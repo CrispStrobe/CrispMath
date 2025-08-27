@@ -2,11 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import '../engine/calculator_engine.dart';
 import '../widgets/keypad_grid.dart';
 
-/// The main calculator screen, featuring a rich math display and a tabbed keypad.
+/// The main calculator screen with proper = behavior like traditional calculators
 class CalculatorScreen extends StatefulWidget {
   final bool Function(KeyEvent)? onKeyEvent;
   
@@ -15,7 +14,6 @@ class CalculatorScreen extends StatefulWidget {
   @override
   State<CalculatorScreen> createState() => _CalculatorScreenState();
 
-  // Method to handle keyboard input from parent
   bool handleKeyboardInput(KeyEvent event) {
     final state = _CalculatorScreenState._currentState;
     return state?.handleKeyboardInput(event) ?? false;
@@ -29,8 +27,10 @@ class _CalculatorScreenState extends State<CalculatorScreen>
   late TabController _tabController;
   String _expression = '';
   String _result = '';
+  String _lastResult = ''; // Store last calculation result
+  bool _justCalculated = false; // Track if we just pressed =
+  bool _isNewExpression = true; // Track if starting new expression
 
-  // Instantiate the calculator engine to handle all logic.
   final CalculatorEngine _engine = CalculatorEngine();
 
   @override
@@ -82,7 +82,6 @@ class _CalculatorScreenState extends State<CalculatorScreen>
     return false;
   }
 
-  /// Handles all button presses from the keypads.
   void _onButtonPressed(String value) {
     if (value == 'solve') {
       _showSolveDialog();
@@ -93,26 +92,65 @@ class _CalculatorScreenState extends State<CalculatorScreen>
       if (value == 'C') {
         _expression = '';
         _result = '';
+        _lastResult = '';
+        _justCalculated = false;
+        _isNewExpression = true;
       } else if (value == '⌫') {
         if (_expression.isNotEmpty) {
           _expression = _expression.substring(0, _expression.length - 1);
+          _isNewExpression = false;
         }
       } else if (value == '=') {
         if (_expression.isNotEmpty) {
           try {
-            // This is where the FFI bridge to SymEngine is called.
             _result = _engine.evaluate(_expression);
+            _lastResult = _result;
+            _justCalculated = true;
+            _isNewExpression = false;
           } catch (e) {
             _result = 'Error';
+            _lastResult = '';
+            _justCalculated = false;
           }
         }
+      } else if (_isOperator(value)) {
+        // Handle operators with proper calculator behavior
+        if (_justCalculated && _lastResult.isNotEmpty) {
+          // Start new expression with last result
+          _expression = _lastResult + value;
+          _result = '';
+          _justCalculated = false;
+          _isNewExpression = false;
+        } else if (_expression.isNotEmpty) {
+          // Add operator to current expression
+          _expression += value;
+          _isNewExpression = false;
+        }
       } else {
-        _expression += value;
+        // Handle numbers and functions
+        if (_justCalculated) {
+          // Start completely new expression
+          _expression = value;
+          _result = '';
+          _justCalculated = false;
+          _isNewExpression = false;
+        } else if (_isNewExpression && _expression.isEmpty) {
+          // First input
+          _expression = value;
+          _isNewExpression = false;
+        } else {
+          // Continue building expression
+          _expression += value;
+          _isNewExpression = false;
+        }
       }
     });
   }
 
-  /// Shows the dialog for the equation solver.
+  bool _isOperator(String value) {
+    return ['+', '-', '*', '/', '^', '%'].contains(value);
+  }
+
   void _showSolveDialog() {
     final TextEditingController equationController = TextEditingController();
 
@@ -139,12 +177,13 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                   String expression =
                       equationController.text.split('=')[0].trim();
                   
-                  // This is where the FFI bridge to the solver is called.
                   final solution = _engine.solve(expression, 'x');
 
                   setState(() {
                     _expression = "solve(${equationController.text})";
                     _result = "x = {$solution}";
+                    _justCalculated = true;
+                    _lastResult = '';
                   });
                   Navigator.of(context).pop();
                 }
@@ -157,40 +196,12 @@ class _CalculatorScreenState extends State<CalculatorScreen>
     );
   }
 
-  /// Converts a plain text expression to a LaTeX-compatible string for rendering.
-  String _toLaTeX(String input) {
-    if (input.isEmpty) return '';
-    
-    String latex = input;
-    
-    // Handle basic replacements more carefully
-    latex = latex.replaceAll('*', r' \times ');
-    latex = latex.replaceAll('pi', r'\pi');
-    latex = latex.replaceAll('sqrt(', r'\sqrt{');
-    
-    // Handle division - this is tricky, need to find the operands
-    // For now, just display as is and let the math renderer handle it
-    latex = latex.replaceAll('/', r' \div ');
-    
-    // Handle functions
-    latex = latex.replaceAll('sin(', r'\sin(');
-    latex = latex.replaceAll('cos(', r'\cos(');
-    latex = latex.replaceAll('tan(', r'\tan(');
-    latex = latex.replaceAll('ln(', r'\ln(');
-    latex = latex.replaceAll('log(', r'\log(');
-    
-    // Handle exponents
-    latex = latex.replaceAll('^', r'^');
-    
-    return latex;
-  }
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Column(
         children: [
-          // --- Display Area ---
+          // Enhanced Display Area with calculation history
           Expanded(
             flex: 3,
             child: Container(
@@ -202,7 +213,23 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Display expression as plain text
+                    // Previous result (if just calculated)
+                    if (_justCalculated && _lastResult.isNotEmpty)
+                      Container(
+                        alignment: Alignment.centerRight,
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          '= $_lastResult',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.grey[500],
+                            fontWeight: FontWeight.w300,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    
+                    // Current expression
                     Container(
                       alignment: Alignment.centerRight,
                       child: Text(
@@ -214,22 +241,29 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                         textAlign: TextAlign.right,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _result,
-                      style: TextStyle(
-                        fontSize: 24, 
-                        color: Colors.grey[400],
-                        fontWeight: FontWeight.w400,
+                    
+                    // Current result
+                    if (_result.isNotEmpty)
+                      Container(
+                        alignment: Alignment.centerRight,
+                        margin: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          _justCalculated ? '= $_result' : _result,
+                          style: TextStyle(
+                            fontSize: _justCalculated ? 28 : 24,
+                            color: _justCalculated ? Colors.blue[300] : Colors.grey[400],
+                            fontWeight: _justCalculated ? FontWeight.w500 : FontWeight.w400,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
             ),
           ),
 
-          // --- Keypad Area ---
+          // Keypad Area
           Expanded(
             flex: 5,
             child: Column(

@@ -1,89 +1,55 @@
 cmake_minimum_required(VERSION 3.15)
 project(cas_wrapper)
 
-set(CMAKE_CXX_STANDARD 14)  # SymEngine C++ API needs C++14
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set Homebrew prefix
+# --- Find Dependencies from Homebrew ---
 set(HOMEBREW_PREFIX "/opt/homebrew")
 if(NOT EXISTS ${HOMEBREW_PREFIX})
-    set(HOMEBREW_PREFIX "/usr/local") # Intel Mac fallback
+    set(HOMEBREW_PREFIX "/usr/local")
 endif()
 
 # Find include directories
-find_path(SYMENGINE_INCLUDE_DIR 
-    NAMES symengine/cwrapper.h
-    PATHS ${HOMEBREW_PREFIX}/include
-    NO_DEFAULT_PATH
-)
+find_path(SYMENGINE_INCLUDE_DIR NAMES symengine/cwrapper.h PATHS ${HOMEBREW_PREFIX}/include REQUIRED)
+find_path(GMP_INCLUDE_DIR NAMES gmp.h PATHS ${HOMEBREW_PREFIX}/include REQUIRED)
 
-find_path(GMP_INCLUDE_DIR 
-    NAMES gmp.h
-    PATHS ${HOMEBREW_PREFIX}/include
-    NO_DEFAULT_PATH
-)
+# --- Find a mix of STATIC and DYNAMIC libraries ---
+# We will link these statically as they are available as .a files
+find_library(SYMENGINE_STATIC_LIB NAMES libsymengine.a PATHS ${HOMEBREW_PREFIX}/lib REQUIRED)
+find_library(GMP_STATIC_LIB NAMES libgmp.a PATHS ${HOMEBREW_PREFIX}/lib REQUIRED)
+find_library(MPFR_STATIC_LIB NAMES libmpfr.a PATHS ${HOMEBREW_PREFIX}/lib REQUIRED)
+find_library(MPC_STATIC_LIB NAMES libmpc.a PATHS ${HOMEBREW_PREFIX}/lib REQUIRED)
 
-# Find libraries
-find_library(SYMENGINE_LIBRARY 
-    NAMES symengine
-    PATHS ${HOMEBREW_PREFIX}/lib
-    NO_DEFAULT_PATH
-)
+# FLINT is only available as a dynamic library, so we find that instead.
+find_library(FLINT_DYLIB NAMES libflint.dylib PATHS ${HOMEBREW_PREFIX}/lib REQUIRED)
 
-find_library(GMP_LIBRARY 
-    NAMES gmp
-    PATHS ${HOMEBREW_PREFIX}/lib
-    NO_DEFAULT_PATH
-)
+message(STATUS "✅ Using static SymEngine: ${SYMENGINE_STATIC_LIB}")
+message(STATUS "✅ Using dynamic FLINT: ${FLINT_DYLIB}")
 
-# Check if all dependencies were found
-if(NOT SYMENGINE_INCLUDE_DIR)
-    message(FATAL_ERROR "SymEngine headers not found. Install with: brew install symengine")
-endif()
-
-if(NOT GMP_INCLUDE_DIR)
-    message(FATAL_ERROR "GMP headers not found. Install with: brew install gmp")
-endif()
-
-if(NOT SYMENGINE_LIBRARY)
-    message(FATAL_ERROR "SymEngine library not found. Install with: brew install symengine")
-endif()
-
-if(NOT GMP_LIBRARY)
-    message(FATAL_ERROR "GMP library not found. Install with: brew install gmp")
-endif()
-
-# Print what we found
-message(STATUS "SymEngine include: ${SYMENGINE_INCLUDE_DIR}")
-message(STATUS "SymEngine library: ${SYMENGINE_LIBRARY}")
-message(STATUS "GMP include: ${GMP_INCLUDE_DIR}")
-message(STATUS "GMP library: ${GMP_LIBRARY}")
-
-# Create the shared library
+# --- Build the Shared Library ---
 add_library(cas_wrapper SHARED cas_wrapper.cpp)
 
-# Set include directories
-target_include_directories(cas_wrapper PRIVATE 
-    ${SYMENGINE_INCLUDE_DIR}
-    ${GMP_INCLUDE_DIR}
+target_include_directories(cas_wrapper PRIVATE ${SYMENGINE_INCLUDE_DIR} ${GMP_INCLUDE_DIR})
+
+# Link all libraries
+target_link_libraries(cas_wrapper PRIVATE
+    ${SYMENGINE_STATIC_LIB}
+    ${MPC_STATIC_LIB}
+    ${MPFR_STATIC_LIB}
+    ${GMP_STATIC_LIB}
+    ${FLINT_DYLIB}  # Link the dynamic flint library
 )
 
-# Link libraries
-target_link_libraries(cas_wrapper PRIVATE 
-    ${SYMENGINE_LIBRARY}
-    ${GMP_LIBRARY}
-)
-
-# Set properties
-set_target_properties(cas_wrapper PROPERTIES
-    CXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN ON
-)
-
-# macOS specific settings
+# --- Target Properties ---
+set_target_properties(cas_wrapper PROPERTIES CXX_VISIBILITY_PRESET hidden)
 if(APPLE)
-    set_target_properties(cas_wrapper PROPERTIES
-        INSTALL_NAME_DIR "@rpath"
-        BUILD_WITH_INSTALL_RPATH TRUE
-    )
+    set_target_properties(cas_wrapper PROPERTIES INSTALL_NAME_DIR "@rpath")
 endif()
+
+# Post-build check
+add_custom_command(TARGET cas_wrapper POST_BUILD
+    COMMAND otool -L $<TARGET_FILE:cas_wrapper>
+    COMMENT "✅ Verifying library dependencies..."
+    VERBATIM
+)

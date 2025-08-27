@@ -6,7 +6,7 @@ CXX_DEFINES = -Dcas_wrapper_EXPORTS
 
 CXX_INCLUDES = -I/opt/homebrew/include
 
-CXX_FLAGSarm64 = -std=gnu++14 -arch arm64 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden
+CXX_FLAGSarm64 = -std=gnu++14 -arch arm64 -fPIC -fvisibility=hidden
 
-CXX_FLAGS = -std=gnu++14 -arch arm64 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden
+CXX_FLAGS = -std=gnu++14 -arch arm64 -fPIC -fvisibility=hidden
 
