@@ -23,6 +23,7 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   
   String _resultPreview = '';
   bool _justCalculated = false;
+  bool _modalIsOpen = false;
   
   final Map<String, String> _memory = {};
 
@@ -126,19 +127,44 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   
   /// Updates live preview of result as user types
   void _updateLivePreview() {
-    String currentText = _controller.text;
-    if (currentText.isEmpty || currentText.trim().toLowerCase().startsWith('solve')) {
-      _resultPreview = '';
-      return;
+    String currentText = _controller.text.trim();
+    
+    // Don't preview if:
+    // - Empty or whitespace only
+    // - Contains only letters (variables without numbers)
+    // - Starts with 'solve'
+    // - Too short to be meaningful
+    if (currentText.isEmpty || 
+        currentText.toLowerCase().startsWith('solve') ||
+        currentText.length < 2 ||
+        RegExp(r'^[a-zA-Z]+$').hasMatch(currentText)) {
+        setState(() { _resultPreview = ''; });
+        return;
     }
+    
+    // Only preview if it looks like a mathematical expression
+    if (!RegExp(r'[\d\+\-\*/\^\(\)\.\,]').hasMatch(currentText)) {
+        setState(() { _resultPreview = ''; });
+        return;
+    }
+    
     try {
-      final preprocessed = _preprocessNativeExpression(_preprocessExpression(currentText));
-      final result = _engine.evaluate(preprocessed);
-      _resultPreview = (result != "Error" && result != currentText && double.tryParse(result) != null) ? result : '';
+        final preprocessed = _preprocessNativeExpression(_preprocessExpression(currentText));
+        final result = _engine.evaluate(preprocessed);
+        
+        // Only show preview if result is different and numeric
+        if (result != "Error" && 
+            result != currentText && 
+            double.tryParse(result) != null &&
+            result != preprocessed) {
+        setState(() { _resultPreview = result; });
+        } else {
+        setState(() { _resultPreview = ''; });
+        }
     } catch (e) {
-      _resultPreview = '';
+        setState(() { _resultPreview = ''; });
     }
-  }
+    }
 
   /// Handles hardware keyboard events
   bool handleKeyboardInput(KeyEvent event) {
@@ -207,10 +233,16 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         case 'f(x)':
         _showFunctionPicker();
         break;
-        // Function buttons that need cursor inside parentheses
-        case 'sin(': case 'cos(': case 'tan(': case 'ln(': case 'log(': case 'sqrt(': case 'abs(':
+        // Function buttons that need cursor inside parentheses - FIXED: Handle all function cases
+        case 'sin(': case 'cos(': case 'tan(': case 'ln(': case 'sqrt(': case 'abs(':
         final funcName = value.substring(0, value.length - 1);
         _insertTextAndPositionCursor('$funcName()', cursorOffset: -1);
+        break;
+        case 'log(': // Special case for log
+        _insertTextAndPositionCursor('log()', cursorOffset: -1);
+        break;
+        case 'log': // In case it's just 'log' without parentheses
+        _insertTextAndPositionCursor('log()', cursorOffset: -1);
         break;
         default:
         _insertTextAndPositionCursor(value);
@@ -370,15 +402,25 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
       final solveContent = expression.substring(6, expression.length - 1).trim();
       print('SOLVE: Content inside solve(): "$solveContent"');
       
-      // Parse the content - expecting format like "expr, variable" or "expr=0, variable"
-      final parts = solveContent.split(',');
-      if (parts.length != 2) {
-        print('SOLVE: Error - Expected format: solve(expression, variable)');
-        return 'Error: solve() requires format: solve(expression, variable)';
-      }
+      String equation;
+      String variable;
       
-      String equation = parts[0].trim();
-      String variable = parts[1].trim();
+      // Parse the content - check if variable is explicitly provided
+      final parts = solveContent.split(',');
+      if (parts.length == 1) {
+        // Only equation provided, auto-detect variable
+        equation = parts[0].trim();
+        variable = _detectVariable(equation);
+        print('SOLVE: Auto-detected variable: "$variable"');
+      } else if (parts.length == 2) {
+        // Both equation and variable provided
+        equation = parts[0].trim();
+        variable = parts[1].trim();
+        print('SOLVE: Explicit variable provided: "$variable"');
+      } else {
+        print('SOLVE: Error - Too many parameters');
+        return 'Error: solve() format: solve(equation) or solve(equation, variable)';
+      }
       
       print('SOLVE: Equation: "$equation", Variable: "$variable"');
       
@@ -411,17 +453,66 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     }
   }
 
+  /// Auto-detects the variable to solve for in an equation
+  String _detectVariable(String equation) {
+    print('SOLVE: Auto-detecting variable in: "$equation"');
+    
+    // Known constants and functions to ignore
+    final knownTokens = {
+      'e', 'pi', 'sin', 'cos', 'tan', 'ln', 'log', 'sqrt', 'abs', 
+      'exp', 'deg', 'rad', 'gamma', 'factorial'
+    };
+    
+    // Find all single letters that could be variables
+    final variablePattern = RegExp(r'\b([a-zA-Z])\b');
+    final matches = variablePattern.allMatches(equation);
+    
+    final foundVariables = <String>{};
+    for (final match in matches) {
+      final variable = match.group(1)!.toLowerCase();
+      if (!knownTokens.contains(variable)) {
+        foundVariables.add(variable);
+      }
+    }
+    
+    print('SOLVE: Found potential variables: $foundVariables');
+    
+    // Prioritize common variable names
+    final commonVariables = ['x', 'y', 'z', 't', 'n', 'a', 'b', 'c'];
+    for (final common in commonVariables) {
+      if (foundVariables.contains(common)) {
+        print('SOLVE: Selected common variable: "$common"');
+        return common;
+      }
+    }
+    
+    // If no common variables, use the first one found
+    if (foundVariables.isNotEmpty) {
+      final firstVar = foundVariables.first;
+      print('SOLVE: Selected first variable: "$firstVar"');
+      return firstVar;
+    }
+    
+    // Fallback to 'x' if no variables detected
+    print('SOLVE: No variables detected, defaulting to "x"');
+    return 'x';
+  }
+
   String _preprocessNativeExpression(String expression) {
     String p = expression;
+    
+    // FIX: Convert European decimal comma to dot
+    p = p.replaceAll(',', '.');
+    
     p = p.replaceAllMapped(RegExp(r'(\d|\))(\()'), (m) => '${m[1]}*${m[2]}');
     p = p.replaceAllMapped(RegExp(r'(\))(\d|[a-zA-Z])'), (m) => '${m[1]}*${m[2]}');
     p = p.replaceAllMapped(RegExp(r'(\d+)!'), (m) {
-      final n = int.tryParse(m.group(1)!) ?? 0;
-      if (n <= 20) { int f=1; for(int i=1;i<=n;i++){f*=i;} return f.toString(); } 
-      else { return 'gamma(${n + 1})'; }
+        final n = int.tryParse(m.group(1)!) ?? 0;
+        if (n <= 20) { int f=1; for(int i=1;i<=n;i++){f*=i;} return f.toString(); } 
+        else { return 'gamma(${n + 1})'; }
     });
     return p;
-  }
+    }
   
   String _extractNumericFromSolveResult(String solveResult) {
     final match = RegExp(r'[a-zA-Z]\s*=\s*([+-]?[\d.]+)\s*$').firstMatch(solveResult);
@@ -432,13 +523,17 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   }
   
   void _showSolveFunctionPicker() {
-    // Store current focus state
-    final hadFocus = _inputFocusNode.hasFocus;
-    print('MODAL: Opening solve picker, current focus: $hadFocus');
+    // Store current cursor position and text state
+    final currentSelection = _controller.selection;
+    final currentText = _controller.text;
+    
+    print('MODAL: Opening solve picker, storing state: text="$currentText", selection=$currentSelection');
+    
+    setState(() { _modalIsOpen = true; });
     
     showModalBottomSheet(
         context: context,
-        isScrollControlled: true, // Allow keyboard to show if needed
+        isScrollControlled: true,
         builder: (context) {
         return Column(
             mainAxisSize: MainAxisSize.min, 
@@ -452,11 +547,10 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
             ListTile(
                 leading: Icon(Icons.edit),
                 title: Text('Enter manually'),
-                subtitle: Text('Type your own equation'),
+                subtitle: Text('Continue typing your equation'),
                 onTap: () {
-                print('MODAL: Manual entry selected');
+                print('MODAL: Manual entry selected - preserving cursor position');
                 Navigator.of(context).pop();
-                // Just close - user can continue typing
                 },
             ),
             const Divider(),
@@ -471,8 +565,13 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
                         onTap: () {
                         print('MODAL: Selected Y${e.key + 1} = 0');
                         Navigator.of(context).pop();
-                        // Insert the solve equation
-                        _insertTextAndPositionCursor('Y${e.key+1}=0, x');
+                        // Replace the solve() content with the selected equation
+                        final newText = currentText.replaceRange(
+                            currentText.indexOf('(') + 1,
+                            currentText.lastIndexOf(')'),
+                            'Y${e.key+1}=0'
+                        );
+                        _insertTextAndPositionCursor(newText, cursorOffset: -(newText.length - currentText.length));
                         },
                     )).toList(),
                 ),
@@ -481,24 +580,37 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         );
         }
     ).whenComplete(() {
-        print('MODAL: Solve picker closed, restoring focus');
-        // Use a longer delay to ensure modal is fully dismissed
-        Future.delayed(const Duration(milliseconds: 100), () {
+        setState(() { _modalIsOpen = false; });
+        print('MODAL: Solve picker closed, restoring focus and cursor position');
+        // Restore focus and cursor position carefully
+        WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_inputFocusNode.hasFocus) {
-            print('MODAL: Requesting focus after delay');
             _inputFocusNode.requestFocus();
+        }
+        
+        // Restore cursor position if text hasn't changed
+        if (_controller.text == currentText && currentSelection.isValid) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+            _controller.selection = currentSelection;
+            print('MODAL: Restored cursor position to: $currentSelection');
+            });
         }
         });
     });
     }
-  
-  void _showFunctionPicker() {
-    final hadFocus = _inputFocusNode.hasFocus;
-    print('MODAL: Opening function picker, current focus: $hadFocus');
+
+    void _showFunctionPicker() {
+    // Store current cursor position and text state
+    final currentSelection = _controller.selection;
+    final currentText = _controller.text;
+    
+    print('MODAL: Opening function picker, storing state: text="$currentText", selection=$currentSelection');
+    
+    setState(() { _modalIsOpen = true; });
     
     showModalBottomSheet(
         context: context,
-        isScrollControlled: true, // Allow keyboard to show if needed
+        isScrollControlled: true,
         builder: (context) {
         return Column(
             mainAxisSize: MainAxisSize.min,
@@ -512,9 +624,9 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
             ListTile(
                 leading: Icon(Icons.edit),
                 title: Text('Enter manually'),
-                subtitle: Text('Type your own function call'),
+                subtitle: Text('Continue typing your function'),
                 onTap: () {
-                print('MODAL: Manual function entry selected');
+                print('MODAL: Manual function entry selected - preserving cursor position');
                 Navigator.of(context).pop();
                 },
             ),
@@ -542,12 +654,20 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         );
         }
     ).whenComplete(() {
-        print('MODAL: Function picker closed, restoring focus');
-        // Use a longer delay to ensure modal is fully dismissed
-        Future.delayed(const Duration(milliseconds: 100), () {
+        setState(() { _modalIsOpen = false; });
+        print('MODAL: Function picker closed, restoring focus and cursor position');
+        // Restore focus and cursor position carefully
+        WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_inputFocusNode.hasFocus) {
-            print('MODAL: Requesting focus after delay');
             _inputFocusNode.requestFocus();
+        }
+        
+        // Restore cursor position if text hasn't changed
+        if (_controller.text == currentText && currentSelection.isValid) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+            _controller.selection = currentSelection;
+            print('MODAL: Restored cursor position to: $currentSelection');
+            });
         }
         });
     });
