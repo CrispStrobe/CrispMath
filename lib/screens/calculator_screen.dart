@@ -1,3 +1,5 @@
+/// lib/screens/calculator_screen.dart - Enhanced with SymbolicMathBridge functions
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
@@ -30,16 +32,12 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this); // Added one more tab for advanced functions
     _controller.addListener(_onInputChanged);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _inputFocusNode.requestFocus();
     });
-  }
-
-  void _onFocusChanged() {
-    // Remove this - we'll handle focus more directly
   }
 
   @override
@@ -51,7 +49,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     super.dispose();
   }
   
-  /// Public method to request focus - called from main.dart
   void requestFocus() {
     print('MAIN: requestFocus() called from main.dart');
     if (!_inputFocusNode.hasFocus) {
@@ -62,25 +59,17 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     }
   }
   
-  /// Central hub for reacting to text changes from keyboard or grid
   void _onInputChanged() {
-    // A flag to prevent re-triggering this listener while we are modifying text inside it.
     bool isModifying = false;
 
-    // Handle post-calculation state
     if (!isModifying && _justCalculated && _controller.text.isNotEmpty) {
       final input = _controller.text;
-
-      // CRITICAL FIX: Only run post-calc logic for simple inputs (operators/numbers).
-      // If the input is a function call (contains a parenthesis), do NOT run this,
-      // as it will override the carefully placed cursor.
       final isSimpleInput = !input.contains('(');
 
       if (isSimpleInput) {
         isModifying = true;
         final lastResult = _appState.history.firstOrNull?.result ?? '0';
 
-        // Prevent recursive listener calls
         _controller.removeListener(_onInputChanged);
 
         if (['+', '-', '*', '/', '^', '%'].contains(input)) {
@@ -95,25 +84,21 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         _controller.addListener(_onInputChanged);
         isModifying = false;
       } else {
-        // If it's a function call, just reset the flag and do nothing else.
         setState(() { _justCalculated = false; });
       }
     }
     
     _handleFunctionAutocomplete();
-    // Use a local variable to prevent rapid firing during modifications.
     if (!isModifying) {
         setState(() => _updateLivePreview());
     }
   }
 
-  /// Auto-completes function names like 'solve' into 'solve()'
   void _handleFunctionAutocomplete() {
     final text = _controller.text;
     final cursorPos = _controller.selection.baseOffset;
     if (cursorPos < 0) return;
 
-    // Find start of word before cursor
     int wordStart = cursorPos;
     while (wordStart > 0 && RegExp(r'[a-zA-Z]').hasMatch(text[wordStart - 1])) {
         wordStart--;
@@ -130,24 +115,16 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         _controller.selection = TextSelection.collapsed(offset: wordStart + word.length + 1);
         _controller.addListener(_onInputChanged);
         
-        // Don't show picker immediately - let user type first
         print('AUTO: solve() inserted, cursor positioned inside parentheses');
         }
     }
-    }
+  }
   
-  /// Updates live preview of result as user types
   void _updateLivePreview() {
     String currentText = _controller.text.trim();
     
-    // Don't preview if:
-    // - Empty or whitespace only
-    // - Contains only letters (variables without numbers)
-    // - Starts with 'solve'
-    // - Too short to be meaningful
     if (currentText.isEmpty || 
         currentText.toLowerCase().startsWith('solve') ||
-        
         currentText.contains('=') ||
         currentText.length < 2 ||
         RegExp(r'^[a-zA-Z]+$').hasMatch(currentText)) {
@@ -155,7 +132,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         return;
     }
     
-    // Only preview if it looks like a mathematical expression
     if (!RegExp(r'[\d\+\-\*/\^\(\)\.\,]').hasMatch(currentText)) {
         setState(() { _resultPreview = ''; });
         return;
@@ -163,46 +139,139 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     
     try {
         final preprocessed = _preprocessNativeExpression(_preprocessExpression(currentText));
-        final result = _engine.evaluate(preprocessed);
+        final rawResult = _engine.evaluate(preprocessed);
         
-        // Only show preview if result is different and numeric
-        if (result != "Error" && 
-            result != currentText && 
-            double.tryParse(result) != null &&
-            result != preprocessed) {
-        setState(() { _resultPreview = result; });
+        // APPLY COMPLEX NUMBER NORMALIZATION TO PREVIEW
+        final normalizedResult = _normalizeComplexResult(rawResult);
+        
+        if (normalizedResult != "Error" && 
+            normalizedResult != currentText && 
+            normalizedResult != preprocessed) {
+            
+            // Check if it's a simple numeric result
+            final numericResult = double.tryParse(normalizedResult);
+            if (numericResult != null) {
+                setState(() { _resultPreview = normalizedResult; });
+            } else if (!normalizedResult.contains('Error')) {
+                // Show symbolic results too, but cleaned up
+                setState(() { _resultPreview = normalizedResult; });
+            } else {
+                setState(() { _resultPreview = ''; });
+            }
         } else {
         setState(() { _resultPreview = ''; });
         }
     } catch (e) {
         setState(() { _resultPreview = ''; });
     }
-    }
-
-  /// Handles hardware keyboard events
-  bool handleKeyboardInput(KeyEvent event) {
-    if (event is! KeyDownEvent) return false;
-    
-    print('KEYBOARD: Hardware key pressed: ${event.logicalKey}');
-    
-    if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) { 
-      _onButtonPressed("EXE"); 
-      return true;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.escape) { 
-      _onButtonPressed('C'); 
-      return true;
-    }
-    
-    return false;
   }
 
-  /// Central handler for all keypad buttons
-  void _onButtonPressed(String value) {
-    // Note: No top-level focus request here. Focus is handled by the
-    // specific action methods (_insertTextAndPositionCursor, _handleBackspace)
-    // to prevent the "select all" bug.
+  void _debugKeyboardInput(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      print('=== KEYBOARD DEBUG ===');
+      print('Logical Key: ${event.logicalKey}');
+      print('Physical Key: ${event.physicalKey}');
+      print('Character: "${event.character}"');
+      print('Key Label: "${event.logicalKey.keyLabel}"');
+      print('========================');
+    }
+  }
 
+  bool handleKeyboardInput(KeyEvent event) {
+    _debugKeyboardInput(event);
+    if (event is! KeyDownEvent) return false;
+
+    final physicalKey = event.physicalKey;
+    final logicalKey = event.logicalKey;
+    final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+
+    // --- GERMAN KEYBOARD LAYOUT FIX ---
+    // Handles specific physical keys that are misinterpreted by Flutter on macOS.
+    // This is more reliable than using logical keys or characters for these specific cases.
+
+    // Key: `+` and `*` (Physical location of `]` on a US keyboard)
+    if (physicalKey == PhysicalKeyboardKey.bracketRight) {
+      _insertTextAndPositionCursor(isShiftPressed ? '*' : '+');
+      return true;
+    }
+    // Key: `-` (Physical location of `/` on a US keyboard)
+    if (physicalKey == PhysicalKeyboardKey.slash) {
+      // Shift + `-` on German layout is `_`, which we can ignore for the calculator.
+      if (!isShiftPressed) {
+        _insertTextAndPositionCursor('-');
+        return true;
+      }
+    }
+    // Key: `/` (This is Shift + 7 on a German keyboard)
+    if (physicalKey == PhysicalKeyboardKey.digit7 && isShiftPressed) {
+      _insertTextAndPositionCursor('/');
+      return true;
+    }
+
+    // --- GENERAL KEY HANDLING ---
+
+    // A set of keys that should not produce character input.
+    final Set<LogicalKeyboardKey> modifierKeys = <LogicalKeyboardKey>{
+      LogicalKeyboardKey.shiftLeft,
+      LogicalKeyboardKey.shiftRight,
+      LogicalKeyboardKey.controlLeft,
+      LogicalKeyboardKey.controlRight,
+      LogicalKeyboardKey.altLeft,
+      LogicalKeyboardKey.altRight,
+      LogicalKeyboardKey.metaLeft,
+      LogicalKeyboardKey.metaRight,
+      LogicalKeyboardKey.capsLock,
+      LogicalKeyboardKey.escape,
+      LogicalKeyboardKey.fn,
+    };
+
+    // Handle special action keys first
+    if (logicalKey == LogicalKeyboardKey.enter || logicalKey == LogicalKeyboardKey.numpadEnter) {
+      _onButtonPressed("EXE");
+      return true;
+    }
+    if (logicalKey == LogicalKeyboardKey.escape) {
+      _onButtonPressed('C');
+      return true;
+    }
+    if (logicalKey == LogicalKeyboardKey.backspace) {
+      _onButtonPressed('⌫');
+      return true;
+    }
+
+    // For most other keys, trust the `event.character` if it's not from a modifier key.
+    if (event.character != null && event.character!.isNotEmpty && !modifierKeys.contains(logicalKey)) {
+      _insertTextAndPositionCursor(event.character!);
+      return true;
+    }
+
+    // Fallback for Numpad keys that might not produce a character on all platforms
+    switch (logicalKey) {
+      case LogicalKeyboardKey.numpadAdd:
+        _insertTextAndPositionCursor('+');
+        return true;
+      case LogicalKeyboardKey.numpadSubtract:
+        _insertTextAndPositionCursor('-');
+        return true;
+      case LogicalKeyboardKey.numpadMultiply:
+        _insertTextAndPositionCursor('*');
+        return true;
+      case LogicalKeyboardKey.numpadDivide:
+        _insertTextAndPositionCursor('/');
+        return true;
+      case LogicalKeyboardKey.numpadDecimal:
+      case LogicalKeyboardKey.period:
+        _insertTextAndPositionCursor('.');
+        return true;
+      case LogicalKeyboardKey.equal:
+        _onButtonPressed("EXE");
+        return true;
+    }
+
+    return false; // Indicate that the key event was not handled
+  }
+
+  void _onButtonPressed(String value) {
     switch (value) {
       case 'C':
         _controller.clear();
@@ -217,7 +286,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         }
         break;
       case '◀':
-        // Cursor movement should only happen if the field already has focus
         if (_inputFocusNode.hasFocus) {
           final selection = _controller.selection;
           if (selection.baseOffset > 0) {
@@ -236,12 +304,9 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         }
         break;
       
-      // --- WORKFLOW FIXES ARE HERE ---
-
+      // Enhanced function handling
       case 'solve':
-        // 1. First, insert 'solve()' with the cursor correctly positioned inside.
         _insertTextAndPositionCursor('solve()', cursorOffset: -1);
-        // 2. Then, show the picker as a helpful overlay.
         _showSolveFunctionPicker();
         break;
 
@@ -249,7 +314,44 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         _showFunctionPicker();
         break;
 
-      // CURSOR FIX: Group all functions that need the cursor placed inside the parentheses.
+      case 'd/dx':
+        _insertTextAndPositionCursor('d/dx()', cursorOffset: -1);
+        break;
+
+      case 'factor':
+        _insertTextAndPositionCursor('factor()', cursorOffset: -1);
+        break;
+
+      case 'expand':
+        _insertTextAndPositionCursor('expand()', cursorOffset: -1);
+        break;
+
+      case 'simplify':
+        _insertTextAndPositionCursor('simplify()', cursorOffset: -1);
+        break;
+
+      case 'gcd':
+        _insertTextAndPositionCursor('gcd(,)', cursorOffset: -2);
+        break;
+
+      case 'lcm':
+        _insertTextAndPositionCursor('lcm(,)', cursorOffset: -2);
+        break;
+
+      // Constants from SymbolicMathBridge
+      case 'π':
+        _insertTextAndPositionCursor('pi');
+        break;
+
+      case 'e':
+        _insertTextAndPositionCursor('E');
+        break;
+
+      case 'γ':
+        _insertTextAndPositionCursor('EulerGamma');
+        break;
+
+      // Function buttons that need cursor inside parentheses
       case 'sin(':
       case 'cos(':
       case 'tan(':
@@ -257,90 +359,67 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
       case 'log(':
       case 'sqrt(':
       case 'abs(':
-        // Extract the function name (e.g., "sin") from the button value (e.g., "sin(").
+      case 'asin(':
+      case 'acos(':
+      case 'atan(':
+      case 'sinh(':
+      case 'cosh(':
+      case 'tanh(':
         final funcName = value.substring(0, value.length - 1);
-        // Insert the text with a cursorOffset of -1 to place the cursor before the last character ')'.
         _insertTextAndPositionCursor('$funcName()', cursorOffset: -1);
         break;
 
       default:
-        // Handle all other buttons (numbers, operators, etc.)
         _insertTextAndPositionCursor(value);
         break;
     }
   }
 
-  void _onButtonPressed_old(String value) {
-    print('\n=== BUTTON PRESSED: "$value" ===');
-    print('Focus before: ${_inputFocusNode.hasFocus}');
-    print('Current text: "${_controller.text}"');
-    print('Current selection: ${_controller.selection}');
+  // COMPLEX NUMBER FIX: Enhanced result normalization
+  String _normalizeComplexResult(String result) {
+    if (result.isEmpty) return result;
     
-    // Ensure focus for all button presses
-    if (!_inputFocusNode.hasFocus) {
-        _inputFocusNode.requestFocus();
-    }
-
-    switch (value) {
-        case 'C':
-        _controller.clear();
-        setState(() { _justCalculated = false; });
-        break;
-        case '⌫':
-        _handleBackspace();
-        break;
-        case 'EXE':
-        if (_controller.text.isNotEmpty) {
-            _calculate(_controller.text);
-        }
-        break;
-        case '◀':
-        final selection = _controller.selection;
-        if (selection.baseOffset > 0) {
-            final newPosition = selection.baseOffset - 1;
-            _controller.selection = TextSelection.collapsed(offset: newPosition);
-        }
-        break;
-        case '▶':
-        final selection = _controller.selection;
-        if (selection.baseOffset < _controller.text.length) {
-            final newPosition = selection.baseOffset + 1;
-            _controller.selection = TextSelection.collapsed(offset: newPosition);
-        }
-        break;
-        case 'solve':
-        _insertTextAndPositionCursor('solve()', cursorOffset: -1);
-        // Show picker after a short delay to allow the text to be inserted
-        Future.delayed(const Duration(milliseconds: 50), () {
-            _showSolveFunctionPicker();
-        });
-        break;
-        case 'f(x)':
-        _showFunctionPicker();
-        break;
-        // Function buttons that need cursor inside parentheses - FIXED: Handle all function cases
-        case 'sin(': case 'cos(': case 'tan(': case 'ln(': case 'sqrt(': case 'abs(':
-        final funcName = value.substring(0, value.length - 1);
-        _insertTextAndPositionCursor('$funcName()', cursorOffset: -1);
-        break;
-        case 'log(': // Special case for log
-        _insertTextAndPositionCursor('log()', cursorOffset: -1);
-        break;
-        case 'log': // In case it's just 'log' without parentheses
-        _insertTextAndPositionCursor('log()', cursorOffset: -1);
-        break;
-        default:
-        _insertTextAndPositionCursor(value);
-        break;
+    String normalized = result.trim();
+    
+    print('NORMALIZE: Input: "$normalized"');
+    
+    // Handle SymEngine's complex number format: "a + b*I" or "a - b*I"
+    // Pattern matches: number + number*I, number - number*I, number*I, etc.
+    
+    // Remove zero imaginary parts completely
+    // Matches: "+ 0*I", "+ 0.0*I", "- 0*I", "- 0.0*I", etc.
+    normalized = normalized.replaceAll(RegExp(r'\s*[+\-]\s*0(\.0*)?(\s*\*\s*I|\s*I)\s*'), '');
+    
+    // Remove imaginary unit artifacts that are just multiplied by zero
+    normalized = normalized.replaceAll(RegExp(r'\s*\+\s*0\.0\s*\*\s*I\s*\*\s*\d+'), '');
+    normalized = normalized.replaceAll(RegExp(r'\s*\*\s*I\s*\*\s*\d+\s*$'), '');
+    
+    // Clean up standalone zero imaginary parts
+    normalized = normalized.replaceAll(RegExp(r'^\s*0(\.0*)?\s*\*\s*I\s*$'), '0');
+    
+    // Handle pure imaginary numbers (like "I" -> "i" or "2*I" -> "2i")
+    normalized = normalized.replaceAll(RegExp(r'(\d+)\s*\*\s*I\b'), r'\1i');
+    normalized = normalized.replaceAll(RegExp(r'\bI\b'), 'i');
+    
+    // Clean up extra spaces and normalize operators
+    normalized = normalized.replaceAll(RegExp(r'\s+'), ' ');
+    normalized = normalized.replaceAll(RegExp(r'\s*\+\s*'), ' + ');
+    normalized = normalized.replaceAll(RegExp(r'\s*\-\s*'), ' - ');
+    normalized = normalized.replaceAll(RegExp(r'\s*\*\s*'), '*');
+    
+    // Remove leading/trailing spaces
+    normalized = normalized.trim();
+    
+    // If we ended up with just operators, return the original
+    if (RegExp(r'^[\+\-\*\s]*$').hasMatch(normalized)) {
+      normalized = result;
     }
     
-    print('Focus after: ${_inputFocusNode.hasFocus}');
-    print('Final text: "${_controller.text}"');
-    print('Final selection: ${_controller.selection}');
-    print('=== END BUTTON PROCESSING ===\n');
-    }
+    print('NORMALIZE: Output: "$normalized"');
+    
+    return normalized;
+  }
   
-  /// THE KEY METHOD - Robust text insertion that prevents auto-selection
   void _insertTextAndPositionCursor(String text, {int cursorOffset = 0}) {
     print('\n=== TEXT INSERTION DEBUG ===');
     print('Inserting: "$text"');
@@ -349,11 +428,9 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     print('  Text: "${_controller.text}"');
     print('  Selection: ${_controller.selection}');
     
-    // Get current state
     final selection = _controller.selection;
     final currentText = _controller.text;
 
-    // Calculate new text and cursor position using replaceRange
     final newText = currentText.replaceRange(selection.start, selection.end, text);
     final newPosition = selection.start + text.length + cursorOffset;
     
@@ -361,19 +438,14 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     print('  New text: "$newText"');
     print('  New cursor position: $newPosition');
 
-    // If we already have focus, the update can be done synchronously and simply.
     if (_inputFocusNode.hasFocus) {
       _controller.value = TextEditingValue(
         text: newText,
         selection: TextSelection.collapsed(offset: newPosition.clamp(0, newText.length)),
       );
     } else {
-      // If we DON'T have focus, we request it. This is an asynchronous operation.
       _inputFocusNode.requestFocus();
       
-      // We schedule the state update for the very next frame. By the time this
-      // callback runs, the focus event will be complete. Our value assignment
-      // will now correctly override the TextField's default "select all" behavior.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _controller.value = TextEditingValue(
           text: newText,
@@ -388,7 +460,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     print('=== END TEXT INSERTION DEBUG ===\n');
   }
   
-  /// Handles backspace for both cursor and selection
   void _handleBackspace() {
     print('\n=== BACKSPACE DEBUG ===');
     final selection = _controller.selection;
@@ -398,15 +469,13 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     print('  Text: "$currentText"');
     print('  Selection: $selection');
 
-    if (!selection.isValid) return; // Do nothing if selection is invalid
+    if (!selection.isValid) return;
 
-    // If text is selected, deleting it is the same as inserting an empty string.
     if (!selection.isCollapsed) {
       _insertTextAndPositionCursor('');
       return;
     }
 
-    // Handle single-character deletion at a collapsed cursor.
     if (selection.start > 0) {
       final currentText = _controller.text;
       final newText = currentText.substring(0, selection.start - 1) + currentText.substring(selection.start);
@@ -417,7 +486,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         print('  New text: "$newText"');
         print('  New cursor: $newPos');
 
-      // Apply the same focus-aware logic as our main insertion function.
       if (_inputFocusNode.hasFocus) {
         _controller.value = TextEditingValue(
           text: newText,
@@ -440,31 +508,52 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     print('=== END BACKSPACE DEBUG ===\n');
   }
 
-  /// Evaluates expression and updates history
   void _calculate(String expression) {
     print('\n=== CALCULATING: "$expression" ===');
     try {
       String result;
       
-      // Handle solve() function calls BEFORE preprocessing
+      // Handle different function types
       if (expression.trim().startsWith('solve(') && expression.trim().endsWith(')')) {
         print('CALC: Detected solve() function, handling specially');
         result = _handleSolveFunction(expression.trim());
+      } else if (expression.trim().startsWith('d/dx(') && expression.trim().endsWith(')')) {
+        print('CALC: Detected differentiation function');
+        result = _handleDifferentiateFunction(expression.trim());
+      } else if (expression.trim().startsWith('factor(') && expression.trim().endsWith(')')) {
+        print('CALC: Detected factor function');
+        result = _handleFactorFunction(expression.trim());
+      } else if (expression.trim().startsWith('expand(') && expression.trim().endsWith(')')) {
+        print('CALC: Detected expand function');
+        result = _handleExpandFunction(expression.trim());
+      } else if (expression.trim().startsWith('simplify(') && expression.trim().endsWith(')')) {
+        print('CALC: Detected simplify function');
+        result = _handleSimplifyFunction(expression.trim());
+      } else if (expression.trim().startsWith('gcd(') && expression.trim().endsWith(')')) {
+        print('CALC: Detected GCD function');
+        result = _handleGcdFunction(expression.trim());
+      } else if (expression.trim().startsWith('lcm(') && expression.trim().endsWith(')')) {
+        print('CALC: Detected LCM function');
+        result = _handleLcmFunction(expression.trim());
       } else {
         // Normal expression evaluation with preprocessing
         final preprocessed = _preprocessNativeExpression(_preprocessExpression(expression));
         print('CALC: Preprocessed expression: "$preprocessed"');
-        result = _engine.evaluate(preprocessed);
+        
+        final rawResult = _engine.evaluate(preprocessed);
+        print('CALC: Raw result from engine: "$rawResult"');
+        
+        // APPLY COMPLEX NUMBER NORMALIZATION
+        result = _normalizeComplexResult(rawResult);
       }
       
-      print('CALC: Result: "$result"');
+      print('CALC: Final result: "$result"');
       
       setState(() {
         _appState.addHistoryEntry(expression, result);
         _resultPreview = '';
         _justCalculated = true;
         
-        // Clear without triggering listener
         _controller.removeListener(_onInputChanged);
         _controller.clear();
         _controller.addListener(_onInputChanged);
@@ -478,27 +567,22 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     print('=== END CALCULATION ===\n');
   }
 
-  /// Handles solve() function parsing and execution
   String _handleSolveFunction(String expression) {
     print('SOLVE: Processing solve function: "$expression"');
     
     try {
-      // Extract content inside solve()
       final solveContent = expression.substring(6, expression.length - 1).trim();
       print('SOLVE: Content inside solve(): "$solveContent"');
       
       String equation;
       String variable;
       
-      // Parse the content - check if variable is explicitly provided
       final parts = solveContent.split(',');
       if (parts.length == 1) {
-        // Only equation provided, auto-detect variable
         equation = parts[0].trim();
         variable = _detectVariable(equation);
         print('SOLVE: Auto-detected variable: "$variable"');
       } else if (parts.length == 2) {
-        // Both equation and variable provided
         equation = parts[0].trim();
         variable = parts[1].trim();
         print('SOLVE: Explicit variable provided: "$variable"');
@@ -509,14 +593,12 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
       
       print('SOLVE: Equation: "$equation", Variable: "$variable"');
       
-      // If equation contains =, split it and move right side to left
       if (equation.contains('=')) {
         final eqParts = equation.split('=');
         if (eqParts.length == 2) {
           final leftSide = eqParts[0].trim();
           final rightSide = eqParts[1].trim();
           
-          // Convert "left = right" to "left - (right)"
           if (rightSide == '0' || rightSide.isEmpty) {
             equation = leftSide;
           } else {
@@ -526,7 +608,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         }
       }
       
-      // Now preprocess the equation before solving
       final preprocessed = _preprocessNativeExpression(_preprocessExpression(equation));
       print('SOLVE: Preprocessed equation: "$preprocessed"');
       
@@ -538,17 +619,91 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     }
   }
 
-  /// Auto-detects the variable to solve for in an equation
+  String _handleDifferentiateFunction(String expression) {
+    try {
+      final content = expression.substring(5, expression.length - 1).trim();
+      final parts = content.split(',');
+      
+      String expr = parts[0].trim();
+      String variable = parts.length > 1 ? parts[1].trim() : _detectVariable(expr);
+      
+      final preprocessed = _preprocessNativeExpression(_preprocessExpression(expr));
+      return _engine.differentiate(preprocessed, variable);
+    } catch (e) {
+      return 'Error: Invalid d/dx() syntax';
+    }
+  }
+
+  String _handleFactorFunction(String expression) {
+    try {
+      final content = expression.substring(7, expression.length - 1).trim();
+      final preprocessed = _preprocessNativeExpression(_preprocessExpression(content));
+      return _engine.factor(preprocessed);
+    } catch (e) {
+      return 'Error: Invalid factor() syntax';
+    }
+  }
+
+  String _handleExpandFunction(String expression) {
+    try {
+      final content = expression.substring(7, expression.length - 1).trim();
+      final preprocessed = _preprocessNativeExpression(_preprocessExpression(content));
+      return _engine.expand(preprocessed);
+    } catch (e) {
+      return 'Error: Invalid expand() syntax';
+    }
+  }
+
+  String _handleSimplifyFunction(String expression) {
+    try {
+      final content = expression.substring(9, expression.length - 1).trim();
+      final preprocessed = _preprocessNativeExpression(_preprocessExpression(content));
+      return _engine.expand(preprocessed); // SymEngine uses expand for simplification
+    } catch (e) {
+      return 'Error: Invalid simplify() syntax';
+    }
+  }
+
+  String _handleGcdFunction(String expression) {
+    try {
+      final content = expression.substring(4, expression.length - 1).trim();
+      final parts = content.split(',');
+      if (parts.length != 2) {
+        return 'Error: gcd() requires exactly 2 arguments';
+      }
+      
+      final a = _preprocessNativeExpression(_preprocessExpression(parts[0].trim()));
+      final b = _preprocessNativeExpression(_preprocessExpression(parts[1].trim()));
+      return _engine.gcd(a, b);
+    } catch (e) {
+      return 'Error: Invalid gcd() syntax';
+    }
+  }
+
+  String _handleLcmFunction(String expression) {
+    try {
+      final content = expression.substring(4, expression.length - 1).trim();
+      final parts = content.split(',');
+      if (parts.length != 2) {
+        return 'Error: lcm() requires exactly 2 arguments';
+      }
+      
+      final a = _preprocessNativeExpression(_preprocessExpression(parts[0].trim()));
+      final b = _preprocessNativeExpression(_preprocessExpression(parts[1].trim()));
+      return _engine.lcm(a, b);
+    } catch (e) {
+      return 'Error: Invalid lcm() syntax';
+    }
+  }
+
   String _detectVariable(String equation) {
     print('SOLVE: Auto-detecting variable in: "$equation"');
     
-    // Known constants and functions to ignore
     final knownTokens = {
       'e', 'pi', 'sin', 'cos', 'tan', 'ln', 'log', 'sqrt', 'abs', 
       'exp', 'deg', 'rad', 'gamma', 'factorial'
     };
     
-    // Find all single letters that could be variables
     final variablePattern = RegExp(r'\b([a-zA-Z])\b');
     final matches = variablePattern.allMatches(equation);
     
@@ -562,7 +717,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     
     print('SOLVE: Found potential variables: $foundVariables');
     
-    // Prioritize common variable names
     final commonVariables = ['x', 'y', 'z', 't', 'n', 'a', 'b', 'c'];
     for (final common in commonVariables) {
       if (foundVariables.contains(common)) {
@@ -571,32 +725,30 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
       }
     }
     
-    // If no common variables, use the first one found
     if (foundVariables.isNotEmpty) {
       final firstVar = foundVariables.first;
       print('SOLVE: Selected first variable: "$firstVar"');
       return firstVar;
     }
     
-    // Fallback to 'x' if no variables detected
     print('SOLVE: No variables detected, defaulting to "x"');
     return 'x';
   }
 
   String _preprocessNativeExpression(String expression) {
     String p = expression;
+    
+    // Convert German decimal comma to period
     p = p.replaceAll(',', '.');
 
-    // Pass 1: Handle implicit multiplication for numbers and parentheses.
-    // This turns (x+1)(x-2) into (x+1)*(x-2) and 2(3) into 2*(3).
+    // Handle implicit multiplication for numbers and parentheses
     p = p.replaceAllMapped(RegExp(r'(\d|\))(\()'), (m) => '${m[1]}*${m[2]}');
-
-    // Pass 2: Handle implicit multiplication for standalone variables (like x, y, etc.).
-    // A word boundary `\b` ensures we only match single letters, not function names.
-    // This turns x(2) into x*(2) but leaves cos(2) alone.
+    
+    // Handle implicit multiplication for variables
     p = p.replaceAllMapped(RegExp(r'(\b[a-zA-Z]\b)(\()'), (m) => '${m[1]}*${m[2]}');
-
     p = p.replaceAllMapped(RegExp(r'(\))(\d|\b[a-zA-Z]\b)'), (m) => '${m[1]}*${m[2]}');
+    
+    // Handle factorial notation
     p = p.replaceAllMapped(RegExp(r'(\d+)!'), (m) {
       final n = int.tryParse(m.group(1)!) ?? 0;
       if (n <= 20) {
@@ -607,6 +759,7 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         return 'gamma(${n + 1})';
       }
     });
+    
     return p;
   }
   
@@ -639,7 +792,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
                 title: Text('Continue Typing'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  // Safely restore focus and selection
                   _inputFocusNode.requestFocus();
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (mounted) _controller.selection = selectionBeforeModal;
@@ -658,7 +810,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
                       onTap: () {
                         Navigator.of(context).pop();
 
-                        // CRITICAL FIX: Surgically insert the text inside solve()
                         final currentText = _controller.text;
                         final openParen = currentText.lastIndexOf('(');
                         final closeParen = currentText.indexOf(')', openParen);
@@ -684,7 +835,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
       },
     ).whenComplete(() => setState(() { _modalIsOpen = false; }));
 
-    // Return focus to allow "just typing" after the modal appears
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_modalIsOpen && mounted && !_inputFocusNode.hasFocus) {
         _inputFocusNode.requestFocus();
@@ -711,9 +861,7 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     _showPicker(title: 'Select function or continue typing:', options: options);
   }
 
-  /// A generic, robust modal picker that correctly manages focus.
   void _showPicker({required String title, required List<Widget> options}) {
-    // Store the exact cursor position before the modal opens.
     final selectionBeforeModal = _controller.selection;
     setState(() { _modalIsOpen = true; });
 
@@ -734,11 +882,8 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
                 title: Text('Continue Typing'),
                 subtitle: Text('Dismiss this panel'),
                 onTap: () {
-                  // This is now the safe way to close and restore state.
                   Navigator.of(context).pop();
                   _inputFocusNode.requestFocus();
-                  // A post-frame callback ensures the selection is restored *after*
-                  // the focus has been granted, avoiding the "select all" bug.
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     _controller.selection = selectionBeforeModal;
                   });
@@ -752,9 +897,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
       },
     ).whenComplete(() => setState(() { _modalIsOpen = false; }));
 
-    // CRITICAL FIX: After showing the picker, schedule a task to return focus
-    // to the text field. This allows the user to ignore the picker and just
-    // continue typing with their physical keyboard.
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_modalIsOpen && !_inputFocusNode.hasFocus) {
         _inputFocusNode.requestFocus();
@@ -766,7 +908,6 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   String _preprocessExpression(String expression) {
     String processed = expression;
 
-    // Regex to find user-defined functions with arguments, e.g., Y1(3) or Y2(x+1)
     final funcCallRegex = RegExp(r'Y(\d+)\((.*?)\)');
     processed = processed.replaceAllMapped(funcCallRegex, (match) {
       try {
@@ -776,12 +917,9 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         if (funcIndex >= 0 && funcIndex < _appState.graphFunctions.length) {
           String funcBody = _appState.graphFunctions[funcIndex];
           if (funcBody.isNotEmpty) {
-            // This is now a substitution, not just a simple replacement.
             final variable = _detectVariable(funcBody);
-            // Replace all instances of the variable with the argument, wrapped in parentheses
-            // for mathematical safety (e.g., handling Y1(2+3)).
             String substitutedBody = funcBody.replaceAll(variable, '($argValue)');
-            return '($substitutedBody)'; // Return the result of the substitution
+            return '($substitutedBody)';
           }
         }
       } catch (e) {
@@ -790,11 +928,8 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
       return match.group(0)!;
     });
 
-    // Handle simple replacement for Y-variables without arguments (if any)
     final simpleFuncRegex = RegExp(r'Y(\d+)');
     processed = processed.replaceAllMapped(simpleFuncRegex, (match) {
-        // This part remains for backward compatibility if Y variables are used without args
-        // but the funcCallRegex above will catch the more important cases.
         try {
             final funcIndex = int.parse(match.group(1)!) - 1;
             if (funcIndex >= 0 && funcIndex < _appState.graphFunctions.length) {
@@ -867,6 +1002,7 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
               Expanded(flex: 5, child: Column(children: [
                 TabBar(
                   controller: _tabController,
+                  isScrollable: true,
                   onTap: (index) {
                     print('TAB: Tab $index selected, ensuring focus');
                     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -876,13 +1012,27 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
                     });
                   },
                   tabs: const [
-                    Tab(text: 'Num'), Tab(text: 'f(x)'), Tab(text: 'CAS'), Tab(text: 'Mem')
+                    Tab(text: 'Num'), 
+                    Tab(text: 'Trig'), 
+                    Tab(text: 'CAS'), 
+                    Tab(text: 'Advanced'),
+                    Tab(text: 'Mem')
                   ]
                 ),
                 Expanded(child: TabBarView(controller: _tabController, children: [
+                    // Basic numbers and operations
                     KeypadGrid(buttons: const ['C','⌫','%','/','7','8','9','*','4','5','6','-','1','2','3','+','0','.','^','EXE'], onButtonPressed: _onButtonPressed),
-                    KeypadGrid(buttons: const ['sin(','cos(','tan(','x','ln(','log(','sqrt(','(','e','pi','!',')','abs(','deg','rad','EXE'], onButtonPressed: _onButtonPressed),
-                    KeypadGrid(buttons: const ['solve','f(x)','d/dx','∫','factor','expand','lim','◀','simplify','=','▶',','], onButtonPressed: _onButtonPressed),
+                    
+                    // Trigonometric and basic functions
+                    KeypadGrid(buttons: const ['sin(','cos(','tan(','x','asin(','acos(','atan(','(','sinh(','cosh(','tanh(',')','ln(','log(','√','EXE'], onButtonPressed: _onButtonPressed),
+                    
+                    // Computer Algebra System functions
+                    KeypadGrid(buttons: const ['solve','factor','expand','d/dx','simplify','f(x)','∫','◀','gcd','lcm','=','▶',',','π','e','γ'], onButtonPressed: _onButtonPressed),
+                    
+                    // Advanced mathematical functions
+                    KeypadGrid(buttons: const ['abs(','gamma','!','∞','matrix','det','inv','◀','asinh(','acosh(','atanh(','▶','fib','prime','mod','EXE'], onButtonPressed: _onButtonPressed),
+                    
+                    // Memory operations
                     KeypadGrid(buttons: const ['STO','M1','M2','M3','DEL','M4','M5','M6','◀','M7','M8','M9','▶'], onButtonPressed: _onButtonPressed),
                 ])),
               ])),

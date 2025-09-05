@@ -1,158 +1,224 @@
 /// lib/engine/calculator_engine.dart
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
-import 'cas_bridge.dart';
+import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
-/// A high-level Dart API for the CAS engine.
-/// It handles all FFI calls and memory management.
+/// A high-level Dart API for the CAS engine using SymbolicMathBridge.
+/// This replaces the old custom FFI implementation with your plugin.
 class CalculatorEngine {
-  late final CASBridge? _bridge;
+  late final SymbolicMathBridge? _bridge;
   bool _nativeAvailable = false;
 
   CalculatorEngine() {
     try {
-      _bridge = CASBridge();
+      _bridge = SymbolicMathBridge();
       _nativeAvailable = true;
-      print('✅ Native CAS library loaded successfully');
+      print('✅ SymbolicMathBridge loaded successfully');
     } catch (e) {
-      print('❌ Native library not available, using fallback: $e');
+      print('❌ SymbolicMathBridge not available, using fallback: $e');
       _nativeAvailable = false;
       _bridge = null;
     }
   }
 
-  /// Evaluates a mathematical expression by calling the native library.
+  /// Evaluates a mathematical expression using SymEngine.
   String evaluate(String expression) {
     print('ENGINE: Evaluating expression: "$expression"');
     
-    if (_nativeAvailable) {
-      final result = _callNative('evaluate', expression);
-      print('ENGINE: Evaluation result: "$result"');
-      return result;
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        final result = _bridge!.evaluate(expression);
+        print('ENGINE: Evaluation result: "$result"');
+        return result;
+      } catch (e) {
+        print('ENGINE: Evaluation error: $e');
+        return 'Error';
+      }
     }
     return 'Error: Native Library Failed';
   }
 
-  /// Solves an equation for a given variable.
+  /// Solves an equation for a given variable using SymEngine.
   String solve(String expression, String symbol) {
-    print('SOLVE: Native solve called with expression: "$expression", symbol: "$symbol"');
+    print('SOLVE: Solving expression: "$expression", symbol: "$symbol"');
     
-    if (_nativeAvailable) {
-      final result = _callNativeTwoArg('solve', expression, symbol);
-      print('SOLVE: Native solve result: "$result"');
-      
-      // Format the result nicely
-      if (result != "Solve error" && result != "No solutions found") {
-        // If we get numeric solutions, format them with the variable name
-        if (result.contains(',')) {
-          // Multiple solutions
-          return '$symbol = {$result}';
-        } else {
-          // Single solution
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        final result = _bridge!.solve(expression, symbol);
+        print('SOLVE: Solve result: "$result"');
+        
+        // Format the result nicely
+        if (result != "Error" && !result.startsWith('Error')) {
+          // Parse the solution list format from SymEngine
+          if (result.startsWith('[') && result.endsWith(']')) {
+            final solutions = result.substring(1, result.length - 1);
+            if (solutions.contains(',')) {
+              // Multiple solutions
+              return '$symbol = {$solutions}';
+            } else if (solutions.isNotEmpty) {
+              // Single solution
+              return '$symbol = $solutions';
+            }
+          }
+          
+          // Fallback formatting
           return '$symbol = $result';
         }
+        
+        return result;
+      } catch (e) {
+        print('SOLVE: Solve error: $e');
+        return 'Solve error';
       }
-      
-      return result;
     }
     return 'Solver requires native library';
   }
 
-  /// Factors a symbolic expression.
+  /// Factors a symbolic expression using SymEngine.
   String factor(String expression) {
     print('FACTOR: Factoring expression: "$expression"');
-    if (_nativeAvailable) {
-      final result = _callNative('factor', expression);
-      print('FACTOR: Result: "$result"');
-      return result;
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        final result = _bridge!.factor(expression);
+        print('FACTOR: Result: "$result"');
+        return result;
+      } catch (e) {
+        print('FACTOR: Error: $e');
+        return 'Factor Error';
+      }
     }
     return 'Factor requires native library';
   }
 
-  /// Expands a symbolic expression.
+  /// Expands a symbolic expression using SymEngine.
   String expand(String expression) {
     print('EXPAND: Expanding expression: "$expression"');
-    if (_nativeAvailable) {
-      final result = _callNative('expand', expression);
-      print('EXPAND: Result: "$result"');
-      return result;
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        final result = _bridge!.expand(expression);
+        print('EXPAND: Result: "$result"');
+        return result;
+      } catch (e) {
+        print('EXPAND: Error: $e');
+        return 'Expand Error';
+      }
     }
     return 'Expand requires native library';
   }
 
-  // Generic wrapper for single-argument native functions
-  String _callNative(String functionName, String expression) {
-    if (_bridge == null) throw Exception('Bridge not available');
-    
-    print('NATIVE: Calling $functionName with: "$expression"');
-    
-    Pointer<Utf8> expressionPtr = expression.toNativeUtf8();
-    Pointer<Utf8> resultPtr;
-
-    try {
-      switch (functionName) {
-        case 'evaluate':
-          resultPtr = _bridge!.evaluate(expressionPtr);
-          break;
-        case 'factor':
-          resultPtr = _bridge!.factor(expressionPtr);
-          break;
-        case 'expand':
-          resultPtr = _bridge!.expand(expressionPtr);
-          break;
-        default:
-          malloc.free(expressionPtr);
-          throw Exception("Unknown native function: $functionName");
+  /// Differentiates an expression with respect to a variable.
+  String differentiate(String expression, String variable) {
+    print('DIFF: Differentiating expression: "$expression" w.r.t. $variable');
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        final result = _bridge!.differentiate(expression, variable);
+        print('DIFF: Result: "$result"');
+        return result;
+      } catch (e) {
+        print('DIFF: Error: $e');
+        return 'Differentiation Error';
       }
-
-      final result = resultPtr.toDartString();
-      print('NATIVE: $functionName returned: "$result"');
-      
-      _bridge!.free_string(resultPtr);
-      malloc.free(expressionPtr);
-      
-      return result;
-    } catch (e) {
-      print('NATIVE: Error in $functionName: $e');
-      malloc.free(expressionPtr);
-      return 'Error';
     }
+    return 'Differentiation requires native library';
   }
 
-  // Generic wrapper for two-argument native functions  
-  String _callNativeTwoArg(String functionName, String arg1, String arg2) {
-    if (_bridge == null) throw Exception('Bridge not available');
-    
-    print('NATIVE: Calling $functionName with: "$arg1", "$arg2"');
-    
-    Pointer<Utf8> arg1Ptr = arg1.toNativeUtf8();
-    Pointer<Utf8> arg2Ptr = arg2.toNativeUtf8();
-    Pointer<Utf8> resultPtr;
-
-    try {
-      switch (functionName) {
-        case 'solve':
-          resultPtr = _bridge!.solve(arg1Ptr, arg2Ptr);
-          break;
-        default:
-          malloc.free(arg1Ptr);
-          malloc.free(arg2Ptr);
-          throw Exception("Unknown native function: $functionName");
+  /// Substitutes a variable with a value in an expression.
+  String substitute(String expression, String variable, String value) {
+    print('SUBST: Substituting $variable = $value in "$expression"');
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        final result = _bridge!.substitute(expression, variable, value);
+        print('SUBST: Result: "$result"');
+        return result;
+      } catch (e) {
+        print('SUBST: Error: $e');
+        return 'Substitution Error';
       }
-
-      final result = resultPtr.toDartString();
-      print('NATIVE: $functionName returned: "$result"');
-      
-      _bridge!.free_string(resultPtr);
-      malloc.free(arg1Ptr);
-      malloc.free(arg2Ptr);
-      
-      return result;
-    } catch (e) {
-      print('NATIVE: Error in $functionName: $e');
-      malloc.free(arg1Ptr);
-      malloc.free(arg2Ptr);
-      return 'Error';
     }
+    return 'Substitution requires native library';
   }
+
+  /// Calls a unary mathematical function (sin, cos, log, etc.).
+  String callUnary(String funcName, String expression) {
+    print('UNARY: Calling $funcName on "$expression"');
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        final result = _bridge!.callUnary(funcName, expression);
+        print('UNARY: Result: "$result"');
+        return result;
+      } catch (e) {
+        print('UNARY: Error: $e');
+        return 'Function Error';
+      }
+    }
+    return 'Function requires native library';
+  }
+
+  /// Gets mathematical constants.
+  String getPi() => _nativeAvailable && _bridge != null ? _bridge!.getPi() : '3.14159';
+  String getE() => _nativeAvailable && _bridge != null ? _bridge!.getE() : '2.71828';
+  String getEulerGamma() => _nativeAvailable && _bridge != null ? _bridge!.getEulerGamma() : '0.57721';
+
+  /// Number theory functions.
+  String factorial(int n) {
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        return _bridge!.factorial(n);
+      } catch (e) {
+        print('FACTORIAL: Error: $e');
+        return 'Factorial Error';
+      }
+    }
+    return 'Factorial requires native library';
+  }
+
+  String fibonacci(int n) {
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        return _bridge!.fibonacci(n);
+      } catch (e) {
+        print('FIBONACCI: Error: $e');
+        return 'Fibonacci Error';
+      }
+    }
+    return 'Fibonacci requires native library';
+  }
+
+  String gcd(String a, String b) {
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        return _bridge!.gcd(a, b);
+      } catch (e) {
+        print('GCD: Error: $e');
+        return 'GCD Error';
+      }
+    }
+    return 'GCD requires native library';
+  }
+
+  String lcm(String a, String b) {
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        return _bridge!.lcm(a, b);
+      } catch (e) {
+        print('LCM: Error: $e');
+        return 'LCM Error';
+      }
+    }
+    return 'LCM requires native library';
+  }
+
+  /// Matrix operations using the bridge.
+  SymEngineMatrix? createMatrix(int rows, int cols) {
+    if (_nativeAvailable && _bridge != null) {
+      try {
+        return _bridge!.createMatrix(rows, cols);
+      } catch (e) {
+        print('MATRIX: Creation error: $e');
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /// Checks if the native bridge is available.
+  bool get isNativeAvailable => _nativeAvailable;
 }

@@ -1,6 +1,8 @@
 # CrispCalc - CAS Calculator
 
-A powerful, cross-platform scientific and graphing calculator built with Flutter. It features a modern, mode-driven user interface and is powered by the SymEngine Computer Algebra System (CAS) for robust symbolic mathematics.
+A cross-platform scientific and graphing calculator built with Flutter. It features a modern, mode-driven user interface and is powered by the SymEngine Computer Algebra System (CAS) for (currently, basic) symbolic mathematics.
+
+Status is: work in progress (see below).
 
 -----
 

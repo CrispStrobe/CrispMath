@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - symbolic_math_bridge (1.0.14):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - symbolic_math_bridge (from `.symlinks/plugins/symbolic_math_bridge/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  symbolic_math_bridge:
+    :path: ".symlinks/plugins/symbolic_math_bridge/ios"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  symbolic_math_bridge: b892264a494a85f512fcd04809c0789dfdd17da3
+
+PODFILE CHECKSUM: 0f7ddef226762cd7ce0c1dc6e15bc5bdd212774a
+
+COCOAPODS: 1.16.2

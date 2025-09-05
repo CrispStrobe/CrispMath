@@ -11,13 +11,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
-  # FFI for native interop
-  ffi: ^2.1.0
-  
+
+  # Remove ffi dependency, now handled by the plugin
+  # ffi: ^2.1.0
+
+  # Use your symbolic math bridge
+  symbolic_math_bridge:
+    path: ../symbolic_math_bridge
+
   # Math rendering
   flutter_math_fork: ^0.7.2
-  
+
   # Material Design Icons
   material_design_icons_flutter: ^7.0.7296
 
