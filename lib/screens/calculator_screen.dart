@@ -7,6 +7,8 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
 import '../widgets/keypad_grid.dart';
+import 'dart:io' show Platform; // Import Platform to check OS
+
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
@@ -178,6 +180,204 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   }
 
   bool handleKeyboardInput(KeyEvent event) {
+    _debugKeyboardInput(event);
+    if (event is! KeyDownEvent) return false;
+
+    final physicalKey = event.physicalKey;
+    final logicalKey = event.logicalKey;
+    final character = event.character;
+    final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+    final isAltPressed = HardwareKeyboard.instance.isAltPressed;
+
+    // --- PHYSICAL KEY MAPPINGS (Most Reliable) ---
+    // This section maps physical key positions to their intended mathematical symbols
+    // regardless of the OS keyboard layout interpretation
+
+    // Parentheses: Shift+8 and Shift+9 on German keyboard
+    if (physicalKey == PhysicalKeyboardKey.digit8 && isShiftPressed) {
+      _insertTextAndPositionCursor('(');
+      return true;
+    }
+    if (physicalKey == PhysicalKeyboardKey.digit9 && isShiftPressed) {
+      _insertTextAndPositionCursor(')');
+      return true;
+    }
+
+    // Square brackets: AltGr+8 and AltGr+9 on German keyboard  
+    if (physicalKey == PhysicalKeyboardKey.digit8 && isAltPressed) {
+      _insertTextAndPositionCursor('[');
+      return true;
+    }
+    if (physicalKey == PhysicalKeyboardKey.digit9 && isAltPressed) {
+      _insertTextAndPositionCursor(']');
+      return true;
+    }
+
+    // Curly braces: AltGr+7 and AltGr+0 on German keyboard
+    if (physicalKey == PhysicalKeyboardKey.digit7 && isAltPressed) {
+      _insertTextAndPositionCursor('{');
+      return true;
+    }
+    if (physicalKey == PhysicalKeyboardKey.digit0 && isAltPressed) {
+      _insertTextAndPositionCursor('}');
+      return true;
+    }
+
+    // Basic arithmetic operators on German keyboard
+    // Plus and multiplication (right of P key)
+    if (physicalKey == PhysicalKeyboardKey.bracketRight) {
+      _insertTextAndPositionCursor(isShiftPressed ? '*' : '+');
+      return true;
+    }
+    
+    // Minus (right of zero key, without shift)
+    if (physicalKey == PhysicalKeyboardKey.slash && !isShiftPressed) {
+      _insertTextAndPositionCursor('-');
+      return true;
+    }
+    
+    // Division: Shift+7 on German keyboard
+    if (physicalKey == PhysicalKeyboardKey.digit7 && isShiftPressed) {
+      _insertTextAndPositionCursor('/');
+      return true;
+    }
+
+    // Hash/Number sign: Shift+3 on German keyboard (useful for comments)
+    if (physicalKey == PhysicalKeyboardKey.digit3 && isShiftPressed) {
+      _insertTextAndPositionCursor('#');
+      return true;
+    }
+
+    // Equal sign: Shift+0 on German keyboard
+    if (physicalKey == PhysicalKeyboardKey.digit0 && isShiftPressed) {
+      _insertTextAndPositionCursor('=');
+      return true;
+    }
+
+    // Question mark: Shift+ß on German keyboard
+    if (physicalKey == PhysicalKeyboardKey.minus && isShiftPressed) {
+      _insertTextAndPositionCursor('?');
+      return true;
+    }
+
+    // --- LOCALE-SPECIFIC CHARACTER CORRECTIONS ---
+    // Fallback for cases where physical key mapping isn't sufficient
+    if (Platform.isMacOS && character != null && character.isNotEmpty) {
+      // German keyboard layout corrections
+      final corrections = _getGermanKeyboardCorrections();
+      if (corrections.containsKey(character)) {
+        _insertTextAndPositionCursor(corrections[character]!);
+        return true;
+      }
+    }
+
+    // --- GENERAL ACTION KEYS ---
+    final Set<LogicalKeyboardKey> modifierKeys = <LogicalKeyboardKey>{
+      LogicalKeyboardKey.shiftLeft,
+      LogicalKeyboardKey.shiftRight,
+      LogicalKeyboardKey.controlLeft,
+      LogicalKeyboardKey.controlRight,
+      LogicalKeyboardKey.altLeft,
+      LogicalKeyboardKey.altRight,
+      LogicalKeyboardKey.metaLeft,
+      LogicalKeyboardKey.metaRight,
+      LogicalKeyboardKey.capsLock,
+      LogicalKeyboardKey.escape,
+      LogicalKeyboardKey.fn,
+    };
+
+    // Handle special action keys
+    if (logicalKey == LogicalKeyboardKey.enter || logicalKey == LogicalKeyboardKey.numpadEnter) {
+      _onButtonPressed("EXE");
+      return true;
+    }
+    if (logicalKey == LogicalKeyboardKey.escape) {
+      _onButtonPressed('C');
+      return true;
+    }
+    if (logicalKey == LogicalKeyboardKey.backspace) {
+      _onButtonPressed('⌫');
+      return true;
+    }
+
+    // --- STANDARD CHARACTER INPUT ---
+    // For characters that are correctly interpreted by the OS
+    if (character != null && character.isNotEmpty && !modifierKeys.contains(logicalKey)) {
+      // Only use OS character if it hasn't been corrected above
+      _insertTextAndPositionCursor(character);
+      return true;
+    }
+
+    // --- NUMPAD FALLBACKS ---
+    // Ensure numpad works regardless of layout issues
+    switch (logicalKey) {
+      case LogicalKeyboardKey.numpadAdd:
+        _insertTextAndPositionCursor('+');
+        return true;
+      case LogicalKeyboardKey.numpadSubtract:
+        _insertTextAndPositionCursor('-');
+        return true;
+      case LogicalKeyboardKey.numpadMultiply:
+        _insertTextAndPositionCursor('*');
+        return true;
+      case LogicalKeyboardKey.numpadDivide:
+        _insertTextAndPositionCursor('/');
+        return true;
+      case LogicalKeyboardKey.numpadDecimal:
+        _insertTextAndPositionCursor('.');
+        return true;
+      case LogicalKeyboardKey.equal:
+        _onButtonPressed("EXE");
+        return true;
+    }
+
+    return false; // Key event not handled
+  }
+
+  // Helper method for German keyboard character corrections
+  Map<String, String> _getGermanKeyboardCorrections() {
+    return {
+      // These are the incorrect characters Flutter might produce -> correct characters
+      ']': '+',     // Plus key misinterpreted
+      '}': '*',     // Multiplication key misinterpreted  
+      '/': '-',     // Minus key misinterpreted
+      '&': '/',     // Division key misinterpreted
+      '*': '(',     // Left parenthesis misinterpreted (your current issue)
+      // Add more as you discover them:
+      // '?': ')',   // Right parenthesis misinterpreted (if this happens)
+    };
+  }
+
+  // Optional: Method to get corrections for other keyboard layouts
+  Map<String, String> _getKeyboardCorrections() {
+    // You could detect the current locale and return appropriate corrections
+    final locale = Platform.localeName;
+    
+    if (locale.startsWith('de')) {
+      return _getGermanKeyboardCorrections();
+    } else if (locale.startsWith('fr')) {
+      return _getFrenchKeyboardCorrections();
+    } else if (locale.startsWith('es')) {
+      return _getSpanishKeyboardCorrections();
+    }
+    
+    return {}; // No corrections needed for this locale
+  }
+
+  // Placeholder methods for other keyboard layouts
+  Map<String, String> _getFrenchKeyboardCorrections() {
+    return {
+      // Add French AZERTY keyboard corrections as needed
+    };
+  }
+
+  Map<String, String> _getSpanishKeyboardCorrections() {
+    return {
+      // Add Spanish keyboard corrections as needed
+    };
+  }
+
+  bool handleKeyboardInput_old(KeyEvent event) {
     _debugKeyboardInput(event);
     if (event is! KeyDownEvent) return false;
 
