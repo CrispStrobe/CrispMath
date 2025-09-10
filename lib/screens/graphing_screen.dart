@@ -520,18 +520,78 @@ class GraphPainter extends CustomPainter {
     String expressionWithX = processedFunc.replaceAll('x', valueStr);
     
     // Evaluate using the calculator engine
-    String result = engine.evaluate(expressionWithX);
+    // String result = engine.evaluate(expressionWithX);
+    // COMPLEX NUMBER CLEANING FOR GRAPHING
+    // String cleanResult = _extractRealPart(result);
+    
+    // Use the enhanced evaluation method to handle complex number format of SymEngine
+    String result = engine.evaluateForGraphing(expressionWithX);
     
     if (result == 'Error' || result.isEmpty) {
       throw Exception('Evaluation failed');
     }
     
+    // double? value = double.tryParse(cleanResult);
     double? value = double.tryParse(result);
     if (value == null) {
+      // throw Exception('Invalid result: $result -> $cleanResult');
       throw Exception('Invalid result: $result');
     }
     
     return value;
+  }
+
+  String _extractRealPart(String complexResult) {
+    if (complexResult.isEmpty) return complexResult;
+    
+    String result = complexResult.trim();
+    
+    print('COMPLEX_EXTRACT: Input: "$result"');
+    
+    // Handle SymEngine complex format: "a + b*I" or "a - b*I"
+    
+    // Pattern 1: "number + 0*I" or "number + 0.0*I" -> just "number"
+    RegExp zeroImagPattern = RegExp(r'^(.+?)\s*[+\-]\s*0(\.0*)?\s*\*?\s*I\s*$');
+    Match? match = zeroImagPattern.firstMatch(result);
+    if (match != null) {
+      String realPart = match.group(1)!.trim();
+      print('COMPLEX_EXTRACT: Zero imaginary, real part: "$realPart"');
+      return realPart;
+    }
+    
+    // Pattern 2: Pure real number (no I at all)
+    if (!result.contains('I') && !result.contains('i')) {
+      print('COMPLEX_EXTRACT: Pure real: "$result"');
+      return result;
+    }
+    
+    // Pattern 3: "a + b*I" where b != 0 -> extract just a
+    RegExp generalComplexPattern = RegExp(r'^(.+?)\s*[+\-]\s*.+?\s*\*?\s*I.*$');
+    match = generalComplexPattern.firstMatch(result);
+    if (match != null) {
+      String realPart = match.group(1)!.trim();
+      print('COMPLEX_EXTRACT: Complex with real part: "$realPart"');
+      return realPart;
+    }
+    
+    // Pattern 4: Pure imaginary "b*I" -> return "0"
+    RegExp pureImagPattern = RegExp(r'^\s*[+\-]?\s*\d*\.?\d*\s*\*?\s*I\s*$');
+    if (pureImagPattern.hasMatch(result)) {
+      print('COMPLEX_EXTRACT: Pure imaginary, returning 0');
+      return '0';
+    }
+    
+    // Fallback: try to extract any leading number
+    RegExp leadingNumberPattern = RegExp(r'^([+\-]?\d*\.?\d+)');
+    match = leadingNumberPattern.firstMatch(result);
+    if (match != null) {
+      String leadingNumber = match.group(1)!;
+      print('COMPLEX_EXTRACT: Extracted leading number: "$leadingNumber"');
+      return leadingNumber;
+    }
+    
+    print('COMPLEX_EXTRACT: No pattern matched, returning original: "$result"');
+    return result;
   }
 
   @override

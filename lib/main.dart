@@ -6,6 +6,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'screens/calculator_screen.dart';
 import 'screens/graphing_screen.dart';
 import 'screens/function_editor_screen.dart';
+import 'engine/app_state.dart';
 
 void main() {
   runApp(const CrispCalcApp());
@@ -55,7 +56,7 @@ class _MainScreenState extends State<MainScreen> {
       CalculatorScreen(key: _calculatorScreenKey),
       const GraphingScreen(),
       const FunctionEditorScreen(),
-      const PlaceholderScreen(title: 'Settings'),
+      const SettingsScreen(),
     ];
   }
 
@@ -95,26 +96,62 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class PlaceholderScreen extends StatelessWidget {
-  final String title;
-  const PlaceholderScreen({super.key, required this.title});
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AppState appState = AppState();
+    
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.construction, size: 80, color: Colors.grey),
-            const SizedBox(height: 24),
-            Text('$title\n(Coming Soon!)',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.grey, fontSize: 24),
-            ),
-          ],
-        ),
+      appBar: AppBar(title: const Text('Settings')),
+      body: ListenableBuilder(
+        listenable: appState,
+        builder: (context, child) {
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Number Display Format', 
+                        style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 16),
+                      
+                      RadioListTile<NumberDisplayFormat>(
+                        title: const Text('Auto (129, 129.5)'),
+                        value: NumberDisplayFormat.auto,
+                        groupValue: appState.numberFormat,
+                        onChanged: (value) => appState.setNumberFormat(value!),
+                      ),
+                      RadioListTile<NumberDisplayFormat>(
+                        title: const Text('Integer (129)'),
+                        value: NumberDisplayFormat.integer,
+                        groupValue: appState.numberFormat,
+                        onChanged: (value) => appState.setNumberFormat(value!),
+                      ),
+                      RadioListTile<NumberDisplayFormat>(
+                        title: const Text('One Decimal (129.0)'),
+                        value: NumberDisplayFormat.oneDecimal,
+                        groupValue: appState.numberFormat,
+                        onChanged: (value) => appState.setNumberFormat(value!),
+                      ),
+                      RadioListTile<NumberDisplayFormat>(
+                        title: const Text('Two Decimals (129.00)'),
+                        value: NumberDisplayFormat.twoDecimal,
+                        groupValue: appState.numberFormat,
+                        onChanged: (value) => appState.setNumberFormat(value!),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

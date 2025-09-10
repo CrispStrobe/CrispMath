@@ -36,6 +36,62 @@ class CalculatorEngine {
     return 'Error: Native Library Failed';
   }
 
+  // handles SymEngine complex number format
+  String evaluateForGraphing(String expression) {
+    // print('ENGINE_GRAPH: Evaluating for graphing: "$expression"');
+    
+    if (!_nativeAvailable || _bridge == null) {
+      return 'Error: Native Library Failed';
+    }
+    
+    try {
+      // Use minimal preprocessing for graphing
+      String cleanExpression = expression.trim();
+      cleanExpression = cleanExpression.replaceAll(',', '.');
+      cleanExpression = cleanExpression.replaceAll(' ', '');
+      
+      final result = _bridge!.evaluate(cleanExpression);
+      // print('ENGINE_GRAPH: Raw result: "$result"');
+      
+      // Apply complex number extraction
+      final realPart = _extractRealPartForGraphing(result);
+      // print('ENGINE_GRAPH: Extracted real part: "$realPart"');
+      
+      return realPart;
+    } catch (e) {
+      print('ENGINE_GRAPH: Error: $e');
+      return 'Error';
+    }
+  }
+
+  String _extractRealPartForGraphing(String complexResult) {
+    if (complexResult.isEmpty) return complexResult;
+    
+    String result = complexResult.trim();
+    
+    // Remove zero imaginary parts: "number + 0*I" -> "number"
+    result = result.replaceAll(RegExp(r'\s*[+\-]\s*0(\.0*)?\s*\*?\s*I\b'), '');
+    
+    // Remove any remaining I terms for graphing (we only want real values)
+    result = result.replaceAll(RegExp(r'\s*[+\-]\s*[^+\-]*I[^+\-]*'), '');
+    
+    // Clean up spaces
+    result = result.replaceAll(RegExp(r'\s+'), ' ').trim();
+    
+    // If empty or just operators, try to extract first number
+    if (result.isEmpty || RegExp(r'^[\+\-\*\s]*$').hasMatch(result)) {
+      RegExp numberPattern = RegExp(r'([+\-]?\d*\.?\d+)');
+      Match? match = numberPattern.firstMatch(complexResult);
+      if (match != null) {
+        result = match.group(1)!;
+      } else {
+        result = '0'; // Fallback for graphing
+      }
+    }
+    
+    return result;
+  }
+
   /// Solves an equation for a given variable using SymEngine.
   String solve(String expression, String symbol) {
     print('SOLVE: Solving expression: "$expression", symbol: "$symbol"');
