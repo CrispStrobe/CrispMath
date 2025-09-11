@@ -29,6 +29,7 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   final AppState _appState = AppState();
   final CalculatorEngine _engine = CalculatorEngine();
   late final AnalysisEngine _analysisEngine;
+  final Map<String, String> _memory = {};
 
   late TabController _tabController;
   final LatexController _latexController = LatexController();
@@ -331,6 +332,28 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         _latexController.moveCursor(1);
         break;
 
+      // -- Storage --
+      case 'STO':
+        _showStoreDialog();
+        break;
+
+      // Update the memory buttons M1-M9:
+      case 'M1': case 'M2': case 'M3': case 'M4': case 'M5': 
+      case 'M6': case 'M7': case 'M8': case 'M9':
+        final memIndex = int.parse(value.substring(1)) - 1;
+        if (_memory.containsKey('M$memIndex')) {
+          _latexController.insert(_memory['M$memIndex']!);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Memory M${memIndex + 1} is empty')),
+          );
+        }
+        break;
+
+      case 'DEL':
+        _showDeleteMemoryDialog();
+        break;
+      
       // --- LaTeX Template Insertions ---
       case '/': // This is the BUTTON press, should create fractions
         _latexController.insert(r'\frac{}{}', cursorOffsetFromEnd: -4);
@@ -532,6 +555,191 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     return ['+', '-', '*', '/', '^', '%', '=', r'\cdot', r'\times', r'\div'].contains(value);
   }
 
+  void _showStoreDialog() {
+    if (_appState.history.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No result to store')),
+      );
+      return;
+    }
+
+    final lastResult = _appState.history.first.result;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Store Result'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Store: $lastResult'),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showSaveAsVariableDialog(lastResult);
+                    },
+                    child: const Text('Save as Variable'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showSaveToMemoryDialog(lastResult);
+                    },
+                    child: const Text('Save to Memory'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSaveAsVariableDialog(String value) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Save as Variable'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Variable Name',
+                border: OutlineInputBorder(),
+                hintText: 'e.g., result1',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('Value: $value'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                _appState.setVariable(name, value);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Saved $name = $value')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSaveToMemoryDialog(String value) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Save to Memory'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400, // Fixed height to prevent overflow
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Save: $value'),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: List.generate(9, (i) => ListTile(
+                    title: Text('M${i + 1}'),
+                    subtitle: Text(_memory['M$i'] ?? 'Empty'),
+                    onTap: () {
+                      _memory['M$i'] = value;
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Saved to M${i + 1}')),
+                      );
+                    },
+                  )),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteMemoryDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Memory'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400, // Fixed height to prevent overflow
+          child: ListView(
+            shrinkWrap: true,
+            children: List.generate(9, (i) => ListTile(
+              title: Text('M${i + 1}'),
+              subtitle: Text(_memory['M$i'] ?? 'Empty'),
+              trailing: _memory['M$i'] != null ? IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () {
+                  setState(() {
+                    _memory.remove('M$i');
+                  });
+                },
+              ) : null,
+            )),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _memory.clear();
+              });
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('All memory cleared')),
+              );
+            },
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _normalizeComplexResult(String result) {
     if (result.isEmpty) return result;
     
@@ -555,8 +763,25 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
       normalized = result;
     }
     
-    print('NORMALIZE: Output: "$normalized"');
+    // Clean up decimal zeros (0.0 -> 0)
+    // normalized = normalized.replaceAll(RegExp(r'\.0+(?!\d)'), '');
     
+    // Handle pure real numbers that show as "5.0 + 0.0*I"  
+    normalized = normalized.replaceAll(RegExp(r'^([+-]?\d+(?:\.\d+)?)\s*\+\s*0\.0\s*\*\s*I$'), r'\1');
+    
+    // Fix Python-style exponents (**) to readable format
+    normalized = normalized.replaceAll('**2', '²');
+    normalized = normalized.replaceAll('**3', '³');
+    normalized = normalized.replaceAllMapped(RegExp(r'\*\*(\d+)'), (m) => '^${m.group(1)}');
+    
+    // Clean up multiplication formatting for display
+    normalized = normalized.replaceAllMapped(RegExp(r'(\d+)\s*\*\s*([a-zA-Z])(?!\*)'), (m) => '${m.group(1)}${m.group(2)}');
+    
+    if (RegExp(r'^[\+\-\*\s]*$').hasMatch(normalized)) {
+      normalized = result;
+    }
+    
+    print('NORMALIZE: Output: "$normalized"');
     return normalized;
   }
 

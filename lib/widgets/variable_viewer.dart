@@ -99,7 +99,8 @@ class VariableViewer extends StatelessWidget {
                   name: funcName,
                   expression: entry.value,
                   color: _getColorForGraphFunction(entry.key),
-                  onTap: () => onVariableTap(funcName),
+                  // Insert the function expression, not the function name
+                  onTap: () => onVariableTap(entry.value),
                   onDelete: () => appState.clearFunction(entry.key),
                 );
               }),
@@ -123,7 +124,8 @@ class VariableViewer extends StatelessWidget {
                   name: funcName,
                   expression: entry.value,
                   color: _getColorForUserFunction(entry.key),
-                  onTap: () => onVariableTap(funcName),
+                  // Insert the function expression, not the function name
+                  onTap: () => onVariableTap(entry.value),
                   onDelete: () => appState.clearUserFunction(entry.key),
                 );
               }),
