@@ -15,7 +15,12 @@ class CalculatorKeypad extends StatelessWidget {
     required this.localizations,
     required this.appState,
     required this.onVariableTap,
-  });
+    this.memory,
+    this.onMemoryAction,
+    });
+
+  final Map<String, String>? memory;
+  final void Function(String)? onMemoryAction;
 
   final TabController tabController;
   final void Function(String) onButtonPressed;
@@ -63,10 +68,12 @@ class CalculatorKeypad extends StatelessWidget {
                 'abs','gamma','!','matrix','ⁿ√x','det','inv','transpose','◀','asinh','acosh','atanh','▶','fib','prime','mod','EXE'
               ], onButtonPressed: onButtonPressed),
               
-              // 5. The new, dynamic variable and function viewer
+              // 5. Dynamic variable and function viewer
               VariableViewer(
                 appState: appState,
                 onVariableTap: onVariableTap,
+                memory: memory,
+                onMemoryAction: onMemoryAction,
               ),
             ],
           ),

@@ -1,5 +1,5 @@
 /// lib/widgets/variable_viewer.dart
-/// Displays a scrollable list of all user-defined variables and functions.
+/// Displays a scrollable list of all user-defined variables, functions, and memory slots.
 
 import 'package:flutter/material.dart';
 import '../engine/app_state.dart';
@@ -9,15 +9,17 @@ class VariableViewer extends StatelessWidget {
     super.key,
     required this.appState,
     required this.onVariableTap,
+    this.memory,
+    this.onMemoryAction,
   });
 
   final AppState appState;
   final void Function(String name) onVariableTap;
+  final Map<String, String>? memory;
+  final void Function(String action)? onMemoryAction;
 
   @override
   Widget build(BuildContext context) {
-    // ListenableBuilder ensures this UI automatically updates whenever
-    // a variable or function is added, changed, or removed in AppState.
     return ListenableBuilder(
       listenable: appState,
       builder: (context, child) {
@@ -33,109 +35,214 @@ class VariableViewer extends StatelessWidget {
             .where((entry) => entry.value.isNotEmpty)
             .toList();
 
-        // If no variables or functions have been defined, show a helpful message.
-        if (variableKeys.isEmpty && graphFunctionEntries.isEmpty && userFunctionEntries.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.storage, size: 48, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No variables or functions defined.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Use "name = value" on the main screen to create variables.\nDefine functions in the Function Editor.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
+        final hasMemory = memory != null && onMemoryAction != null;
+        final hasAnyContent = variableKeys.isNotEmpty || 
+                             graphFunctionEntries.isNotEmpty || 
+                             userFunctionEntries.isNotEmpty ||
+                             (hasMemory && memory!.isNotEmpty);
 
-        // Display the variables and functions in a scrollable list.
-        return ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+        return Column(
           children: [
-            // --- Variables Section ---
-            if (variableKeys.isNotEmpty) ...[
-              _SectionHeader(
-                title: 'Variables',
-                icon: Icons.abc,
-                onClear: () => _showClearDialog(context, 'variables', () => appState.clearAllVariables()),
-              ),
-              ...variableKeys.map((key) {
-                return _VariableTile(
-                  name: key,
-                  value: appState.userVariables[key]!,
-                  onTap: () => onVariableTap(key),
-                  onDelete: () => appState.removeVariable(key),
-                );
-              }),
-              const SizedBox(height: 16),
-            ],
+            // Main content area
+            Expanded(
+              child: hasAnyContent ? ListView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  // --- Variables Section ---
+                  if (variableKeys.isNotEmpty) ...[
+                    _SectionHeader(
+                      title: 'Variables',
+                      icon: Icons.abc,
+                      onClear: () => _showClearDialog(context, 'variables', () => appState.clearAllVariables()),
+                    ),
+                    ...variableKeys.map((key) {
+                      return _VariableTile(
+                        name: key,
+                        value: appState.userVariables[key]!,
+                        onTap: () => onVariableTap(key),
+                        onDelete: () => appState.removeVariable(key),
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                  ],
 
-            // --- Graph Functions Section (Y1, Y2, etc.) ---
-            if (graphFunctionEntries.isNotEmpty) ...[
-              _SectionHeader(
-                title: 'Graph Functions',
-                icon: Icons.show_chart,
-                onClear: () => _showClearDialog(context, 'graph functions', () {
-                  for (int i = 0; i < appState.graphFunctions.length; i++) {
-                    appState.clearFunction(i);
-                  }
-                }),
-              ),
-              ...graphFunctionEntries.map((entry) {
-                final funcName = 'Y${entry.key + 1}';
-                return _FunctionTile(
-                  name: funcName,
-                  expression: entry.value,
-                  color: _getColorForGraphFunction(entry.key),
-                  // Insert the function expression, not the function name
-                  onTap: () => onVariableTap(entry.value),
-                  onDelete: () => appState.clearFunction(entry.key),
-                );
-              }),
-              const SizedBox(height: 16),
-            ],
+                  // --- Graph Functions Section (Y1, Y2, etc.) ---
+                  if (graphFunctionEntries.isNotEmpty) ...[
+                    _SectionHeader(
+                      title: 'Graph Functions',
+                      icon: Icons.show_chart,
+                      onClear: () => _showClearDialog(context, 'graph functions', () {
+                        for (int i = 0; i < appState.graphFunctions.length; i++) {
+                          appState.clearFunction(i);
+                        }
+                      }),
+                    ),
+                    ...graphFunctionEntries.map((entry) {
+                      final funcName = 'Y${entry.key + 1}';
+                      return _FunctionTile(
+                        name: funcName,
+                        expression: entry.value,
+                        color: _getColorForGraphFunction(entry.key),
+                        onTap: () => onVariableTap(entry.value),
+                        onDelete: () => appState.clearFunction(entry.key),
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                  ],
 
-            // --- User Functions Section (F1, F2, etc.) ---
-            if (userFunctionEntries.isNotEmpty) ...[
-              _SectionHeader(
-                title: 'User Functions',
-                icon: Icons.functions,
-                onClear: () => _showClearDialog(context, 'user functions', () {
-                  for (int i = 0; i < appState.userFunctions.length; i++) {
-                    appState.clearUserFunction(i);
-                  }
-                }),
-              ),
-              ...userFunctionEntries.map((entry) {
-                final funcName = 'F${entry.key + 1}';
-                return _FunctionTile(
-                  name: funcName,
-                  expression: entry.value,
-                  color: _getColorForUserFunction(entry.key),
-                  // Insert the function expression, not the function name
-                  onTap: () => onVariableTap(entry.value),
-                  onDelete: () => appState.clearUserFunction(entry.key),
-                );
-              }),
-            ],
+                  // --- User Functions Section (F1, F2, etc.) ---
+                  if (userFunctionEntries.isNotEmpty) ...[
+                    _SectionHeader(
+                      title: 'User Functions',
+                      icon: Icons.functions,
+                      onClear: () => _showClearDialog(context, 'user functions', () {
+                        for (int i = 0; i < appState.userFunctions.length; i++) {
+                          appState.clearUserFunction(i);
+                        }
+                      }),
+                    ),
+                    ...userFunctionEntries.map((entry) {
+                      final funcName = 'F${entry.key + 1}';
+                      return _FunctionTile(
+                        name: funcName,
+                        expression: entry.value,
+                        color: _getColorForUserFunction(entry.key),
+                        onTap: () => onVariableTap(entry.value),
+                        onDelete: () => appState.clearUserFunction(entry.key),
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                  ],
 
-            // Add some bottom padding
-            const SizedBox(height: 16),
+                  // --- Memory Section ---
+                  if (hasMemory && memory!.isNotEmpty) ...[
+                    _SectionHeader(
+                      title: 'Memory Slots',
+                      icon: Icons.memory,
+                      onClear: () => _showClearDialog(context, 'memory slots', () => onMemoryAction!('CLEAR_ALL')),
+                    ),
+                    ...List.generate(9, (i) {
+                      final memKey = 'M$i';
+                      final memName = 'M${i + 1}';
+                      final memValue = memory![memKey];
+                      
+                      if (memValue != null) {
+                        return _MemoryTile(
+                          name: memName,
+                          value: memValue,
+                          onTap: () => onMemoryAction!(memName),
+                          onDelete: () => onMemoryAction!('DELETE_$memName'),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }).where((widget) => widget is! SizedBox),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Add bottom padding for last item
+                  const SizedBox(height: 80),
+                ],
+              ) : _buildEmptyState(),
+            ),
+
+            // --- Memory Controls Section (Always at bottom when memory is enabled) ---
+            if (hasMemory) _buildMemoryControls(context),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.storage, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No variables or functions defined.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Use "name = value" on the main screen to create variables.\nDefine functions in the Function Editor.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemoryControls(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Memory action buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _MemoryActionButton(
+                label: 'STO',
+                icon: Icons.save,
+                color: Colors.green,
+                onPressed: () => onMemoryAction!('STO'),
+              ),
+              _MemoryActionButton(
+                label: 'DEL',
+                icon: Icons.delete,
+                color: Colors.red,
+                onPressed: () => onMemoryAction!('DEL'),
+              ),
+              _MemoryActionButton(
+                label: 'Ans',
+                icon: Icons.replay,
+                color: Colors.blue,
+                onPressed: () => onMemoryAction!('Ans'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Memory slots grid
+          Container(
+            constraints: const BoxConstraints(maxHeight: 120),
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 3,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
+              childAspectRatio: 2.2,
+              children: List.generate(9, (i) {
+                final memKey = 'M$i';
+                final memName = 'M${i + 1}';
+                final hasValue = memory!.containsKey(memKey);
+                
+                return _MemorySlotButton(
+                  name: memName,
+                  hasValue: hasValue,
+                  value: hasValue ? memory![memKey] : null,
+                  onPressed: () => onMemoryAction!(memName),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -332,6 +439,171 @@ class _FunctionTile extends StatelessWidget {
         ],
       ),
       onTap: onTap,
+    );
+  }
+}
+
+class _MemoryTile extends StatelessWidget {
+  final String name;
+  final String value;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _MemoryTile({
+    required this.name,
+    required this.value,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: Colors.orange.withOpacity(0.2),
+        radius: 16,
+        child: Text(
+          name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            color: Colors.orange,
+          ),
+        ),
+      ),
+      title: Text(
+        name,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: Colors.orange,
+        ),
+      ),
+      subtitle: Text(
+        value,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+        style: TextStyle(color: Colors.grey[600]),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.keyboard_return, size: 16, color: Colors.grey),
+          IconButton(
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline, size: 18),
+            iconSize: 18,
+            tooltip: 'Delete memory slot',
+          ),
+        ],
+      ),
+      onTap: onTap,
+    );
+  }
+}
+
+class _MemoryActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onPressed;
+
+  const _MemoryActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 70,
+      height: 36,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.1),
+          foregroundColor: color,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: color.withOpacity(0.3)),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MemorySlotButton extends StatelessWidget {
+  final String name;
+  final bool hasValue;
+  final String? value;
+  final VoidCallback onPressed;
+
+  const _MemorySlotButton({
+    required this.name,
+    required this.hasValue,
+    this.value,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: hasValue ? Colors.orange.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: hasValue ? Colors.orange.withOpacity(0.4) : Colors.grey.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                name,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: hasValue ? Colors.orange : Colors.grey[600],
+                ),
+              ),
+              if (hasValue && value != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  value!.length > 8 ? '${value!.substring(0, 8)}...' : value!,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey[500],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
