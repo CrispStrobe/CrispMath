@@ -1,5 +1,5 @@
 /// lib/utils/keyboard_input_handler.dart
-/// Shared keyboard input handling for German/international keyboards
+/// Enhanced keyboard input handling with real-time German keyboard correction
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +23,7 @@ class KeyboardInputHandler {
     final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
     final isAltPressed = HardwareKeyboard.instance.isAltPressed;
 
-    // --- GERMAN KEYBOARD PHYSICAL KEY MAPPINGS ---
+    // --- GERMAN KEYBOARD PHYSICAL KEY MAPPINGS (Real-time correction) ---
     
     // Key: `+` and `*` (Physical location of `]` on a US keyboard)
     if (physicalKey == PhysicalKeyboardKey.bracketRight) {
@@ -31,7 +31,7 @@ class KeyboardInputHandler {
       return true;
     }
     
-    // Key: `-` (Physical location of `/` on a US keyboard)
+    // Key: `-` (Physical location of `/` on a US keyboard)  
     if (physicalKey == PhysicalKeyboardKey.slash && !isShiftPressed) {
       onInsert('-');
       return true;
@@ -81,19 +81,27 @@ class KeyboardInputHandler {
       return true;
     }
 
-    // --- STANDARD CHARACTER INPUT ---
+    // --- CHARACTER INPUT WITH IMMEDIATE CORRECTION ---
     if (character != null && character.isNotEmpty) {
       final charCode = character.codeUnitAt(0);
       if (charCode < 0xF700 && charCode >= 32) {
+        // Apply real-time corrections for German keyboard characters
         switch (character) {
-          case '*':
+          case ']': // German keyboard produces ] instead of +
+            onInsert('+');
+            break;
+          case '}': // German keyboard produces } instead of * (becomes LaTeX \cdot)
             onInsert(r'\cdot ');
             break;
-          case '^':
+          case '*': // Standard * key should become LaTeX \cdot
+            onInsert(r'\cdot ');
+            break;
+          case '^': // Handle power operator
             onInsert('^{}');
             onMoveCursor(-1);
             break;
           default:
+            // For other characters, insert as-is
             onInsert(character);
         }
         return true;
@@ -125,21 +133,40 @@ class KeyboardInputHandler {
     return false;
   }
 
-  /// Gets keyboard corrections for different locales
+  /// Gets keyboard corrections for different locales (legacy support)
   static Map<String, String> getKeyboardCorrections(String locale) {
     if (locale.startsWith('de')) {
       return {
-        ']': '+', '}': r'\cdot ', '/': '-', '&': '/', '*': '(',
+        ']': '+', 
+        '}': r'\cdot ', 
+        '/': '-', 
+        '&': '/', 
+        '*': '(',
       };
     } else if (locale.startsWith('fr')) {
       return {
-        '§': '(', '°': ')', '£': r'\cdot ', 'µ': '+', '¨': '^',
-        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        '§': '(', 
+        '°': ')', 
+        '£': r'\cdot ', 
+        'µ': '+', 
+        '¨': '^',
+        'á': 'a', 
+        'é': 'e', 
+        'í': 'i', 
+        'ó': 'o', 
+        'ú': 'u',
       };
     } else if (locale.startsWith('es')) {
       return {
-        '¿': '/', 'ñ': '+', 'Ñ': r'\cdot ', '¡': '(',
-        'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        '¿': '/', 
+        'ñ': '+', 
+        'Ñ': r'\cdot ', 
+        '¡': '(',
+        'á': 'a', 
+        'é': 'e', 
+        'í': 'i', 
+        'ó': 'o', 
+        'ú': 'u',
       };
     }
     return {};
@@ -153,7 +180,41 @@ class KeyboardInputHandler {
       print('Physical Key: ${event.physicalKey}');
       print('Character: "${event.character}"');
       print('Key Label: "${event.logicalKey.keyLabel}"');
+      print('Shift: ${HardwareKeyboard.instance.isShiftPressed}');
+      print('Alt: ${HardwareKeyboard.instance.isAltPressed}');
       print('========================');
     }
+  }
+
+  /// Enhanced function specifically for LaTeX fields that need proper \cdot handling
+  static bool handleLatexKeyboardInput(
+    KeyEvent event, 
+    Function(String) onInsert,
+    VoidCallback onBackspace,
+    VoidCallback onClear,
+    VoidCallback onExecute,
+    Function(int) onMoveCursor,
+  ) {
+    if (event is! KeyDownEvent) return false;
+
+    final physicalKey = event.physicalKey;
+    final logicalKey = event.logicalKey;
+    final character = event.character;
+    final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+
+    // Handle German keyboard mappings with LaTeX output
+    if (physicalKey == PhysicalKeyboardKey.bracketRight) {
+      if (isShiftPressed) {
+        // German } key should produce LaTeX multiplication
+        onInsert(r'\cdot ');
+      } else {
+        // German ] key should produce +
+        onInsert('+');
+      }
+      return true;
+    }
+    
+    // Use the standard handler for other keys
+    return handleKeyboardInput(event, onInsert, onBackspace, onClear, onExecute, onMoveCursor);
   }
 }

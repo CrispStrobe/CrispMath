@@ -1,9 +1,11 @@
-/// lib/screens/graphing_screen.dart
+/// lib/screens/graphing_screen.dart - Fixed Focus Management
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import '../engine/calculator_engine.dart';
 import '../engine/app_state.dart';
+import '../utils/keyboard_input_handler.dart';
 
 class GraphingScreen extends StatefulWidget {
   const GraphingScreen({super.key});
@@ -15,6 +17,8 @@ class GraphingScreen extends StatefulWidget {
 class _GraphingScreenState extends State<GraphingScreen> {
   final AppState _appState = AppState();
   final TextEditingController _functionController = TextEditingController();
+  final FocusNode _screenFocusNode = FocusNode(); // For keyboard listener
+  final FocusNode _textFieldFocusNode = FocusNode(); // Separate for TextField
   final CalculatorEngine _engine = CalculatorEngine();
   
   // Graph view controls
@@ -25,9 +29,84 @@ class _GraphingScreenState extends State<GraphingScreen> {
   Offset _focalStart = Offset.zero;
 
   @override
+  void initState() {
+    super.initState();
+    // Request focus for keyboard input
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _screenFocusNode.requestFocus();
+    });
+  }
+
+  @override
   void dispose() {
     _functionController.dispose();
+    _screenFocusNode.dispose();
+    _textFieldFocusNode.dispose();
     super.dispose();
+  }
+
+  bool _handleKeyboardInput(KeyEvent event) {
+    // Only handle if the text field is focused
+    if (!_textFieldFocusNode.hasFocus) {
+      return false;
+    }
+    
+    return KeyboardInputHandler.handleKeyboardInput(
+      event,
+      (text) => _insertAtCursor(text),
+      () => _backspaceAtCursor(),
+      () => _clearFunction(),
+      () => _addFunction(),
+      (amount) => _moveCursorInFunction(amount),
+    );
+  }
+
+  void _insertAtCursor(String text) {
+    final selection = _functionController.selection;
+    final newText = _functionController.text.replaceRange(
+      selection.start,
+      selection.end,
+      text,
+    );
+    _functionController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: selection.start + text.length),
+    );
+  }
+
+  void _backspaceAtCursor() {
+    final selection = _functionController.selection;
+    if (selection.isCollapsed && selection.baseOffset > 0) {
+      final newText = _functionController.text.replaceRange(
+        selection.baseOffset - 1,
+        selection.baseOffset,
+        '',
+      );
+      _functionController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: selection.baseOffset - 1),
+      );
+    } else if (!selection.isCollapsed) {
+      final newText = _functionController.text.replaceRange(
+        selection.start,
+        selection.end,
+        '',
+      );
+      _functionController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: selection.start),
+      );
+    }
+  }
+
+  void _clearFunction() {
+    _functionController.clear();
+  }
+
+  void _moveCursorInFunction(int amount) {
+    final selection = _functionController.selection;
+    final newOffset = (selection.baseOffset + amount).clamp(0, _functionController.text.length);
+    _functionController.selection = TextSelection.collapsed(offset: newOffset);
   }
 
   void _addFunction() {
@@ -44,7 +123,7 @@ class _GraphingScreenState extends State<GraphingScreen> {
         ),
       );
       _functionController.clear();
-      FocusManager.instance.primaryFocus?.unfocus();
+      _textFieldFocusNode.unfocus();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -110,195 +189,217 @@ class _GraphingScreenState extends State<GraphingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _appState,
-      builder: (context, child) {
-        final activeFunctions = <String>[];
-        final activeFunctionIndices = <int>[];
-        
-        for (int i = 0; i < _appState.graphFunctions.length; i++) {
-          if (_appState.graphFunctions[i].isNotEmpty) {
-            activeFunctions.add(_appState.graphFunctions[i]);
-            activeFunctionIndices.add(i);
-          }
+    return RawKeyboardListener(
+      focusNode: _screenFocusNode, // Separate focus node for screen
+      autofocus: true,
+      onKey: (RawKeyEvent event) {
+        if (event is RawKeyDownEvent) {
+          final keyEvent = KeyDownEvent(
+            physicalKey: event.physicalKey,
+            logicalKey: event.logicalKey,
+            character: event.character,
+            timeStamp: Duration.zero,
+            synthesized: false,
+          );
+          _handleKeyboardInput(keyEvent);
         }
+      },
+      child: ListenableBuilder(
+        listenable: _appState,
+        builder: (context, child) {
+          final activeFunctions = <String>[];
+          final activeFunctionIndices = <int>[];
+          
+          for (int i = 0; i < _appState.graphFunctions.length; i++) {
+            if (_appState.graphFunctions[i].isNotEmpty) {
+              activeFunctions.add(_appState.graphFunctions[i]);
+              activeFunctionIndices.add(i);
+            }
+          }
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text('Graphing (${activeFunctions.length} functions)'),
-            actions: [
-              IconButton(
-                onPressed: _resetView,
-                icon: const Icon(Icons.center_focus_strong),
-                tooltip: 'Reset View',
-              ),
-              if (activeFunctions.isNotEmpty)
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Graphing (${activeFunctions.length} functions)'),
+              actions: [
                 IconButton(
-                  onPressed: _clearAllFunctions,
-                  icon: const Icon(Icons.clear_all),
-                  tooltip: 'Clear All Functions',
+                  onPressed: _resetView,
+                  icon: const Icon(Icons.center_focus_strong),
+                  tooltip: 'Reset View',
                 ),
-            ],
-          ),
-          body: Column(
-            children: [
-              // Graph display area
-              Expanded(
-                child: GestureDetector(
-                  onScaleStart: (details) {
-                    _focalStart = details.localFocalPoint;
-                    _startScale = _scale;
-                    _startOffset = _offset;
-                  },
-                  onScaleUpdate: (details) {
-                    setState(() {
-                      _scale = (_startScale * details.scale).clamp(0.1, 20.0);
-                      _offset = _startOffset + (details.localFocalPoint - _focalStart);
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade800, width: 1),
-                    ),
-                    child: CustomPaint(
-                      painter: GraphPainter(
-                        functions: activeFunctions,
-                        functionIndices: activeFunctionIndices,
-                        scale: _scale,
-                        offset: _offset,
-                        engine: _engine,
-                        getColorForFunction: _getColorForFunction,
+                if (activeFunctions.isNotEmpty)
+                  IconButton(
+                    onPressed: _clearAllFunctions,
+                    icon: const Icon(Icons.clear_all),
+                    tooltip: 'Clear All Functions',
+                  ),
+              ],
+            ),
+            body: Column(
+              children: [
+                // Graph display area
+                Expanded(
+                  child: GestureDetector(
+                    onScaleStart: (details) {
+                      _focalStart = details.localFocalPoint;
+                      _startScale = _scale;
+                      _startOffset = _offset;
+                    },
+                    onScaleUpdate: (details) {
+                      setState(() {
+                        _scale = (_startScale * details.scale).clamp(0.1, 20.0);
+                        _offset = _startOffset + (details.localFocalPoint - _focalStart);
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade800, width: 1),
                       ),
-                      size: Size.infinite,
+                      child: CustomPaint(
+                        painter: GraphPainter(
+                          functions: activeFunctions,
+                          functionIndices: activeFunctionIndices,
+                          scale: _scale,
+                          offset: _offset,
+                          engine: _engine,
+                          getColorForFunction: _getColorForFunction,
+                        ),
+                        size: Size.infinite,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              
-              // Controls area
-              Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // Function input
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _functionController,
-                            decoration: const InputDecoration(
-                              labelText: 'Enter function to plot',
-                              border: OutlineInputBorder(),
-                              prefixText: 'y = ',
-                              hintText: 'e.g., x^2, sin(x), ln(x+1)',
-                            ),
-                            onSubmitted: (_) => _addFunction(),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.add_chart),
-                          label: const Text('Plot'),
-                          onPressed: _addFunction,
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Active functions display
-                    if (activeFunctions.isNotEmpty) ...[
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Active Functions:',
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 50,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: activeFunctionIndices.length,
-                          itemBuilder: (context, index) {
-                            final funcText = activeFunctions[index];
-                            final originalIndex = activeFunctionIndices[index];
-                            final yLabel = 'Y${originalIndex + 1}';
-                            final color = _getColorForFunction(originalIndex);
-                            
-                            return Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              child: Chip(
-                                avatar: CircleAvatar(
-                                  backgroundColor: color,
-                                  radius: 8,
-                                ),
-                                label: SizedBox(
-                                  width: 120,
-                                  child: Text(
-                                    '$yLabel = $funcText',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                backgroundColor: color.withOpacity(0.1),
-                                side: BorderSide(color: color, width: 1),
-                                onDeleted: () => _removeFunction(funcText),
-                                deleteIcon: const Icon(Icons.close, size: 16),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ] else ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.functions,
-                              size: 48,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'No functions plotted',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Enter a function above to start graphing',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
+                
+                // Controls area
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, -2),
                       ),
                     ],
-                  ],
+                  ),
+                  child: Column(
+                    children: [
+                      // Function input with German keyboard support
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _functionController,
+                              focusNode: _textFieldFocusNode, // Separate focus node
+                              decoration: const InputDecoration(
+                                labelText: 'Enter function to plot',
+                                border: OutlineInputBorder(),
+                                prefixText: 'y = ',
+                                hintText: 'e.g., x^2, sin(x), ln(x+1)',
+                              ),
+                              onSubmitted: (_) => _addFunction(),
+                              onTap: () {
+                                // Give focus to text field when tapped
+                                _textFieldFocusNode.requestFocus();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.add_chart),
+                            label: const Text('Plot'),
+                            onPressed: _addFunction,
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Active functions display
+                      if (activeFunctions.isNotEmpty) ...[
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Active Functions:',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 50,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: activeFunctionIndices.length,
+                            itemBuilder: (context, index) {
+                              final funcText = activeFunctions[index];
+                              final originalIndex = activeFunctionIndices[index];
+                              final yLabel = 'Y${originalIndex + 1}';
+                              final color = _getColorForFunction(originalIndex);
+                              
+                              return Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                child: Chip(
+                                  avatar: CircleAvatar(
+                                    backgroundColor: color,
+                                    radius: 8,
+                                  ),
+                                  label: SizedBox(
+                                    width: 120,
+                                    child: Text(
+                                      '$yLabel = $funcText',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  backgroundColor: color.withOpacity(0.1),
+                                  side: BorderSide(color: color, width: 1),
+                                  onDeleted: () => _removeFunction(funcText),
+                                  deleteIcon: const Icon(Icons.close, size: 16),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.functions,
+                                size: 48,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No functions plotted',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Enter a function above to start graphing',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
 
+// [Rest of GraphPainter class stays the same as before]
 class GraphPainter extends CustomPainter {
   final List<String> functions;
   final List<int> functionIndices;
@@ -519,11 +620,6 @@ class GraphPainter extends CustomPainter {
     
     String expressionWithX = processedFunc.replaceAll('x', valueStr);
     
-    // Evaluate using the calculator engine
-    // String result = engine.evaluate(expressionWithX);
-    // COMPLEX NUMBER CLEANING FOR GRAPHING
-    // String cleanResult = _extractRealPart(result);
-    
     // Use the enhanced evaluation method to handle complex number format of SymEngine
     String result = engine.evaluateForGraphing(expressionWithX);
     
@@ -531,67 +627,12 @@ class GraphPainter extends CustomPainter {
       throw Exception('Evaluation failed');
     }
     
-    // double? value = double.tryParse(cleanResult);
     double? value = double.tryParse(result);
     if (value == null) {
-      // throw Exception('Invalid result: $result -> $cleanResult');
       throw Exception('Invalid result: $result');
     }
     
     return value;
-  }
-
-  String _extractRealPart(String complexResult) {
-    if (complexResult.isEmpty) return complexResult;
-    
-    String result = complexResult.trim();
-    
-    print('COMPLEX_EXTRACT: Input: "$result"');
-    
-    // Handle SymEngine complex format: "a + b*I" or "a - b*I"
-    
-    // Pattern 1: "number + 0*I" or "number + 0.0*I" -> just "number"
-    RegExp zeroImagPattern = RegExp(r'^(.+?)\s*[+\-]\s*0(\.0*)?\s*\*?\s*I\s*$');
-    Match? match = zeroImagPattern.firstMatch(result);
-    if (match != null) {
-      String realPart = match.group(1)!.trim();
-      print('COMPLEX_EXTRACT: Zero imaginary, real part: "$realPart"');
-      return realPart;
-    }
-    
-    // Pattern 2: Pure real number (no I at all)
-    if (!result.contains('I') && !result.contains('i')) {
-      print('COMPLEX_EXTRACT: Pure real: "$result"');
-      return result;
-    }
-    
-    // Pattern 3: "a + b*I" where b != 0 -> extract just a
-    RegExp generalComplexPattern = RegExp(r'^(.+?)\s*[+\-]\s*.+?\s*\*?\s*I.*$');
-    match = generalComplexPattern.firstMatch(result);
-    if (match != null) {
-      String realPart = match.group(1)!.trim();
-      print('COMPLEX_EXTRACT: Complex with real part: "$realPart"');
-      return realPart;
-    }
-    
-    // Pattern 4: Pure imaginary "b*I" -> return "0"
-    RegExp pureImagPattern = RegExp(r'^\s*[+\-]?\s*\d*\.?\d*\s*\*?\s*I\s*$');
-    if (pureImagPattern.hasMatch(result)) {
-      print('COMPLEX_EXTRACT: Pure imaginary, returning 0');
-      return '0';
-    }
-    
-    // Fallback: try to extract any leading number
-    RegExp leadingNumberPattern = RegExp(r'^([+\-]?\d*\.?\d+)');
-    match = leadingNumberPattern.firstMatch(result);
-    if (match != null) {
-      String leadingNumber = match.group(1)!;
-      print('COMPLEX_EXTRACT: Extracted leading number: "$leadingNumber"');
-      return leadingNumber;
-    }
-    
-    print('COMPLEX_EXTRACT: No pattern matched, returning original: "$result"');
-    return result;
   }
 
   @override

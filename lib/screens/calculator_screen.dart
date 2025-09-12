@@ -1,8 +1,9 @@
-/// lib/screens/calculator_screen.dart - Refactored and Modular
+/// lib/screens/calculator_screen.dart - With Working History Toggle
 
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 // Engine imports
@@ -41,9 +42,11 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
 
   late TabController _tabController;
   final LatexController _latexController = LatexController();
+  final FocusNode _calculatorFocusNode = FocusNode(); // Dedicated focus node
   
   String _resultPreview = '';
   bool _justCalculated = false;
+  bool _showLatexHistory = false; // History display toggle
 
   @override
   void initState() {
@@ -51,6 +54,11 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     _analysisEngine = AnalysisEngine(_engine);
     _tabController = TabController(length: 5, vsync: this);
     _latexController.addListener(_onInputChanged);
+    
+    // Request focus immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculatorFocusNode.requestFocus();
+    });
   }
 
   @override
@@ -58,12 +66,70 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     _tabController.dispose();
     _latexController.removeListener(_onInputChanged);
     _latexController.dispose();
+    _calculatorFocusNode.dispose();
     super.dispose();
   }
   
   /// Allows parent widgets to request focus for the input field.
   void requestFocus() {
     print("Requesting focus for CalculatorScreen.");
+    _calculatorFocusNode.requestFocus();
+  }
+
+  /// Converts expression to LaTeX for history display
+  String _toLatex(String text) {
+    String latex = text;
+    
+    // Replace standard operators with LaTeX equivalents
+    latex = latex.replaceAll('*', r'\cdot ');
+    
+    // Convert fractions
+    latex = latex.replaceAllMapped(RegExp(r'\(([^/]+)\)/\(([^/]+)\)'), (m) {
+      return r'\frac{' + '${m.group(1)}' + r'}{' + '${m.group(2)}' + r'}';
+    });
+    
+    // Ensure standard functions are rendered upright
+    latex = latex.replaceAllMapped(RegExp(r'(\b(sin|cos|tan|ln|log|det|lim|sqrt|abs|gamma)\b)(?![a-zA-Z])'), (m) {
+      return '\\${m.group(1)}';
+    });
+    
+    // Handle powers
+    latex = latex.replaceAllMapped(RegExp(r'([a-zA-Z0-9)]+)\^([a-zA-Z0-9]+)'), (m) {
+      return '${m.group(1)}^{${m.group(2)}}';
+    });
+    
+    return latex;
+  }
+
+  Widget _buildExpressionDisplay(String expression) {
+    if (_showLatexHistory && expression.isNotEmpty) {
+      // Try to render as LaTeX
+      try {
+        return Math.tex(
+          _toLatex(expression),
+          textStyle: TextStyle(fontSize: 20, color: Colors.grey[500]),
+          onErrorFallback: (err) => Text(
+            expression,
+            style: TextStyle(fontSize: 20, color: Colors.grey[500]),
+            textAlign: TextAlign.right,
+          ),
+        );
+      } catch (e) {
+        // Fallback to plain text if LaTeX rendering fails
+        return Text(
+          expression,
+          style: TextStyle(fontSize: 20, color: Colors.grey[500]),
+          textAlign: TextAlign.right,
+        );
+      }
+    } else {
+      // Plain text display
+      return Text(
+        expression,
+        style: TextStyle(fontSize: 20, color: Colors.grey[500]),
+        textAlign: TextAlign.right,
+      );
+    }
   }
 
   /// Called whenever the input text changes.
@@ -148,6 +214,14 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   bool _handleKeyboardInput(KeyEvent event) {
     KeyboardInputHandler.debugKeyboardInput(event);
     
+    // Handle Enter key specifically to prevent tab switching
+    if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      if (event is KeyDownEvent) {
+        _onButtonPressed("EXE");
+        return true; // Consume the event to prevent tab switching
+      }
+    }
+    
     return KeyboardInputHandler.handleKeyboardInput(
       event,
       (text) => _latexController.insert(text),
@@ -176,6 +250,9 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   }
 
   void _onButtonPressed(String value) async {
+    // Ensure focus stays on calculator
+    _calculatorFocusNode.requestFocus();
+    
     if (_justCalculated && _isOperator(value) && _appState.history.isNotEmpty) {
       _latexController.insert('Ans');
     }
@@ -335,17 +412,29 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
 
       case '∫':
         final result = await FunctionPickerDialogs.showIntegralDialog(context);
-        if (result != null) _latexController.insert(result);
+        if (result != null) {
+          _latexController.insert(result);
+          // Force refresh after dialog insertion
+          setState(() {});
+        }
         break;
       
       case 'ⁿ√x':
         final result = await FunctionPickerDialogs.showNthRootDialog(context);
-        if (result != null) _latexController.insert(result);
+        if (result != null) {
+          _latexController.insert(result);
+          // Force refresh after dialog insertion
+          setState(() {});
+        }
         break;
       
       case 'lim':
         final result = await FunctionPickerDialogs.showLimitDialog(context);
-        if (result != null) _latexController.insert(result);
+        if (result != null) {
+          _latexController.insert(result);
+          // Force refresh after dialog insertion
+          setState(() {});
+        }
         break;
       
       case 'matrix':
@@ -499,6 +588,9 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
         _justCalculated = true;
         _latexController.clear();
       });
+      
+      // Keep focus on calculator after calculation
+      _calculatorFocusNode.requestFocus();
       
       print('CALC: Added to history, cleared input, set _justCalculated = true');
     } catch (e) {
@@ -712,7 +804,7 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
   @override
   Widget build(BuildContext context) {
     return RawKeyboardListener(
-      focusNode: FocusNode(),
+      focusNode: _calculatorFocusNode, // Use dedicated focus node
       autofocus: true,
       onKey: (RawKeyEvent event) {
         if (event is RawKeyDownEvent) {
@@ -723,38 +815,96 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
             timeStamp: Duration.zero,
             synthesized: false,
           );
-          _handleKeyboardInput(keyEvent);
+          final handled = _handleKeyboardInput(keyEvent);
+          // Keep focus on calculator
+          if (handled) {
+            _calculatorFocusNode.requestFocus();
+          }
         }
       },
       child: SafeArea(
         child: Column(
           children: [
-            // History display
+            // History display section
             Expanded(
               flex: 3, 
-              child: ListenableBuilder(
-                listenable: _appState, 
-                builder: (context, child) {
-                  return ListView.builder(
-                    itemCount: _appState.history.length, 
-                    reverse: true,
-                    itemBuilder: (context, index) {
-                      final entry = _appState.history[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(entry.expression, style: TextStyle(fontSize: 20, color: Colors.grey[500])),
-                            const SizedBox(height: 4),
-                            Text("= ${entry.result}", style: TextStyle(fontSize: 28, color: Colors.blue[300])),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                }
-              )
+              child: Column(
+                children: [
+                  // Toggle button for LaTeX/Plain text display (VISIBLE NOW!)
+                  if (_appState.history.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            'History:',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                          const SizedBox(width: 8),
+                          SegmentedButton<bool>(
+                            segments: const [
+                              ButtonSegment<bool>(
+                                value: false,
+                                label: Text('Plain', style: TextStyle(fontSize: 12)),
+                                icon: Icon(Icons.text_fields, size: 16),
+                              ),
+                              ButtonSegment<bool>(
+                                value: true,
+                                label: Text('LaTeX', style: TextStyle(fontSize: 12)),
+                                icon: Icon(Icons.functions, size: 16),
+                              ),
+                            ],
+                            selected: {_showLatexHistory},
+                            onSelectionChanged: (Set<bool> newSelection) {
+                              setState(() {
+                                _showLatexHistory = newSelection.first;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  
+                  // History list
+                  Expanded(
+                    child: ListenableBuilder(
+                      listenable: _appState, 
+                      builder: (context, child) {
+                        if (_appState.history.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'Calculation history will appear here.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          );
+                        }
+                        
+                        return ListView.builder(
+                          itemCount: _appState.history.length, 
+                          reverse: true,
+                          itemBuilder: (context, index) {
+                            final entry = _appState.history[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  // Expression display (with LaTeX toggle)
+                                  _buildExpressionDisplay(entry.expression),
+                                  const SizedBox(height: 4),
+                                  // Result display
+                                  Text("= ${entry.result}", style: TextStyle(fontSize: 28, color: Colors.blue[300])),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    ),
+                  ),
+                ],
+              ),
             ),
             
             const Divider(height: 1),
