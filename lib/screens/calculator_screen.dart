@@ -1,4 +1,4 @@
-/// lib/screens/calculator_screen.dart - With Working History Toggle
+/// lib/screens/calculator_screen.dart
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -21,6 +21,7 @@ import '../widgets/function_picker_dialogs.dart';
 import '../utils/keyboard_input_handler.dart';
 import '../utils/latex_conversion_utils.dart';
 import '../utils/expression_preprocessing_utils.dart';
+import '../utils/math_display_utils.dart';
 
 // Other imports
 import '../controllers/latex_controller.dart';
@@ -76,8 +77,13 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
     _calculatorFocusNode.requestFocus();
   }
 
-  /// Converts expression to LaTeX for history display
+  /// Converts expression to LaTeX for history display - now uses unified utility
   String _toLatex(String text) {
+    return MathDisplayUtils.toHistoryDisplayLatex(text);
+  }
+
+  /// Converts expression to LaTeX for history display - legacy version for debug testing
+  String _toLatex_old(String text) {
     String latex = text;
     
     // Replace standard operators with LaTeX equivalents
@@ -846,12 +852,10 @@ class CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPro
                             segments: const [
                               ButtonSegment<bool>(
                                 value: false,
-                                label: Text('Plain', style: TextStyle(fontSize: 12)),
                                 icon: Icon(Icons.text_fields, size: 16),
                               ),
                               ButtonSegment<bool>(
-                                value: true,
-                                label: Text('LaTeX', style: TextStyle(fontSize: 12)),
+                                value: true, 
                                 icon: Icon(Icons.functions, size: 16),
                               ),
                             ],

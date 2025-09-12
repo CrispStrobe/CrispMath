@@ -8,6 +8,7 @@ import 'dart:async';
 import '../engine/app_state.dart';
 import '../utils/keyboard_input_handler.dart';
 import '../controllers/latex_controller.dart';
+import '../utils/math_display_utils.dart';
 
 class FunctionPickerDialogs {
   static void showSolveFunctionPicker(
@@ -209,6 +210,11 @@ class _DialogLatexFieldState extends State<DialogLatexField> with SingleTickerPr
 
   /// Converts a plain text string to LaTeX string for rendering.
   String _toLatex(String text) {
+    return MathDisplayUtils.toHistoryDisplayLatex(text);
+  }
+
+  // legacy version for debug testing
+  String _toLatex_old(String text) {
     String latex = text;
     
     // Replace standard operators with LaTeX equivalents

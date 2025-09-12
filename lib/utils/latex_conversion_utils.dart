@@ -16,94 +16,94 @@ class LatexConversionUtils {
     
     // Handle nth roots: \sqrt[n]{expr} -> (expr)^(1/n)
     result = result.replaceAllMapped(RegExp(r'\\sqrt\[([^\]]+)\]\{([^}]+)\}'), (m) {
-      final n = m.group(1)!;
-      final expr = m.group(2)!;
-      return '($expr)^(1/$n)';
+        final n = m.group(1)!;
+        final expr = m.group(2)!;
+        return '($expr)^(1/$n)';
     });
     
     // Handle square roots: \sqrt{expr} -> sqrt(expr)
     result = result.replaceAllMapped(RegExp(r'\\sqrt\{([^}]+)\}'), (m) {
-      return 'sqrt(${m.group(1)})';
+        return 'sqrt(${m.group(1)})';
     });
     
     // Handle fractions: \frac{num}{den} -> (num)/(den)
     result = result.replaceAllMapped(RegExp(r'\\frac\{([^}]+)\}\{([^}]+)\}'), (m) {
-      return '(${m.group(1)})/(${m.group(2)})';
+        return '(${m.group(1)})/(${m.group(2)})';
     });
     
     // Handle differentiation: \frac{d}{dx}(expr) -> d/dx(expr)
     result = result.replaceAllMapped(RegExp(r'\\frac\{d\}\{d([a-zA-Z])\}\(([^)]+)\)'), (m) {
-      return 'd/d${m.group(1)}(${m.group(2)})';
+        return 'd/d${m.group(1)}(${m.group(2)})';
     });
     
     // Handle differentiation with braces: \frac{d}{dx}{expr} -> d/dx(expr)
     result = result.replaceAllMapped(RegExp(r'\\frac\{d\}\{d([a-zA-Z])\}\{([^}]+)\}'), (m) {
-      return 'd/d${m.group(1)}(${m.group(2)})';
+        return 'd/d${m.group(1)}(${m.group(2)})';
     });
     
     // === STEP 2: Handle function notation with braces ===
     
     // Trigonometric functions: \sin{expr} -> sin(expr)
     result = result.replaceAllMapped(RegExp(r'\\(sin|cos|tan|csc|sec|cot)\{([^}]+)\}'), (m) {
-      return '${m.group(1)}(${m.group(2)})';
+        return '${m.group(1)}(${m.group(2)})';
     });
     
     // Inverse trigonometric functions: \arcsin{expr} -> asin(expr)
     result = result.replaceAllMapped(RegExp(r'\\arc(sin|cos|tan|csc|sec|cot)\{([^}]+)\}'), (m) {
-      final func = m.group(1)!;
-      final expr = m.group(2)!;
-      return 'a$func($expr)';
+        final func = m.group(1)!;
+        final expr = m.group(2)!;
+        return 'a$func($expr)';
     });
     
     // Hyperbolic functions: \sinh{expr} -> sinh(expr)
     result = result.replaceAllMapped(RegExp(r'\\(sinh|cosh|tanh|csch|sech|coth)\{([^}]+)\}'), (m) {
-      return '${m.group(1)}(${m.group(2)})';
+        return '${m.group(1)}(${m.group(2)})';
     });
     
     // Inverse hyperbolic functions: \asinh{expr} -> asinh(expr)
     result = result.replaceAllMapped(RegExp(r'\\a(sinh|cosh|tanh|csch|sech|coth)\{([^}]+)\}'), (m) {
-      return 'a${m.group(1)}(${m.group(2)})';
+        return 'a${m.group(1)}(${m.group(2)})';
     });
     
     // Logarithmic functions: \ln{expr} -> ln(expr), \log{expr} -> log(expr)
     result = result.replaceAllMapped(RegExp(r'\\(ln|log)\{([^}]+)\}'), (m) {
-      return '${m.group(1)}(${m.group(2)})';
+        return '${m.group(1)}(${m.group(2)})';
     });
     
     // Logarithm with base: \log_{base}{expr} -> log(expr)/log(base)
     result = result.replaceAllMapped(RegExp(r'\\log_\{([^}]+)\}\{([^}]+)\}'), (m) {
-      final base = m.group(1)!;
-      final expr = m.group(2)!;
-      return 'log($expr)/log($base)';
+        final base = m.group(1)!;
+        final expr = m.group(2)!;
+        return 'log($expr)/log($base)';
     });
     
     // === STEP 3: Handle function notation with parentheses (already correct) ===
     
     // These are already in correct format: \sin(expr) -> sin(expr)
     result = result.replaceAllMapped(RegExp(r'\\(sin|cos|tan|csc|sec|cot|sinh|cosh|tanh|csch|sech|coth|ln|log|sqrt|abs)\('), (m) {
-      return '${m.group(1)}(';
+        return '${m.group(1)}(';
     });
     
     // Inverse trig with parentheses: \arcsin(expr) -> asin(expr)
     result = result.replaceAllMapped(RegExp(r'\\arc(sin|cos|tan|csc|sec|cot)\('), (m) {
-      return 'a${m.group(1)}(';
+        return 'a${m.group(1)}(';
     });
     
     // === STEP 4: Handle power and subscript notation ===
     
     // Powers with braces: x^{expr} -> x^(expr)
     result = result.replaceAllMapped(RegExp(r'\^\{([^}]+)\}'), (m) {
-      final exp = m.group(1)!;
-      // If it's a single character/number, parentheses aren't needed
-      if (RegExp(r'^[a-zA-Z0-9]$').hasMatch(exp)) {
+        final exp = m.group(1)!;
+        // If it's a single character/number, parentheses aren't needed
+        if (RegExp(r'^[a-zA-Z0-9]$').hasMatch(exp)) {
         return '^$exp';
-      }
-      return '^($exp)';
+        }
+        return '^($exp)';
     });
     
     // Subscripts with braces: x_{expr} -> x_expr (though SymEngine may not need this)
     result = result.replaceAllMapped(RegExp(r'_\{([^}]+)\}'), (m) {
-      return '_${m.group(1)}';
+        return '_${m.group(1)}';
     });
     
     // === STEP 5: Handle constants and symbols ===
@@ -148,60 +148,64 @@ class LatexConversionUtils {
     result = result.replaceAll(r'\pm', '+-');
     result = result.replaceAll(r'\mp', '-+');
     
+    // Modulo operations: \bmod -> mod (FIXED)
+    result = result.replaceAll(r'\bmod', ' mod ');
+    result = result.replaceAll(r'\\bmod', ' mod ');
+    
     // === STEP 7: Handle absolute values and norms ===
     
     // Absolute values: |expr| -> abs(expr)
     // This is tricky because we need to match paired pipes
     result = result.replaceAllMapped(RegExp(r'\|([^|]+)\|'), (m) {
-      return 'abs(${m.group(1)})';
+        return 'abs(${m.group(1)})';
     });
     
-    // === STEP 8: Handle integrals (basic form) ===
+    // === STEP 8: Handle integrals ===
     
     // Simple integral: \int expr dx -> integrate(expr, x)
-    result = result.replaceAllMapped(RegExp(r'\\int\s+([^d]+)\s+d([a-zA-Z])'), (m) {
-      final expr = m.group(1)!.trim();
-      final variable = m.group(2)!;
-      return 'integrate($expr, $variable)';
+    result = result.replaceAllMapped(RegExp(r'\\int\s+([^d]+)\s*\\?,?\s*d([a-zA-Z])'), (m) {
+        final expr = m.group(1)!.trim();
+        final variable = m.group(2)!;
+        return 'integrate($expr, $variable)';
     });
     
     // Definite integral: \int_{a}^{b} expr dx -> integrate(expr, (x, a, b))
-    result = result.replaceAllMapped(RegExp(r'\\int_\{([^}]+)\}\^\{([^}]+)\}\s+([^d]+)\s+d([a-zA-Z])'), (m) {
-      final lower = m.group(1)!;
-      final upper = m.group(2)!;
-      final expr = m.group(3)!.trim();
-      final variable = m.group(4)!;
-      return 'integrate($expr, ($variable, $lower, $upper))';
+    result = result.replaceAllMapped(RegExp(r'\\int_\{([^}]+)\}\^\{([^}]+)\}\s*([^d]+)\s*\\?,?\s*d([a-zA-Z])'), (m) {
+        final lower = m.group(1)!;
+        final upper = m.group(2)!;
+        final expr = m.group(3)!.trim();
+        final variable = m.group(4)!;
+        return 'integrate($expr, ($variable, $lower, $upper))';
     });
     
     // === STEP 9: Handle limits ===
     
     // Basic limit: \lim_{x \to a} expr -> limit(expr, x, a)
     result = result.replaceAllMapped(RegExp(r'\\lim_\{([a-zA-Z])\s*\\to\s*([^}]+)\}\s*(.+)'), (m) {
-      final variable = m.group(1)!;
-      final approaches = m.group(2)!;
-      final expr = m.group(3)!;
-      return 'limit($expr, $variable, $approaches)';
+        final variable = m.group(1)!;
+        final approaches = m.group(2)!;
+        final expr = m.group(3)!;
+        return 'limit($expr, $variable, $approaches)';
     });
     
     // === STEP 10: Handle summations and products ===
     
     // Summation: \sum_{i=1}^{n} expr -> Sum(expr, (i, 1, n))
     result = result.replaceAllMapped(RegExp(r'\\sum_\{([a-zA-Z])=([^}]+)\}\^\{([^}]+)\}\s*(.+)'), (m) {
-      final variable = m.group(1)!;
-      final start = m.group(2)!;
-      final end = m.group(3)!;
-      final expr = m.group(4)!;
-      return 'Sum($expr, ($variable, $start, $end))';
+        final variable = m.group(1)!;
+        final start = m.group(2)!;
+        final end = m.group(3)!;
+        final expr = m.group(4)!;
+        return 'Sum($expr, ($variable, $start, $end))';
     });
     
     // Product: \prod_{i=1}^{n} expr -> Product(expr, (i, 1, n))
     result = result.replaceAllMapped(RegExp(r'\\prod_\{([a-zA-Z])=([^}]+)\}\^\{([^}]+)\}\s*(.+)'), (m) {
-      final variable = m.group(1)!;
-      final start = m.group(2)!;
-      final end = m.group(3)!;
-      final expr = m.group(4)!;
-      return 'Product($expr, ($variable, $start, $end))';
+        final variable = m.group(1)!;
+        final start = m.group(2)!;
+        final end = m.group(3)!;
+        final expr = m.group(4)!;
+        return 'Product($expr, ($variable, $start, $end))';
     });
     
     // === STEP 11: Handle braces (convert to parentheses where needed) ===
@@ -225,7 +229,7 @@ class LatexConversionUtils {
     print('LATEX_CONVERT: Output: "$result"');
     
     return result;
-  }
+    }
 
   /// Converts LaTeX back to readable format for history display
   static String latexToReadable(String latex) {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import '../controllers/latex_controller.dart';
 import 'dart:async';
+import '../utils/math_display_utils.dart';
 
 class LatexInputField extends StatefulWidget {
   const LatexInputField({super.key, required this.controller});
@@ -47,6 +48,11 @@ class _LatexInputFieldState extends State<LatexInputField> {
 
   /// Enhanced LaTeX conversion that handles dialog-inserted LaTeX
   String _toLatex(String text) {
+    return MathDisplayUtils.toHistoryDisplayLatex(text);
+  }
+
+  // legacy version for debug testing
+  String _toLatex_old(String text) {
     if (text.isEmpty) return text;
     
     String latex = text;
