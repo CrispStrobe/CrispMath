@@ -278,8 +278,13 @@ roughly double the perceived value of the app.
     t-test, χ² goodness-of-fit. Each takes inputs + a significance
     level α, returns the test statistic, df, p-values, and a colored
     "reject H₀" / "fail to reject H₀" verdict block.
-  - **V4 pending**: two-sample t-test (independent), ANOVA, χ²
-    independence, exponential regression, F-distribution.
+  - **V4 partial** (HISTORY round 36): exponential regression
+    (`y = a·exp(b·x)`) via log-linearization, plus a chip-row picker
+    in the Regression tab so users can switch between linear,
+    polynomial (degree 2–5), and exponential fits without leaving
+    the screen.
+  - **V5 pending**: two-sample t-test (independent), ANOVA, χ²
+    independence, F-distribution.
 - [~] **Unit-aware arithmetic**. `5 km / 30 min in mph`, `1 mile + 5 ft`,
   full SI prefix handling, dimension checking on results. Opens the
   engineering / physics / chemistry audience.

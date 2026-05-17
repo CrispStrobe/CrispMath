@@ -88,6 +88,30 @@ class PolynomialFit {
   }
 }
 
+/// Exponential regression of the form `y = a * exp(b * x)`. Fit by
+/// log-linearizing — taking `ln(y) = ln(a) + b * x` and running an
+/// ordinary linear regression — so the `rSquared` reflects the
+/// log-space fit, not the residual variance on the original `y`s.
+/// That's the standard convention (matches R's `lm(log(y) ~ x)` and
+/// most stats textbooks); we report it as-is rather than recomputing
+/// in raw-y space, which would be misleading for fits dominated by a
+/// few large values.
+class ExponentialFit {
+  final double a;
+  final double b;
+  final double rSquared;
+  final int count;
+  const ExponentialFit({
+    required this.a,
+    required this.b,
+    required this.rSquared,
+    required this.count,
+  });
+
+  /// Evaluate the fitted curve at [x].
+  double evaluate(double x) => a * math.exp(b * x);
+}
+
 class Statistics {
   /// Compute everything in DescriptiveStats from a list of numbers.
   /// Throws ArgumentError on empty input.
@@ -284,6 +308,33 @@ class Statistics {
       rSquared: r2,
       count: n,
       degree: degree,
+    );
+  }
+
+  /// Exponential regression `y = a * exp(b * x)` by log-linearization.
+  /// All `ys` must be strictly positive (we take their natural log);
+  /// throws otherwise.
+  static ExponentialFit expFit(List<double> xs, List<double> ys) {
+    if (xs.length != ys.length) {
+      throw ArgumentError(
+          'expFit() expects same-length lists; got ${xs.length} vs ${ys.length}.');
+    }
+    if (xs.length < 2) {
+      throw ArgumentError('expFit() needs at least 2 points.');
+    }
+    for (final y in ys) {
+      if (y <= 0) {
+        throw ArgumentError(
+            'expFit() requires strictly positive y-values (got $y).');
+      }
+    }
+    final logYs = ys.map(math.log).toList(growable: false);
+    final lin = linearFit(xs, logYs);
+    return ExponentialFit(
+      a: math.exp(lin.intercept),
+      b: lin.slope,
+      rSquared: lin.rSquared,
+      count: xs.length,
     );
   }
 

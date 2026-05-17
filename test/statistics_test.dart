@@ -246,4 +246,63 @@ void main() {
       );
     });
   });
+
+  group('Statistics.expFit', () {
+    test('exact y = 2 * exp(0.5 * x) recovers a and b', () {
+      final xs = const [0.0, 1.0, 2.0, 3.0, 4.0];
+      final ys = [for (final x in xs) 2.0 * math.exp(0.5 * x)];
+      final f = Statistics.expFit(xs, ys);
+      expect(f.a, closeTo(2.0, 1e-9));
+      expect(f.b, closeTo(0.5, 1e-9));
+      expect(f.rSquared, closeTo(1.0, 1e-9));
+      expect(f.count, equals(5));
+    });
+    test('exact y = 3 * exp(-0.2 * x) — negative b', () {
+      final xs = const [0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
+      final ys = [for (final x in xs) 3.0 * math.exp(-0.2 * x)];
+      final f = Statistics.expFit(xs, ys);
+      expect(f.a, closeTo(3.0, 1e-9));
+      expect(f.b, closeTo(-0.2, 1e-9));
+      expect(f.rSquared, closeTo(1.0, 1e-9));
+    });
+    test('evaluate() reproduces y at the sample points', () {
+      final xs = const [0.0, 1.0, 2.0, 3.0];
+      final ys = [for (final x in xs) 1.5 * math.exp(0.7 * x)];
+      final f = Statistics.expFit(xs, ys);
+      for (var i = 0; i < xs.length; i++) {
+        expect(f.evaluate(xs[i]), closeTo(ys[i], 1e-9));
+      }
+    });
+    test('non-positive y throws', () {
+      expect(
+        () => Statistics.expFit(const [1.0, 2.0], const [1.0, -1.0]),
+        throwsArgumentError,
+      );
+      expect(
+        () => Statistics.expFit(const [1.0, 2.0], const [1.0, 0.0]),
+        throwsArgumentError,
+      );
+    });
+    test('length mismatch throws', () {
+      expect(
+        () => Statistics.expFit(const [1.0, 2.0], const [1.0, 2.0, 3.0]),
+        throwsArgumentError,
+      );
+    });
+    test('single point throws', () {
+      expect(
+        () => Statistics.expFit(const [1.0], const [2.0]),
+        throwsArgumentError,
+      );
+    });
+    test('classic textbook example — bacterial growth', () {
+      // Population doubles every hour: y = 100 * exp(ln(2) * t).
+      final xs = const [0.0, 1.0, 2.0, 3.0, 4.0];
+      final ys = const [100.0, 200.0, 400.0, 800.0, 1600.0];
+      final f = Statistics.expFit(xs, ys);
+      expect(f.a, closeTo(100.0, 1e-6));
+      expect(f.b, closeTo(math.log(2), 1e-6));
+      expect(f.rSquared, closeTo(1.0, 1e-9));
+    });
+  });
 }

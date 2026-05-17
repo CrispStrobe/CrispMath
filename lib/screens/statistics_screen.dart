@@ -198,9 +198,13 @@ class _RegressionTab extends StatefulWidget {
   State<_RegressionTab> createState() => _RegressionTabState();
 }
 
+enum _RegressionModel { linear, polynomial, exponential }
+
 class _RegressionTabState extends State<_RegressionTab> {
   final _xs = TextEditingController(text: '1, 2, 3, 4, 5');
   final _ys = TextEditingController(text: '2.1, 3.9, 6.0, 8.1, 10.0');
+  _RegressionModel _model = _RegressionModel.linear;
+  int _polyDegree = 2;
 
   @override
   void dispose() {
@@ -217,27 +221,144 @@ class _RegressionTabState extends State<_RegressionTab> {
       .whereType<double>()
       .toList();
 
+  Widget _resultCard(BuildContext context, String headline, String formula,
+      List<String> details) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(headline, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 6),
+            Text(
+              formula,
+              style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            for (final d in details) Text(d),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResults(BuildContext context, List<double> xs, List<double> ys) {
+    if (xs.isEmpty || ys.isEmpty) return const SizedBox.shrink();
+    try {
+      switch (_model) {
+        case _RegressionModel.linear:
+          final fit = Statistics.linearFit(xs, ys);
+          return _resultCard(
+            context,
+            'Best-fit line:',
+            'y = ${_fmt(fit.slope)}·x + ${_fmt(fit.intercept)}',
+            [
+              'Slope a = ${_fmt(fit.slope)}',
+              'Intercept b = ${_fmt(fit.intercept)}',
+              'R² = ${_fmt(fit.rSquared)}',
+              'n = ${fit.count}',
+            ],
+          );
+        case _RegressionModel.polynomial:
+          final fit = Statistics.polynomialFit(xs, ys, _polyDegree);
+          final terms = <String>[];
+          for (var i = fit.coefficients.length - 1; i >= 0; i--) {
+            final c = fit.coefficients[i];
+            if (i == 0) {
+              terms.add(_fmt(c));
+            } else if (i == 1) {
+              terms.add('${_fmt(c)}·x');
+            } else {
+              terms.add('${_fmt(c)}·x^$i');
+            }
+          }
+          return _resultCard(
+            context,
+            'Best-fit polynomial (degree ${fit.degree}):',
+            'y = ${terms.join(' + ')}',
+            [
+              for (var i = 0; i < fit.coefficients.length; i++)
+                'c$i = ${_fmt(fit.coefficients[i])}',
+              'R² = ${_fmt(fit.rSquared)}',
+              'n = ${fit.count}',
+            ],
+          );
+        case _RegressionModel.exponential:
+          final fit = Statistics.expFit(xs, ys);
+          return _resultCard(
+            context,
+            'Best-fit exponential:',
+            'y = ${_fmt(fit.a)}·exp(${_fmt(fit.b)}·x)',
+            [
+              'a = ${_fmt(fit.a)}',
+              'b = ${_fmt(fit.b)}',
+              'R² (log-space) = ${_fmt(fit.rSquared)}',
+              'n = ${fit.count}',
+            ],
+          );
+      }
+    } catch (e) {
+      return Text('Error: $e',
+          style: TextStyle(color: Theme.of(context).colorScheme.error));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final xs = _parse(_xs.text);
     final ys = _parse(_ys.text);
-    LinearFit? fit;
-    String? err;
-    if (xs.isEmpty || ys.isEmpty) {
-      err = null;
-    } else {
-      try {
-        fit = Statistics.linearFit(xs, ys);
-      } catch (e) {
-        err = e.toString();
-      }
-    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Wrap(
+            spacing: 6,
+            children: [
+              ChoiceChip(
+                label: const Text('Linear'),
+                selected: _model == _RegressionModel.linear,
+                onSelected: (_) =>
+                    setState(() => _model = _RegressionModel.linear),
+              ),
+              ChoiceChip(
+                label: const Text('Polynomial'),
+                selected: _model == _RegressionModel.polynomial,
+                onSelected: (_) =>
+                    setState(() => _model = _RegressionModel.polynomial),
+              ),
+              ChoiceChip(
+                label: const Text('Exponential'),
+                selected: _model == _RegressionModel.exponential,
+                onSelected: (_) =>
+                    setState(() => _model = _RegressionModel.exponential),
+              ),
+            ],
+          ),
+          if (_model == _RegressionModel.polynomial) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text('Degree: '),
+                DropdownButton<int>(
+                  value: _polyDegree,
+                  items: [
+                    for (final d in const [2, 3, 4, 5])
+                      DropdownMenuItem(value: d, child: Text('$d')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setState(() => _polyDegree = v);
+                  },
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
           TextField(
             controller: _xs,
             onChanged: (_) => setState(() {}),
@@ -256,35 +377,7 @@ class _RegressionTabState extends State<_RegressionTab> {
             ),
           ),
           const SizedBox(height: 16),
-          if (err != null)
-            Text('Error: $err',
-                style: TextStyle(color: Theme.of(context).colorScheme.error))
-          else if (fit != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Best-fit line:',
-                        style: Theme.of(context).textTheme.titleSmall),
-                    const SizedBox(height: 6),
-                    Text(
-                      'y = ${_fmt(fit.slope)}·x + ${_fmt(fit.intercept)}',
-                      style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16),
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Slope a = ${_fmt(fit.slope)}'),
-                    Text('Intercept b = ${_fmt(fit.intercept)}'),
-                    Text('R² = ${_fmt(fit.rSquared)}'),
-                    Text('n = ${fit.count}'),
-                  ],
-                ),
-              ),
-            ),
+          _buildResults(context, xs, ys),
         ],
       ),
     );

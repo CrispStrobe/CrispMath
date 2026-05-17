@@ -2,6 +2,49 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 36) — Statistics V4: exponential regression
+
+Rounds out the regression cluster. The Statistics screen's Regression
+tab now picks between linear, polynomial (degree 2–5), and
+exponential fits via a chip-row at the top — no separate dialog, no
+mode switch elsewhere.
+
+### Math (lib/engine/statistics.dart)
+
+`Statistics.expFit(xs, ys)` fits `y = a · exp(b · x)` by log-
+linearization: take `ln(y) = ln(a) + b · x` and run an ordinary
+linear regression on `(x, ln(y))`. Returns an `ExponentialFit` struct
+with `a`, `b`, `rSquared`, `count`, and an `evaluate(x)` helper.
+
+R² reflects the log-space fit (matches R's `lm(log(y) ~ x)` and most
+textbooks), which is the right thing to report — recomputing in raw-
+y space tends to be dominated by the largest data points and gives a
+misleading picture of fit quality. We document the convention in the
+class doc comment so users see it next to the value.
+
+Validation: throws on length mismatch, fewer than 2 points, or any
+non-positive y (the `log` would be undefined).
+
+### UI (lib/screens/statistics_screen.dart)
+
+`_RegressionTab` now keeps a `_RegressionModel` enum
+(`linear | polynomial | exponential`) and a degree selector that
+shows only when polynomial is picked. The result card is rendered by
+`_resultCard()` which shares headline + formula + details layout
+across all three modes.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **635/635** (+7 new tests: exact recovery of `a, b`
+  on synthetic data, negative-`b` decay, evaluate() round-trip,
+  classic bacterial-growth textbook case, three error-path tests).
+
+### V5 deferred
+
+Two-sample t-test (independent), ANOVA, χ² independence,
+F-distribution.
+
 ## 2026-05-17 (round 35) — Unit V3: SI prefix parser
 
 Extends `UnitCatalog` so the inline parser recognizes every standard
