@@ -37,13 +37,25 @@ jobs:
           flutter build macos --debug
 
       - name: Verify SymEngine symbols are linked
+        # Scan every Mach-O in the .app bundle. Different Flutter versions
+        # put the Dart VM in different files (`crisp_calc.debug.dylib` on
+        # some, embedded in the main binary on others), so we just look
+        # everywhere instead of guessing a single path.
         run: |
           set -eu
-          DYLIB="build/macos/Build/Products/Debug/crisp_calc.app/Contents/MacOS/crisp_calc.debug.dylib"
-          COUNT=$(nm "$DYLIB" | grep -c flutter_symengine || true)
-          echo "SymEngine symbols in binary: $COUNT"
-          if [ "$COUNT" -lt 30 ]; then
-            echo "::error::Expected >= 30 SymEngine symbols, found $COUNT"
+          APP="build/macos/Build/Products/Debug/crisp_calc.app"
+          ls -la "$APP/Contents/MacOS"
+          TOTAL=0
+          for bin in $(find "$APP" -type f -perm -u+x); do
+            count=$(nm "$bin" 2>/dev/null | grep -c flutter_symengine || true)
+            if [ "$count" -gt 0 ]; then
+              echo "  $bin: $count"
+              TOTAL=$((TOTAL + count))
+            fi
+          done
+          echo "Total SymEngine symbols across bundle: $TOTAL"
+          if [ "$TOTAL" -lt 30 ]; then
+            echo "::error::Expected >= 30 SymEngine symbols across bundle, found $TOTAL"
             exit 1
           fi
 
