@@ -2,6 +2,49 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 10) — Cross-platform builds + P1#2 deep-dive
+
+### P1#2: release-build SymEngine investigation (still open)
+- Forensic finding: the static archive holds **two** kinds of symbols.
+  ~3000 mangled C++ `__ZN9SymEngine…` and 45 C wrapper
+  `flutter_symengine_*`. Release builds link the C++ side fine — the
+  C wrapper `flutter_symengine_wrapper.o` is silently dropped.
+- Tried, in order:
+  1. `STRIP_INSTALLED_PRODUCT = NO` + `DEAD_CODE_STRIPPING = NO` on
+     the Runner xcconfig → symbols still missing.
+  2. `-Wl,-force_load,<xcframework-slice>` → missing alone, duplicates
+     when combined with `-all_load`.
+  3. Patching `LIBRARY_SEARCH_PATHS` on the bridge POD so the framework
+     pre-links → duplicate symbols (framework + Runner both pull the
+     same archive, both with -all_load).
+- Reverted to the known-debug-working state (`-all_load` only, no
+  patches). 45 symbols in `crisp_calc.debug.dylib` confirmed; release
+  has 0 symbols. The real fix lives upstream in the bridge plugin: the
+  C wrapper needs to be in a separate static lib, or the framework
+  binary needs to pre-link the wrapper objects explicitly. Updated
+  PLAN with the full failure timeline.
+
+### Cross-platform builds: Android / Linux / Windows
+- `flutter create --platforms=android,linux,windows --org=be.crispstro .`
+  added the three platforms (~50 new files: Gradle, CMake, Win32 runner,
+  manifests, mipmap dirs).
+- Android launcher icons sized for every mipmap density (48/72/96/144/192).
+- `CalculatorEngine` already handles a missing bridge gracefully —
+  `DynamicLibrary.open('libSymEngineFlutterWrapper.so')` throws on
+  platforms without the lib, the constructor catches and stays in
+  `_nativeAvailable = false` mode. The UI, persistence, plane/conic
+  analysis, vector/tensor math, plot rendering all still work.
+  Symbolic operations (`solve`, `factor`, etc.) return clear "requires
+  native library" error strings.
+- Three new CI workflows:
+  - `build-android.yml` — Ubuntu + Temurin 17 + Android SDK → debug APK.
+  - `build-linux.yml` — Ubuntu + GTK 3 + Ninja → release bundle (tar.gz).
+  - `build-windows.yml` — Windows-latest → release zip.
+- `release.yml` extended to build all 5 platforms (macOS, iOS, Linux,
+  Windows, Android) on `v*` tags. Release body explains which builds
+  have full symbolic support vs degraded mode.
+- macOS/iOS still 236 tests passing. analyze clean.
+
 ## 2026-05-17 (round 9) — Repo public
 
 - `gh repo edit CrispStrobe/CrispCalc --visibility public` — flipped

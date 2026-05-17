@@ -1,6 +1,9 @@
 # Release: triggered by pushing a semver tag like v1.0.0. Builds release
-# artifacts for macOS and iOS (both unsigned for now) and attaches them to
-# a GitHub Release.
+# artifacts for every platform we can and attaches them to a GitHub
+# Release. SymEngine is iOS/macOS-only — Linux/Windows/Android builds
+# ship with the bridge unavailable (symbolic ops return error strings);
+# the rest of the calculator (UI, persistence, plane/conic analysis,
+# pure-Dart vector/tensor math, plot rendering) still works.
 
 name: Release
 
@@ -13,6 +16,7 @@ permissions:
   contents: write
 
 jobs:
+  # ── macOS (full SymEngine support) ──────────────────────────────────
   macos:
     runs-on: macos-14
     timeout-minutes: 60
@@ -23,32 +27,33 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-
       - name: Build macOS (release, unsigned)
         run: |
           unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
           flutter build macos --release
-
       - name: Verify SymEngine symbols
         run: |
           set -eu
-          APP="build/macos/Build/Products/Release/crisp_calc.app/Contents/MacOS/crisp_calc"
-          COUNT=$(nm -arch arm64 "$APP" | grep -c flutter_symengine || true)
-          echo "Symbols (arm64): $COUNT"
-          # Release linkage is known-flaky (see PLAN.md). Warn but don't fail.
-          if [ "$COUNT" -lt 30 ]; then
-            echo "::warning::Only $COUNT SymEngine symbols in release binary (expected >= 30)."
+          APP="build/macos/Build/Products/Release/crisp_calc.app"
+          TOTAL=0
+          for bin in $(find "$APP" -type f -perm -u+x); do
+            c=$(nm -arch arm64 "$bin" 2>/dev/null | grep -c flutter_symengine || true)
+            TOTAL=$((TOTAL + c))
+          done
+          echo "Total SymEngine symbols: $TOTAL"
+          # Release linkage is the open P1#2; warn instead of fail.
+          if [ "$TOTAL" -lt 30 ]; then
+            echo "::warning::Release build has $TOTAL SymEngine symbols (expected 30+)."
           fi
-
       - run: |
           cd build/macos/Build/Products/Release
           zip -ryq ../../../../../crisp_calc-${{ github.ref_name }}-macos.zip crisp_calc.app
-
       - uses: actions/upload-artifact@v4
         with:
           name: macos-release
           path: crisp_calc-${{ github.ref_name }}-macos.zip
 
+  # ── iOS (full SymEngine support, unsigned) ──────────────────────────
   ios:
     runs-on: macos-14
     timeout-minutes: 60
@@ -59,24 +64,92 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-
       - name: Build iOS (release, unsigned)
         run: |
           unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
           flutter build ios --release --no-codesign
-
       - run: |
           cd build/ios/iphoneos
           zip -ryq ../../../crisp_calc-${{ github.ref_name }}-ios-unsigned.zip Runner.app
-
       - uses: actions/upload-artifact@v4
         with:
           name: ios-release
           path: crisp_calc-${{ github.ref_name }}-ios-unsigned.zip
 
-  publish:
-    needs: [macos, ios]
+  # ── Linux (degraded SymEngine support) ───────────────────────────────
+  linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+      - run: flutter build linux --release
+      - run: |
+          cd build/linux/x64/release/
+          tar czf ../../../../crisp_calc-${{ github.ref_name }}-linux-x64.tar.gz bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: crisp_calc-${{ github.ref_name }}-linux-x64.tar.gz
+
+  # ── Windows (degraded SymEngine support) ─────────────────────────────
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - name: Zip the bundle
+        run: |
+          cd build\windows\x64\runner\Release
+          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\crisp_calc-${{ github.ref_name }}-windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: crisp_calc-${{ github.ref_name }}-windows-x64.zip
+
+  # ── Android (degraded SymEngine support, unsigned APK) ───────────────
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk crisp_calc-${{ github.ref_name }}-android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: crisp_calc-${{ github.ref_name }}-android.apk
+
+  # ── Publish all artifacts to a GitHub Release ───────────────────────
+  publish:
+    needs: [macos, ios, linux, windows, android]
+    runs-on: ubuntu-latest
+    if: always() && contains(needs.*.result, 'success')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -89,13 +162,32 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           generate_release_notes: true
+          fail_on_unmatched_files: false
           files: |
             artifacts/macos-release/*.zip
             artifacts/ios-release/*.zip
+            artifacts/linux-release/*.tar.gz
+            artifacts/windows-release/*.zip
+            artifacts/android-release/*.apk
           body: |
             CrispCalc ${{ github.ref_name }}
 
-            Unsigned macOS and iOS builds. To run the macOS app, you may need
-            to right-click → Open the first time (Gatekeeper won't recognize
-            the unsigned binary). The iOS build is for development inspection
-            only — install on a device requires a paid Apple Developer cert.
+            **macOS** (`crisp_calc-…-macos.zip`) — full symbolic + numeric
+            features. Right-click → Open the first time (unsigned).
+
+            **iOS** (`crisp_calc-…-ios-unsigned.zip`) — full features.
+            Inspection only; sideloading needs a paid Apple Developer cert.
+
+            **Linux** (`crisp_calc-…-linux-x64.tar.gz`) — degraded mode.
+            UI, persistence, plane/conic analysis, vectors/tensors and
+            plot rendering all work; symbolic operations (`solve`,
+            `factor`, `expand`, `simplify`, `d/dx`, `integrate`, etc.)
+            return an error string because the SymEngine bridge is
+            iOS/macOS-only at the moment.
+
+            **Windows** (`crisp_calc-…-windows-x64.zip`) — degraded mode,
+            same caveat as Linux.
+
+            **Android** (`crisp_calc-…-android.apk`) — degraded mode,
+            same caveat. APK is unsigned; install with
+            `adb install crisp_calc-….apk`.

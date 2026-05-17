@@ -17,17 +17,21 @@ and the light/dark/system theme picker.
   entry point and the underlying SymEngine C API is missing one. Numerical
   one-sided / infinity limits stay as the current best effort. (Native
   `integrate` is now bound — see HISTORY.)
-- [ ] **`flutter build macos --release`: SymEngine symbols missing.**
-  Debug builds link the static archive cleanly via `-all_load` in the
-  Pods-Runner xcconfig (45 `flutter_symengine_*` symbols land in
-  `crisp_calc.debug.dylib`). The same xcconfig is in effect for the
-  release build, but `nm` reports 0 symbols in `Contents/MacOS/crisp_calc`.
-  Tried adding `-Wl,-force_load,…libsymengine_flutter_wrapper.a` — got
-  duplicate-symbol errors when combined with `-all_load`, and missing
-  symbols when used alone. Likely involves: how `static_framework`
-  interacts with release `DEAD_CODE_STRIPPING`, framework re-link order,
-  or the AOT-compile pipeline. Need to inspect the actual `ld` command
-  line via `xcodebuild -verbose` or via instrumenting the Podfile.
+- [ ] **`flutter build macos --release`: SymEngine wrapper symbols dropped.**
+  Investigated 2026-05-17. The static archive `libsymengine_flutter_wrapper.a`
+  contains two distinct things: ~3000 C++ SymEngine symbols and 45 C
+  wrapper `flutter_symengine_*` symbols, in different `.o` files. The
+  C++ side links fine in release (~3000 `__ZN9SymEngine…` symbols land
+  in the binary). The C wrapper `flutter_symengine_wrapper.o` is silently
+  dropped, even with `-all_load`, even with `STRIP_INSTALLED_PRODUCT=NO`
+  + `DEAD_CODE_STRIPPING=NO`, even with `-Wl,-force_load,<path>` on the
+  on-disk xcframework slice. Adding both `-all_load` and `-force_load`
+  trips duplicate-symbol errors. Patching `LIBRARY_SEARCH_PATHS` on the
+  bridge POD target so the framework pre-links the wrapper also dupes
+  in release. The real fix is upstream: split the wrapper into its own
+  static lib in the bridge plugin's xcframework, or pre-link the
+  framework binary properly so its symbols are unambiguously the
+  authoritative ones.
 - [ ] **iOS smoke test.** Not run since the recent changes.
 
 ## P2 — Engine + native bridge

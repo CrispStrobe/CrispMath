@@ -40,19 +40,24 @@ post_install do |installer|
     flutter_additional_macos_build_settings(target)
   end
 
-  # The bridge's static archive (libsymengine_flutter_wrapper.a, packaged
-  # inside SymEngineFlutterWrapper.xcframework) carries all the SymEngine
-  # entry points. They're only reached via dart:ffi DynamicLibrary.process()
-  # at runtime, so the linker would happily drop them. We:
-  #   1. add `-all_load` to the Runner xcconfig (covers debug + simulator)
-  #   2. add `-force_load <path>` so the symbols make it into release
-  #      builds even when the static_framework didn't pre-link them.
   # Force-load every object file from the SymEngine static archive into the
   # Runner binary. The symbols are only reached via dart:ffi
   # DynamicLibrary.process() at runtime; without `-all_load` the linker
-  # would happily drop them. Confirmed working in debug builds (~45 symbols
-  # land in the binary). Release builds currently still drop them; see
-  # PLAN.md for the open follow-up.
+  # would happily drop them.
+  #
+  # Status:
+  #   Debug — works. 45 flutter_symengine_* symbols land in
+  #     `Contents/MacOS/crisp_calc.debug.dylib`.
+  #   Release — broken. The C++ part of the static archive (`SymEngine::*`,
+  #     thousands of mangled symbols) links fine, but the C wrapper
+  #     `flutter_symengine_wrapper.o` is silently dropped. Tried adding
+  #     `-Wl,-force_load,…` on the on-disk xcframework slice (duplicate
+  #     symbols when combined with `-all_load`, missing symbols when
+  #     alone) and patching the bridge POD's LIBRARY_SEARCH_PATHS (still
+  #     drops the wrapper objects). The real fix lives in the bridge
+  #     plugin: rework the podspec so the wrapper is its own static lib
+  #     separate from SymEngine, or pre-link the framework binary
+  #     properly. See PLAN.md P1#2.
   installer.aggregate_targets.each do |agg|
     agg.user_build_configurations.each_key do |config|
       xcconfig_path = agg.xcconfig_path(config)

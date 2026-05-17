@@ -1,0 +1,48 @@
+# Windows smoke build. Same caveat as Linux: SymEngine bridge isn't
+# available on Windows, so the calculator runs in degraded mode (UI
+# works, symbolic operations return error strings). Producing a build
+# artifact lets Windows users try the calculator and gives us a CI
+# safety net against regressions in the Flutter-Windows pipeline.
+
+name: Build Windows
+
+on:
+  push:
+    branches: [main, latex-input-field]
+  pull_request:
+    branches: [main, latex-input-field]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build Windows (release)
+        run: flutter build windows --release
+
+      - name: Zip the bundle
+        run: |
+          cd build\windows\x64\runner\Release
+          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\crisp_calc-windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: crisp_calc-windows-x64
+          path: crisp_calc-windows-x64.zip
+          retention-days: 14
