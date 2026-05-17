@@ -29,13 +29,12 @@ jobs:
         run: flutter pub get
 
       - name: Build macOS (debug, unsigned)
-        env:
-          # CocoaPods runs as part of the macOS build. Some hosts ship Ruby
-          # gem env vars that conflict with the bundled CocoaPods Ruby.
-          # Unset them so `pod` uses its own gems.
-          GEM_HOME: ''
-          GEM_PATH: ''
-        run: flutter build macos --debug
+        # GitHub macOS runners ship preset GEM_HOME / GEM_PATH that point at
+        # a stale gem cache; CocoaPods refuses to start. We `unset` them
+        # inline rather than via `env:` (empty strings still trip rubygems).
+        run: |
+          unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
+          flutter build macos --debug
 
       - name: Verify SymEngine symbols are linked
         run: |
