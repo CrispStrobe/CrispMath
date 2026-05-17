@@ -406,8 +406,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "6c9f232"
-      resolved-ref: "6c9f23237fcd84858a0d34612560b3c0e5651339"
+      ref: c3fd26a
+      resolved-ref: c3fd26a1375323ee17e81b9531111d7b33c47717
       url: "https://github.com/CrispStrobe/symbolic_math_bridge.git"
     source: git
     version: "1.0.0"

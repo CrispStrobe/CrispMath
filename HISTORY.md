@@ -2,6 +2,45 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 11) — P1#2 round 2 (still open, partial progress)
+
+### What I learned
+- Built a tiny universal static archive
+  `libflutter_symengine_wrapper_only.a` (56 KB, just the 45 C entry
+  points without any SymEngine internals) by `lipo -thin → ar -x → ar
+  rcs → lipo -create`. Bundled into a real
+  `FlutterSymEngineWrapperOnly.xcframework` with iOS and macOS slices
+  and committed to the bridge repo so it ships alongside the big
+  `SymEngineFlutterWrapper.xcframework`.
+- Verified the small archive: `nm -arch arm64
+  libflutter_symengine_wrapper_only.a` → 45 `T _flutter_symengine_*`.
+
+### What didn't work
+- Wiring the new archive into the bridge podspec
+  (`vendored_frameworks` + `-Wl,-force_load,<path>`): CocoaPods adds
+  `-lflutter_symengine_wrapper_only` automatically; that combined with
+  the existing `-all_load -lsymengine_flutter_wrapper` ended up
+  breaking even the debug link (0 symbols instead of 45). Removed the
+  wiring; the archive is in the bridge repo for the next attempt.
+- Inspecting `crisp_calc-linker-args.resp` shows the macOS Runner's
+  actual `ld` invocation receives ONLY Swift `-add_ast_path` entries.
+  The `-all_load`, `-l"symengine_flutter_wrapper"`, etc. from
+  `Pods-Runner.*.xcconfig` never show up there. So the standard
+  CocoaPods linker-flag plumbing doesn't reach the link step on this
+  Xcode 26.2 / Flutter 3.38.5 combination. Debug builds work via
+  Flutter's separate `crisp_calc.debug.dylib` link pipeline, which
+  somehow does consume the flags.
+
+### State after this round
+- Bridge HEAD at `c3fd26a` — carries the wrapper-only archive without
+  wiring (so debug builds stay green) and the comment trail of what
+  was tried.
+- CrispCalc's Podfile is back to the working `-all_load`-only state.
+- Debug: 45 `flutter_symengine_*` symbols in
+  `crisp_calc.debug.dylib`. App fully functional.
+- Release: 0 symbols. Symbolic operations return "Error: requires
+  native library". Open P1#2.
+
 ## 2026-05-17 (round 10) — Cross-platform builds + P1#2 deep-dive
 
 ### P1#2: release-build SymEngine investigation (still open)
