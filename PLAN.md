@@ -387,6 +387,85 @@ roughly double the perceived value of the app.
   and per-row copy-value-to-clipboard. CODATA 2022 / exact-SI
   values where applicable.
 
+#### Precision & number theory (native libs already linked)
+
+The SymEngine xcframework we ship on iOS/macOS bundles **GMP**
+(arbitrary-precision integers), **MPFR** (correctly-rounded
+arbitrary-precision floats), **MPC** (arbitrary-precision complex),
+and **FLINT** (advanced number theory + polynomial arithmetic). All
+four are already loaded at runtime — we just don't expose anything
+beyond what SymEngine's parser surfaces. The work below is mostly
+"add the FFI bindings + a few keypad buttons," not "add a new
+dependency."
+
+Group A (recommended first — ship together as one round):
+
+- [ ] **Arbitrary-precision integer mode** (GMP / SymEngine integer).
+  A toggle in Settings (`Exact integer mode`) that says: when both
+  operands of `+/-/*/^/!/mod/gcd/lcm/factor` are integers and the
+  result fits no double, return the exact arbitrary-precision answer
+  rendered as the full digit string. Already kinda works inside
+  SymEngine — but today the bridge stringifies via SymEngine's
+  default which gives the exact form. Real work: a status banner
+  ("Exact integer result — 158 digits") and a tap-to-copy on results
+  longer than the line width. Use cases: `100!` (158 digits),
+  `2^200`, `fib(500)`, `gcd(10^50, …)`.
+
+- [ ] **Arbitrary-precision real constants on demand** (MPFR).
+  Templated calls: `pi(50)`, `e(100)`, `EulerGamma(200)`,
+  `sqrt(2, 50)`, `ln(10, 100)`. The argument sets the decimal
+  precision (1..10000). Backed by MPFR's `mpfr_const_pi`,
+  `mpfr_const_euler`, etc. Pedagogically delightful for "what's π to
+  100 digits?" classroom moments. Tiny: one FFI call per constant +
+  a precision-aware formatter that uses the requested digit count.
+
+- [ ] **Number-theory toy set** (FLINT + GMP). New keypad buttons /
+  CAS shortcuts on the Adv tab:
+  - `isprime(n)` → bool (FLINT BPSW + Miller-Rabin, exact for n &lt; 2^64)
+  - `nextprime(n)` / `prevprime(n)` → next/previous prime
+  - `factorint(n)` → list of `(prime, exponent)` tuples
+  - `divisors(n)` → list of divisors
+  - `totient(n)` → Euler's φ
+  - `modinv(a, m)` → modular inverse via extended GCD
+  - `modpow(a, e, m)` → fast modular exponentiation
+  - `jacobi(a, n)` → Jacobi symbol
+  Sits below `prime` / `factor` on the Adv tab (we already have
+  those as one-shot, but FLINT-backed versions return structured
+  results, not strings). Use case: high-school olympiad problems,
+  introductory crypto.
+
+Group B (V2 — more specialized, ship after Group A lands):
+
+- [ ] **Polynomial arithmetic over Z, Q, F_p** (FLINT). New CAS
+  ops: `polyfactor(p, mod=5)`, `polygcd(p, q)`, `polyresultant(p, q)`,
+  `polydiscriminant(p)`. FLINT's `nmod_poly` / `fmpz_poly` already
+  do all the heavy lifting; we'd add a small Dart-side type to
+  represent polynomial-with-modulus and the bindings. Audience:
+  abstract algebra students, undergrad cryptography homework.
+
+- [ ] **Continued fractions** (GMP + MPFR). `cfrac(x, n)` returns
+  the first n terms of the continued-fraction expansion as a list;
+  `convergent(x, k)` returns the k-th rational convergent
+  `Fraction(p, q)`. Tiny — n iterations of `floor` + `frac` against
+  an MPFR mantissa. `cfrac(pi, 10)` → `[3; 7, 15, 1, 292, 1, 1, 1,
+  2, 1]` is the kind of thing that should "just work" in a CAS.
+
+- [ ] **Bessel / zeta / theta special functions** (MPFR). Plottable
+  on the graphing screen: `BesselJ(n, x)`, `BesselY(n, x)`,
+  `BesselI(n, x)`, `BesselK(n, x)`, `zeta(s)`, `theta(s, q)`, plus
+  the existing `gamma` / `digamma`. MPFR has correctly-rounded
+  implementations for all of these. Mostly an evaluator+grapher
+  wiring round; the math is in the linked binary already.
+
+- [ ] **Arbitrary-precision complex** (MPC). When the user opts into
+  "high-precision mode," complex arithmetic stops collapsing to
+  `Complex(double, double)` and uses MPC under the hood, giving
+  correctly-rounded answers for `gamma(1+i)`, `(1+i)^100`,
+  `BesselJ(2, 3+4i)`, etc. Useful only after Bessel/zeta land,
+  since those are where double-precision complex first hurts.
+
+---
+
 #### Engagement / sharing
 
 - [ ] **Shareable state links**. URL-encode the full calculator state
