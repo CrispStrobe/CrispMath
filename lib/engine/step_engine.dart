@@ -135,8 +135,7 @@ class StepEngine {
     if (!firstHasVar && firstDeriv.trim() != '0') {
       // Linear: body = a*x + b
       _linearSteps(body, firstDeriv, variable, engine, steps);
-    } else if (secondIsZero == false &&
-        !_containsVar(secondDeriv, variable)) {
+    } else if (secondIsZero == false && !_containsVar(secondDeriv, variable)) {
       // Quadratic: body = a*x^2 + b*x + c
       _quadraticSteps(body, variable, engine, steps);
     } else {
@@ -201,8 +200,8 @@ class StepEngine {
     //   a = (d^2/dvar^2 body) / 2
     //   b = (d/dvar body) | var=0
     //   c = body | var=0
-    final d2 = engine.differentiate(
-        engine.differentiate(body, variable), variable);
+    final d2 =
+        engine.differentiate(engine.differentiate(body, variable), variable);
     final d1 = engine.differentiate(body, variable);
     final a = engine.simplify('($d2)/2');
     final b = engine.simplify(_substitute(d1, variable, '0'));
@@ -338,9 +337,8 @@ class StepEngine {
     // Sum/difference rule: ∫(f ± g) dx = ∫f dx ± ∫g dx
     final sumTerms = _splitTopLevelSum(s);
     if (sumTerms != null && sumTerms.length >= 2) {
-      final parts = sumTerms
-          .map((t) => '${t.sign}∫ ${t.body} d$variable')
-          .join(' ');
+      final parts =
+          sumTerms.map((t) => '${t.sign}∫ ${t.body} d$variable').join(' ');
       steps.add(MathStep(
         rule: 'Sum/difference rule (linearity)',
         formula: r"\int (f \pm g) \, dx = \int f \, dx \pm \int g \, dx",
@@ -548,8 +546,7 @@ class StepEngine {
         formula:
             r"\frac{d}{dx}\left[\frac{f}{g}\right] = \frac{f'g - fg'}{g^2}",
         before: 'd/d$variable[$s]',
-        after:
-            '(d/d$variable[$f]·$g - $f·d/d$variable[$g]) / ($g)^2',
+        after: '(d/d$variable[$f]·$g - $f·d/d$variable[$g]) / ($g)^2',
       ));
       _trace(f, variable, engine, steps);
       _trace(g, variable, engine, steps);
@@ -567,8 +564,7 @@ class StepEngine {
         rule: 'Product rule',
         formula: r"\frac{d}{dx}[fg] = f'g + fg'",
         before: 'd/d$variable[$s]',
-        after:
-            'd/d$variable[$first]·($rest) + $first·d/d$variable[$rest]',
+        after: 'd/d$variable[$first]·($rest) + $first·d/d$variable[$rest]',
       ));
       _trace(first, variable, engine, steps);
       _trace(rest, variable, engine, steps);
@@ -588,8 +584,7 @@ class StepEngine {
           rule: 'Power rule',
           formula: r"\frac{d}{dx}[x^n] = n x^{n-1}",
           before: 'd/d$variable[$s]',
-          after:
-              '$exp·($base)^($exp - 1)·d/d$variable[$base]',
+          after: '$exp·($base)^($exp - 1)·d/d$variable[$base]',
           note: base == variable
               ? null
               : 'Combined with chain rule because the base is not just $variable.',
@@ -602,8 +597,7 @@ class StepEngine {
           rule: 'Exponential rule',
           formula: r"\frac{d}{dx}[a^{u(x)}] = a^{u(x)} \ln(a) \, u'(x)",
           before: 'd/d$variable[$s]',
-          after:
-              '($base)^($exp)·ln($base)·d/d$variable[$exp]',
+          after: '($base)^($exp)·ln($base)·d/d$variable[$exp]',
         ));
         _trace(exp, variable, engine, steps);
         return;
@@ -617,7 +611,9 @@ class StepEngine {
       final rule = _standardDerivatives[fc.name]!;
       final argIsVar = fc.arg.trim() == variable;
       steps.add(MathStep(
-        rule: argIsVar ? rule.simpleRuleName : 'Chain rule (${rule.simpleRuleName})',
+        rule: argIsVar
+            ? rule.simpleRuleName
+            : 'Chain rule (${rule.simpleRuleName})',
         formula: rule.formula,
         before: 'd/d$variable[$s]',
         after: argIsVar
@@ -694,8 +690,12 @@ class StepEngine {
         // Skip if this is an exponent sign (e.g. 1e-5) or a unary minus
         // after another operator.
         final prev = s[i - 1];
-        if (prev == '*' || prev == '/' || prev == '^' || prev == '(' ||
-            prev == 'e' || prev == 'E') {
+        if (prev == '*' ||
+            prev == '/' ||
+            prev == '^' ||
+            prev == '(' ||
+            prev == 'e' ||
+            prev == 'E') {
           continue;
         }
         final body = s.substring(start, i).trim();

@@ -17,8 +17,8 @@ void main() {
     });
 
     test('expression with no parameters returns empty list', () {
-      expect(ExpressionPreprocessingUtils.detectParameters('x + 1', 'x'),
-          isEmpty);
+      expect(
+          ExpressionPreprocessingUtils.detectParameters('x + 1', 'x'), isEmpty);
     });
 
     test('the plot variable is never reported as a parameter', () {
@@ -108,16 +108,14 @@ void main() {
   group('detectParameters — mixed real expressions', () {
     test('a*sin(b*x + c) classic sinusoid form', () {
       expect(
-        ExpressionPreprocessingUtils.detectParameters(
-            'a*sin(b*x + c)', 'x'),
+        ExpressionPreprocessingUtils.detectParameters('a*sin(b*x + c)', 'x'),
         equals(['a', 'b', 'c']),
       );
     });
 
     test('quadratic ax^2 + bx + c', () {
       expect(
-        ExpressionPreprocessingUtils.detectParameters(
-            'a*x^2 + b*x + c', 'x'),
+        ExpressionPreprocessingUtils.detectParameters('a*x^2 + b*x + c', 'x'),
         equals(['a', 'b', 'c']),
       );
     });
@@ -147,8 +145,7 @@ void main() {
 
     test('single parameter substitution wraps value in parens', () {
       expect(
-        ExpressionPreprocessingUtils.substituteParameters(
-            'a*x', {'a': 2.0}),
+        ExpressionPreprocessingUtils.substituteParameters('a*x', {'a': 2.0}),
         equals('(2.0)*x'),
       );
     });

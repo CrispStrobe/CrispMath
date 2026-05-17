@@ -165,8 +165,7 @@ class AppState extends ChangeNotifier {
             if (slot == null) continue;
             final inner = entry.value as Map<String, dynamic>;
             functionParameters[slot] = {
-              for (final p in inner.entries)
-                p.key: (p.value as num).toDouble(),
+              for (final p in inner.entries) p.key: (p.value as num).toDouble(),
             };
           }
         } catch (e) {

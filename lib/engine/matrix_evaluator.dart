@@ -121,8 +121,7 @@ class MatrixEvaluator {
       final atEnd = i == inner.length - 1;
       final atSeparator = c == ',' && depth == 0;
       if (atSeparator || atEnd) {
-        final chunk =
-            inner.substring(start, atEnd ? i + 1 : i).trim();
+        final chunk = inner.substring(start, atEnd ? i + 1 : i).trim();
         if (chunk.startsWith('[') && chunk.endsWith(']')) {
           rows.add(_parseCells(chunk));
         } else if (chunk.isNotEmpty) {

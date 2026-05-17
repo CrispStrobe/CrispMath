@@ -344,8 +344,8 @@ class GraphingScreenState extends State<GraphingScreen>
                   ),
                 if (activeFunctions.isNotEmpty)
                   IconButton(
-                    onPressed: () => setState(
-                        () => _showAnnotations = !_showAnnotations),
+                    onPressed: () =>
+                        setState(() => _showAnnotations = !_showAnnotations),
                     icon: Icon(_showAnnotations
                         ? Icons.bubble_chart
                         : Icons.bubble_chart_outlined),
@@ -416,10 +416,9 @@ class GraphingScreenState extends State<GraphingScreen>
                               showAnnotations: _showAnnotations,
                               parameters: {
                                 for (final i in activeFunctionIndices)
-                                  if (_appState.functionParameters[i] !=
-                                          null &&
-                                      _appState.functionParameters[i]!
-                                          .isNotEmpty)
+                                  if (_appState.functionParameters[i] != null &&
+                                      _appState
+                                          .functionParameters[i]!.isNotEmpty)
                                     i: Map<String, double>.from(
                                         _appState.functionParameters[i]!),
                               },
@@ -581,8 +580,8 @@ class GraphingScreenState extends State<GraphingScreen>
                             name: p,
                             value: _appState.getParameter(originalIndex, p),
                             color: color,
-                            onChanged: (v) => _appState.setParameter(
-                                originalIndex, p, v),
+                            onChanged: (v) =>
+                                _appState.setParameter(originalIndex, p, v),
                           ),
                       ],
                     ),
@@ -1137,10 +1136,8 @@ class _ParameterSlider extends StatelessWidget {
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 2,
-              thumbShape:
-                  const RoundSliderThumbShape(enabledThumbRadius: 6),
-              overlayShape:
-                  const RoundSliderOverlayShape(overlayRadius: 12),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
               activeTrackColor: color,
               thumbColor: color,
             ),

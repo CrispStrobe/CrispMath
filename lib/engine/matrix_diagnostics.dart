@@ -37,8 +37,8 @@ class MatrixDiagnostics {
     const specs = <_Spec>[
       _Spec('2x2 determinant', 'det([1,2; 3,4])', '-2'),
       _Spec('3x3 identity determinant', 'det([1,0,0; 0,1,0; 0,0,1])', '1'),
-      _Spec('Transpose 2x2', 'transpose([1,2; 3,4])',
-          'Matrix([[1, 3], [2, 4]])'),
+      _Spec(
+          'Transpose 2x2', 'transpose([1,2; 3,4])', 'Matrix([[1, 3], [2, 4]])'),
       _Spec(
           'Inverse of identity', 'inv([1,0; 0,1])', 'Matrix([[1, 0], [0, 1]])'),
       _Spec('Matrix addition', '[1,2; 3,4] + [1,0; 0,1]',
@@ -55,8 +55,9 @@ class MatrixDiagnostics {
     for (final spec in specs) {
       String actual;
       try {
-        final processed = ExpressionPreprocessingUtils.preprocessNativeExpression(
-            spec.expression);
+        final processed =
+            ExpressionPreprocessingUtils.preprocessNativeExpression(
+                spec.expression);
         actual = engine.evaluate(processed);
       } catch (e) {
         actual = 'Error: $e';

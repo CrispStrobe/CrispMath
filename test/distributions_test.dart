@@ -20,6 +20,7 @@ void main() {
         }
         return s * h / 3;
       }
+
       final area = simpson(standardNormal.pdf, -5, 5, 200);
       expect(area, closeTo(1.0, 1e-4));
     });
@@ -85,8 +86,7 @@ void main() {
     test('quantile and CDF are inverses', () {
       for (final p in const [0.1, 0.25, 0.5, 0.75, 0.9, 0.99]) {
         final x = standardNormal.quantile(p);
-        expect(standardNormal.cdf(x), closeTo(p, 1e-6),
-            reason: 'p=$p');
+        expect(standardNormal.cdf(x), closeTo(p, 1e-6), reason: 'p=$p');
       }
     });
 

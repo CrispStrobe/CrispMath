@@ -67,9 +67,8 @@ class Binomial {
     if (k < 0 || k > n) return 0.0;
     if (p == 0) return k == 0 ? 1.0 : 0.0;
     if (p == 1) return k == n ? 1.0 : 0.0;
-    final logProb = _logChoose(n, k) +
-        k * math.log(p) +
-        (n - k) * math.log(1 - p);
+    final logProb =
+        _logChoose(n, k) + k * math.log(p) + (n - k) * math.log(1 - p);
     return math.exp(logProb);
   }
 
@@ -110,8 +109,7 @@ double _erf(double x) {
   const p = 0.3275911;
   final t = 1.0 / (1.0 + p * ax);
   final y = 1.0 -
-      (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t *
-          math.exp(-ax * ax);
+      (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-ax * ax);
   return sign * y;
 }
 

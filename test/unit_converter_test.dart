@@ -173,12 +173,10 @@ void main() {
 
   group('angle conversions', () {
     test('180° = π rad', () {
-      expect(_convert(180, '°', 'rad'),
-          closeTo(3.141592653589793, 1e-12));
+      expect(_convert(180, '°', 'rad'), closeTo(3.141592653589793, 1e-12));
     });
     test('360° = 2π rad', () {
-      expect(_convert(360, '°', 'rad'),
-          closeTo(6.283185307179586, 1e-12));
+      expect(_convert(360, '°', 'rad'), closeTo(6.283185307179586, 1e-12));
     });
     test('1 turn = 360°', () {
       expect(_convert(1, 'turn', '°'), closeTo(360.0, 1e-9));
@@ -207,8 +205,7 @@ void main() {
     });
 
     test('infinity fails cleanly', () {
-      final r =
-          UnitConverter.convert(double.infinity, _u('m'), _u('km'));
+      final r = UnitConverter.convert(double.infinity, _u('m'), _u('km'));
       expect(r.ok, isFalse);
     });
   });

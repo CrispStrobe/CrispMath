@@ -96,7 +96,8 @@ void main() {
       final r = diffRules('x*sin(x)*cos(x)');
       expect(r.first, equals('Product rule'));
       // first*(rest) recursion → second product rule appears
-      expect(r.where((s) => s == 'Product rule').length, greaterThanOrEqualTo(2));
+      expect(
+          r.where((s) => s == 'Product rule').length, greaterThanOrEqualTo(2));
     });
   });
 
@@ -148,8 +149,18 @@ void main() {
     });
     test('every standard function name has a rule entry', () {
       const fns = [
-        'sin', 'cos', 'tan', 'asin', 'acos', 'atan',
-        'sinh', 'cosh', 'tanh', 'exp', 'log', 'sqrt'
+        'sin',
+        'cos',
+        'tan',
+        'asin',
+        'acos',
+        'atan',
+        'sinh',
+        'cosh',
+        'tanh',
+        'exp',
+        'log',
+        'sqrt'
       ];
       for (final fn in fns) {
         final r = diffRules('$fn(x)');
@@ -162,8 +173,16 @@ void main() {
   group('differentiate — Result invariant', () {
     test('every trace ends with a Result step', () {
       for (final e in const [
-        '7', 'x', 'x + 1', 'x*sin(x)', 'sin(x)/x', 'x^3', '2^x',
-        'sin(x^2)', '(x+1)*(x+2)', 'exp(x)*cos(x)',
+        '7',
+        'x',
+        'x + 1',
+        'x*sin(x)',
+        'sin(x)/x',
+        'x^3',
+        '2^x',
+        'sin(x^2)',
+        '(x+1)*(x+2)',
+        'exp(x)*cos(x)',
       ]) {
         expect(diffRules(e).last, equals('Result'), reason: 'e=$e');
       }
@@ -261,8 +280,15 @@ void main() {
   group('integrate — Result invariant', () {
     test('every trace ends with a Result step carrying + C', () {
       for (final e in const [
-        '5', 'x', 'x^2', '1/x', 'sin(x)', 'exp(x)',
-        'x^2 + x + 1', '3*x^2', 'a*sin(x)',
+        '5',
+        'x',
+        'x^2',
+        '1/x',
+        'sin(x)',
+        'exp(x)',
+        'x^2 + x + 1',
+        '3*x^2',
+        'a*sin(x)',
       ]) {
         final steps = StepEngine.integrate(e, 'x', engine);
         expect(steps.last.rule, equals('Result'), reason: 'e=$e');
@@ -298,8 +324,7 @@ void main() {
         'sin(x) = 0',
         'x - 3 = 0',
       ]) {
-        expect(StepEngine.solve(e, 'x', engine).length,
-            greaterThanOrEqualTo(2),
+        expect(StepEngine.solve(e, 'x', engine).length, greaterThanOrEqualTo(2),
             reason: 'e=$e');
       }
     });

@@ -951,8 +951,7 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get aboutTitle => 'À propos de CrispCalc';
   @override
-  String get aboutTagline =>
-      'Calculatrice symbolique CAS basée sur SymEngine';
+  String get aboutTagline => 'Calculatrice symbolique CAS basée sur SymEngine';
   @override
   String aboutVersion(String version) => 'Version $version';
   @override
@@ -1068,8 +1067,7 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get solveStepsHint => 'p. ex. 2x + 3 = 7  ou  x^2 - 5x + 6';
   @override
-  String solveStepsHeader(String variable) =>
-      'Résolution pour $variable :';
+  String solveStepsHeader(String variable) => 'Résolution pour $variable :';
   @override
   String get integrationStepsTitle => 'Étapes d\'intégration';
   @override
@@ -1277,8 +1275,7 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get aboutTitle => 'Acerca de CrispCalc';
   @override
-  String get aboutTagline =>
-      'Calculadora CAS simbólica basada en SymEngine';
+  String get aboutTagline => 'Calculadora CAS simbólica basada en SymEngine';
   @override
   String aboutVersion(String version) => 'Versión $version';
   @override
@@ -1328,13 +1325,11 @@ class EsLocalizations implements AppLocalizations {
       'Longitud / tiempo / masa / temperatura / velocidad / ángulo.';
 
   @override
-  String get selectEquation =>
-      'Selecciona una ecuación o sigue escribiendo:';
+  String get selectEquation => 'Selecciona una ecuación o sigue escribiendo:';
   @override
   String get continueTyping => 'Continuar escribiendo';
   @override
-  String get selectFunction =>
-      'Selecciona una función o sigue escribiendo:';
+  String get selectFunction => 'Selecciona una función o sigue escribiendo:';
   @override
   String get dismissPanel => 'Cerrar este panel';
   @override
@@ -1393,8 +1388,7 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get solveStepsHint => 'p. ej. 2x + 3 = 7  o  x^2 - 5x + 6';
   @override
-  String solveStepsHeader(String variable) =>
-      'Resolviendo para $variable:';
+  String solveStepsHeader(String variable) => 'Resolviendo para $variable:';
   @override
   String get integrationStepsTitle => 'Pasos de integración';
   @override

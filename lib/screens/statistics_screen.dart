@@ -141,8 +141,7 @@ class _StatsTable extends StatelessWidget {
       _Row('Sum', _fmt(s.sum)),
       _Row('Mean', _fmt(s.mean)),
       _Row('Median', _fmt(s.median)),
-      _Row('Mode',
-          s.modes.isEmpty ? '—' : s.modes.map(_fmt).join(', ')),
+      _Row('Mode', s.modes.isEmpty ? '—' : s.modes.map(_fmt).join(', ')),
       _Row('Min', _fmt(s.min)),
       _Row('Max', _fmt(s.max)),
       _Row('Range', _fmt(s.range)),
@@ -369,14 +368,11 @@ class _DistributionsTabState extends State<_DistributionsTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (norm == null)
-                    const Text(
-                        'Enter μ and σ > 0 to compute normal values.')
+                    const Text('Enter μ and σ > 0 to compute normal values.')
                   else ...[
+                    if (x != null) _resultRow('PDF(x)', _fmt(norm.pdf(x))),
                     if (x != null)
-                      _resultRow('PDF(x)', _fmt(norm.pdf(x))),
-                    if (x != null)
-                      _resultRow('CDF(x) = P(X ≤ x)',
-                          _fmt(norm.cdf(x))),
+                      _resultRow('CDF(x) = P(X ≤ x)', _fmt(norm.cdf(x))),
                     if (p != null && p >= 0 && p <= 1)
                       _resultRow('quantile(p)', _fmt(norm.quantile(p))),
                   ],
@@ -427,8 +423,8 @@ class _DistributionsTabState extends State<_DistributionsTab> {
 
   Widget _field(TextEditingController c, String label) => TextField(
         controller: c,
-        keyboardType: const TextInputType.numberWithOptions(
-            decimal: true, signed: true),
+        keyboardType:
+            const TextInputType.numberWithOptions(decimal: true, signed: true),
         onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
           labelText: label,

@@ -14,7 +14,9 @@ void main() {
   final engine = CalculatorEngine();
 
   List<String> rulesFor(String expr, String variable) =>
-      StepEngine.differentiate(expr, variable, engine).map((s) => s.rule).toList();
+      StepEngine.differentiate(expr, variable, engine)
+          .map((s) => s.rule)
+          .toList();
 
   group('StepEngine.differentiate — rule selection', () {
     test('constant rule fires when expression has no variable', () {
@@ -87,8 +89,7 @@ void main() {
 
     test('emits a "Move all terms to one side" step', () {
       final steps = StepEngine.solve('2*x + 3 = 7', 'x', engine);
-      expect(steps.map((s) => s.rule),
-          contains('Move all terms to one side'));
+      expect(steps.map((s) => s.rule), contains('Move all terms to one side'));
     });
 
     test('input without "=" is treated as expression = 0', () {
@@ -96,8 +97,7 @@ void main() {
       expect(steps.first.rule, equals('Treat as equation = 0'));
     });
 
-    test('"no variable present" branch fires when expression is constant',
-        () {
+    test('"no variable present" branch fires when expression is constant', () {
       final steps = StepEngine.solve('5 = 5', 'x', engine);
       expect(steps.map((s) => s.rule), contains('No variable present'));
     });
@@ -116,7 +116,9 @@ void main() {
 
   group('StepEngine.integrate — rule selection', () {
     List<String> rulesFor(String expr, String variable) =>
-        StepEngine.integrate(expr, variable, engine).map((s) => s.rule).toList();
+        StepEngine.integrate(expr, variable, engine)
+            .map((s) => s.rule)
+            .toList();
 
     test('constant rule fires for an integrand without the variable', () {
       final rules = rulesFor('7', 'x');
@@ -161,8 +163,7 @@ void main() {
       expect(rules.first, equals('Antiderivative of sin'));
     });
 
-    test('falls through to "Symbolic integration" for unrecognized shapes',
-        () {
+    test('falls through to "Symbolic integration" for unrecognized shapes', () {
       // sin(x^2) needs substitution, which V1 doesn't handle.
       final rules = rulesFor('sin(x^2)', 'x');
       expect(rules.first, equals('Symbolic integration'));

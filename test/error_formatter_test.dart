@@ -45,12 +45,13 @@ void main() {
       expect(out, equals(t.errorParse));
     });
     test('lowercase parse error variant', () {
-      final out =
-          EngineErrorFormatter.format('Error: differentiate failed: parse failed', t);
+      final out = EngineErrorFormatter.format(
+          'Error: differentiate failed: parse failed', t);
       expect(out, equals(t.errorParse));
     });
     test('ParseException', () {
-      final out = EngineErrorFormatter.format('Error: ParseException at column 5', t);
+      final out =
+          EngineErrorFormatter.format('Error: ParseException at column 5', t);
       expect(out, equals(t.errorParse));
     });
   });
@@ -58,7 +59,8 @@ void main() {
   group('format — native library not loaded', () {
     test('differentiate requires native library', () {
       expect(
-        EngineErrorFormatter.format('Error: differentiate requires native library', t),
+        EngineErrorFormatter.format(
+            'Error: differentiate requires native library', t),
         equals(t.errorNativeRequired),
       );
     });
@@ -100,24 +102,27 @@ void main() {
 
   group('format — generic "Invalid X() syntax"', () {
     test('factor syntax', () {
-      final out = EngineErrorFormatter.format('Error: Invalid factor() syntax', t);
+      final out =
+          EngineErrorFormatter.format('Error: Invalid factor() syntax', t);
       expect(out, contains('factor'));
       expect(out, equals(t.errorInvalidSyntax('factor')));
     });
     test('solve syntax', () {
-      final out = EngineErrorFormatter.format('Error: Invalid solve() syntax', t);
+      final out =
+          EngineErrorFormatter.format('Error: Invalid solve() syntax', t);
       expect(out, equals(t.errorInvalidSyntax('solve')));
     });
     test('d/dx syntax', () {
-      final out = EngineErrorFormatter.format('Error: Invalid d/dx() syntax', t);
+      final out =
+          EngineErrorFormatter.format('Error: Invalid d/dx() syntax', t);
       expect(out, equals(t.errorInvalidSyntax('d/dx')));
     });
   });
 
   group('format — passes through informative messages', () {
     test('gcd argument count keeps its useful text', () {
-      final out =
-          EngineErrorFormatter.format('Error: gcd() requires exactly 2 arguments', t);
+      final out = EngineErrorFormatter.format(
+          'Error: gcd() requires exactly 2 arguments', t);
       expect(out, contains('gcd'));
       expect(out, contains('2 arguments'));
       // No "Error:" prefix in the user-facing string.
@@ -133,7 +138,8 @@ void main() {
 
   group('format — unknown error', () {
     test('unrecognized message gets the warning prefix but keeps detail', () {
-      final out = EngineErrorFormatter.format('Error: something unexpected happened', t);
+      final out = EngineErrorFormatter.format(
+          'Error: something unexpected happened', t);
       expect(out, startsWith('⚠'));
       expect(out, contains('something unexpected happened'));
     });

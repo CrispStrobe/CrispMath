@@ -29,8 +29,8 @@ void main() {
     });
 
     test('median of even-length list averages the middle two', () {
-      expect(Statistics.describe(const [1, 2, 3, 4]).median,
-          closeTo(2.5, _eps));
+      expect(
+          Statistics.describe(const [1, 2, 3, 4]).median, closeTo(2.5, _eps));
     });
 
     test('median is order-insensitive', () {
@@ -39,8 +39,7 @@ void main() {
     });
 
     test('mode finds the most frequent value', () {
-      expect(
-          Statistics.describe(const [1, 2, 2, 3]).modes, equals([2.0]));
+      expect(Statistics.describe(const [1, 2, 2, 3]).modes, equals([2.0]));
     });
 
     test('mode finds all ties', () {
@@ -77,10 +76,9 @@ void main() {
 
     test('stddev = sqrt(variance)', () {
       final s = Statistics.describe(const [2, 4, 4, 4, 5, 5, 7, 9]);
-      expect(s.sampleStddev,
-          closeTo(math.sqrt(s.sampleVariance), _eps));
-      expect(s.populationStddev,
-          closeTo(math.sqrt(s.populationVariance), _eps));
+      expect(s.sampleStddev, closeTo(math.sqrt(s.sampleVariance), _eps));
+      expect(
+          s.populationStddev, closeTo(math.sqrt(s.populationVariance), _eps));
     });
 
     test('variance is zero when all values are identical', () {

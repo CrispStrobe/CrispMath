@@ -1025,11 +1025,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
   Future<void> _showDifferentiationSteps() async {
     final t = AppLocalizations.of(context);
     final expr = _latexController.text.trim();
-    final defaultExpr = expr.isEmpty
-        ? 'x*sin(x)'
-        : LatexConversionUtils.fromLatex(expr);
-    final defaultVar =
-        ExpressionPreprocessingUtils.detectVariable(defaultExpr);
+    final defaultExpr =
+        expr.isEmpty ? 'x*sin(x)' : LatexConversionUtils.fromLatex(expr);
+    final defaultVar = ExpressionPreprocessingUtils.detectVariable(defaultExpr);
 
     final exprCtl = TextEditingController(text: defaultExpr);
     final varCtl = TextEditingController(text: defaultVar);
@@ -1085,8 +1083,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         ExpressionPreprocessingUtils.preprocessNativeExpression(
       ExpressionPreprocessingUtils.preprocessExpression(exprText, _appState),
     );
-    final steps =
-        StepEngine.differentiate(preprocessed, varText, _engine);
+    final steps = StepEngine.differentiate(preprocessed, varText, _engine);
 
     if (!mounted) return;
     await showDialog<void>(
@@ -1109,8 +1106,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final raw = _latexController.text.trim();
     final defaultExpr =
         raw.isEmpty ? '2x + 3 = 7' : LatexConversionUtils.fromLatex(raw);
-    final defaultVar =
-        ExpressionPreprocessingUtils.detectVariable(defaultExpr);
+    final defaultVar = ExpressionPreprocessingUtils.detectVariable(defaultExpr);
 
     final exprCtl = TextEditingController(text: defaultExpr);
     final varCtl = TextEditingController(text: defaultVar);
@@ -1195,8 +1191,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final raw = _latexController.text.trim();
     final defaultExpr =
         raw.isEmpty ? 'x^2' : LatexConversionUtils.fromLatex(raw);
-    final defaultVar =
-        ExpressionPreprocessingUtils.detectVariable(defaultExpr);
+    final defaultVar = ExpressionPreprocessingUtils.detectVariable(defaultExpr);
 
     final exprCtl = TextEditingController(text: defaultExpr);
     final varCtl = TextEditingController(text: defaultVar);
@@ -1264,8 +1259,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         variable: varText,
         steps: steps,
         subtitle: t.integrationStepsHeader(varText),
-        headlineLatex:
-            r'\int ' + _toLatex(preprocessed) + r' \, d' + varText,
+        headlineLatex: r'\int ' + _toLatex(preprocessed) + r' \, d' + varText,
       ),
     );
   }
@@ -1368,8 +1362,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                   : Icons.search,
                               size: 20,
                             ),
-                            tooltip:
-                                AppLocalizations.of(context).searchHistory,
+                            tooltip: AppLocalizations.of(context).searchHistory,
                             onPressed: () {
                               setState(() {
                                 _historySearchOpen = !_historySearchOpen;
@@ -1458,11 +1451,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                   final tt = AppLocalizations.of(context);
                                   final display = EngineErrorFormatter.format(
                                       entry.result, tt);
-                                  final isError =
-                                      EngineErrorFormatter.isError(entry.result);
+                                  final isError = EngineErrorFormatter.isError(
+                                      entry.result);
                                   return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       // Expression display (with LaTeX toggle)
                                       _buildExpressionDisplay(entry.expression),

@@ -94,8 +94,8 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
             // Value field.
             TextField(
               controller: _input,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true, signed: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true, signed: true),
               decoration: const InputDecoration(
                 labelText: 'Value',
                 border: OutlineInputBorder(),
@@ -105,13 +105,17 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
             // From/To row with a swap button in the middle.
             Row(
               children: [
-                Expanded(child: _unitDropdown(_from, (u) => setState(() => _from = u!), units)),
+                Expanded(
+                    child: _unitDropdown(
+                        _from, (u) => setState(() => _from = u!), units)),
                 IconButton(
                   icon: const Icon(Icons.swap_horiz),
                   tooltip: 'Swap',
                   onPressed: _swap,
                 ),
-                Expanded(child: _unitDropdown(_to, (u) => setState(() => _to = u!), units)),
+                Expanded(
+                    child: _unitDropdown(
+                        _to, (u) => setState(() => _to = u!), units)),
               ],
             ),
             const SizedBox(height: 16),
@@ -125,8 +129,7 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
               child: Row(
                 children: [
                   Icon(Icons.east,
-                      color:
-                          Theme.of(context).colorScheme.onPrimaryContainer),
+                      color: Theme.of(context).colorScheme.onPrimaryContainer),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -134,8 +137,7 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontWeight: FontWeight.w600,
-                        color:
-                            Theme.of(context).colorScheme.onPrimaryContainer,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),

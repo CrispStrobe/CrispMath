@@ -85,9 +85,7 @@ class StepsDialog extends StatelessWidget {
     final isResult = s.rule == 'Result';
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      color: isResult
-          ? Theme.of(context).colorScheme.primaryContainer
-          : null,
+      color: isResult ? Theme.of(context).colorScheme.primaryContainer : null,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -169,10 +167,13 @@ class StepsDialog extends StatelessWidget {
   /// shorthand sigils. Convert to LaTeX so they render nicely.
   String _bracketToFracLatex(String s) {
     // d/dvar[...] → \frac{d}{dvar}[...]
-    return s.replaceAllMapped(
-      RegExp(r'd/d([a-zA-Z_][a-zA-Z0-9_]*)\['),
-      (m) => r'\frac{d}{d' + m.group(1)! + r'}\left[',
-    ).replaceAll(']', r'\right]').let(_toLatex);
+    return s
+        .replaceAllMapped(
+          RegExp(r'd/d([a-zA-Z_][a-zA-Z0-9_]*)\['),
+          (m) => r'\frac{d}{d' + m.group(1)! + r'}\left[',
+        )
+        .replaceAll(']', r'\right]')
+        .let(_toLatex);
   }
 
   String _toLatex(String s) {
