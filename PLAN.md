@@ -12,9 +12,7 @@ and the light/dark/system theme picker.
 
 ## P1 — Open follow-ups
 
-- [ ] **Make `CrispCalc` repo public.** LICENSE + About + CI all in
-  place now. `gh repo edit --visibility public` and confirm the first
-  CI run is green before announcing.
+- [x] ~~Make `CrispCalc` repo public.~~ Done 2026-05-17 — see HISTORY.
 - [ ] **Native `limit`.** The native bridge doesn't expose a `limit`
   entry point and the underlying SymEngine C API is missing one. Numerical
   one-sided / infinity limits stay as the current best effort. (Native

@@ -2,6 +2,17 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 9) — Repo public
+
+- `gh repo edit CrispStrobe/CrispCalc --visibility public` — flipped
+  after the green CI confirmation. The bridge plugin was already
+  public.
+- Added a description and topics: calculator, cas, dart, ffi, flutter,
+  ios, macos, symbolic-computation, symengine.
+- GitHub Actions minutes are now unlimited on the runner. The build
+  matrix (CI + Build macOS + Build iOS, ~7 min total per push) will
+  comfortably fit even with frequent pushes.
+
 ## 2026-05-17 (round 8) — About screen, LICENSE, GH Actions CI
 
 ### LICENSE + AGPL choice
