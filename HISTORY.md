@@ -2,6 +2,76 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 29) — Built-in constants library
+
+Last of the "small concrete P5 gaps" cluster. Curated catalog of 30
+physical, mathematical, chemistry, and astronomy constants reachable
+from Settings → "Constants reference".
+
+### Catalog
+
+`lib/engine/constants_catalog.dart`:
+
+- **Mathematical** (5): π, e, φ (golden ratio), γ (Euler-Mascheroni),
+  Catalan's constant.
+- **Physical** (14): c (speed of light), h, ℏ, G, g (standard
+  gravity), k_B, e (elementary charge), ε₀, μ₀, m_e / m_p / m_n
+  (electron / proton / neutron mass), σ (Stefan-Boltzmann), R_∞.
+- **Chemistry** (5): N_A, R (gas constant), F (Faraday), V_m (molar
+  volume), u (atomic mass unit).
+- **Astronomy** (6): M_⊙, R_⊕, M_⊕, AU, pc, ly.
+
+Values follow CODATA 2022 where applicable; the 7 constants made
+exact by the 2019 SI redefinition (c, h, k_B, e, N_A, …) carry
+their defined values.
+
+Each entry has a `symbol`, `name`, `value`, `unit`, `category`, and
+an optional one-line `note` explaining what it measures or how it's
+derived (e.g. "F = N_A · e", "ℏ = h / (2π)").
+
+### Dialog
+
+`lib/widgets/constants_dialog.dart`:
+
+- Category chip row + an "All" chip for browsing.
+- Substring search across symbol / name / unit.
+- Each row shows symbol (monospace, bold), name, value-with-unit
+  (auto exponential notation when |x| ≥ 10⁶ or < 10⁻³), and the
+  note in italic.
+- Per-row copy-to-clipboard button — a toast confirms with the
+  symbol so a user can chain copies confidently.
+
+### Settings tile
+
+Added between Unit converter and Help in the Settings list.
+
+### i18n
+
+12 new keys × 4 locales = 48 strings (titles, category labels,
+search hint, no-matches placeholder, copy button + toast,
+Settings tile label + subtitle).
+
+### Tests
+
+`test/constants_catalog_test.dart` covers:
+
+- Coverage: ≥ 25 entries, ≥ 3 per category, every entry has a
+  non-empty symbol and name.
+- Well-known values: π, e (math), c (exact), elementary e (exact),
+  N_A (exact), k_B (exact), h (exact), and the derived-constant
+  relationships (R ≈ N_A · k_B, F ≈ N_A · e, ℏ ≈ h / (2π)).
+- Search: empty query returns all, substring on name/symbol/unit
+  works, case-insensitive, no-match returns empty.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **527/527** (23 new tests: 16 catalog math /
+  search + 7 new locale-coverage checks).
+- macOS release: matrix self-test 7/7, step self-test 28/28.
+
+---
+
 ## 2026-05-17 (round 28) — Polish bundle: export, help, share, integration tests
 
 A grab-bag of P4 production-readiness items shipped in one push, plus

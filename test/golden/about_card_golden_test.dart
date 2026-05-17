@@ -54,8 +54,7 @@ void main() {
       'Matrix syntax',
       'Step-by-step solutions',
     ]) {
-      await tester.scrollUntilVisible(find.text(anchor), 100,
-          scrollable: list);
+      await tester.scrollUntilVisible(find.text(anchor), 100, scrollable: list);
       expect(find.text(anchor), findsOneWidget,
           reason: 'missing anchor: $anchor');
     }

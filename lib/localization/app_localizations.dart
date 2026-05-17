@@ -189,6 +189,20 @@ abstract class AppLocalizations {
   String get helpMatrixBody;
   String get helpStepsBody;
 
+  // -- Constants library --
+  String get constantsTitle;
+  String get constantsSearchHint;
+  String get constantsNoMatches;
+  String get constantsAllCategory;
+  String get constantsCategoryMathematical;
+  String get constantsCategoryPhysical;
+  String get constantsCategoryChemistry;
+  String get constantsCategoryAstronomy;
+  String get constantsCopyValue;
+  String constantsCopiedToast(String symbol);
+  String get settingsConstants;
+  String get settingsConstantsSubtitle;
+
   // -- Keypad tab labels --
   String get tabNum;
   String get tabTrig;
@@ -546,6 +560,32 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get helpStepsBody =>
       'Three keypad buttons in the CAS tab open step-by-step traces:\n\n  • d/dx⌄ for differentiation steps\n  • solve⌄ for equation solving\n  • ∫⌄ for indefinite integration\n\nEach shows the rule applied at every step plus a final answer.';
+
+  @override
+  String get constantsTitle => 'Constants reference';
+  @override
+  String get constantsSearchHint => 'Search by symbol, name, or unit…';
+  @override
+  String get constantsNoMatches => 'No constants match this filter.';
+  @override
+  String get constantsAllCategory => 'All';
+  @override
+  String get constantsCategoryMathematical => 'Mathematical';
+  @override
+  String get constantsCategoryPhysical => 'Physical';
+  @override
+  String get constantsCategoryChemistry => 'Chemistry';
+  @override
+  String get constantsCategoryAstronomy => 'Astronomy';
+  @override
+  String get constantsCopyValue => 'Copy value';
+  @override
+  String constantsCopiedToast(String symbol) => 'Copied $symbol to clipboard';
+  @override
+  String get settingsConstants => 'Constants reference';
+  @override
+  String get settingsConstantsSubtitle =>
+      'Physical, mathematical, chemistry, and astronomy constants.';
 
   @override
   String get tabNum => 'Num';
@@ -915,6 +955,33 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get helpStepsBody =>
       'Drei Tasten im CAS-Reiter öffnen Schritt-für-Schritt-Spuren:\n\n  • d/dx⌄ für Ableitungsschritte\n  • solve⌄ für Gleichungen lösen\n  • ∫⌄ für unbestimmte Integration\n\nJede zeigt die angewandte Regel pro Schritt plus das Endergebnis.';
+
+  @override
+  String get constantsTitle => 'Konstantenreferenz';
+  @override
+  String get constantsSearchHint => 'Nach Symbol, Name oder Einheit suchen…';
+  @override
+  String get constantsNoMatches => 'Keine Konstanten passen zum Filter.';
+  @override
+  String get constantsAllCategory => 'Alle';
+  @override
+  String get constantsCategoryMathematical => 'Mathematisch';
+  @override
+  String get constantsCategoryPhysical => 'Physikalisch';
+  @override
+  String get constantsCategoryChemistry => 'Chemie';
+  @override
+  String get constantsCategoryAstronomy => 'Astronomie';
+  @override
+  String get constantsCopyValue => 'Wert kopieren';
+  @override
+  String constantsCopiedToast(String symbol) =>
+      '$symbol in Zwischenablage kopiert';
+  @override
+  String get settingsConstants => 'Konstantenreferenz';
+  @override
+  String get settingsConstantsSubtitle =>
+      'Physikalische, mathematische, chemische und astronomische Konstanten.';
 
   @override
   String get tabNum => 'Num';
@@ -1288,6 +1355,34 @@ class FrLocalizations implements AppLocalizations {
       'Trois boutons du pavé CAS ouvrent des traces pas-à-pas :\n\n  • d/dx⌄ pour les étapes de dérivation\n  • solve⌄ pour la résolution d\'équations\n  • ∫⌄ pour l\'intégration indéfinie\n\nChaque vue montre la règle appliquée à chaque étape plus la réponse finale.';
 
   @override
+  String get constantsTitle => 'Référence des constantes';
+  @override
+  String get constantsSearchHint => 'Rechercher par symbole, nom ou unité…';
+  @override
+  String get constantsNoMatches =>
+      'Aucune constante ne correspond à ce filtre.';
+  @override
+  String get constantsAllCategory => 'Toutes';
+  @override
+  String get constantsCategoryMathematical => 'Mathématiques';
+  @override
+  String get constantsCategoryPhysical => 'Physique';
+  @override
+  String get constantsCategoryChemistry => 'Chimie';
+  @override
+  String get constantsCategoryAstronomy => 'Astronomie';
+  @override
+  String get constantsCopyValue => 'Copier la valeur';
+  @override
+  String constantsCopiedToast(String symbol) =>
+      '$symbol copié dans le presse-papiers';
+  @override
+  String get settingsConstants => 'Référence des constantes';
+  @override
+  String get settingsConstantsSubtitle =>
+      'Constantes physiques, mathématiques, chimiques et astronomiques.';
+
+  @override
   String get tabNum => 'Num';
   @override
   String get tabTrig => 'Trig';
@@ -1654,6 +1749,34 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get helpStepsBody =>
       'Tres botones del teclado CAS abren trazas paso a paso:\n\n  • d/dx⌄ para pasos de derivación\n  • solve⌄ para resolución de ecuaciones\n  • ∫⌄ para integración indefinida\n\nCada vista muestra la regla aplicada en cada paso más la respuesta final.';
+
+  @override
+  String get constantsTitle => 'Referencia de constantes';
+  @override
+  String get constantsSearchHint => 'Buscar por símbolo, nombre o unidad…';
+  @override
+  String get constantsNoMatches =>
+      'Ninguna constante coincide con este filtro.';
+  @override
+  String get constantsAllCategory => 'Todas';
+  @override
+  String get constantsCategoryMathematical => 'Matemáticas';
+  @override
+  String get constantsCategoryPhysical => 'Física';
+  @override
+  String get constantsCategoryChemistry => 'Química';
+  @override
+  String get constantsCategoryAstronomy => 'Astronomía';
+  @override
+  String get constantsCopyValue => 'Copiar valor';
+  @override
+  String constantsCopiedToast(String symbol) =>
+      '$symbol copiado al portapapeles';
+  @override
+  String get settingsConstants => 'Referencia de constantes';
+  @override
+  String get settingsConstantsSubtitle =>
+      'Constantes físicas, matemáticas, químicas y astronómicas.';
 
   @override
   String get tabNum => 'Núm';

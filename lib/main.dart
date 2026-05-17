@@ -25,6 +25,7 @@ import 'screens/function_editor_screen.dart';
 import 'screens/graphing_screen.dart';
 import 'screens/help_screen.dart';
 import 'services/native_licenses.dart';
+import 'widgets/constants_dialog.dart';
 import 'widgets/export_data_dialog.dart';
 import 'widgets/unit_converter_dialog.dart';
 
@@ -428,6 +429,19 @@ class SettingsScreen extends StatelessWidget {
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const UnitConverterDialog(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.science_outlined),
+                  title: Text(t.settingsConstants),
+                  subtitle: Text(t.settingsConstantsSubtitle),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => const ConstantsDialog(),
                   ),
                 ),
               ),

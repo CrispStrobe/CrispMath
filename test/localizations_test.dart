@@ -127,6 +127,25 @@ void main() {
         }
       });
 
+      test('constants library strings are present', () {
+        for (final s in [
+          t.constantsTitle,
+          t.constantsSearchHint,
+          t.constantsNoMatches,
+          t.constantsAllCategory,
+          t.constantsCategoryMathematical,
+          t.constantsCategoryPhysical,
+          t.constantsCategoryChemistry,
+          t.constantsCategoryAstronomy,
+          t.constantsCopyValue,
+          t.constantsCopiedToast('c'),
+          t.settingsConstants,
+          t.settingsConstantsSubtitle,
+        ]) {
+          expect(s.trim(), isNotEmpty);
+        }
+      });
+
       test('export / share / help strings are present', () {
         for (final s in [
           t.exportDataTitle,

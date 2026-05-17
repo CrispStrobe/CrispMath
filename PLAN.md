@@ -296,9 +296,12 @@ roughly double the perceived value of the app.
   Y1..Y10 are a partial story. Allow named functions
   (`f(x) = x^2 + 1`), composition (`g(f(x))`), and a tab to browse /
   edit / rename them.
-- [ ] **Built-in constants library**. Physical (c, G, h, kB),
-  mathematical (φ, Catalan, ζ(2), …), chemical (Avogadro), with one-
-  tap insert into the calculator.
+- [x] ~~**Built-in constants library**.~~ Done 2026-05-17 — see
+  HISTORY round 29. 30 constants across mathematical, physical,
+  chemistry, and astronomy categories. Settings → "Constants
+  reference" opens a dialog with category chips, substring search,
+  and per-row copy-value-to-clipboard. CODATA 2022 / exact-SI
+  values where applicable.
 
 #### Engagement / sharing
 
