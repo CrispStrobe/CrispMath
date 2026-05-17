@@ -2,6 +2,26 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 12) — v0.1.0 cut
+
+- Fast-forwarded main from `latex-input-field` (18 commits, ~9k
+  insertions covering everything from the first audit forward).
+- Tagged `v0.1.0` with a release-note commit message covering features
+  and known limitations.
+- The `release.yml` workflow fired automatically on the tag push and
+  ran 6 jobs in parallel: macOS, iOS, Linux, Windows, Android, publish.
+  All six green; publish step created the GitHub Release and attached
+  every artifact.
+- Release page: https://github.com/CrispStrobe/CrispCalc/releases/tag/v0.1.0
+  - `crisp_calc-v0.1.0-macos.zip` (22.8 MiB, release build, unsigned)
+  - `crisp_calc-v0.1.0-ios-unsigned.zip` (10.4 MiB)
+  - `crisp_calc-v0.1.0-linux-x64.tar.gz` (19.7 MiB, degraded mode)
+  - `crisp_calc-v0.1.0-windows-x64.zip` (13.6 MiB, degraded mode)
+  - `crisp_calc-v0.1.0-android.apk` (54.4 MiB, degraded mode)
+- Release-note body documents that symbolic operations work on
+  iOS/macOS only at this version and macOS release builds have the
+  known SymEngine wrapper-symbol drop (PLAN P1#2).
+
 ## 2026-05-17 (round 11) — P1#2 round 2 (still open, partial progress)
 
 ### What I learned
