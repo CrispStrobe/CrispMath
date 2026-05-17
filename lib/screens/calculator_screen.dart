@@ -1022,6 +1022,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   /// the default expression so a user can type a function first and then
   /// tap this button.
   Future<void> _showDifferentiationSteps() async {
+    final t = AppLocalizations.of(context);
     final expr = _latexController.text.trim();
     final defaultExpr = expr.isEmpty
         ? 'x*sin(x)'
@@ -1035,7 +1036,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final go = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Differentiation steps'),
+        title: Text(t.differentiationStepsTitle),
         content: SizedBox(
           width: 360,
           child: Column(
@@ -1043,17 +1044,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
             children: [
               TextField(
                 controller: exprCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Expression',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: t.dialogExpression,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: varCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Variable',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: t.dialogVariable,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -1062,11 +1063,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Show steps'),
+            child: Text(t.dialogShowSteps),
           ),
         ],
       ),
@@ -1090,10 +1091,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
     await showDialog<void>(
       context: context,
       builder: (ctx) => StepsDialog(
-        title: 'Differentiation steps',
+        title: t.differentiationStepsTitle,
         expression: preprocessed,
         variable: varText,
         steps: steps,
+        subtitle: t.differentiationStepsHeader(varText),
       ),
     );
   }
@@ -1102,6 +1104,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   /// (or expression to set to 0) and a variable, then runs StepEngine.solve
   /// and renders the trace.
   Future<void> _showSolveSteps() async {
+    final t = AppLocalizations.of(context);
     final raw = _latexController.text.trim();
     final defaultExpr =
         raw.isEmpty ? '2x + 3 = 7' : LatexConversionUtils.fromLatex(raw);
@@ -1114,7 +1117,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final go = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Solve steps'),
+        title: Text(t.solveStepsTitle),
         content: SizedBox(
           width: 360,
           child: Column(
@@ -1122,18 +1125,18 @@ class CalculatorScreenState extends State<CalculatorScreen>
             children: [
               TextField(
                 controller: exprCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Equation or expression',
-                  hintText: 'e.g. 2x + 3 = 7  or  x^2 - 5x + 6',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: t.solveStepsEquationLabel,
+                  hintText: t.solveStepsHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: varCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Solve for',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: t.solveStepsSolveFor,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -1142,11 +1145,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Show steps'),
+            child: Text(t.dialogShowSteps),
           ),
         ],
       ),
@@ -1171,11 +1174,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
     await showDialog<void>(
       context: context,
       builder: (ctx) => StepsDialog(
-        title: 'Solve steps',
+        title: t.solveStepsTitle,
         expression: preprocessed,
         variable: varText,
         steps: steps,
-        subtitle: 'Solving for $varText:',
+        subtitle: t.solveStepsHeader(varText),
         headlineLatex: preprocessed.contains('=')
             ? preprocessed.replaceAll('=', r' \,=\, ')
             : '$preprocessed = 0',
@@ -1187,6 +1190,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   /// step-by-step dialog. Mirrors _showDifferentiationSteps and
   /// _showSolveSteps; same dialog widget with different headline.
   Future<void> _showIntegrationSteps() async {
+    final t = AppLocalizations.of(context);
     final raw = _latexController.text.trim();
     final defaultExpr =
         raw.isEmpty ? 'x^2' : LatexConversionUtils.fromLatex(raw);
@@ -1199,7 +1203,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final go = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Integration steps'),
+        title: Text(t.integrationStepsTitle),
         content: SizedBox(
           width: 360,
           child: Column(
@@ -1207,18 +1211,18 @@ class CalculatorScreenState extends State<CalculatorScreen>
             children: [
               TextField(
                 controller: exprCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Integrand',
-                  hintText: 'e.g. x^2  or  sin(x) + 2x',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: t.integrationStepsIntegrandLabel,
+                  hintText: t.integrationStepsHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: varCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Integrate with respect to',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: t.integrationStepsWrt,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -1227,11 +1231,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Show steps'),
+            child: Text(t.dialogShowSteps),
           ),
         ],
       ),
@@ -1254,11 +1258,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
     await showDialog<void>(
       context: context,
       builder: (ctx) => StepsDialog(
-        title: 'Integration steps',
+        title: t.integrationStepsTitle,
         expression: preprocessed,
         variable: varText,
         steps: steps,
-        subtitle: 'Integrating with respect to $varText:',
+        subtitle: t.integrationStepsHeader(varText),
         headlineLatex:
             r'\int ' + _toLatex(preprocessed) + r' \, d' + varText,
       ),

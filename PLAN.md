@@ -155,11 +155,14 @@ single feature. Roughly in priority order — top items unblock the next.
 
 ### Polish
 
-- [ ] **Localize the picker dialogs**. `IntegralDialog`,
+- [x] ~~**Localize the picker dialogs**. `IntegralDialog`,
   `LimitDialog`, `NthRootDialog`, `SubstituteDialog` are still
-  hardcoded English. The DE/FR/ES infrastructure is in place; this is
-  mechanical — move strings to `AppLocalizations` and remove the
-  `const Text('Limit')` literals.
+  hardcoded English.~~ Done 2026-05-17 — see HISTORY round 26.
+  All picker + step-by-step entry dialogs now route their labels,
+  titles, hints, and action buttons through `AppLocalizations`.
+  The bottom-sheet pickers too (`showSolveFunctionPicker`,
+  `_showPicker`). 21 new strings × 4 locales added with locale-test
+  coverage for every new key.
 - [ ] **Perf instrumentation**. Frame-timing overlay in debug, jank
   detection in CI for one canonical flow, repeatable benchmark for the
   graph painter at common viewport sizes. Currently we don't know if

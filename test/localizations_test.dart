@@ -108,6 +108,49 @@ void main() {
         expect(t.whereY(1, 'x^2').trim(), isNotEmpty);
         expect(t.aboutVersion('1.0').trim(), isNotEmpty);
         expect(t.matrixDiagnosticsSummary(6, 6).trim(), isNotEmpty);
+        expect(t.differentiationStepsHeader('x').trim(), isNotEmpty);
+        expect(t.solveStepsHeader('x').trim(), isNotEmpty);
+        expect(t.integrationStepsHeader('x').trim(), isNotEmpty);
+      });
+
+      test('dialog action strings are present', () {
+        for (final s in [
+          t.dialogInsert,
+          t.dialogClose,
+          t.dialogShowSteps,
+          t.dialogVariable,
+          t.dialogExpression,
+          t.dialogValue,
+          t.dialogFunction,
+        ]) {
+          expect(s.trim(), isNotEmpty);
+        }
+      });
+
+      test('picker / step dialog titles are present', () {
+        for (final s in [
+          t.integralTitle,
+          t.integralLowerBound,
+          t.integralUpperBound,
+          t.integralDefinite,
+          t.nthRootTitle,
+          t.nthRootBase,
+          t.limitTitle,
+          t.limitApproaches,
+          t.substituteTitle,
+          t.substituteUseStoredVariable,
+          t.differentiationStepsTitle,
+          t.solveStepsTitle,
+          t.solveStepsEquationLabel,
+          t.solveStepsSolveFor,
+          t.solveStepsHint,
+          t.integrationStepsTitle,
+          t.integrationStepsIntegrandLabel,
+          t.integrationStepsWrt,
+          t.integrationStepsHint,
+        ]) {
+          expect(s.trim(), isNotEmpty);
+        }
       });
     });
   }

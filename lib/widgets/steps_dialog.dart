@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
 import '../engine/step_engine.dart';
+import '../localization/app_localizations.dart';
 import '../utils/math_display_utils.dart';
 
 class StepsDialog extends StatelessWidget {
@@ -41,6 +42,7 @@ class StepsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(title),
       content: SizedBox(
@@ -51,7 +53,7 @@ class StepsDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                subtitle ?? 'With respect to $variable:',
+                subtitle ?? t.differentiationStepsHeader(variable),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 4),
@@ -73,7 +75,7 @@ class StepsDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(t.dialogClose),
         ),
       ],
     );

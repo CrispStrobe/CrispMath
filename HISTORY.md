@@ -2,6 +2,61 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 26) — Dialog localization sweep
+
+A P4 polish item from PLAN. The FR/ES locales we added in round 17
+were leaking English everywhere users opened a picker or step-by-
+step dialog. Mechanical fix, large surface — touches every dialog
+in `lib/widgets/function_picker_dialogs.dart` plus the three step
+prompts in `lib/screens/calculator_screen.dart` plus the steps view
+in `lib/widgets/steps_dialog.dart`.
+
+### Strings added
+
+21 new `AppLocalizations` keys, 84 locale entries (× 4):
+
+- Shared dialog vocabulary: `dialogInsert`, `dialogClose`,
+  `dialogShowSteps`, `dialogVariable`, `dialogExpression`,
+  `dialogValue`, `dialogFunction`.
+- Picker dialogs: `integralTitle`, `integralLowerBound`,
+  `integralUpperBound`, `integralDefinite`, `nthRootTitle`,
+  `nthRootBase`, `limitTitle`, `limitApproaches`,
+  `substituteTitle`, `substituteUseStoredVariable`.
+- Step-by-step prompts: `differentiationStepsTitle`,
+  `differentiationStepsHeader(var)`, `solveStepsTitle`,
+  `solveStepsEquationLabel`, `solveStepsSolveFor`,
+  `solveStepsHint`, `solveStepsHeader(var)`,
+  `integrationStepsTitle`, `integrationStepsIntegrandLabel`,
+  `integrationStepsWrt`, `integrationStepsHint`,
+  `integrationStepsHeader(var)`.
+
+`localizations_test.dart` gained two new groups (dialog action
+strings, picker/step dialog titles) — 32 new checks total (8 per
+locale × 4 locales).
+
+### Reused existing keys
+
+- `continueTyping` and `dismissPanel` were already in `AppLocalizations`
+  but never plumbed into the bottom-sheet pickers. Now they are.
+- `solveFor(n)` and `whereY(n, func)` already existed too —
+  similarly wired in.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **480/480** (8 new locale-coverage tests, no other
+  test churn).
+- macOS release matrix self-test 7/7, step self-test 28/28.
+
+### Out of scope
+
+The Statistics screen's labels (tab names, field labels) are still
+hardcoded English. Same convention as the other analysis screens
+(curve sketching, planes, conics) — that whole cluster deserves a
+separate localization pass.
+
+---
+
 ## 2026-05-17 (round 25) — Statistics + probability (P5 #3, V1)
 
 Last of the P5 top-4 cluster. Pure-Dart statistics + distributions

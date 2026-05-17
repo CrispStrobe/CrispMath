@@ -109,6 +109,41 @@ abstract class AppLocalizations {
   String solveFor(int n);
   String whereY(int n, String func);
 
+  // -- Shared dialog actions / labels --
+  String get dialogInsert;
+  String get dialogClose;
+  String get dialogShowSteps;
+  String get dialogVariable;
+  String get dialogExpression;
+  String get dialogValue;
+  String get dialogFunction;
+
+  // -- Integral / NthRoot / Limit / Substitute dialogs --
+  String get integralTitle;
+  String get integralLowerBound;
+  String get integralUpperBound;
+  String get integralDefinite;
+  String get nthRootTitle;
+  String get nthRootBase;
+  String get limitTitle;
+  String get limitApproaches;
+  String get substituteTitle;
+  String get substituteUseStoredVariable;
+
+  // -- Step-by-step dialogs (entry-prompt + headlines) --
+  String get differentiationStepsTitle;
+  String differentiationStepsHeader(String variable);
+  String get solveStepsTitle;
+  String get solveStepsEquationLabel;
+  String get solveStepsSolveFor;
+  String get solveStepsHint;
+  String solveStepsHeader(String variable);
+  String get integrationStepsTitle;
+  String get integrationStepsIntegrandLabel;
+  String get integrationStepsWrt;
+  String get integrationStepsHint;
+  String integrationStepsHeader(String variable);
+
   // -- Calculator errors --
   String get errorSolveFormat;
   String get errorInvalidSolve;
@@ -327,6 +362,69 @@ class EnLocalizations implements AppLocalizations {
   String solveFor(int n) => 'Solve Y$n = 0';
   @override
   String whereY(int n, String func) => 'where Y$n = $func';
+
+  @override
+  String get dialogInsert => 'Insert';
+  @override
+  String get dialogClose => 'Close';
+  @override
+  String get dialogShowSteps => 'Show steps';
+  @override
+  String get dialogVariable => 'Variable';
+  @override
+  String get dialogExpression => 'Expression';
+  @override
+  String get dialogValue => 'Value';
+  @override
+  String get dialogFunction => 'Function f(x)';
+
+  @override
+  String get integralTitle => 'Integral';
+  @override
+  String get integralLowerBound => 'Lower bound';
+  @override
+  String get integralUpperBound => 'Upper bound';
+  @override
+  String get integralDefinite => 'Definite Integral';
+  @override
+  String get nthRootTitle => 'Nth Root';
+  @override
+  String get nthRootBase => 'Base';
+  @override
+  String get limitTitle => 'Limit';
+  @override
+  String get limitApproaches => 'Approaches';
+  @override
+  String get substituteTitle => 'Substitute';
+  @override
+  String get substituteUseStoredVariable => 'Use a stored variable as value:';
+
+  @override
+  String get differentiationStepsTitle => 'Differentiation steps';
+  @override
+  String differentiationStepsHeader(String variable) =>
+      'Differentiating with respect to $variable:';
+  @override
+  String get solveStepsTitle => 'Solve steps';
+  @override
+  String get solveStepsEquationLabel => 'Equation or expression';
+  @override
+  String get solveStepsSolveFor => 'Solve for';
+  @override
+  String get solveStepsHint => 'e.g. 2x + 3 = 7  or  x^2 - 5x + 6';
+  @override
+  String solveStepsHeader(String variable) => 'Solving for $variable:';
+  @override
+  String get integrationStepsTitle => 'Integration steps';
+  @override
+  String get integrationStepsIntegrandLabel => 'Integrand';
+  @override
+  String get integrationStepsWrt => 'Integrate with respect to';
+  @override
+  String get integrationStepsHint => 'e.g. x^2  or  sin(x) + 2x';
+  @override
+  String integrationStepsHeader(String variable) =>
+      'Integrating with respect to $variable:';
 
   @override
   String get errorSolveFormat =>
@@ -566,6 +664,70 @@ class DeLocalizations implements AppLocalizations {
   String solveFor(int n) => 'Löse Y$n = 0';
   @override
   String whereY(int n, String func) => 'wobei Y$n = $func';
+
+  @override
+  String get dialogInsert => 'Einfügen';
+  @override
+  String get dialogClose => 'Schließen';
+  @override
+  String get dialogShowSteps => 'Schritte anzeigen';
+  @override
+  String get dialogVariable => 'Variable';
+  @override
+  String get dialogExpression => 'Ausdruck';
+  @override
+  String get dialogValue => 'Wert';
+  @override
+  String get dialogFunction => 'Funktion f(x)';
+
+  @override
+  String get integralTitle => 'Integral';
+  @override
+  String get integralLowerBound => 'Untere Grenze';
+  @override
+  String get integralUpperBound => 'Obere Grenze';
+  @override
+  String get integralDefinite => 'Bestimmtes Integral';
+  @override
+  String get nthRootTitle => 'n-te Wurzel';
+  @override
+  String get nthRootBase => 'Basis';
+  @override
+  String get limitTitle => 'Grenzwert';
+  @override
+  String get limitApproaches => 'strebt gegen';
+  @override
+  String get substituteTitle => 'Einsetzen';
+  @override
+  String get substituteUseStoredVariable =>
+      'Gespeicherte Variable als Wert verwenden:';
+
+  @override
+  String get differentiationStepsTitle => 'Ableitungsschritte';
+  @override
+  String differentiationStepsHeader(String variable) =>
+      'Ableiten nach $variable:';
+  @override
+  String get solveStepsTitle => 'Lösungsschritte';
+  @override
+  String get solveStepsEquationLabel => 'Gleichung oder Ausdruck';
+  @override
+  String get solveStepsSolveFor => 'Lösen nach';
+  @override
+  String get solveStepsHint => 'z. B. 2x + 3 = 7  oder  x^2 - 5x + 6';
+  @override
+  String solveStepsHeader(String variable) => 'Lösen nach $variable:';
+  @override
+  String get integrationStepsTitle => 'Integrationsschritte';
+  @override
+  String get integrationStepsIntegrandLabel => 'Integrand';
+  @override
+  String get integrationStepsWrt => 'Integrieren nach';
+  @override
+  String get integrationStepsHint => 'z. B. x^2  oder  sin(x) + 2x';
+  @override
+  String integrationStepsHeader(String variable) =>
+      'Integrieren nach $variable:';
 
   @override
   String get errorSolveFormat =>
@@ -810,6 +972,71 @@ class FrLocalizations implements AppLocalizations {
   String whereY(int n, String func) => 'où Y$n = $func';
 
   @override
+  String get dialogInsert => 'Insérer';
+  @override
+  String get dialogClose => 'Fermer';
+  @override
+  String get dialogShowSteps => 'Voir les étapes';
+  @override
+  String get dialogVariable => 'Variable';
+  @override
+  String get dialogExpression => 'Expression';
+  @override
+  String get dialogValue => 'Valeur';
+  @override
+  String get dialogFunction => 'Fonction f(x)';
+
+  @override
+  String get integralTitle => 'Intégrale';
+  @override
+  String get integralLowerBound => 'Borne inférieure';
+  @override
+  String get integralUpperBound => 'Borne supérieure';
+  @override
+  String get integralDefinite => 'Intégrale définie';
+  @override
+  String get nthRootTitle => 'Racine n-ième';
+  @override
+  String get nthRootBase => 'Base';
+  @override
+  String get limitTitle => 'Limite';
+  @override
+  String get limitApproaches => 'tend vers';
+  @override
+  String get substituteTitle => 'Substituer';
+  @override
+  String get substituteUseStoredVariable =>
+      'Utiliser une variable stockée comme valeur :';
+
+  @override
+  String get differentiationStepsTitle => 'Étapes de dérivation';
+  @override
+  String differentiationStepsHeader(String variable) =>
+      'Dérivation par rapport à $variable :';
+  @override
+  String get solveStepsTitle => 'Étapes de résolution';
+  @override
+  String get solveStepsEquationLabel => 'Équation ou expression';
+  @override
+  String get solveStepsSolveFor => 'Résoudre pour';
+  @override
+  String get solveStepsHint => 'p. ex. 2x + 3 = 7  ou  x^2 - 5x + 6';
+  @override
+  String solveStepsHeader(String variable) =>
+      'Résolution pour $variable :';
+  @override
+  String get integrationStepsTitle => 'Étapes d\'intégration';
+  @override
+  String get integrationStepsIntegrandLabel => 'Intégrande';
+  @override
+  String get integrationStepsWrt => 'Intégrer par rapport à';
+  @override
+  String get integrationStepsHint => 'p. ex. x^2  ou  sin(x) + 2x';
+  @override
+  String integrationStepsHeader(String variable) =>
+      'Intégration par rapport à $variable :';
+
+  @override
   String get errorSolveFormat =>
       'Erreur : le format de solve() est solve(équation, variable)';
   @override
@@ -1049,6 +1276,71 @@ class EsLocalizations implements AppLocalizations {
   String solveFor(int n) => 'Resolver Y$n = 0';
   @override
   String whereY(int n, String func) => 'donde Y$n = $func';
+
+  @override
+  String get dialogInsert => 'Insertar';
+  @override
+  String get dialogClose => 'Cerrar';
+  @override
+  String get dialogShowSteps => 'Ver pasos';
+  @override
+  String get dialogVariable => 'Variable';
+  @override
+  String get dialogExpression => 'Expresión';
+  @override
+  String get dialogValue => 'Valor';
+  @override
+  String get dialogFunction => 'Función f(x)';
+
+  @override
+  String get integralTitle => 'Integral';
+  @override
+  String get integralLowerBound => 'Límite inferior';
+  @override
+  String get integralUpperBound => 'Límite superior';
+  @override
+  String get integralDefinite => 'Integral definida';
+  @override
+  String get nthRootTitle => 'Raíz n-ésima';
+  @override
+  String get nthRootBase => 'Base';
+  @override
+  String get limitTitle => 'Límite';
+  @override
+  String get limitApproaches => 'tiende a';
+  @override
+  String get substituteTitle => 'Sustituir';
+  @override
+  String get substituteUseStoredVariable =>
+      'Usar una variable guardada como valor:';
+
+  @override
+  String get differentiationStepsTitle => 'Pasos de derivación';
+  @override
+  String differentiationStepsHeader(String variable) =>
+      'Derivando respecto a $variable:';
+  @override
+  String get solveStepsTitle => 'Pasos de resolución';
+  @override
+  String get solveStepsEquationLabel => 'Ecuación o expresión';
+  @override
+  String get solveStepsSolveFor => 'Resolver para';
+  @override
+  String get solveStepsHint => 'p. ej. 2x + 3 = 7  o  x^2 - 5x + 6';
+  @override
+  String solveStepsHeader(String variable) =>
+      'Resolviendo para $variable:';
+  @override
+  String get integrationStepsTitle => 'Pasos de integración';
+  @override
+  String get integrationStepsIntegrandLabel => 'Integrando';
+  @override
+  String get integrationStepsWrt => 'Integrar respecto a';
+  @override
+  String get integrationStepsHint => 'p. ej. x^2  o  sin(x) + 2x';
+  @override
+  String integrationStepsHeader(String variable) =>
+      'Integrando respecto a $variable:';
 
   @override
   String get errorSolveFormat =>

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'dart:async';
 import '../engine/app_state.dart';
+import '../localization/app_localizations.dart';
 import '../utils/keyboard_input_handler.dart';
 import '../controllers/latex_controller.dart';
 import '../utils/math_display_utils.dart';
@@ -19,6 +20,7 @@ class FunctionPickerDialogs {
       context: context,
       isScrollControlled: true,
       builder: (context) {
+        final t = AppLocalizations.of(context);
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -26,13 +28,13 @@ class FunctionPickerDialogs {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Select equation or continue typing:',
+                  t.selectEquation,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
               ListTile(
                 leading: const Icon(Icons.keyboard_return),
-                title: const Text('Continue Typing'),
+                title: Text(t.continueTyping),
                 onTap: () => Navigator.of(context).pop(),
               ),
               const Divider(),
@@ -44,8 +46,8 @@ class FunctionPickerDialogs {
                       .entries
                       .where((e) => e.value.isNotEmpty)
                       .map((e) => ListTile(
-                            title: Text('Solve Y${e.key + 1} = 0'),
-                            subtitle: Text('where Y${e.key + 1} = ${e.value}'),
+                            title: Text(t.solveFor(e.key + 1)),
+                            subtitle: Text(t.whereY(e.key + 1, e.value)),
                             onTap: () {
                               Navigator.of(context).pop();
                               final textToInsert = 'Y${e.key + 1}=0, x';
@@ -99,6 +101,7 @@ class FunctionPickerDialogs {
       context: context,
       isScrollControlled: true,
       builder: (context) {
+        final t = AppLocalizations.of(context);
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -110,8 +113,8 @@ class FunctionPickerDialogs {
               ),
               ListTile(
                 leading: const Icon(Icons.keyboard_return),
-                title: const Text('Continue Typing'),
-                subtitle: const Text('Dismiss this panel'),
+                title: Text(t.continueTyping),
+                subtitle: Text(t.dismissPanel),
                 onTap: () => Navigator.of(context).pop(),
               ),
               const Divider(),
@@ -485,31 +488,32 @@ class _IntegralDialogState extends State<IntegralDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return KeyboardListener(
       focusNode: _keyboardFocus,
       autofocus: true,
       onKeyEvent: _handleKeyboardInput,
       child: AlertDialog(
-        title: const Text('Integral'),
+        title: Text(t.integralTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             DialogLatexField(
               controller: _functionController,
-              label: 'Function f(x)',
+              label: t.dialogFunction,
               isFocused: _focusedField == 0,
               onTap: () => setState(() => _focusedField = 0),
             ),
             const SizedBox(height: 12),
             DialogLatexField(
               controller: _variableController,
-              label: 'Variable',
+              label: t.dialogVariable,
               isFocused: _focusedField == 1,
               onTap: () => setState(() => _focusedField = 1),
             ),
             const SizedBox(height: 12),
             CheckboxListTile(
-              title: const Text('Definite Integral'),
+              title: Text(t.integralDefinite),
               value: _isDefinite,
               onChanged: (value) => setState(() => _isDefinite = value!),
             ),
@@ -517,14 +521,14 @@ class _IntegralDialogState extends State<IntegralDialog> {
               const SizedBox(height: 12),
               DialogLatexField(
                 controller: _lowerController,
-                label: 'Lower Bound',
+                label: t.integralLowerBound,
                 isFocused: _focusedField == 2,
                 onTap: () => setState(() => _focusedField = 2),
               ),
               const SizedBox(height: 12),
               DialogLatexField(
                 controller: _upperController,
-                label: 'Upper Bound',
+                label: t.integralUpperBound,
                 isFocused: _focusedField == 3,
                 onTap: () => setState(() => _focusedField = 3),
               ),
@@ -534,11 +538,11 @@ class _IntegralDialogState extends State<IntegralDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             onPressed: _onSubmit,
-            child: const Text('Insert'),
+            child: Text(t.dialogInsert),
           ),
         ],
       ),
@@ -632,25 +636,26 @@ class _NthRootDialogState extends State<NthRootDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return KeyboardListener(
       focusNode: _keyboardFocus,
       autofocus: true,
       onKeyEvent: _handleKeyboardInput,
       child: AlertDialog(
-        title: const Text('Nth Root'),
+        title: Text(t.nthRootTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             DialogLatexField(
               controller: _expressionController,
-              label: 'Expression',
+              label: t.nthRootBase,
               isFocused: _focusedField == 0,
               onTap: () => setState(() => _focusedField = 0),
             ),
             const SizedBox(height: 12),
             DialogLatexField(
               controller: _rootController,
-              label: 'Root (n)',
+              label: 'n',
               isFocused: _focusedField == 1,
               onTap: () => setState(() => _focusedField = 1),
             ),
@@ -659,11 +664,11 @@ class _NthRootDialogState extends State<NthRootDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             onPressed: _onSubmit,
-            child: const Text('Insert'),
+            child: Text(t.dialogInsert),
           ),
         ],
       ),
@@ -763,32 +768,33 @@ class _LimitDialogState extends State<LimitDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return KeyboardListener(
       focusNode: _keyboardFocus,
       autofocus: true,
       onKeyEvent: _handleKeyboardInput,
       child: AlertDialog(
-        title: const Text('Limit'),
+        title: Text(t.limitTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             DialogLatexField(
               controller: _functionController,
-              label: 'Function f(x)',
+              label: t.dialogFunction,
               isFocused: _focusedField == 0,
               onTap: () => setState(() => _focusedField = 0),
             ),
             const SizedBox(height: 12),
             DialogLatexField(
               controller: _variableController,
-              label: 'Variable',
+              label: t.dialogVariable,
               isFocused: _focusedField == 1,
               onTap: () => setState(() => _focusedField = 1),
             ),
             const SizedBox(height: 12),
             DialogLatexField(
               controller: _approachesController,
-              label: 'Approaches',
+              label: t.limitApproaches,
               isFocused: _focusedField == 2,
               onTap: () => setState(() => _focusedField = 2),
             ),
@@ -797,11 +803,11 @@ class _LimitDialogState extends State<LimitDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             onPressed: _onSubmit,
-            child: const Text('Insert'),
+            child: Text(t.dialogInsert),
           ),
         ],
       ),
@@ -877,6 +883,7 @@ class _SubstituteDialogState extends State<SubstituteDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     final vars = widget.appState.userVariables.entries
         .where((e) => e.key.isNotEmpty && e.value.isNotEmpty)
         .toList();
@@ -886,7 +893,7 @@ class _SubstituteDialogState extends State<SubstituteDialog> {
       autofocus: true,
       onKeyEvent: _handleKeyboardInput,
       child: AlertDialog(
-        title: const Text('Substitute'),
+        title: Text(t.substituteTitle),
         content: SizedBox(
           width: 360,
           child: Column(
@@ -894,21 +901,21 @@ class _SubstituteDialogState extends State<SubstituteDialog> {
             children: [
               DialogLatexField(
                 controller: _expressionController,
-                label: 'Expression',
+                label: t.dialogExpression,
                 isFocused: _focusedField == 0,
                 onTap: () => setState(() => _focusedField = 0),
               ),
               const SizedBox(height: 12),
               DialogLatexField(
                 controller: _variableController,
-                label: 'Variable',
+                label: t.dialogVariable,
                 isFocused: _focusedField == 1,
                 onTap: () => setState(() => _focusedField = 1),
               ),
               const SizedBox(height: 12),
               DialogLatexField(
                 controller: _valueController,
-                label: 'Value',
+                label: t.dialogValue,
                 isFocused: _focusedField == 2,
                 onTap: () => setState(() => _focusedField = 2),
               ),
@@ -917,7 +924,7 @@ class _SubstituteDialogState extends State<SubstituteDialog> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Use a stored variable as value:',
+                    t.substituteUseStoredVariable,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -945,11 +952,11 @@ class _SubstituteDialogState extends State<SubstituteDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(t.cancel),
           ),
           ElevatedButton(
             onPressed: _onSubmit,
-            child: const Text('Insert'),
+            child: Text(t.dialogInsert),
           ),
         ],
       ),
