@@ -2,6 +2,71 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 24) — Unit converter (P5 #4, V1)
+
+Fourth and final of the P5 top-4 cluster. Ships a Unit Converter
+dialog reachable from Settings, with a catalog of ~40 common units
+across six dimensions and unit-tested conversion math.
+
+### Catalog
+
+`lib/engine/unit_catalog.dart` enumerates units per dimension with
+`(scale, offset)` pairs taking each unit to its canonical SI base.
+The offset is only non-zero for temperature (°C, °F are affine, not
+proportional, to Kelvin); everything else is `offset = 0`.
+
+Dimensions covered:
+
+- **Length** — m, km, cm, mm, μm, nm, mi, yd, ft, in, nmi, AU, ly
+- **Time** — s, ms, μs, ns, min, h, d, wk, yr (365.25 d)
+- **Mass** — kg, g, mg, t, lb, oz, st
+- **Temperature** — K, °C, °F (with proper affine handling)
+- **Velocity** — m/s, km/h, mph, ft/s, kn (knot), c (speed of light)
+- **Angle** — rad, °, grad, turn, arcmin, arcsec
+
+### Converter
+
+`lib/engine/unit_converter.dart` does single-dimension conversion
+through the base unit. Validates that source and target share the
+same dimension, rejects NaN / infinity inputs cleanly, and a
+companion `format()` helper renders the result with trailing-zero
+stripping and scientific notation for extreme magnitudes.
+
+### Dialog
+
+`lib/widgets/unit_converter_dialog.dart` shows a chip row for
+dimensions, paired from/to dropdowns with a swap button, and a live
+result block. Settings → "Unit converter" launches it. Pure Dart,
+no engine integration needed at this stage — the dialog is a
+self-contained tool.
+
+### What V1 deliberately omits
+
+- **Inline syntax** in the calculator (`5 km + 3 m`, `9.81 m/s^2 * 2 s`).
+  Inline is tricky because unit symbols overlap with variable names
+  (`k`, `g`, `t`, `h`, etc.). V2 needs a disambiguating syntax —
+  maybe an explicit `[unit]` wrapper or a context-aware parser.
+- **Composite-dimension arithmetic** (force = mass × acceleration,
+  energy = force × distance). V2.
+- **SI prefix parsing** (`5 km` understood as `5 × 10³ m`). Doable
+  by detecting a known prefix on an unknown-but-known-base-suffix
+  symbol; deferred to V2 alongside inline.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **422/422** (50 new tests covering catalog coverage,
+  every dimension's basic conversions, temperature offset correctness
+  including the -40 °C = -40 °F coincidence, round-trips, error
+  handling, and formatting).
+- macOS release: matrix self-test 7/7, step self-test 28/28.
+
+This completes the P5 top-4 cluster I recommended:
+**step-by-step solutions ✓, parameter sliders ✓, unit converter ✓**,
+and **statistics + probability module** as the only remaining piece.
+
+---
+
 ## 2026-05-17 (round 23) — Parameter sliders + thorough test sweep
 
 Two threads in one round: shipping P5 #2 (parameter sliders on the

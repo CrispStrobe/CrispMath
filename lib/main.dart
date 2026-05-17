@@ -24,6 +24,7 @@ import 'screens/calculator_screen.dart';
 import 'screens/function_editor_screen.dart';
 import 'screens/graphing_screen.dart';
 import 'services/native_licenses.dart';
+import 'widgets/unit_converter_dialog.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -412,6 +413,19 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(t.settingsLayoutBody),
                     ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.straighten),
+                  title: Text(t.unitConverterTitle),
+                  subtitle: Text(t.unitConverterSubtitle),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => const UnitConverterDialog(),
                   ),
                 ),
               ),

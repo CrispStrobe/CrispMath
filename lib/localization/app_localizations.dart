@@ -96,6 +96,8 @@ abstract class AppLocalizations {
   String get matrixDiagnosticsTitle;
   String get matrixDiagnosticsSubtitle;
   String matrixDiagnosticsSummary(int passed, int total);
+  String get unitConverterTitle;
+  String get unitConverterSubtitle;
 
   // -- Picker dialogs --
   String get selectEquation;
@@ -300,6 +302,11 @@ class EnLocalizations implements AppLocalizations {
   @override
   String matrixDiagnosticsSummary(int passed, int total) =>
       '$passed of $total checks passed';
+  @override
+  String get unitConverterTitle => 'Unit converter';
+  @override
+  String get unitConverterSubtitle =>
+      'Length / time / mass / temperature / velocity / angle.';
 
   @override
   String get selectEquation => 'Select equation or continue typing:';
@@ -529,6 +536,11 @@ class DeLocalizations implements AppLocalizations {
   @override
   String matrixDiagnosticsSummary(int passed, int total) =>
       '$passed von $total Prüfungen bestanden';
+  @override
+  String get unitConverterTitle => 'Einheitenumrechner';
+  @override
+  String get unitConverterSubtitle =>
+      'Länge / Zeit / Masse / Temperatur / Geschwindigkeit / Winkel.';
 
   @override
   String get selectEquation => 'Gleichung auswählen oder weiter tippen:';
@@ -759,6 +771,11 @@ class FrLocalizations implements AppLocalizations {
   @override
   String matrixDiagnosticsSummary(int passed, int total) =>
       '$passed vérifications sur $total réussies';
+  @override
+  String get unitConverterTitle => 'Convertisseur d\'unités';
+  @override
+  String get unitConverterSubtitle =>
+      'Longueur / temps / masse / température / vitesse / angle.';
 
   @override
   String get selectEquation =>
@@ -990,6 +1007,11 @@ class EsLocalizations implements AppLocalizations {
   @override
   String matrixDiagnosticsSummary(int passed, int total) =>
       '$passed de $total comprobaciones superadas';
+  @override
+  String get unitConverterTitle => 'Conversor de unidades';
+  @override
+  String get unitConverterSubtitle =>
+      'Longitud / tiempo / masa / temperatura / velocidad / ángulo.';
 
   @override
   String get selectEquation =>

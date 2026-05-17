@@ -216,10 +216,17 @@ roughly double the perceived value of the app.
   binomial / t / chi-square distributions and quantiles, basic
   hypothesis tests. A whole school-curriculum use case we don't
   address at all today.
-- [ ] **Unit-aware arithmetic**. `5 km / 30 min in mph`, `1 mile + 5 ft`,
+- [~] **Unit-aware arithmetic**. `5 km / 30 min in mph`, `1 mile + 5 ft`,
   full SI prefix handling, dimension checking on results. Opens the
-  engineering / physics / chemistry audience. Doable as a Dart
-  preprocessor layer on top of the existing engine.
+  engineering / physics / chemistry audience.
+  - **V1 done** (HISTORY round 24): single-dimension converter with
+    a Unit Converter dialog reachable from Settings. ~40 units across
+    six dimensions (length, time, mass, temperature, velocity, angle)
+    with proper offset handling for °C / °F. Conversion math fully
+    unit-tested (50 examples).
+  - **V2 pending**: inline syntax (`5 km + 3 m` in the calculator
+    input), composite-dimension arithmetic (force = mass × acceleration),
+    SI prefix parser.
 
 ### Other meaningful gaps
 
