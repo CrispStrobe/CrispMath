@@ -26,6 +26,9 @@ abstract class AppLocalizations {
   String get clearButton;
   String get clearHistory;
   String get clearHistoryConfirm;
+  String get searchHistory;
+  String get searchHistoryHint;
+  String get historyNoMatches;
 
   // -- Graphing screen --
   String graphingTitle(int count);
@@ -142,6 +145,12 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get clearHistoryConfirm =>
       'Remove all calculation entries from history?';
+  @override
+  String get searchHistory => 'Search history';
+  @override
+  String get searchHistoryHint => 'Filter history…';
+  @override
+  String get historyNoMatches => 'No matching entries.';
 
   @override
   String graphingTitle(int count) => 'Graphing ($count functions)';
@@ -345,6 +354,12 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get clearHistoryConfirm =>
       'Alle Einträge aus dem Berechnungsverlauf entfernen?';
+  @override
+  String get searchHistory => 'Verlauf durchsuchen';
+  @override
+  String get searchHistoryHint => 'Verlauf filtern…';
+  @override
+  String get historyNoMatches => 'Keine passenden Einträge.';
 
   @override
   String graphingTitle(int count) => 'Graphen ($count Funktionen)';

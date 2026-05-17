@@ -2,6 +2,51 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 14) — P2: substitute dialog + history search
+
+Two user-facing improvements with the bridge fix from round 13
+unblocked.
+
+### Variable substitution dialog
+
+The `subst` keypad button used to just stuff `subst(, , )` into the
+input and let the user fill the holes — fiddly and easy to break. New
+`SubstituteDialog` (in `lib/widgets/function_picker_dialogs.dart`)
+mirrors the existing `LimitDialog` pattern: three LaTeX fields
+(Expression, Variable, Value) and an "Insert" button that builds
+`subst(expr, var, value)` and drops it in.
+
+Nice bit: when `appState.userVariables` is non-empty, the dialog shows
+a row of `ActionChip`s for each stored variable. Tapping one fills the
+Value field — same gesture as picking from memory, no typing.
+
+### History search
+
+Added a search icon to the calculator history toolbar (next to the
+LaTeX/plain toggle + clear). Toggle reveals a TextField that filters
+the rendered history live — case-insensitive `contains` against both
+expression and result. Empty filter shows the usual list; non-matching
+filter shows a "no matching entries" placeholder. Search state is per-
+session (intentionally not persisted — feels weird to come back to the
+app with a stale filter).
+
+### i18n
+
+Added en/de strings for `searchHistory`, `searchHistoryHint`,
+`historyNoMatches`. The new dialog itself is still hardcoded English to
+match the rest of `function_picker_dialogs.dart`; that whole file
+should get a localization pass in a follow-up.
+
+### Verification
+
+- `flutter analyze`: 31 issues — same count as before, no new
+  warnings/errors.
+- `flutter test`: 236 tests pass.
+- macOS release build: 69.2 MB, boots cleanly with the linked-symbols
+  log from round 13.
+
+---
+
 ## 2026-05-17 (round 13) — P1#2 finally closed (macOS release link)
 
 The macOS release build kept dropping every `flutter_symengine_*`

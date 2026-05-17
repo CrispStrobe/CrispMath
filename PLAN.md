@@ -37,7 +37,8 @@ and the light/dark/system theme picker.
 
 - [ ] **More translations.** German is up to date; Spanish / French
   would be cheap follow-ups.
-- [ ] **Variable substitution dialog** — no more typing `subst(...)`.
+- [x] ~~**Variable substitution dialog** — no more typing `subst(...)`.~~
+  Done 2026-05-17 — see HISTORY round 14.
 - [ ] **Plot annotations** — mark extrema and roots on the graph when
   an analysis is open.
 
@@ -45,7 +46,8 @@ and the light/dark/system theme picker.
 
 - [ ] Symbolic Gauss / RREF on matrices.
 - [ ] CI: GitHub Actions to run `flutter analyze` + `flutter test` on PR.
-- [ ] History view filtering / search.
+- [x] ~~History view filtering / search.~~ Done 2026-05-17 — see
+  HISTORY round 14.
 
 ---
 

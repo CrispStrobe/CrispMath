@@ -48,11 +48,16 @@ class CalculatorScreenState extends State<CalculatorScreen>
   bool _justCalculated = false;
   bool _showLatexHistory = false; // History display toggle
 
+  bool _historySearchOpen = false;
+  final TextEditingController _historySearchController =
+      TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
     _latexController.addListener(_onInputChanged);
+    _historySearchController.addListener(() => setState(() {}));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculatorFocusNode.requestFocus();
@@ -65,6 +70,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _latexController.removeListener(_onInputChanged);
     _latexController.dispose();
     _calculatorFocusNode.dispose();
+    _historySearchController.dispose();
     super.dispose();
   }
 
@@ -520,7 +526,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
         break;
 
       case 'subst':
-        _latexController.insert('subst(, , )', cursorOffsetFromEnd: -4);
+        final substResult = await FunctionPickerDialogs.showSubstituteDialog(
+            context, _appState);
+        if (substResult != null) {
+          _latexController.insert(substResult);
+          setState(() {});
+        }
         break;
 
       case 'dot':
@@ -1080,11 +1091,53 @@ class CalculatorScreenState extends State<CalculatorScreen>
                           ),
                           const SizedBox(width: 8),
                           IconButton(
+                            icon: Icon(
+                              _historySearchOpen
+                                  ? Icons.search_off
+                                  : Icons.search,
+                              size: 20,
+                            ),
+                            tooltip:
+                                AppLocalizations.of(context).searchHistory,
+                            onPressed: () {
+                              setState(() {
+                                _historySearchOpen = !_historySearchOpen;
+                                if (!_historySearchOpen) {
+                                  _historySearchController.clear();
+                                }
+                              });
+                            },
+                          ),
+                          IconButton(
                             icon: const Icon(Icons.delete_sweep, size: 20),
                             tooltip: AppLocalizations.of(context).clearHistory,
                             onPressed: _confirmClearHistory,
                           ),
                         ],
+                      ),
+                    ),
+
+                  if (_historySearchOpen && _appState.history.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: TextField(
+                        controller: _historySearchController,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          prefixIcon: const Icon(Icons.search, size: 18),
+                          hintText:
+                              AppLocalizations.of(context).searchHistoryHint,
+                          border: const OutlineInputBorder(),
+                          suffixIcon: _historySearchController.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () {
+                                    _historySearchController.clear();
+                                  },
+                                ),
+                        ),
                       ),
                     ),
 
@@ -1102,11 +1155,31 @@ class CalculatorScreenState extends State<CalculatorScreen>
                             );
                           }
 
+                          final q = _historySearchController.text
+                              .trim()
+                              .toLowerCase();
+                          final entries = q.isEmpty
+                              ? _appState.history
+                              : _appState.history
+                                  .where((e) =>
+                                      e.expression.toLowerCase().contains(q) ||
+                                      e.result.toLowerCase().contains(q))
+                                  .toList();
+
+                          if (entries.isEmpty) {
+                            return Center(
+                              child: Text(
+                                AppLocalizations.of(context).historyNoMatches,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            );
+                          }
+
                           return ListView.builder(
-                            itemCount: _appState.history.length,
+                            itemCount: entries.length,
                             reverse: true,
                             itemBuilder: (context, index) {
-                              final entry = _appState.history[index];
+                              final entry = entries[index];
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 24, vertical: 8),

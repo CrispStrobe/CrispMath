@@ -144,6 +144,16 @@ class FunctionPickerDialogs {
       builder: (context) => LimitDialog(),
     );
   }
+
+  static Future<String?> showSubstituteDialog(
+    BuildContext context,
+    AppState appState,
+  ) async {
+    return await showDialog<String>(
+      context: context,
+      builder: (context) => SubstituteDialog(appState: appState),
+    );
+  }
 }
 
 /// A simple LaTeX input field for dialogs that only shows cursor when focused
@@ -778,6 +788,154 @@ class _LimitDialogState extends State<LimitDialog> {
               onTap: () => setState(() => _focusedField = 2),
             ),
           ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: _onSubmit,
+            child: const Text('Insert'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SubstituteDialog extends StatefulWidget {
+  final AppState appState;
+
+  const SubstituteDialog({super.key, required this.appState});
+
+  @override
+  State<SubstituteDialog> createState() => _SubstituteDialogState();
+}
+
+class _SubstituteDialogState extends State<SubstituteDialog> {
+  final _expressionController = LatexController();
+  final _variableController = LatexController();
+  final _valueController = LatexController();
+  final FocusNode _keyboardFocus = FocusNode();
+
+  int _focusedField = 0; // 0=expression, 1=variable, 2=value
+
+  @override
+  void initState() {
+    super.initState();
+    _variableController.insert('x');
+  }
+
+  @override
+  void dispose() {
+    _expressionController.dispose();
+    _variableController.dispose();
+    _valueController.dispose();
+    _keyboardFocus.dispose();
+    super.dispose();
+  }
+
+  bool _handleKeyboardInput(KeyEvent event) {
+    return KeyboardInputHandler.handleKeyboardInput(
+      event,
+      (text) => _getActiveController()?.insert(text),
+      () => _getActiveController()?.backspace(),
+      () => _getActiveController()?.clear(),
+      _onSubmit,
+      (amount) => _getActiveController()?.moveCursor(amount),
+    );
+  }
+
+  LatexController? _getActiveController() {
+    switch (_focusedField) {
+      case 0:
+        return _expressionController;
+      case 1:
+        return _variableController;
+      case 2:
+        return _valueController;
+      default:
+        return _expressionController;
+    }
+  }
+
+  void _onSubmit() {
+    final expr = _expressionController.text.trim();
+    final variable = _variableController.text.trim();
+    final value = _valueController.text.trim();
+
+    if (expr.isEmpty || variable.isEmpty || value.isEmpty) return;
+
+    Navigator.of(context).pop('subst($expr, $variable, $value)');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vars = widget.appState.userVariables.entries
+        .where((e) => e.key.isNotEmpty && e.value.isNotEmpty)
+        .toList();
+
+    return KeyboardListener(
+      focusNode: _keyboardFocus,
+      autofocus: true,
+      onKeyEvent: _handleKeyboardInput,
+      child: AlertDialog(
+        title: const Text('Substitute'),
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DialogLatexField(
+                controller: _expressionController,
+                label: 'Expression',
+                isFocused: _focusedField == 0,
+                onTap: () => setState(() => _focusedField = 0),
+              ),
+              const SizedBox(height: 12),
+              DialogLatexField(
+                controller: _variableController,
+                label: 'Variable',
+                isFocused: _focusedField == 1,
+                onTap: () => setState(() => _focusedField = 1),
+              ),
+              const SizedBox(height: 12),
+              DialogLatexField(
+                controller: _valueController,
+                label: 'Value',
+                isFocused: _focusedField == 2,
+                onTap: () => setState(() => _focusedField = 2),
+              ),
+              if (vars.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Use a stored variable as value:',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: vars
+                      .map((e) => ActionChip(
+                            label: Text('${e.key} = ${e.value}'),
+                            onPressed: () {
+                              setState(() {
+                                _valueController.clear();
+                                _valueController.insert(e.value);
+                                _focusedField = 2;
+                              });
+                            },
+                          ))
+                      .toList(),
+                ),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
