@@ -114,6 +114,68 @@ void main() {
     });
   });
 
+  group('StepEngine.integrate — rule selection', () {
+    List<String> rulesFor(String expr, String variable) =>
+        StepEngine.integrate(expr, variable, engine).map((s) => s.rule).toList();
+
+    test('constant rule fires for an integrand without the variable', () {
+      final rules = rulesFor('7', 'x');
+      expect(rules.first, equals('Constant rule'));
+    });
+
+    test('identity / power-rule-1 fires for ∫x dx', () {
+      final rules = rulesFor('x', 'x');
+      expect(rules.first, equals('Power rule (n=1)'));
+    });
+
+    test('power rule fires for ∫x^3 dx with a regular exponent', () {
+      final rules = rulesFor('x^3', 'x');
+      expect(rules.first, equals('Power rule'));
+    });
+
+    test('logarithm rule fires for ∫x^(-1) dx', () {
+      final rules = rulesFor('x^-1', 'x');
+      expect(rules.first, equals('Logarithm rule'));
+    });
+
+    test('logarithm rule also fires for the literal 1/x', () {
+      final rules = rulesFor('1/x', 'x');
+      expect(rules.first, equals('Logarithm rule'));
+    });
+
+    test('sum rule splits ∫(x + 1) dx into a sum step', () {
+      final rules = rulesFor('x + 1', 'x');
+      expect(rules.first, equals('Sum/difference rule (linearity)'));
+      // Should contain at least one sub-rule step from recursing on x and 1.
+      expect(rules, contains('Constant rule'));
+    });
+
+    test('constant multiple pulls out a constant factor', () {
+      final rules = rulesFor('3*x^2', 'x');
+      expect(rules.first, equals('Constant multiple'));
+      expect(rules, contains('Power rule'));
+    });
+
+    test('standard antiderivative fires for ∫sin(x) dx', () {
+      final rules = rulesFor('sin(x)', 'x');
+      expect(rules.first, equals('Antiderivative of sin'));
+    });
+
+    test('falls through to "Symbolic integration" for unrecognized shapes',
+        () {
+      // sin(x^2) needs substitution, which V1 doesn't handle.
+      final rules = rulesFor('sin(x^2)', 'x');
+      expect(rules.first, equals('Symbolic integration'));
+    });
+
+    test('every trace ends with a Result step', () {
+      for (final expr in const ['7', 'x', 'x^2', 'sin(x)', '3*x^2']) {
+        expect(rulesFor(expr, 'x').last, equals('Result'),
+            reason: 'expr=$expr');
+      }
+    });
+  });
+
   group('StepEngine.differentiate — step content', () {
     test('product rule step references both factors in the after string', () {
       final steps = StepEngine.differentiate('x*sin(x)', 'x', engine);

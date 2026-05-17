@@ -195,12 +195,16 @@ roughly double the perceived value of the app.
     derivatives; linear (1-step isolation), quadratic (discriminant +
     formula), and a graceful fall-through to SymEngine's `solve()` for
     higher-order / transcendental cases. New `solve⌄` keypad button.
-  - **Integration pending**: harder because symbolic integration uses
-    many algorithms (Risch, u-sub heuristics, integration by parts,
-    partial fractions). Realistic V1: try a small number of heuristics
-    Dart-side (power rule, simple trig, exp, basic u-sub, by-parts)
-    and fall through to SymEngine's answer unaugmented when no
-    pattern matches.
+  - **Integration done (V1)** (HISTORY round 22): same engine extended
+    with `StepEngine.integrate()`. Modeled on SymPy's
+    `manualintegrate` — fixed rule list, each rule either emits a
+    step and recurses on a simpler sub-integrand or declines.
+    Coverage: constant, identity (∫x dx), power rule, logarithm rule
+    (1/x and x^-1), sum/linearity, constant multiple, and standard
+    antiderivatives for sin/cos/exp/sinh/cosh when the argument is
+    just the variable. Substitution and integration by parts deferred
+    to V2 — they need heuristic u-picking (LIATE) that V1 can't
+    safely guess.
 - [ ] **Interactive parameter sliders** on the graphing screen.
   Replace constants in a graphed function with named parameters
   (`y = a*sin(b*x + c)`), attach a slider widget per parameter, drag

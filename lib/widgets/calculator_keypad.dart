@@ -113,6 +113,7 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
     'd/dx',
     'd/dx⌄',
     '∫',
+    '∫⌄',
     'lim',
     'subst',
     'gcd',

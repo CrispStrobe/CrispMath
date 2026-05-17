@@ -439,6 +439,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
         }
         break;
 
+      case '∫⌄':
+        await _showIntegrationSteps();
+        break;
+
       case 'ⁿ√x':
         final result = await FunctionPickerDialogs.showNthRootDialog(context);
         if (result != null) {
@@ -1175,6 +1179,88 @@ class CalculatorScreenState extends State<CalculatorScreen>
         headlineLatex: preprocessed.contains('=')
             ? preprocessed.replaceAll('=', r' \,=\, ')
             : '$preprocessed = 0',
+      ),
+    );
+  }
+
+  /// Prompt for an integrand + variable, then open the integration
+  /// step-by-step dialog. Mirrors _showDifferentiationSteps and
+  /// _showSolveSteps; same dialog widget with different headline.
+  Future<void> _showIntegrationSteps() async {
+    final raw = _latexController.text.trim();
+    final defaultExpr =
+        raw.isEmpty ? 'x^2' : LatexConversionUtils.fromLatex(raw);
+    final defaultVar =
+        ExpressionPreprocessingUtils.detectVariable(defaultExpr);
+
+    final exprCtl = TextEditingController(text: defaultExpr);
+    final varCtl = TextEditingController(text: defaultVar);
+
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Integration steps'),
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: exprCtl,
+                decoration: const InputDecoration(
+                  labelText: 'Integrand',
+                  hintText: 'e.g. x^2  or  sin(x) + 2x',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: varCtl,
+                decoration: const InputDecoration(
+                  labelText: 'Integrate with respect to',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Show steps'),
+          ),
+        ],
+      ),
+    );
+
+    final exprText = exprCtl.text.trim();
+    final varText = varCtl.text.trim();
+    exprCtl.dispose();
+    varCtl.dispose();
+
+    if (go != true || exprText.isEmpty || varText.isEmpty) return;
+
+    final preprocessed =
+        ExpressionPreprocessingUtils.preprocessNativeExpression(
+      ExpressionPreprocessingUtils.preprocessExpression(exprText, _appState),
+    );
+    final steps = StepEngine.integrate(preprocessed, varText, _engine);
+
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StepsDialog(
+        title: 'Integration steps',
+        expression: preprocessed,
+        variable: varText,
+        steps: steps,
+        subtitle: 'Integrating with respect to $varText:',
+        headlineLatex:
+            r'\int ' + _toLatex(preprocessed) + r' \, d' + varText,
       ),
     );
   }

@@ -2,6 +2,84 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 22) — Step-by-step integration (P5 #1, V3)
+
+Third slice of the step-by-step workstream. Modeled on SymPy's
+`manualintegrate` (the only public reference for "integration steps
+on top of a CAS that already has its own integrator"). To our
+knowledge, nobody has written one of these on top of SymEngine before
+— SymEngine is mostly used as a backend for SymPy, so the audience
+that wanted step traces inherited them from SymPy directly.
+
+### Rule walker
+
+`StepEngine.integrate(expr, variable, engine)` tries a fixed rule list
+in order. Each rule either emits a `MathStep` and recurses on a
+simpler sub-integrand, or declines and lets the next rule try. The
+final "Result" step always carries SymEngine's canonical antiderivative
+(with `+ C`), so even when the walker can't elaborate, the user still
+gets the right answer.
+
+Rules covered in V1:
+
+- Constant rule: ∫c dx = c·x when the integrand doesn't depend on var.
+- Power rule (n=1): ∫x dx = x²/2.
+- Power rule (general): ∫x^n dx = x^(n+1)/(n+1) for constant n ≠ -1.
+- Logarithm rule: ∫1/x dx = ln|x| (catches both `1/x` and `x^-1`).
+- Sum/difference (linearity): ∫(f ± g) dx = ∫f dx ± ∫g dx; recurses on
+  each term.
+- Constant multiple: ∫c·f(x) dx = c·∫f(x) dx; splits factors into
+  constant and variable parts, pulls the constant out front, recurses
+  on the remainder.
+- Standard antiderivatives for sin/cos/exp/sinh/cosh when the argument
+  is exactly the variable.
+- Fall-through: emits a "Symbolic integration" step that hands off to
+  SymEngine, with a note explaining that substitution and by-parts
+  aren't yet recognized.
+
+### Deferred (V2)
+
+- **Substitution**: needs a fixed candidate list (composite argument,
+  derivative-spotting). Most failures are pedagogical, not correctness
+  — if SymEngine still has the right answer the worst case is "no
+  steps shown."
+- **Integration by parts**: needs LIATE ordering and a recursion
+  budget to avoid infinite descent.
+- **Partial fractions** and **trig substitution**: niche, defer.
+
+### UI entry
+
+New `∫⌄` button in the CAS keypad tab, right next to `∫`. Opens a
+small integrand+variable prompt (defaults to `x^2`), runs the trace,
+opens the StepsDialog with the headline rendered as a proper LaTeX
+integral (`\int … \, d x`). Existing `∫` flow untouched.
+
+### Walk-through for `3·x^2`
+
+1. Constant multiple — `3 · ∫ x^2 dx`
+2. Power rule — `(x)^3 / 3`
+3. Result — `x^3 + C` (from SymEngine)
+
+### Why this is unusual
+
+The chat upstream noted that nobody appears to have done this on top
+of SymEngine before — SymEngine is primarily a SymPy backend and its
+direct users are library authors with no audience for pedagogical
+tooling. The combination of (a) a student-facing app, (b) the mobile
+on-device constraint that requires C++ speed, and (c) the willingness
+to write a parallel rule walker is rare enough that the path is
+empty. Documented in PLAN P5 #1.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: 287/287 (10 new integration tests covering rule
+  selection, the always-ends-with-Result invariant, and the fall-
+  through path for unrecognized shapes).
+- macOS release boots clean. Matrix self-test still 7/7.
+
+---
+
 ## 2026-05-17 (round 21) — Step-by-step equation solving (P5 #1, V2)
 
 Second slice of the step-by-step workstream from round 20: equation
