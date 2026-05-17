@@ -283,8 +283,13 @@ roughly double the perceived value of the app.
     in the Regression tab so users can switch between linear,
     polynomial (degree 2–5), and exponential fits without leaving
     the screen.
-  - **V5 pending**: two-sample t-test (independent), ANOVA, χ²
-    independence, F-distribution.
+  - **V5 partial** (HISTORY round 37): Welch's two-sample t-test for
+    independent samples with possibly unequal variances. Added as a
+    4th chip in the Tests tab next to one-sample t, paired t, and
+    χ² goodness-of-fit. Welch-Satterthwaite df, two- and one-sided
+    p-values, verdict block at α.
+  - **V6 pending**: ANOVA, χ² independence, F-distribution, paired
+    sign test.
 - [~] **Unit-aware arithmetic**. `5 km / 30 min in mph`, `1 mile + 5 ft`,
   full SI prefix handling, dimension checking on results. Opens the
   engineering / physics / chemistry audience.

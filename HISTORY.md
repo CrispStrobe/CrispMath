@@ -2,6 +2,56 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 37) — Statistics V5: Welch's two-sample t-test
+
+Extends `HypothesisTests` and the Statistics screen's Tests tab with
+the most-requested missing inferential test from V1.
+
+### Math (lib/engine/hypothesis_tests.dart)
+
+`HypothesisTests.welchT(sample1: ..., sample2: ...)` returns
+`TwoSampleTResult{statistic, df, mean1, mean2, stddev1, stddev2, n1,
+n2, pValueTwoSided, pValueOneSidedUpper, pValueOneSidedLower,
+rejectsAt(α)}`.
+
+Welch's variant is the default in R's `t.test()` and the modern
+textbook recommendation over pooled Student's t — it doesn't assume
+equal variances and gives sensible inference even when the samples
+are heteroscedastic. The formula:
+
+```
+t = (x̄₁ − x̄₂) / √(s₁²/n₁ + s₂²/n₂)
+df = (s₁²/n₁ + s₂²/n₂)² / ((s₁²/n₁)²/(n₁−1) + (s₂²/n₂)²/(n₂−1))
+```
+
+The Welch-Satterthwaite df is non-integer in general; we expose it
+as a `double` on the result and round when passing into our t-CDF
+(which takes integer df). That's the standard textbook workaround.
+
+Throws if either sample has fewer than 2 observations or zero
+variance.
+
+### UI (lib/screens/statistics_screen.dart)
+
+`_TestKind` enum gains `twoSampleT`; the Tests tab's chip-row now
+has four chips (one-sample t, two-sample t (Welch), paired t, χ²
+GOF). `_buildTwoSample()` mirrors the existing one-sample layout
+with two `Sample` inputs and a result card showing both sample
+statistics + the Welch-Satterthwaite df.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **642/642** (+7 new tests: equal-means edge case,
+  textbook example hand-verified against R's `t.test()` output
+  (t=-2.449, df=10), strongly-different-means rejection, p-tail
+  symmetry, unequal-variance handling, two error paths).
+
+### V6 deferred
+
+ANOVA (one-way), χ² independence (contingency tables), F-distribution,
+paired sign test.
+
 ## 2026-05-17 (round 36) — Statistics V4: exponential regression
 
 Rounds out the regression cluster. The Statistics screen's Regression

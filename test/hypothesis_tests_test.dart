@@ -120,6 +120,82 @@ void main() {
     });
   });
 
+  group('welchT (two-sample t)', () {
+    test('equal means → t ≈ 0, p ≈ 1', () {
+      final r = HypothesisTests.welchT(
+        sample1: const [5, 6, 7, 5, 6, 7, 5, 6, 7],
+        sample2: const [5, 6, 7, 5, 6, 7, 5, 6, 7],
+      );
+      expect(r.statistic, closeTo(0.0, 1e-9));
+      expect(r.pValueTwoSided, closeTo(1.0, 0.05));
+    });
+
+    test('classic textbook example — different means, similar variance', () {
+      // Sample 1: [8,9,10,10,11,12]. n=6, x̄₁=10. Deviations
+      //   -2,-1,0,0,1,2 → SS=10, sample var s₁²=10/5=2.0 → v₁=2/6=1/3.
+      // Sample 2: same shape, x̄₂=12, v₂=1/3.
+      // SE = √(2/3) ≈ 0.8165 → t = (10−12)/0.8165 ≈ -2.449.
+      // df Welch = (v₁+v₂)² / (v₁²/(n₁−1)+v₂²/(n₂−1)) = 10.
+      final r = HypothesisTests.welchT(
+        sample1: const [8, 9, 10, 10, 11, 12],
+        sample2: const [10, 11, 12, 12, 13, 14],
+      );
+      expect(r.mean1, closeTo(10.0, 1e-9));
+      expect(r.mean2, closeTo(12.0, 1e-9));
+      expect(r.statistic, closeTo(-2.449, 0.01));
+      expect(r.df, closeTo(10.0, 1e-6));
+    });
+
+    test('strongly different means — rejected at α = 0.05', () {
+      final r = HypothesisTests.welchT(
+        sample1: const [100, 102, 99, 101, 100, 98, 103, 101, 100, 99],
+        sample2: const [50, 52, 49, 51, 50, 48, 53, 51, 50, 49],
+      );
+      expect(r.rejectsAt(0.05), isTrue);
+      expect(r.pValueTwoSided, lessThan(1e-9));
+    });
+
+    test('upper-tail and lower-tail p sum to 1', () {
+      final r = HypothesisTests.welchT(
+        sample1: const [10, 12, 11, 14, 13],
+        sample2: const [10, 11, 9, 13, 12],
+      );
+      expect(r.pValueOneSidedUpper + r.pValueOneSidedLower,
+          closeTo(1.0, 1e-6));
+    });
+
+    test('Welch handles unequal variances', () {
+      // Sample 1: small spread. Sample 2: large spread, same mean.
+      final r = HypothesisTests.welchT(
+        sample1: const [9.9, 10.0, 10.1, 9.95, 10.05],
+        sample2: const [5.0, 8.0, 10.0, 12.0, 15.0],
+      );
+      // Means: 10.0 vs 10.0 → t ≈ 0, p ≈ 1.
+      expect(r.statistic, closeTo(0.0, 0.1));
+      expect(r.rejectsAt(0.05), isFalse);
+    });
+
+    test('zero variance in either sample throws', () {
+      expect(
+        () => HypothesisTests.welchT(
+          sample1: const [5, 5, 5, 5],
+          sample2: const [4, 6, 5, 7],
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('fewer than 2 in either sample throws', () {
+      expect(
+        () => HypothesisTests.welchT(
+          sample1: const [5.0],
+          sample2: const [4, 5, 6],
+        ),
+        throwsArgumentError,
+      );
+    });
+  });
+
   group('chiSquareGof', () {
     test('observed = expected → χ² = 0, p = 1', () {
       final r = HypothesisTests.chiSquareGof(

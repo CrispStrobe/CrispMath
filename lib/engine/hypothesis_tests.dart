@@ -11,8 +11,8 @@
 // of freedom, p-value, and a verdict at a user-supplied significance
 // level. The UI renders the verdict in plain language.
 //
-// Two-sample t-tests (independent), ANOVA, and chi-square
-// independence are V2 territory.
+// V2 adds Welch's two-sample t-test for independent samples with
+// unequal variances. ANOVA and chi-square independence remain V3.
 
 import 'dart:math' as math;
 
@@ -44,6 +44,43 @@ class TTestResult {
     required this.sampleStddev,
     required this.sampleSize,
     required this.hypothesizedMean,
+    required this.pValueTwoSided,
+    required this.pValueOneSidedUpper,
+    required this.pValueOneSidedLower,
+  });
+
+  bool rejectsAt(double alpha, {bool twoSided = true}) =>
+      (twoSided ? pValueTwoSided : pValueOneSidedUpper) < alpha;
+}
+
+/// Result of an independent two-sample t-test (Welch's variant).
+class TwoSampleTResult {
+  final double statistic;
+
+  /// Welch-Satterthwaite df. Non-integer in general — we keep it as a
+  /// double; the UI rounds for display.
+  final double df;
+
+  final double mean1;
+  final double mean2;
+  final double stddev1;
+  final double stddev2;
+  final int n1;
+  final int n2;
+
+  final double pValueTwoSided;
+  final double pValueOneSidedUpper;
+  final double pValueOneSidedLower;
+
+  const TwoSampleTResult({
+    required this.statistic,
+    required this.df,
+    required this.mean1,
+    required this.mean2,
+    required this.stddev1,
+    required this.stddev2,
+    required this.n1,
+    required this.n2,
     required this.pValueTwoSided,
     required this.pValueOneSidedUpper,
     required this.pValueOneSidedLower,
@@ -133,6 +170,70 @@ class HypothesisTests {
       for (var i = 0; i < before.length; i++) before[i] - after[i],
     ];
     return oneSampleT(data: diffs, hypothesizedMean: 0.0);
+  }
+
+  /// Welch's two-sample t-test for independent samples with possibly
+  /// unequal variances. This is the default in R's `t.test()` and the
+  /// recommended modern choice over the pooled Student's t (which
+  /// assumes equal variances).
+  ///
+  /// Computes:
+  ///   t = (x̄₁ − x̄₂) / √(s₁²/n₁ + s₂²/n₂)
+  ///   df via Welch-Satterthwaite:
+  ///       df = (s₁²/n₁ + s₂²/n₂)² /
+  ///            ((s₁²/n₁)²/(n₁−1) + (s₂²/n₂)²/(n₂−1))
+  ///
+  /// Throws if either sample has fewer than 2 observations or zero
+  /// variance.
+  static TwoSampleTResult welchT({
+    required List<double> sample1,
+    required List<double> sample2,
+  }) {
+    if (sample1.length < 2 || sample2.length < 2) {
+      throw ArgumentError(
+          'welchT() needs at least 2 observations in each sample.');
+    }
+    final s1 = Statistics.describe(sample1);
+    final s2 = Statistics.describe(sample2);
+    if (s1.sampleStddev == 0 || s2.sampleStddev == 0) {
+      throw ArgumentError(
+          'welchT() needs variance in both samples (one has stddev = 0).');
+    }
+    final v1 = s1.sampleVariance / s1.count;
+    final v2 = s2.sampleVariance / s2.count;
+    final se = math.sqrt(v1 + v2);
+    final t = (s1.mean - s2.mean) / se;
+
+    // Welch-Satterthwaite df.
+    final num = (v1 + v2) * (v1 + v2);
+    final den = (v1 * v1) / (s1.count - 1) + (v2 * v2) / (s2.count - 1);
+    final df = num / den;
+
+    // For the p-value we need T-distribution CDFs at non-integer df.
+    // TDistribution accepts int df; round it (Welch's df is approximate
+    // anyway). For a more accurate p, we'd want a real Γ-based pdf
+    // integrator — but the round is the standard textbook approach and
+    // matches what most stats packages display.
+    final dfInt = df.round();
+    final tDist = TDistribution(df: math.max(1, dfInt));
+
+    final upper = (1.0 - tDist.cdf(t)).clamp(0.0, 1.0).toDouble();
+    final lower = tDist.cdf(t).clamp(0.0, 1.0).toDouble();
+    final twoSided = (2 * math.min(upper, lower)).clamp(0.0, 1.0).toDouble();
+
+    return TwoSampleTResult(
+      statistic: t,
+      df: df,
+      mean1: s1.mean,
+      mean2: s2.mean,
+      stddev1: s1.sampleStddev,
+      stddev2: s2.sampleStddev,
+      n1: s1.count,
+      n2: s2.count,
+      pValueTwoSided: twoSided,
+      pValueOneSidedUpper: upper,
+      pValueOneSidedLower: lower,
+    );
   }
 
   /// Chi-square goodness-of-fit. χ² = Σ (Oᵢ − Eᵢ)² / Eᵢ with

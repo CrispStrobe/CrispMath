@@ -545,7 +545,7 @@ class _DistributionsTabState extends State<_DistributionsTab> {
 
 // === Hypothesis tests tab ================================================
 
-enum _TestKind { oneSampleT, pairedT, chiSquareGof }
+enum _TestKind { oneSampleT, twoSampleT, pairedT, chiSquareGof }
 
 class _TestsTab extends StatefulWidget {
   const _TestsTab();
@@ -559,6 +559,10 @@ class _TestsTabState extends State<_TestsTab> {
   // One-sample t-test inputs.
   final _oneSampleData = TextEditingController(text: '172, 174, 168, 180, 176');
   final _oneSampleMu = TextEditingController(text: '170');
+
+  // Two-sample t-test inputs.
+  final _twoSampleA = TextEditingController(text: '8, 9, 10, 10, 11, 12');
+  final _twoSampleB = TextEditingController(text: '10, 11, 12, 12, 13, 14');
 
   // Paired t-test inputs.
   final _pairedBefore =
@@ -578,6 +582,8 @@ class _TestsTabState extends State<_TestsTab> {
     for (final c in [
       _oneSampleData,
       _oneSampleMu,
+      _twoSampleA,
+      _twoSampleB,
       _pairedBefore,
       _pairedAfter,
       _gofObserved,
@@ -690,6 +696,62 @@ class _TestsTabState extends State<_TestsTab> {
           _resultRow('Hypothesized μ₀', _fmt(r.hypothesizedMean)),
           _resultRow('t-statistic', _fmt(r.statistic)),
           _resultRow('Degrees of freedom', '${r.df}'),
+          _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
+          _resultRow('p-value (upper tail)', _fmt(r.pValueOneSidedUpper)),
+          _resultRow('p-value (lower tail)', _fmt(r.pValueOneSidedLower)),
+          _verdictBlock(context, r.rejectsAt(alpha)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTwoSample(BuildContext context) {
+    final alpha = double.tryParse(_alpha.text) ?? 0.05;
+    final a = _parse(_twoSampleA.text);
+    final b = _parse(_twoSampleB.text);
+    String? err;
+    TwoSampleTResult? r;
+    if (a.length >= 2 && b.length >= 2) {
+      try {
+        r = HypothesisTests.welchT(sample1: a, sample2: b);
+      } catch (e) {
+        err = e.toString();
+      }
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _twoSampleA,
+          maxLines: 2,
+          onChanged: (_) => setState(() {}),
+          decoration: const InputDecoration(
+            labelText: 'Sample 1',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _twoSampleB,
+          maxLines: 2,
+          onChanged: (_) => setState(() {}),
+          decoration: const InputDecoration(
+            labelText: 'Sample 2',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (err != null)
+          Text(err,
+              style: TextStyle(color: Theme.of(context).colorScheme.error))
+        else if (r != null) ...[
+          _resultRow('Mean₁ x̄₁', _fmt(r.mean1)),
+          _resultRow('Mean₂ x̄₂', _fmt(r.mean2)),
+          _resultRow('Stddev₁ s₁', _fmt(r.stddev1)),
+          _resultRow('Stddev₂ s₂', _fmt(r.stddev2)),
+          _resultRow('Sizes n₁, n₂', '${r.n1}, ${r.n2}'),
+          _resultRow('t-statistic (Welch)', _fmt(r.statistic)),
+          _resultRow('df (Welch-Satterthwaite)', _fmt(r.df)),
           _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
           _resultRow('p-value (upper tail)', _fmt(r.pValueOneSidedUpper)),
           _resultRow('p-value (lower tail)', _fmt(r.pValueOneSidedLower)),
@@ -815,6 +877,12 @@ class _TestsTabState extends State<_TestsTab> {
                 onSelected: (_) => setState(() => _kind = _TestKind.oneSampleT),
               ),
               ChoiceChip(
+                label: const Text('Two-sample t (Welch)'),
+                selected: _kind == _TestKind.twoSampleT,
+                onSelected: (_) =>
+                    setState(() => _kind = _TestKind.twoSampleT),
+              ),
+              ChoiceChip(
                 label: const Text('Paired t'),
                 selected: _kind == _TestKind.pairedT,
                 onSelected: (_) => setState(() => _kind = _TestKind.pairedT),
@@ -851,6 +919,8 @@ class _TestsTabState extends State<_TestsTab> {
                 switch (_kind) {
                   case _TestKind.oneSampleT:
                     return _buildOneSample(context);
+                  case _TestKind.twoSampleT:
+                    return _buildTwoSample(context);
                   case _TestKind.pairedT:
                     return _buildPaired(context);
                   case _TestKind.chiSquareGof:
