@@ -211,11 +211,20 @@ roughly double the perceived value of the app.
   parameters; a compact slider per parameter appears under each
   function chip, and the curve repaints live as the user drags.
   Values persist across restarts via shared_preferences.
-- [ ] **Statistics + probability module**. Descriptive stats on a list
+- [~] **Statistics + probability module**. Descriptive stats on a list
   of numbers, linear / polynomial / exponential regression, normal /
   binomial / t / chi-square distributions and quantiles, basic
-  hypothesis tests. A whole school-curriculum use case we don't
-  address at all today.
+  hypothesis tests.
+  - **V1 done** (HISTORY round 25): three-tab Statistics screen in
+    the Analysis hub. Descriptive (count, mean, median, mode,
+    quartiles, IQR, sample + population variance/stddev, range),
+    linear regression (slope, intercept, R²), normal distribution
+    (PDF, CDF, quantile via bisection on the CDF), binomial
+    distribution (PMF, CDF, mean/variance, log-domain for large n).
+    50 unit tests covering known textbook values.
+  - **V2 pending**: t-distribution, chi-square, hypothesis tests
+    (one-sample t, paired t, chi-square goodness-of-fit), polynomial
+    and exponential regression.
 - [~] **Unit-aware arithmetic**. `5 km / 30 min in mph`, `1 mile + 5 ft`,
   full SI prefix handling, dimension checking on results. Opens the
   engineering / physics / chemistry audience.

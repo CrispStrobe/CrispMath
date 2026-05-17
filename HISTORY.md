@@ -2,6 +2,72 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 25) — Statistics + probability (P5 #3, V1)
+
+Last of the P5 top-4 cluster. Pure-Dart statistics + distributions
+math, plus a three-tab Statistics screen in the Analysis hub.
+
+### Math layer
+
+`lib/engine/statistics.dart`:
+
+- `DescriptiveStats` (count, sum, mean, median, mode, sample +
+  population variance/stddev, min, max, range, Q1/Q3, IQR). Quartiles
+  use R-type-7 / Excel linear interpolation.
+- `Statistics.linearFit(xs, ys)` — least-squares linear regression
+  returning slope, intercept, R², count. Handles the all-x's-equal
+  case (returns NaN slope) and constant-y (R² = 1 by convention) so
+  the UI doesn't have to special-case anything.
+
+`lib/engine/distributions.dart`:
+
+- `Normal(mean, stddev)` with `pdf(x)`, `cdf(x)` (via the Abramowitz
+  & Stegun erf approximation, max error 1.5e-7), and `quantile(p)`
+  (bisection on the monotone CDF, ~1e-10 precision in ≤100 iters).
+- `Binomial(n, p)` with `pmf(k)`, `cdf(k)`, `mean`, `variance`,
+  `stddev`. PMF uses log-domain so it stays finite at large n.
+
+### Screen
+
+`lib/screens/statistics_screen.dart` is a three-tab workspace:
+
+- **Descriptive** — paste comma/space/newline-separated numbers,
+  see all 15 statistics in a card.
+- **Regression** — two text fields (x's and y's), see the best-fit
+  line equation plus slope/intercept/R²/n.
+- **Distributions** — Normal section (μ, σ, x for CDF, p for
+  quantile), Binomial section (n, p, k) — both with derived moments.
+
+Wired into the Analysis hub as a fourth `_ModuleCard` next to curve
+sketching / planes / conics.
+
+### i18n
+
+`moduleStatistics` + `moduleStatisticsSubtitle` strings added for
+all four locales (en/de/fr/es). Screen labels themselves are
+hardcoded English for V1 — same convention as the other analysis
+screens; a localization pass for those would be a separate round.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **472/472** (50 new tests: 23 statistics covering
+  textbook values for mean/median/mode/variance/quartiles plus
+  regression including the perfect-fit, constant-y, and all-x-equal
+  edge cases; 27 distributions covering normal CDF z-tables at
+  0/±1/±1.96/±2.58, quantile/CDF inversion, binomial sum-to-1, p=0
+  and p=1 corners, large-n log-domain stability).
+- macOS release: matrix self-test 7/7, step self-test 28/28.
+
+### P5 top-4 cluster — fully complete
+
+- ✓ Step-by-step solutions for diff / integrate / solve (rounds 20–22)
+- ✓ Interactive parameter sliders (round 23)
+- ✓ Unit converter (round 24)
+- ✓ Statistics + probability (round 25)
+
+---
+
 ## 2026-05-17 (round 24) — Unit converter (P5 #4, V1)
 
 Fourth and final of the P5 top-4 cluster. Ships a Unit Converter

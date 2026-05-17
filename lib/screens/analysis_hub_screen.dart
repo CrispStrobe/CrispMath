@@ -7,6 +7,7 @@ import '../localization/app_localizations.dart';
 import 'conic_section_screen.dart';
 import 'curve_analysis_input_screen.dart';
 import 'plane_analysis_screen.dart';
+import 'statistics_screen.dart';
 
 class AnalysisHubScreen extends StatelessWidget {
   const AnalysisHubScreen({super.key});
@@ -49,6 +50,16 @@ class AnalysisHubScreen extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => const ConicSectionScreen(),
+              ));
+            },
+          ),
+          _ModuleCard(
+            icon: Icons.bar_chart,
+            title: t.moduleStatistics,
+            subtitle: t.moduleStatisticsSubtitle,
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const StatisticsScreen(),
               ));
             },
           ),

@@ -59,6 +59,8 @@ abstract class AppLocalizations {
   String get modulePlanesSubtitle;
   String get moduleConics;
   String get moduleConicsSubtitle;
+  String get moduleStatistics;
+  String get moduleStatisticsSubtitle;
 
   // -- Settings --
   String get settingsTitle;
@@ -218,6 +220,11 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get moduleConicsSubtitle =>
       'Classify Ax² + Bxy + Cy² + Dx + Ey + F = 0';
+  @override
+  String get moduleStatistics => 'Statistics';
+  @override
+  String get moduleStatisticsSubtitle =>
+      'Descriptive stats, linear regression, normal & binomial distributions';
 
   @override
   String get settingsTitle => 'Settings';
@@ -450,6 +457,11 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get moduleConicsSubtitle =>
       'Klassifiziere Ax² + Bxy + Cy² + Dx + Ey + F = 0';
+  @override
+  String get moduleStatistics => 'Statistik';
+  @override
+  String get moduleStatisticsSubtitle =>
+      'Beschreibende Statistik, lineare Regression, Normal- & Binomialverteilung';
 
   @override
   String get settingsTitle => 'Einstellungen';
@@ -684,6 +696,11 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get moduleConicsSubtitle =>
       'Classer Ax² + Bxy + Cy² + Dx + Ey + F = 0';
+  @override
+  String get moduleStatistics => 'Statistiques';
+  @override
+  String get moduleStatisticsSubtitle =>
+      'Statistiques descriptives, régression linéaire, lois normale & binomiale';
 
   @override
   String get settingsTitle => 'Paramètres';
@@ -921,6 +938,11 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get moduleConicsSubtitle =>
       'Clasifica Ax² + Bxy + Cy² + Dx + Ey + F = 0';
+  @override
+  String get moduleStatistics => 'Estadística';
+  @override
+  String get moduleStatisticsSubtitle =>
+      'Estadística descriptiva, regresión lineal, distribuciones normal y binomial';
 
   @override
   String get settingsTitle => 'Ajustes';
