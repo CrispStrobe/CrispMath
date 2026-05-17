@@ -29,9 +29,15 @@ and the light/dark/system theme picker.
 - [ ] **High-precision evaluation.** `SymbolicMathBridge.evaluateWithPrecision`
   / `gmpPower` / `mpfrHighPrecisionPi` still throw — wire them when the
   C++ wrapper exposes the corresponding symbols.
-- [ ] **Matrix arithmetic end-to-end.** Confirm `det(Matrix([[…]]))`,
+- [x] ~~**Matrix arithmetic end-to-end.** Confirm `det(Matrix([[…]]))`,
   `inv(...)`, `transpose(...)` round-trip cleanly through the engine
-  with a release SymEngine build.
+  with a release SymEngine build.~~ Done 2026-05-17 — see HISTORY
+  round 16. Required a new `MatrixEvaluator` that routes matrix
+  expressions through the FFI matrix bindings (SymEngine's text
+  parser doesn't recognize `Matrix(...)` literals). 6/6 self-test
+  checks pass in the release build; trigger them with the
+  `CRISPCALC_DIAGNOSTIC=matrix` env var or via Settings → "Matrix
+  self-test".
 
 ## P2 — UX polish
 

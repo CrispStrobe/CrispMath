@@ -8,6 +8,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
+import 'matrix_evaluator.dart';
 import 'numerical.dart';
 
 class CalculatorEngine {
@@ -44,12 +45,26 @@ class CalculatorEngine {
       return fn(bridge);
     } catch (e) {
       _log('$op error: $e');
-      return 'Error: $op failed';
+      // Surface the actual bridge exception. It tends to be a short
+      // SymEngine parse/eval message (e.g. "ParseError: Unknown symbol"),
+      // which is far more useful for debugging than the old generic
+      // "Error: <op> failed".
+      final msg = e.toString().replaceAll(RegExp(r'^Exception:\s*'), '');
+      return 'Error: $op failed: $msg';
     }
   }
 
-  String evaluate(String expression) =>
-      _bridgeCall('evaluate', (b) => b.evaluate(expression));
+  String evaluate(String expression) {
+    // Matrix expressions can't go through SymEngine's text parser — it
+    // doesn't recognize `Matrix([[...]])` literals. Route them through the
+    // dedicated matrix FFI bindings first; fall back to the scalar parser
+    // when the expression doesn't look matrix-shaped.
+    if (_nativeAvailable && expression.contains('Matrix(')) {
+      final matrixResult = MatrixEvaluator.tryEvaluate(expression, this);
+      if (matrixResult != null) return matrixResult;
+    }
+    return _bridgeCall('evaluate', (b) => b.evaluate(expression));
+  }
 
   String evaluateForGraphing(String expression) {
     final bridge = _bridge;

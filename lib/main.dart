@@ -8,10 +8,14 @@
 //   < 720 px  : bottom navigation bar
 //   >= 720 px : NavigationRail (extended above 1100 px)
 
+import 'dart:io' show Platform, exit, stdout;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'engine/app_state.dart';
+import 'engine/calculator_engine.dart';
+import 'engine/matrix_diagnostics.dart';
 import 'localization/app_localizations.dart';
 import 'screens/about_screen.dart';
 import 'screens/analysis_hub_screen.dart';
@@ -26,8 +30,37 @@ void main() async {
   // Register native (SymEngine / GMP / MPFR / MPC / FLINT) license texts so
   // they appear in `showLicensePage` alongside the pub deps.
   await registerNativeLicenses();
+
+  // Headless self-test for CI / manual verification. Invoke with the
+  // `CRISPCALC_DIAGNOSTIC=matrix` environment variable set (desktop only —
+  // `Platform.executableArguments` is Dart-VM args, not user argv, so an
+  // env var is the cleanest hook from a launched binary). Runs the matrix
+  // battery against the native bridge, prints PASS/FAIL lines to stdout,
+  // exits non-zero on any failure.
+  if (!kIsWebShim &&
+      (Platform.isMacOS || Platform.isLinux || Platform.isWindows) &&
+      Platform.environment['CRISPCALC_DIAGNOSTIC'] == 'matrix') {
+    final results = MatrixDiagnostics.run(CalculatorEngine());
+    var anyFailed = false;
+    for (final r in results) {
+      stdout.writeln('${r.passed ? "PASS" : "FAIL"}  ${r.name}');
+      stdout.writeln('  expr:     ${r.expression}');
+      stdout.writeln('  expected: ${r.expected}');
+      stdout.writeln('  actual:   ${r.actual}');
+      if (!r.passed) anyFailed = true;
+    }
+    final passed = results.where((r) => r.passed).length;
+    stdout.writeln('---');
+    stdout.writeln('$passed of ${results.length} checks passed');
+    exit(anyFailed ? 1 : 0);
+  }
+
   runApp(const CrispCalcApp());
 }
+
+// Tiny shim so the desktop-only platform check above also works at
+// analyze time on web builds (which can't import dart:io).
+const bool kIsWebShim = bool.fromEnvironment('dart.library.html');
 
 class CrispCalcApp extends StatelessWidget {
   const CrispCalcApp({super.key});
@@ -355,6 +388,16 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
+                  leading: const Icon(Icons.fact_check_outlined),
+                  title: Text(t.matrixDiagnosticsTitle),
+                  subtitle: Text(t.matrixDiagnosticsSubtitle),
+                  trailing: const Icon(Icons.play_arrow),
+                  onTap: () => _showMatrixDiagnostics(context, t),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: Text(t.settingsAbout),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -368,6 +411,86 @@ class SettingsScreen extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Future<void> _showMatrixDiagnostics(
+      BuildContext context, AppLocalizations t) async {
+    final engine = CalculatorEngine();
+    final results = MatrixDiagnostics.run(engine);
+    final passed = results.where((r) => r.passed).length;
+    if (!context.mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.matrixDiagnosticsTitle),
+        content: SizedBox(
+          width: 480,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  t.matrixDiagnosticsSummary(passed, results.length),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 12),
+                for (final r in results) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        r.passed ? Icons.check_circle : Icons.cancel,
+                        color: r.passed
+                            ? Colors.green
+                            : Theme.of(context).colorScheme.error,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          r.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 26, bottom: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('expr: ${r.expression}',
+                            style: const TextStyle(
+                                fontFamily: 'monospace', fontSize: 12)),
+                        Text('expected: ${r.expected}',
+                            style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                                color: Colors.grey[400])),
+                        Text('actual:   ${r.actual}',
+                            style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                                color: r.passed
+                                    ? Colors.grey[400]
+                                    : Theme.of(context).colorScheme.error)),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(t.cancel),
+          ),
+        ],
       ),
     );
   }

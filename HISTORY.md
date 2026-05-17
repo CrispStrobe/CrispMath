@@ -2,6 +2,85 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 16) — Matrix arithmetic actually works end-to-end
+
+PLAN P2 "matrix arithmetic end-to-end" turned up a real bug that the
+unit tests couldn't have caught — the preprocessor was emitting strings
+SymEngine's text parser couldn't accept.
+
+### The self-test that surfaced the bug
+
+Added `lib/engine/matrix_diagnostics.dart` with a six-check battery
+(2x2 det, 3x3 identity det, transpose, inverse of identity, addition,
+multiplication). Exposed two entry points to run it:
+
+- Settings → "Matrix self-test" tile opens a dialog with PASS/FAIL per
+  check and the raw expected vs. actual strings.
+- `CRISPCALC_DIAGNOSTIC=matrix <app>` runs the battery headlessly and
+  exits non-zero on any failure. (Reaches `Platform.environment` from
+  `main()` — `Platform.executableArguments` is Dart-VM args, not user
+  argv, so the obvious `--matrix-diagnostic` flag wouldn't have worked
+  from a launched binary.)
+
+First run on a fresh release build: **0 of 6 checks passed**. Every
+matrix expression came back `SymbolicMathException: evaluate -
+parse failed`. The preprocessor builds `Matrix([[1,2],[3,4]])` strings,
+but SymEngine's `parse()` doesn't have a `Matrix` constructor in its
+grammar.
+
+### The fix: route matrix ops through the FFI matrix bindings
+
+New `lib/engine/matrix_evaluator.dart`. `CalculatorEngine.evaluate()`
+now checks for `Matrix(` in the expression and, if found, hands off to
+`MatrixEvaluator.tryEvaluate()` instead of the string-evaluate path.
+The evaluator:
+
+- Recognizes three top-level shapes: `det/inv/transpose(<matrix>)`,
+  `<matrix> {+,-,*} <matrix>`, and a bare `<matrix>` literal.
+- Parses `Matrix([[a,b],[c,d]])` into a fresh `SymEngineMatrix` via the
+  `createMatrix` + `set` FFI calls.
+- Routes operations to the matrix API (`getDeterminant`, `inverse`,
+  `operator+`, `operator*`).
+- Implements `transpose` and `-` in Dart (no native entry points) by
+  copying cells into a new matrix.
+- Formats the result as canonical `Matrix([[a, b], [c, d]])` instead
+  of the bridge's native multi-line `[a, b]\n[c, d]` shape, so results
+  feed back into the engine cleanly and look right in history.
+
+### A bonus user-visible improvement
+
+`_bridgeCall` was hiding the underlying bridge exception under a
+generic "Error: <op> failed". Now it appends the exception's message:
+"Error: evaluate failed: SymbolicMathException: evaluate - parse
+failed". That's how the parse-failure diagnosis was possible in the
+first place. Future debugging gets cheaper.
+
+### Verification
+
+`CRISPCALC_DIAGNOSTIC=matrix build/macos/Build/Products/Release/crisp_calc.app/Contents/MacOS/crisp_calc`:
+
+```
+PASS  2x2 determinant — actual: -2
+PASS  3x3 identity determinant — actual: 1
+PASS  Transpose 2x2 — actual: Matrix([[1, 3], [2, 4]])
+PASS  Inverse of identity — actual: Matrix([[1, 0], [0, 1]])
+PASS  Matrix addition — actual: Matrix([[2, 2], [3, 5]])
+PASS  Matrix multiplication — actual: Matrix([[3, 4], [5, 6]])
+6 of 6 checks passed
+```
+
+`flutter analyze`: 0 issues. `flutter test`: 239/239 (3 new
+diagnostics tests for the runner shape).
+
+### Out of scope
+
+Mixed scalar-matrix expressions (e.g. `det(M) + 3`), chained matrix
+expressions (`A * B + C`), scalar-times-matrix, matrix substitution
+with stored variables. Today's evaluator handles literal-only operands
+at top level. Wider parsing is a future iteration.
+
+---
+
 ## 2026-05-17 (round 15) — Plot annotations + zero-issue analyze
 
 ### Plot annotations

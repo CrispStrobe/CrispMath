@@ -91,6 +91,9 @@ abstract class AppLocalizations {
   String get aboutLicenseText;
   String get aboutOpenSourceLicenses;
   String get settingsAbout;
+  String get matrixDiagnosticsTitle;
+  String get matrixDiagnosticsSubtitle;
+  String matrixDiagnosticsSummary(int passed, int total);
 
   // -- Picker dialogs --
   String get selectEquation;
@@ -283,6 +286,14 @@ class EnLocalizations implements AppLocalizations {
   String get aboutOpenSourceLicenses => 'Open-source licenses';
   @override
   String get settingsAbout => 'About CrispCalc';
+  @override
+  String get matrixDiagnosticsTitle => 'Matrix self-test';
+  @override
+  String get matrixDiagnosticsSubtitle =>
+      'Verify det / inv / transpose / + / * through the native bridge.';
+  @override
+  String matrixDiagnosticsSummary(int passed, int total) =>
+      '$passed of $total checks passed';
 
   @override
   String get selectEquation => 'Select equation or continue typing:';
@@ -500,6 +511,14 @@ class DeLocalizations implements AppLocalizations {
   String get aboutOpenSourceLicenses => 'Open-Source-Lizenzen';
   @override
   String get settingsAbout => 'Über CrispCalc';
+  @override
+  String get matrixDiagnosticsTitle => 'Matrix-Selbsttest';
+  @override
+  String get matrixDiagnosticsSubtitle =>
+      'det / inv / transpose / + / * über die native Bridge prüfen.';
+  @override
+  String matrixDiagnosticsSummary(int passed, int total) =>
+      '$passed von $total Prüfungen bestanden';
 
   @override
   String get selectEquation => 'Gleichung auswählen oder weiter tippen:';
