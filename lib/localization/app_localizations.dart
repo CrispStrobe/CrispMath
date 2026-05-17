@@ -70,6 +70,8 @@ abstract class AppLocalizations {
   String get settingsLanguage;
   String get settingsLanguageEnglish;
   String get settingsLanguageGerman;
+  String get settingsLanguageFrench;
+  String get settingsLanguageSpanish;
   String get settingsTheme;
   String get settingsThemeSystem;
   String get settingsThemeLight;
@@ -233,6 +235,10 @@ class EnLocalizations implements AppLocalizations {
   String get settingsLanguageEnglish => 'English';
   @override
   String get settingsLanguageGerman => 'Deutsch';
+  @override
+  String get settingsLanguageFrench => 'Français';
+  @override
+  String get settingsLanguageSpanish => 'Español';
   @override
   String get settingsTheme => 'Theme';
   @override
@@ -457,6 +463,10 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get settingsLanguageGerman => 'Deutsch';
   @override
+  String get settingsLanguageFrench => 'Français';
+  @override
+  String get settingsLanguageSpanish => 'Español';
+  @override
   String get settingsTheme => 'Erscheinungsbild';
   @override
   String get settingsThemeSystem => 'Systemeinstellung';
@@ -571,17 +581,493 @@ class DeLocalizations implements AppLocalizations {
   String get tabSymbolic => 'Symbolisch';
 }
 
+class FrLocalizations implements AppLocalizations {
+  const FrLocalizations();
+
+  @override
+  String get navCalculator => 'Calculatrice';
+  @override
+  String get navGraphing => 'Graphes';
+  @override
+  String get navFunctions => 'Fonctions';
+  @override
+  String get navAnalysis => 'Analyse';
+  @override
+  String get navSettings => 'Paramètres';
+
+  @override
+  String get historyHere => 'L\'historique des calculs apparaîtra ici.';
+  @override
+  String get historyLabel => 'Historique :';
+  @override
+  String get clearButton => 'C';
+  @override
+  String get clearHistory => 'Effacer l\'historique';
+  @override
+  String get clearHistoryConfirm =>
+      'Supprimer toutes les entrées de l\'historique des calculs ?';
+  @override
+  String get searchHistory => 'Rechercher dans l\'historique';
+  @override
+  String get searchHistoryHint => 'Filtrer l\'historique…';
+  @override
+  String get historyNoMatches => 'Aucune entrée correspondante.';
+
+  @override
+  String graphingTitle(int count) => 'Graphes ($count fonctions)';
+  @override
+  String functionAdded(int slot) => 'Fonction ajoutée à Y$slot';
+  @override
+  String functionRemoved(int slot) => 'Y$slot supprimée';
+  @override
+  String get allSlotsFull =>
+      'Tous les emplacements de fonction sont occupés. Effacez-en une d\'abord.';
+  @override
+  String get clearAllFunctions => 'Effacer toutes les fonctions';
+  @override
+  String get clearAllFunctionsConfirm =>
+      'Voulez-vous vraiment effacer toutes les fonctions tracées ?';
+  @override
+  String get cancel => 'Annuler';
+  @override
+  String get clearAll => 'Tout effacer';
+  @override
+  String get zoomIn => 'Zoom avant';
+  @override
+  String get zoomOut => 'Zoom arrière';
+  @override
+  String get resetView => 'Réinitialiser la vue';
+  @override
+  String get showKeypad => 'Afficher le clavier';
+  @override
+  String get hideKeypad => 'Masquer le clavier';
+  @override
+  String get showAnnotations => 'Afficher racines et extréma';
+  @override
+  String get hideAnnotations => 'Masquer racines et extréma';
+  @override
+  String get analyzeFunctions => 'Analyser les fonctions';
+  @override
+  String get selectFunctionToAnalyze => 'Choisir la fonction à analyser';
+  @override
+  String get plotButton => 'Tracer';
+  @override
+  String get enterFunctionPrompt =>
+      'Saisissez une fonction ci-dessous pour la tracer.';
+
+  @override
+  String get analysisModulesTitle => 'Modules d\'analyse';
+  @override
+  String get moduleCurveSketching => 'Étude de fonction';
+  @override
+  String get moduleCurveSketchingSubtitle =>
+      'Analyse complète d\'une fonction f(x)';
+  @override
+  String get modulePlanes => 'Plans';
+  @override
+  String get modulePlanesSubtitle =>
+      'Analyser des plans 3D en forme cartésienne ou paramétrique';
+  @override
+  String get moduleConics => 'Coniques';
+  @override
+  String get moduleConicsSubtitle =>
+      'Classer Ax² + Bxy + Cy² + Dx + Ey + F = 0';
+
+  @override
+  String get settingsTitle => 'Paramètres';
+  @override
+  String get settingsNumberFormat => 'Format des nombres';
+  @override
+  String get settingsNumberFormatAuto => 'Auto (129, 129,5)';
+  @override
+  String get settingsNumberFormatInteger => 'Entier (129)';
+  @override
+  String get settingsNumberFormatOneDecimal => 'Une décimale (129,0)';
+  @override
+  String get settingsNumberFormatTwoDecimal => 'Deux décimales (129,00)';
+  @override
+  String get settingsLanguage => 'Langue';
+  @override
+  String get settingsLanguageEnglish => 'English';
+  @override
+  String get settingsLanguageGerman => 'Deutsch';
+  @override
+  String get settingsLanguageFrench => 'Français';
+  @override
+  String get settingsLanguageSpanish => 'Español';
+  @override
+  String get settingsTheme => 'Apparence';
+  @override
+  String get settingsThemeSystem => 'Selon le système';
+  @override
+  String get settingsThemeLight => 'Clair';
+  @override
+  String get settingsThemeDark => 'Sombre';
+  @override
+  String get settingsLayoutTitle => 'Disposition';
+  @override
+  String get settingsLayoutBody =>
+      'CrispCalc s\'adapte à la largeur de la fenêtre : navigation '
+      'inférieure sur smartphone, rail latéral sur tablette et bureau. '
+      'À partir de ~760 px, le pavé affiche toutes les touches sans onglets.';
+
+  @override
+  String get aboutTitle => 'À propos de CrispCalc';
+  @override
+  String get aboutTagline =>
+      'Calculatrice symbolique CAS basée sur SymEngine';
+  @override
+  String aboutVersion(String version) => 'Version $version';
+  @override
+  String get aboutServiceProvider => 'Fournisseur';
+  @override
+  String get aboutContact => 'Contact';
+  @override
+  String get aboutPrivacy => 'Confidentialité';
+  @override
+  String get aboutPrivacyText =>
+      'CrispCalc fonctionne entièrement sur l\'appareil. Aucun calcul, '
+      'entrée d\'historique ou variable utilisateur n\'est jamais transmis '
+      'à un serveur. L\'application ne collecte aucune donnée d\'analyse '
+      'et ne contacte aucun service distant.';
+  @override
+  String get aboutDisclaimer => 'Avertissement';
+  @override
+  String get aboutDisclaimerText =>
+      'CrispCalc est fourni « tel quel », sans aucune garantie. Le moteur '
+      'symbolique peut renvoyer des résultats imprécis pour des entrées '
+      'numériques mal conditionnées ou des expressions symboliques non '
+      'prises en charge. Vérifiez de manière indépendante les calculs '
+      'critiques.';
+  @override
+  String get aboutLicense => 'Licence';
+  @override
+  String get aboutLicenseText =>
+      'CrispCalc est un logiciel libre publié sous la GNU Affero General '
+      'Public License version 3 ou ultérieure. Ce choix découle des '
+      'exigences de copyleft des bibliothèques GMP/MPFR/MPC/FLINT '
+      'incluses, liées statiquement.';
+  @override
+  String get aboutOpenSourceLicenses => 'Licences open source';
+  @override
+  String get settingsAbout => 'À propos de CrispCalc';
+  @override
+  String get matrixDiagnosticsTitle => 'Auto-test matriciel';
+  @override
+  String get matrixDiagnosticsSubtitle =>
+      'Vérifier det / inv / transpose / + / * via le pont natif.';
+  @override
+  String matrixDiagnosticsSummary(int passed, int total) =>
+      '$passed vérifications sur $total réussies';
+
+  @override
+  String get selectEquation =>
+      'Sélectionnez une équation ou continuez à taper :';
+  @override
+  String get continueTyping => 'Continuer la saisie';
+  @override
+  String get selectFunction =>
+      'Sélectionnez une fonction ou continuez à taper :';
+  @override
+  String get dismissPanel => 'Fermer ce panneau';
+  @override
+  String solveFor(int n) => 'Résoudre Y$n = 0';
+  @override
+  String whereY(int n, String func) => 'où Y$n = $func';
+
+  @override
+  String get errorSolveFormat =>
+      'Erreur : le format de solve() est solve(équation, variable)';
+  @override
+  String get errorInvalidSolve => 'Erreur : syntaxe solve() invalide';
+  @override
+  String get errorInvalidDiff => 'Erreur : syntaxe d/dx() invalide';
+  @override
+  String get errorInvalidFactor => 'Erreur : syntaxe factor() invalide';
+  @override
+  String get errorInvalidExpand => 'Erreur : syntaxe expand() invalide';
+  @override
+  String get errorInvalidSimplify => 'Erreur : syntaxe simplify() invalide';
+  @override
+  String get errorGcdArgs => 'Erreur : gcd() requiert exactement 2 arguments';
+  @override
+  String get errorInvalidGcd => 'Erreur : syntaxe gcd() invalide';
+  @override
+  String get errorLcmArgs => 'Erreur : lcm() requiert exactement 2 arguments';
+  @override
+  String get errorInvalidLcm => 'Erreur : syntaxe lcm() invalide';
+
+  @override
+  String get tabNum => 'Num';
+  @override
+  String get tabTrig => 'Trig';
+  @override
+  String get tabCas => 'CAS';
+  @override
+  String get tabAdvanced => 'Avancé';
+  @override
+  String get tabVars => 'Variables';
+  @override
+  String get tabBasic => 'Base';
+  @override
+  String get tabSymbolic => 'Symbolique';
+}
+
+class EsLocalizations implements AppLocalizations {
+  const EsLocalizations();
+
+  @override
+  String get navCalculator => 'Calculadora';
+  @override
+  String get navGraphing => 'Gráficos';
+  @override
+  String get navFunctions => 'Funciones';
+  @override
+  String get navAnalysis => 'Análisis';
+  @override
+  String get navSettings => 'Ajustes';
+
+  @override
+  String get historyHere => 'El historial de cálculos aparecerá aquí.';
+  @override
+  String get historyLabel => 'Historial:';
+  @override
+  String get clearButton => 'C';
+  @override
+  String get clearHistory => 'Borrar historial';
+  @override
+  String get clearHistoryConfirm =>
+      '¿Eliminar todas las entradas del historial de cálculos?';
+  @override
+  String get searchHistory => 'Buscar en el historial';
+  @override
+  String get searchHistoryHint => 'Filtrar historial…';
+  @override
+  String get historyNoMatches => 'No hay entradas coincidentes.';
+
+  @override
+  String graphingTitle(int count) => 'Gráficos ($count funciones)';
+  @override
+  String functionAdded(int slot) => 'Función añadida a Y$slot';
+  @override
+  String functionRemoved(int slot) => 'Y$slot eliminada';
+  @override
+  String get allSlotsFull =>
+      'Todas las posiciones de función están ocupadas. Borra una primero.';
+  @override
+  String get clearAllFunctions => 'Borrar todas las funciones';
+  @override
+  String get clearAllFunctionsConfirm =>
+      '¿Seguro que quieres borrar todas las funciones representadas?';
+  @override
+  String get cancel => 'Cancelar';
+  @override
+  String get clearAll => 'Borrar todo';
+  @override
+  String get zoomIn => 'Acercar';
+  @override
+  String get zoomOut => 'Alejar';
+  @override
+  String get resetView => 'Restablecer vista';
+  @override
+  String get showKeypad => 'Mostrar teclado';
+  @override
+  String get hideKeypad => 'Ocultar teclado';
+  @override
+  String get showAnnotations => 'Mostrar raíces y extremos';
+  @override
+  String get hideAnnotations => 'Ocultar raíces y extremos';
+  @override
+  String get analyzeFunctions => 'Analizar funciones';
+  @override
+  String get selectFunctionToAnalyze => 'Selecciona la función a analizar';
+  @override
+  String get plotButton => 'Representar';
+  @override
+  String get enterFunctionPrompt =>
+      'Escribe una función abajo para representarla.';
+
+  @override
+  String get analysisModulesTitle => 'Módulos de análisis';
+  @override
+  String get moduleCurveSketching => 'Estudio de funciones';
+  @override
+  String get moduleCurveSketchingSubtitle =>
+      'Análisis completo de una función f(x)';
+  @override
+  String get modulePlanes => 'Planos';
+  @override
+  String get modulePlanesSubtitle =>
+      'Analiza planos 3D en forma cartesiana o paramétrica';
+  @override
+  String get moduleConics => 'Cónicas';
+  @override
+  String get moduleConicsSubtitle =>
+      'Clasifica Ax² + Bxy + Cy² + Dx + Ey + F = 0';
+
+  @override
+  String get settingsTitle => 'Ajustes';
+  @override
+  String get settingsNumberFormat => 'Formato numérico';
+  @override
+  String get settingsNumberFormatAuto => 'Auto (129; 129,5)';
+  @override
+  String get settingsNumberFormatInteger => 'Entero (129)';
+  @override
+  String get settingsNumberFormatOneDecimal => 'Un decimal (129,0)';
+  @override
+  String get settingsNumberFormatTwoDecimal => 'Dos decimales (129,00)';
+  @override
+  String get settingsLanguage => 'Idioma';
+  @override
+  String get settingsLanguageEnglish => 'English';
+  @override
+  String get settingsLanguageGerman => 'Deutsch';
+  @override
+  String get settingsLanguageFrench => 'Français';
+  @override
+  String get settingsLanguageSpanish => 'Español';
+  @override
+  String get settingsTheme => 'Tema';
+  @override
+  String get settingsThemeSystem => 'Según el sistema';
+  @override
+  String get settingsThemeLight => 'Claro';
+  @override
+  String get settingsThemeDark => 'Oscuro';
+  @override
+  String get settingsLayoutTitle => 'Diseño';
+  @override
+  String get settingsLayoutBody =>
+      'CrispCalc se adapta al ancho de la ventana: navegación inferior en '
+      'móviles, raíl lateral en tabletas y escritorio. A partir de ~760 px '
+      'el teclado muestra todas las teclas sin pestañas.';
+
+  @override
+  String get aboutTitle => 'Acerca de CrispCalc';
+  @override
+  String get aboutTagline =>
+      'Calculadora CAS simbólica basada en SymEngine';
+  @override
+  String aboutVersion(String version) => 'Versión $version';
+  @override
+  String get aboutServiceProvider => 'Proveedor';
+  @override
+  String get aboutContact => 'Contacto';
+  @override
+  String get aboutPrivacy => 'Privacidad';
+  @override
+  String get aboutPrivacyText =>
+      'CrispCalc funciona íntegramente en el dispositivo. Ningún cálculo, '
+      'entrada del historial o variable de usuario se envía a un servidor. '
+      'La aplicación no recopila datos de telemetría ni contacta servicios '
+      'remotos.';
+  @override
+  String get aboutDisclaimer => 'Aviso legal';
+  @override
+  String get aboutDisclaimerText =>
+      'CrispCalc se ofrece «tal cual», sin garantía alguna. El motor '
+      'simbólico puede devolver resultados imprecisos para entradas '
+      'numéricas mal condicionadas o expresiones simbólicas no '
+      'soportadas. Verifica de forma independiente los cálculos críticos.';
+  @override
+  String get aboutLicense => 'Licencia';
+  @override
+  String get aboutLicenseText =>
+      'CrispCalc es software libre publicado bajo la GNU Affero General '
+      'Public License versión 3 o posterior. Esta elección se debe a los '
+      'requisitos de copyleft de las bibliotecas GMP/MPFR/MPC/FLINT '
+      'incluidas, enlazadas estáticamente.';
+  @override
+  String get aboutOpenSourceLicenses => 'Licencias de código abierto';
+  @override
+  String get settingsAbout => 'Acerca de CrispCalc';
+  @override
+  String get matrixDiagnosticsTitle => 'Autoprueba de matrices';
+  @override
+  String get matrixDiagnosticsSubtitle =>
+      'Comprobar det / inv / transpose / + / * vía el puente nativo.';
+  @override
+  String matrixDiagnosticsSummary(int passed, int total) =>
+      '$passed de $total comprobaciones superadas';
+
+  @override
+  String get selectEquation =>
+      'Selecciona una ecuación o sigue escribiendo:';
+  @override
+  String get continueTyping => 'Continuar escribiendo';
+  @override
+  String get selectFunction =>
+      'Selecciona una función o sigue escribiendo:';
+  @override
+  String get dismissPanel => 'Cerrar este panel';
+  @override
+  String solveFor(int n) => 'Resolver Y$n = 0';
+  @override
+  String whereY(int n, String func) => 'donde Y$n = $func';
+
+  @override
+  String get errorSolveFormat =>
+      'Error: el formato de solve() es solve(ecuación, variable)';
+  @override
+  String get errorInvalidSolve => 'Error: sintaxis de solve() inválida';
+  @override
+  String get errorInvalidDiff => 'Error: sintaxis de d/dx() inválida';
+  @override
+  String get errorInvalidFactor => 'Error: sintaxis de factor() inválida';
+  @override
+  String get errorInvalidExpand => 'Error: sintaxis de expand() inválida';
+  @override
+  String get errorInvalidSimplify => 'Error: sintaxis de simplify() inválida';
+  @override
+  String get errorGcdArgs => 'Error: gcd() requiere exactamente 2 argumentos';
+  @override
+  String get errorInvalidGcd => 'Error: sintaxis de gcd() inválida';
+  @override
+  String get errorLcmArgs => 'Error: lcm() requiere exactamente 2 argumentos';
+  @override
+  String get errorInvalidLcm => 'Error: sintaxis de lcm() inválida';
+
+  @override
+  String get tabNum => 'Núm';
+  @override
+  String get tabTrig => 'Trig';
+  @override
+  String get tabCas => 'CAS';
+  @override
+  String get tabAdvanced => 'Avanzado';
+  @override
+  String get tabVars => 'Variables';
+  @override
+  String get tabBasic => 'Básico';
+  @override
+  String get tabSymbolic => 'Simbólico';
+}
+
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en', 'de'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      const ['en', 'de', 'fr', 'es'].contains(locale.languageCode);
 
   @override
   Future<AppLocalizations> load(Locale locale) {
-    return SynchronousFuture<AppLocalizations>(locale.languageCode == 'de'
-        ? const DeLocalizations()
-        : const EnLocalizations());
+    final AppLocalizations resolved;
+    switch (locale.languageCode) {
+      case 'de':
+        resolved = const DeLocalizations();
+        break;
+      case 'fr':
+        resolved = const FrLocalizations();
+        break;
+      case 'es':
+        resolved = const EsLocalizations();
+        break;
+      default:
+        resolved = const EnLocalizations();
+    }
+    return SynchronousFuture<AppLocalizations>(resolved);
   }
 
   @override

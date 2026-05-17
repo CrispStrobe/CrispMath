@@ -84,6 +84,8 @@ class CrispCalcApp extends StatelessWidget {
           supportedLocales: const [
             Locale('en', ''),
             Locale('de', ''),
+            Locale('fr', ''),
+            Locale('es', ''),
           ],
           themeMode: appState.themeMode,
           theme: _buildLightTheme(),
@@ -286,6 +288,14 @@ class SettingsScreen extends StatelessWidget {
                             RadioListTile<String>(
                               title: Text(t.settingsLanguageGerman),
                               value: 'de',
+                            ),
+                            RadioListTile<String>(
+                              title: Text(t.settingsLanguageFrench),
+                              value: 'fr',
+                            ),
+                            RadioListTile<String>(
+                              title: Text(t.settingsLanguageSpanish),
+                              value: 'es',
                             ),
                           ],
                         ),

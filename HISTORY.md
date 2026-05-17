@@ -2,6 +2,41 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 17) — French + Spanish locales
+
+Added `FrLocalizations` and `EsLocalizations` to
+`lib/localization/app_localizations.dart` (full mirror of the German
+override block — nav, history, graphing, analysis hub, settings, about,
+matrix diagnostics, picker dialogs, error strings, and tab labels;
+~95 strings each).
+
+- Extended the abstract `AppLocalizations` class with two new
+  language-name getters (`settingsLanguageFrench`,
+  `settingsLanguageSpanish`) — enforces compile-time coverage on each
+  locale class.
+- `AppLocalizationsDelegate.isSupported` and `load` extended to handle
+  `'fr'` and `'es'`. Unknown language codes still fall through to
+  English.
+- `main.dart`: added `Locale('fr','')` and `Locale('es','')` to
+  `supportedLocales`, and two new `RadioListTile`s in the language
+  card.
+
+### Safety net
+
+New `test/localizations_test.dart` walks every locale and asserts
+every string getter + templated method returns non-empty content. A
+new string on the abstract class catches at compile-time (Dart's
+missing-override error); this test catches accidentally-empty
+translations and broken templated formatters that wouldn't compile-
+fail. 20 checks pass across the 4 locales.
+
+### Verification
+
+`flutter analyze`: 0 issues. `flutter test`: 259/259 (20 new locale
+checks). macOS release builds and boots clean.
+
+---
+
 ## 2026-05-17 (round 16) — Matrix arithmetic actually works end-to-end
 
 PLAN P2 "matrix arithmetic end-to-end" turned up a real bug that the

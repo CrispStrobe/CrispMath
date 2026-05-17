@@ -41,8 +41,11 @@ and the light/dark/system theme picker.
 
 ## P2 — UX polish
 
-- [ ] **More translations.** German is up to date; Spanish / French
-  would be cheap follow-ups.
+- [x] ~~**More translations.** German is up to date; Spanish / French
+  would be cheap follow-ups.~~ Done 2026-05-17 — see HISTORY round 17.
+  Full FR and ES locales (~95 strings each) plus a per-locale
+  non-emptiness test suite (20 checks) so missing strings would fail
+  CI rather than a runtime UI lookup.
 - [x] ~~**Variable substitution dialog** — no more typing `subst(...)`.~~
   Done 2026-05-17 — see HISTORY round 14.
 - [x] ~~**Plot annotations** — mark extrema and roots on the graph
