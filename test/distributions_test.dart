@@ -179,4 +179,79 @@ void main() {
       expect(pmf100, greaterThan(0));
     });
   });
+
+  group('Student t — CDF / quantile', () {
+    test('t-distribution PDF peaks at 0 and is symmetric', () {
+      const t = TDistribution(df: 5);
+      expect(t.pdf(0) > t.pdf(1), isTrue);
+      expect(t.pdf(-2), closeTo(t.pdf(2), 1e-9));
+    });
+
+    test('CDF at 0 is 0.5', () {
+      const t = TDistribution(df: 10);
+      expect(t.cdf(0), closeTo(0.5, 1e-4));
+    });
+
+    test('CDF tails approach 0 and 1', () {
+      const t = TDistribution(df: 3);
+      expect(t.cdf(-30), lessThan(0.001));
+      expect(t.cdf(30), greaterThan(0.999));
+    });
+
+    test('quantile(0.975) is ~2.776 for df=4 (textbook value)', () {
+      const t = TDistribution(df: 4);
+      expect(t.quantile(0.975), closeTo(2.776, 1e-2));
+    });
+
+    test('quantile(0.95) is ~1.812 for df=10 (textbook value)', () {
+      const t = TDistribution(df: 10);
+      expect(t.quantile(0.95), closeTo(1.812, 1e-2));
+    });
+
+    test('large df approaches the standard normal', () {
+      // For df=1000 the t-distribution is essentially N(0, 1).
+      const t = TDistribution(df: 1000);
+      expect(t.quantile(0.975), closeTo(1.96, 0.05));
+    });
+  });
+
+  group('Chi-square — CDF / quantile', () {
+    test('mean = df', () {
+      const c = ChiSquare(df: 5);
+      expect(c.mean, equals(5.0));
+    });
+
+    test('variance = 2·df', () {
+      const c = ChiSquare(df: 8);
+      expect(c.variance, equals(16.0));
+    });
+
+    test('CDF at 0 is 0', () {
+      const c = ChiSquare(df: 4);
+      expect(c.cdf(0), equals(0.0));
+    });
+
+    test('CDF tails toward 1', () {
+      const c = ChiSquare(df: 4);
+      expect(c.cdf(100), greaterThan(0.999));
+    });
+
+    test('quantile(0.95) ≈ 7.815 for df=3 (textbook value)', () {
+      const c = ChiSquare(df: 3);
+      expect(c.quantile(0.95), closeTo(7.815, 0.05));
+    });
+
+    test('quantile(0.95) ≈ 18.307 for df=10 (textbook value)', () {
+      const c = ChiSquare(df: 10);
+      expect(c.quantile(0.95), closeTo(18.307, 0.1));
+    });
+
+    test('quantile and CDF are inverses', () {
+      const c = ChiSquare(df: 5);
+      for (final p in const [0.1, 0.5, 0.9, 0.99]) {
+        final x = c.quantile(p);
+        expect(c.cdf(x), closeTo(p, 1e-3), reason: 'p=$p');
+      }
+    });
+  });
 }

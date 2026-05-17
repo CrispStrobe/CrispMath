@@ -178,4 +178,72 @@ void main() {
       );
     });
   });
+
+  group('Statistics.polynomialFit', () {
+    test('linear data with degree 1 matches linearFit', () {
+      final p = Statistics.polynomialFit(
+        const [0, 1, 2, 3, 4],
+        const [1, 3, 5, 7, 9],
+        1,
+      );
+      expect(p.coefficients.length, equals(2));
+      expect(p.coefficients[0], closeTo(1.0, 1e-9)); // intercept
+      expect(p.coefficients[1], closeTo(2.0, 1e-9)); // slope
+      expect(p.rSquared, closeTo(1.0, 1e-9));
+      expect(p.degree, equals(1));
+    });
+
+    test('quadratic fit recovers y = x²', () {
+      final p = Statistics.polynomialFit(
+        const [-2, -1, 0, 1, 2],
+        const [4, 1, 0, 1, 4],
+        2,
+      );
+      // y = 0 + 0·x + 1·x²
+      expect(p.coefficients[0], closeTo(0.0, 1e-9));
+      expect(p.coefficients[1], closeTo(0.0, 1e-9));
+      expect(p.coefficients[2], closeTo(1.0, 1e-9));
+      expect(p.rSquared, closeTo(1.0, 1e-9));
+    });
+
+    test('cubic fit recovers y = x³ - 2x', () {
+      double f(double x) => x * x * x - 2 * x;
+      const xs = [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0];
+      final ys = xs.map(f).toList();
+      final p = Statistics.polynomialFit(xs, ys, 3);
+      // expected: c0=0, c1=-2, c2=0, c3=1
+      expect(p.coefficients[0], closeTo(0.0, 1e-9));
+      expect(p.coefficients[1], closeTo(-2.0, 1e-9));
+      expect(p.coefficients[2], closeTo(0.0, 1e-9));
+      expect(p.coefficients[3], closeTo(1.0, 1e-9));
+      expect(p.rSquared, closeTo(1.0, 1e-9));
+    });
+
+    test('evaluate(x) reconstructs the original y on the fit points', () {
+      final p = Statistics.polynomialFit(
+        const [0, 1, 2, 3, 4],
+        const [1, 3, 5, 7, 9],
+        1,
+      );
+      expect(p.evaluate(10), closeTo(21.0, 1e-9));
+    });
+
+    test('too few points throws', () {
+      expect(
+        () => Statistics.polynomialFit(const [0, 1], const [0, 1], 3),
+        throwsArgumentError,
+      );
+    });
+
+    test('singular system (all x equal) throws', () {
+      expect(
+        () => Statistics.polynomialFit(
+          const [1, 1, 1, 1],
+          const [1, 2, 3, 4],
+          2,
+        ),
+        throwsArgumentError,
+      );
+    });
+  });
 }

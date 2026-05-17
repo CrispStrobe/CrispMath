@@ -160,6 +160,7 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
       Unit current, ValueChanged<Unit?> onChanged, List<Unit> units) {
     return DropdownButtonFormField<Unit>(
       initialValue: current,
+      isExpanded: true,
       decoration: const InputDecoration(
         border: OutlineInputBorder(),
         isDense: true,

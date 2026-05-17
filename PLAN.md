@@ -120,11 +120,17 @@ single feature. Roughly in priority order — top items unblock the next.
 
 ### Quality
 
-- [ ] **UI flow tests**. Widget tests today cover "app boots." Every
+- [~] **UI flow tests**. Widget tests today cover "app boots." Every
   calculator gesture — enter expression, tap solve, store as variable,
   open substitute dialog, run analysis — has zero test coverage. A
-  button rename can break a flow without CI flagging it. Add coverage
-  for the 10 most-used flows.
+  button rename can break a flow without CI flagging it.
+  - Settings + Analysis hub flows shipped 2026-05-17 — 7 tests
+    covering Help screen / Constants dialog / Unit converter /
+    Export data / locale switch / Statistics module open / Analysis
+    hub layout (`test/ui_flows_test.dart`).
+  - Calculator-keypad-driven flows still pending — better fit for
+    `integration_test` since they depend on the keypad layout
+    breakpoint.
 - [~] **Integration tests via `integration_test` package**. The
   matrix-diagnostic env-var hack is a stand-in for what should be a
   real integration suite that drives the actual UI in CI. Once the
@@ -251,9 +257,15 @@ roughly double the perceived value of the app.
     (PDF, CDF, quantile via bisection on the CDF), binomial
     distribution (PMF, CDF, mean/variance, log-domain for large n).
     50 unit tests covering known textbook values.
-  - **V2 pending**: t-distribution, chi-square, hypothesis tests
-    (one-sample t, paired t, chi-square goodness-of-fit), polynomial
-    and exponential regression.
+  - **V2 partial** (HISTORY round 30): added Student's t-distribution
+    (PDF/CDF/quantile via Lanczos log-gamma + Simpson on PDF) and
+    chi-square distribution (same), plus least-squares polynomial
+    regression (Gaussian-elim solve of normal equations, returns
+    coefficient vector + R² + a `.evaluate(x)` helper). Verified
+    against textbook z- and chi-square critical values; cubic /
+    quadratic fits recover exact coefficients.
+  - **V3 pending**: hypothesis test UI on top of t/chi-square,
+    exponential regression, F-distribution.
 - [~] **Unit-aware arithmetic**. `5 km / 30 min in mph`, `1 mile + 5 ft`,
   full SI prefix handling, dimension checking on results. Opens the
   engineering / physics / chemistry audience.

@@ -94,6 +94,109 @@ class Binomial {
   double get stddev => math.sqrt(variance);
 }
 
+/// Student's t-distribution with [df] degrees of freedom. The most
+/// common hypothesis-test distribution after the normal — confidence
+/// intervals on a small sample, one-sample / paired-sample t tests.
+class TDistribution {
+  final int df;
+  const TDistribution({required this.df})
+      : assert(df > 0, 'degrees of freedom must be positive');
+
+  /// PDF: Γ((ν+1)/2) / (√(νπ) · Γ(ν/2)) · (1 + x²/ν)^(-(ν+1)/2).
+  double pdf(double x) {
+    final v = df.toDouble();
+    final logNorm =
+        _logGamma((v + 1) / 2) - 0.5 * math.log(v * math.pi) - _logGamma(v / 2);
+    final logKernel = -((v + 1) / 2) * math.log(1 + x * x / v);
+    return math.exp(logNorm + logKernel);
+  }
+
+  /// CDF via numerical integration of the PDF using Simpson's rule
+  /// over [-large, x]. Symmetric about 0 so we exploit cdf(-x) = 1 -
+  /// cdf(x). 1000 Simpson subintervals give ~6 digits of accuracy
+  /// for typical df.
+  double cdf(double x) {
+    if (x == 0) return 0.5;
+    if (x > 0) return 1.0 - cdf(-x);
+    // x < 0 — integrate PDF from -∞ approximation to x.
+    const lower = -50.0; // 50σ for standard normal is well past any
+    // realistic input; for t with low df the tails are heavier but
+    // still negligibly small below -50.
+    return _simpson(pdf, lower, x, 1000);
+  }
+
+  /// Bisection on the monotone CDF. Same approach as Normal.quantile.
+  double quantile(double p) {
+    if (p <= 0) return double.negativeInfinity;
+    if (p >= 1) return double.infinity;
+    var lo = -50.0;
+    var hi = 50.0;
+    for (var i = 0; i < 100; i++) {
+      final mid = 0.5 * (lo + hi);
+      final c = cdf(mid);
+      if ((hi - lo).abs() < 1e-10) return mid;
+      if (c < p) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    return 0.5 * (lo + hi);
+  }
+}
+
+/// Chi-square distribution with [df] degrees of freedom. Used in
+/// goodness-of-fit tests, variance tests, contingency tables.
+/// Support is x ≥ 0. We expose PDF, CDF, quantile, mean, variance.
+class ChiSquare {
+  final int df;
+  const ChiSquare({required this.df})
+      : assert(df > 0, 'degrees of freedom must be positive');
+
+  /// PDF: x^(k/2 − 1) · e^(−x/2) / (2^(k/2) · Γ(k/2)). Zero for x < 0.
+  double pdf(double x) {
+    if (x < 0) return 0.0;
+    if (x == 0) return df == 2 ? 0.5 : (df == 1 ? double.infinity : 0.0);
+    final k = df.toDouble();
+    final logVal = (k / 2 - 1) * math.log(x) -
+        x / 2 -
+        (k / 2) * math.log(2) -
+        _logGamma(k / 2);
+    return math.exp(logVal);
+  }
+
+  /// CDF via numerical integration of the PDF on [0, x]. 1000 Simpson
+  /// subintervals give ~6 digits for typical df.
+  double cdf(double x) {
+    if (x <= 0) return 0.0;
+    return _simpson(pdf, 0, x, 1000);
+  }
+
+  /// Bisection on the monotone CDF. Upper bracket scales with df
+  /// because the chi-square mean is df.
+  double quantile(double p) {
+    if (p <= 0) return 0.0;
+    if (p >= 1) return double.infinity;
+    var lo = 0.0;
+    var hi = (df + 50) * 5.0; // generous: 5x mean + 5x df coverage
+    for (var i = 0; i < 100; i++) {
+      final mid = 0.5 * (lo + hi);
+      final c = cdf(mid);
+      if ((hi - lo).abs() < 1e-10) return mid;
+      if (c < p) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    return 0.5 * (lo + hi);
+  }
+
+  double get mean => df.toDouble();
+  double get variance => 2.0 * df;
+  double get stddev => math.sqrt(variance);
+}
+
 // === Internal helpers ====================================================
 
 /// Abramowitz & Stegun 7.1.26 — max abs error 1.5e-7 for x ≥ 0.
@@ -114,30 +217,55 @@ double _erf(double x) {
 }
 
 /// log(C(n, k)) using log-gamma. Works far past plain factorials.
-/// Dart doesn't ship log-gamma, so we use Stirling's series for
-/// log Γ(z+1) = (z+0.5) ln(z+0.5) − (z+0.5) + 0.5 ln(2π) + 1/(12(z+0.5)) − …
-/// Accurate to ~1e-10 for z ≥ 1, which is all binomial PMF needs.
+/// Uses the real-valued logGamma so it also accepts half-integer
+/// inputs for t- and chi-square calls.
 double _logChoose(int n, int k) {
   if (k < 0 || k > n) return double.negativeInfinity;
   if (k == 0 || k == n) return 0.0;
-  return _logFactorial(n) - _logFactorial(k) - _logFactorial(n - k);
+  return _logGamma(n + 1.0) - _logGamma(k + 1.0) - _logGamma((n - k) + 1.0);
 }
 
-double _logFactorial(int n) {
-  if (n < 2) return 0.0;
-  // Direct sum is fine — n is typically ≤ a few hundred in calculator
-  // use. For really large n we'd switch to Stirling.
-  if (n <= 256) {
-    var s = 0.0;
-    for (var i = 2; i <= n; i++) {
-      s += math.log(i.toDouble());
-    }
-    return s;
+/// Lanczos approximation to log Γ(z). Good to ~14 digits for z > 0.5;
+/// uses the reflection formula for the rest. Standard textbook
+/// coefficients (g = 7).
+double _logGamma(double x) {
+  if (x < 0.5) {
+    // Reflection: Γ(z) Γ(1−z) = π / sin(πz).
+    return math.log(math.pi / math.sin(math.pi * x)) - _logGamma(1.0 - x);
   }
-  // Stirling for large n (rarely hit in practice).
-  final x = n.toDouble() + 1.0;
-  return (x - 0.5) * math.log(x) -
-      x +
-      0.5 * math.log(2 * math.pi) +
-      1.0 / (12.0 * x);
+  const c = <double>[
+    0.99999999999980993,
+    676.5203681218851,
+    -1259.1392167224028,
+    771.32342877765313,
+    -176.61502916214059,
+    12.507343278686905,
+    -0.13857109526572012,
+    9.9843695780195716e-6,
+    1.5056327351493116e-7,
+  ];
+  const g = 7;
+  final z = x - 1.0;
+  var a = c[0];
+  for (var i = 1; i < g + 2; i++) {
+    a += c[i] / (z + i);
+  }
+  final t = z + g + 0.5;
+  return 0.5 * math.log(2 * math.pi) +
+      (z + 0.5) * math.log(t) -
+      t +
+      math.log(a);
+}
+
+/// Composite Simpson's rule on [a, b] with [n] sub-intervals (n
+/// rounded up to an even count internally). Used by the t and
+/// chi-square CDFs.
+double _simpson(double Function(double) f, double a, double b, int n) {
+  if (n.isOdd) n += 1;
+  final h = (b - a) / n;
+  var s = f(a) + f(b);
+  for (var i = 1; i < n; i++) {
+    s += (i.isOdd ? 4 : 2) * f(a + i * h);
+  }
+  return s * h / 3;
 }

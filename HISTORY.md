@@ -2,6 +2,87 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 30) — UI flows + stats V2: polynomial / t / chi-square
+
+Two threads in one round: PLAN's "UI flow tests" gap and the V2 of the
+statistics module from PLAN P5.
+
+### CI: pin Flutter 3.38.5
+
+`channel: stable` was floating to 3.41.9 whose `dart format` rules
+differ from local dev's 3.38.5, so the format gate has been flaking on
+every push. Pinned `ci.yml` to 3.38.5 explicitly. Build workflows
+stay on `stable` since they don't run the format check — they verify
+the pipeline.
+
+### UI flow tests
+
+`test/ui_flows_test.dart` covers the most-likely-to-break Settings +
+Analysis hub flows:
+
+- Help screen lists the function reference (with scroll-to anchors).
+- Constants dialog filters by category (verifying π disappears when
+  the Astronomy chip is active and AU appears).
+- Unit converter switches dimensions and survives the dropdown
+  rebuild.
+- Export data dialog renders its Copy button.
+- Locale switch from English to German actually updates the live UI.
+- Statistics module opens to the Descriptive tab with all three
+  tab labels.
+- Analysis hub lists all four module cards.
+
+7 tests, all green. Calculator-keypad gestures (type expression, tap
+EXE, see history entry) deferred to integration_test since they
+depend on the layout breakpoint.
+
+Bonus fix found by the tests: the Unit converter's two side-by-side
+dropdowns overflowed at narrow widths because the
+`DropdownButtonFormField` wasn't `isExpanded: true`. Now constrained
+correctly.
+
+### Statistics V2
+
+`lib/engine/statistics.dart` extended:
+
+- `Statistics.polynomialFit(xs, ys, degree)` — least-squares solver
+  for arbitrary polynomial degree. Builds normal equations
+  `(XᵀX)c = Xᵀy` via power-sum accumulation, solves with Gaussian
+  elimination + partial pivoting, returns coefficients in ascending
+  order plus R². `PolynomialFit.evaluate(x)` reconstructs the curve.
+- Linear case (degree 1) cross-checks against `linearFit`.
+- Quadratic / cubic exact-coefficient recovery tests.
+- Singular-system (all-x-equal) and underdetermined (< degree+1
+  points) cases throw `ArgumentError`.
+
+`lib/engine/distributions.dart` extended:
+
+- `TDistribution(df)` — PDF in closed form via Lanczos log-gamma,
+  CDF via Simpson on the PDF (1000 subintervals), quantile via
+  bisection on the monotone CDF.
+- `ChiSquare(df)` — same shape. Mean = df, variance = 2df,
+  stddev = √(2df) exposed as getters.
+- Lanczos approximation replaces the integer-only log-factorial used
+  for binomial coefficient calculations, since t and χ² need
+  half-integer Γ arguments. Binomial coverage retained.
+
+Test verification against textbook critical values:
+
+- t.quantile(0.975) at df=4 ≈ 2.776 (1d.p. textbook)
+- t.quantile(0.95) at df=10 ≈ 1.812
+- t.quantile(0.975) at df=1000 ≈ 1.96 (large-df → normal limit)
+- chi².quantile(0.95) at df=3 ≈ 7.815
+- chi².quantile(0.95) at df=10 ≈ 18.307
+- chi² quantile / CDF inverse identity at p ∈ {0.1, 0.5, 0.9, 0.99}
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **553/553** (26 new tests: 7 UI flows + 6 polynomial
+  fit + 6 t-distribution + 7 chi-square).
+- macOS release matrix self-test 7/7, step self-test 28/28.
+
+---
+
 ## 2026-05-17 (round 29) — Built-in constants library
 
 Last of the "small concrete P5 gaps" cluster. Curated catalog of 30
