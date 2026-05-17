@@ -314,9 +314,15 @@ roughly double the perceived value of the app.
 
 #### Math surface area
 
-- [ ] **3D graphing**. Surface plots, parametric 3D curves,
-  intersection with planes (we already have the plane math). Touch-
-  rotate / pinch-zoom on the 3D canvas.
+- [x] ~~**3D graphing (V1)**.~~ Done 2026-05-17 — see HISTORY round 33.
+  Wireframe surface plot z = f(x, y) over a configurable ±range, on a
+  32×32 grid. Touch-rotate (azimuth + elevation) and pinch-zoom via
+  `GestureDetector.onScaleUpdate`. Hand-rolled rotation matrix +
+  orthographic projection (no `vector_math` dep). Height-tinted wires
+  (blue → red HSV), three colored axes, z-range/orientation legend.
+  Listed as a 5th `_ModuleCard` in the Analysis hub.
+  **V2 deferred**: hidden-line removal, perspective projection,
+  contour overlays, parametric 3D curves, intersection with planes.
 - [ ] **User-defined function namespace**. Today's graph slots
   Y1..Y10 are a partial story. Allow named functions
   (`f(x) = x^2 + 1`), composition (`g(f(x))`), and a tab to browse /

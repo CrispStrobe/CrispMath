@@ -61,6 +61,12 @@ abstract class AppLocalizations {
   String get moduleConicsSubtitle;
   String get moduleStatistics;
   String get moduleStatisticsSubtitle;
+  String get module3DTitle;
+  String get module3DSubtitle;
+  String get module3DFunctionLabel;
+  String get module3DRangeLabel;
+  String get module3DResample;
+  String get module3DTapPlot;
 
   // -- Settings --
   String get settingsTitle;
@@ -307,6 +313,19 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get moduleStatisticsSubtitle =>
       'Descriptive stats, linear regression, normal & binomial distributions';
+  @override
+  String get module3DTitle => '3D Graphing';
+  @override
+  String get module3DSubtitle =>
+      'Plot z = f(x, y) as a rotatable wireframe surface';
+  @override
+  String get module3DFunctionLabel => 'f(x, y)';
+  @override
+  String get module3DRangeLabel => 'Range';
+  @override
+  String get module3DResample => 'Re-sample grid';
+  @override
+  String get module3DTapPlot => 'Enter a function of x and y, then tap Plot.';
 
   @override
   String get settingsTitle => 'Settings';
@@ -699,6 +718,20 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get moduleStatisticsSubtitle =>
       'Beschreibende Statistik, lineare Regression, Normal- & Binomialverteilung';
+  @override
+  String get module3DTitle => '3D-Grafik';
+  @override
+  String get module3DSubtitle =>
+      'Zeichne z = f(x, y) als drehbare Drahtgitter-Fläche';
+  @override
+  String get module3DFunctionLabel => 'f(x, y)';
+  @override
+  String get module3DRangeLabel => 'Bereich';
+  @override
+  String get module3DResample => 'Gitter neu abtasten';
+  @override
+  String get module3DTapPlot =>
+      'Funktion in x und y eingeben, dann auf Zeichnen tippen.';
 
   @override
   String get settingsTitle => 'Einstellungen';
@@ -1095,6 +1128,20 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get moduleStatisticsSubtitle =>
       'Statistiques descriptives, régression linéaire, lois normale & binomiale';
+  @override
+  String get module3DTitle => 'Graphique 3D';
+  @override
+  String get module3DSubtitle =>
+      'Tracer z = f(x, y) comme une surface filaire rotative';
+  @override
+  String get module3DFunctionLabel => 'f(x, y)';
+  @override
+  String get module3DRangeLabel => 'Plage';
+  @override
+  String get module3DResample => 'Rééchantillonner la grille';
+  @override
+  String get module3DTapPlot =>
+      'Saisissez une fonction de x et y, puis appuyez sur Tracer.';
 
   @override
   String get settingsTitle => 'Paramètres';
@@ -1494,6 +1541,20 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get moduleStatisticsSubtitle =>
       'Estadística descriptiva, regresión lineal, distribuciones normal y binomial';
+  @override
+  String get module3DTitle => 'Gráfica 3D';
+  @override
+  String get module3DSubtitle =>
+      'Representa z = f(x, y) como superficie rotable de alambre';
+  @override
+  String get module3DFunctionLabel => 'f(x, y)';
+  @override
+  String get module3DRangeLabel => 'Rango';
+  @override
+  String get module3DResample => 'Remuestrear cuadrícula';
+  @override
+  String get module3DTapPlot =>
+      'Introduce una función de x e y y pulsa Representar.';
 
   @override
   String get settingsTitle => 'Ajustes';

@@ -158,17 +158,18 @@ void main() {
       expect(find.text('Mean'), findsOneWidget);
     });
 
-    testWidgets('Analysis hub lists all four modules', (tester) async {
+    testWidgets('Analysis hub lists all five modules', (tester) async {
       await _pumpApp(tester);
       final analysis = find.text('Analysis');
       await tester.tap(analysis.first);
       await tester.pumpAndSettle();
 
-      // All four module cards.
+      // All five module cards.
       expect(find.text('Curve Sketching'), findsOneWidget);
       expect(find.text('Planes'), findsOneWidget);
       expect(find.text('Conic Sections'), findsOneWidget);
       expect(find.text('Statistics'), findsOneWidget);
+      expect(find.text('3D Graphing'), findsOneWidget);
     });
   });
 }

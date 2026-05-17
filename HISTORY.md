@@ -2,6 +2,65 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 33) — 3D graphing (V1)
+
+A new Analysis-hub module: interactive 3D wireframe surface plots of
+z = f(x, y). Hand-rolled rotation + orthographic projection, no
+`vector_math` dependency.
+
+### Math + rendering (lib/screens/graphing_3d_screen.dart)
+
+- **Sampler**: evaluates the user's expression on a 33×33 (grid = 32)
+  lattice over `[−range, +range]²`. Substitutes numeric `x` and `y`
+  literals into the expression *before* the preprocessor pass — so a
+  stored AppState variable named `x` can't shadow the coordinate.
+  Each cell goes through `evaluateForGraphing` and any non-numeric
+  return falls back to NaN, which the wireframe just skips.
+- **Projection**: an azimuth rotation around world-z, then an
+  elevation rotation around the rotated x-axis, then drop the depth
+  coordinate (orthographic). `z` is recentered around its midpoint
+  and scaled so the surface visually fits alongside the x/y range.
+- **Wireframe**: connects `(i,j) → (i+1,j)` and `(i,j) → (i,j+1)`,
+  colored by mid-height z in HSV from blue (low) to red (high).
+- **Axes**: three colored lines through the origin (X red, Y green,
+  Z blue) so the user always knows where they are after rotating.
+- **Legend**: a small `[zMin, zMax]` + azimuth/elevation readout in
+  the top-left corner of the canvas.
+
+### UI
+
+- `Graphing3DScreen` with a TextField for the function (defaults to
+  `sin(x) * cos(y)`), a Plot button, a ±range slider (1..20), and a
+  "Reset view" + "Re-sample grid" action pair.
+- `GestureDetector.onScaleUpdate` handles both drag (rotate) and
+  pinch (zoom, clamped 0.2..5.0). Elevation is clamped to
+  ±π/2 − 0.01 to prevent the gimbal degenerate.
+- Listed as the 5th `_ModuleCard` in `analysis_hub_screen.dart`
+  with `Icons.threed_rotation`.
+
+### i18n
+
+Six new strings (`module3DTitle`, `module3DSubtitle`,
+`module3DFunctionLabel`, `module3DRangeLabel`, `module3DResample`,
+`module3DTapPlot`) translated to en/de/fr/es and covered by
+`localizations_test.dart`.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **595/595**, including the updated UI flow test
+  ("Analysis hub lists all five modules") and the new i18n coverage.
+- macOS release build: green.
+
+### V2 deferred
+
+- Hidden-line removal (current wireframe has no depth ordering, so
+  a back-facing edge can draw on top of a front-facing one).
+- Perspective projection (currently orthographic).
+- Contour overlay lines at constant z.
+- Parametric 3D curves (`(x(t), y(t), z(t))`).
+- Surface-plane intersection (reuses round 23's plane math).
+
 ## 2026-05-17 (round 32) — Hypothesis tests UI
 
 V3 of the Statistics module, built on the t/χ² infrastructure from

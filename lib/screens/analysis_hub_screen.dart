@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../localization/app_localizations.dart';
 import 'conic_section_screen.dart';
 import 'curve_analysis_input_screen.dart';
+import 'graphing_3d_screen.dart';
 import 'plane_analysis_screen.dart';
 import 'statistics_screen.dart';
 
@@ -60,6 +61,16 @@ class AnalysisHubScreen extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => const StatisticsScreen(),
+              ));
+            },
+          ),
+          _ModuleCard(
+            icon: Icons.threed_rotation,
+            title: t.module3DTitle,
+            subtitle: t.module3DSubtitle,
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const Graphing3DScreen(),
               ));
             },
           ),
