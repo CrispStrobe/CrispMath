@@ -13,7 +13,8 @@
 //
 // V2 adds Welch's two-sample t-test for independent samples with
 // unequal variances. V3 adds one-way ANOVA. V4 adds χ² independence
-// for contingency tables.
+// for contingency tables. V5 adds Fisher's exact test for sparse 2×2
+// tables (where χ² isn't reliable).
 
 import 'dart:math' as math;
 
@@ -140,6 +141,41 @@ class AnovaResult {
   });
 
   bool rejectsAt(double alpha) => pValue < alpha;
+}
+
+/// Result of Fisher's exact test on a 2×2 contingency table.
+class FisherExactResult {
+  /// Observed cell counts in [a, b, c, d] form:
+  /// `a b`
+  /// `c d`
+  final int a, b, c, d;
+
+  /// P(observed | margins) under H₀.
+  final double pObserved;
+
+  /// Two-sided p-value: sum of P(table) over all tables with the same
+  /// row/column margins whose probability is ≤ pObserved.
+  final double pValueTwoSided;
+
+  /// Upper-tail (right) one-sided p-value: P(A ≥ a | margins).
+  final double pValueOneSidedUpper;
+
+  /// Lower-tail (left) one-sided p-value: P(A ≤ a | margins).
+  final double pValueOneSidedLower;
+
+  const FisherExactResult({
+    required this.a,
+    required this.b,
+    required this.c,
+    required this.d,
+    required this.pObserved,
+    required this.pValueTwoSided,
+    required this.pValueOneSidedUpper,
+    required this.pValueOneSidedLower,
+  });
+
+  bool rejectsAt(double alpha, {bool twoSided = true}) =>
+      (twoSided ? pValueTwoSided : pValueOneSidedUpper) < alpha;
 }
 
 /// Result of a chi-square test of independence on a contingency table.
@@ -508,6 +544,82 @@ class HypothesisTests {
       observed: List.unmodifiable([
         for (final row in observed) List<double>.unmodifiable(row),
       ]),
+    );
+  }
+
+  /// Fisher's exact test on a 2×2 contingency table:
+  ///   `a b`
+  ///   `c d`
+  ///
+  /// Conditional on fixed row totals (a+b, c+d) and column totals
+  /// (a+c, b+d), the count in cell `a` follows a hypergeometric
+  /// distribution. The test enumerates every table with the same
+  /// margins and picks p-values directly — no large-sample
+  /// approximation.
+  ///
+  /// Two-sided p-value uses R's `fisher.test()` convention: sum of
+  /// P(table) over all tables with the same margins whose probability
+  /// is ≤ P(observed). This is more rigorous than the doubling
+  /// convention and handles asymmetric distributions correctly.
+  ///
+  /// Use this instead of χ² independence whenever any expected count
+  /// falls below ~5, which is the canonical textbook threshold for
+  /// when the χ² large-sample approximation breaks down.
+  ///
+  /// Throws on any negative count or when all four cells are zero.
+  static FisherExactResult fisherExact2x2(int a, int b, int c, int d) {
+    if (a < 0 || b < 0 || c < 0 || d < 0) {
+      throw ArgumentError(
+          'fisherExact2x2() requires non-negative cell counts.');
+    }
+    if (a + b + c + d == 0) {
+      throw ArgumentError('fisherExact2x2() requires at least one count.');
+    }
+    final r1 = a + b;
+    final r2 = c + d;
+    final c1 = a + c;
+    final n = r1 + r2;
+
+    // Hypergeometric probability P(A = k) for cell `a` given the
+    // margins r1, r2, c1, n. Computed in log-domain via log-Choose to
+    // stay stable for moderately large totals.
+    double pHyper(int k) {
+      if (k < 0 || k > r1 || k > c1 || (c1 - k) > r2) return 0.0;
+      final lp = logChoose(r1, k) +
+          logChoose(r2, c1 - k) -
+          logChoose(n, c1);
+      return math.exp(lp);
+    }
+
+    final pObs = pHyper(a);
+
+    // Range of valid `a` values given the margins.
+    final kMin = math.max(0, c1 - r2);
+    final kMax = math.min(r1, c1);
+
+    var pTwoSided = 0.0;
+    var pUpper = 0.0;
+    var pLower = 0.0;
+    // Use a small epsilon for the "≤ P(observed)" comparison to ensure
+    // the observed table is always counted in (avoids floating-point
+    // strict inequalities dropping the equality case).
+    const eps = 1e-12;
+    for (var k = kMin; k <= kMax; k++) {
+      final p = pHyper(k);
+      if (p <= pObs + eps) pTwoSided += p;
+      if (k >= a) pUpper += p;
+      if (k <= a) pLower += p;
+    }
+
+    return FisherExactResult(
+      a: a,
+      b: b,
+      c: c,
+      d: d,
+      pObserved: pObs,
+      pValueTwoSided: pTwoSided.clamp(0.0, 1.0).toDouble(),
+      pValueOneSidedUpper: pUpper.clamp(0.0, 1.0).toDouble(),
+      pValueOneSidedLower: pLower.clamp(0.0, 1.0).toDouble(),
     );
   }
 

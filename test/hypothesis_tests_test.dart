@@ -488,4 +488,73 @@ void main() {
       );
     });
   });
+
+  group('fisherExact2x2', () {
+    test('classic textbook tea-tasting (Fisher 1935)', () {
+      // Lady tasting tea: 4 cups milk-first, 4 cups tea-first.
+      // Lady correctly identifies all 4 of each (3 correct, 1 wrong is
+      // the next-most-extreme).
+      // Observed:
+      //   milk-claimed   tea-claimed
+      //   3              1               | 4  (milk truth)
+      //   1              3               | 4  (tea truth)
+      //   4              4               | 8
+      // R's fisher.test on this gives two-sided p ≈ 0.486.
+      final r = HypothesisTests.fisherExact2x2(3, 1, 1, 3);
+      expect(r.pValueTwoSided, closeTo(0.486, 0.01));
+    });
+
+    test('all-correct guesses give a smaller p', () {
+      // Same setup, 4 of 4 correct on each side. R's fisher.test:
+      // two-sided p ≈ 0.0286.
+      final r = HypothesisTests.fisherExact2x2(4, 0, 0, 4);
+      expect(r.pValueTwoSided, closeTo(0.0286, 0.005));
+      expect(r.rejectsAt(0.05), isTrue);
+    });
+
+    test('one-sided p-values are monotonic in `a`', () {
+      // Same margins, different `a` values — upper-tail p should
+      // decrease as `a` grows.
+      final r2 = HypothesisTests.fisherExact2x2(2, 2, 2, 2);
+      final r3 = HypothesisTests.fisherExact2x2(3, 1, 1, 3);
+      final r4 = HypothesisTests.fisherExact2x2(4, 0, 0, 4);
+      expect(r2.pValueOneSidedUpper, greaterThan(r3.pValueOneSidedUpper));
+      expect(r3.pValueOneSidedUpper, greaterThan(r4.pValueOneSidedUpper));
+    });
+
+    test('upper-tail and lower-tail p sum to 1 + pObserved', () {
+      // upper + lower double-counts the observed table, so
+      // upper + lower = 1 + P(observed).
+      final r = HypothesisTests.fisherExact2x2(3, 1, 1, 3);
+      expect(r.pValueOneSidedUpper + r.pValueOneSidedLower,
+          closeTo(1.0 + r.pObserved, 1e-6));
+    });
+
+    test('symmetric table gives p ≈ 1', () {
+      // Margins symmetric around the expected, observed cell at the mean.
+      final r = HypothesisTests.fisherExact2x2(2, 2, 2, 2);
+      expect(r.pValueTwoSided, closeTo(1.0, 0.01));
+    });
+
+    test('large totals still compute (log-domain stays stable)', () {
+      // Fairly extreme 2x2 with totals ~200.
+      final r = HypothesisTests.fisherExact2x2(80, 20, 10, 90);
+      expect(r.pValueTwoSided, lessThan(1e-9));
+      expect(r.rejectsAt(0.001), isTrue);
+    });
+
+    test('all zeros throws', () {
+      expect(
+        () => HypothesisTests.fisherExact2x2(0, 0, 0, 0),
+        throwsArgumentError,
+      );
+    });
+
+    test('negative count throws', () {
+      expect(
+        () => HypothesisTests.fisherExact2x2(-1, 0, 1, 1),
+        throwsArgumentError,
+      );
+    });
+  });
 }

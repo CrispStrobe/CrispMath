@@ -307,7 +307,11 @@ double _erf(double x) {
 /// log(C(n, k)) using log-gamma. Works far past plain factorials.
 /// Uses the real-valued logGamma so it also accepts half-integer
 /// inputs for t- and chi-square calls.
-double _logChoose(int n, int k) {
+double _logChoose(int n, int k) => logChoose(n, k);
+
+/// Public wrapper for log(C(n, k)). Exposed for cross-module use
+/// (e.g. Fisher's exact test in hypothesis_tests.dart).
+double logChoose(int n, int k) {
   if (k < 0 || k > n) return double.negativeInfinity;
   if (k == 0 || k == n) return 0.0;
   return _logGamma(n + 1.0) - _logGamma(k + 1.0) - _logGamma((n - k) + 1.0);

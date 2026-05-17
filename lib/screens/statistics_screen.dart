@@ -552,6 +552,7 @@ enum _TestKind {
   anovaOneWay,
   chiSquareGof,
   chiSquareIndep,
+  fisherExact,
 }
 
 class _TestsTab extends StatefulWidget {
@@ -592,6 +593,10 @@ class _TestsTabState extends State<_TestsTab> {
   final _indepTable =
       TextEditingController(text: '10, 20\n20, 10\n15, 15');
 
+  // Fisher's exact inputs — a single line "a, b, c, d" where the 2×2
+  // table is [[a, b], [c, d]].
+  final _fisherTable = TextEditingController(text: '3, 1, 1, 3');
+
   // Significance level.
   final _alpha = TextEditingController(text: '0.05');
 
@@ -608,6 +613,7 @@ class _TestsTabState extends State<_TestsTab> {
       _gofObserved,
       _gofExpected,
       _indepTable,
+      _fisherTable,
       _alpha,
     ]) {
       c.dispose();
@@ -929,6 +935,54 @@ class _TestsTabState extends State<_TestsTab> {
     );
   }
 
+  Widget _buildFisher(BuildContext context) {
+    final alpha = double.tryParse(_alpha.text) ?? 0.05;
+    final ints = _fisherTable.text
+        .split(RegExp(r'[\s,;]+'))
+        .where((t) => t.isNotEmpty)
+        .map((s) => int.tryParse(s.trim()))
+        .toList();
+    String? err;
+    FisherExactResult? r;
+    if (ints.length == 4 && ints.every((v) => v != null)) {
+      try {
+        r = HypothesisTests.fisherExact2x2(
+            ints[0]!, ints[1]!, ints[2]!, ints[3]!);
+      } catch (e) {
+        err = e.toString();
+      }
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _fisherTable,
+          onChanged: (_) => setState(() {}),
+          decoration: const InputDecoration(
+            labelText: '2×2 cells: a, b, c, d',
+            helperText: 'Row 1 = [a, b]; row 2 = [c, d].',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (err != null)
+          Text(err,
+              style: TextStyle(color: Theme.of(context).colorScheme.error))
+        else if (r != null) ...[
+          _resultRow('a (row1,col1)', '${r.a}'),
+          _resultRow('b (row1,col2)', '${r.b}'),
+          _resultRow('c (row2,col1)', '${r.c}'),
+          _resultRow('d (row2,col2)', '${r.d}'),
+          _resultRow('P(observed)', _fmt(r.pObserved)),
+          _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
+          _resultRow('p-value (upper)', _fmt(r.pValueOneSidedUpper)),
+          _resultRow('p-value (lower)', _fmt(r.pValueOneSidedLower)),
+          _verdictBlock(context, r.rejectsAt(alpha)),
+        ],
+      ],
+    );
+  }
+
   Widget _buildGof(BuildContext context) {
     final alpha = double.tryParse(_alpha.text) ?? 0.05;
     final observed = _parse(_gofObserved.text);
@@ -1023,6 +1077,12 @@ class _TestsTabState extends State<_TestsTab> {
                 onSelected: (_) =>
                     setState(() => _kind = _TestKind.chiSquareIndep),
               ),
+              ChoiceChip(
+                label: const Text("Fisher's exact 2×2"),
+                selected: _kind == _TestKind.fisherExact,
+                onSelected: (_) =>
+                    setState(() => _kind = _TestKind.fisherExact),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1059,6 +1119,8 @@ class _TestsTabState extends State<_TestsTab> {
                     return _buildGof(context);
                   case _TestKind.chiSquareIndep:
                     return _buildIndependence(context);
+                  case _TestKind.fisherExact:
+                    return _buildFisher(context);
                 }
               }(),
             ),

@@ -2,6 +2,55 @@
 
 Completed work, newest first.
 
+## 2026-05-17 (round 41) — Statistics V8: Fisher's exact 2×2
+
+Pairs with round 39's χ² independence. When any expected cell count
+under H₀ falls below ~5, the large-sample χ² approximation is
+unreliable — Fisher's exact gives the right p-value by enumerating
+every contingency table with the same row/column margins.
+
+### Math (lib/engine/hypothesis_tests.dart)
+
+`HypothesisTests.fisherExact2x2(a, b, c, d)` returns
+`FisherExactResult{a, b, c, d, pObserved, pValueTwoSided,
+pValueOneSidedUpper, pValueOneSidedLower, rejectsAt(α)}`.
+
+Conditional on fixed row totals `(a+b, c+d)` and column totals
+`(a+c, b+d)`, the count `a` follows a hypergeometric distribution:
+
+```
+P(A = k) = C(r1, k) · C(r2, c1 − k) / C(n, c1)
+```
+
+The two-sided p-value follows R's `fisher.test()` convention: sum
+P(table) over all tables with the same margins whose probability
+is `≤ P(observed)`. This is more rigorous than the "double the
+smaller tail" doubling convention and handles asymmetric
+distributions correctly.
+
+Implementation uses log-domain via the new public `logChoose(n, k)`
+helper (exposed from `distributions.dart`), so large totals like
+`fisherExact2x2(80, 20, 10, 90)` don't overflow.
+
+### UI (lib/screens/statistics_screen.dart)
+
+7th chip on the Tests tab. Input is a single comma/space-separated
+line: `a, b, c, d`, where `[[a, b], [c, d]]` is the 2×2 table.
+Result card shows all four cell values, P(observed), two-sided p,
+both one-sided p-values, and the verdict block.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **684/684** (+8 new tests, including Fisher 1935's
+  original tea-tasting example (3/4 correct → p ≈ 0.486; 4/4 correct
+  → p ≈ 0.0286 matching R's `fisher.test()` output) and a large-
+  totals stability test).
+
+### V9 deferred
+
+Paired sign test, Wilcoxon rank-sum.
+
 ## 2026-05-17 (round 40) — Unit V4: scalar × quantity arithmetic
 
 Round 35 (SI prefixes) handled exotic unit symbols; this round handles
