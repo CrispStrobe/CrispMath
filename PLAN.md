@@ -498,6 +498,66 @@ roughly double the perceived value of the app.
   and per-row copy-value-to-clipboard. CODATA 2022 / exact-SI
   values where applicable.
 
+#### Constraint Satisfaction Problems (dart_csp integration)
+
+CrispCalc's existing `solve()` is symbolic — it returns parametric
+solutions or closed-form roots. There's a whole class of math problems
+it can't touch: Diophantine equations with bounded integer variables
+(`2x + 3y = 100, x,y ≥ 0`), number-theory puzzles
+("smallest n where n, n+2, n+6 are all prime"), cryptarithms
+(SEND + MORE = MONEY), Sudoku, magic squares, scheduling. These all
+share the same underlying model: variables with finite domains, a set
+of constraints, find any/all assignments that satisfy them.
+
+The user's `dart_csp` library (MIT, pure Dart) is a mature CSP solver
+— backtracking with AC-3 / GAC, MRV / LCV / dom-wdeg, min-conflicts,
+branch-and-bound optimization, reified constraints, global constraints
+(`allDifferent`, `gcc`, `circuit`, `cumulative`, …), a string
+constraint parser, set variables, soft constraints. Pure Dart, zero
+native deps — fits the bridge-free side of the engine layer cleanly.
+
+Roadmap (ship one round at a time):
+
+- [x] ~~**CSP Round A — Diophantine + cryptarithm module**.~~
+  Done 2026-05-24 — see HISTORY round 59. `dart_csp` pinned at
+  commit `7a05fe5` in pubspec. New `lib/engine/csp_solver.dart`
+  exposes two static methods (`solveDiophantine`,
+  `solveCryptarithm`) wrapping the dart_csp Problem API; a small
+  `_tryParseLinear` pre-pass routes coefficient-bearing forms like
+  `2*x + 3*y == 12` through `addLinearEquals` (the string parser
+  stumbles on them). New `ConstraintsScreen` is the seventh
+  Analysis-hub module; two tabs (Diophantine + Cryptarithm) with
+  textarea inputs and a copyable result block. Chrome localized
+  en/de/fr/es; example entries in the worked-examples catalog
+  deferred to V2 (would need a way to navigate into the
+  Constraints screen rather than the calculator).
+
+- [ ] **CSP Round B — Sudoku module**.
+  New `lib/widgets/sudoku_grid.dart` with a tappable 9×9 input grid,
+  Solve button, Step-through visualization (uses dart_csp's
+  `setOptions(callback: ...)` hook). Solve, verify, optionally
+  enumerate alternates. Pre-filled puzzle library (easy/medium/hard).
+  Likely the most-visible feature this batch produces.
+
+- [ ] **CSP Round C — Generic constraint mini-DSL**.
+  A free-text "Constraint problem" editor in the Analysis hub. Users
+  type:
+  ```
+  vars: x, y, z in 1..9
+  allDifferent(x, y, z)
+  x + y + z == 15
+  ```
+  We feed it to dart_csp's string parser and surface solutions in a
+  table with copy-to-clipboard / show-trace. Power-user feature; very
+  flexible. Worked-example entries for N-queens, magic square,
+  map-coloring, simple scheduling.
+
+- [ ] **CSP Round D — Optimization + scheduling (deferred)**.
+  Exposes `minimize` / `maximize` to the DSL; adds
+  `addNoOverlap` / `addCumulative` UI for OR-flavored scheduling
+  problems (machine assignments, parallel jobs). Useful for business
+  / operations homework — but its own substantial chunk.
+
 #### Precision & number theory (native libs already linked)
 
 The SymEngine xcframework we ship on iOS/macOS bundles **GMP**

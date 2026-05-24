@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/unit_converter_dialog.dart';
 import 'conic_section_screen.dart';
+import 'constraints_screen.dart';
 import 'curve_analysis_input_screen.dart';
 import 'graphing_3d_screen.dart';
 import 'plane_analysis_screen.dart';
@@ -84,6 +85,16 @@ class AnalysisHubScreen extends StatelessWidget {
                 context: context,
                 builder: (_) => const UnitConverterDialog(),
               );
+            },
+          ),
+          _ModuleCard(
+            icon: Icons.account_tree_outlined,
+            title: t.moduleConstraintsTitle,
+            subtitle: t.moduleConstraintsSubtitle,
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const ConstraintsScreen(),
+              ));
             },
           ),
         ],

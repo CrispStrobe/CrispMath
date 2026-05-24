@@ -57,6 +57,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
+  dart_csp:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: "7a05fe5"
+      resolved-ref: "7a05fe50c0acb816a9cc9066bed6d2633d175ce8"
+      url: "https://github.com/CrispStrobe/dart_csp.git"
+    source: git
+    version: "2.1.0"
   fake_async:
     dependency: transitive
     description:

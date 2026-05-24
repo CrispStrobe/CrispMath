@@ -28,6 +28,16 @@ dependencies:
       url: https://github.com/CrispStrobe/symbolic_math_bridge.git
       ref: "6652199"
 
+  # Constraint Satisfaction Problem solver — pure Dart, no native
+  # deps. Powers the Analysis-hub "Constraints" module (Diophantine
+  # equations, cryptarithms in V1; Sudoku and a generic mini-DSL in
+  # follow-up rounds). Bump the `ref:` when CSP-engine features we
+  # depend on grow.
+  dart_csp:
+    git:
+      url: https://github.com/CrispStrobe/dart_csp.git
+      ref: "7a05fe5"
+
   # Math rendering
   flutter_math_fork: ^0.7.2
 

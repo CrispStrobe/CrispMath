@@ -2,6 +2,93 @@
 
 Completed work, newest first.
 
+## 2026-05-24 (round 59) — CSP Round A: Constraints module (Diophantine + cryptarithm)
+
+First slice of the CSP integration plan. Wires the user's pure-Dart
+`dart_csp` library into a new Analysis-hub module that solves two
+classes of problems CrispCalc's symbolic engine couldn't touch:
+bounded-integer Diophantine equations (enumerate ALL solutions to
+`2x + 3y == 30, x ≤ y`), and cryptarithms (SEND + MORE = MONEY).
+
+### Mechanism
+
+- **`pubspec.yaml`** gets a git-pinned `dart_csp` entry (commit
+  `7a05fe5`). Pure Dart, zero native deps — fits the bridge-free
+  side of the engine layer.
+
+- **`lib/engine/csp_solver.dart`** is the wrapper. Two public methods:
+
+  - `CspSolver.solveDiophantine({variables, constraints, maxSolutions})`
+    accepts `Map<String, (min, max)>` for the variables and a list
+    of dart_csp string constraints. Streams up to N solutions
+    (default 100); returns a `DiophantineResult` with `solutions`,
+    `error`, and `truncated` flags.
+
+  - `CspSolver.solveCryptarithm(expression)` parses
+    `WORD1 +|- WORD2 = WORD3`, builds the standard model
+    (one 0..9 variable per letter, `allDifferent`, leading-letter
+    non-zero, place-value sum equality), and returns the digit
+    assignment.
+
+- **`_tryParseLinear` pre-pass** is the trick that makes both modes
+  work. dart_csp's string parser handles `x == y`, `x != y`, and
+  simple unit-coefficient sums (`x + y == 7`), but stumbles on
+  coefficient-bearing forms like `2*x + 3*y == 12` and the larger
+  expressions cryptarithm builds (`10000*M + 1000*O + ... == ...`).
+  My pre-pass detects those shapes and routes them to dart_csp's
+  dedicated `addLinearEquals` / `addLinearLeq` / `addLinearGeq` API
+  — same bounds-consistency propagator that gives the README's
+  claimed 1800× speedup on SEND + MORE = MONEY. The cryptarithm
+  builder collects per-letter coefficients directly and posts one
+  `addLinearEquals` call.
+
+### UI
+
+`ConstraintsScreen` is a new module card on the Analysis hub
+(7th module). Two tabs:
+
+- **Diophantine**: variables textarea (`x in 0..50` one per line),
+  constraints textarea (one per line), Solve button. Result block
+  shows numbered solutions in monospace with a Copy button. Errors
+  surface inline in an error-colored container.
+
+- **Cryptarithm**: single line input (default
+  `SEND + MORE = MONEY`), Solve button, result block listing each
+  letter and its assigned digit.
+
+Both tabs use a small in-button spinner during the (typically
+sub-second) solve. Long-eval V3's persistent worker isn't wired in
+yet — CSP problems at this scale finish well under the 300 ms
+watchdog threshold; reach for the worker only if a future round
+adds problems that don't.
+
+### i18n
+
+19 new strings (module title + subtitle, tab labels, intro text per
+tab, field labels and hints, solve button, error messages, result
+headers, copy + toast) across en/de/fr/es. Two templated methods
+(`constraintsSolutionsHeader(int)`,
+`constraintsTruncatedHeader(int)`) handle pluralization per locale.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **1118/1118** (11 new `csp_solver_test.dart`
+  cases covering both modes, 19 new locale-coverage strings,
+  updated "Analysis hub lists all seven modules" assertion).
+- `dart format`: clean.
+
+### V2 candidates
+
+- Worked-examples catalog entries for the Constraints screen
+  (needs a different navigation slot than `pendingInsertExpression`
+  which targets the calculator).
+- Multiple-solution display for the cryptarithm tab (currently
+  fetches `getSolution()` which returns the first one).
+- A "show progress" callback via `setOptions(callback: ...)` for
+  visualizing the search step-by-step on the Diophantine tab —
+  great for pedagogy on small problems.
+
 ## 2026-05-24 (round 58) — Worked-examples V2: direct insertion + localized bodies
 
 V1 (round 54) shipped 21 examples with copy-to-clipboard. V2 closes

@@ -268,6 +268,36 @@ void main() {
         expect(t.calculating.trim(), isNotEmpty);
       });
 
+      test('CSP / Constraints module strings are present', () {
+        for (final s in [
+          t.moduleConstraintsTitle,
+          t.moduleConstraintsSubtitle,
+          t.constraintsTabDiophantine,
+          t.constraintsTabCryptarithm,
+          t.constraintsDiophantineIntro,
+          t.constraintsCryptarithmIntro,
+          t.constraintsVariablesLabel,
+          t.constraintsVariablesHint,
+          t.constraintsConstraintsLabel,
+          t.constraintsConstraintsHint,
+          t.constraintsCryptarithmInputLabel,
+          t.constraintsSolveButton,
+          t.constraintsBadVarLine,
+          t.constraintsNoSolutions,
+          t.constraintsCryptarithmFoundHeader,
+          t.constraintsCopyResult,
+          t.constraintsCopiedToast,
+          t.constraintsSolutionsHeader(1),
+          t.constraintsSolutionsHeader(5),
+          t.constraintsTruncatedHeader(100),
+        ]) {
+          expect(s.trim(), isNotEmpty);
+        }
+        // Pluralization sanity.
+        expect(t.constraintsSolutionsHeader(5), contains('5'));
+        expect(t.constraintsTruncatedHeader(100), contains('100'));
+      });
+
       test('worked examples strings are present', () {
         for (final s in [
           t.workedExamplesTitle,

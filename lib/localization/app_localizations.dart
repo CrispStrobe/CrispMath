@@ -274,6 +274,27 @@ abstract class AppLocalizations {
   // -- Long-evaluation progress overlay (V2) --
   String get calculating;
 
+  // -- Constraints module (Analysis hub / CSP Round A) --
+  String get moduleConstraintsTitle;
+  String get moduleConstraintsSubtitle;
+  String get constraintsTabDiophantine;
+  String get constraintsTabCryptarithm;
+  String get constraintsDiophantineIntro;
+  String get constraintsCryptarithmIntro;
+  String get constraintsVariablesLabel;
+  String get constraintsVariablesHint;
+  String get constraintsConstraintsLabel;
+  String get constraintsConstraintsHint;
+  String get constraintsCryptarithmInputLabel;
+  String get constraintsSolveButton;
+  String get constraintsBadVarLine;
+  String get constraintsNoSolutions;
+  String get constraintsCryptarithmFoundHeader;
+  String constraintsSolutionsHeader(int n);
+  String constraintsTruncatedHeader(int n);
+  String get constraintsCopyResult;
+  String get constraintsCopiedToast;
+
   // -- Accessibility tooltips (V1 a11y pass) --
   String get clearSearchTooltip;
   String get clearFunctionSlotTooltip;
@@ -880,6 +901,59 @@ class EnLocalizations implements AppLocalizations {
 
   @override
   String get calculating => 'Calculating…';
+
+  @override
+  String get moduleConstraintsTitle => 'Constraint problems';
+  @override
+  String get moduleConstraintsSubtitle =>
+      'Diophantine equations and cryptarithms — find integer '
+      'solutions and digit assignments.';
+  @override
+  String get constraintsTabDiophantine => 'Diophantine';
+  @override
+  String get constraintsTabCryptarithm => 'Cryptarithm';
+  @override
+  String get constraintsDiophantineIntro =>
+      'Declare bounded integer variables, list the constraints they '
+      'must satisfy, and the solver enumerates all integer solutions '
+      '(capped at 100).';
+  @override
+  String get constraintsCryptarithmIntro =>
+      'Enter a puzzle of the form `WORD1 + WORD2 = WORD3` (or `−` '
+      'instead of `+`). Each letter is a digit 0..9; leading digits '
+      'are non-zero; all letters carry distinct digits.';
+  @override
+  String get constraintsVariablesLabel => 'Variables';
+  @override
+  String get constraintsVariablesHint =>
+      'One per line, format: name in min..max';
+  @override
+  String get constraintsConstraintsLabel => 'Constraints';
+  @override
+  String get constraintsConstraintsHint =>
+      'One per line. Comparisons, arithmetic, in/not-in sets all '
+      'supported.';
+  @override
+  String get constraintsCryptarithmInputLabel => 'Puzzle';
+  @override
+  String get constraintsSolveButton => 'Solve';
+  @override
+  String get constraintsBadVarLine =>
+      'Could not parse variable line. Expected `name in min..max`';
+  @override
+  String get constraintsNoSolutions => 'No solutions.';
+  @override
+  String get constraintsCryptarithmFoundHeader => 'Digit assignment';
+  @override
+  String constraintsSolutionsHeader(int n) =>
+      n == 1 ? '1 solution' : '$n solutions';
+  @override
+  String constraintsTruncatedHeader(int n) =>
+      'Showing first $n solutions (more exist)';
+  @override
+  String get constraintsCopyResult => 'Copy solutions';
+  @override
+  String get constraintsCopiedToast => 'Copied to clipboard.';
 
   @override
   String get clearSearchTooltip => 'Clear search';
@@ -1725,6 +1799,59 @@ class DeLocalizations implements AppLocalizations {
 
   @override
   String get calculating => 'Berechne …';
+
+  @override
+  String get moduleConstraintsTitle => 'Bedingungsprobleme';
+  @override
+  String get moduleConstraintsSubtitle =>
+      'Diophantische Gleichungen und Kryptarithmen — ganzzahlige '
+      'Lösungen und Ziffernzuordnungen finden.';
+  @override
+  String get constraintsTabDiophantine => 'Diophantisch';
+  @override
+  String get constraintsTabCryptarithm => 'Kryptarithmus';
+  @override
+  String get constraintsDiophantineIntro =>
+      'Beschränkte ganzzahlige Variablen deklarieren, die zu '
+      'erfüllenden Bedingungen auflisten — der Löser zählt alle '
+      'ganzzahligen Lösungen auf (gedeckelt bei 100).';
+  @override
+  String get constraintsCryptarithmIntro =>
+      'Ein Rätsel der Form `WORT1 + WORT2 = WORT3` eingeben (oder `−` '
+      'statt `+`). Jeder Buchstabe ist eine Ziffer 0..9; führende '
+      'Ziffern ungleich null; alle Buchstaben tragen verschiedene Ziffern.';
+  @override
+  String get constraintsVariablesLabel => 'Variablen';
+  @override
+  String get constraintsVariablesHint =>
+      'Eine pro Zeile, Format: name in min..max';
+  @override
+  String get constraintsConstraintsLabel => 'Bedingungen';
+  @override
+  String get constraintsConstraintsHint =>
+      'Eine pro Zeile. Vergleiche, Arithmetik, in/not-in Mengen alle '
+      'unterstützt.';
+  @override
+  String get constraintsCryptarithmInputLabel => 'Rätsel';
+  @override
+  String get constraintsSolveButton => 'Lösen';
+  @override
+  String get constraintsBadVarLine =>
+      'Variablenzeile nicht erkannt. Erwartet: `name in min..max`';
+  @override
+  String get constraintsNoSolutions => 'Keine Lösungen.';
+  @override
+  String get constraintsCryptarithmFoundHeader => 'Ziffernzuordnung';
+  @override
+  String constraintsSolutionsHeader(int n) =>
+      n == 1 ? '1 Lösung' : '$n Lösungen';
+  @override
+  String constraintsTruncatedHeader(int n) =>
+      'Die ersten $n Lösungen (weitere existieren)';
+  @override
+  String get constraintsCopyResult => 'Lösungen kopieren';
+  @override
+  String get constraintsCopiedToast => 'In Zwischenablage kopiert.';
 
   @override
   String get clearSearchTooltip => 'Suche leeren';
@@ -2674,6 +2801,60 @@ class FrLocalizations implements AppLocalizations {
   String get calculating => 'Calcul en cours …';
 
   @override
+  String get moduleConstraintsTitle => 'Problèmes de contraintes';
+  @override
+  String get moduleConstraintsSubtitle =>
+      'Équations diophantiennes et cryptarithmes — trouver des '
+      'solutions entières et des attributions de chiffres.';
+  @override
+  String get constraintsTabDiophantine => 'Diophantien';
+  @override
+  String get constraintsTabCryptarithm => 'Cryptarithme';
+  @override
+  String get constraintsDiophantineIntro =>
+      'Déclare des variables entières bornées, liste les contraintes '
+      'à satisfaire — le solveur énumère toutes les solutions '
+      'entières (plafonnées à 100).';
+  @override
+  String get constraintsCryptarithmIntro =>
+      'Entre une énigme de la forme `MOT1 + MOT2 = MOT3` (ou `−` au '
+      'lieu de `+`). Chaque lettre est un chiffre 0..9 ; les chiffres '
+      'de tête sont non nuls ; toutes les lettres portent des chiffres '
+      'distincts.';
+  @override
+  String get constraintsVariablesLabel => 'Variables';
+  @override
+  String get constraintsVariablesHint =>
+      'Une par ligne, format : name in min..max';
+  @override
+  String get constraintsConstraintsLabel => 'Contraintes';
+  @override
+  String get constraintsConstraintsHint =>
+      'Une par ligne. Comparaisons, arithmétique, in/not-in ensembles '
+      'tous pris en charge.';
+  @override
+  String get constraintsCryptarithmInputLabel => 'Énigme';
+  @override
+  String get constraintsSolveButton => 'Résoudre';
+  @override
+  String get constraintsBadVarLine =>
+      'Ligne de variable non reconnue. Attendu : `name in min..max`';
+  @override
+  String get constraintsNoSolutions => 'Aucune solution.';
+  @override
+  String get constraintsCryptarithmFoundHeader => 'Attribution des chiffres';
+  @override
+  String constraintsSolutionsHeader(int n) =>
+      n == 1 ? '1 solution' : '$n solutions';
+  @override
+  String constraintsTruncatedHeader(int n) =>
+      'Affichage des $n premières solutions (d\'autres existent)';
+  @override
+  String get constraintsCopyResult => 'Copier les solutions';
+  @override
+  String get constraintsCopiedToast => 'Copié dans le presse-papiers.';
+
+  @override
   String get clearSearchTooltip => 'Effacer la recherche';
   @override
   String get clearFunctionSlotTooltip => 'Effacer l\'emplacement de fonction';
@@ -3619,6 +3800,61 @@ class EsLocalizations implements AppLocalizations {
 
   @override
   String get calculating => 'Calculando…';
+
+  @override
+  String get moduleConstraintsTitle => 'Problemas de restricciones';
+  @override
+  String get moduleConstraintsSubtitle =>
+      'Ecuaciones diofánticas y criptoaritmos — encontrar soluciones '
+      'enteras y asignaciones de dígitos.';
+  @override
+  String get constraintsTabDiophantine => 'Diofántico';
+  @override
+  String get constraintsTabCryptarithm => 'Criptoaritmo';
+  @override
+  String get constraintsDiophantineIntro =>
+      'Declara variables enteras acotadas, lista las restricciones a '
+      'satisfacer — el solver enumera todas las soluciones enteras '
+      '(limitado a 100).';
+  @override
+  String get constraintsCryptarithmIntro =>
+      'Introduce un puzzle de la forma `PALABRA1 + PALABRA2 = '
+      'PALABRA3` (o `−` en vez de `+`). Cada letra es un dígito 0..9; '
+      'los dígitos de cabecera no son cero; todas las letras llevan '
+      'dígitos distintos.';
+  @override
+  String get constraintsVariablesLabel => 'Variables';
+  @override
+  String get constraintsVariablesHint =>
+      'Una por línea, formato: name in min..max';
+  @override
+  String get constraintsConstraintsLabel => 'Restricciones';
+  @override
+  String get constraintsConstraintsHint =>
+      'Una por línea. Comparaciones, aritmética, in/not-in conjuntos '
+      'todos soportados.';
+  @override
+  String get constraintsCryptarithmInputLabel => 'Puzzle';
+  @override
+  String get constraintsSolveButton => 'Resolver';
+  @override
+  String get constraintsBadVarLine =>
+      'No se pudo analizar la línea de variable. Esperado: '
+      '`name in min..max`';
+  @override
+  String get constraintsNoSolutions => 'Sin soluciones.';
+  @override
+  String get constraintsCryptarithmFoundHeader => 'Asignación de dígitos';
+  @override
+  String constraintsSolutionsHeader(int n) =>
+      n == 1 ? '1 solución' : '$n soluciones';
+  @override
+  String constraintsTruncatedHeader(int n) =>
+      'Mostrando las primeras $n soluciones (existen más)';
+  @override
+  String get constraintsCopyResult => 'Copiar soluciones';
+  @override
+  String get constraintsCopiedToast => 'Copiado al portapapeles.';
 
   @override
   String get clearSearchTooltip => 'Borrar búsqueda';
