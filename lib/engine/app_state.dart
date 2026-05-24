@@ -75,6 +75,7 @@ class AppState extends ChangeNotifier {
   static const _kFunctions = 'crisp.functions';
   static const _kParameters = 'crisp.parameters';
   static const _kExactIntegerMode = 'crisp.exactIntegerMode';
+  static const _kOnboardingDismissed = 'crisp.onboardingDismissed';
 
   static const int _kGraphSlotCount = 10;
   static const int _kHistoryCap = 200;
@@ -101,6 +102,13 @@ class AppState extends ChangeNotifier {
   bool _exactIntegerMode = true;
   bool get exactIntegerMode => _exactIntegerMode;
 
+  /// True once the user has completed or skipped the first-launch tour
+  /// (or pressed "Don't show again" from the Settings re-trigger). The
+  /// main screen checks this on each launch and shows the
+  /// `OnboardingTour` overlay when false.
+  bool _onboardingDismissed = false;
+  bool get onboardingDismissed => _onboardingDismissed;
+
   /// Read persisted settings into memory. Must be awaited before runApp.
   /// Pass `force: true` (from tests) to re-read prefs after they've been
   /// mocked with new values — production callers should leave this alone.
@@ -112,6 +120,7 @@ class AppState extends ChangeNotifier {
     _numberFormat = NumberDisplayFormat.auto;
     _themeMode = ThemeMode.dark;
     _exactIntegerMode = true;
+    _onboardingDismissed = false;
     history.clear();
     userVariables.clear();
     functionParameters.clear();
@@ -144,6 +153,8 @@ class AppState extends ChangeNotifier {
       }
       final exactMode = _prefs!.getBool(_kExactIntegerMode);
       if (exactMode != null) _exactIntegerMode = exactMode;
+      final onboarded = _prefs!.getBool(_kOnboardingDismissed);
+      if (onboarded != null) _onboardingDismissed = onboarded;
       _restoreList<CalculationEntry>(
         key: _kHistory,
         target: history,
@@ -238,6 +249,13 @@ class AppState extends ChangeNotifier {
     if (_exactIntegerMode == enabled) return;
     _exactIntegerMode = enabled;
     _prefs?.setBool(_kExactIntegerMode, enabled);
+    notifyListeners();
+  }
+
+  void setOnboardingDismissed(bool dismissed) {
+    if (_onboardingDismissed == dismissed) return;
+    _onboardingDismissed = dismissed;
+    _prefs?.setBool(_kOnboardingDismissed, dismissed);
     notifyListeners();
   }
 

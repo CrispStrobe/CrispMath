@@ -20,7 +20,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// (predictable widget tree across tests). Reset SharedPreferences so
 /// each test starts from a clean AppState.
 Future<void> _pumpApp(WidgetTester tester) async {
-  SharedPreferences.setMockInitialValues({});
+  // Pre-mark the onboarding tour as dismissed so it doesn't pop on top
+  // of the screen we're trying to drive in each test.
+  SharedPreferences.setMockInitialValues({
+    'crisp.onboardingDismissed': true,
+  });
   await tester.binding.setSurfaceSize(const Size(1280, 800));
   await AppState().load(force: true);
   await tester.pumpWidget(const CrispCalcApp());

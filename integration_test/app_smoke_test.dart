@@ -12,13 +12,24 @@
 // own `CRISPCALC_DIAGNOSTIC=…` headless mode — this file covers the
 // UI side that those env-var modes deliberately skip.
 
+import 'package:crisp_calc/engine/app_state.dart';
 import 'package:crisp_calc/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    // Dismiss the onboarding tour so it doesn't pop over the test
+    // surface. Production launches drive it via AppState.
+    SharedPreferences.setMockInitialValues({
+      'crisp.onboardingDismissed': true,
+    });
+    await AppState().load(force: true);
+  });
 
   group('CrispCalc app — smoke', () {
     testWidgets('boots without throwing', (tester) async {

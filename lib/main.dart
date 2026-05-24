@@ -27,6 +27,7 @@ import 'screens/help_screen.dart';
 import 'services/native_licenses.dart';
 import 'widgets/constants_dialog.dart';
 import 'widgets/export_data_dialog.dart';
+import 'widgets/onboarding_tour.dart';
 import 'widgets/unit_converter_dialog.dart';
 
 void main() async {
@@ -209,6 +210,17 @@ class _MainScreenState extends State<MainScreen> {
       const AnalysisHubScreen(),
       const SettingsScreen(),
     ];
+    // First-launch onboarding tour. Skipped if the user has already
+    // dismissed it (persisted) or — pragmatically — when running
+    // headless / under widget tests where no MaterialApp ancestor is
+    // mounted in the right way to host a Dialog. The setOnboarding flag
+    // toggle in OnboardingTour.show prevents re-showing.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!AppState().onboardingDismissed) {
+        OnboardingTour.show(context);
+      }
+    });
   }
 
   void _select(int i) {
@@ -438,6 +450,16 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: Text(t.settingsExactIntegerModeSubtitle),
                   value: appState.exactIntegerMode,
                   onChanged: appState.setExactIntegerMode,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.flag_outlined),
+                  title: Text(t.settingsReplayTour),
+                  subtitle: Text(t.settingsReplayTourSubtitle),
+                  trailing: const Icon(Icons.play_arrow),
+                  onTap: () => OnboardingTour.show(context),
                 ),
               ),
               const SizedBox(height: 16),

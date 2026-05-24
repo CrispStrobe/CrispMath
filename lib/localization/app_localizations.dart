@@ -271,6 +271,22 @@ abstract class AppLocalizations {
   String exactIntegerBadge(int digits);
   String get exactIntegerTapToCopy;
 
+  // -- Onboarding tour (first-launch overlay) --
+  String get onboardingSkip;
+  String get onboardingNext;
+  String get onboardingDone;
+  String onboardingPage(int current, int total);
+  String get onboardingKeypadTitle;
+  String get onboardingKeypadBody;
+  String get onboardingHistoryTitle;
+  String get onboardingHistoryBody;
+  String get onboardingFunctionsTitle;
+  String get onboardingFunctionsBody;
+  String get onboardingAnalysisTitle;
+  String get onboardingAnalysisBody;
+  String get settingsReplayTour;
+  String get settingsReplayTourSubtitle;
+
   // -- Step-engine plain-language notes (V2). Returns a localized
   //    sentence for the given key, interpolating `note.params`.
   //    Returns null when the locale doesn't carry a translation for
@@ -799,6 +815,45 @@ class EnLocalizations implements AppLocalizations {
   String exactIntegerBadge(int digits) => 'Exact integer · $digits digits';
   @override
   String get exactIntegerTapToCopy => 'Tap to copy';
+
+  @override
+  String get onboardingSkip => 'Skip';
+  @override
+  String get onboardingNext => 'Next';
+  @override
+  String get onboardingDone => 'Got it';
+  @override
+  String onboardingPage(int current, int total) => '$current / $total';
+  @override
+  String get onboardingKeypadTitle => 'Tabbed keypad';
+  @override
+  String get onboardingKeypadBody =>
+      'Switch between Num, Trig, CAS, and Advanced tabs to find the '
+      'operation you need. On larger windows every key fits on one '
+      'screen — no tabs needed.';
+  @override
+  String get onboardingHistoryTitle => 'Scroll your history';
+  @override
+  String get onboardingHistoryBody =>
+      'Every calculation is saved. Scroll up to revisit, long-press to '
+      'copy or reuse, tap the search icon to filter.';
+  @override
+  String get onboardingFunctionsTitle => 'Pick a function';
+  @override
+  String get onboardingFunctionsBody =>
+      'The ∫⌄, d/dx⌄, and solve⌄ buttons open step-by-step pickers '
+      'that walk you through the answer one rule at a time.';
+  @override
+  String get onboardingAnalysisTitle => 'Analysis hub';
+  @override
+  String get onboardingAnalysisBody =>
+      'Curve sketching, planes, conics, 3D plotting, statistics, and '
+      'the unit converter all live in the Analysis tab.';
+  @override
+  String get settingsReplayTour => 'Replay onboarding tour';
+  @override
+  String get settingsReplayTourSubtitle =>
+      'Show the first-launch tour again next time you open the app.';
 
   @override
   String get helpTitle => 'Help';
@@ -1461,6 +1516,46 @@ class DeLocalizations implements AppLocalizations {
   String exactIntegerBadge(int digits) => 'Exakte Ganzzahl · $digits Ziffern';
   @override
   String get exactIntegerTapToCopy => 'Tippen zum Kopieren';
+
+  @override
+  String get onboardingSkip => 'Überspringen';
+  @override
+  String get onboardingNext => 'Weiter';
+  @override
+  String get onboardingDone => 'Verstanden';
+  @override
+  String onboardingPage(int current, int total) => '$current / $total';
+  @override
+  String get onboardingKeypadTitle => 'Tastenfeld mit Reitern';
+  @override
+  String get onboardingKeypadBody =>
+      'Wechsle zwischen den Reitern Num, Trig, CAS und Erweitert, um die '
+      'gewünschte Operation zu finden. Bei breiteren Fenstern passt das '
+      'ganze Tastenfeld auf einen Bildschirm — ohne Reiter.';
+  @override
+  String get onboardingHistoryTitle => 'Verlauf durchblättern';
+  @override
+  String get onboardingHistoryBody =>
+      'Jede Berechnung wird gespeichert. Nach oben scrollen, um sie '
+      'erneut zu sehen, lange drücken zum Kopieren oder erneut '
+      'Verwenden, Suchsymbol antippen zum Filtern.';
+  @override
+  String get onboardingFunctionsTitle => 'Funktion auswählen';
+  @override
+  String get onboardingFunctionsBody =>
+      'Die Tasten ∫⌄, d/dx⌄ und solve⌄ öffnen Schritt-für-Schritt-'
+      'Auswahlen, die das Ergebnis Regel für Regel erklären.';
+  @override
+  String get onboardingAnalysisTitle => 'Analyse-Hub';
+  @override
+  String get onboardingAnalysisBody =>
+      'Kurvendiskussion, Ebenen, Kegelschnitte, 3D-Diagramme, Statistik '
+      'und der Einheitenrechner finden sich alle im Reiter Analyse.';
+  @override
+  String get settingsReplayTour => 'Einführungstour erneut anzeigen';
+  @override
+  String get settingsReplayTourSubtitle =>
+      'Die Erststart-Tour beim nächsten Öffnen der App noch einmal zeigen.';
 
   @override
   String get helpTitle => 'Hilfe';
@@ -2134,6 +2229,47 @@ class FrLocalizations implements AppLocalizations {
   String get exactIntegerTapToCopy => 'Toucher pour copier';
 
   @override
+  String get onboardingSkip => 'Passer';
+  @override
+  String get onboardingNext => 'Suivant';
+  @override
+  String get onboardingDone => 'Compris';
+  @override
+  String onboardingPage(int current, int total) => '$current / $total';
+  @override
+  String get onboardingKeypadTitle => 'Clavier à onglets';
+  @override
+  String get onboardingKeypadBody =>
+      'Bascule entre les onglets Num, Trig, CAS et Avancé pour '
+      'trouver l\'opération recherchée. Sur les écrans plus larges, '
+      'tout le clavier tient en une seule vue — sans onglets.';
+  @override
+  String get onboardingHistoryTitle => 'Parcourir l\'historique';
+  @override
+  String get onboardingHistoryBody =>
+      'Chaque calcul est enregistré. Fais défiler vers le haut pour '
+      'le revoir, appuie longuement pour copier ou réutiliser, touche '
+      'l\'icône de recherche pour filtrer.';
+  @override
+  String get onboardingFunctionsTitle => 'Choisir une fonction';
+  @override
+  String get onboardingFunctionsBody =>
+      'Les boutons ∫⌄, d/dx⌄ et solve⌄ ouvrent des sélecteurs pas-à-pas '
+      'qui détaillent la réponse règle par règle.';
+  @override
+  String get onboardingAnalysisTitle => 'Hub d\'analyse';
+  @override
+  String get onboardingAnalysisBody =>
+      'Étude de fonction, plans, coniques, tracé 3D, statistiques et '
+      'le convertisseur d\'unités sont tous dans l\'onglet Analyse.';
+  @override
+  String get settingsReplayTour => 'Revoir la visite guidée';
+  @override
+  String get settingsReplayTourSubtitle =>
+      'Afficher à nouveau la visite de premier lancement la prochaine fois '
+      'que tu ouvres l\'app.';
+
+  @override
   String get helpTitle => 'Aide';
   @override
   String get helpFunctionsHeading => 'Fonctions prises en charge';
@@ -2802,6 +2938,47 @@ class EsLocalizations implements AppLocalizations {
   String exactIntegerBadge(int digits) => 'Entero exacto · $digits dígitos';
   @override
   String get exactIntegerTapToCopy => 'Toca para copiar';
+
+  @override
+  String get onboardingSkip => 'Omitir';
+  @override
+  String get onboardingNext => 'Siguiente';
+  @override
+  String get onboardingDone => 'Entendido';
+  @override
+  String onboardingPage(int current, int total) => '$current / $total';
+  @override
+  String get onboardingKeypadTitle => 'Teclado con pestañas';
+  @override
+  String get onboardingKeypadBody =>
+      'Cambia entre las pestañas Núm, Trig, CAS y Avanzado para '
+      'encontrar la operación que necesitas. En ventanas más anchas '
+      'todo el teclado cabe en una sola pantalla — sin pestañas.';
+  @override
+  String get onboardingHistoryTitle => 'Desplaza por el historial';
+  @override
+  String get onboardingHistoryBody =>
+      'Cada cálculo se guarda. Desplázate hacia arriba para revisarlo, '
+      'mantén pulsado para copiar o reutilizar, toca el icono de '
+      'búsqueda para filtrar.';
+  @override
+  String get onboardingFunctionsTitle => 'Elegir una función';
+  @override
+  String get onboardingFunctionsBody =>
+      'Los botones ∫⌄, d/dx⌄ y solve⌄ abren selectores paso a paso '
+      'que explican la respuesta regla por regla.';
+  @override
+  String get onboardingAnalysisTitle => 'Centro de análisis';
+  @override
+  String get onboardingAnalysisBody =>
+      'Estudio de curvas, planos, cónicas, gráficos 3D, estadística y '
+      'el conversor de unidades están todos en la pestaña Análisis.';
+  @override
+  String get settingsReplayTour => 'Repetir la visita guiada';
+  @override
+  String get settingsReplayTourSubtitle =>
+      'Mostrar la visita de primer inicio la próxima vez que abras la '
+      'aplicación.';
 
   @override
   String get helpTitle => 'Ayuda';

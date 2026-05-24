@@ -254,6 +254,30 @@ void main() {
         expect(t.exactIntegerBadge(158), contains('158'));
       });
 
+      test('onboarding tour strings are present', () {
+        for (final s in [
+          t.onboardingSkip,
+          t.onboardingNext,
+          t.onboardingDone,
+          t.onboardingPage(1, 4),
+          t.onboardingKeypadTitle,
+          t.onboardingKeypadBody,
+          t.onboardingHistoryTitle,
+          t.onboardingHistoryBody,
+          t.onboardingFunctionsTitle,
+          t.onboardingFunctionsBody,
+          t.onboardingAnalysisTitle,
+          t.onboardingAnalysisBody,
+          t.settingsReplayTour,
+          t.settingsReplayTourSubtitle,
+        ]) {
+          expect(s.trim(), isNotEmpty);
+        }
+        // Templated page indicator interpolates both numbers.
+        expect(t.onboardingPage(2, 4), contains('2'));
+        expect(t.onboardingPage(2, 4), contains('4'));
+      });
+
       test('picker / step dialog titles are present', () {
         for (final s in [
           t.integralTitle,

@@ -167,9 +167,15 @@ single feature. Roughly in priority order — top items unblock the next.
   warning style in the theme's error color instead of the normal
   blue result. Unrecognized errors get a `⚠ ` prefix and keep their
   detail. Fragment-underlining and fix suggestions deferred to V2.
-- [ ] **Onboarding tour**. First launch shows a 4-card tour: keypad
+- [x] ~~**Onboarding tour**. First launch shows a 4-card tour: keypad
   tabs, history scroll, function picker, analysis hub. Skippable.
-  Discoverable features stop being a problem.
+  Discoverable features stop being a problem.~~ Done 2026-05-24 —
+  see HISTORY round 48. New `OnboardingTour` widget renders a paged
+  Dialog with the four canonical cards; `AppState.onboardingDismissed`
+  (persisted) gates the auto-show in MainScreen's initState
+  post-frame callback. Settings gains a "Replay onboarding tour"
+  tile that re-triggers the same dialog on demand. Localized
+  across en/de/fr/es.
 - [x] ~~**User documentation**.~~ Done 2026-05-17 — in-app Help
   screen reachable from Settings → "Help & function reference".
   Lists every supported op grouped by category (Arithmetic, CAS,

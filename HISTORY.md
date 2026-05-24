@@ -2,6 +2,59 @@
 
 Completed work, newest first.
 
+## 2026-05-24 (round 48) — Onboarding tour
+
+First-launch overlay introducing the four big features (keypad tabs,
+history scroll, function pickers, Analysis hub) as a paged Dialog
+with skippable navigation. The persisted `onboardingDismissed` flag
+on AppState gates the auto-show — the tour pops at most once per
+device.
+
+### Pieces
+
+- **`lib/widgets/onboarding_tour.dart`** — new file. `OnboardingTour`
+  StatefulWidget with a 4-page PageView, page-dot indicator, Skip /
+  Next / Got-it bottom bar, and a `static Future<void> show(context)`
+  helper that wraps `showDialog` and marks
+  `AppState.onboardingDismissed = true` on close (whether user hit
+  Done, Skip, or back-dismissed). `barrierDismissible: false` so
+  the user must engage with one of the explicit buttons.
+
+- **`AppState.onboardingDismissed`** — new bool, persisted as
+  `crisp.onboardingDismissed` in SharedPreferences. Defaults to
+  `false` so the tour runs on first install but never again.
+
+- **`MainScreen.initState`** — post-frame callback that calls
+  `OnboardingTour.show(context)` when the flag is false. Gated on
+  `if (!mounted) return;` so test harnesses that disposed the widget
+  before the post-frame fires don't crash.
+
+- **Settings → "Replay onboarding tour"** — a `ListTile` with a
+  play-arrow trailing icon that runs the same `OnboardingTour.show`.
+  Lets users who skipped through find the cards again later.
+
+- **i18n** — 14 new strings (`onboardingSkip`, `onboardingNext`,
+  `onboardingDone`, `onboardingPage(int, int)`, four `*Title` +
+  four `*Body` for the four cards, plus `settingsReplayTour` +
+  `settingsReplayTourSubtitle`) implemented across en/de/fr/es with
+  the standard non-emptiness test extended to cover all of them.
+
+### Test fixture changes
+
+All three widget-test entry points (`widget_test.dart`,
+`ui_flows_test.dart`, `integration_test/app_smoke_test.dart`) now
+pre-set `crisp.onboardingDismissed: true` in their
+`SharedPreferences.setMockInitialValues` calls. Without this every
+existing test would race against the tour overlay popping over the
+screen they're trying to drive.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **886/886** (8 new locale-string checks + 4 new
+  AppState persistence tests for the onboarding flag).
+- `dart format`: clean.
+
 ## 2026-05-24 (round 47) — Unit V5: composite-dimension arithmetic + derived units
 
 Quantity × quantity and quantity / quantity now extend the running

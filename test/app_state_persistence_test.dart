@@ -256,4 +256,43 @@ void main() {
       expect(s.exportToJson()['exactIntegerMode'], isFalse);
     });
   });
+
+  group('onboarding dismissed flag', () {
+    test('default is false (first launch shows tour)', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      expect(s.onboardingDismissed, isFalse);
+    });
+
+    test('setOnboardingDismissed writes through', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      s.setOnboardingDismissed(true);
+      final fresh = await SharedPreferences.getInstance();
+      expect(fresh.getBool('crisp.onboardingDismissed'), isTrue);
+    });
+
+    test('load() restores stored value', () async {
+      SharedPreferences.setMockInitialValues(
+          {'crisp.onboardingDismissed': true});
+      final s = AppState();
+      await s.load(force: true);
+      expect(s.onboardingDismissed, isTrue);
+    });
+
+    test('idempotent setter — no notification when value unchanged', () async {
+      SharedPreferences.setMockInitialValues(
+          {'crisp.onboardingDismissed': true});
+      final s = AppState();
+      await s.load(force: true);
+      var notifications = 0;
+      void cb() => notifications++;
+      s.addListener(cb);
+      s.setOnboardingDismissed(true); // same value
+      expect(notifications, 0);
+      s.removeListener(cb);
+    });
+  });
 }
