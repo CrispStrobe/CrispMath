@@ -179,6 +179,70 @@ class SudokuSolver {
     return SudokuTrace(frames: frames, solution: solution, error: null);
   }
 
+  /// V3: per-cell candidate sets. For each empty cell, returns the
+  /// digits 1..N that don't already appear in the same row,
+  /// column, box, or — for Sudoku-X — diagonals. Pre-filled (clue)
+  /// cells return the empty set. Pure Dart — no bridge / solver
+  /// call needed, so it's cheap enough to recompute on every cell
+  /// edit when the user has "Show hints" enabled.
+  ///
+  /// This is the naive single-pass elimination (sometimes called
+  /// "naked candidates"). The dart_csp AC-3 pass would produce
+  /// strictly tighter sets in some puzzles, but routing through
+  /// the bridge for every keystroke isn't free; the V4 follow-up
+  /// could expose the AC-3-pruned version as an opt-in
+  /// "advanced hints" level.
+  static List<Set<int>> computeCandidates(SudokuPuzzle puzzle) {
+    final layout = puzzle.layout;
+    final n = layout.side;
+    final all = {for (var v = 1; v <= n; v++) v};
+    final out = List<Set<int>>.generate(n * n, (_) => <int>{});
+
+    // Pre-compute which values appear in each row, column, and box
+    // so the per-cell candidate lookup is O(1).
+    final rowUsed = List<Set<int>>.generate(n, (_) => <int>{});
+    final colUsed = List<Set<int>>.generate(n, (_) => <int>{});
+    final boxUsed = <int, Set<int>>{};
+    final mainDiagUsed = <int>{};
+    final antiDiagUsed = <int>{};
+
+    int boxKey(int r, int c) {
+      final br = r ~/ layout.boxRows;
+      final bc = c ~/ layout.boxCols;
+      return br * layout.boxCols + bc;
+    }
+
+    for (var r = 0; r < n; r++) {
+      for (var c = 0; c < n; c++) {
+        final v = puzzle.cells[r * n + c];
+        if (v == 0) continue;
+        rowUsed[r].add(v);
+        colUsed[c].add(v);
+        boxUsed.putIfAbsent(boxKey(r, c), () => <int>{}).add(v);
+        if (puzzle.variant == SudokuVariant.x) {
+          if (r == c) mainDiagUsed.add(v);
+          if (r + c == n - 1) antiDiagUsed.add(v);
+        }
+      }
+    }
+
+    for (var r = 0; r < n; r++) {
+      for (var c = 0; c < n; c++) {
+        if (puzzle.cells[r * n + c] != 0) continue;
+        final excluded = <int>{
+          ...rowUsed[r],
+          ...colUsed[c],
+          ...?boxUsed[boxKey(r, c)],
+          if (puzzle.variant == SudokuVariant.x && r == c) ...mainDiagUsed,
+          if (puzzle.variant == SudokuVariant.x && r + c == n - 1)
+            ...antiDiagUsed,
+        };
+        out[r * n + c] = all.difference(excluded);
+      }
+    }
+    return out;
+  }
+
   // === Internals ==========================================================
 
   /// `r0c0`, `r0c1`, … `r8c8`. Single string per cell because

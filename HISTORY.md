@@ -2,6 +2,77 @@
 
 Completed work, newest first.
 
+## 2026-05-24 (round 62) — Sudoku V3: hint mode (pencil-marks per cell)
+
+The flagship "real Sudoku app" feature: turn on Show Hints and
+every empty cell renders a small sub-grid of dimmed digits showing
+which values are still legal given the current row, column, box,
+and (for Sudoku-X) diagonal occupants. As the user fills in
+clues — or as the solver visualizer plays — the candidates
+recompute live.
+
+### Engine
+
+- **`SudokuSolver.computeCandidates(puzzle) → List<Set<int>>`**.
+  Pure-Dart single-pass elimination ("naked candidates"). For
+  each empty cell, returns the digits 1..N minus the union of
+  values already present in the same row, column, box, and
+  diagonals (if variant is X). Clue cells return the empty set.
+- O(N²) per call — fast enough to recompute on every keystroke
+  even on 16×16.
+- A stricter "AC-3-pruned" version that propagates iteratively
+  to a fixed point would catch more eliminations (some "hidden
+  singles" the naive version misses), but each call would route
+  through the dart_csp bridge — too expensive for live recompute.
+  V4 will expose that as an opt-in advanced level.
+
+### Widget
+
+`SudokuGrid` gained an optional `candidates: List<Set<int>>`
+param. When non-null, each empty cell's `_Cell` builds a
+`_PencilMarks` widget instead of empty space. Sub-grid layout
+mirrors the box layout — 9×9 cell → 3×3 sub-grid, 6×6 cell →
+2×3, 4×4 → 2×2, 16×16 → 4×4. Each digit `d` sits in its
+conventional position so users learn where each digit "belongs"
+in the cell. Missing digits render as blank to keep the visual
+density low.
+
+### Screen
+
+New `SwitchListTile` "Show hints" between the digit pad and
+Solve button. Hint mode is suppressed while the visualizer is
+playing a search trace (the two overlays would compete for the
+same cell space), and resumes when the user clears the trace
+or edits a cell.
+
+### Interaction with variant + size
+
+- Works identically on all four sizes shipped in V2.
+- Sudoku-X variant correctly adds the two diagonals to the
+  exclusion set when the cell sits on one of them.
+- The same toggle flips state across size + variant changes —
+  the puzzle reset on layout/variant switch doesn't reset
+  `_showHints` (intentional: the user's pedagogy preference
+  shouldn't reset on every nav).
+
+### i18n
+
+Two new strings × 4 locales (`sudokuShowHints`,
+`sudokuShowHintsSubtitle`) with the standard non-emptiness
+coverage check.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **1150/1150**. New tests:
+  - All-empty 4×4 → every cell has candidates {1, 2, 3, 4}.
+  - Single clue affects row + column + box but not unrelated cells.
+  - Clue cells get the empty set.
+  - Sudoku-X variant eliminates diagonal occupants (both diagonals).
+  - Regular variant does NOT — confirms the X overlay actually
+    only fires when the variant flag is set.
+- `dart format`: clean.
+
 ## 2026-05-24 (round 61) — Sudoku V2: 6×6 + 16×16 layouts + Sudoku-X variant
 
 Round 60 (Sudoku V1) parameterized the layout but only exposed 4×4

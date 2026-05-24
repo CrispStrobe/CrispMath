@@ -282,6 +282,93 @@ void main() {
     }, timeout: const Timeout(Duration(seconds: 60)));
   });
 
+  group('Sudoku V3 — computeCandidates (hint mode)', () {
+    test('empty 4×4 has every digit 1..4 candidate for every cell', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.small,
+        cells: List<int>.filled(16, 0),
+      );
+      final cands = SudokuSolver.computeCandidates(puzzle);
+      expect(cands, hasLength(16));
+      for (final s in cands) {
+        expect(s, equals({1, 2, 3, 4}));
+      }
+    });
+
+    test('cell with a row clue loses that value', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.small,
+        cells: [
+          1, 0, 0, 0, // row 0: 1 already used
+          0, 0, 0, 0,
+          0, 0, 0, 0,
+          0, 0, 0, 0,
+        ],
+      );
+      final cands = SudokuSolver.computeCandidates(puzzle);
+      // (0, 1) — same row as the 1 clue → can't be 1.
+      expect(cands[1], equals({2, 3, 4}));
+      // (1, 0) — same column → can't be 1.
+      expect(cands[4], equals({2, 3, 4}));
+      // (1, 1) — same 2×2 box → can't be 1.
+      expect(cands[5], equals({2, 3, 4}));
+      // (1, 2) — different box, different row, different col → 1 still legal.
+      expect(cands[6], contains(1));
+    });
+
+    test('clue cells get the empty candidate set', () {
+      final cands = SudokuSolver.computeCandidates(SudokuPresets.small4x4Easy);
+      for (var i = 0; i < SudokuPresets.small4x4Easy.cells.length; i++) {
+        if (SudokuPresets.small4x4Easy.cells[i] != 0) {
+          expect(cands[i], isEmpty,
+              reason: 'clue cell $i should have empty candidates');
+        }
+      }
+    });
+
+    test('Sudoku-X variant also eliminates diagonal occupants', () {
+      // 9×9 X variant: put a `5` at (0, 0) — main diagonal. The
+      // cell at (4, 4) (also on the main diagonal) must NOT have
+      // 5 as a candidate.
+      final cells = List<int>.filled(81, 0);
+      cells[0] = 5; // (0, 0)
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: cells,
+        variant: SudokuVariant.x,
+      );
+      final cands = SudokuSolver.computeCandidates(puzzle);
+      expect(cands[4 * 9 + 4], isNot(contains(5)),
+          reason: 'main diagonal cell (4,4) should exclude 5');
+      // (4, 4) is also on the anti-diagonal, so it loses 5 either way.
+      // Pick (8, 0) — anti-diagonal but NOT main diagonal — and put
+      // a 7 at (0, 8) (also anti-diagonal).
+      final cells2 = List<int>.filled(81, 0);
+      cells2[0 * 9 + 8] = 7; // (0, 8)
+      final p2 = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: cells2,
+        variant: SudokuVariant.x,
+      );
+      final c2 = SudokuSolver.computeCandidates(p2);
+      expect(c2[8 * 9 + 0], isNot(contains(7)),
+          reason: 'anti-diagonal cell (8,0) should exclude 7');
+    });
+
+    test('regular variant ignores diagonal occupants', () {
+      // Same setup as above, but variant=regular: 5 at (0,0)
+      // should NOT prevent 5 at (4,4) (no shared row/col/box).
+      final cells = List<int>.filled(81, 0);
+      cells[0] = 5;
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: cells,
+      );
+      final cands = SudokuSolver.computeCandidates(puzzle);
+      expect(cands[4 * 9 + 4], contains(5));
+    });
+  });
+
   group('Sudoku V2 — Sudoku-X variant', () {
     test('generator round-trip: 9×9 X variant easy', () async {
       final puzzle = await SudokuGenerator.generate(

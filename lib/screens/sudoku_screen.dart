@@ -46,6 +46,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
   bool _playing = false;
   bool _solving = false;
   bool _generating = false;
+  bool _showHints = false;
   SudokuDifficulty _genDifficulty = SudokuDifficulty.medium;
   _Speed _speed = _Speed.medium;
 
@@ -211,6 +212,21 @@ class _SudokuScreenState extends State<SudokuScreen> {
     final highlightIdx =
         _trace == null ? null : _trace!.frames[_frameIndex].justChangedIndex;
 
+    // V3: when "Show hints" is on, compute the candidate set per
+    // empty cell against the *displayed* grid (so as the user
+    // fills in digits or the visualizer plays, candidates update
+    // live). Disabled while the visualizer trace is mid-replay to
+    // avoid two competing "what's in this cell" overlays.
+    List<Set<int>>? candidates;
+    if (_showHints && _trace == null) {
+      final livePuzzle = SudokuPuzzle(
+        layout: layout,
+        cells: _displayed,
+        variant: _puzzle.variant,
+      );
+      candidates = SudokuSolver.computeCandidates(livePuzzle);
+    }
+
     final gridBlock = Padding(
       padding: const EdgeInsets.all(16),
       child: SudokuGrid(
@@ -219,6 +235,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
         clueIndexes: _clueIndexes,
         selectedIndex: _selected,
         highlightIndex: highlightIdx,
+        candidates: candidates,
         onTapCell: _onTapCell,
       ),
     );
@@ -254,7 +271,17 @@ class _SudokuScreenState extends State<SudokuScreen> {
             side: layout.side,
             onPress: _setDigit,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(t.sudokuShowHints),
+            subtitle: Text(t.sudokuShowHintsSubtitle,
+                style: Theme.of(context).textTheme.bodySmall),
+            value: _showHints,
+            onChanged: (v) => setState(() => _showHints = v),
+          ),
+          const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: _solving ? null : _solve,
             icon: _solving

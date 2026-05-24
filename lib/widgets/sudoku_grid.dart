@@ -27,6 +27,12 @@ class SudokuGrid extends StatelessWidget {
   final int? highlightIndex;
   final ValueChanged<int>? onTapCell;
 
+  /// V3: optional per-cell candidate sets. When non-null, each
+  /// empty cell renders a sub-grid of candidate digits (pencil
+  /// marks) in light/dim color. List length must equal `side²`;
+  /// clue cells' entries are ignored.
+  final List<Set<int>>? candidates;
+
   const SudokuGrid({
     super.key,
     required this.layout,
@@ -35,6 +41,7 @@ class SudokuGrid extends StatelessWidget {
     this.selectedIndex,
     this.highlightIndex,
     this.onTapCell,
+    this.candidates,
   });
 
   @override
@@ -68,6 +75,7 @@ class SudokuGrid extends StatelessWidget {
                               isHighlighted:
                                   highlightIndex == r * layout.side + c,
                               cellSize: cellSize,
+                              candidates: candidates?[r * layout.side + c],
                               onTap: onTapCell == null
                                   ? null
                                   : () => onTapCell!(r * layout.side + c),
@@ -94,6 +102,7 @@ class _Cell extends StatelessWidget {
   final bool isSelected;
   final bool isHighlighted;
   final double cellSize;
+  final Set<int>? candidates;
   final VoidCallback? onTap;
 
   const _Cell({
@@ -105,6 +114,7 @@ class _Cell extends StatelessWidget {
     required this.isSelected,
     required this.isHighlighted,
     required this.cellSize,
+    required this.candidates,
     required this.onTap,
   });
 
@@ -143,17 +153,84 @@ class _Cell extends StatelessWidget {
             ),
           ),
           alignment: Alignment.center,
-          child: value == 0
-              ? const SizedBox.shrink()
-              : Text(
+          child: value != 0
+              ? Text(
                   '$value',
                   style: TextStyle(
                     fontSize: cellSize * 0.55,
                     fontWeight: isClue ? FontWeight.w700 : FontWeight.w400,
                     color: isClue ? scheme.onSurface : scheme.primary,
                   ),
-                ),
+                )
+              : (candidates != null && candidates!.isNotEmpty
+                  ? _PencilMarks(
+                      layout: layout,
+                      candidates: candidates!,
+                      cellSize: cellSize,
+                    )
+                  : const SizedBox.shrink()),
         ),
+      ),
+    );
+  }
+}
+
+class _PencilMarks extends StatelessWidget {
+  final SudokuLayout layout;
+  final Set<int> candidates;
+  final double cellSize;
+
+  const _PencilMarks({
+    required this.layout,
+    required this.candidates,
+    required this.cellSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Sub-grid mirrors the box layout: a 9-cell uses 3×3 sub-grid,
+    // a 6-cell uses 2×3, a 4-cell uses 2×2, a 16-cell uses 4×4.
+    // Each candidate digit sits in its conventional position
+    // (digit d at row (d-1) ~/ subCols, col (d-1) % subCols) so
+    // the user's eye learns where each digit belongs.
+    final n = layout.side;
+    final subRows = layout.boxRows;
+    final subCols = layout.boxCols;
+    final scheme = Theme.of(context).colorScheme;
+    final dim = scheme.onSurface.withValues(alpha: 0.45);
+
+    return Padding(
+      padding: const EdgeInsets.all(2),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          for (var sr = 0; sr < subRows; sr++)
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  for (var sc = 0; sc < subCols; sc++) ...[
+                    () {
+                      final digit = sr * subCols + sc + 1;
+                      if (digit > n) return const SizedBox();
+                      final present = candidates.contains(digit);
+                      return Expanded(
+                        child: Center(
+                          child: Text(
+                            present ? '$digit' : '',
+                            style: TextStyle(
+                              fontSize: cellSize * 0.18,
+                              color: dim,
+                            ),
+                          ),
+                        ),
+                      );
+                    }(),
+                  ],
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

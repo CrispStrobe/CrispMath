@@ -295,6 +295,8 @@ abstract class AppLocalizations {
   String get sudokuDifficultyHard;
   String get sudokuVariantRegular;
   String get sudokuVariantX;
+  String get sudokuShowHints;
+  String get sudokuShowHintsSubtitle;
 
   // -- Constraints module (Analysis hub / CSP Round A) --
   String get moduleConstraintsTitle;
@@ -986,6 +988,12 @@ class EnLocalizations implements AppLocalizations {
   String get sudokuVariantRegular => 'Regular';
   @override
   String get sudokuVariantX => 'Sudoku-X';
+  @override
+  String get sudokuShowHints => 'Show hints';
+  @override
+  String get sudokuShowHintsSubtitle =>
+      'Pencil-marks: for each empty cell, the digits not yet '
+      'eliminated by row, column, box, or diagonal.';
 
   @override
   String get moduleConstraintsTitle => 'Constraint problems';
@@ -1947,6 +1955,13 @@ class DeLocalizations implements AppLocalizations {
   String get sudokuVariantRegular => 'Klassisch';
   @override
   String get sudokuVariantX => 'Sudoku-X';
+  @override
+  String get sudokuShowHints => 'Hinweise anzeigen';
+  @override
+  String get sudokuShowHintsSubtitle =>
+      'Bleistift-Notizen: für jedes leere Feld die Ziffern, die noch '
+      'nicht durch Zeile, Spalte, Block oder Diagonale ausgeschlossen '
+      'sind.';
 
   @override
   String get moduleConstraintsTitle => 'Bedingungsprobleme';
@@ -3010,6 +3025,13 @@ class FrLocalizations implements AppLocalizations {
   String get sudokuVariantRegular => 'Classique';
   @override
   String get sudokuVariantX => 'Sudoku-X';
+  @override
+  String get sudokuShowHints => 'Afficher les indices';
+  @override
+  String get sudokuShowHintsSubtitle =>
+      'Annotations au crayon : pour chaque case vide, les chiffres '
+      'pas encore éliminés par la ligne, la colonne, le bloc ou la '
+      'diagonale.';
 
   @override
   String get moduleConstraintsTitle => 'Problèmes de contraintes';
@@ -4074,6 +4096,12 @@ class EsLocalizations implements AppLocalizations {
   String get sudokuVariantRegular => 'Clásico';
   @override
   String get sudokuVariantX => 'Sudoku-X';
+  @override
+  String get sudokuShowHints => 'Mostrar pistas';
+  @override
+  String get sudokuShowHintsSubtitle =>
+      'Notas a lápiz: para cada casilla vacía, los dígitos aún no '
+      'eliminados por fila, columna, bloque o diagonal.';
 
   @override
   String get moduleConstraintsTitle => 'Problemas de restricciones';

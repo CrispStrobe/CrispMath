@@ -289,6 +289,8 @@ void main() {
           t.sudokuDifficultyHard,
           t.sudokuVariantRegular,
           t.sudokuVariantX,
+          t.sudokuShowHints,
+          t.sudokuShowHintsSubtitle,
         ]) {
           expect(s.trim(), isNotEmpty);
         }

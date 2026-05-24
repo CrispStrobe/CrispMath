@@ -572,11 +572,19 @@ Roadmap (ship one round at a time):
       Hypercube, NRC, 2-Quasi-Magic) all reduce to additional
       `allDifferent` overlays — once the regular engine is in
       place, each is a small per-variant constraint pack.
-  - **V3 deferred** — hint mode (pencil-marks per cell driven by
-    AC-3 domain reductions), uniqueness check exposed to the user
-    ("this puzzle has 3 solutions"), step-trace annotations
-    explaining each propagation (currently the visualizer shows
-    *what* changes, not *why*).
+  - **V3 partial** (HISTORY round 62): **hint mode / pencil-marks**
+    shipped. `SudokuSolver.computeCandidates(puzzle)` returns one
+    `Set<int>` per cell (legal digits after naive
+    row/column/box/diagonal exclusion). Grid widget renders the
+    candidates as a small sub-grid of dimmed digits in each empty
+    cell. Screen has a "Show hints" toggle that recomputes on
+    every edit. Works on all four layouts (4×4 / 6×6 / 9×9 /
+    16×16) and respects the Sudoku-X overlay.
+    **V4 pending** — AC-3-pruned hints (stricter than the naive
+    elimination, slower to compute), uniqueness check exposed to
+    the user ("this puzzle has 3 solutions"), step-trace
+    annotations explaining each propagation (currently the
+    visualizer shows *what* changes, not *why*).
 
 - [ ] **CSP Round C — Generic constraint mini-DSL**.
   A free-text "Constraint problem" editor in the Analysis hub. Users
