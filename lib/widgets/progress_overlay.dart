@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../localization/app_localizations.dart';
+
 class ProgressOverlay extends StatelessWidget {
   final bool isVisible;
   final String title;
@@ -60,7 +62,7 @@ class ProgressOverlay extends StatelessWidget {
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: onCancel,
-                    child: const Text('Cancel'),
+                    child: Text(AppLocalizations.of(context).cancel),
                   ),
                 ],
               ],

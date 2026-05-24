@@ -271,6 +271,9 @@ abstract class AppLocalizations {
   String exactIntegerBadge(int digits);
   String get exactIntegerTapToCopy;
 
+  // -- Long-evaluation progress overlay (V2) --
+  String get calculating;
+
   // -- Accessibility tooltips (V1 a11y pass) --
   String get clearSearchTooltip;
   String get clearFunctionSlotTooltip;
@@ -864,6 +867,9 @@ class EnLocalizations implements AppLocalizations {
   String exactIntegerBadge(int digits) => 'Exact integer · $digits digits';
   @override
   String get exactIntegerTapToCopy => 'Tap to copy';
+
+  @override
+  String get calculating => 'Calculating…';
 
   @override
   String get clearSearchTooltip => 'Clear search';
@@ -1694,6 +1700,9 @@ class DeLocalizations implements AppLocalizations {
   String exactIntegerBadge(int digits) => 'Exakte Ganzzahl · $digits Ziffern';
   @override
   String get exactIntegerTapToCopy => 'Tippen zum Kopieren';
+
+  @override
+  String get calculating => 'Berechne …';
 
   @override
   String get clearSearchTooltip => 'Suche leeren';
@@ -2539,6 +2548,9 @@ class FrLocalizations implements AppLocalizations {
   String get exactIntegerTapToCopy => 'Toucher pour copier';
 
   @override
+  String get calculating => 'Calcul en cours …';
+
+  @override
   String get clearSearchTooltip => 'Effacer la recherche';
   @override
   String get clearFunctionSlotTooltip => 'Effacer l\'emplacement de fonction';
@@ -3380,6 +3392,9 @@ class EsLocalizations implements AppLocalizations {
   String exactIntegerBadge(int digits) => 'Entero exacto · $digits dígitos';
   @override
   String get exactIntegerTapToCopy => 'Toca para copiar';
+
+  @override
+  String get calculating => 'Calculando…';
 
   @override
   String get clearSearchTooltip => 'Borrar búsqueda';

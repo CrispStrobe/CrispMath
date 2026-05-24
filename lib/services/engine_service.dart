@@ -66,13 +66,71 @@ class EngineService {
   static Future<String> evaluateAsync(String expression) {
     return compute(_evaluateInIsolate, expression);
   }
+
+  /// V2: generic dispatch for the specialized CalculatorEngine methods
+  /// (expand, simplify, factor, solve, differentiate, integrate,
+  /// limit, gcd, lcm, factorial, fibonacci). Each is its own bridge
+  /// call so we wrap them individually rather than parsing the
+  /// expression string in the isolate. Returns the same string the
+  /// synchronous path would.
+  static Future<String> runOpAsync(EngineOp op) {
+    return compute(_runOpInIsolate, op);
+  }
 }
 
-// Top-level function so `compute` can serialize a reference to it.
+/// Tag + args for a generic worker dispatch. Held minimal (5 strings)
+/// so it transports cleanly across the isolate boundary via compute().
+class EngineOp {
+  final String kind;
+  final String arg1;
+  final String? arg2;
+  final String? arg3;
+  final String? arg4;
+  const EngineOp(this.kind, this.arg1, [this.arg2, this.arg3, this.arg4]);
+}
+
+// Top-level functions so `compute` can serialize a reference to them.
+
 String _evaluateInIsolate(String expression) {
   try {
     final engine = CalculatorEngine();
     return engine.evaluate(expression);
+  } catch (e) {
+    return 'Error: $e';
+  }
+}
+
+String _runOpInIsolate(EngineOp op) {
+  try {
+    final engine = CalculatorEngine();
+    switch (op.kind) {
+      case 'evaluate':
+        return engine.evaluate(op.arg1);
+      case 'expand':
+        return engine.expand(op.arg1);
+      case 'simplify':
+        return engine.simplify(op.arg1);
+      case 'factor':
+        return engine.factor(op.arg1);
+      case 'solve':
+        return engine.solve(op.arg1, op.arg2!);
+      case 'differentiate':
+        return engine.differentiate(op.arg1, op.arg2!);
+      case 'integrate':
+        return engine.integrate(op.arg1, op.arg2!, op.arg3, op.arg4);
+      case 'limit':
+        return engine.limit(op.arg1, op.arg2!, op.arg3!);
+      case 'gcd':
+        return engine.gcd(op.arg1, op.arg2!);
+      case 'lcm':
+        return engine.lcm(op.arg1, op.arg2!);
+      case 'factorial':
+        return engine.factorial(int.parse(op.arg1));
+      case 'fibonacci':
+        return engine.fibonacci(int.parse(op.arg1));
+      default:
+        return 'Error: unknown engine op ${op.kind}';
+    }
   } catch (e) {
     return 'Error: $e';
   }

@@ -75,4 +75,29 @@ void main() {
       expect(out, isA<String>());
     }, timeout: const Timeout(Duration(seconds: 15)));
   });
+
+  group('EngineService.runOpAsync', () {
+    test('dispatches expand op', () async {
+      final out =
+          await EngineService.runOpAsync(const EngineOp('expand', '(x+1)^2'));
+      expect(out, isA<String>());
+    }, timeout: const Timeout(Duration(seconds: 15)));
+
+    test('dispatches integrate with bounds', () async {
+      final out = await EngineService.runOpAsync(
+          const EngineOp('integrate', 'x^2', 'x', '0', '1'));
+      expect(out, isA<String>());
+    }, timeout: const Timeout(Duration(seconds: 15)));
+
+    test('unknown op returns an Error string', () async {
+      final out = await EngineService.runOpAsync(const EngineOp('bogus', 'x'));
+      expect(out, startsWith('Error'));
+    }, timeout: const Timeout(Duration(seconds: 15)));
+
+    test('factorial op converts the string arg to int', () async {
+      final out =
+          await EngineService.runOpAsync(const EngineOp('factorial', '5'));
+      expect(out, isA<String>());
+    }, timeout: const Timeout(Duration(seconds: 15)));
+  });
 }

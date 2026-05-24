@@ -715,23 +715,23 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
       String result;
       if (_isFunctionCall(converted, 'solve')) {
-        result = _handleSolveFunction(converted);
+        result = await _handleSolveFunction(converted);
       } else if (_isFunctionCall(converted, 'd/dx')) {
-        result = _handleDifferentiateFunction(converted);
+        result = await _handleDifferentiateFunction(converted);
       } else if (_isFunctionCall(converted, 'factor')) {
-        result = _handleFactorFunction(converted);
+        result = await _handleFactorFunction(converted);
       } else if (_isFunctionCall(converted, 'expand')) {
-        result = _handleExpandFunction(converted);
+        result = await _handleExpandFunction(converted);
       } else if (_isFunctionCall(converted, 'simplify')) {
-        result = _handleSimplifyFunction(converted);
+        result = await _handleSimplifyFunction(converted);
       } else if (_isFunctionCall(converted, 'gcd')) {
         result = _handleGcdFunction(converted);
       } else if (_isFunctionCall(converted, 'lcm')) {
         result = _handleLcmFunction(converted);
       } else if (_isFunctionCall(converted, 'integrate')) {
-        result = _handleIntegrateFunction(converted);
+        result = await _handleIntegrateFunction(converted);
       } else if (_isFunctionCall(converted, 'limit')) {
-        result = _handleLimitFunction(converted);
+        result = await _handleLimitFunction(converted);
       } else if (_looksLikeBareEquation(converted)) {
         // `2x + 3 = 0`, `x^2 - 4 = 0`, etc. — anything with a `=` that
         // didn't match the assignment or function-def patterns above. Wrap
@@ -750,12 +750,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
         // EngineService so the UI stays interactive. Short bare
         // arithmetic stays on the main thread — the isolate-init
         // overhead would dwarf the work.
-        final rawResult = EngineService.shouldRunAsync(preprocessed)
-            ? await _runWithProgress(
-                'Calculating…',
-                () => EngineService.evaluateAsync(preprocessed),
-              )
-            : _engine.evaluate(preprocessed);
+        final rawResult = await _runEngineOpMaybeAsync('evaluate', preprocessed,
+            fallback: () => _engine.evaluate(preprocessed));
         result = ExpressionPreprocessingUtils.normalizeComplexResult(rawResult);
       }
 
@@ -948,7 +944,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     }
   }
 
-  String _handleSolveFunction(String expression) {
+  Future<String> _handleSolveFunction(String expression) async {
     try {
       final solveContent =
           expression.substring(6, expression.length - 1).trim();
@@ -981,13 +977,15 @@ class CalculatorScreenState extends State<CalculatorScreen>
               ExpressionPreprocessingUtils.preprocessExpression(
                   equation, _appState));
 
-      return _engine.solve(preprocessed, variable);
+      return _runEngineOpMaybeAsync('solve', preprocessed,
+          arg2: variable,
+          fallback: () => _engine.solve(preprocessed, variable));
     } catch (e) {
       return 'Error: Invalid solve() syntax';
     }
   }
 
-  String _handleDifferentiateFunction(String expression) {
+  Future<String> _handleDifferentiateFunction(String expression) async {
     try {
       final content = expression.substring(5, expression.length - 1).trim();
       final parts = content.split(',');
@@ -1001,46 +999,51 @@ class CalculatorScreenState extends State<CalculatorScreen>
           ExpressionPreprocessingUtils.preprocessNativeExpression(
               ExpressionPreprocessingUtils.preprocessExpression(
                   expr, _appState));
-      return _engine.differentiate(preprocessed, variable);
+      return _runEngineOpMaybeAsync('differentiate', preprocessed,
+          arg2: variable,
+          fallback: () => _engine.differentiate(preprocessed, variable));
     } catch (e) {
       return 'Error: Invalid d/dx() syntax';
     }
   }
 
-  String _handleFactorFunction(String expression) {
+  Future<String> _handleFactorFunction(String expression) async {
     try {
       final content = expression.substring(7, expression.length - 1).trim();
       final preprocessed =
           ExpressionPreprocessingUtils.preprocessNativeExpression(
               ExpressionPreprocessingUtils.preprocessExpression(
                   content, _appState));
-      return _engine.factor(preprocessed);
+      return _runEngineOpMaybeAsync('factor', preprocessed,
+          fallback: () => _engine.factor(preprocessed));
     } catch (e) {
       return 'Error: Invalid factor() syntax';
     }
   }
 
-  String _handleExpandFunction(String expression) {
+  Future<String> _handleExpandFunction(String expression) async {
     try {
       final content = expression.substring(7, expression.length - 1).trim();
       final preprocessed =
           ExpressionPreprocessingUtils.preprocessNativeExpression(
               ExpressionPreprocessingUtils.preprocessExpression(
                   content, _appState));
-      return _engine.expand(preprocessed);
+      return _runEngineOpMaybeAsync('expand', preprocessed,
+          fallback: () => _engine.expand(preprocessed));
     } catch (e) {
       return 'Error: Invalid expand() syntax';
     }
   }
 
-  String _handleSimplifyFunction(String expression) {
+  Future<String> _handleSimplifyFunction(String expression) async {
     try {
       final content = expression.substring(9, expression.length - 1).trim();
       final preprocessed =
           ExpressionPreprocessingUtils.preprocessNativeExpression(
               ExpressionPreprocessingUtils.preprocessExpression(
                   content, _appState));
-      return _engine.simplify(preprocessed);
+      return _runEngineOpMaybeAsync('simplify', preprocessed,
+          fallback: () => _engine.simplify(preprocessed));
     } catch (e) {
       return 'Error: Invalid simplify() syntax';
     }
@@ -1083,7 +1086,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   /// integrate(expr, var) or integrate(expr, (var, lower, upper))
-  String _handleIntegrateFunction(String expression) {
+  Future<String> _handleIntegrateFunction(String expression) async {
     try {
       final content = expression.substring(10, expression.length - 1).trim();
       // Split into expression and the rest at the first comma at depth 0.
@@ -1103,21 +1106,27 @@ class CalculatorScreenState extends State<CalculatorScreen>
         final inner = rest.substring(1, rest.length - 1);
         final parts = inner.split(',').map((s) => s.trim()).toList();
         if (parts.length == 3) {
-          return _engine.integrate(
-              preprocessedExpr, parts[0], parts[1], parts[2]);
+          return _runEngineOpMaybeAsync('integrate', preprocessedExpr,
+              arg2: parts[0],
+              arg3: parts[1],
+              arg4: parts[2],
+              fallback: () => _engine.integrate(
+                  preprocessedExpr, parts[0], parts[1], parts[2]));
         }
         return 'Error: integrate(expr, (var, lower, upper)) expected';
       }
 
       // Just a variable — indefinite integral
-      return _engine.integrate(preprocessedExpr, rest);
+      return _runEngineOpMaybeAsync('integrate', preprocessedExpr,
+          arg2: rest,
+          fallback: () => _engine.integrate(preprocessedExpr, rest));
     } catch (e) {
       return 'Error: Invalid integrate() syntax';
     }
   }
 
   /// limit(expr, var, point)
-  String _handleLimitFunction(String expression) {
+  Future<String> _handleLimitFunction(String expression) async {
     try {
       final content = expression.substring(6, expression.length - 1).trim();
       final parts = content.split(',').map((s) => s.trim()).toList();
@@ -1128,7 +1137,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
           ExpressionPreprocessingUtils.preprocessNativeExpression(
         ExpressionPreprocessingUtils.preprocessExpression(parts[0], _appState),
       );
-      return _engine.limit(preprocessedExpr, parts[1], parts[2]);
+      return _runEngineOpMaybeAsync('limit', preprocessedExpr,
+          arg2: parts[1],
+          arg3: parts[2],
+          fallback: () => _engine.limit(preprocessedExpr, parts[1], parts[2]));
     } catch (e) {
       return 'Error: Invalid limit() syntax';
     }
@@ -1499,17 +1511,30 @@ class CalculatorScreenState extends State<CalculatorScreen>
     );
   }
 
+  /// V1 was a no-cancel watchdog; V2 adds a cancel button via a
+  /// monotonic run-id discard pattern. We can't actually `Isolate.kill`
+  /// a `compute()` worker, so cancel works by:
+  ///   1. Bumping [_runId] when the user taps Cancel.
+  ///   2. Popping the overlay and ignoring whatever the worker
+  ///      eventually returns.
+  /// The bridge call still runs to completion in the background — UI is
+  /// unblocked, but the actual computation isn't aborted. Real
+  /// isolate-kill cancellation is V3 work.
+  int _runId = 0;
+
   /// Runs [task] and shows the [ProgressOverlay] if it hasn't finished
-  /// within 300 ms. Quick operations come back before the watchdog fires
-  /// and no overlay is shown. Slow ones see the "Calculating…" card
-  /// appear; it dismisses itself when the future completes.
+  /// within 300 ms. The overlay has a Cancel button; tapping it
+  /// dismisses the overlay and causes this function to throw
+  /// `_CancelledByUserException` (caller catches and surfaces a
+  /// friendly "Cancelled" history entry).
   Future<T> _runWithProgress<T>(
     String message,
     Future<T> Function() task,
   ) async {
+    final myRunId = ++_runId;
     var overlayOpen = false;
     final watchdog = Timer(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
+      if (!mounted || myRunId != _runId) return;
       overlayOpen = true;
       _busyMessage = message;
       showDialog<void>(
@@ -1517,17 +1542,54 @@ class CalculatorScreenState extends State<CalculatorScreen>
         barrierDismissible: false,
         builder: (_) => PopScope(
           canPop: false,
-          child: ProgressOverlay(isVisible: true, title: _busyMessage),
+          child: ProgressOverlay(
+            isVisible: true,
+            title: _busyMessage,
+            onCancel: () {
+              _runId++; // invalidate the in-flight task
+              if (mounted) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+            },
+          ),
         ),
       );
     });
     try {
-      return await task();
+      final result = await task();
+      if (myRunId != _runId) {
+        throw const _CancelledByUserException();
+      }
+      return result;
     } finally {
       watchdog.cancel();
-      if (overlayOpen && mounted) {
+      if (overlayOpen && mounted && myRunId == _runId) {
         Navigator.of(context, rootNavigator: true).pop();
       }
+    }
+  }
+
+  /// Heuristic dispatch: when the input looks slow enough, route the
+  /// engine op through the worker isolate with the progress overlay;
+  /// otherwise call [fallback] synchronously. The async branch uses
+  /// [EngineService.runOpAsync] which serializes (op kind + args)
+  /// across the isolate boundary.
+  Future<String> _runEngineOpMaybeAsync(
+    String op,
+    String arg1, {
+    String? arg2,
+    String? arg3,
+    String? arg4,
+    required String Function() fallback,
+  }) async {
+    if (!EngineService.shouldRunAsync(arg1)) return fallback();
+    try {
+      return await _runWithProgress(
+        AppLocalizations.of(context).calculating,
+        () => EngineService.runOpAsync(EngineOp(op, arg1, arg2, arg3, arg4)),
+      );
+    } on _CancelledByUserException {
+      return 'Error: cancelled';
     }
   }
 
@@ -1929,4 +1991,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
       ),
     );
   }
+}
+
+/// Internal signal raised by [CalculatorScreenState._runWithProgress]
+/// when the user taps the Cancel button on the progress overlay. The
+/// in-flight compute() can't be aborted (Isolate.kill via a real
+/// long-lived worker is V3 work), so we mark the run as cancelled and
+/// the caller surfaces a friendly "Error: cancelled" entry.
+class _CancelledByUserException implements Exception {
+  const _CancelledByUserException();
 }

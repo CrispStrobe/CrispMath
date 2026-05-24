@@ -2,6 +2,74 @@
 
 Completed work, newest first.
 
+## 2026-05-24 (round 56) — Long-evaluation V2: cancel + handler coverage
+
+V1 (round 51) wrapped only the bare-evaluate path. V2 extends the
+async pipeline to every specialized handler and adds a Cancel button
+to the progress overlay.
+
+### Generic op dispatch
+
+`EngineService.runOpAsync(EngineOp(kind, arg1, [arg2..arg4]))` is a
+new generic entry point. The worker isolate switches on `op.kind`
+and dispatches to the matching `CalculatorEngine` method. Currently
+wired ops: `evaluate`, `expand`, `simplify`, `factor`, `solve`,
+`differentiate`, `integrate` (with optional bounds), `limit`, `gcd`,
+`lcm`, `factorial`, `fibonacci`. Adding a new op is one switch case
++ optional argument plumbing through the 5-string `EngineOp` value.
+
+### Handler conversion
+
+Seven `_handleXxxFunction` methods in `CalculatorScreenState`
+changed from sync `String` to `Future<String>`. Each now ends with
+a call to a new `_runEngineOpMaybeAsync(op, arg1, ..., fallback:
+() => _engine.X(...))` helper that:
+
+- Calls the sync `fallback()` directly when
+  `EngineService.shouldRunAsync(arg1)` returns false (cheap
+  evaluations stay on the main thread).
+- Otherwise pushes the call to `EngineService.runOpAsync` wrapped in
+  the existing `_runWithProgress` watchdog.
+
+`_calculate` now `await`s each handler, and the bare-evaluate path
+shares the same `_runEngineOpMaybeAsync` helper so the codebase has
+one rule for "go async" instead of two branches.
+
+### Cancel button
+
+`ProgressOverlay` already had an `onCancel` slot from V1; the
+calculator screen now wires it. Implementation uses a monotonic
+`_runId` counter:
+
+1. `_runWithProgress` captures the current `_runId` on entry.
+2. The Cancel button bumps `_runId` and pops the overlay.
+3. When the worker's future resolves, the wrapper checks
+   `myRunId != _runId` and throws `_CancelledByUserException` if
+   the user moved on.
+4. `_runEngineOpMaybeAsync` catches the sentinel and returns
+   `Error: cancelled` so the history entry shows the friendly
+   error formatter.
+
+This is **discard-on-completion**, not true cancellation — the
+worker isolate keeps running because compute() doesn't expose
+`Isolate.kill`. The UI is unblocked immediately, which is what
+matters for UX. True kill cancellation needs a long-lived
+`Isolate.spawn` we can `kill()`; V3 work.
+
+### i18n
+
+One new string `calculating` ("Calculating…" / "Berechne …" /
+"Calcul en cours …" / "Calculando…") wires the watchdog message.
+Plus the existing `Cancel` button text in `progress_overlay.dart`
+now goes through `AppLocalizations` instead of being hardcoded.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **972/972** (4 new `runOpAsync` round-trip tests
+  + 1 new locale string).
+- `dart format`: clean.
+
 ## 2026-05-24 (round 55) — Accessibility audit V1
 
 First pass at making the calculator usable to screen-reader users.

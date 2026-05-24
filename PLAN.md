@@ -131,10 +131,19 @@ single feature. Roughly in priority order — top items unblock the next.
     the work). Calculator screen wraps the bare-evaluate path with a
     300 ms-watchdog `ProgressOverlay` so quick ops don't flash and
     slow ops surface a "Calculating…" card.
-  - **V2 pending**: extend the async path to the dedicated function
-    handlers (integrate/limit/solve special-case branches), wire a
-    long-lived worker isolate to amortize the bridge-init cost, add a
-    cancel button.
+  - **V2 partial** (HISTORY round 56): every specialized handler
+    (`integrate`, `limit`, `solve`, `factor`, `expand`, `simplify`,
+    `d/dx`) now routes through the same async wrapper. New
+    `EngineService.runOpAsync(EngineOp)` dispatches generic
+    (op-kind, args) tuples across the isolate boundary. Cancel
+    button on the progress overlay invalidates the in-flight task
+    via a monotonic run-id (UI unblocks immediately; bridge call
+    runs to completion in the background and its result is
+    discarded). New i18n string `calculating`.
+    **V3 pending**: a long-lived worker isolate to amortize the
+    bridge-init cost across calls (currently each compute() pays
+    fresh init); true `Isolate.kill` cancellation rather than
+    discard-on-completion.
 
 ### Quality
 

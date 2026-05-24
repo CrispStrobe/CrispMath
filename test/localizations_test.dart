@@ -264,6 +264,10 @@ void main() {
         }
       });
 
+      test('long-eval calculating string is present', () {
+        expect(t.calculating.trim(), isNotEmpty);
+      });
+
       test('worked examples strings are present', () {
         for (final s in [
           t.workedExamplesTitle,
