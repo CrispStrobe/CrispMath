@@ -433,10 +433,18 @@ roughly double the perceived value of the app.
     fully localized; example titles + descriptions are
     English-only for V1 (translating every example body across 4
     locales is a separate i18n chunk).
-  - **V2 pending**: direct insertion into the calculator
-    (callback-driven push to the main screen rather than
-    clipboard-paste), localized example bodies for DE/FR/ES,
-    advanced topics (related rates, eigenvalue, multivariable).
+  - **V2 partial** (HISTORY round 58): direct insertion via a new
+    `AppState.requestInsertExpression` slot — the dialog's tap or
+    Insert button pushes the expression there, MainScreen routes to
+    the Calculator tab, and the calculator drains the slot on its
+    listener. Catalog grew an `id` field per entry;
+    `AppLocalizations.workedExampleTitle(id)` /
+    `workedExampleDescription(id)` provide translated text per
+    locale, falling back to the English fields when null. All 21
+    entries translated to DE/FR/ES.
+    **V3 pending**: advanced topics (related rates, eigenvalue,
+    multivariable, parametric); a way to wire the example back to
+    its step-by-step trace dialog when applicable.
 - [x] ~~**Plain-language step explanations**.~~ Done 2026-05-24 —
   see HISTORY round 45.
   - **V1** (HISTORY round 42): every common differentiation,

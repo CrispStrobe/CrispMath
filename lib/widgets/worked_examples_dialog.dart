@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../engine/app_state.dart';
 import '../engine/worked_examples.dart';
 import '../localization/app_localizations.dart';
 
@@ -50,11 +51,20 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final query = _searchCtrl.text.trim().toLowerCase();
+    // V2: ask the locale for translated titles/descriptions; fall
+    // back to the English fields on WorkedExample when the locale
+    // doesn't have a translation. Search runs over the *visible*
+    // strings so a German user can find "Mitternachtsformel" by
+    // typing "mitter".
+    String titleFor(WorkedExample e) => t.workedExampleTitle(e.id) ?? e.title;
+    String descFor(WorkedExample e) =>
+        t.workedExampleDescription(e.id) ?? e.description;
+
     final filtered = WorkedExamples.all.where((e) {
       if (_category != null && e.category != _category) return false;
       if (query.isEmpty) return true;
-      return e.title.toLowerCase().contains(query) ||
-          e.description.toLowerCase().contains(query) ||
+      return titleFor(e).toLowerCase().contains(query) ||
+          descFor(e).toLowerCase().contains(query) ||
           e.expression.toLowerCase().contains(query);
     }).toList();
 
@@ -118,12 +128,12 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
                         final e = filtered[i];
                         return ListTile(
                           dense: true,
-                          title: Text(e.title),
+                          title: Text(titleFor(e)),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 2),
-                              Text(e.description,
+                              Text(descFor(e),
                                   style: Theme.of(context).textTheme.bodySmall),
                               const SizedBox(height: 4),
                               Text(
@@ -135,12 +145,25 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
                               ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.copy, size: 18),
-                            tooltip: t.workedExamplesCopy,
-                            onPressed: () => _copy(context, e.expression),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 18),
+                                tooltip: t.workedExamplesCopy,
+                                onPressed: () => _copy(context, e.expression),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.input, size: 18),
+                                tooltip: t.workedExamplesInsert,
+                                onPressed: () => _insert(context, e.expression),
+                              ),
+                            ],
                           ),
-                          onTap: () => _copy(context, e.expression),
+                          // Tap the row → insert (the V2 primary
+                          // action). Copy stays as an explicit icon
+                          // for users who want the clipboard.
+                          onTap: () => _insert(context, e.expression),
                         );
                       },
                     ),
@@ -167,5 +190,14 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  /// V2: push the expression into AppState's pending-insert slot and
+  /// close the dialog. MainScreen routes to the Calculator tab via
+  /// its listener; the calculator screen drains the slot and fills
+  /// the input field.
+  void _insert(BuildContext context, String expression) {
+    AppState().requestInsertExpression(expression);
+    Navigator.of(context).pop();
   }
 }

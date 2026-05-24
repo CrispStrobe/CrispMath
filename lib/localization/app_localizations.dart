@@ -285,6 +285,16 @@ abstract class AppLocalizations {
   String get workedExamplesEmpty;
   String get workedExamplesCopy;
   String get workedExamplesCopied;
+  String get workedExamplesInsert;
+
+  /// Localized title for the worked example with the given [id].
+  /// Returns null when the locale doesn't have a translation — caller
+  /// falls back to the English string in `WorkedExamples.all`.
+  String? workedExampleTitle(String id);
+
+  /// Same as [workedExampleTitle] for the description line.
+  String? workedExampleDescription(String id);
+
   String get workedExamplesCatAll;
   String get workedExamplesCatCalculus;
   String get workedExamplesCatAlgebra;
@@ -890,6 +900,8 @@ class EnLocalizations implements AppLocalizations {
   String get workedExamplesCopied =>
       'Copied to clipboard. Paste into the calculator to try it.';
   @override
+  String get workedExamplesInsert => 'Insert into calculator';
+  @override
   String get workedExamplesCatAll => 'All';
   @override
   String get workedExamplesCatCalculus => 'Calculus';
@@ -903,6 +915,16 @@ class EnLocalizations implements AppLocalizations {
   String get workedExamplesCatStatistics => 'Statistics';
   @override
   String get workedExamplesCatUnits => 'Units';
+  @override
+  String? workedExampleTitle(String id) {
+    // The English catalog has the canonical titles; the
+    // fallback-to-catalog path in the dialog uses these directly.
+    // Returning null for every id keeps EN behavior identical to V1.
+    return null;
+  }
+
+  @override
+  String? workedExampleDescription(String id) => null;
   @override
   String get settingsWorkedExamples => 'Worked examples library';
   @override
@@ -1723,6 +1745,8 @@ class DeLocalizations implements AppLocalizations {
   String get workedExamplesCopied =>
       'In Zwischenablage kopiert. Im Rechner einfügen zum Ausprobieren.';
   @override
+  String get workedExamplesInsert => 'In Rechner einfügen';
+  @override
   String get workedExamplesCatAll => 'Alle';
   @override
   String get workedExamplesCatCalculus => 'Analysis';
@@ -1736,6 +1760,105 @@ class DeLocalizations implements AppLocalizations {
   String get workedExamplesCatStatistics => 'Statistik';
   @override
   String get workedExamplesCatUnits => 'Einheiten';
+  @override
+  String? workedExampleTitle(String id) {
+    switch (id) {
+      case 'derivPoly':
+        return 'Ableitung eines Polynoms';
+      case 'chainRule':
+        return 'Beispiel zur Kettenregel';
+      case 'integralByParts':
+        return 'Unbestimmtes Integral mit partieller Integration';
+      case 'definiteIntegral':
+        return 'Bestimmtes Integral';
+      case 'sinxOverX':
+        return 'Grenzwert an einer behebbaren Singularität';
+      case 'partialFractions':
+        return 'Partialbruchzerlegung';
+      case 'quadraticFormula':
+        return 'Mitternachtsformel';
+      case 'factorCubic':
+        return 'Polynom faktorisieren';
+      case 'expandBinomial':
+        return 'Binom ausmultiplizieren';
+      case 'simplifyRational':
+        return 'Rationalen Ausdruck vereinfachen';
+      case 'matrixDet':
+        return 'Determinante einer Matrix';
+      case 'matrixInverse':
+        return 'Inverse einer Matrix';
+      case 'rref':
+        return 'Reduzierte Zeilenstufenform';
+      case 'factorial100':
+        return 'Fakultät — exakte Ganzzahl';
+      case 'fibonacci50':
+        return 'Fibonacci-Zahl';
+      case 'gcdEuclid':
+        return 'ggT mit Euklid';
+      case 'isprime':
+        return 'Primzahltest (kleines n)';
+      case 'compoundInterest':
+        return 'Zinseszins';
+      case 'zScore':
+        return 'Z-Wert nachschlagen';
+      case 'unitConversion':
+        return 'Einheitenumrechnung inline';
+      case 'compositeDim':
+        return 'Arithmetik mit zusammengesetzten Dimensionen';
+    }
+    return null;
+  }
+
+  @override
+  String? workedExampleDescription(String id) {
+    switch (id) {
+      case 'derivPoly':
+        return 'd/dx von x³ − 4x + 7 an beliebigem x.';
+      case 'chainRule':
+        return 'd/dx von sin(x²) — Kettenregel auf das innere x².';
+      case 'integralByParts':
+        return '∫ x·sin(x) dx — wähle u = x, dv = sin(x) dx.';
+      case 'definiteIntegral':
+        return '∫₀¹ x² dx = 1/3 nach dem Hauptsatz.';
+      case 'sinxOverX':
+        return 'lim x→0 sin(x)/x = 1 (der Klassiker).';
+      case 'partialFractions':
+        return '∫ 1/(x² − 1) dx mit Cover-up an x = ±1.';
+      case 'quadraticFormula':
+        return 'Löse 2x² + 5x − 3 = 0 über die Diskriminante.';
+      case 'factorCubic':
+        return 'Faktorisiere x³ − 8 — Summen-/Differenzformel.';
+      case 'expandBinomial':
+        return '(x + 2)⁵ ausmultiplizieren — Pascalsches Dreieck.';
+      case 'simplifyRational':
+        return '(x² − 4)/(x − 2) auf einfachste Form kürzen.';
+      case 'matrixDet':
+        return 'det einer 3×3 — Laplace-Entwicklung oder Zeilen­reduktion.';
+      case 'matrixInverse':
+        return 'Inverse einer 2×2 — A⁻¹ = adj(A)/det(A).';
+      case 'rref':
+        return 'rref einer 2×3-erweiterten Systemmatrix.';
+      case 'factorial100':
+        return '100! — 158 Ziffern, im Exakt-Ganzzahl-Modus erhalten.';
+      case 'fibonacci50':
+        return 'fib(50) — Rekursion bis zu einem großen Glied.';
+      case 'gcdEuclid':
+        return 'gcd(252, 105) — die ursprüngliche Rekursion.';
+      case 'isprime':
+        return 'isprime(2027) — schnelle Probedivision.';
+      case 'compoundInterest':
+        return '1000 € zu 5 % über 10 Jahre, jährliche Verzinsung.';
+      case 'zScore':
+        return 'Zum Statistik-Reiter → Verteilungen wechseln, um Φ(1,96) '
+            '≈ 0,975 zu berechnen.';
+      case 'unitConversion':
+        return '100 km/h in mph umgerechnet — V2 inline-Parser.';
+      case 'compositeDim':
+        return '100 m / 10 s ergibt eine Geschwindigkeit in m/s — V5-Parser.';
+    }
+    return null;
+  }
+
   @override
   String get settingsWorkedExamples => 'Bibliothek mit Beispielaufgaben';
   @override
@@ -2570,6 +2693,8 @@ class FrLocalizations implements AppLocalizations {
       'Copié dans le presse-papiers. Colle dans la calculatrice pour '
       'l\'essayer.';
   @override
+  String get workedExamplesInsert => 'Insérer dans la calculatrice';
+  @override
   String get workedExamplesCatAll => 'Tous';
   @override
   String get workedExamplesCatCalculus => 'Analyse';
@@ -2583,6 +2708,105 @@ class FrLocalizations implements AppLocalizations {
   String get workedExamplesCatStatistics => 'Statistiques';
   @override
   String get workedExamplesCatUnits => 'Unités';
+  @override
+  String? workedExampleTitle(String id) {
+    switch (id) {
+      case 'derivPoly':
+        return 'Dérivée d\'un polynôme';
+      case 'chainRule':
+        return 'Exemple de règle de la chaîne';
+      case 'integralByParts':
+        return 'Intégrale indéfinie par parties';
+      case 'definiteIntegral':
+        return 'Intégrale définie';
+      case 'sinxOverX':
+        return 'Limite en une singularité supprimable';
+      case 'partialFractions':
+        return 'Décomposition en éléments simples';
+      case 'quadraticFormula':
+        return 'Formule quadratique';
+      case 'factorCubic':
+        return 'Factoriser un polynôme';
+      case 'expandBinomial':
+        return 'Développer un binôme';
+      case 'simplifyRational':
+        return 'Simplifier une expression rationnelle';
+      case 'matrixDet':
+        return 'Déterminant d\'une matrice';
+      case 'matrixInverse':
+        return 'Inverse d\'une matrice';
+      case 'rref':
+        return 'Forme échelonnée réduite';
+      case 'factorial100':
+        return 'Factorielle — entier exact';
+      case 'fibonacci50':
+        return 'Nombre de Fibonacci';
+      case 'gcdEuclid':
+        return 'PGCD par Euclide';
+      case 'isprime':
+        return 'Test de primalité (petit n)';
+      case 'compoundInterest':
+        return 'Intérêts composés';
+      case 'zScore':
+        return 'Lecture d\'un score Z';
+      case 'unitConversion':
+        return 'Conversion d\'unités en ligne';
+      case 'compositeDim':
+        return 'Arithmétique à dimensions composées';
+    }
+    return null;
+  }
+
+  @override
+  String? workedExampleDescription(String id) {
+    switch (id) {
+      case 'derivPoly':
+        return 'd/dx de x³ − 4x + 7 en tout x.';
+      case 'chainRule':
+        return 'd/dx de sin(x²) — règle de la chaîne sur le x² intérieur.';
+      case 'integralByParts':
+        return '∫ x·sin(x) dx — pose u = x, dv = sin(x) dx.';
+      case 'definiteIntegral':
+        return '∫₀¹ x² dx = 1/3 par le théorème fondamental.';
+      case 'sinxOverX':
+        return 'lim x→0 sin(x)/x = 1 (le classique).';
+      case 'partialFractions':
+        return '∫ 1/(x² − 1) dx par la méthode du masque en x = ±1.';
+      case 'quadraticFormula':
+        return 'Résoudre 2x² + 5x − 3 = 0 via le discriminant.';
+      case 'factorCubic':
+        return 'Factoriser x³ − 8 — somme/différence de cubes.';
+      case 'expandBinomial':
+        return 'Développer (x + 2)⁵ — triangle de Pascal.';
+      case 'simplifyRational':
+        return 'Réduire (x² − 4)/(x − 2) à sa forme la plus simple.';
+      case 'matrixDet':
+        return 'det d\'une 3×3 — développement de Laplace ou réduction.';
+      case 'matrixInverse':
+        return 'Inverse d\'une 2×2 — A⁻¹ = adj(A)/det(A).';
+      case 'rref':
+        return 'rref d\'un système 2×3 augmenté.';
+      case 'factorial100':
+        return '100! — 158 chiffres, conservés en mode entier exact.';
+      case 'fibonacci50':
+        return 'fib(50) — récurrence jusqu\'à un grand terme.';
+      case 'gcdEuclid':
+        return 'gcd(252, 105) — la récurrence d\'origine.';
+      case 'isprime':
+        return 'isprime(2027) — division d\'essai rapide.';
+      case 'compoundInterest':
+        return '1000 € à 5 % sur 10 ans, capitalisation annuelle.';
+      case 'zScore':
+        return 'Aller dans l\'écran Statistiques → Distributions pour '
+            'calculer Φ(1,96) ≈ 0,975.';
+      case 'unitConversion':
+        return '100 km/h converti en mph — analyseur inline V2.';
+      case 'compositeDim':
+        return '100 m / 10 s donne une vitesse en m/s — analyseur V5.';
+    }
+    return null;
+  }
+
   @override
   String get settingsWorkedExamples => 'Bibliothèque d\'exemples résolus';
   @override
@@ -3415,6 +3639,8 @@ class EsLocalizations implements AppLocalizations {
   String get workedExamplesCopied =>
       'Copiado al portapapeles. Pega en la calculadora para probarlo.';
   @override
+  String get workedExamplesInsert => 'Insertar en la calculadora';
+  @override
   String get workedExamplesCatAll => 'Todos';
   @override
   String get workedExamplesCatCalculus => 'Cálculo';
@@ -3428,6 +3654,105 @@ class EsLocalizations implements AppLocalizations {
   String get workedExamplesCatStatistics => 'Estadística';
   @override
   String get workedExamplesCatUnits => 'Unidades';
+  @override
+  String? workedExampleTitle(String id) {
+    switch (id) {
+      case 'derivPoly':
+        return 'Derivada de un polinomio';
+      case 'chainRule':
+        return 'Ejemplo de la regla de la cadena';
+      case 'integralByParts':
+        return 'Integral indefinida por partes';
+      case 'definiteIntegral':
+        return 'Integral definida';
+      case 'sinxOverX':
+        return 'Límite en una singularidad evitable';
+      case 'partialFractions':
+        return 'Fracciones parciales';
+      case 'quadraticFormula':
+        return 'Fórmula cuadrática';
+      case 'factorCubic':
+        return 'Factorizar un polinomio';
+      case 'expandBinomial':
+        return 'Desarrollar un binomio';
+      case 'simplifyRational':
+        return 'Simplificar una expresión racional';
+      case 'matrixDet':
+        return 'Determinante de una matriz';
+      case 'matrixInverse':
+        return 'Inversa de una matriz';
+      case 'rref':
+        return 'Forma escalonada reducida por filas';
+      case 'factorial100':
+        return 'Factorial — entero exacto';
+      case 'fibonacci50':
+        return 'Número de Fibonacci';
+      case 'gcdEuclid':
+        return 'MCD por Euclides';
+      case 'isprime':
+        return 'Test de primalidad (n pequeño)';
+      case 'compoundInterest':
+        return 'Interés compuesto';
+      case 'zScore':
+        return 'Consulta de puntuación Z';
+      case 'unitConversion':
+        return 'Conversión de unidades en línea';
+      case 'compositeDim':
+        return 'Aritmética con dimensiones compuestas';
+    }
+    return null;
+  }
+
+  @override
+  String? workedExampleDescription(String id) {
+    switch (id) {
+      case 'derivPoly':
+        return 'd/dx de x³ − 4x + 7 en cualquier x.';
+      case 'chainRule':
+        return 'd/dx de sin(x²) — regla de la cadena sobre el x² interior.';
+      case 'integralByParts':
+        return '∫ x·sin(x) dx — toma u = x, dv = sin(x) dx.';
+      case 'definiteIntegral':
+        return '∫₀¹ x² dx = 1/3 por el teorema fundamental.';
+      case 'sinxOverX':
+        return 'lim x→0 sin(x)/x = 1 (el clásico).';
+      case 'partialFractions':
+        return '∫ 1/(x² − 1) dx por el método de cobertura en x = ±1.';
+      case 'quadraticFormula':
+        return 'Resuelve 2x² + 5x − 3 = 0 mediante el discriminante.';
+      case 'factorCubic':
+        return 'Factoriza x³ − 8 — suma/diferencia de cubos.';
+      case 'expandBinomial':
+        return 'Desarrolla (x + 2)⁵ — triángulo de Pascal.';
+      case 'simplifyRational':
+        return 'Reduce (x² − 4)/(x − 2) a su forma más simple.';
+      case 'matrixDet':
+        return 'det de una 3×3 — desarrollo de Laplace o reducción.';
+      case 'matrixInverse':
+        return 'Inversa de una 2×2 — A⁻¹ = adj(A)/det(A).';
+      case 'rref':
+        return 'rref de un sistema 2×3 aumentado.';
+      case 'factorial100':
+        return '100! — 158 dígitos, conservados en modo entero exacto.';
+      case 'fibonacci50':
+        return 'fib(50) — recurrencia hasta un término grande.';
+      case 'gcdEuclid':
+        return 'gcd(252, 105) — la recurrencia original.';
+      case 'isprime':
+        return 'isprime(2027) — división de prueba rápida.';
+      case 'compoundInterest':
+        return '1000 € al 5 % durante 10 años, capitalización anual.';
+      case 'zScore':
+        return 'Ve a la pantalla Estadística → Distribuciones para '
+            'calcular Φ(1,96) ≈ 0,975.';
+      case 'unitConversion':
+        return '100 km/h convertido a mph — analizador inline V2.';
+      case 'compositeDim':
+        return '100 m / 10 s da una velocidad en m/s — analizador V5.';
+    }
+    return null;
+  }
+
   @override
   String get settingsWorkedExamples => 'Biblioteca de ejemplos resueltos';
   @override

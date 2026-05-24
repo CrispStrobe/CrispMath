@@ -224,6 +224,24 @@ class _MainScreenState extends State<MainScreen> {
         OnboardingTour.show(context);
       }
     });
+    // Worked-examples V2: when a dialog signals "insert this into the
+    // calculator", switch to the Calculator tab. The CalculatorScreen
+    // itself consumes the pending expression and inserts it.
+    AppState().addListener(_maybeRouteToCalculator);
+  }
+
+  @override
+  void dispose() {
+    AppState().removeListener(_maybeRouteToCalculator);
+    super.dispose();
+  }
+
+  void _maybeRouteToCalculator() {
+    if (!mounted) return;
+    if (AppState().pendingInsertExpression != null &&
+        _selectedIndex != _kCalculator) {
+      _select(_kCalculator);
+    }
   }
 
   void _select(int i) {

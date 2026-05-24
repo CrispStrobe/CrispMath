@@ -34,6 +34,15 @@ void main() {
           reason: 'duplicate titles in catalog');
     });
 
+    test('ids are unique (V2 needs stable keys for translation lookup)', () {
+      final ids = WorkedExamples.all.map((e) => e.id).toList();
+      expect(ids.toSet().length, ids.length,
+          reason: 'duplicate ids in catalog');
+      for (final id in ids) {
+        expect(id, isNotEmpty, reason: 'empty id in catalog');
+      }
+    });
+
     test('total entries is in the curated range', () {
       // V1 promised 12-20 entries; below 12 means we under-delivered,
       // above 25 means the dialog needs better grouping than a flat

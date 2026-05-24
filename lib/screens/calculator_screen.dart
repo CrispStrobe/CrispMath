@@ -83,14 +83,29 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _tabController = TabController(length: 5, vsync: this);
     _latexController.addListener(_onInputChanged);
     _historySearchController.addListener(() => setState(() {}));
+    // Worked-examples V2: pull in any pre-filled expression that
+    // arrived via AppState.requestInsertExpression (the dialog signals
+    // here, MainScreen routes us, and we drain the slot on the next
+    // listener fire).
+    _appState.addListener(_consumePendingInsert);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculatorFocusNode.requestFocus();
+      _consumePendingInsert();
     });
+  }
+
+  void _consumePendingInsert() {
+    final expr = _appState.consumePendingInsert();
+    if (expr == null || !mounted) return;
+    _latexController.clear();
+    _latexController.insert(expr);
+    _calculatorFocusNode.requestFocus();
   }
 
   @override
   void dispose() {
+    _appState.removeListener(_consumePendingInsert);
     _tabController.dispose();
     _latexController.removeListener(_onInputChanged);
     _latexController.dispose();

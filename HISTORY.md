@@ -2,6 +2,70 @@
 
 Completed work, newest first.
 
+## 2026-05-24 (round 58) — Worked-examples V2: direct insertion + localized bodies
+
+V1 (round 54) shipped 21 examples with copy-to-clipboard. V2 closes
+the two biggest gaps: tapping a row now puts the expression directly
+into the calculator's input field (with auto-tab-switch), and every
+title + description is translated to DE/FR/ES.
+
+### Direct insertion
+
+New `AppState.requestInsertExpression(expr)` slot. The dialog's row
+tap (and the new Insert icon button) pushes the expression there and
+closes the dialog. `MainScreen` listens to AppState; when the slot
+fills, it routes to the Calculator tab. `CalculatorScreen` also
+listens; on its next listener fire it calls `consumePendingInsert()`
+to drain the slot, clears the LaTeX field, inserts the expression,
+and requests focus.
+
+The Copy icon stays for users who want clipboard behaviour — that's
+the only secondary action. Tapping the row primary-action is now
+Insert, which matches the user's expectation when they're browsing
+a "try this" library.
+
+### Localized titles + descriptions
+
+Each `WorkedExample` gained a stable `id` slug (`derivPoly`,
+`quadraticFormula`, `factorial100`, …). `AppLocalizations` gains
+two new methods:
+
+- `String? workedExampleTitle(String id)` — returns the localized
+  title, or null when the locale has no translation.
+- `String? workedExampleDescription(String id)` — same for the
+  description.
+
+The dialog uses `t.workedExampleTitle(e.id) ?? e.title` so a missing
+translation gracefully falls back to the catalog English. EN's
+implementation returns null for every id by design — the catalog
+itself IS the English source.
+
+### Search behavior
+
+Substring search now runs over the *visible* (translated) strings,
+so a German user types "Mitternachtsformel" and finds the quadratic
+formula example. Expression text remains searchable across locales
+since it's locale-independent.
+
+### i18n stats
+
+42 new translated strings per non-English locale (21 examples × 2
+fields) = 126 new translation entries. Plus one new chrome string
+`workedExamplesInsert` ("Insert into calculator" / "In Rechner
+einfügen" / "Insérer dans la calculatrice" / "Insertar en la
+calculadora") × 4 locales.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **1103/1103** (3 locales × 21 entries × 2 fields
+  = 126 new localization-coverage tests + 1 new catalog id-
+  uniqueness test). The `worked_examples_localization_test.dart`
+  pins coverage for every entry — a future catalog addition that
+  forgets to add DE/FR/ES translations fails CI rather than ships
+  mixed-language.
+- `dart format`: clean.
+
 ## 2026-05-24 (round 57) — Long-evaluation V3: persistent worker + true cancel
 
 Replaces the per-call `compute()` model from V1/V2 with a long-lived

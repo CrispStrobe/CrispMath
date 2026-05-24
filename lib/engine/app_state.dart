@@ -343,6 +343,33 @@ class AppState extends ChangeNotifier {
   /// `_kUdfExpansionDepth` passes so `g(f(x))` composes correctly.
   final Map<String, UserFunction> userFunctions = {};
 
+  /// Cross-screen "insert this expression into the calculator field"
+  /// signal. Set by [requestInsertExpression] (typically from a dialog
+  /// in another tab); the main screen listens and switches to the
+  /// Calculator tab; the calculator screen reads + clears via
+  /// [consumePendingInsert] on its post-frame callback.
+  String? _pendingInsertExpression;
+  String? get pendingInsertExpression => _pendingInsertExpression;
+
+  /// Asks the app to switch to the Calculator tab and pre-fill its
+  /// input field with [expression]. Returns immediately; the actual
+  /// navigation + insertion happen on the next listener tick.
+  void requestInsertExpression(String expression) {
+    _pendingInsertExpression = expression;
+    notifyListeners();
+  }
+
+  /// One-shot read: returns the pending expression and clears the slot.
+  /// Called by the calculator screen after it's inserted the value.
+  String? consumePendingInsert() {
+    final value = _pendingInsertExpression;
+    if (value != null) {
+      _pendingInsertExpression = null;
+      // Don't notify — we're being called from a listener already.
+    }
+    return value;
+  }
+
   /// Parameter values per graph slot. Keyed by slot index, then by
   /// parameter name. Used by the graphing screen's slider panel: any
   /// identifier in a function string that isn't `x` (or a reserved

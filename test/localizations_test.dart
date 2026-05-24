@@ -275,6 +275,7 @@ void main() {
           t.workedExamplesEmpty,
           t.workedExamplesCopy,
           t.workedExamplesCopied,
+          t.workedExamplesInsert,
           t.workedExamplesCatAll,
           t.workedExamplesCatCalculus,
           t.workedExamplesCatAlgebra,
