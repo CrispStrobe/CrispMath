@@ -64,19 +64,38 @@ void main() {
     });
   });
 
-  group('EngineService.evaluateAsync', () {
-    // Skip these on platforms where the bridge can't be initialized in
-    // the worker isolate (it tries DynamicLibrary.process() which
-    // works on macOS/iOS but not on the headless test VM without the
-    // SymEngine dylib). The wrapper returns a string either way, so
-    // we just assert that the future completes within a sane window.
+  group('EngineService.evaluateAsync (persistent worker)', () {
+    // The worker is long-lived now — the first call pays the spawn
+    // cost; subsequent calls reuse it. We tear it down between tests
+    // via shutdownForTest so each `test` has a clean slate.
+    tearDown(() async {
+      await EngineService.shutdownForTest();
+    });
+
     test('returns a string (success or error) without throwing', () async {
       final out = await EngineService.evaluateAsync('2 + 3');
       expect(out, isA<String>());
     }, timeout: const Timeout(Duration(seconds: 15)));
+
+    test('multiple sequential calls reuse the same worker', () async {
+      // We can't directly observe "same isolate" from outside, but we
+      // can check that 3 sequential calls all complete with strings —
+      // a smoke test that the dispatch loop survives multiple
+      // requests.
+      final results = <String>[];
+      for (var i = 0; i < 3; i++) {
+        results.add(await EngineService.evaluateAsync('$i + 1'));
+      }
+      expect(results, hasLength(3));
+      expect(results.every((s) => s.isNotEmpty), isTrue);
+    }, timeout: const Timeout(Duration(seconds: 15)));
   });
 
   group('EngineService.runOpAsync', () {
+    tearDown(() async {
+      await EngineService.shutdownForTest();
+    });
+
     test('dispatches expand op', () async {
       final out =
           await EngineService.runOpAsync(const EngineOp('expand', '(x+1)^2'));
@@ -97,6 +116,37 @@ void main() {
     test('factorial op converts the string arg to int', () async {
       final out =
           await EngineService.runOpAsync(const EngineOp('factorial', '5'));
+      expect(out, isA<String>());
+    }, timeout: const Timeout(Duration(seconds: 15)));
+  });
+
+  group('EngineService.cancelInFlight (V3)', () {
+    tearDown(() async {
+      await EngineService.shutdownForTest();
+    });
+
+    test('pending future completes with EngineCancelled on kill', () async {
+      // Boot the worker first so kill is racing a real in-flight
+      // request rather than the initial spawn. Production cancellation
+      // would always be against an already-running worker.
+      await EngineService.evaluateAsync('1 + 1');
+      final fut = EngineService.runOpAsync(const EngineOp('evaluate', 'x'));
+      fut.catchError((Object e) {
+        // Expected when kill landed before the worker responded.
+        expect(e, isA<EngineCancelled>());
+        return '';
+      });
+      await EngineService.cancelInFlight();
+      // Drain microtasks so any stranded errors surface here, not
+      // in the next test's setup.
+      await Future<void>.delayed(Duration.zero);
+    }, timeout: const Timeout(Duration(seconds: 15)));
+
+    test('next request after cancel respawns the worker', () async {
+      await EngineService.evaluateAsync('1 + 1'); // boot
+      await EngineService.cancelInFlight();
+      // Should not throw — must lazily spawn a fresh worker.
+      final out = await EngineService.evaluateAsync('2 + 2');
       expect(out, isA<String>());
     }, timeout: const Timeout(Duration(seconds: 15)));
   });

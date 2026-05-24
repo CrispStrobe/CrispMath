@@ -2,6 +2,80 @@
 
 Completed work, newest first.
 
+## 2026-05-24 (round 57) — Long-evaluation V3: persistent worker + true cancel
+
+Replaces the per-call `compute()` model from V1/V2 with a long-lived
+worker isolate that owns one `SymbolicMathBridge` for its lifetime,
+and wires the Cancel button to actually `Isolate.kill` it.
+
+### Mechanism
+
+`_PersistentWorker` (private to `engine_service.dart`) spawns one
+isolate the first time `EngineService.runOpAsync` or
+`evaluateAsync` is called and reuses it for every subsequent
+request. Communication is a SendPort/ReceivePort handshake:
+
+1. Main spawns worker with `mainPort` as the entry arg.
+2. Worker creates its own `ReceivePort` and sends the matching
+   `SendPort` back over `mainPort`.
+3. Main records the worker's `SendPort` as `_commandPort` and
+   completes the startup completer.
+4. Every request gets a monotonic id; main posts
+   `_WorkerRequest(id, op)` to `_commandPort`; worker dispatches
+   to `_runOp(engine, op)` and posts `_WorkerResponse(id, result)`
+   back.
+
+### Why one isolate instead of one-per-call
+
+V1/V2 used `compute()`, which spawns a fresh isolate per call.
+Each spawn pays a few tens of ms to load `SymbolicMathBridge`
+(FFI symbol lookup, finalizer setup, etc.). For a calculator
+session with dozens of evaluations that adds up — and crucially
+the user feels the latency on the first slow op when the overlay
+takes ~50 ms to actually start computing rather than just
+displaying.
+
+The persistent worker pays the bridge cost once. Every subsequent
+slow op pays only the message-passing overhead (~ms).
+
+### True cancel
+
+V2's cancel used a monotonic run-id to discard the result; the
+underlying bridge call still ran to completion in the background.
+V3's `cancelInFlight()` calls `_isolate.kill(priority:
+Isolate.immediate)` and clears all state. Pending request futures
+complete with `EngineCancelled`. The calculator screen's
+`_runWithProgress` catches that and re-throws
+`_CancelledByUserException` — the existing surface stays the same.
+The next request after a cancel pays the spawn cost again (same as
+V1's compute() approach), but only on cancel.
+
+### Race-condition fix
+
+When `kill()` fires DURING the initial spawn handshake, the
+startup completer might be completed-with-error before
+`_ensureStarted`'s `await startup.future` is registered. Dart's
+unhandled-error machinery then flags it. Kill now pre-attaches a
+no-op error listener (`startup.future.then((_) {}, onError: (_) {})`)
+before calling `completeError` so the error is "observed" even
+when no one is awaiting yet. Both listeners fire — the await still
+throws EngineCancelled, the no-op swallows the unhandled-error
+report.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **975/975** (3 new tests: persistent-worker
+  sequential calls, cancel-during-pending, respawn-after-cancel).
+- `dart format`: clean.
+
+### V4 deferred
+
+Progress callbacks during long-running ops (worker → main mid-
+computation), a prioritized request queue, and persistent-worker
+reuse across navigation events (currently the worker is
+process-scoped, which is fine).
+
 ## 2026-05-24 (round 56) — Long-evaluation V2: cancel + handler coverage
 
 V1 (round 51) wrapped only the bare-evaluate path. V2 extends the

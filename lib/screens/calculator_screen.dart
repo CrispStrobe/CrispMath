@@ -1547,6 +1547,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
             title: _busyMessage,
             onCancel: () {
               _runId++; // invalidate the in-flight task
+              // V3: actually kill the worker isolate. The pending
+              // future completes with EngineCancelled, which the
+              // catch below reraises as _CancelledByUserException.
+              EngineService.cancelInFlight();
               if (mounted) {
                 Navigator.of(context, rootNavigator: true).pop();
               }
@@ -1561,6 +1565,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
         throw const _CancelledByUserException();
       }
       return result;
+    } on EngineCancelled {
+      throw const _CancelledByUserException();
     } finally {
       watchdog.cancel();
       if (overlayOpen && mounted && myRunId == _runId) {

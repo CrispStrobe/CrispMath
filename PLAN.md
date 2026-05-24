@@ -140,10 +140,15 @@ single feature. Roughly in priority order — top items unblock the next.
     via a monotonic run-id (UI unblocks immediately; bridge call
     runs to completion in the background and its result is
     discarded). New i18n string `calculating`.
-    **V3 pending**: a long-lived worker isolate to amortize the
-    bridge-init cost across calls (currently each compute() pays
-    fresh init); true `Isolate.kill` cancellation rather than
-    discard-on-completion.
+  - **V3 partial** (HISTORY round 57): replaced per-call `compute()`
+    with a long-lived `_PersistentWorker` isolate that owns one
+    `SymbolicMathBridge` for its lifetime — bridge init cost
+    amortized across the whole session instead of paid per call.
+    `cancelInFlight()` now `Isolate.kill`s the worker for real;
+    pending futures complete with `EngineCancelled`. The next
+    request lazily respawns a fresh worker.
+    **V4 deferred**: progress callbacks (worker → main during a
+    long calc), prioritized request queue.
 
 ### Quality
 
