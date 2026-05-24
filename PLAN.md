@@ -112,11 +112,24 @@ single feature. Roughly in priority order — top items unblock the next.
   the App Store / TestFlight / hardened-runtime paths aren't open. Apple
   Developer enrollment + notarization workflow + automatic version
   bumping on tag. Same shape for Android via Play.
-- [ ] **Long-evaluation off-main-thread**. Big integrals or matrix ops
+- [~] **Long-evaluation off-main-thread**. Big integrals or matrix ops
   can freeze the UI for several seconds. Wrap bridge calls in a Dart
   isolate (or at least `compute()`) and show the progress overlay
   (`lib/widgets/progress_overlay.dart` already exists, just isn't wired
   in for engine calls).
+  - **V1 partial** (HISTORY round 51): new `EngineService` offloads
+    "potentially slow" evaluations to a worker isolate via `compute()`.
+    A `shouldRunAsync` heuristic decides per expression — long inputs,
+    CAS function calls (integrate/factor/simplify/expand/solve/limit),
+    matrix shapes, factorials > 50, fibonacci > 100. Short bare
+    arithmetic stays on the main thread (isolate-init cost would dwarf
+    the work). Calculator screen wraps the bare-evaluate path with a
+    300 ms-watchdog `ProgressOverlay` so quick ops don't flash and
+    slow ops surface a "Calculating…" card.
+  - **V2 pending**: extend the async path to the dedicated function
+    handlers (integrate/limit/solve special-case branches), wire a
+    long-lived worker isolate to amortize the bridge-init cost, add a
+    cancel button.
 
 ### Quality
 

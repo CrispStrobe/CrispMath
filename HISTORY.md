@@ -2,6 +2,69 @@
 
 Completed work, newest first.
 
+## 2026-05-24 (round 51) — Long-evaluation off-main-thread (V1)
+
+Big integrals, factorials, and matrix ops no longer freeze the UI.
+New `EngineService` offloads "potentially slow" evaluations to a
+worker isolate via Flutter's `compute()`, and the calculator screen
+shows a `ProgressOverlay` if the work hasn't completed within 300 ms.
+
+### Mechanism
+
+- **`lib/services/engine_service.dart`** — new file. Two parts:
+  - `shouldRunAsync(expression)` — pure-function heuristic that
+    returns `true` when the isolate-init cost is worth paying.
+    Triggers on long inputs (>80 chars), CAS function calls
+    (`integrate(`, `factor(`, `simplify(`, `expand(`, `solve(`,
+    `limit(`), matrix shapes (`Matrix(`, `det(`, `inv(`, `rref(`),
+    factorials > 50 (`51!`, `100!`), fibonacci > 100.
+  - `evaluateAsync(expression)` — wraps a top-level
+    `_evaluateInIsolate` function with `compute()`. The worker
+    re-instantiates `CalculatorEngine`, which re-instantiates
+    `SymbolicMathBridge` (per-isolate singleton). FFI symbols are
+    process-scoped so `DynamicLibrary.process()` finds them in the
+    worker. Bridge init costs ~tens of ms per call — acceptable
+    overhead for evaluations that take seconds anyway.
+
+- **Calculator screen `_runWithProgress`** — a small async helper
+  that launches a 300 ms watchdog `Timer`. If the task hasn't
+  completed by then, it pushes a barrier-dismissal-disabled
+  `ProgressOverlay` dialog via `showDialog`; on completion, the
+  finally block cancels the watchdog and dismisses the overlay
+  via `Navigator.pop`. Quick evaluations never see the dialog
+  flash.
+
+- **Bare-evaluate path** in `_calculate` now branches on
+  `EngineService.shouldRunAsync(preprocessed)` — slow ones go
+  through `EngineService.evaluateAsync` wrapped in the watchdog;
+  short ones stay on the main thread. The specialized handlers
+  (integrate/limit/solve etc.) still run synchronously for this
+  round — wiring those into the async pipeline is V2 work.
+
+### Trade-offs
+
+- **FFI + isolates**: each compute() call pays a fresh
+  `SymbolicMathBridge()` initialization in the worker isolate. For
+  evaluations < 100 ms this overhead is real and noticeable, which
+  is why `shouldRunAsync` is conservative — bare arithmetic always
+  stays sync.
+- **No cancel button (yet)**: the ProgressOverlay supports one via
+  its `onCancel` callback, but cancelling a compute() call cleanly
+  requires isolate teardown, which V2 will handle alongside the
+  long-lived worker.
+- **Specialized handlers stay sync**: `_handleIntegrateFunction`,
+  `_handleSolveFunction`, etc. don't yet route through
+  `EngineService`. They use bridge calls directly. V2 candidate.
+
+### Verification
+
+- `flutter analyze`: 0 issues.
+- `flutter test`: **924/924** (7 new tests: 6 for `shouldRunAsync`
+  classification, 1 round-trip that confirms `evaluateAsync`
+  completes and returns a string even without native bridge
+  available in the headless test VM).
+- `dart format`: clean.
+
 ## 2026-05-24 (round 50) — User-defined function namespace
 
 Named, reusable functions live alongside the existing Y1..Y10 graph

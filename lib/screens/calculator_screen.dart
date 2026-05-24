@@ -15,11 +15,13 @@ import '../widgets/calculator_keypad.dart';
 import '../widgets/latex_input_field.dart';
 import '../widgets/memory_dialogs.dart';
 import '../widgets/function_picker_dialogs.dart';
+import '../widgets/progress_overlay.dart';
 import '../widgets/steps_dialog.dart';
 import '../engine/step_engine.dart';
 import '../engine/unit_expression.dart';
 
 // Utils imports
+import '../services/engine_service.dart';
 import '../utils/exact_integer.dart';
 import '../utils/keyboard_input_handler.dart';
 import '../utils/latex_conversion_utils.dart';
@@ -60,6 +62,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
   String _resultPreview = '';
   bool _justCalculated = false;
   bool _showLatexHistory = false; // History display toggle
+
+  /// Watchdog-installed message for the progress overlay. Populated by
+  /// `_runWithProgress` after the 300 ms threshold so quick
+  /// evaluations don't flash the dialog.
+  String _busyMessage = '';
 
   bool _historySearchOpen = false;
   final TextEditingController _historySearchController =
@@ -738,7 +745,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
           ExpressionPreprocessingUtils.preprocessExpression(
               substituted, _appState),
         );
-        final rawResult = _engine.evaluate(preprocessed);
+        // Big expressions (integrate, factor, simplify, matrix, long
+        // factorials) get offloaded to a worker isolate via
+        // EngineService so the UI stays interactive. Short bare
+        // arithmetic stays on the main thread — the isolate-init
+        // overhead would dwarf the work.
+        final rawResult = EngineService.shouldRunAsync(preprocessed)
+            ? await _runWithProgress(
+                'Calculating…',
+                () => EngineService.evaluateAsync(preprocessed),
+              )
+            : _engine.evaluate(preprocessed);
         result = ExpressionPreprocessingUtils.normalizeComplexResult(rawResult);
       }
 
@@ -1480,6 +1497,38 @@ class CalculatorScreenState extends State<CalculatorScreen>
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  /// Runs [task] and shows the [ProgressOverlay] if it hasn't finished
+  /// within 300 ms. Quick operations come back before the watchdog fires
+  /// and no overlay is shown. Slow ones see the "Calculating…" card
+  /// appear; it dismisses itself when the future completes.
+  Future<T> _runWithProgress<T>(
+    String message,
+    Future<T> Function() task,
+  ) async {
+    var overlayOpen = false;
+    final watchdog = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      overlayOpen = true;
+      _busyMessage = message;
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => PopScope(
+          canPop: false,
+          child: ProgressOverlay(isVisible: true, title: _busyMessage),
+        ),
+      );
+    });
+    try {
+      return await task();
+    } finally {
+      watchdog.cancel();
+      if (overlayOpen && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
   }
 
   Future<void> _copyBigIntegerToClipboard(
