@@ -84,6 +84,7 @@ void main() {
         'coinChangeMin',
         'schedulingMakespan',
         'cumulativeScheduling',
+        'rcpsp',
       };
       var seen = 0;
       for (final e in WorkedExamples.all) {

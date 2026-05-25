@@ -574,6 +574,77 @@ cumulative(; capacity=2)
       expect(r.ok, isFalse);
       expect(r.error, contains('at least one task'));
     });
+
+    test(
+        'round 84: multiple cumulative overlays compose — RCPSP-style '
+        'crew + equipment scheduling', () async {
+      // Four tasks share two renewable resources (crew + equip,
+      // each capacity 3). s2 + s3 together demand equip = 4 > 3
+      // so they cannot overlap on equipment; that constraint is
+      // binding and produces makespan = 6 as the optimum.
+      const dsl = '''
+vars: s1, s2, s3, s4 in 0..6
+vars: makespan in 0..6
+cumulative(s1=3@2, s2=4@1, s3=2@2, s4=3@1; capacity=3)
+cumulative(s1=3@1, s2=4@2, s3=2@2, s4=3@1; capacity=3)
+s1 + 3 <= makespan
+s2 + 4 <= makespan
+s3 + 2 <= makespan
+s4 + 3 <= makespan
+minimize makespan
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.objective, 6);
+      expect(r.solutions, hasLength(1));
+      final s = r.solutions.first;
+      // Verify both resources stay within capacity at every t.
+      bool capacityOk(List<int> demands, int capacity) {
+        for (var t = 0; t < 7; t++) {
+          var load = 0;
+          // (s_i, dur_i, dem_i) — aligned with task list above.
+          final tasks = [
+            (s['s1']!, 3, demands[0]),
+            (s['s2']!, 4, demands[1]),
+            (s['s3']!, 2, demands[2]),
+            (s['s4']!, 3, demands[3]),
+          ];
+          for (final t1 in tasks) {
+            if (t >= t1.$1 && t < t1.$1 + t1.$2) load += t1.$3;
+          }
+          if (load > capacity) return false;
+        }
+        return true;
+      }
+
+      expect(capacityOk([2, 1, 2, 1], 3), isTrue,
+          reason: 'crew capacity violated');
+      expect(capacityOk([1, 2, 2, 1], 3), isTrue,
+          reason: 'equipment capacity violated');
+    }, timeout: const Timeout(Duration(seconds: 60)));
+
+    test(
+        'round 84: two cumulative overlays are independently enforced '
+        '(over-capacity on either is infeasible)', () async {
+      // Two tasks with combined demand 4 > 3 on the second
+      // resource. The first overlay is trivially satisfiable;
+      // the second forces sequential execution. With only 4
+      // time units available, that's infeasible.
+      const dsl = '''
+vars: s1, s2 in 0..3
+cumulative(s1=2@1, s2=2@1; capacity=3)
+cumulative(s1=2@2, s2=2@2; capacity=3)
+''';
+      final r = await CspSolver.solveDsl(dsl, maxSolutions: 200);
+      expect(r.ok, isTrue, reason: r.error);
+      // Every returned (s1, s2) must keep the SECOND overlay
+      // within capacity at every t — i.e., not overlap.
+      for (final s in r.solutions) {
+        final s1 = s['s1']!, s2 = s['s2']!;
+        expect(s1 + 2 <= s2 || s2 + 2 <= s1, isTrue,
+            reason: 'overlap violates equip capacity: s1=$s1 s2=$s2');
+      }
+    }, timeout: const Timeout(Duration(seconds: 30)));
   });
 
   group('CspSolver.solveCryptarithm', () {

@@ -286,5 +286,17 @@ class WorkedExamples {
           'resource via `cumulative` and minimizes the makespan.',
       expression: 'dsl:cumulativeScheduling',
     ),
+    // Round 84: classical RCPSP — multiple parallel cumulative
+    // overlays representing distinct resource types.
+    WorkedExample(
+      id: 'dslRcpsp',
+      category: WorkedExampleCategory.constraints,
+      title: 'Project scheduling RCPSP — two resources (DSL)',
+      description:
+          'Loads a DSL program with two parallel `cumulative` overlays '
+          '(crew + equipment, each capacity 3) over four tasks; minimizes '
+          'the makespan.',
+      expression: 'dsl:rcpsp',
+    ),
   ];
 }

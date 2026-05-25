@@ -2,6 +2,60 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 84) — Multi-resource RCPSP gallery
+
+Round 80 shipped the single-resource `cumulative` overlay; the
+DSL parser, `solveDiophantine`, and `solveOptimization` already
+accept a `List<CumulativeGroup>` and thread each through to
+dart_csp's `addCumulative`. The classical RCPSP
+(Resource-Constrained Project Scheduling Problem) is exactly
+"multiple parallel `cumulative` overlays, one per resource
+type" — so no engine change is needed; only a curated example
+plus the four-point discovery wiring (see HANDOFF.md §4.10).
+
+### Gallery
+
+New `rcpsp` entry in `_DslTabState._gallery`
+(constraints_screen.dart): four tasks share a crew of 3 and an
+equipment pool of 3. s2 and s3 together demand equip = 4 > 3
+capacity, so they cannot overlap on equipment — that
+constraint is binding. Lower bound on makespan is
+`max(⌈17/3⌉, ⌈18/3⌉, dur(s2)+dur(s3)) = 6`, achieved by
+`s1=0, s2=0, s3=4, s4=3`.
+
+### Worked-examples discovery
+
+`dslRcpsp` entry in `WorkedExamples.all` with the
+`dsl:rcpsp` sentinel. The dialog detects the sentinel,
+navigates to Constraints + Free-form tab, pre-loads the
+program from the gallery (round-73 pattern).
+
+### Localization
+
+`constraintsDslExampleTitle` gets a `rcpsp` case per locale.
+`workedExampleTitle` / `Description` get a `dslRcpsp` case for
+DE/FR/ES (the catalog title is the EN fallback). 4 locales ×
+1 entry × (title + description) — the locale-coverage test
+exercises these.
+
+### Tests
+
+Two new tests in `csp_solver_test.dart`:
+- Multi-cumulative compose: RCPSP-style program returns
+  optimum makespan = 6, with both overlays enforced (the
+  test verifies the assignment keeps crew + equipment under
+  capacity at every integer time).
+- Independence: a two-overlay program where only the second
+  forces sequential execution still requires no-overlap on the
+  second resource.
+
+`worked_examples_test.dart` updated to include `rcpsp` in the
+`knownDslIds` set — the catalog-vs-gallery sentinel check
+still passes.
+
+Suite grows 1280 → 1288 (2 new csp tests + 6 auto-generated
+locale-coverage entries for the new WorkedExample).
+
 ## 2026-05-25 (round 83) — 10×10 / 12×12 / 15×15 Sudoku layouts
 
 Pure surface-area growth on the parameterized Sudoku engine.

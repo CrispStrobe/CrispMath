@@ -1128,6 +1128,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Scheduling — minimize makespan';
       case 'cumulativeScheduling':
         return 'Cumulative scheduling — capacity 2';
+      case 'rcpsp':
+        return 'RCPSP — crew + equipment';
     }
     return id;
   }
@@ -2195,6 +2197,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Scheduling — Makespan minimieren';
       case 'cumulativeScheduling':
         return 'Kumulatives Scheduling — Kapazität 2';
+      case 'rcpsp':
+        return 'RCPSP — Crew + Ausrüstung';
     }
     return id;
   }
@@ -2300,6 +2304,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Einzelmaschinen-Scheduling — Makespan minimieren (DSL)';
       case 'dslCumulativeScheduling':
         return 'Parallele Ressourcen-Planung — cumulative (DSL)';
+      case 'dslRcpsp':
+        return 'Projektplanung RCPSP — zwei Ressourcen (DSL)';
       case 'derivPoly':
         return 'Ableitung eines Polynoms';
       case 'chainRule':
@@ -2365,6 +2371,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Lädt ein DSL-Programm, das drei Aufgaben (Dauern 4/3/2) auf einer Maschine via `noOverlap` plant und den Makespan minimiert.';
       case 'dslCumulativeScheduling':
         return 'Lädt ein DSL-Programm, das drei Aufgaben auf einer Ressource der Kapazität 2 via `cumulative` plant und den Makespan minimiert.';
+      case 'dslRcpsp':
+        return 'Lädt ein DSL-Programm mit zwei parallelen `cumulative`-Auflagen (Crew + Ausrüstung, je Kapazität 3) über vier Aufgaben; minimiert den Makespan.';
       case 'derivPoly':
         return 'd/dx von x³ − 4x + 7 an beliebigem x.';
       case 'chainRule':
@@ -3397,6 +3405,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Ordonnancement — minimiser le makespan';
       case 'cumulativeScheduling':
         return 'Ordonnancement cumulatif — capacité 2';
+      case 'rcpsp':
+        return 'RCPSP — équipe + équipement';
     }
     return id;
   }
@@ -3504,6 +3514,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Ordonnancement mono-machine — minimiser le makespan (DSL)';
       case 'dslCumulativeScheduling':
         return 'Ordonnancement parallèle — cumulative (DSL)';
+      case 'dslRcpsp':
+        return 'Ordonnancement de projet RCPSP — deux ressources (DSL)';
       case 'derivPoly':
         return 'Dérivée d\'un polynôme';
       case 'chainRule':
@@ -3569,6 +3581,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Charge un programme DSL qui ordonnance trois tâches (durées 4/3/2) sur une machine via `noOverlap` et minimise le makespan.';
       case 'dslCumulativeScheduling':
         return 'Charge un programme DSL qui ordonnance trois tâches sur une ressource de capacité 2 via `cumulative` et minimise le makespan.';
+      case 'dslRcpsp':
+        return 'Charge un programme DSL avec deux contraintes `cumulative` parallèles (équipe + équipement, capacité 3 chacune) sur quatre tâches ; minimise le makespan.';
       case 'derivPoly':
         return 'd/dx de x³ − 4x + 7 en tout x.';
       case 'chainRule':
@@ -4598,6 +4612,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Planificación — minimizar el makespan';
       case 'cumulativeScheduling':
         return 'Planificación acumulativa — capacidad 2';
+      case 'rcpsp':
+        return 'RCPSP — equipo + equipamiento';
     }
     return id;
   }
@@ -4705,6 +4721,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Planificación mono-máquina — minimizar el makespan (DSL)';
       case 'dslCumulativeScheduling':
         return 'Planificación paralela — cumulative (DSL)';
+      case 'dslRcpsp':
+        return 'Planificación de proyecto RCPSP — dos recursos (DSL)';
       case 'derivPoly':
         return 'Derivada de un polinomio';
       case 'chainRule':
@@ -4770,6 +4788,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Carga un programa DSL que planifica tres tareas (duraciones 4/3/2) en una máquina con `noOverlap` y minimiza el makespan.';
       case 'dslCumulativeScheduling':
         return 'Carga un programa DSL que planifica tres tareas sobre un recurso de capacidad 2 con `cumulative` y minimiza el makespan.';
+      case 'dslRcpsp':
+        return 'Carga un programa DSL con dos restricciones `cumulative` paralelas (equipo + equipamiento, capacidad 3 cada una) sobre cuatro tareas; minimiza el makespan.';
       case 'derivPoly':
         return 'd/dx de x³ − 4x + 7 en cualquier x.';
       case 'chainRule':

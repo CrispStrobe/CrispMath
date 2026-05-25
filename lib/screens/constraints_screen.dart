@@ -467,6 +467,35 @@ s2 + 3 <= makespan
 s3 + 4 <= makespan
 minimize makespan''',
     ),
+    (
+      // Round 84: multi-resource project scheduling (RCPSP — the
+      // classical resource-constrained project scheduling
+      // problem). Four tasks share two renewable resources, each
+      // of capacity 3 — interpret as a crew of 3 and an
+      // equipment pool of 3.
+      //
+      //   Task | dur | crew | equip
+      //     s1 |  3  |   2  |   1
+      //     s2 |  4  |   1  |   2
+      //     s3 |  2  |   2  |   2
+      //     s4 |  3  |   1  |   1
+      //
+      // s2 + s3 together demand equip = 4 > 3 capacity, so they
+      // cannot overlap on equipment — that constraint is the
+      // binding resource. Lower bound on makespan is
+      // max(⌈17/3⌉, ⌈18/3⌉, dur(s2)+dur(s3)) = 6. Achieved by
+      // s1=0, s2=0, s3=4, s4=3 → makespan 6.
+      id: 'rcpsp',
+      program: '''vars: s1, s2, s3, s4 in 0..6
+vars: makespan in 0..6
+cumulative(s1=3@2, s2=4@1, s3=2@2, s4=3@1; capacity=3)
+cumulative(s1=3@1, s2=4@2, s3=2@2, s4=3@1; capacity=3)
+s1 + 3 <= makespan
+s2 + 4 <= makespan
+s3 + 2 <= makespan
+s4 + 3 <= makespan
+minimize makespan''',
+    ),
   ];
 
   final _ctl = TextEditingController(text: _gallery.first.program);
