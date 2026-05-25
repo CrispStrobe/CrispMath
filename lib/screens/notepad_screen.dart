@@ -410,16 +410,18 @@ class _NotepadScreenState extends State<NotepadScreen> {
     if (preprocessed.trim().isEmpty) return '';
 
     // Try the unit evaluator first against the raw preprocessed
-    // body and again with outer-paren-stripping — Phase 2's Ans
+    // body and again with all parens stripped — Phase 2's Ans
     // substitution wraps the previous-line result in parens (so
-    // `Ans + 1` binds correctly), which would otherwise blind
-    // `UnitExpressionEvaluator` to `(8 km) in miles`-shaped input.
+    // `Ans + 1` binds correctly for arithmetic), but the unit
+    // tokenizer doesn't grok parens (PLAN V6 deferred), so
+    // `(8 km) in miles` would otherwise fail. Stripping all parens
+    // is safe for the unit fallback since unit expressions don't
+    // use parens for grouping in V1.
     var unitResult = UnitExpressionEvaluator.tryEvaluate(preprocessed);
-    if (unitResult == null) {
-      final stripped = _stripOuterParens(preprocessed);
-      if (stripped != preprocessed) {
-        unitResult = UnitExpressionEvaluator.tryEvaluate(stripped);
-      }
+    if (unitResult == null && preprocessed.contains('(')) {
+      final stripped =
+          preprocessed.replaceAll('(', '').replaceAll(')', '');
+      unitResult = UnitExpressionEvaluator.tryEvaluate(stripped);
     }
     if (unitResult != null) return _appState.formatNumber(unitResult);
 
@@ -436,28 +438,6 @@ class _NotepadScreenState extends State<NotepadScreen> {
     } catch (e) {
       return 'Error: $e';
     }
-  }
-
-  /// Strip a *single* layer of matched outer parens (only when
-  /// they enclose the entire expression). Used as a fallback when
-  /// the unit evaluator fails on a paren-wrapped Ans substitution
-  /// like `(8 km) in miles`. Returns the input unchanged when no
-  /// outer paren pair encloses the whole thing.
-  String _stripOuterParens(String s) {
-    final trimmed = s.trim();
-    if (!trimmed.startsWith('(') || !trimmed.endsWith(')')) return s;
-    var depth = 0;
-    for (var i = 0; i < trimmed.length; i++) {
-      final ch = trimmed[i];
-      if (ch == '(') {
-        depth++;
-      } else if (ch == ')') {
-        depth--;
-        // Only strip if the outermost `(` closes at the very end.
-        if (depth == 0 && i < trimmed.length - 1) return s;
-      }
-    }
-    return trimmed.substring(1, trimmed.length - 1).trim();
   }
 
   /// Resolve the doc's optional `use name1, name2, ...` directive
