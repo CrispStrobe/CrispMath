@@ -282,6 +282,42 @@ void main() {
     }, timeout: const Timeout(Duration(seconds: 60)));
   });
 
+  group('Sudoku V2 — 8×8 layout (round 75)', () {
+    test('8×8 layout invariants: side=8, 2×4 boxes', () {
+      const l = SudokuLayout.eight;
+      expect(l.side, 8);
+      expect(l.boxRows, 2);
+      expect(l.boxCols, 4);
+      expect(l.boxRows * l.boxCols, l.side);
+    });
+
+    test('8×8 medium preset solves to a valid grid', () async {
+      final out = await SudokuSolver.solve(SudokuPresets.eight8x8);
+      expect(out, isNotNull);
+      _expectValidSudoku(SudokuLayout.eight, out!);
+      // Preserved clues.
+      for (var i = 0; i < SudokuPresets.eight8x8.cells.length; i++) {
+        final clue = SudokuPresets.eight8x8.cells[i];
+        if (clue != 0) {
+          expect(out[i], clue, reason: 'clue at $i must survive solve');
+        }
+      }
+    }, timeout: const Timeout(Duration(seconds: 60)));
+
+    test('generator round-trip: 8×8 medium', () async {
+      final puzzle = await SudokuGenerator.generate(
+        layout: SudokuLayout.eight,
+        difficulty: SudokuDifficulty.medium,
+        seed: 8,
+      );
+      expect(puzzle.cells.length, 64);
+      expect(puzzle.layout.side, 8);
+      final sol = await SudokuSolver.solve(puzzle);
+      expect(sol, isNotNull);
+      _expectValidSudoku(SudokuLayout.eight, sol!);
+    }, timeout: const Timeout(Duration(seconds: 120)));
+  });
+
   group('Sudoku V3 — computeCandidates (hint mode)', () {
     test('empty 4×4 has every digit 1..4 candidate for every cell', () {
       final puzzle = SudokuPuzzle(

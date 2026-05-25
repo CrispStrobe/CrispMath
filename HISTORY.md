@@ -2,6 +2,46 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 75) — Sudoku 8×8 layout
+
+PLAN's V2 Sudoku roadmap listed 8×8 (2×4 boxes) between the
+existing 6×6 and 9×9 stops. The parameterized engine already
+handles arbitrary `(side, boxRows, boxCols)` triples — the only
+work is one layout constant, one preset, one generator
+clue-count entry, and the matching i18n + tests.
+
+### Layout
+
+`SudokuLayout.eight = (side: 8, boxRows: 2, boxCols: 4)`, added
+to `SudokuLayout.all` between `medium` and `standard` so the
+size-picker chips render in ascending order. The
+parameterized box walker handles the 2×4 partition with no
+special-casing.
+
+### Preset
+
+`SudokuPresets.eight8x8` — 28 clues peeled from the canonical
+full grid
+`12345678 / 56781234 / 23416785 / 67852341 / 34127856 / …`
+in a checkerboard-ish pattern that keeps each row + col +
+2×4 box partially populated. Registered in `SudokuPresets.all`
+so the existing "every preset is solvable" sweep covers it.
+
+### Generator
+
+`_targetClueCount` gets an `case 8:` branch with 30 / 24 / 18
+clues for easy / medium / hard — scaled from the 9×9 (40/30/22)
+counts in roughly the cell-count ratio (64 vs 81), since 8×8
+minimum-clue research is less well-developed than 9×9.
+
+### i18n + tests
+
+`'eight8x8'` localized as "8×8 medium" across all four locales.
+Three new tests in `sudoku_test.dart`: layout invariants
+(side / boxRows / boxCols), preset solves to a valid grid with
+clues preserved, and generator round-trip with a fixed seed.
+Suite total: 1222 tests.
+
 ## 2026-05-25 (round 74) — CSP Round D: minimize / maximize in the DSL
 
 The constraint mini-DSL (round 68) was enumeration-only:

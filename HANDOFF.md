@@ -110,7 +110,7 @@ lib/
 test/
   sudoku_test.dart, csp_solver_test.dart, ui_flows_test.dart,
   localizations_test.dart, worked_examples_test.dart,
-  ... (~50 test files, ~1219 tests total)
+  ... (~50 test files, ~1222 tests total)
 PLAN.md                    ← Roadmap; mark items SHIPPED with round refs
 HISTORY.md                 ← Newest-first changelog (this file's source of truth)
 ```
@@ -271,8 +271,9 @@ fresh feature arcs.
    SAC-by-probing through the full dart_csp solver (Problem
    doesn't expose propagate-only). See HISTORY round 73 for the
    request-id cancellation pattern.~~
-3. **8×8 Sudoku layout** (~30 min) — one-line layout addition +
-   one preset. Cheap surface area growth.
+3. ~~**8×8 Sudoku layout**~~ shipped round 75. One layout
+   constant + one preset + one generator clue-count branch +
+   four locale labels. Same parameterized engine.
 4. **Step-trace "why" annotations** (medium) — the visualizer
    shows what cell got assigned, not why. Hook into dart_csp's
    propagation events to annotate each frame with the

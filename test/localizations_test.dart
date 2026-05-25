@@ -310,6 +310,7 @@ void main() {
           'small4x4Medium',
           'small4x4Hard',
           'medium6x6',
+          'eight8x8',
           'standard9x9Easy',
           'standard9x9Medium',
           'standard9x9Hard',

@@ -967,6 +967,8 @@ class EnLocalizations implements AppLocalizations {
         return '4×4 hard';
       case 'medium6x6':
         return '6×6 medium';
+      case 'eight8x8':
+        return '8×8 medium';
       case 'standard9x9Easy':
         return '9×9 easy';
       case 'standard9x9Medium':
@@ -1994,6 +1996,8 @@ class DeLocalizations implements AppLocalizations {
         return '4×4 schwer';
       case 'medium6x6':
         return '6×6 mittel';
+      case 'eight8x8':
+        return '8×8 mittel';
       case 'standard9x9Easy':
         return '9×9 leicht';
       case 'standard9x9Medium':
@@ -3146,6 +3150,8 @@ class FrLocalizations implements AppLocalizations {
         return '4×4 difficile';
       case 'medium6x6':
         return '6×6 moyen';
+      case 'eight8x8':
+        return '8×8 moyen';
       case 'standard9x9Easy':
         return '9×9 facile';
       case 'standard9x9Medium':
@@ -4300,6 +4306,8 @@ class EsLocalizations implements AppLocalizations {
         return '4×4 difícil';
       case 'medium6x6':
         return '6×6 medio';
+      case 'eight8x8':
+        return '8×8 medio';
       case 'standard9x9Easy':
         return '9×9 fácil';
       case 'standard9x9Medium':

@@ -61,13 +61,17 @@ class SudokuLayout {
 
   static const small = SudokuLayout(side: 4, boxRows: 2, boxCols: 2);
   static const medium = SudokuLayout(side: 6, boxRows: 2, boxCols: 3);
+
+  /// Round 75: 8×8 with 2×4 boxes. Fills the gap between 6×6 and
+  /// 9×9; same parameterized engine, no special-cased solver.
+  static const eight = SudokuLayout(side: 8, boxRows: 2, boxCols: 4);
   static const standard = SudokuLayout(side: 9, boxRows: 3, boxCols: 3);
   static const large = SudokuLayout(side: 16, boxRows: 4, boxCols: 4);
 
   /// Every layout the V2 module exposes. Generator + UI iterate
   /// over this rather than naming constants directly so adding a
-  /// new size (e.g. 8×8 with 2×4 boxes) is a one-line change.
-  static const all = <SudokuLayout>[small, medium, standard, large];
+  /// new size is a one-line change.
+  static const all = <SudokuLayout>[small, medium, eight, standard, large];
 }
 
 /// A Sudoku puzzle = layout + variant + initial clues. `cells` is
@@ -713,6 +717,19 @@ class SudokuGenerator {
           case SudokuDifficulty.hard:
             return 9;
         }
+      case 8:
+        // 8×8 minimum-clue research is less well-explored than
+        // 9×9. We pad generously: 8×8 has 64 cells (vs 81), so
+        // the easy/medium/hard counts scale down from 9×9
+        // (40/30/22) in roughly the cell-count ratio.
+        switch (difficulty) {
+          case SudokuDifficulty.easy:
+            return 30;
+          case SudokuDifficulty.medium:
+            return 24;
+          case SudokuDifficulty.hard:
+            return 18;
+        }
       case 16:
         // 16×16 generation is heavy — keep the target high so the
         // peel loop terminates within a reasonable per-call time.
@@ -1085,6 +1102,26 @@ class SudokuPresets {
     ],
   );
 
+  // Round 75: 8×8 medium peeled from the canonical full grid
+  //   1 2 3 4 5 6 7 8 / 5 6 7 8 1 2 3 4 / 2 3 4 1 6 7 8 5 /
+  //   6 7 8 5 2 3 4 1 / 3 4 1 2 7 8 5 6 / 7 8 5 6 3 4 1 2 /
+  //   4 1 2 3 8 5 6 7 / 8 5 6 7 4 1 2 3
+  // 28 clues — enough to keep the search shallow, sparse enough
+  // to give the visualizer something interesting to replay.
+  static final SudokuPuzzle eight8x8 = SudokuPuzzle(
+    layout: SudokuLayout.eight,
+    cells: [
+      1, 0, 3, 0, 5, 0, 7, 0, //
+      0, 6, 0, 8, 0, 2, 0, 4, //
+      2, 0, 0, 1, 0, 0, 8, 0, //
+      0, 7, 0, 0, 2, 0, 0, 1, //
+      3, 0, 1, 0, 0, 8, 0, 6, //
+      0, 8, 0, 6, 0, 0, 1, 0, //
+      4, 0, 0, 3, 0, 5, 0, 0, //
+      0, 0, 6, 0, 4, 0, 2, 3, //
+    ],
+  );
+
   // V2: 6×6 medium peeled from the canonical full grid
   //   1 2 3 4 5 6 / 4 5 6 1 2 3 / 2 3 1 5 6 4 /
   //   5 6 4 2 3 1 / 3 1 2 6 4 5 / 6 4 5 3 1 2
@@ -1237,6 +1274,7 @@ class SudokuPresets {
     (id: 'small4x4Medium', puzzle: small4x4Medium),
     (id: 'small4x4Hard', puzzle: small4x4Hard),
     (id: 'medium6x6', puzzle: medium6x6),
+    (id: 'eight8x8', puzzle: eight8x8),
     (id: 'standard9x9Easy', puzzle: standard9x9Easy),
     (id: 'standard9x9Medium', puzzle: standard9x9Medium),
     (id: 'standard9x9Hard', puzzle: standard9x9Hard),
