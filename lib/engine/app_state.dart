@@ -587,15 +587,20 @@ class AppState extends ChangeNotifier {
   final Map<int, Map<String, double>> functionParameters = {};
 
   String formatNumber(String numberString) {
-    // Preserve full precision for arbitrary-precision integer results
-    // (e.g. 100! = 158 digits) — `double.tryParse` would silently round
-    // them to ~15 significant digits. Only kicks in when the integer is
-    // actually past double precision; small ints like "129" still flow
-    // through the user's chosen NumberDisplayFormat. Off-switch via
-    // Settings for users who want compact formatting at the cost of
-    // precision.
-    if (_exactIntegerMode && ExactInteger.digitCount(numberString) > 15) {
-      return numberString.trim();
+    // Big-int literal handling: `100!`'s 158-digit result, etc.
+    //   - Exact integer mode ON  → preserve the full digit string.
+    //   - Exact integer mode OFF → render as compact scientific
+    //     notation (`9.332622e+157`). The previous fall-through
+    //     to `double.tryParse` + `number.round().toString()`
+    //     silently clamped huge doubles to int64 max
+    //     (`9223372036854775807`), which looked correct but was
+    //     completely wrong; scientific notation is the documented
+    //     "off" behavior per the Settings subtitle.
+    final digitCount = ExactInteger.digitCount(numberString);
+    if (digitCount > 15) {
+      if (_exactIntegerMode) return numberString.trim();
+      final n = double.tryParse(numberString);
+      return n == null ? numberString.trim() : n.toStringAsExponential(6);
     }
 
     final number = double.tryParse(numberString);
