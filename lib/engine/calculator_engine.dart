@@ -161,22 +161,53 @@ class CalculatorEngine {
       ? _bridge!.getEulerGamma()
       : '0.5772156649015329';
 
-  /// Round 81 (precision arc): π to [decimalDigits] decimal places via
+  /// Round 85 (precision arc): π to [decimalDigits] decimal places via
   /// MPFR through SymEngine's `basic_evalf`. Routes through the bridge's
   /// `mpfrHighPrecisionPi`. Returns the standard double-precision π if
   /// the native bridge isn't available — useful for `flutter test`
   /// headless mode on Linux CI where the macOS xcframework doesn't
   /// load. Throws when [decimalDigits] is out of 1..10000.
-  String getPiWithPrecision(int decimalDigits) {
+  String getPiWithPrecision(int decimalDigits) => _precisionConstant('pi',
+      decimalDigits, '3.141592653589793', (b, n) => b.mpfrHighPrecisionPi(n));
+
+  /// Round 86: e to [decimalDigits] places. Wraps the bridge's
+  /// `mpfrHighPrecisionE` with the same fallback / validation as
+  /// [getPiWithPrecision].
+  String getEWithPrecision(int decimalDigits) => _precisionConstant('e',
+      decimalDigits, '2.718281828459045', (b, n) => b.mpfrHighPrecisionE(n));
+
+  /// Round 86: Euler–Mascheroni γ to [decimalDigits] places.
+  String getEulerGammaWithPrecision(int decimalDigits) => _precisionConstant(
+      'euler_gamma',
+      decimalDigits,
+      '0.5772156649015329',
+      (b, n) => b.mpfrHighPrecisionEulerGamma(n));
+
+  /// Round 86: √2 to [decimalDigits] places.
+  String getSqrt2WithPrecision(int decimalDigits) => _precisionConstant(
+      'sqrt2',
+      decimalDigits,
+      '1.4142135623730951',
+      (b, n) => b.mpfrHighPrecisionSqrt2(n));
+
+  /// Validation + dispatch shared by the round-85/86 precision
+  /// getters. [fallback] is the standard double-precision value
+  /// returned when the bridge isn't loaded (Linux CI headless mode).
+  String _precisionConstant(
+    String label,
+    int decimalDigits,
+    String fallback,
+    String Function(SymbolicMathBridge, int) call,
+  ) {
     if (decimalDigits < 1 || decimalDigits > 10000) {
       throw ArgumentError(
           'decimalDigits must be in 1..10000 (got $decimalDigits)');
     }
     if (!_nativeAvailable || _bridge == null) {
-      return '3.141592653589793';
+      return fallback;
     }
     return _bridgeCall(
-        'pi_with_precision', (b) => b.mpfrHighPrecisionPi(decimalDigits));
+        '${label}_with_precision', (b) => call(b, decimalDigits));
   }
 
   String factorial(int n) {

@@ -2,6 +2,76 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 86) — Precision arc round 2 — `e(N)` + `EulerGamma(N)` + `sqrt(2,N)`
+
+Three more MPFR constants on top of round 85's `pi(N)`. Same
+three-repo pipeline, validated end-to-end again.
+
+### math-stack-ios-builder (feat/precision-e-egamma-sqrt2, commit 5d4e1608)
+
+`flutter_symengine_e_with_precision`,
+`flutter_symengine_euler_gamma_with_precision`,
+`flutter_symengine_sqrt2_with_precision` in
+`src/flutter_symengine_wrapper.{c,h}`. `e` and `EulerGamma` go
+through `basic_const_E` / `basic_const_EulerGamma`; `sqrt(2)`
+uses `basic_parse("sqrt(2)")` because there's no
+`basic_const_sqrt2`. All three then feed `basic_evalf(real=1)`
+at the requested bit precision.
+
+Factored the round-85 boilerplate into an
+`IMPLEMENT_CONST_WITH_PRECISION` macro so the three new
+functions are each a one-liner. `pi(N)` unchanged.
+
+### symbolic_math_bridge (feat/precision-e-egamma-sqrt2, commit a100b8e)
+
+Three new optional fields `_eWithPrecision`,
+`_eulerGammaWithPrecision`, `_sqrt2WithPrecision` (each
+`_FactorialDart?`); three new `lookupFunction` calls in
+`_initializeSymEngine` (each in its own try/catch); three
+public methods `mpfrHighPrecisionE` / `mpfrHighPrecisionEulerGamma`
+/ `mpfrHighPrecisionSqrt2`. New private `_callPrecisionFn`
+helper extracts the validation + null check + native call +
+free pattern from round 85's inline implementation; the
+round-85 `mpfrHighPrecisionPi` stays as-is.
+
+Three new extern + +load entries in both iOS and macOS
+`SymEngineBridge.m`.
+
+### CrispCalc (feat/precision-e-egamma-sqrt2)
+
+Bridge pin bumped `726a093` → `a100b8e`. Three new engine
+methods `getEWithPrecision`, `getEulerGammaWithPrecision`,
+`getSqrt2WithPrecision`. New private `_precisionConstant`
+helper factors the round-85 validation + fallback + dispatch
+pattern; round 85's `getPiWithPrecision` now uses the helper
+too (small refactor).
+
+### Tests
+
+`test/precision_test.dart` refactored to a parameterised
+`runPrecisionGroup` factory so each constant has the same four
+tests (50-digit prefix, 100-digit prefix, 0 rejection, 10001
+rejection). `pi(500)` kept as a separate stress test. 17
+tests total (was 5); suite 1288 → 1305.
+
+Reference prefixes for each constant are inlined at the top
+of the file from OEIS A000796 (π), A001113 (e), A001620 (γ),
+and an MPFR-computed √2 value matching A002193.
+
+### Operational note: CocoaPods diagnostic
+
+Mid-round, parallel session hit a CocoaPods bootstrap failure
+caused by a Ruby 3.1.3 → 4.0.3 homebrew upgrade. User gems at
+`~/.gem/ruby/3.1.3/` shadowed the bundled ones; the
+homebrew-cocoapods bottle's libexec gem dir was missing
+`bigdecimal` and `nkf` (kconv stdlib removal in Ruby 4.0).
+Fix: uninstall bigdecimal 3.2.2 + 3.2.3 from
+`~/.gem/ruby/3.1.3/`, `brew reinstall cocoapods`, then
+install `bigdecimal`, `nkf`, and a fresh `unf_ext` into
+`/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec` via
+`/opt/homebrew/opt/ruby/bin/gem install ... --install-dir
+<libexec>`. `pod install` succeeds afterward.
+
 ## 2026-05-25 (round 85) — Precision arc round 1 — `pi(N)` via MPFR
 
 First concrete round of the MPFR/FLINT precision arc primed by
