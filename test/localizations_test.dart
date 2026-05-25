@@ -289,6 +289,7 @@ void main() {
           t.sudokuDifficultyHard,
           t.sudokuVariantRegular,
           t.sudokuVariantX,
+          t.sudokuVariantKiller,
           t.sudokuShowHints,
           t.sudokuShowHintsSubtitle,
         ]) {
@@ -304,6 +305,7 @@ void main() {
           'standard9x9Easy',
           'standard9x9Medium',
           'standard9x9Hard',
+          'killer4x4',
         ]) {
           expect(t.sudokuPresetLabel(id).trim(), isNotEmpty);
         }

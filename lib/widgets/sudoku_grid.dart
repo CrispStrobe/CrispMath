@@ -33,6 +33,12 @@ class SudokuGrid extends StatelessWidget {
   /// clue cells' entries are ignored.
   final List<Set<int>>? candidates;
 
+  /// Killer-Sudoku-only: cages to render as inset borders + per-
+  /// cage sum labels in the top-left corner of each anchor cell.
+  /// Null for regular / Sudoku-X puzzles. Cell→cage mapping is
+  /// computed internally.
+  final List<KillerCage>? cages;
+
   const SudokuGrid({
     super.key,
     required this.layout,
@@ -42,18 +48,33 @@ class SudokuGrid extends StatelessWidget {
     this.highlightIndex,
     this.onTapCell,
     this.candidates,
+    this.cages,
   });
+
+  /// Maps each cell index to its cage index, or -1 if uncaged.
+  /// Returns null when `cages` itself is null.
+  List<int>? _cellToCage() {
+    if (cages == null) return null;
+    final out = List<int>.filled(layout.side * layout.side, -1);
+    for (var i = 0; i < cages!.length; i++) {
+      for (final idx in cages![i].cellIndexes) {
+        out[idx] = i;
+      }
+    }
+    return out;
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final cellToCage = _cellToCage();
     return AspectRatio(
       aspectRatio: 1,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final size = constraints.biggest.shortestSide;
           final cellSize = size / layout.side;
-          return Container(
+          final grid = Container(
             decoration: BoxDecoration(
               border: Border.all(color: scheme.onSurface, width: 2),
             ),
@@ -86,6 +107,29 @@ class SudokuGrid extends StatelessWidget {
                   ),
               ],
             ),
+          );
+          // For Killer puzzles, overlay the cage boundary lines +
+          // anchor-cell sum labels via a CustomPaint sized to
+          // match the grid. IgnorePointer so the cells underneath
+          // still receive taps.
+          if (cellToCage == null) return grid;
+          return Stack(
+            children: [
+              grid,
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _CagePainter(
+                      layout: layout,
+                      cages: cages!,
+                      cellToCage: cellToCage,
+                      color: scheme.primary,
+                      textColor: scheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -234,4 +278,113 @@ class _PencilMarks extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CagePainter extends CustomPainter {
+  final SudokuLayout layout;
+  final List<KillerCage> cages;
+  final List<int> cellToCage;
+  final Color color;
+  final Color textColor;
+
+  _CagePainter({
+    required this.layout,
+    required this.cages,
+    required this.cellToCage,
+    required this.color,
+    required this.textColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final n = layout.side;
+    final cellSize = size.width / n;
+    // Inset the cage line slightly inside each cell so it doesn't
+    // collide with the cell-boundary lines underneath.
+    final inset = cellSize * 0.08;
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.7)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke;
+
+    int cageOf(int r, int c) {
+      if (r < 0 || r >= n || c < 0 || c >= n) return -1;
+      return cellToCage[r * n + c];
+    }
+
+    for (var r = 0; r < n; r++) {
+      for (var c = 0; c < n; c++) {
+        final mine = cageOf(r, c);
+        if (mine < 0) continue;
+        final left = c * cellSize;
+        final top = r * cellSize;
+        final right = (c + 1) * cellSize;
+        final bottom = (r + 1) * cellSize;
+        // Draw an inset line on each edge whose neighbour is a
+        // different cage (or off-grid).
+        if (cageOf(r - 1, c) != mine) {
+          canvas.drawLine(
+            Offset(left + inset, top + inset),
+            Offset(right - inset, top + inset),
+            paint,
+          );
+        }
+        if (cageOf(r + 1, c) != mine) {
+          canvas.drawLine(
+            Offset(left + inset, bottom - inset),
+            Offset(right - inset, bottom - inset),
+            paint,
+          );
+        }
+        if (cageOf(r, c - 1) != mine) {
+          canvas.drawLine(
+            Offset(left + inset, top + inset),
+            Offset(left + inset, bottom - inset),
+            paint,
+          );
+        }
+        if (cageOf(r, c + 1) != mine) {
+          canvas.drawLine(
+            Offset(right - inset, top + inset),
+            Offset(right - inset, bottom - inset),
+            paint,
+          );
+        }
+      }
+    }
+
+    // Per-cage sum label: tiny text in the top-left of the
+    // cage's anchor cell (lowest-row, then lowest-col).
+    for (var i = 0; i < cages.length; i++) {
+      final cage = cages[i];
+      var anchor = cage.cellIndexes.first;
+      for (final idx in cage.cellIndexes) {
+        if (idx < anchor) anchor = idx;
+      }
+      final r = anchor ~/ n;
+      final c = anchor % n;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: '${cage.targetSum}',
+          style: TextStyle(
+            color: textColor,
+            fontSize: cellSize * 0.20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(
+        canvas,
+        Offset(c * cellSize + inset + 1, r * cellSize + inset + 1),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CagePainter old) =>
+      old.cages != cages ||
+      old.cellToCage != cellToCage ||
+      old.layout != layout ||
+      old.color != color;
 }

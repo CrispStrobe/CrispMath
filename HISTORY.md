@@ -2,6 +2,62 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 63) — Sudoku V4: Killer Sudoku variant
+
+Cage-based Sudoku where each cage is a contiguous (or arbitrary)
+set of cells with a target sum, and the digits inside a cage
+must be distinct. The 4×4 Killer preset ships with no givens at
+all — the cage system alone determines the unique solution. The
+dart_csp linear-arithmetic propagator (`addLinearEquals`) handles
+the per-cage sum constraint with bounds consistency, so adding
+this variant cost no new constraint code in the solver itself —
+just a model extension + UI overlay.
+
+### Engine
+
+- **`SudokuVariant.killer`** added to the variant enum.
+- **`KillerCage`** model — `cellIndexes` (flat index into the
+  side²-cell grid) + `targetSum`. Construction asserts that
+  every cell of the grid is covered by exactly one cage.
+- **`SudokuPuzzle`** gained an optional `cages: List<KillerCage>?`
+  field. Construction asserts `cages != null` when variant is
+  killer; otherwise the field is null. The clone helper
+  (`withCell`) carries cages forward.
+- **`_buildProblem`** now appends one `addAllDifferent(keys)`
+  and one `addLinearEquals(keys, [1,…,1], targetSum)` per cage.
+  AllDifferent is omitted for singleton cages (degenerate).
+- **`SudokuPresets.killer4x4`** — a partition of 16 cells into
+  8 cages with verified sums totalling 40 (= 1+2+3+4 × 4 rows).
+
+### Widget
+
+`SudokuGrid` gained an optional `cages: List<KillerCage>?`. When
+non-null the grid is wrapped in a Stack with an `IgnorePointer`
+`CustomPaint` overlay that draws inset cage edges (only where a
+cell's neighbour is in a different cage) and a small target-sum
+label in the top-left of each cage's anchor cell. The overlay
+ignores taps so cell taps still hit the grid underneath.
+
+### Screen
+
+- Variant `SegmentedButton` gained a third "Killer" segment.
+- Switching INTO Killer auto-loads the matching Killer preset
+  (an empty Killer grid is invalid — cages are required), and
+  loading any non-Killer preset clears the cages field.
+- Generator controls are disabled when the variant is Killer
+  (cage-partition generation is a separate solver pass, deferred).
+
+### i18n + tests
+
+- `sudokuVariantKiller` added to the abstract Localizations API
+  + en/de/fr/es implementations. `sudokuPresetLabel('killer4x4')`
+  resolves in every locale.
+- New `Sudoku — Killer variant` test group: cage partitioning is
+  exhaustive, killer4x4 preset's cage sums match a valid solution,
+  the same cages solve from an empty grid (no givens), infeasible
+  cage sums return no solution, and constructing a killer puzzle
+  without cages throws.
+
 ## 2026-05-24 (round 62) — Sudoku V3: hint mode (pencil-marks per cell)
 
 The flagship "real Sudoku app" feature: turn on Show Hints and

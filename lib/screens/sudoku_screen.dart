@@ -54,11 +54,30 @@ class _SudokuScreenState extends State<SudokuScreen> {
   /// top selectors (not via a preset), we wipe the grid to empty
   /// so the user can fill in fresh clues OR hit Generate / pick a
   /// matching preset. Doing this also resets the trace.
+  ///
+  /// V3-Killer: an empty Killer puzzle is invalid (the cages
+  /// list is required). When switching INTO Killer mode, auto-
+  /// load the matching Killer preset; when switching OUT of
+  /// Killer mode, drop the cages.
   void _switchLayoutOrVariant(
       SudokuLayout? newLayout, SudokuVariant? newVariant) {
     _stopVisualizer();
     final layout = newLayout ?? _puzzle.layout;
     final variant = newVariant ?? _puzzle.variant;
+    if (variant == SudokuVariant.killer) {
+      // Killer can't be empty — pick a preset whose layout matches
+      // (or fall back to any Killer preset we ship).
+      final match = SudokuPresets.all.firstWhere(
+        (p) =>
+            p.puzzle.variant == SudokuVariant.killer &&
+            p.puzzle.layout.side == layout.side,
+        orElse: () => SudokuPresets.all.firstWhere(
+          (p) => p.puzzle.variant == SudokuVariant.killer,
+        ),
+      );
+      _loadPreset(match.puzzle);
+      return;
+    }
     final empty = SudokuPuzzle(
       layout: layout,
       cells: List<int>.filled(layout.side * layout.side, 0),
@@ -236,6 +255,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
         selectedIndex: _selected,
         highlightIndex: highlightIdx,
         candidates: candidates,
+        cages: _puzzle.cages,
         onTapCell: _onTapCell,
       ),
     );
@@ -262,6 +282,11 @@ class _SudokuScreenState extends State<SudokuScreen> {
           _GeneratorRow(
             difficulty: _genDifficulty,
             generating: _generating,
+            // Killer generation isn't shipped in V1 — cage
+            // partition + per-cage sum is a separate solver
+            // pass. Keep the controls visible but disabled so
+            // the UX is consistent across variants.
+            disabled: _puzzle.variant == SudokuVariant.killer,
             onDifficulty: (d) => setState(() => _genDifficulty = d),
             onGenerate: _generate,
             labels: t,
@@ -562,6 +587,10 @@ class _SizeVariantPickers extends StatelessWidget {
               value: SudokuVariant.x,
               label: Text(labels.sudokuVariantX),
             ),
+            ButtonSegment(
+              value: SudokuVariant.killer,
+              label: Text(labels.sudokuVariantKiller),
+            ),
           ],
           selected: {variant},
           onSelectionChanged: (s) => onVariantChanged(s.first),
@@ -574,6 +603,7 @@ class _SizeVariantPickers extends StatelessWidget {
 class _GeneratorRow extends StatelessWidget {
   final SudokuDifficulty difficulty;
   final bool generating;
+  final bool disabled;
   final ValueChanged<SudokuDifficulty> onDifficulty;
   final VoidCallback onGenerate;
   final AppLocalizations labels;
@@ -581,6 +611,7 @@ class _GeneratorRow extends StatelessWidget {
   const _GeneratorRow({
     required this.difficulty,
     required this.generating,
+    required this.disabled,
     required this.onDifficulty,
     required this.onGenerate,
     required this.labels,
@@ -607,12 +638,12 @@ class _GeneratorRow extends StatelessWidget {
               ),
             ],
             selected: {difficulty},
-            onSelectionChanged: (s) => onDifficulty(s.first),
+            onSelectionChanged: disabled ? null : (s) => onDifficulty(s.first),
           ),
         ),
         const SizedBox(width: 8),
         FilledButton.icon(
-          onPressed: generating ? null : onGenerate,
+          onPressed: (generating || disabled) ? null : onGenerate,
           icon: generating
               ? const SizedBox(
                   width: 16,

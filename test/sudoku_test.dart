@@ -389,6 +389,90 @@ void main() {
       expect(antiDiag.toSet().length, n);
     }, timeout: const Timeout(Duration(seconds: 180)));
   });
+
+  group('Sudoku — Killer variant', () {
+    test('killer4x4 preset partitions every cell into exactly one cage', () {
+      final puzzle = SudokuPresets.killer4x4;
+      final n = puzzle.layout.side;
+      final seen = <int>{};
+      for (final c in puzzle.cages!) {
+        for (final idx in c.cellIndexes) {
+          expect(seen.add(idx), isTrue,
+              reason: 'cell $idx appears in more than one cage');
+        }
+      }
+      expect(seen.length, n * n,
+          reason: 'cages must cover every cell of the grid');
+    });
+
+    test('killer4x4 preset has cage sums that match a valid solution',
+        () async {
+      final puzzle = SudokuPresets.killer4x4;
+      final sol = await SudokuSolver.solve(puzzle);
+      expect(sol, isNotNull, reason: 'killer4x4 must be feasible');
+      _expectValidSudoku(puzzle.layout, sol!);
+      // Per-cage sum equals targetSum AND cage values are all-different.
+      for (final cage in puzzle.cages!) {
+        final values = [for (final idx in cage.cellIndexes) sol[idx]];
+        expect(values.reduce((a, b) => a + b), cage.targetSum,
+            reason: 'cage with target ${cage.targetSum} sums to wrong total');
+        expect(values.toSet().length, values.length,
+            reason: 'cage with target ${cage.targetSum} has duplicate digits');
+      }
+    });
+
+    test('killer4x4 round-trip: stripping all clues still solves under cages',
+        () async {
+      // Killer puzzles need no givens — the cage system is the
+      // entire constraint set. Verify solving from an empty grid
+      // with the cage spec alone still recovers a valid solution.
+      final preset = SudokuPresets.killer4x4;
+      final empty = SudokuPuzzle(
+        layout: preset.layout,
+        cells: List<int>.filled(preset.layout.side * preset.layout.side, 0),
+        variant: SudokuVariant.killer,
+        cages: preset.cages,
+      );
+      final sol = await SudokuSolver.solve(empty);
+      expect(sol, isNotNull);
+      _expectValidSudoku(preset.layout, sol!);
+      for (final cage in preset.cages!) {
+        final values = [for (final idx in cage.cellIndexes) sol[idx]];
+        expect(values.reduce((a, b) => a + b), cage.targetSum);
+        expect(values.toSet().length, values.length);
+      }
+    });
+
+    test('killer cage with infeasible sum returns no solution', () async {
+      // A 2-cell cage that targets sum = 1 cannot be filled with
+      // any two distinct digits from 1..4 (smallest pair is 1+2=3).
+      final infeasible = SudokuPuzzle(
+        layout: SudokuLayout.small,
+        cells: List<int>.filled(16, 0),
+        variant: SudokuVariant.killer,
+        cages: const [
+          KillerCage(cellIndexes: [0, 1], targetSum: 1),
+          KillerCage(cellIndexes: [2, 3], targetSum: 9),
+          KillerCage(
+              cellIndexes: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+              targetSum: 30),
+        ],
+      );
+      final sol = await SudokuSolver.solve(infeasible);
+      expect(sol, isNull);
+    });
+
+    test('asserts: killer variant without cages throws', () {
+      expect(
+        () => SudokuPuzzle(
+          layout: SudokuLayout.small,
+          cells: List<int>.filled(16, 0),
+          variant: SudokuVariant.killer,
+        ),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+  });
 }
 
 void _expectValidSudoku(SudokuLayout layout, List<int> cells) {

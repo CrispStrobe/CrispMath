@@ -295,6 +295,7 @@ abstract class AppLocalizations {
   String get sudokuDifficultyHard;
   String get sudokuVariantRegular;
   String get sudokuVariantX;
+  String get sudokuVariantKiller;
   String get sudokuShowHints;
   String get sudokuShowHintsSubtitle;
 
@@ -958,6 +959,8 @@ class EnLocalizations implements AppLocalizations {
         return '9×9 hard (AI Escargot)';
       case 'standard9x9XEasy':
         return '9×9 Sudoku-X easy';
+      case 'killer4x4':
+        return '4×4 Killer';
     }
     return id;
   }
@@ -988,6 +991,8 @@ class EnLocalizations implements AppLocalizations {
   String get sudokuVariantRegular => 'Regular';
   @override
   String get sudokuVariantX => 'Sudoku-X';
+  @override
+  String get sudokuVariantKiller => 'Killer';
   @override
   String get sudokuShowHints => 'Show hints';
   @override
@@ -1925,6 +1930,8 @@ class DeLocalizations implements AppLocalizations {
         return '9×9 schwer (AI Escargot)';
       case 'standard9x9XEasy':
         return '9×9 Sudoku-X leicht';
+      case 'killer4x4':
+        return '4×4 Killer';
     }
     return id;
   }
@@ -1955,6 +1962,8 @@ class DeLocalizations implements AppLocalizations {
   String get sudokuVariantRegular => 'Klassisch';
   @override
   String get sudokuVariantX => 'Sudoku-X';
+  @override
+  String get sudokuVariantKiller => 'Killer';
   @override
   String get sudokuShowHints => 'Hinweise anzeigen';
   @override
@@ -2995,6 +3004,8 @@ class FrLocalizations implements AppLocalizations {
         return '9×9 difficile (AI Escargot)';
       case 'standard9x9XEasy':
         return '9×9 Sudoku-X facile';
+      case 'killer4x4':
+        return '4×4 Killer';
     }
     return id;
   }
@@ -3025,6 +3036,8 @@ class FrLocalizations implements AppLocalizations {
   String get sudokuVariantRegular => 'Classique';
   @override
   String get sudokuVariantX => 'Sudoku-X';
+  @override
+  String get sudokuVariantKiller => 'Killer';
   @override
   String get sudokuShowHints => 'Afficher les indices';
   @override
@@ -4066,6 +4079,8 @@ class EsLocalizations implements AppLocalizations {
         return '9×9 difícil (AI Escargot)';
       case 'standard9x9XEasy':
         return '9×9 Sudoku-X fácil';
+      case 'killer4x4':
+        return '4×4 Killer';
     }
     return id;
   }
@@ -4096,6 +4111,8 @@ class EsLocalizations implements AppLocalizations {
   String get sudokuVariantRegular => 'Clásico';
   @override
   String get sudokuVariantX => 'Sudoku-X';
+  @override
+  String get sudokuVariantKiller => 'Killer';
   @override
   String get sudokuShowHints => 'Mostrar pistas';
   @override

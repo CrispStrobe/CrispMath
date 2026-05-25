@@ -565,9 +565,11 @@ Roadmap (ship one round at a time):
     - Irregular regions ("Du-sum-oh"/Geometry Number Place) —
       boxes are arbitrary same-size polyomino tilings, not the
       regular grid.
-    - Killer / Samunampure — boxes replaced by sum constraints
+    - ~~Killer / Samunampure — boxes replaced by sum constraints
       over irregular regions. Maps naturally to dart_csp's
-      `addLinearEquals` over per-cage cell sets.
+      `addLinearEquals` over per-cage cell sets.~~ **SHIPPED**
+      in HISTORY round 63 (4×4 preset, no givens, full overlay).
+      Generator + larger Killer presets are V2.
     - Other variants (Sudoku X / diagonals, Disjoint Groups,
       Hypercube, NRC, 2-Quasi-Magic) all reduce to additional
       `allDifferent` overlays — once the regular engine is in

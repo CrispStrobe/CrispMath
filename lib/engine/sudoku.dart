@@ -24,11 +24,23 @@ import 'package:dart_csp/dart_csp.dart' as csp;
 
 /// Sudoku rule variants. `regular` is the classic row + column +
 /// box `allDifferent`; `x` adds the two diagonals as further
-/// `allDifferent` constraints (Sudoku-X). The PLAN.md variant
-/// roadmap tracks Killer, Disjoint Groups, etc. as further
-/// follow-ups — each is one more constraint pack on top of the
-/// regular engine.
-enum SudokuVariant { regular, x }
+/// `allDifferent` constraints (Sudoku-X); `killer` replaces the
+/// "given clues" pattern with a partition of the grid into
+/// **cages** (irregular cell groups), each carrying a target sum.
+/// Killer puzzles still respect row / column / box `allDifferent`
+/// plus per-cage `allDifferent` (no digit repeats within a cage)
+/// plus per-cage sum equality.
+enum SudokuVariant { regular, x, killer }
+
+/// One Killer Sudoku cage: a set of cell indexes (into the flat
+/// length-`side²` cell list) that together must sum to
+/// [targetSum] and contain no repeated digits.
+class KillerCage {
+  final List<int> cellIndexes;
+  final int targetSum;
+
+  const KillerCage({required this.cellIndexes, required this.targetSum});
+}
 
 /// A single Sudoku puzzle layout. Standard 9×9 has `side=9,
 /// boxRows=3, boxCols=3`; the V1 mini variant is `side=4,
@@ -66,18 +78,42 @@ class SudokuPuzzle {
   final SudokuVariant variant;
   final List<int> cells;
 
+  /// Killer-only: list of cages partitioning the grid. Each cell
+  /// index must appear in exactly one cage. Null when
+  /// `variant != killer`. The constructor asserts coverage when
+  /// the variant is killer.
+  final List<KillerCage>? cages;
+
   SudokuPuzzle({
     required this.layout,
     required this.cells,
     this.variant = SudokuVariant.regular,
-  }) : assert(cells.length == layout.side * layout.side);
+    this.cages,
+  })  : assert(cells.length == layout.side * layout.side),
+        assert(variant != SudokuVariant.killer || cages != null,
+            'killer variant requires a cages list'),
+        assert(cages == null || _validCages(cages, layout.side * layout.side));
 
   int get(int row, int col) => cells[row * layout.side + col];
 
   SudokuPuzzle withCell(int row, int col, int value) {
     final copy = List<int>.from(cells);
     copy[row * layout.side + col] = value;
-    return SudokuPuzzle(layout: layout, cells: copy, variant: variant);
+    return SudokuPuzzle(
+        layout: layout, cells: copy, variant: variant, cages: cages);
+  }
+
+  /// Every cell index must appear in exactly one cage. Cage
+  /// indexes must be in `[0, totalCells)`.
+  static bool _validCages(List<KillerCage> cages, int totalCells) {
+    final seen = <int>{};
+    for (final c in cages) {
+      for (final idx in c.cellIndexes) {
+        if (idx < 0 || idx >= totalCells) return false;
+        if (!seen.add(idx)) return false; // duplicate cell across cages
+      }
+    }
+    return seen.length == totalCells;
   }
 }
 
@@ -298,6 +334,28 @@ class SudokuSolver {
           [for (var i = 0; i < n; i++) _key(i, i)]); // main diagonal
       p.addAllDifferent(
           [for (var i = 0; i < n; i++) _key(i, n - 1 - i)]); // anti-diagonal
+    }
+    // Killer Sudoku (round 63): each cage adds two constraints —
+    // `allDifferent` on its cells (no digit repeats within a
+    // cage) and `addLinearEquals` with all-1 coefficients
+    // summing to the cage's target. The linear-arithmetic
+    // propagator handles the sum efficiently (same path that
+    // makes SEND+MORE solve in ms).
+    if (puzzle.cages != null) {
+      for (final cage in puzzle.cages!) {
+        final keys = [
+          for (final idx in cage.cellIndexes)
+            _key(idx ~/ n, idx % n),
+        ];
+        if (keys.length > 1) {
+          p.addAllDifferent(keys);
+        }
+        p.addLinearEquals(
+          keys,
+          List<num>.filled(keys.length, 1),
+          cage.targetSum,
+        );
+      }
     }
     return p;
   }
@@ -880,6 +938,33 @@ class SudokuPresets {
   // under the X overlay. Users get X-variant puzzles via the
   // variant toggle + Generate.
 
+  // === Killer Sudoku presets (round 63) ============================
+  //
+  // Each preset has an empty cells list (Killer puzzles have no
+  // clue digits — the cages carry the information) plus a list
+  // of cages that partition every cell into exactly one group.
+
+  /// 4×4 Killer derived from the canonical full grid
+  ///   1 2 3 4 / 3 4 1 2 / 2 1 4 3 / 4 3 2 1.
+  /// 8 cages partition all 16 cells; one singleton (the upper-
+  /// right cell, value 4) acts as a starter clue.
+  static final SudokuPuzzle killer4x4 = SudokuPuzzle(
+    layout: SudokuLayout.small,
+    variant: SudokuVariant.killer,
+    cells: List<int>.filled(16, 0),
+    cages: const [
+      // Indices are row-major: r*4 + c.
+      KillerCage(cellIndexes: [0, 4], targetSum: 4), //  (0,0)+(1,0) = 1+3
+      KillerCage(cellIndexes: [1, 2], targetSum: 5), //  (0,1)+(0,2) = 2+3
+      KillerCage(cellIndexes: [3], targetSum: 4), //     (0,3)       = 4
+      KillerCage(cellIndexes: [5, 6, 7], targetSum: 7), // (1,1)+(1,2)+(1,3) = 4+1+2
+      KillerCage(cellIndexes: [8, 9], targetSum: 3), //  (2,0)+(2,1) = 2+1
+      KillerCage(cellIndexes: [10, 11], targetSum: 7), // (2,2)+(2,3) = 4+3
+      KillerCage(cellIndexes: [12, 13], targetSum: 7), // (3,0)+(3,1) = 4+3
+      KillerCage(cellIndexes: [14, 15], targetSum: 3), // (3,2)+(3,3) = 2+1
+    ],
+  );
+
   /// Friendly preset list with (id, layout) pairs the picker uses.
   static final List<({String id, SudokuPuzzle puzzle})> all = [
     (id: 'small4x4Easy', puzzle: small4x4Easy),
@@ -889,5 +974,6 @@ class SudokuPresets {
     (id: 'standard9x9Easy', puzzle: standard9x9Easy),
     (id: 'standard9x9Medium', puzzle: standard9x9Medium),
     (id: 'standard9x9Hard', puzzle: standard9x9Hard),
+    (id: 'killer4x4', puzzle: killer4x4),
   ];
 }
