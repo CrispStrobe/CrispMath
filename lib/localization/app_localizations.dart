@@ -296,6 +296,7 @@ abstract class AppLocalizations {
   String get sudokuVariantRegular;
   String get sudokuVariantX;
   String get sudokuVariantKiller;
+  String get sudokuVariantDisjoint;
   String get sudokuCheckUnique;
   String get sudokuUniqueSolution;
   String get sudokuMultipleSolutions;
@@ -1013,6 +1014,8 @@ class EnLocalizations implements AppLocalizations {
   String get sudokuVariantX => 'Sudoku-X';
   @override
   String get sudokuVariantKiller => 'Killer';
+  @override
+  String get sudokuVariantDisjoint => 'Disjoint';
   @override
   String get sudokuCheckUnique => 'Check uniqueness';
   @override
@@ -2042,6 +2045,8 @@ class DeLocalizations implements AppLocalizations {
   String get sudokuVariantX => 'Sudoku-X';
   @override
   String get sudokuVariantKiller => 'Killer';
+  @override
+  String get sudokuVariantDisjoint => 'Disjunkt';
   @override
   String get sudokuCheckUnique => 'Eindeutigkeit prüfen';
   @override
@@ -3196,6 +3201,8 @@ class FrLocalizations implements AppLocalizations {
   String get sudokuVariantX => 'Sudoku-X';
   @override
   String get sudokuVariantKiller => 'Killer';
+  @override
+  String get sudokuVariantDisjoint => 'Disjoint';
   @override
   String get sudokuCheckUnique => "Vérifier l'unicité";
   @override
@@ -4352,6 +4359,8 @@ class EsLocalizations implements AppLocalizations {
   String get sudokuVariantX => 'Sudoku-X';
   @override
   String get sudokuVariantKiller => 'Killer';
+  @override
+  String get sudokuVariantDisjoint => 'Disjunto';
   @override
   String get sudokuCheckUnique => 'Comprobar unicidad';
   @override

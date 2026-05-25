@@ -30,7 +30,12 @@ import 'package:dart_csp/dart_csp.dart' as csp;
 /// Killer puzzles still respect row / column / box `allDifferent`
 /// plus per-cage `allDifferent` (no digit repeats within a cage)
 /// plus per-cage sum equality.
-enum SudokuVariant { regular, x, killer }
+///
+/// Round 76: `disjoint` adds the "Disjoint Groups" overlay — cells
+/// occupying the **same position within their respective boxes**
+/// must all be different. For a 9×9 grid this adds 9 new
+/// `allDifferent` constraints, one per in-box position.
+enum SudokuVariant { regular, x, killer, disjoint }
 
 /// One Killer Sudoku cage: a set of cell indexes (into the flat
 /// length-`side²` cell list) that together must sum to
@@ -273,6 +278,13 @@ class SudokuSolver {
       return br * layout.boxCols + bc;
     }
 
+    // Round 76: in-box position key for the Disjoint Groups variant.
+    // Cells with the same key sit in the same Disjoint Group across
+    // all boxes (e.g. "top-left of every box").
+    int disjointKey(int r, int c) =>
+        (r % layout.boxRows) * layout.boxCols + (c % layout.boxCols);
+    final disjointUsed = <int, Set<int>>{};
+
     for (var r = 0; r < n; r++) {
       for (var c = 0; c < n; c++) {
         final v = puzzle.cells[r * n + c];
@@ -283,6 +295,9 @@ class SudokuSolver {
         if (puzzle.variant == SudokuVariant.x) {
           if (r == c) mainDiagUsed.add(v);
           if (r + c == n - 1) antiDiagUsed.add(v);
+        }
+        if (puzzle.variant == SudokuVariant.disjoint) {
+          disjointUsed.putIfAbsent(disjointKey(r, c), () => <int>{}).add(v);
         }
       }
     }
@@ -321,6 +336,8 @@ class SudokuSolver {
           if (puzzle.variant == SudokuVariant.x && r == c) ...mainDiagUsed,
           if (puzzle.variant == SudokuVariant.x && r + c == n - 1)
             ...antiDiagUsed,
+          if (puzzle.variant == SudokuVariant.disjoint)
+            ...?disjointUsed[disjointKey(r, c)],
         };
         var candidates = all.difference(excluded);
         // Cage-aware filtering.
@@ -519,6 +536,16 @@ class SudokuSolver {
       p.addAllDifferent(
           [for (var i = 0; i < n; i++) _key(i, n - 1 - i)]); // anti-diagonal
     }
+    // Round 76: Disjoint Groups overlay. For each in-box position p
+    // (there are `side` of them — one per cell within a box), gather
+    // every grid cell that occupies position p within its own box,
+    // and add an `allDifferent` over that set. The standard 9×9 gets
+    // 9 new constraints of 9 variables each.
+    if (puzzle.variant == SudokuVariant.disjoint) {
+      for (final group in _disjointGroups(puzzle.layout)) {
+        p.addAllDifferent(group);
+      }
+    }
     // Killer Sudoku (round 63): each cage adds two constraints —
     // `allDifferent` on its cells (no digit repeats within a
     // cage) and `addLinearEquals` with all-1 coefficients
@@ -561,6 +588,31 @@ class SudokuSolver {
       }
     }
     return p;
+  }
+
+  /// Round 76: yields the Disjoint-Groups partition. Each group
+  /// collects every cell that sits at the same (row-within-box,
+  /// col-within-box) position across all boxes. There are exactly
+  /// [layout.side] such groups, each of size [layout.side] (one
+  /// representative per box). The standard 9×9 yields 9 groups of
+  /// 9 cells (every "top-left of each box", every "centre of each
+  /// box", etc.).
+  static Iterable<List<String>> _disjointGroups(SudokuLayout layout) sync* {
+    final n = layout.side;
+    // Iterate (ir, ic) — the row/col coordinates within a box —
+    // and collect, for each grid box (br, bc), the cell at offset
+    // (ir, ic) inside that box.
+    for (var ir = 0; ir < layout.boxRows; ir++) {
+      for (var ic = 0; ic < layout.boxCols; ic++) {
+        final group = <String>[];
+        for (var br = 0; br < n; br += layout.boxRows) {
+          for (var bc = 0; bc < n; bc += layout.boxCols) {
+            group.add(_key(br + ir, bc + ic));
+          }
+        }
+        yield group;
+      }
+    }
   }
 
   /// Yields the box partition as a list of (row, col) -> key

@@ -761,6 +761,7 @@ class _SizeVariantPickers extends StatelessWidget {
                   SudokuVariant.regular => labels.sudokuVariantRegular,
                   SudokuVariant.x => labels.sudokuVariantX,
                   SudokuVariant.killer => labels.sudokuVariantKiller,
+                  SudokuVariant.disjoint => labels.sudokuVariantDisjoint,
                 }),
                 selected: variant == v,
                 onSelected: (_) => onVariantChanged(v),

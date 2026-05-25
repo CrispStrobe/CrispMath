@@ -2,6 +2,56 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 76) — Sudoku Disjoint Groups variant
+
+HANDOFF §6 listed Disjoint Groups as a one-session pick that
+mirrors the Sudoku-X pattern: a parameterized overlay on top of
+the existing row / column / box constraints. Same engine plumbing,
+just a new set of `allDifferent` constraints.
+
+### Rule
+
+For each in-box position p (e.g. "top-left of the box"), the
+cells that occupy position p across all boxes form a group; every
+group must contain distinct digits 1..N. Standard 9×9 adds 9 new
+`allDifferent` constraints, one per in-box position, each of size
+9 (one cell per box).
+
+### Engine
+
+- `SudokuVariant.disjoint` enum value.
+- New `_disjointGroups(layout)` walker yields the `side` groups
+  by iterating in-box (row, col) offsets and collecting the cell
+  at that offset inside every grid box.
+- `_buildProblem` adds the groups as `allDifferent` when
+  `variant == disjoint`.
+- `computeCandidates` gains a `disjointUsed[key]` index keyed by
+  `(r % boxRows) * boxCols + c % boxCols` (the in-box position).
+  Empty cells exclude values already placed at the same key.
+
+### UI + i18n
+
+`SudokuVariant.disjoint` rendered in the variant ChoiceChip row
+between Killer and the next variant. Four new locale strings
+(`sudokuVariantDisjoint`: Disjoint / Disjunkt / Disjoint /
+Disjunto). The `_switchLayoutOrVariant` Killer-special-case
+falls through correctly for Disjoint (no cages required — an
+empty grid is a valid Disjoint puzzle).
+
+### Tests
+
+Three new engine tests in `sudoku_test.dart`:
+- Generator round-trip on 9×9 disjoint easy verifies every
+  in-box-position group is duplicate-free in the solved grid.
+- `computeCandidates` correctly excludes values from the same
+  disjoint group ((3,3) loses 5 when (0,0) is 5; (4,4) keeps it
+  since the in-box position differs).
+- Regression: the regular variant ignores the disjoint conflict
+  (proving the new code path is gated by the variant flag).
+
+Locale-coverage test + UI flow test updated to include the new
+variant. Suite total: 1225 tests.
+
 ## 2026-05-25 (round 75) — Sudoku 8×8 layout
 
 PLAN's V2 Sudoku roadmap listed 8×8 (2×4 boxes) between the

@@ -662,6 +662,72 @@ void main() {
     }, timeout: const Timeout(Duration(seconds: 180)));
   });
 
+  group('Sudoku V2 — Disjoint Groups variant (round 76)', () {
+    test('generator round-trip: 9×9 disjoint easy obeys the overlay', () async {
+      final puzzle = await SudokuGenerator.generate(
+        layout: SudokuLayout.standard,
+        difficulty: SudokuDifficulty.easy,
+        variant: SudokuVariant.disjoint,
+        seed: 123,
+      );
+      expect(puzzle.variant, SudokuVariant.disjoint);
+      final sol = await SudokuSolver.solve(puzzle);
+      expect(sol, isNotNull);
+      _expectValidSudoku(SudokuLayout.standard, sol!);
+      // Each in-box position forms a 9-cell group; all values
+      // within a group must be distinct.
+      const layout = SudokuLayout.standard;
+      const n = 9;
+      for (var ir = 0; ir < layout.boxRows; ir++) {
+        for (var ic = 0; ic < layout.boxCols; ic++) {
+          final group = <int>[];
+          for (var br = 0; br < n; br += layout.boxRows) {
+            for (var bc = 0; bc < n; bc += layout.boxCols) {
+              group.add(sol[(br + ir) * n + (bc + ic)]);
+            }
+          }
+          expect(group.toSet().length, group.length,
+              reason: 'disjoint group at in-box ($ir,$ic) has duplicates: '
+                  '$group');
+        }
+      }
+    }, timeout: const Timeout(Duration(seconds: 180)));
+
+    test('computeCandidates excludes values from the same disjoint group',
+        () async {
+      // 9×9 with a 5 at (0,0). Under regular rules (4,4) could still
+      // be 5 — different row, column, box. Under Disjoint Groups,
+      // (0,0) and (3,3) and (6,6) all sit at the "top-left" in-box
+      // position so they collide. Verify (3,3) loses 5 but (4,4)
+      // keeps it (different in-box position).
+      final cells = List<int>.filled(81, 0);
+      cells[0] = 5;
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: cells,
+        variant: SudokuVariant.disjoint,
+      );
+      final cands = SudokuSolver.computeCandidates(puzzle);
+      expect(cands[3 * 9 + 3], isNot(contains(5)),
+          reason: '(3,3) shares in-box position with (0,0) → 5 forbidden');
+      expect(cands[4 * 9 + 4], contains(5),
+          reason: '(4,4) is at a different in-box position → 5 still legal');
+    });
+
+    test('regression: regular variant still accepts the disjoint conflict',
+        () async {
+      // Same 5 at (0,0); under REGULAR rules, (3,3) is free to be 5.
+      final cells = List<int>.filled(81, 0);
+      cells[0] = 5;
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: cells,
+      );
+      final cands = SudokuSolver.computeCandidates(puzzle);
+      expect(cands[3 * 9 + 3], contains(5));
+    });
+  });
+
   group('Sudoku — uniqueness check', () {
     test('a generated puzzle has a unique solution', () async {
       final puzzle = await SudokuGenerator.generate(

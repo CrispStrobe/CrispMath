@@ -217,7 +217,13 @@ void main() {
       await tester.pumpAndSettle();
       // Cycle through the three variants in the SegmentedButton.
       // Tapping any of Regular / Sudoku-X / Killer used to crash.
-      for (final label in const ['Sudoku-X', 'Killer', 'Regular']) {
+      // Round 76 added Disjoint to the rotation.
+      for (final label in const [
+        'Sudoku-X',
+        'Killer',
+        'Disjoint',
+        'Regular',
+      ]) {
         await tester.tap(find.text(label));
         await tester.pumpAndSettle();
       }

@@ -290,6 +290,7 @@ void main() {
           t.sudokuVariantRegular,
           t.sudokuVariantX,
           t.sudokuVariantKiller,
+          t.sudokuVariantDisjoint,
           t.sudokuCheckUnique,
           t.sudokuUniqueSolution,
           t.sudokuMultipleSolutions,

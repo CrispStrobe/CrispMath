@@ -110,7 +110,7 @@ lib/
 test/
   sudoku_test.dart, csp_solver_test.dart, ui_flows_test.dart,
   localizations_test.dart, worked_examples_test.dart,
-  ... (~50 test files, ~1222 tests total)
+  ... (~50 test files, ~1225 tests total)
 PLAN.md                    ← Roadmap; mark items SHIPPED with round refs
 HISTORY.md                 ← Newest-first changelog (this file's source of truth)
 ```
@@ -263,10 +263,9 @@ fresh feature arcs.
 
 ### Small / medium (1 session each)
 
-1. **Disjoint Groups Sudoku variant** (~45 min) — same digits
-   forbidden across same-position cells in different boxes. Pure
-   per-variant addition to the parameterized engine; mirrors the
-   Sudoku-X pattern.
+1. ~~**Disjoint Groups Sudoku variant**~~ shipped round 76.
+   `_disjointGroups(layout)` walker + 4 locale strings + variant
+   ChoiceChip + candidate-eliminator extension.
 2. ~~**AC-3-pruned hints (advanced level)** — shipped round 73 as
    SAC-by-probing through the full dart_csp solver (Problem
    doesn't expose propagate-only). See HISTORY round 73 for the
