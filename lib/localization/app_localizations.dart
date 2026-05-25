@@ -2152,6 +2152,12 @@ class DeLocalizations implements AppLocalizations {
         return 'Killer-Sudoku (9×9)';
       case 'constraintEditor':
         return 'Freitext-Bedingungseditor';
+      case 'dslMagicSquare':
+        return '3×3 magisches Quadrat (DSL)';
+      case 'dslMapColoring':
+        return 'Landkartenfärbung K4 (DSL)';
+      case 'dslOrderedTriples':
+        return 'Geordnete Tripel mit Summe 20 (DSL)';
       case 'derivPoly':
         return 'Ableitung eines Polynoms';
       case 'chainRule':
@@ -2205,6 +2211,12 @@ class DeLocalizations implements AppLocalizations {
         return 'Öffnet das Sudoku-Modul — "9×9 Killer" aus der Rätselliste wählen.';
       case 'constraintEditor':
         return 'Öffnet das Bedingungsmodul — Variablen deklarieren, Bedingungen hinzufügen, lösen.';
+      case 'dslMagicSquare':
+        return 'Lädt das 9-Variablen-Programm für das magische Quadrat in den DSL-Editor.';
+      case 'dslMapColoring':
+        return 'Lädt eine K4-Graphfärbung mit 3 Farben — bewusst unlösbar, um den "keine Lösungen"-Pfad zu zeigen.';
+      case 'dslOrderedTriples':
+        return 'Lädt ein DSL-Programm, das (a, b, c) mit a < b < c und a + b + c = 20 aufzählt.';
       case 'derivPoly':
         return 'd/dx von x³ − 4x + 7 an beliebigem x.';
       case 'chainRule':
@@ -3276,6 +3288,12 @@ class FrLocalizations implements AppLocalizations {
         return 'Killer Sudoku (9×9)';
       case 'constraintEditor':
         return 'Éditeur de contraintes libres';
+      case 'dslMagicSquare':
+        return 'Carré magique 3×3 (DSL)';
+      case 'dslMapColoring':
+        return 'Coloration de carte K4 (DSL)';
+      case 'dslOrderedTriples':
+        return 'Triplets ordonnés sommant à 20 (DSL)';
       case 'derivPoly':
         return 'Dérivée d\'un polynôme';
       case 'chainRule':
@@ -3329,6 +3347,12 @@ class FrLocalizations implements AppLocalizations {
         return 'Ouvre le module Sudoku — choisir « 9×9 Killer » dans la liste.';
       case 'constraintEditor':
         return 'Ouvre le module Contraintes — déclarer des variables, ajouter des contraintes, résoudre.';
+      case 'dslMagicSquare':
+        return 'Charge le programme à 9 variables du carré magique dans l\'éditeur DSL.';
+      case 'dslMapColoring':
+        return 'Charge une coloration K4 à 3 couleurs — volontairement infaisable pour montrer le chemin « aucune solution ».';
+      case 'dslOrderedTriples':
+        return 'Charge un programme DSL énumérant (a, b, c) avec a < b < c et a + b + c = 20.';
       case 'derivPoly':
         return 'd/dx de x³ − 4x + 7 en tout x.';
       case 'chainRule':
@@ -4397,6 +4421,12 @@ class EsLocalizations implements AppLocalizations {
         return 'Killer Sudoku (9×9)';
       case 'constraintEditor':
         return 'Editor de restricciones libres';
+      case 'dslMagicSquare':
+        return 'Cuadrado mágico 3×3 (DSL)';
+      case 'dslMapColoring':
+        return 'Coloración de mapa K4 (DSL)';
+      case 'dslOrderedTriples':
+        return 'Tripletes ordenados que suman 20 (DSL)';
       case 'derivPoly':
         return 'Derivada de un polinomio';
       case 'chainRule':
@@ -4450,6 +4480,12 @@ class EsLocalizations implements AppLocalizations {
         return 'Abre el módulo Sudoku — elige «9×9 Killer» en la lista.';
       case 'constraintEditor':
         return 'Abre el módulo Restricciones — declara variables, agrega restricciones, resuelve.';
+      case 'dslMagicSquare':
+        return 'Carga el programa de 9 variables del cuadrado mágico en el editor DSL.';
+      case 'dslMapColoring':
+        return 'Carga una coloración K4 con 3 colores — intencionalmente infactible para mostrar la ruta «sin soluciones».';
+      case 'dslOrderedTriples':
+        return 'Carga un programa DSL que enumera (a, b, c) con a < b < c y a + b + c = 20.';
       case 'derivPoly':
         return 'd/dx de x³ − 4x + 7 en cualquier x.';
       case 'chainRule':

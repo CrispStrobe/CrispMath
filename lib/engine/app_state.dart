@@ -370,6 +370,29 @@ class AppState extends ChangeNotifier {
     return value;
   }
 
+  /// Round 73: pending "open the Constraints DSL tab and load this
+  /// example" signal. Mirrors [_pendingInsertExpression] but
+  /// targets the Constraints screen's Free-form tab. Set by the
+  /// worked-examples dialog when a `dsl:<id>` sentinel is tapped;
+  /// drained by the DSL tab's initState. The value is the gallery
+  /// id (e.g. `magicSquare3`) — the tab owns the id → program
+  /// mapping so the rest of the app doesn't need to.
+  String? _pendingDslProgramId;
+  String? get pendingDslProgramId => _pendingDslProgramId;
+
+  void requestLoadDslProgram(String id) {
+    _pendingDslProgramId = id;
+    notifyListeners();
+  }
+
+  String? consumePendingDslProgramId() {
+    final value = _pendingDslProgramId;
+    if (value != null) {
+      _pendingDslProgramId = null;
+    }
+    return value;
+  }
+
   /// Parameter values per graph slot. Keyed by slot index, then by
   /// parameter name. Used by the graphing screen's slider panel: any
   /// identifier in a function string that isn't `x` (or a reserved

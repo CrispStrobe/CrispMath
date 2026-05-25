@@ -223,6 +223,19 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
       }
       return;
     }
+    // Round 73: `dsl:<id>` opens the Constraints module AND
+    // pre-loads the program with that gallery id. The id → text
+    // mapping lives in _DslTabState; we just stash the id on
+    // AppState and let the tab drain it on init.
+    if (expression.startsWith('dsl:')) {
+      final id = expression.substring('dsl:'.length);
+      AppState().requestLoadDslProgram(id);
+      Navigator.of(context).pop();
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => const ConstraintsScreen(),
+      ));
+      return;
+    }
     AppState().requestInsertExpression(expression);
     Navigator.of(context).pop();
   }

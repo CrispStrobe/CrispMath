@@ -222,5 +222,35 @@ class WorkedExamples {
           'solve.',
       expression: 'open:constraints',
     ),
+    // Round 73: `dsl:<id>` sentinels open the Constraints module
+    // AND pre-load a specific DSL program from the gallery. The id
+    // after `dsl:` matches the gallery's id in _DslTabState, which
+    // owns the actual program text.
+    WorkedExample(
+      id: 'dslMagicSquare',
+      category: WorkedExampleCategory.constraints,
+      title: '3×3 magic square (DSL)',
+      description:
+          'Loads the 9-variable magic-square program into the DSL editor.',
+      expression: 'dsl:magicSquare3',
+    ),
+    WorkedExample(
+      id: 'dslMapColoring',
+      category: WorkedExampleCategory.constraints,
+      title: 'Map coloring K4 (DSL)',
+      description:
+          'Loads a K4 graph coloring with 3 colors — intentionally infeasible '
+          'so you can see the "no solutions" path.',
+      expression: 'dsl:mapColoring',
+    ),
+    WorkedExample(
+      id: 'dslOrderedTriples',
+      category: WorkedExampleCategory.constraints,
+      title: 'Ordered triples summing to 20 (DSL)',
+      description:
+          'Loads a DSL program enumerating (a, b, c) with a < b < c and '
+          'a + b + c = 20.',
+      expression: 'dsl:orderedTriples',
+    ),
   ];
 }

@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../engine/app_state.dart';
 import '../engine/csp_solver.dart';
 import '../localization/app_localizations.dart';
 
@@ -36,6 +37,13 @@ class _ConstraintsScreenState extends State<ConstraintsScreen>
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
+    // Round 73: if a DSL worked-example was tapped, the AppState
+    // slot will be populated. Jump directly to the Free-form tab
+    // so the user lands on the editor (the _DslTab itself drains
+    // the slot + sets the program text in its own initState).
+    if (AppState().pendingDslProgramId != null) {
+      _tabs.index = 2;
+    }
   }
 
   @override
@@ -408,6 +416,23 @@ b < c''',
   final _ctl = TextEditingController(text: _gallery.first.program);
   DiophantineResult? _result;
   bool _solving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Round 73: if the user got here via a `dsl:<id>` worked-
+    // example sentinel, AppState carries the pending gallery id.
+    // Drain it and load the matching program.
+    final pendingId = AppState().consumePendingDslProgramId();
+    if (pendingId != null) {
+      for (final entry in _gallery) {
+        if (entry.id == pendingId) {
+          _ctl.text = entry.program;
+          break;
+        }
+      }
+    }
+  }
 
   void _loadExample(String programText) {
     setState(() {

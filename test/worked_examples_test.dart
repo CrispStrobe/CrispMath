@@ -44,11 +44,13 @@ void main() {
     });
 
     test('total entries is in the curated range', () {
-      // V1 promised 12-20 entries; below 12 means we under-delivered,
-      // above 25 means the dialog needs better grouping than a flat
-      // ListView.
+      // V1 promised 12-20 entries; below 12 means we under-delivered.
+      // Cap raised to 30 in round 73 to accommodate the constraints
+      // category (Killer + DSL sentinels). If we go past 30 the
+      // dialog should grow proper category-grouping rather than the
+      // flat ListView it has today.
       expect(WorkedExamples.all.length, greaterThanOrEqualTo(12));
-      expect(WorkedExamples.all.length, lessThanOrEqualTo(25));
+      expect(WorkedExamples.all.length, lessThanOrEqualTo(30));
     });
 
     test('round 69: constraints category surfaces Killer + DSL entries', () {
@@ -68,6 +70,29 @@ void main() {
         expect(knownModules, contains(module),
             reason: '${e.id} targets unknown module "$module"');
       }
+    });
+
+    test('round 73: dsl: sentinels target known gallery ids', () {
+      // The gallery lives inside _DslTabState; we mirror its ids
+      // here so a catalog typo + a missing gallery entry fail CI
+      // rather than silently load nothing.
+      const knownDslIds = {
+        'magicSum',
+        'magicSquare3',
+        'mapColoring',
+        'orderedTriples',
+      };
+      var seen = 0;
+      for (final e in WorkedExamples.all) {
+        if (!e.expression.startsWith('dsl:')) continue;
+        seen++;
+        final id = e.expression.substring('dsl:'.length);
+        expect(knownDslIds, contains(id),
+            reason: '${e.id} targets unknown DSL gallery id "$id"');
+      }
+      expect(seen, greaterThan(0),
+          reason:
+              'expected at least one dsl:<id> sentinel — round 73 added three');
     });
   });
 }
