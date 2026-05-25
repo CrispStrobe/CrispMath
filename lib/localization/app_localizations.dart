@@ -279,6 +279,10 @@ abstract class AppLocalizations {
   String get moduleSudokuSubtitle;
   String get sudokuSolveButton;
   String get sudokuClearCell;
+  // Round 87: Sudoku UI overhaul (clear-to-start + win chip).
+  String get sudokuClearToStart;
+  String get sudokuSolvedCorrectly;
+  String get sudokuFilledWithErrors;
   String get sudokuPresetLabelChooser;
   String get sudokuPresetCustom;
   String sudokuPresetLabel(String id);
@@ -970,6 +974,12 @@ class EnLocalizations implements AppLocalizations {
   String get sudokuSolveButton => 'Solve';
   @override
   String get sudokuClearCell => 'Clear';
+  @override
+  String get sudokuClearToStart => 'Reset puzzle';
+  @override
+  String get sudokuSolvedCorrectly => 'Solved!';
+  @override
+  String get sudokuFilledWithErrors => 'Has errors';
   @override
   String get sudokuPresetLabelChooser => 'Puzzle';
   @override
@@ -2036,6 +2046,12 @@ class DeLocalizations implements AppLocalizations {
   String get sudokuSolveButton => 'Lösen';
   @override
   String get sudokuClearCell => 'Leeren';
+  @override
+  String get sudokuClearToStart => 'Rätsel zurücksetzen';
+  @override
+  String get sudokuSolvedCorrectly => 'Gelöst!';
+  @override
+  String get sudokuFilledWithErrors => 'Mit Fehlern';
   @override
   String get sudokuPresetLabelChooser => 'Rätsel';
   @override
@@ -3243,6 +3259,12 @@ class FrLocalizations implements AppLocalizations {
   String get sudokuSolveButton => 'Résoudre';
   @override
   String get sudokuClearCell => 'Effacer';
+  @override
+  String get sudokuClearToStart => 'Réinitialiser';
+  @override
+  String get sudokuSolvedCorrectly => 'Résolu !';
+  @override
+  String get sudokuFilledWithErrors => 'Avec des erreurs';
   @override
   String get sudokuPresetLabelChooser => 'Grille';
   @override
@@ -4452,6 +4474,12 @@ class EsLocalizations implements AppLocalizations {
   String get sudokuSolveButton => 'Resolver';
   @override
   String get sudokuClearCell => 'Borrar';
+  @override
+  String get sudokuClearToStart => 'Reiniciar';
+  @override
+  String get sudokuSolvedCorrectly => '¡Resuelto!';
+  @override
+  String get sudokuFilledWithErrors => 'Con errores';
   @override
   String get sudokuPresetLabelChooser => 'Cuadrícula';
   @override

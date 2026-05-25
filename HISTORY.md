@@ -2,6 +2,77 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 87) — Sudoku UI overhaul (8 fixes)
+
+Eight specific UX gaps the user surfaced after living with the
+Sudoku module for a while. All in CrispCalc only — single-repo
+round, but on its own feature-branch worktree
+(`../CrispCalc-sudoku-ui/`).
+
+### Bug fixes
+
+1. **`_setDigit` re-captured `_clueIndexes` on every edit.** Once
+   a user entered a digit, the cell became a "clue" and couldn't
+   be overwritten. Fix: only capture clues on
+   `_loadPreset` / `_generate` / `_switchLayoutOrVariant`; user
+   entries stay editable.
+2. **Layout-switch (e.g. picking 4×4 from the size chips) wiped
+   to empty AND left the preset dropdown blank.** Fix:
+   `_switchLayoutOrVariant` now searches `SudokuPresets.all` for
+   a preset matching the new `(layout, variant)` and loads it.
+   Falls through to an empty grid only when no preset exists for
+   the combination.
+3. **`Lösen` set up the visualizer but stopped at frame 0** — the
+   user had to know to press Play. Now `_solve` auto-starts the
+   ticker so the step-by-step fill plays immediately on click.
+4. **Visualizer's bottom Row (restart + play + 3-segment speed
+   button) overflowed by ~135 px in the 360 px right panel.**
+   Now a `Wrap`.
+
+### New features
+
+5. **Clear-to-start button.** New `_baseCells` snapshot at load;
+   `_clearToStart()` restores `_displayed` to it. Wired in a
+   `Wrap` below the digit pad alongside the win chip.
+6. **Win-check chip.** New `_solution` lazy-cached on first
+   completed grid. `_maybeCheckWin()` fires after every
+   `_setDigit`; chip lights up "Solved!" (green) on match or
+   "Has errors" (red) when filled but mismatched. Skips during
+   visualizer playback.
+7. **Cell-keyboard input.** New `FocusNode` + `KeyEvent` handler
+   on the screen. Digit keys (1..9 + numpad) fill the selected
+   cell; 0 / Backspace / Delete clear; arrow keys move the
+   selection. 10..16 stay on drag-and-drop only (ambiguous on
+   regular keyboards).
+8. **Drag-and-drop digit entry.** Each digit (and the Clear
+   button) is now a `Draggable<int>`; each cell is a
+   `DragTarget<int>` with a green tint on valid hover and a red
+   tint on clue cells. Tapping still works alongside.
+
+### Localization
+
+Three new strings × 4 locales = 12 entries: `sudokuClearToStart`,
+`sudokuSolvedCorrectly`, `sudokuFilledWithErrors`. EN/DE/FR/ES.
+
+### Tests
+
+One new widget test verifies the round-87 preset-auto-load after
+a 4×4 size-chip tap. A second visualizer-Wrap test was attempted
+but flakes — auto-play ticker keeps `pumpAndSettle` busy; the
+existing round-70 variant-switcher cycle test already covers the
+right-panel layout at 360 px so the overflow regression check
+ships there.
+
+`flutter analyze` clean; `dart format` applied; suite still
+passes (1437 tests in this worktree — parallel notepad work
+bumped the absolute baseline).
+
+### Worktree
+
+Implemented in a fresh `feat/sudoku-ui-overhaul` worktree at
+`../CrispCalc-sudoku-ui/`, per the multi-repo-arc worktree
+convention.
+
 ## 2026-05-25 (round 86) — Precision arc round 2 — `e(N)` + `EulerGamma(N)` + `sqrt(2,N)`
 
 Three more MPFR constants on top of round 85's `pi(N)`. Same

@@ -27,6 +27,12 @@ class SudokuGrid extends StatelessWidget {
   final int? highlightIndex;
   final ValueChanged<int>? onTapCell;
 
+  /// Round 87: drag-and-drop digit entry. Fires `(cellIndex,
+  /// digit)` when the user drops a [Draggable<int>] on a cell.
+  /// Digit 0 means "clear the cell"; 1..side fills it. Null = no
+  /// drop handler (e.g. during visualizer playback).
+  final void Function(int cellIndex, int? digit)? onDropDigit;
+
   /// V3: optional per-cell candidate sets. When non-null, each
   /// empty cell renders a sub-grid of candidate digits (pencil
   /// marks) in light/dim color. List length must equal `side²`;
@@ -47,6 +53,7 @@ class SudokuGrid extends StatelessWidget {
     this.selectedIndex,
     this.highlightIndex,
     this.onTapCell,
+    this.onDropDigit,
     this.candidates,
     this.cages,
   });
@@ -100,6 +107,15 @@ class SudokuGrid extends StatelessWidget {
                               onTap: onTapCell == null
                                   ? null
                                   : () => onTapCell!(r * layout.side + c),
+                              // Round 87: drag-and-drop digit entry.
+                              // 0 = clear; 1..side = fill. Non-clue
+                              // cells only.
+                              onAcceptDigit: onDropDigit == null
+                                  ? null
+                                  : (digit) => onDropDigit!(
+                                        r * layout.side + c,
+                                        digit == 0 ? null : digit,
+                                      ),
                             ),
                           ),
                       ],
@@ -148,6 +164,7 @@ class _Cell extends StatelessWidget {
   final double cellSize;
   final Set<int>? candidates;
   final VoidCallback? onTap;
+  final ValueChanged<int>? onAcceptDigit;
 
   const _Cell({
     required this.row,
@@ -160,6 +177,7 @@ class _Cell extends StatelessWidget {
     required this.cellSize,
     required this.candidates,
     required this.onTap,
+    required this.onAcceptDigit,
   });
 
   @override
@@ -172,49 +190,66 @@ class _Cell extends StatelessWidget {
     final isBoxBoundaryBottom =
         (row + 1) % layout.boxRows == 0 && row + 1 != layout.side;
 
-    Color? bg;
-    if (isHighlighted) {
-      bg = scheme.primary.withValues(alpha: 0.30);
-    } else if (isSelected) {
-      bg = scheme.primary.withValues(alpha: 0.15);
-    }
-
-    return Material(
-      color: bg ?? scheme.surface,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              right: BorderSide(
-                color: scheme.onSurface.withValues(alpha: 0.6),
-                width: isBoxBoundaryRight ? 2 : 0.5,
+    // Round 87: when a drag is hovering this cell, tint the bg
+    // green to signal a valid drop. Clue cells (read-only) get
+    // a red tint instead.
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) {
+        if (isClue || onAcceptDigit == null) return false;
+        return details.data >= 0 && details.data <= layout.side;
+      },
+      onAcceptWithDetails: (details) {
+        if (onAcceptDigit != null) onAcceptDigit!(details.data);
+      },
+      builder: (context, candidateData, rejectedData) {
+        Color? bg;
+        if (candidateData.isNotEmpty) {
+          bg = isClue
+              ? scheme.error.withValues(alpha: 0.25)
+              : scheme.tertiary.withValues(alpha: 0.30);
+        } else if (isHighlighted) {
+          bg = scheme.primary.withValues(alpha: 0.30);
+        } else if (isSelected) {
+          bg = scheme.primary.withValues(alpha: 0.15);
+        }
+        return Material(
+          color: bg ?? scheme.surface,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  right: BorderSide(
+                    color: scheme.onSurface.withValues(alpha: 0.6),
+                    width: isBoxBoundaryRight ? 2 : 0.5,
+                  ),
+                  bottom: BorderSide(
+                    color: scheme.onSurface.withValues(alpha: 0.6),
+                    width: isBoxBoundaryBottom ? 2 : 0.5,
+                  ),
+                ),
               ),
-              bottom: BorderSide(
-                color: scheme.onSurface.withValues(alpha: 0.6),
-                width: isBoxBoundaryBottom ? 2 : 0.5,
-              ),
+              alignment: Alignment.center,
+              child: value != 0
+                  ? Text(
+                      '$value',
+                      style: TextStyle(
+                        fontSize: cellSize * 0.55,
+                        fontWeight: isClue ? FontWeight.w700 : FontWeight.w400,
+                        color: isClue ? scheme.onSurface : scheme.primary,
+                      ),
+                    )
+                  : (candidates != null && candidates!.isNotEmpty
+                      ? _PencilMarks(
+                          layout: layout,
+                          candidates: candidates!,
+                          cellSize: cellSize,
+                        )
+                      : const SizedBox.shrink()),
             ),
           ),
-          alignment: Alignment.center,
-          child: value != 0
-              ? Text(
-                  '$value',
-                  style: TextStyle(
-                    fontSize: cellSize * 0.55,
-                    fontWeight: isClue ? FontWeight.w700 : FontWeight.w400,
-                    color: isClue ? scheme.onSurface : scheme.primary,
-                  ),
-                )
-              : (candidates != null && candidates!.isNotEmpty
-                  ? _PencilMarks(
-                      layout: layout,
-                      candidates: candidates!,
-                      cellSize: cellSize,
-                    )
-                  : const SizedBox.shrink()),
-        ),
-      ),
+        );
+      },
     );
   }
 }

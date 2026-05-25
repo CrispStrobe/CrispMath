@@ -150,6 +150,11 @@ project depends on it via a git ref pin in `pubspec.yaml`.
 - **Round 86** — Precision arc round 2: `e(N)`, `EulerGamma(N)`,
   `sqrt(2,N)` via the same pipeline. Boilerplate factored into
   a wrapper-side macro + bridge-side `_callPrecisionFn` helper.
+- **Round 87** — Sudoku UI overhaul: clue-overwrite bug fix,
+  layout-switch auto-loads matching preset, solve auto-plays
+  the visualizer, visualizer-overflow → `Wrap`, drag-and-drop
+  digits, cell-keyboard input + arrow nav, clear-to-start
+  button, win-check chip.
 
 ## 4. Land mines we have already hit
 

@@ -18,6 +18,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../engine/sudoku.dart';
 import '../localization/app_localizations.dart';
@@ -33,11 +34,31 @@ class SudokuScreen extends StatefulWidget {
 class _SudokuScreenState extends State<SudokuScreen> {
   SudokuPuzzle _puzzle = SudokuPresets.standard9x9Easy;
   // Clues are captured at puzzle load so the visualizer can tell
-  // user/preset values apart from solver-filled ones.
+  // user/preset values apart from solver-filled ones. Round 87:
+  // NEVER re-captured on user edit — before round 87, every user
+  // entry was being added to _clueIndexes so the user couldn't
+  // overwrite their own digits.
   late Set<int> _clueIndexes = _captureClueIndexes(_puzzle);
+  // Round 87: cells of the puzzle as last loaded (preset /
+  // generated / layout-switched). Used by "clear to start" and by
+  // the win-check (which compares _displayed to the unique
+  // solution of _baseCells, not the live-edited _puzzle.cells).
+  late List<int> _baseCells = List<int>.from(_puzzle.cells);
   // Live editable cells. Mutated by tap-to-enter and by the
   // visualizer when replaying frames.
   late List<int> _displayed = List<int>.from(_puzzle.cells);
+
+  /// Round 87: the unique solution to the puzzle as last loaded
+  /// (i.e. to [_baseCells]). Used by the win-check chip. Null on
+  /// load; populated lazily when the user first completes the grid.
+  /// Invalidated to null on every preset / generate / layout switch.
+  List<int>? _solution;
+  bool _computingSolution = false;
+
+  /// Round 87: focus node for cell-keyboard input. When a cell is
+  /// selected, pressing a digit key fills it; Backspace / Delete /
+  /// 0 clears it; arrow keys move the selection.
+  final FocusNode _keyboardFocus = FocusNode();
 
   int? _selected;
   SudokuTrace? _trace;
@@ -70,31 +91,35 @@ class _SudokuScreenState extends State<SudokuScreen> {
   bool _checkingUnique = false;
 
   /// V2: when the user picks a different size or variant via the
-  /// top selectors (not via a preset), we wipe the grid to empty
-  /// so the user can fill in fresh clues OR hit Generate / pick a
-  /// matching preset. Doing this also resets the trace.
+  /// top selectors (not via a preset), we wipe the grid. Round 87:
+  /// instead of falling to an empty grid, look for a preset
+  /// matching the new (layout, variant) first — so the "Rätsel"
+  /// dropdown stays in sync. Only when no preset exists for the
+  /// combination do we fall through to an empty grid (which lets
+  /// the user compose their own).
   ///
   /// V3-Killer: an empty Killer puzzle is invalid (the cages
-  /// list is required). When switching INTO Killer mode, auto-
-  /// load the matching Killer preset; when switching OUT of
-  /// Killer mode, drop the cages.
+  /// list is required), so Killer mode always loads a preset.
   void _switchLayoutOrVariant(
       SudokuLayout? newLayout, SudokuVariant? newVariant) {
     _stopVisualizer();
     final layout = newLayout ?? _puzzle.layout;
     final variant = newVariant ?? _puzzle.variant;
+    // Round 87: try to find a preset that matches the new (layout,
+    // variant) exactly. If found, load it — keeps the preset
+    // dropdown showing the active entry. Falls through to an empty
+    // grid only when no preset matches the combination.
+    final match = SudokuPresets.all.where((p) =>
+        p.puzzle.layout.side == layout.side && p.puzzle.variant == variant);
+    if (match.isNotEmpty) {
+      _loadPreset(match.first.puzzle);
+      return;
+    }
     if (variant == SudokuVariant.killer) {
-      // Killer can't be empty — pick a preset whose layout matches
-      // (or fall back to any Killer preset we ship).
-      final match = SudokuPresets.all.firstWhere(
-        (p) =>
-            p.puzzle.variant == SudokuVariant.killer &&
-            p.puzzle.layout.side == layout.side,
-        orElse: () => SudokuPresets.all.firstWhere(
-          (p) => p.puzzle.variant == SudokuVariant.killer,
-        ),
-      );
-      _loadPreset(match.puzzle);
+      // Killer can't be empty — fall back to any Killer preset.
+      final any = SudokuPresets.all
+          .firstWhere((p) => p.puzzle.variant == SudokuVariant.killer);
+      _loadPreset(any.puzzle);
       return;
     }
     final empty = SudokuPuzzle(
@@ -104,12 +129,14 @@ class _SudokuScreenState extends State<SudokuScreen> {
     );
     setState(() {
       _puzzle = empty;
+      _baseCells = List<int>.from(empty.cells);
       _clueIndexes = {};
       _displayed = List<int>.from(empty.cells);
       _selected = null;
       _trace = null;
       _frameIndex = 0;
       _unique = null;
+      _solution = null;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
@@ -118,6 +145,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _keyboardFocus.dispose();
     super.dispose();
   }
 
@@ -130,12 +158,14 @@ class _SudokuScreenState extends State<SudokuScreen> {
     _stopVisualizer();
     setState(() {
       _puzzle = p;
+      _baseCells = List<int>.from(p.cells);
       _clueIndexes = _captureClueIndexes(p);
       _displayed = List<int>.from(p.cells);
       _selected = null;
       _trace = null;
       _frameIndex = 0;
       _unique = null;
+      _solution = null;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
@@ -143,22 +173,59 @@ class _SudokuScreenState extends State<SudokuScreen> {
 
   void _onTapCell(int idx) {
     setState(() => _selected = idx);
+    // Round 87: keep keyboard focus on the screen so digit keys
+    // route to _setDigit rather than getting lost.
+    _keyboardFocus.requestFocus();
   }
 
+  /// Round 87: write digit [d] (or clear, when null/0) into the
+  /// currently selected cell. Originally re-captured _clueIndexes
+  /// on every edit so user entries became un-editable clues — the
+  /// re-capture is now removed. _clueIndexes only changes via
+  /// _loadPreset / _generate / _switchLayoutOrVariant.
   void _setDigit(int? d) {
     final sel = _selected;
     if (sel == null) return;
-    if (_clueIndexes.contains(sel)) return; // preset — don't allow overwrite
+    if (_clueIndexes.contains(sel)) return; // preset clue — read-only
     setState(() {
       _displayed[sel] = d ?? 0;
       _puzzle = _puzzle.withCell(
           sel ~/ _puzzle.layout.side, sel % _puzzle.layout.side, d ?? 0);
-      // Re-capture clue indexes if the user is composing their own
-      // puzzle — anything non-zero becomes a clue.
-      _clueIndexes = _captureClueIndexes(_puzzle);
       _trace = null;
       _frameIndex = 0;
       _unique = null;
+      _advancedCandidates = null;
+    });
+    _maybeRecomputeAdvanced();
+    _maybeCheckWin();
+  }
+
+  /// Round 87: invoked by [DragTarget<int>] on a cell when the user
+  /// drops a digit from the [_DigitPad]. The selection moves to
+  /// the drop target so subsequent keyboard input lands on the
+  /// same cell.
+  void _onDropDigitOnCell(int idx, int? digit) {
+    if (_clueIndexes.contains(idx)) return;
+    setState(() => _selected = idx);
+    _setDigit(digit);
+  }
+
+  /// Round 87: clear the user's edits and restore the puzzle to
+  /// the cells it had at load time. Clues remain (they're part of
+  /// _baseCells); only user-entered digits are wiped.
+  void _clearToStart() {
+    _stopVisualizer();
+    setState(() {
+      _displayed = List<int>.from(_baseCells);
+      _puzzle = SudokuPuzzle(
+        layout: _puzzle.layout,
+        cells: List<int>.from(_baseCells),
+        variant: _puzzle.variant,
+        cages: _puzzle.cages,
+      );
+      _trace = null;
+      _frameIndex = 0;
+      _selected = null;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
@@ -178,17 +245,23 @@ class _SudokuScreenState extends State<SudokuScreen> {
     setState(() {
       _generating = false;
       _puzzle = puzzle;
+      _baseCells = List<int>.from(puzzle.cells);
       _clueIndexes = _captureClueIndexes(puzzle);
       _displayed = List<int>.from(puzzle.cells);
       _selected = null;
       _trace = null;
       _frameIndex = 0;
       _unique = null;
+      _solution = null;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
   }
 
+  /// Round 87: kicks off step-by-step solver visualization. Before
+  /// this round, _solve set the trace and stopped at frame 0 — the
+  /// user had to know to press play. Now we auto-start the ticker
+  /// so "Lösen" produces visible motion immediately.
   Future<void> _solve() async {
     _stopVisualizer();
     setState(() => _solving = true);
@@ -202,6 +275,60 @@ class _SudokuScreenState extends State<SudokuScreen> {
         _displayed = List<int>.from(trace.frames.first.assigned);
       }
     });
+    // Round 87: auto-play so the user sees the solver fill the
+    // grid step-by-step. Skip auto-play when the solve failed
+    // (no frames / error) so we don't spin an empty ticker.
+    if (trace.solved && trace.frames.length > 1) {
+      _playPause();
+    }
+  }
+
+  /// Round 87: win-check chip. Lazy-solves [_baseCells] on the
+  /// first call and caches the result in [_solution]; subsequent
+  /// calls are O(N) comparison only. Triggered after every
+  /// [_setDigit] so the chip lights up the instant the user
+  /// completes the grid.
+  ///
+  /// Returns silently when the trace is active (visualizer
+  /// playback) or when the grid still has empty cells.
+  Future<void> _maybeCheckWin() async {
+    if (_trace != null) return;
+    if (_displayed.any((v) => v == 0)) return;
+    if (_solution == null) {
+      if (_computingSolution) return;
+      setState(() => _computingSolution = true);
+      final base = SudokuPuzzle(
+        layout: _puzzle.layout,
+        cells: List<int>.from(_baseCells),
+        variant: _puzzle.variant,
+        cages: _puzzle.cages,
+      );
+      final solved = await SudokuSolver.solve(base);
+      if (!mounted) return;
+      setState(() {
+        _computingSolution = false;
+        _solution = solved;
+      });
+    }
+    // After lazy solve, re-check the displayed grid (it may have
+    // been edited during the await).
+    if (_displayed.any((v) => v == 0)) return;
+    setState(() {}); // rebuild to surface the chip
+  }
+
+  /// Round 87: true when the displayed grid is fully filled AND
+  /// matches the cached solution. False when fully filled but
+  /// wrong; null when not yet evaluable (empty cells, no solution
+  /// cached, or trace active).
+  bool? get _winStatus {
+    if (_trace != null) return null;
+    if (_displayed.any((v) => v == 0)) return null;
+    final sol = _solution;
+    if (sol == null) return null;
+    for (var i = 0; i < _displayed.length; i++) {
+      if (_displayed[i] != sol[i]) return false;
+    }
+    return true;
   }
 
   Future<void> _checkUnique() async {
@@ -314,6 +441,70 @@ class _SudokuScreenState extends State<SudokuScreen> {
     }
   }
 
+  /// Round 87: keyboard handler. Digit keys (1..9, plus 0 = clear)
+  /// fill the selected cell. Backspace / Delete also clear. Arrow
+  /// keys move the selection. Returns "handled" so the event
+  /// doesn't bubble to other listeners (e.g. the AppBar).
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    final side = _puzzle.layout.side;
+
+    // Digit input: '1'..'9' + numpad. For 16×16 the user reaches
+    // 10..16 via drag-and-drop from the digit pad (single-key
+    // 10..16 is ambiguous on a regular keyboard).
+    const digitKeys = <(int, LogicalKeyboardKey, LogicalKeyboardKey)>[
+      (1, LogicalKeyboardKey.digit1, LogicalKeyboardKey.numpad1),
+      (2, LogicalKeyboardKey.digit2, LogicalKeyboardKey.numpad2),
+      (3, LogicalKeyboardKey.digit3, LogicalKeyboardKey.numpad3),
+      (4, LogicalKeyboardKey.digit4, LogicalKeyboardKey.numpad4),
+      (5, LogicalKeyboardKey.digit5, LogicalKeyboardKey.numpad5),
+      (6, LogicalKeyboardKey.digit6, LogicalKeyboardKey.numpad6),
+      (7, LogicalKeyboardKey.digit7, LogicalKeyboardKey.numpad7),
+      (8, LogicalKeyboardKey.digit8, LogicalKeyboardKey.numpad8),
+      (9, LogicalKeyboardKey.digit9, LogicalKeyboardKey.numpad9),
+    ];
+    for (final entry in digitKeys) {
+      final (digit, top, numpad) = entry;
+      if (digit > side) break;
+      if (key == top || key == numpad) {
+        _setDigit(digit);
+        return KeyEventResult.handled;
+      }
+    }
+    if (key == LogicalKeyboardKey.digit0 ||
+        key == LogicalKeyboardKey.numpad0 ||
+        key == LogicalKeyboardKey.backspace ||
+        key == LogicalKeyboardKey.delete) {
+      _setDigit(null);
+      return KeyEventResult.handled;
+    }
+    // Arrow keys move the selection by one cell.
+    final sel = _selected;
+    if (sel != null) {
+      var r = sel ~/ side, c = sel % side;
+      if (key == LogicalKeyboardKey.arrowLeft && c > 0) {
+        setState(() => _selected = r * side + (c - 1));
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowRight && c < side - 1) {
+        setState(() => _selected = r * side + (c + 1));
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowUp && r > 0) {
+        setState(() => _selected = (r - 1) * side + c);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowDown && r < side - 1) {
+        setState(() => _selected = (r + 1) * side + c);
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
@@ -361,6 +552,10 @@ class _SudokuScreenState extends State<SudokuScreen> {
         candidates: candidates,
         cages: _puzzle.cages,
         onTapCell: _onTapCell,
+        // Round 87: drag-and-drop digit entry from the digit pad.
+        // Non-null digit fills the cell; null clears it. Wired only
+        // when the visualizer isn't active.
+        onDropDigit: _trace == null ? _onDropDigitOnCell : null,
       ),
     );
 
@@ -399,6 +594,46 @@ class _SudokuScreenState extends State<SudokuScreen> {
           _DigitPad(
             side: layout.side,
             onPress: _setDigit,
+          ),
+          const SizedBox(height: 8),
+          // Round 87: clear-to-start + win-check chip.
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _trace == null ? _clearToStart : null,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: Text(t.sudokuClearToStart),
+              ),
+              if (_computingSolution)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              if (_winStatus != null)
+                Chip(
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: _winStatus!
+                      ? Theme.of(context).colorScheme.secondaryContainer
+                      : Theme.of(context).colorScheme.errorContainer,
+                  label: Text(
+                    _winStatus!
+                        ? t.sudokuSolvedCorrectly
+                        : t.sudokuFilledWithErrors,
+                    style: TextStyle(
+                      color: _winStatus!
+                          ? Theme.of(context).colorScheme.onSecondaryContainer
+                          : Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 8),
           _HintLevelPicker(
@@ -486,21 +721,30 @@ class _SudokuScreenState extends State<SudokuScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(t.moduleSudokuTitle)),
-      body: isWide
-          ? Row(
-              children: [
-                Expanded(child: gridBlock),
-                SizedBox(
-                  width: 360,
-                  // Round 70: the right panel got taller after the
-                  // uniqueness chip + variant picker landed. Wrap in
-                  // a scroll view so short windows don't overflow
-                  // the column at the bottom.
-                  child: SingleChildScrollView(child: controlsBlock),
-                ),
-              ],
-            )
-          : ListView(children: [gridBlock, controlsBlock]),
+      // Round 87: Focus + onKeyEvent wrap so digit / arrow / delete
+      // keys land on _handleKey when the user has selected a cell.
+      // autofocus true so the user can start typing without an
+      // initial tap on the screen background.
+      body: Focus(
+        focusNode: _keyboardFocus,
+        autofocus: true,
+        onKeyEvent: _handleKey,
+        child: isWide
+            ? Row(
+                children: [
+                  Expanded(child: gridBlock),
+                  SizedBox(
+                    width: 360,
+                    // Round 70: the right panel got taller after the
+                    // uniqueness chip + variant picker landed. Wrap in
+                    // a scroll view so short windows don't overflow
+                    // the column at the bottom.
+                    child: SingleChildScrollView(child: controlsBlock),
+                  ),
+                ],
+              )
+            : ListView(children: [gridBlock, controlsBlock]),
+      ),
     );
   }
 
@@ -614,11 +858,34 @@ class _PresetPicker extends StatelessWidget {
   }
 }
 
+/// Round 87: each digit button is also a [Draggable<int>] so the
+/// user can drag a digit onto a grid cell instead of select-then-tap.
+/// Tapping still works for non-drag users. The clear button drags
+/// a null (sentinel via [Draggable<int>] with data = 0; receiver
+/// treats 0 as "clear").
 class _DigitPad extends StatelessWidget {
   final int side;
   final ValueChanged<int?> onPress;
 
   const _DigitPad({required this.side, required this.onPress});
+
+  Widget _digitFeedback(BuildContext context, String label) {
+    return Material(
+      elevation: 4,
+      borderRadius: BorderRadius.circular(6),
+      color: Theme.of(context).colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -628,28 +895,50 @@ class _DigitPad extends StatelessWidget {
       runSpacing: 6,
       children: [
         for (var d = 1; d <= side; d++)
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.zero,
-              ),
-              onPressed: () => onPress(d),
-              child: Text('$d'),
+          Draggable<int>(
+            data: d,
+            feedback: _digitFeedback(context, '$d'),
+            childWhenDragging: Opacity(
+              opacity: 0.4,
+              child: _digitButton(context, '$d', () => onPress(d)),
             ),
+            child: _digitButton(context, '$d', () => onPress(d)),
           ),
-        SizedBox(
-          height: 40,
-          child: OutlinedButton.icon(
-            onPressed: () => onPress(null),
-            icon: const Icon(Icons.clear, size: 16),
-            label: Text(t.sudokuClearCell),
+        // Clear button — also draggable. Data 0 = "clear this cell".
+        Draggable<int>(
+          data: 0,
+          feedback: _digitFeedback(context, t.sudokuClearCell),
+          childWhenDragging: Opacity(
+            opacity: 0.4,
+            child: _clearButton(context, t, () => onPress(null)),
           ),
+          child: _clearButton(context, t, () => onPress(null)),
         ),
       ],
     );
   }
+
+  Widget _digitButton(BuildContext context, String label, VoidCallback onTap) =>
+      SizedBox(
+        width: 40,
+        height: 40,
+        child: OutlinedButton(
+          style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
+          onPressed: onTap,
+          child: Text(label),
+        ),
+      );
+
+  Widget _clearButton(
+          BuildContext context, AppLocalizations t, VoidCallback onTap) =>
+      SizedBox(
+        height: 40,
+        child: OutlinedButton.icon(
+          onPressed: onTap,
+          icon: const Icon(Icons.clear, size: 16),
+          label: Text(t.sudokuClearCell),
+        ),
+      );
 }
 
 class _VisualizerControls extends StatelessWidget {
@@ -717,7 +1006,15 @@ class _VisualizerControls extends StatelessWidget {
             value: current.toDouble().clamp(0, (total - 1).toDouble()),
             onChanged: (v) => onScrub(v.round()),
           ),
-          Row(
+          // Round 87: switched from Row to Wrap. Previous Row
+          // overflowed by ~135 px in the 360 px right panel
+          // (restart icon + play icon + 12 px gap + 3-segment
+          // speed button = ~440 px). Wrap lets the speed segments
+          // flow to a second line on narrow panels.
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               IconButton(
                 tooltip: labels.sudokuRestart,
@@ -729,7 +1026,6 @@ class _VisualizerControls extends StatelessWidget {
                 icon: Icon(playing ? Icons.pause : Icons.play_arrow),
                 onPressed: onPlayPause,
               ),
-              const SizedBox(width: 12),
               SegmentedButton<_Speed>(
                 segments: [
                   ButtonSegment(
