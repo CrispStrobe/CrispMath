@@ -1472,7 +1472,20 @@ Copy / Reuse"), but neither lets the user **capture** what
 they just computed into a named slot. Promote the right-click
 menu so common follow-ups are one tap away.
 
-##### Round 91 — Right-click "store as variable / function"
+##### Round 91 — Right-click "store as variable / function" — **SHIPPED**
+
+Done 2026-05-25 — see HISTORY round 91. Calculator history
+rows + Notepad result cells now expose Store-as-variable +
+Store-as-function via the shared `StoreResultDialogs`. The
+function item is gated on
+`ExpressionPreprocessingUtils.extractFreeVariables(expr)`
+being non-empty; assignment-line notepad sources are unwrapped
+by `classifyNotepadLine` so the body is the RHS only. Variable
+Viewer "promote to function" deferred to a follow-up — the
+current dialog handles the calc + notepad surfaces cleanly,
+and the viewer addition is an isolated +1.
+
+Original spec follows for reference:
 
 Add two new items to both the Calculator history-row menu
 (`_showHistoryEntryMenu`) and the Notepad line menu (which

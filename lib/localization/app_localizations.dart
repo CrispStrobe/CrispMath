@@ -306,6 +306,18 @@ abstract class AppLocalizations {
   String get historyEntryReuse;
   String get historyEntryCopied;
 
+  // Round 91: Store result as variable / function (right-click /
+  // long-press on a Calculator history row or a Notepad result).
+  String get storeAsVariable;
+  String get storeAsFunction;
+  String get storeVariableTitle;
+  String get storeFunctionTitle;
+  String get storeNameLabel;
+  String get storeFunctionParamLabel;
+  String get storeButton;
+  String get storeNameReserved;
+  String storeSavedAs(String name);
+
   // -- Settings tile labels for the new entries --
   String get settingsExportData;
   String get settingsExportDataSubtitle;
@@ -858,8 +870,7 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get settingsNumberFormatAuto => 'Auto (129, 129.5)';
   @override
-  String settingsNumberFormatDecimalPlaces(int n) =>
-      'Decimal places: $n';
+  String settingsNumberFormatDecimalPlaces(int n) => 'Decimal places: $n';
   @override
   String get settingsAutoBindSolve => 'Auto-bind solve results';
   @override
@@ -1085,6 +1096,26 @@ class EnLocalizations implements AppLocalizations {
   String get historyEntryReuse => 'Reuse expression';
   @override
   String get historyEntryCopied => 'Copied';
+
+  // -- Round 91: Store result as variable / function --
+  @override
+  String get storeAsVariable => 'Store result as variable';
+  @override
+  String get storeAsFunction => 'Store as function';
+  @override
+  String get storeVariableTitle => 'Save as variable';
+  @override
+  String get storeFunctionTitle => 'Save as function';
+  @override
+  String get storeNameLabel => 'Name';
+  @override
+  String get storeFunctionParamLabel => 'Parameter';
+  @override
+  String get storeButton => 'Save';
+  @override
+  String get storeNameReserved => 'Reserved by a built-in';
+  @override
+  String storeSavedAs(String name) => 'Saved as $name';
 
   @override
   String get settingsExportData => 'Export data';
@@ -2256,6 +2287,26 @@ class DeLocalizations implements AppLocalizations {
   String get historyEntryReuse => 'Ausdruck wiederverwenden';
   @override
   String get historyEntryCopied => 'Kopiert';
+
+  // -- Round 91 --
+  @override
+  String get storeAsVariable => 'Ergebnis als Variable speichern';
+  @override
+  String get storeAsFunction => 'Als Funktion speichern';
+  @override
+  String get storeVariableTitle => 'Als Variable speichern';
+  @override
+  String get storeFunctionTitle => 'Als Funktion speichern';
+  @override
+  String get storeNameLabel => 'Name';
+  @override
+  String get storeFunctionParamLabel => 'Parameter';
+  @override
+  String get storeButton => 'Speichern';
+  @override
+  String get storeNameReserved => 'Name ist von einer Funktion belegt';
+  @override
+  String storeSavedAs(String name) => 'Als $name gespeichert';
 
   @override
   String get settingsExportData => 'Daten exportieren';
@@ -3568,6 +3619,26 @@ class FrLocalizations implements AppLocalizations {
   String get historyEntryReuse => 'Réutiliser l\'expression';
   @override
   String get historyEntryCopied => 'Copié';
+
+  // -- Round 91 --
+  @override
+  String get storeAsVariable => 'Enregistrer comme variable';
+  @override
+  String get storeAsFunction => 'Enregistrer comme fonction';
+  @override
+  String get storeVariableTitle => 'Enregistrer comme variable';
+  @override
+  String get storeFunctionTitle => 'Enregistrer comme fonction';
+  @override
+  String get storeNameLabel => 'Nom';
+  @override
+  String get storeFunctionParamLabel => 'Paramètre';
+  @override
+  String get storeButton => 'Enregistrer';
+  @override
+  String get storeNameReserved => 'Nom réservé par une fonction intégrée';
+  @override
+  String storeSavedAs(String name) => 'Enregistré comme $name';
 
   @override
   String get settingsExportData => 'Exporter les données';
@@ -4882,6 +4953,26 @@ class EsLocalizations implements AppLocalizations {
   String get historyEntryReuse => 'Reutilizar expresión';
   @override
   String get historyEntryCopied => 'Copiado';
+
+  // -- Round 91 --
+  @override
+  String get storeAsVariable => 'Guardar como variable';
+  @override
+  String get storeAsFunction => 'Guardar como función';
+  @override
+  String get storeVariableTitle => 'Guardar como variable';
+  @override
+  String get storeFunctionTitle => 'Guardar como función';
+  @override
+  String get storeNameLabel => 'Nombre';
+  @override
+  String get storeFunctionParamLabel => 'Parámetro';
+  @override
+  String get storeButton => 'Guardar';
+  @override
+  String get storeNameReserved => 'Nombre reservado por una función integrada';
+  @override
+  String storeSavedAs(String name) => 'Guardado como $name';
 
   @override
   String get settingsExportData => 'Exportar datos';

@@ -380,6 +380,31 @@ class ExpressionPreprocessingUtils {
     return 'x';
   }
 
+  /// True when [token] collides with a CAS built-in (constant or
+  /// function name) or the calculator's `Ans` slot. Public so the
+  /// round-91 "Store result as variable / function" dialogs can reject
+  /// user-chosen names that would shadow an engine identifier.
+  static bool isReservedName(String token) => _reservedTokens.contains(token);
+
+  /// Round 91: collects every identifier in [expression] that isn't a
+  /// reserved CAS token or a graph-slot reference (`Y1`..`Y10`). Used
+  /// by the "Store result as function" menu item to decide whether the
+  /// expression actually has a free parameter to bind on, and to pick
+  /// a default `paramVar` for the new UserFunction.
+  ///
+  /// Returns a stable insertion-ordered set (first occurrence wins).
+  static Set<String> extractFreeVariables(String expression) {
+    final result = <String>{};
+    final pattern = RegExp(r'[A-Za-z_][A-Za-z0-9_]*');
+    for (final match in pattern.allMatches(expression)) {
+      final token = match.group(0)!;
+      if (_reservedTokens.contains(token)) continue;
+      if (RegExp(r'^Y\d+$').hasMatch(token)) continue;
+      result.add(token);
+    }
+    return result;
+  }
+
   /// Cleans up SymEngine's complex-number representation, stray operators,
   /// and Python-style exponents in numeric/symbolic results.
   static String normalizeComplexResult(String result) {

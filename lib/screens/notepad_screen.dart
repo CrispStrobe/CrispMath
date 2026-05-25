@@ -36,6 +36,7 @@ import '../utils/expression_preprocessing_utils.dart';
 import '../utils/latex_conversion_utils.dart';
 import '../utils/math_display_utils.dart';
 import '../widgets/notepad_manager_dialog.dart';
+import '../widgets/store_result_dialogs.dart';
 
 /// Layout breakpoint matching the app shell's nav-rail switch
 /// (decision #17). At or above this width the input + result render
@@ -1360,12 +1361,26 @@ class _NotepadResultColumn extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: () => _showResultActions(context, res, latex),
+      onSecondaryTap: () => _showResultActions(context, res, latex),
       child: body,
     );
   }
 
   void _showResultActions(BuildContext context, String plain, String latex) {
     final t = AppLocalizations.of(context);
+    // Round 91: when the line is an assignment (`f = x^2 + 1`), Store
+    // as function should bind on the RHS, not the entire source. Parse
+    // once so both menu items see the same canonical body.
+    final parsed = classifyNotepadLine(
+      line.source,
+      lineIndex: 0,
+      firstCodeLineIndex: 0,
+    );
+    final functionBody = parsed.kind == NotepadLineKind.assignment
+        ? (parsed.body ?? line.source)
+        : line.source;
+    final freeVars =
+        ExpressionPreprocessingUtils.extractFreeVariables(functionBody);
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -1400,6 +1415,46 @@ class _NotepadResultColumn extends StatelessWidget {
                 );
               },
             ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.save_alt),
+              title: Text(t.storeAsVariable),
+              onTap: () async {
+                Navigator.of(sheetContext).pop();
+                final saved = await StoreResultDialogs.promptStoreAsVariable(
+                  context: context,
+                  value: plain,
+                );
+                if (saved != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(t.storeSavedAs(saved)),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+            ),
+            if (freeVars.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.functions),
+                title: Text(t.storeAsFunction),
+                onTap: () async {
+                  Navigator.of(sheetContext).pop();
+                  final saved = await StoreResultDialogs.promptStoreAsFunction(
+                    context: context,
+                    expression: functionBody,
+                  );
+                  if (saved != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(t.storeSavedAs(saved)),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
+              ),
           ],
         ),
       ),

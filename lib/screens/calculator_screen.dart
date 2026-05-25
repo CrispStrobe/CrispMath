@@ -28,6 +28,7 @@ import '../utils/latex_conversion_utils.dart';
 import '../utils/error_formatter.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/math_display_utils.dart';
+import '../widgets/store_result_dialogs.dart';
 
 // Other imports
 import '../controllers/latex_controller.dart';
@@ -1606,6 +1607,42 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 _latexController.insert(entry.expression);
               },
             ),
+            const Divider(height: 1),
+            // Round 91: capture this row into a named slot. Variable
+            // is always available (every result is a value). Function
+            // is only meaningful when the expression has at least one
+            // free identifier the user could parameterise on.
+            ListTile(
+              leading: const Icon(Icons.save_alt),
+              title: Text(t.storeAsVariable),
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                final saved = await StoreResultDialogs.promptStoreAsVariable(
+                  context: context,
+                  value: entry.result,
+                );
+                if (saved != null && context.mounted) {
+                  _toast(context, t.storeSavedAs(saved));
+                }
+              },
+            ),
+            if (ExpressionPreprocessingUtils.extractFreeVariables(
+                    entry.expression)
+                .isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.functions),
+                title: Text(t.storeAsFunction),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  final saved = await StoreResultDialogs.promptStoreAsFunction(
+                    context: context,
+                    expression: entry.expression,
+                  );
+                  if (saved != null && context.mounted) {
+                    _toast(context, t.storeSavedAs(saved));
+                  }
+                },
+              ),
           ],
         ),
       ),

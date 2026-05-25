@@ -2,6 +2,57 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 91) — Right-click "Store as variable / function"
+
+Calculator history rows and Notepad result cells gain two new
+context-menu items: capture the current value into a named
+global variable, or capture the expression as a single-parameter
+user function. Both surfaces share a single dialog widget in
+`lib/widgets/store_result_dialogs.dart`; the calculator's
+`_showHistoryEntryMenu` and the notepad's `_showResultActions`
+just add ListTiles and delegate.
+
+### What's new
+
+- **Store result as variable** — every row qualifies (every
+  result is a value). Prompts for an identifier name, validates
+  against `ExpressionPreprocessingUtils.isReservedName` (new
+  public predicate over the engine's `_reservedTokens`), and
+  persists via `AppState.setVariable(name, result)`. Existing
+  variables are overwritten without confirmation — matches the
+  calculator's existing M+/store semantics; PLAN round 91b
+  covers the overwrite-confirmation polish.
+- **Store as function** — only surfaces when the expression has
+  at least one free identifier the user could parameterise on.
+  Free-var detection is the new
+  `ExpressionPreprocessingUtils.extractFreeVariables` helper:
+  every identifier-like token in the expression, minus reserved
+  tokens and `Y\d+` graph-slot refs. Default parameter is the
+  first single-letter free variable (falling back to the first
+  free variable). Validator: single-letter lowercase, not
+  reserved. Persists via `AppState.setUserFunction(UserFunction(
+  name, paramVar, body))`.
+
+### Notepad surface
+
+The notepad result widget already had `onLongPress →
+_showResultActions(context, plain, latex)`. Round 91 also wires
+`onSecondaryTap` for desktop right-click and threads
+`line.source` through so the function-store path can detect
+free vars. When the line is an assignment (`f = x^2 + 1`),
+`classifyNotepadLine` extracts the RHS so the function body is
+`x^2 + 1`, not the malformed `f = x^2 + 1`.
+
+### i18n
+
+Nine new strings × four locales: `storeAsVariable`,
+`storeAsFunction`, `storeVariableTitle`, `storeFunctionTitle`,
+`storeNameLabel`, `storeFunctionParamLabel`, `storeButton`,
+`storeNameReserved`, `storeSavedAs(name)`. Validator messages
+reuse the existing `userFunctionsNameRequired` /
+`userFunctionsNameInvalid` / `userFunctionsNameHelp` keys to
+keep the new-string count down. 1465 tests pass.
+
 ## 2026-05-25 (round 120) — Calculator history LaTeX render cache
 
 User-reported (end of last session): toggling the Calculator's
