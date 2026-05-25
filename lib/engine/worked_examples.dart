@@ -252,5 +252,27 @@ class WorkedExamples {
           'a + b + c = 20.',
       expression: 'dsl:orderedTriples',
     ),
+    // Round 79: surface the optimization gallery entries shipped
+    // in rounds 74 (coin-change) and 77 (scheduling makespan) via
+    // the worked-examples discovery library, mirroring the round-73
+    // pattern.
+    WorkedExample(
+      id: 'dslCoinChange',
+      category: WorkedExampleCategory.constraints,
+      title: 'Coin change — minimize coins (DSL)',
+      description:
+          'Loads a DSL program that pays 17¢ with the fewest coins drawn '
+          'from {1, 5, 10, 25} via `minimize`.',
+      expression: 'dsl:coinChangeMin',
+    ),
+    WorkedExample(
+      id: 'dslSchedulingMakespan',
+      category: WorkedExampleCategory.constraints,
+      title: 'Single-machine scheduling — minimize makespan (DSL)',
+      description:
+          'Loads a DSL program that schedules three tasks (durations 4/3/2) '
+          'on one machine via `noOverlap` and minimizes the makespan.',
+      expression: 'dsl:schedulingMakespan',
+    ),
   ];
 }

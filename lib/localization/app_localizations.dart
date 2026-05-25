@@ -2215,6 +2215,10 @@ class DeLocalizations implements AppLocalizations {
         return 'Landkartenfärbung K4 (DSL)';
       case 'dslOrderedTriples':
         return 'Geordnete Tripel mit Summe 20 (DSL)';
+      case 'dslCoinChange':
+        return 'Münzwechsel — Anzahl minimieren (DSL)';
+      case 'dslSchedulingMakespan':
+        return 'Einzelmaschinen-Scheduling — Makespan minimieren (DSL)';
       case 'derivPoly':
         return 'Ableitung eines Polynoms';
       case 'chainRule':
@@ -2274,6 +2278,10 @@ class DeLocalizations implements AppLocalizations {
         return 'Lädt eine K4-Graphfärbung mit 3 Farben — bewusst unlösbar, um den "keine Lösungen"-Pfad zu zeigen.';
       case 'dslOrderedTriples':
         return 'Lädt ein DSL-Programm, das (a, b, c) mit a < b < c und a + b + c = 20 aufzählt.';
+      case 'dslCoinChange':
+        return 'Lädt ein DSL-Programm, das 17¢ mit den wenigsten Münzen aus {1, 5, 10, 25} via `minimize` zahlt.';
+      case 'dslSchedulingMakespan':
+        return 'Lädt ein DSL-Programm, das drei Aufgaben (Dauern 4/3/2) auf einer Maschine via `noOverlap` plant und den Makespan minimiert.';
       case 'derivPoly':
         return 'd/dx von x³ − 4x + 7 an beliebigem x.';
       case 'chainRule':
@@ -3376,6 +3384,10 @@ class FrLocalizations implements AppLocalizations {
         return 'Coloration de carte K4 (DSL)';
       case 'dslOrderedTriples':
         return 'Triplets ordonnés sommant à 20 (DSL)';
+      case 'dslCoinChange':
+        return 'Rendu de monnaie — minimiser les pièces (DSL)';
+      case 'dslSchedulingMakespan':
+        return 'Ordonnancement mono-machine — minimiser le makespan (DSL)';
       case 'derivPoly':
         return 'Dérivée d\'un polynôme';
       case 'chainRule':
@@ -3435,6 +3447,10 @@ class FrLocalizations implements AppLocalizations {
         return 'Charge une coloration K4 à 3 couleurs — volontairement infaisable pour montrer le chemin « aucune solution ».';
       case 'dslOrderedTriples':
         return 'Charge un programme DSL énumérant (a, b, c) avec a < b < c et a + b + c = 20.';
+      case 'dslCoinChange':
+        return 'Charge un programme DSL qui paie 17 ¢ avec le moins de pièces de {1, 5, 10, 25} via `minimize`.';
+      case 'dslSchedulingMakespan':
+        return 'Charge un programme DSL qui ordonnance trois tâches (durées 4/3/2) sur une machine via `noOverlap` et minimise le makespan.';
       case 'derivPoly':
         return 'd/dx de x³ − 4x + 7 en tout x.';
       case 'chainRule':
@@ -4534,6 +4550,10 @@ class EsLocalizations implements AppLocalizations {
         return 'Coloración de mapa K4 (DSL)';
       case 'dslOrderedTriples':
         return 'Tripletes ordenados que suman 20 (DSL)';
+      case 'dslCoinChange':
+        return 'Cambio de monedas — minimizar piezas (DSL)';
+      case 'dslSchedulingMakespan':
+        return 'Planificación mono-máquina — minimizar el makespan (DSL)';
       case 'derivPoly':
         return 'Derivada de un polinomio';
       case 'chainRule':
@@ -4593,6 +4613,10 @@ class EsLocalizations implements AppLocalizations {
         return 'Carga una coloración K4 con 3 colores — intencionalmente infactible para mostrar la ruta «sin soluciones».';
       case 'dslOrderedTriples':
         return 'Carga un programa DSL que enumera (a, b, c) con a < b < c y a + b + c = 20.';
+      case 'dslCoinChange':
+        return 'Carga un programa DSL que paga 17 ¢ con el menor número de monedas de {1, 5, 10, 25} mediante `minimize`.';
+      case 'dslSchedulingMakespan':
+        return 'Carga un programa DSL que planifica tres tareas (duraciones 4/3/2) en una máquina con `noOverlap` y minimiza el makespan.';
       case 'derivPoly':
         return 'd/dx de x³ − 4x + 7 en cualquier x.';
       case 'chainRule':

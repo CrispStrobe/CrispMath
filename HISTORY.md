@@ -2,6 +2,71 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 79) — Worked-examples discovery for DSL optimization + docs sync
+
+The round-74 (`coinChangeMin`) and round-77
+(`schedulingMakespan`) DSL gallery entries had landed in the
+Free-form tab's gallery dropdown but hadn't been added to the
+**worked-examples library** — so a user browsing for problems
+had no way to discover them from the Settings →
+"Worked examples library" surface. Round 69's
+`dsl:<gallery_id>` sentinel pattern already supports
+cross-screen navigation; the discovery layer just hadn't caught
+up.
+
+### Catalog additions
+
+Two new entries in `lib/engine/worked_examples.dart`:
+
+- `dslCoinChange` — pay 17¢ with the fewest coins from
+  {1, 5, 10, 25} via `minimize`
+- `dslSchedulingMakespan` — schedule three tasks on one machine
+  via `noOverlap` and minimise the makespan
+
+Both go through the same `dsl:<id>` sentinel detection in
+`worked_examples_dialog.dart`, which navigates the user to the
+Constraints module + Free-form tab + pre-loads the program from
+`_DslTabState._gallery`.
+
+### Translations
+
+Four locales × two entries × (title + description) = 16 new
+strings. Localized titles include
+"Münzwechsel — Anzahl minimieren (DSL)",
+"Rendu de monnaie — minimiser les pièces (DSL)", etc. The
+locale-coverage test in `localizations_test.dart` already
+exercises these via the `workedExampleTitle` / `Description`
+dispatchers, so missing translations fail CI.
+
+### Doc sync
+
+`PLAN.md` § "Constraint Satisfaction Problems" had CSP Round D
+listed as `[ ]` deferred — moved to `[x]` shipped with HISTORY
+pointers to rounds 74 + 77 + 78. The Sudoku variant roadmap
+under CSP Round B now marks 8×8 + Disjoint Groups as shipped
+(rounds 75 + 76) and the V4 "advanced hints" / V5 "uniqueness
+chip" / V6 "8×8 + Disjoint" rows reflect the actual session
+progress.
+
+`HANDOFF.md` rewritten to absorb today's session:
+§3 lists the recent-round chain (73–79) so the next assistant
+can read HISTORY for the load-bearing context; §4 gains three
+new land mines (4.8: `__obj__` reserved name; 4.9:
+`_parseLinearTerms` deliberately returns null for constant-only
+expressions so the empty-var fallback stays correct; 4.10: the
+four touch-points required to keep DSL gallery + worked-examples
+discovery in sync); §5 gains two new patterns (5.3: SAC by
+probing when AC-3 isn't exposed; 5.4: synthetic objective
+variable for `minimize` / `maximize`); §6 re-ranked with
+`addCumulative`, step-trace annotations, and 8×8 variant
+presets as the next 1-session picks.
+
+No engine / UI / hand-written test changes — this is purely a
+discovery + docs round. Two new WorkedExample entries do
+auto-generate 12 tests via `worked_examples_localization_test`'s
+per-entry × per-locale × (title + description) parametric loop,
+so the suite grows from 1236 to 1248.
+
 ## 2026-05-25 (round 78) — DSL linear parser: expression-on-both-sides
 
 Round 77 had to write `makespan - sN >= dN` because the

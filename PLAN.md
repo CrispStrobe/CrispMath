@@ -554,26 +554,27 @@ Roadmap (ship one round at a time):
     ships (standard off-the-shelf puzzles fail the X constraint
     — users get X puzzles via Generate). Round-trip test covers
     6×6 + Sudoku-X.
-  - **V3 deferred — variant roadmap**. Sudoku is a family, not one
+  - **V3 partial — variant roadmap**. Sudoku is a family, not one
     puzzle. Standard sizes alone span 4..25 with mixed
     aspect-ratio boxes:
-    - 6×6 (2×3 boxes), 8×8 (2×4), 10×10 (2×5), 12×12 (2×6 or 3×4),
-      15×15 (3×5), 16×16 (4×4), 25×25 (5×5). Each needs a clue
-      library and validated minimum-clue counts (the wiki ranges
-      from 4 clues for 4×4 to 55 for 16×16; 25×25 lower bound is
-      open).
+    - 6×6 (2×3 boxes) shipped round 61. ~~8×8 (2×4)~~ shipped
+      round 75. 10×10 (2×5), 12×12 (2×6 or 3×4), 15×15 (3×5),
+      16×16 (4×4) ✓ also shipped round 61, 25×25 (5×5) still
+      open — each needs a clue library and validated minimum-clue
+      counts (Wikipedia ranges from 4 clues for 4×4 to 55 for
+      16×16; 25×25 lower bound is open).
     - Irregular regions ("Du-sum-oh"/Geometry Number Place) —
       boxes are arbitrary same-size polyomino tilings, not the
-      regular grid.
+      regular grid. Still pending.
     - ~~Killer / Samunampure — boxes replaced by sum constraints
       over irregular regions. Maps naturally to dart_csp's
       `addLinearEquals` over per-cage cell sets.~~ **SHIPPED**
       in HISTORY round 63 (4×4 preset, no givens, full overlay).
       Generator + larger Killer presets are V2.
-    - Other variants (Sudoku X / diagonals, Disjoint Groups,
-      Hypercube, NRC, 2-Quasi-Magic) all reduce to additional
-      `allDifferent` overlays — once the regular engine is in
-      place, each is a small per-variant constraint pack.
+    - Other variants: ~~Sudoku-X~~ shipped round 61. ~~Disjoint
+      Groups~~ shipped round 76. Hypercube / NRC / 2-Quasi-Magic
+      still open — each reduces to additional `allDifferent`
+      overlays.
   - **V3 partial** (HISTORY round 62): **hint mode / pencil-marks**
     shipped. `SudokuSolver.computeCandidates(puzzle)` returns one
     `Set<int>` per cell (legal digits after naive
@@ -582,11 +583,25 @@ Roadmap (ship one round at a time):
     cell. Screen has a "Show hints" toggle that recomputes on
     every edit. Works on all four layouts (4×4 / 6×6 / 9×9 /
     16×16) and respects the Sudoku-X overlay.
-    **V4 pending** — AC-3-pruned hints (stricter than the naive
-    elimination, slower to compute), uniqueness check exposed to
-    the user ("this puzzle has 3 solutions"), step-trace
-    annotations explaining each propagation (currently the
-    visualizer shows *what* changes, not *why*).
+  - **V4 — advanced hints** done 2026-05-25 (HISTORY round 73).
+    `SudokuHintLevel` now has three positions (off / basic /
+    advanced); advanced runs `computeCandidatesPruned` which does
+    singleton arc consistency by probing — each (cell, candidate)
+    is verified by the full dart_csp solver, catching hidden
+    singles + naked pairs that naive elimination misses. Request-id
+    cancellation handles in-flight staleness across fast edits.
+  - **V5 — uniqueness chip** done 2026-05-25 (HISTORY round 65,
+    pre-session). "Check uniqueness" button + chip on the Sudoku
+    screen reports "Unique solution" / "Multiple solutions".
+  - **V6 — 8×8 + Disjoint Groups** done 2026-05-25 (HISTORY rounds
+    75 + 76). `SudokuLayout.eight` (2×4 boxes) with a 28-clue
+    medium preset; `SudokuVariant.disjoint` with the in-box-position
+    `_disjointGroups` walker. Both pick up the parameterized
+    engine cleanly.
+    **V7 pending**: **step-trace "why" annotations** — currently
+    the visualizer shows *what* changes per frame, not *which
+    constraint* fired. Would hook into dart_csp's propagation
+    events to annotate each frame.
 
 - ~~**CSP Round C — Generic constraint mini-DSL**.~~ **V1 SHIPPED**
   in HISTORY round 68. A "Free-form" tab in the Constraints module
@@ -595,11 +610,26 @@ Roadmap (ship one round at a time):
   Diophantine result-block. V2: trace mode, worked-example
   entries for N-queens / magic-square / map-coloring / scheduling.
 
-- [ ] **CSP Round D — Optimization + scheduling (deferred)**.
-  Exposes `minimize` / `maximize` to the DSL; adds
-  `addNoOverlap` / `addCumulative` UI for OR-flavored scheduling
-  problems (machine assignments, parallel jobs). Useful for business
-  / operations homework — but its own substantial chunk.
+- [x] ~~**CSP Round D — Optimization in the DSL**.~~ Done 2026-05-25 —
+  see HISTORY round 74. `minimize` / `maximize` directives parsed
+  out of the DSL, routed through dart_csp's branch-and-bound via a
+  synthetic `__obj__` variable with tight integer bounds. New
+  `DiophantineResult.optimal` factory carries the singleton optimum
+  plus the proven objective value; `_ResultBlock` UI swaps the
+  "N solutions" header for "Optimal: objective = N" when present.
+  Coin-change gallery entry demonstrates the canonical least-coins
+  problem.
+
+- [x] ~~**CSP Round E — Scheduling (noOverlap)**.~~ Done 2026-05-25 —
+  see HISTORY rounds 77 + 78. `noOverlap(s1=4, s2=3, s3=2)` syntax
+  parses into a `NoOverlapGroup` and routes to
+  `Problem.addNoOverlap` (cumulative time-table propagator under
+  capacity 1, all heights 1). Composes with `minimize` for the
+  single-machine-makespan classic. Round 78 closed the loop by
+  extending the linear-expression parser to accept expressions on
+  both sides of the comparator (`s + d <= makespan` is the natural
+  form now). Still open from the round-E bundle:
+  `addCumulative` (variable per-task heights + global capacity).
 
 #### Precision & number theory (native libs already linked)
 

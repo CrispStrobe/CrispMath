@@ -22,11 +22,13 @@ The codebase has grown well past "calculator":
   Sections, Statistics, 3D Graphing, Unit Converter, Constants,
   Constraint problems, Sudoku)
 - Constraint Satisfaction Problems via [dart_csp](../dart_csp):
-  Diophantine, cryptarithms, free-form DSL editor, Sudoku
-  (regular / Sudoku-X / Killer; 4×4 / 6×6 / 9×9 / 16×16)
-- Worked-examples library (~28 curated entries) — discovery
+  Diophantine, cryptarithms, free-form DSL editor (with
+  `minimize` / `maximize` / `noOverlap` directives), Sudoku
+  (Regular / Sudoku-X / Killer / Disjoint Groups; 4×4 / 6×6 /
+  8×8 / 9×9 / 16×16)
+- Worked-examples library (~30 curated entries) — discovery
   surface that crosses into the module screens via sentinel
-  expressions (see §5)
+  expressions (see §5.2)
 - Settings: locale (en/de/fr/es), themes, number format,
   user-defined functions
 
@@ -110,13 +112,26 @@ lib/
 test/
   sudoku_test.dart, csp_solver_test.dart, ui_flows_test.dart,
   localizations_test.dart, worked_examples_test.dart,
-  ... (~50 test files, ~1236 tests total)
+  ... (~50 test files, ~1248 tests total)
 PLAN.md                    ← Roadmap; mark items SHIPPED with round refs
 HISTORY.md                 ← Newest-first changelog (this file's source of truth)
 ```
 
 dart_csp lives at `~/code/dart_csp/` (sibling checkout); the
 project depends on it via a git ref pin in `pubspec.yaml`.
+
+### Recently shipped (read HISTORY for context)
+
+- **Round 73** — Sudoku advanced hints (SAC by probing)
+- **Round 74** — CSP DSL `minimize` / `maximize`
+- **Round 75** — Sudoku 8×8 layout (2×4 boxes)
+- **Round 76** — Sudoku Disjoint Groups variant
+- **Round 77** — CSP DSL `noOverlap` (single-machine scheduling)
+- **Round 78** — DSL linear parser accepts expressions on both
+  sides of the comparator
+- **Round 79** — worked-examples library surfaces the round-74
+  and round-77 DSL gallery entries (`coinChangeMin`,
+  `schedulingMakespan`); PLAN.md + this file synced
 
 ## 4. Land mines we have already hit
 
@@ -191,7 +206,9 @@ breakpoint. Several widgets break this width:
 The regression test
 `test/ui_flows_test.dart` → `Sudoku screen: variant switcher
 cycles without DropdownButton crash` catches both the dropdown
-crash AND the overflow.
+crash AND the overflow. Round 76 extended the variant rotation
+in that test to include Disjoint — keep all four variants in
+the cycle when adding more.
 
 ### 4.5 DropdownButton "exactly one item" assertion
 
@@ -224,7 +241,63 @@ pending slots should drain them (or `AppState().load(force:
 true)` at the start). The `_pumpApp` helper in `ui_flows_test.dart`
 does this.
 
-## 5. Two cross-screen patterns worth knowing
+### 4.8 `__obj__` is a reserved variable name in DSL optimization
+
+`solveOptimization` injects a synthetic `__obj__` range variable
+to carry the objective value (dart_csp's `minimize` / `maximize`
+require the objective to be a registered variable). The DSL
+checks `knownVars.contains('__obj__')` up front and rejects the
+program with a friendly error if a user-declared variable
+collides.
+
+If a refactor changes the synthetic name (or its bounding
+linear-equals constraint), **keep the collision check in sync**.
+The bound is computed from input-variable ranges as
+`Σ min(coef*lo, coef*hi)` and `Σ max(coef*lo, coef*hi)` plus any
+constant offset in the objective expression — this matters
+because dart_csp picks its interval-vs-list domain rep based on
+span, and an open-ended range balloons the search.
+
+### 4.9 `_parseLinearTerms` returns null for constant-only expressions
+
+Round 78 extended `_tryParseLinear` (CSP) to handle
+expression-on-both-sides, but **`addLinearEquals` requires a
+non-empty variable list** — so when LHS and RHS cancel out to
+zero variables (`5 == 5`, `x - x == 0`), the helper deliberately
+returns null and falls through to dart_csp's string parser.
+Don't "fix" the empty-list early return — the fallback is
+correct, and dart_csp validates the constant comparison
+correctly.
+
+Regression test: `test/csp_solver_test.dart` →
+`constant-only constraints still fall through to the string
+parser`.
+
+### 4.10 DSL gallery vs. worked-examples discovery — keep in sync
+
+The `dsl:<id>` sentinel pattern (round 73) requires two places
+to stay aligned when adding a new gallery program:
+
+1. `_DslTabState._gallery` in `lib/screens/constraints_screen.dart`
+   — the program text users actually load
+2. `WorkedExamples.all` in `lib/engine/worked_examples.dart` —
+   the discovery entry that surfaces the program in the
+   worked-examples dialog
+3. `AppLocalizations.workedExampleTitle/Description` for
+   en/de/fr/es (titles are localised per id; English fallback
+   comes from the entry itself)
+4. `constraintsDslExampleTitle` in app_localizations.dart for
+   the Examples-button dropdown inside the DSL tab
+
+The `test/worked_examples_test.dart` →
+`round 73: dsl: sentinels target known gallery ids` test
+catches typos in (1) vs (2), but **all four touch-points are
+needed for full discoverability**. Round 79 surfaced the
+round-74 (`coinChangeMin`) and round-77 (`schedulingMakespan`)
+entries that had previously only been in the gallery — keep
+new entries from drifting again.
+
+## 5. Cross-screen + cross-feature patterns worth knowing
 
 ### 5.1 AppState pending slots
 
@@ -256,6 +329,70 @@ Detection is in `lib/widgets/worked_examples_dialog.dart`
 points at a real target — a typo in a future entry fails CI
 rather than silently dead-ending.
 
+### 5.3 Singleton arc consistency by probing (when AC-3 isn't exposed)
+
+Round 73 needed "stricter than naive pencil-marks" for Sudoku
+hints. dart_csp doesn't expose a propagate-to-fixpoint entry
+point (its `_propagate` is private; `Problem` only offers full
+`getSolution` / `getSolutions`), so we can't ask for "the
+reduced domain after AC-3 + GAC."
+
+The workaround: for each candidate value `v` at empty cell `c`,
+build `puzzle.withCell(c, v)` and call the full solver. If it's
+satisfiable, keep `v`; otherwise drop it. This is singleton arc
+consistency by probing — semantically what AC-3 gives you for
+unary constraints, but routed through the backtracker.
+
+Two short-circuits keep it bounded:
+
+- Fetch one base solution up front. Each cell's base value is
+  trivially feasible, so skip the probe for it.
+- Every successful probe returns a *different* complete
+  solution; harvest its per-cell values into a `confirmed` set
+  so subsequent (cell, value) pairs already proven feasible
+  skip the probe.
+
+`SudokuSolver.computeCandidatesPruned` lives in
+`lib/engine/sudoku.dart`. The UI gates this behind an
+"Advanced" hint level (off / basic / advanced) because the cost
+is seconds-per-edit on hard 9×9 puzzles. A monotonic
+`_advancedRequestId` in the screen state cancels stale
+in-flight results when the user edits quickly.
+
+If you need the same pattern for a different CSP, reuse the
+shape: naive set → base solution → per-candidate probe →
+harvest. Don't try to expose dart_csp internals — the probe
+loop is robust and the cost is bearable for any problem the
+backtracker handles quickly.
+
+### 5.4 Synthetic objective variable for `minimize` / `maximize`
+
+dart_csp's `Problem.minimize(objective)` /
+`Problem.maximize(objective)` take the **name of a variable**,
+not an expression. To optimize a linear expression like
+`x + 2y - z`, round 74 introduced a synthetic `__obj__` range
+variable bound to that expression via `addLinearEquals`:
+
+```dart
+problem.addRangeVariable('__obj__', objLo, objHi);
+problem.addLinearEquals(
+  [...exprVars, '__obj__'],
+  [...exprCoeffs, -1],
+  -constantTerm,   // round 78: any +k in the objective folds here
+);
+final result = await problem.minimize('__obj__');
+```
+
+The tight `(objLo, objHi)` range matters — dart_csp picks
+interval-vs-list domain rep based on span. Compute it from the
+input-variable ranges (per-term min/max contribution summed
+independently). If you forget and use a huge range, the search
+balloons.
+
+After the solver returns, strip `__obj__` from the assignment
+before handing back to the caller — see `solveOptimization` in
+`csp_solver.dart`. The optimum value is `result['__obj__']`.
+
 ## 6. Open arcs, ranked by lift vs. cost
 
 Recommended next picks for a fresh session. Mix of small wins and
@@ -263,38 +400,50 @@ fresh feature arcs.
 
 ### Small / medium (1 session each)
 
-1. ~~**Disjoint Groups Sudoku variant**~~ shipped round 76.
-   `_disjointGroups(layout)` walker + 4 locale strings + variant
-   ChoiceChip + candidate-eliminator extension.
-2. ~~**AC-3-pruned hints (advanced level)** — shipped round 73 as
-   SAC-by-probing through the full dart_csp solver (Problem
-   doesn't expose propagate-only). See HISTORY round 73 for the
-   request-id cancellation pattern.~~
-3. ~~**8×8 Sudoku layout**~~ shipped round 75. One layout
-   constant + one preset + one generator clue-count branch +
-   four locale labels. Same parameterized engine.
-4. **Step-trace "why" annotations** (medium) — the visualizer
-   shows what cell got assigned, not why. Hook into dart_csp's
-   propagation events to annotate each frame with the
-   constraint that fired.
+1. **`addCumulative` (CSP Round E continued)** (~45–60 min) —
+   sibling to round 77's `noOverlap`. Variable per-task heights
+   plus a global capacity. Pick a DSL syntax (`cumulative(s1=4@2,
+   s2=3@1; capacity=3)` or similar), parse + thread through both
+   `solveDiophantine` and `solveOptimization`, add a gallery
+   example like "schedule three jobs on a 2-capacity resource."
+2. **Step-trace "why" annotations** (~1–2 hours) — the Sudoku
+   visualizer currently shows *what* cell was assigned, not
+   *which constraint* fired. dart_csp's propagation callback
+   already fires per decision; surface the firing-constraint
+   name as a per-frame caption. Touches engine, widget, and
+   i18n.
+3. **8×8 Sudoku-X / 8×8 Killer / 8×8 Disjoint presets** (~30 min
+   each) — round 75 added the layout but only a Regular preset.
+   Each variant works on the layout automatically; just need
+   curated puzzles + the preset id + locale labels.
+4. **10×10 / 12×12 / 15×15 Sudoku layouts** (~30 min each) —
+   pure surface-area growth, mirrors the round-75 pattern (one
+   layout constant + one preset + one clue-count branch +
+   locale labels). Wikipedia's minimum-clue table provides
+   target counts.
 
 ### Fresh feature arcs (multi-session)
 
-5. ~~**CSP Round D — minimize / maximize in the DSL**~~ shipped
-   round 74. ~~**CSP Round E — `addNoOverlap`**~~ shipped round 77
-   (`noOverlap(s1=4, s2=3, ...)` syntax, composes with minimize
-   for makespan problems). ~~**Linear parser: expression-on-both-
-   sides**~~ shipped round 78 (`s + d <= makespan` is the natural
-   form now). Still open from the round-E bundle:
-   `addCumulative` (capacity + heights, single resource with
-   variable demands).
+5. **Irregular-region Sudoku (Du-sum-oh)** — boxes become
+   arbitrary same-size polyomino tilings instead of the regular
+   rectangular partition. Engine: replace the box-partition
+   walker (`_boxes`) with a per-puzzle region list; everything
+   else (allDifferent overlay, hint elimination) reuses the
+   existing path. Generator becomes its own problem (sampling
+   valid tilings).
 6. **Killer generator V2** — programmatic cage-layout generation
    with uniqueness guarantee. Requires search over shapes; the
    round-66 probe loop is a starting point.
 7. **GMP / MPFR / MPC / FLINT precision arc** — native bridge
    for arbitrary precision + number theory. Plumbed but not
-   surfaced. New feature arc, ~5-10 rounds. See PLAN §"Precision
-   & number theory".
+   surfaced. New feature arc, ~5–10 rounds. See PLAN
+   §"Precision & number theory" for the staged breakdown
+   (Group A: integer mode is shipped; arbitrary-precision
+   constants + number-theory toy set are the next slices).
+8. **Worked-examples V3** — advanced topics (related rates,
+   eigenvalue, multivariable, parametric) and a "view this
+   step-by-step" jump from a worked example to its trace
+   dialog. Listed as V3 pending in PLAN.
 
 ## 7. Critical commands
 
@@ -302,7 +451,7 @@ fresh feature arcs.
 # Run-and-iterate
 flutter run -d macos              # dev build (debug, hot reload)
 flutter analyze                   # must be clean before commit
-flutter test                      # full suite; expect ~1207 tests, ~1 min
+flutter test                      # full suite; expect ~1248 tests, ~1 min
 dart format <files>               # CI runs format check on pinned Dart toolchain
 
 # CI
@@ -324,9 +473,17 @@ If something in this file is wrong by the time you read it,
 work around it. Stale handover docs cause future regressions.
 
 Specifically:
-- Test count drifts as features land — update §3's "~1207 tests"
-- Pin SHA in §4.1 changes on every dart_csp repin — update
-- Lessons from new rounds belong in §4 as new sub-sections
+- Test count drifts as features land — update §3's "~1248 tests"
+  and §7's "expect ~1248 tests". Adding a WorkedExample entry
+  auto-generates 6 tests (3 non-EN locales × title + description)
+  via `worked_examples_localization_test.dart`, so the count can
+  jump even on docs-only rounds.
+- Pin SHA in §4.1 changes on every dart_csp repin — update the
+  commit ref
+- Lessons from new rounds belong in §4 as new sub-sections;
+  cross-cutting patterns belong in §5
+- §6 is the moving part — strike completed picks, surface new
+  ones discovered while shipping
 
-Newest-first round entries continue to live in `HISTORY.md`. This
-file is the **pattern catalog**, not the changelog.
+Newest-first round entries continue to live in `HISTORY.md`.
+This file is the **pattern catalog**, not the changelog.
