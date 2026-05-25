@@ -283,6 +283,8 @@ abstract class AppLocalizations {
   String get sudokuClearToStart;
   String get sudokuSolvedCorrectly;
   String get sudokuFilledWithErrors;
+  // Round 87b: dismissable win celebration overlay.
+  String get sudokuWinOverlayTapHint;
   String get sudokuPresetLabelChooser;
   String get sudokuPresetCustom;
   String sudokuPresetLabel(String id);
@@ -980,6 +982,8 @@ class EnLocalizations implements AppLocalizations {
   String get sudokuSolvedCorrectly => 'Solved!';
   @override
   String get sudokuFilledWithErrors => 'Has errors';
+  @override
+  String get sudokuWinOverlayTapHint => 'Tap to dismiss';
   @override
   String get sudokuPresetLabelChooser => 'Puzzle';
   @override
@@ -2052,6 +2056,8 @@ class DeLocalizations implements AppLocalizations {
   String get sudokuSolvedCorrectly => 'Gelöst!';
   @override
   String get sudokuFilledWithErrors => 'Mit Fehlern';
+  @override
+  String get sudokuWinOverlayTapHint => 'Zum Schließen tippen';
   @override
   String get sudokuPresetLabelChooser => 'Rätsel';
   @override
@@ -3265,6 +3271,8 @@ class FrLocalizations implements AppLocalizations {
   String get sudokuSolvedCorrectly => 'Résolu !';
   @override
   String get sudokuFilledWithErrors => 'Avec des erreurs';
+  @override
+  String get sudokuWinOverlayTapHint => 'Toucher pour fermer';
   @override
   String get sudokuPresetLabelChooser => 'Grille';
   @override
@@ -4480,6 +4488,8 @@ class EsLocalizations implements AppLocalizations {
   String get sudokuSolvedCorrectly => '¡Resuelto!';
   @override
   String get sudokuFilledWithErrors => 'Con errores';
+  @override
+  String get sudokuWinOverlayTapHint => 'Toca para cerrar';
   @override
   String get sudokuPresetLabelChooser => 'Cuadrícula';
   @override

@@ -55,6 +55,11 @@ class _SudokuScreenState extends State<SudokuScreen> {
   List<int>? _solution;
   bool _computingSolution = false;
 
+  /// Round 87b: whether the user has dismissed the current win
+  /// celebration overlay. Reset to false on every edit / clear /
+  /// preset switch so a fresh win shows the overlay again.
+  bool _winOverlayDismissed = false;
+
   /// Round 87: focus node for cell-keyboard input. When a cell is
   /// selected, pressing a digit key fills it; Backspace / Delete /
   /// 0 clears it; arrow keys move the selection.
@@ -137,6 +142,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
       _frameIndex = 0;
       _unique = null;
       _solution = null;
+      _winOverlayDismissed = false;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
@@ -166,6 +172,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
       _frameIndex = 0;
       _unique = null;
       _solution = null;
+      _winOverlayDismissed = false;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
@@ -195,6 +202,10 @@ class _SudokuScreenState extends State<SudokuScreen> {
       _frameIndex = 0;
       _unique = null;
       _advancedCandidates = null;
+      // Round 87b: the user is editing again — a previous win was
+      // dismissed; if they re-complete the grid (e.g. fix an
+      // error), show the celebration overlay again.
+      _winOverlayDismissed = false;
     });
     _maybeRecomputeAdvanced();
     _maybeCheckWin();
@@ -253,6 +264,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
       _frameIndex = 0;
       _unique = null;
       _solution = null;
+      _winOverlayDismissed = false;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
@@ -541,21 +553,36 @@ class _SudokuScreenState extends State<SudokuScreen> {
       }
     }
 
+    // Round 87b: stack the grid + an animated win-celebration
+    // overlay. The overlay appears when [_winStatus == true] and
+    // the user hasn't dismissed it; it fades + scales in from
+    // half-size for a celebratory pop. Tap to dismiss.
     final gridBlock = Padding(
       padding: const EdgeInsets.all(16),
-      child: SudokuGrid(
-        layout: layout,
-        cells: _displayed,
-        clueIndexes: _clueIndexes,
-        selectedIndex: _selected,
-        highlightIndex: highlightIdx,
-        candidates: candidates,
-        cages: _puzzle.cages,
-        onTapCell: _onTapCell,
-        // Round 87: drag-and-drop digit entry from the digit pad.
-        // Non-null digit fills the cell; null clears it. Wired only
-        // when the visualizer isn't active.
-        onDropDigit: _trace == null ? _onDropDigitOnCell : null,
+      child: Stack(
+        children: [
+          SudokuGrid(
+            layout: layout,
+            cells: _displayed,
+            clueIndexes: _clueIndexes,
+            selectedIndex: _selected,
+            highlightIndex: highlightIdx,
+            candidates: candidates,
+            cages: _puzzle.cages,
+            onTapCell: _onTapCell,
+            // Round 87: drag-and-drop digit entry from the digit
+            // pad. Non-null digit fills the cell; null clears it.
+            // Wired only when the visualizer isn't active.
+            onDropDigit: _trace == null ? _onDropDigitOnCell : null,
+          ),
+          if (_winStatus == true && !_winOverlayDismissed)
+            Positioned.fill(
+              child: _WinOverlay(
+                label: t.sudokuSolvedCorrectly,
+                onDismiss: () => setState(() => _winOverlayDismissed = true),
+              ),
+            ),
+        ],
       ),
     );
 
@@ -1246,6 +1273,116 @@ class _HintLevelPicker extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Round 87b: full-grid win celebration overlay. Fades + scales in
+/// from 60% size for a celebratory "pop". Tap the backdrop or the
+/// card to dismiss. Renders absolutely over the [SudokuGrid] via
+/// the parent's `Stack`.
+///
+/// The card has a layered design: a large translucent green disk
+/// behind a check icon + the localized "Solved!" text + a small
+/// dismiss hint. Style is calibrated to feel celebratory without
+/// looking out of place in a CAS calculator (no cartoonish
+/// confetti — the green-disk pulse + a subtle scale-bounce does
+/// the work).
+class _WinOverlay extends StatelessWidget {
+  final String label;
+  final VoidCallback onDismiss;
+
+  const _WinOverlay({required this.label, required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutBack,
+      builder: (context, t, _) {
+        return Opacity(
+          opacity: t.clamp(0.0, 1.0),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onDismiss,
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.25 * t),
+              alignment: Alignment.center,
+              child: Transform.scale(
+                scale: 0.6 + 0.4 * t,
+                child: _WinCard(label: label, scheme: scheme),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _WinCard extends StatelessWidget {
+  final String label;
+  final ColorScheme scheme;
+
+  const _WinCard({required this.label, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    final hint = AppLocalizations.of(context).sudokuWinOverlayTapHint;
+    return Material(
+      elevation: 12,
+      borderRadius: BorderRadius.circular(20),
+      // Tertiary container is the green-ish accent on Material 3;
+      // it stays distinct from the primary blue of the highlight
+      // tint so the overlay reads as a different kind of state.
+      color: scheme.tertiaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Pulse disk + check icon stack.
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    color: scheme.tertiary.withValues(alpha: 0.30),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Icon(
+                  Icons.check_circle,
+                  size: 76,
+                  color: scheme.onTertiaryContainer,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                color: scheme.onTertiaryContainer,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              hint,
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onTertiaryContainer.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
