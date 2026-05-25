@@ -261,8 +261,8 @@ class AppState extends ChangeNotifier {
           final list = jsonDecode(notepadJson) as List<dynamic>;
           for (final raw in list) {
             if (raw is Map) {
-              final doc = NotepadDocument.fromJson(
-                  Map<String, dynamic>.from(raw));
+              final doc =
+                  NotepadDocument.fromJson(Map<String, dynamic>.from(raw));
               if (doc.id.isNotEmpty) notepadDocuments[doc.id] = doc;
             }
           }
@@ -759,8 +759,7 @@ class AppState extends ChangeNotifier {
       var importedCount = 0;
       for (final raw in (json['notepadDocuments'] as List)) {
         if (raw is Map) {
-          final doc =
-              NotepadDocument.fromJson(Map<String, dynamic>.from(raw));
+          final doc = NotepadDocument.fromJson(Map<String, dynamic>.from(raw));
           if (doc.id.isEmpty || doc.id == kWelcomeNotepadDocId) continue;
           notepadDocuments[doc.id] = doc;
           importedCount++;

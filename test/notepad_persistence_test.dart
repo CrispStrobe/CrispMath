@@ -214,8 +214,7 @@ void main() {
       await s.load(force: true);
       final exported = s.exportToJson();
       final exportedDocs = exported['notepadDocuments'] as List;
-      final exportedIds =
-          exportedDocs.map((raw) => (raw as Map)['i']).toSet();
+      final exportedIds = exportedDocs.map((raw) => (raw as Map)['i']).toSet();
       expect(exportedIds, isNot(contains(kWelcomeNotepadDocId)));
       // The seeded Untitled should still be in the export.
       expect(exportedDocs.length, 1);

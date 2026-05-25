@@ -53,8 +53,7 @@ void main() {
       expect(find.text('Untitled'), findsOneWidget);
     });
 
-    testWidgets('tab visible at medium (nav rail) breakpoint',
-        (tester) async {
+    testWidgets('tab visible at medium (nav rail) breakpoint', (tester) async {
       await _bootApp(tester, size: const Size(900, 800));
       expect(find.text('Notepad'), findsWidgets);
       await _gotoNotepad(tester);
@@ -74,13 +73,13 @@ void main() {
     testWidgets('+ button appends a line to the active doc', (tester) async {
       await _bootApp(tester, size: const Size(1280, 800));
       await _gotoNotepad(tester);
-      final docBefore = AppState()
-          .notepadDocuments[AppState().currentNotepadDocId!]!;
+      final docBefore =
+          AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
       final beforeCount = docBefore.lines.length;
       await tester.tap(find.byTooltip('Add line'));
       await tester.pumpAndSettle();
-      final docAfter = AppState()
-          .notepadDocuments[AppState().currentNotepadDocId!]!;
+      final docAfter =
+          AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
       expect(docAfter.lines.length, beforeCount + 1);
     });
 
@@ -88,8 +87,7 @@ void main() {
         (tester) async {
       await _bootApp(tester, size: const Size(1280, 800));
       await _gotoNotepad(tester);
-      final doc =
-          AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
       // Append a second line so we have something to delete that's
       // distinguishable from the empty seeded line.
       doc.lines.add(NotepadLine.fresh(source: 'will-be-deleted'));
@@ -101,8 +99,7 @@ void main() {
       expect(deleteBtns, findsWidgets);
       await tester.tap(deleteBtns.last);
       await tester.pumpAndSettle();
-      expect(doc.lines.where((l) => l.source == 'will-be-deleted'),
-          isEmpty,
+      expect(doc.lines.where((l) => l.source == 'will-be-deleted'), isEmpty,
           reason: 'line should be gone after delete');
 
       // Snackbar with Undo is visible.
@@ -112,8 +109,8 @@ void main() {
       // Tap Undo → line restored.
       await tester.tap(find.text('Undo'));
       await tester.pumpAndSettle();
-      final restored = AppState()
-          .notepadDocuments[AppState().currentNotepadDocId!]!;
+      final restored =
+          AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
       expect(
         restored.lines.any((l) => l.source == 'will-be-deleted'),
         isTrue,
@@ -125,8 +122,7 @@ void main() {
         (tester) async {
       await _bootApp(tester, size: const Size(1280, 800));
       await _gotoNotepad(tester);
-      final doc =
-          AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
       final line = NotepadLine(
         id: 'fixed-id',
         source: '1+1',
@@ -140,8 +136,8 @@ void main() {
       await tester.enterText(find.byType(TextField).last, '2+2');
       await tester.pumpAndSettle();
 
-      final after = AppState()
-          .notepadDocuments[AppState().currentNotepadDocId!]!;
+      final after =
+          AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
       final edited = after.lines.firstWhere((l) => l.id == 'fixed-id');
       expect(edited.source, '2+2');
       expect(edited.cachedResult, isNull,
@@ -236,8 +232,7 @@ void main() {
     testWidgets('cached result renders as Math.tex', (tester) async {
       await _bootApp(tester, size: const Size(1280, 800));
       await _gotoNotepad(tester);
-      final doc =
-          AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
       doc.lines.add(NotepadLine(
         id: 'r1',
         source: '2 + 2',
@@ -253,8 +248,7 @@ void main() {
         (tester) async {
       await _bootApp(tester, size: const Size(1280, 800));
       await _gotoNotepad(tester);
-      final doc =
-          AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
       doc.lines.add(NotepadLine(
         id: 'upstream',
         source: 'oops',

@@ -120,8 +120,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
     final liveIds = doc.lines.map((l) => l.id).toSet();
     // Prune controllers for lines that have been deleted.
-    final stale =
-        _controllers.keys.where((k) => !liveIds.contains(k)).toList();
+    final stale = _controllers.keys.where((k) => !liveIds.contains(k)).toList();
     for (final id in stale) {
       _controllers.remove(id)?.dispose();
       _focusNodes.remove(id)?.dispose();
@@ -331,7 +330,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
     );
   }
 
-  void _showUndoSnackbar({required String label, required VoidCallback onUndo}) {
+  void _showUndoSnackbar(
+      {required String label, required VoidCallback onUndo}) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
@@ -568,7 +568,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         buildDefaultDragHandles: false,
         itemCount: doc.lines.length,
-        onReorder: (oldIndex, newIndex) => _reorderLines(doc, oldIndex, newIndex),
+        onReorder: (oldIndex, newIndex) =>
+            _reorderLines(doc, oldIndex, newIndex),
         itemBuilder: (context, index) {
           final line = doc.lines[index];
           return _NotepadLineRow(
@@ -834,8 +835,7 @@ class _NotepadResultColumn extends StatelessWidget {
 
     if (rawError.startsWith(NotepadErrorPrefix.blockedBy)) {
       // blockedBy:<lineId>:<alias>
-      final payload =
-          rawError.substring(NotepadErrorPrefix.blockedBy.length);
+      final payload = rawError.substring(NotepadErrorPrefix.blockedBy.length);
       final sep = payload.indexOf(':');
       final lineId = sep < 0 ? '' : payload.substring(0, sep);
       final alias = sep < 0 ? payload : payload.substring(sep + 1);
@@ -863,8 +863,7 @@ class _NotepadResultColumn extends StatelessWidget {
     }
 
     if (rawError.startsWith(NotepadErrorPrefix.useDirective)) {
-      final code =
-          rawError.substring(NotepadErrorPrefix.useDirective.length);
+      final code = rawError.substring(NotepadErrorPrefix.useDirective.length);
       return Text(
         'Use directive: $code',
         style: TextStyle(color: cs.error, fontSize: 12),
@@ -873,8 +872,7 @@ class _NotepadResultColumn extends StatelessWidget {
     }
 
     if (rawError.startsWith(NotepadErrorPrefix.evaluation)) {
-      final engine =
-          rawError.substring(NotepadErrorPrefix.evaluation.length);
+      final engine = rawError.substring(NotepadErrorPrefix.evaluation.length);
       final formatted = EngineErrorFormatter.format(engine, t);
       return Text(
         formatted,

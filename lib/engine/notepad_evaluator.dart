@@ -81,8 +81,7 @@ class ParsedNotepadLine {
         body: body,
       );
 
-  factory ParsedNotepadLine.expression(String body) =>
-      ParsedNotepadLine._(
+  factory ParsedNotepadLine.expression(String body) => ParsedNotepadLine._(
         kind: NotepadLineKind.expression,
         body: body,
       );
@@ -165,8 +164,7 @@ ParsedNotepadLine classifyNotepadLine(
       if (!names.contains(n)) names.add(n);
     }
     if (names.isEmpty) {
-      return ParsedNotepadLine.useDirective(names,
-          error: 'emptyImportList');
+      return ParsedNotepadLine.useDirective(names, error: 'emptyImportList');
     }
     return ParsedNotepadLine.useDirective(names);
   }
@@ -738,7 +736,8 @@ class NotepadEvaluator {
       // Walk into the first dependency that's also a cycle node;
       // if none, break (shouldn't happen for cycle participants
       // but guards against malformed input).
-      final cycleDeps = deps.where((idx) => visited.contains(idx) || idx == start).toList();
+      final cycleDeps =
+          deps.where((idx) => visited.contains(idx) || idx == start).toList();
       if (cycleDeps.isEmpty) {
         // Fall back to any dependency to surface SOMETHING in the
         // error path — this branch is mostly defensive.
@@ -764,4 +763,3 @@ class NotepadEvaluator {
     return scope.keys.toSet();
   }
 }
-

@@ -160,8 +160,7 @@ void main() {
     });
 
     test('use with trailing comma is fine', () {
-      final p =
-          classify('use a, b,', lineIndex: 0, firstCodeLineIndex: 0);
+      final p = classify('use a, b,', lineIndex: 0, firstCodeLineIndex: 0);
       expect(p.imports, ['a', 'b']);
       expect(p.directiveError, isNull);
     });
@@ -172,8 +171,7 @@ void main() {
     });
 
     test('use with invalid identifier flags directiveError', () {
-      final p =
-          classify('use 2x, tax', lineIndex: 0, firstCodeLineIndex: 0);
+      final p = classify('use 2x, tax', lineIndex: 0, firstCodeLineIndex: 0);
       expect(p.kind, NotepadLineKind.useDirective);
       expect(p.directiveError, 'invalidImport:2x');
     });
@@ -302,8 +300,7 @@ void main() {
 
     test('externalScope is seeded first', () {
       final doc = docOf([]);
-      final scope = buildNotepadScope(doc,
-          externalScope: {'imported': '42'});
+      final scope = buildNotepadScope(doc, externalScope: {'imported': '42'});
       expect(scope['imported'], '42');
     });
 
@@ -311,8 +308,7 @@ void main() {
       final doc = docOf([
         (source: 'tax = 0.085', cached: '0.085'),
       ]);
-      final scope = buildNotepadScope(doc,
-          externalScope: {'tax': '0.10'});
+      final scope = buildNotepadScope(doc, externalScope: {'tax': '0.10'});
       expect(scope['tax'], '0.085');
     });
   });
@@ -324,10 +320,9 @@ void main() {
         (source: 'tax * 2', cached: null),
       ]);
       final scope = buildNotepadScope(doc);
-      final parsed = classify('tax * 2',
-          lineIndex: 1, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 1, scope: scope);
+      final parsed = classify('tax * 2', lineIndex: 1, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 1, scope: scope);
       expect(out, '(0.085) * 2');
     });
 
@@ -337,10 +332,9 @@ void main() {
         (source: 'line1 * 2', cached: null),
       ]);
       final scope = buildNotepadScope(doc);
-      final parsed = classify('line1 * 2',
-          lineIndex: 1, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 1, scope: scope);
+      final parsed = classify('line1 * 2', lineIndex: 1, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 1, scope: scope);
       expect(out, '(8) * 2');
     });
 
@@ -352,20 +346,20 @@ void main() {
       ]);
       // Manually seed scope to test the substitution rule.
       final scope = {'pi_thing': '3'};
-      final parsed = classify('epigraph + pi_thing',
-          lineIndex: 1, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 1, scope: scope);
+      final parsed =
+          classify('epigraph + pi_thing', lineIndex: 1, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 1, scope: scope);
       expect(out, 'epigraph + (3)');
     });
 
     test('longest-first ordering: total2 wins over total', () {
       final scope = {'total': '10', 'total2': '20'};
       final doc = docOf([(source: 'total2 + total', cached: null)]);
-      final parsed = classify('total2 + total',
-          lineIndex: 0, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 0, scope: scope);
+      final parsed =
+          classify('total2 + total', lineIndex: 0, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 0, scope: scope);
       expect(out, '(20) + (10)');
     });
 
@@ -387,10 +381,9 @@ void main() {
 
     test('expression without any scope refs is returned verbatim', () {
       final doc = docOf([(source: '5 + 3', cached: null)]);
-      final parsed = classify('5 + 3',
-          lineIndex: 0, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 0, scope: {});
+      final parsed = classify('5 + 3', lineIndex: 0, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 0, scope: {});
       expect(out, '5 + 3');
     });
   });
@@ -401,10 +394,9 @@ void main() {
         (source: '5 + 3', cached: '8'),
         (source: 'Ans * 2', cached: null),
       ]);
-      final parsed = classify('Ans * 2',
-          lineIndex: 1, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 1, scope: {});
+      final parsed = classify('Ans * 2', lineIndex: 1, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 1, scope: {});
       expect(out, '(8) * 2');
     });
 
@@ -414,10 +406,9 @@ void main() {
         (source: '', cached: null),
         (source: 'Ans + 1', cached: null),
       ]);
-      final parsed = classify('Ans + 1',
-          lineIndex: 2, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 2, scope: {});
+      final parsed = classify('Ans + 1', lineIndex: 2, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 2, scope: {});
       expect(out, '(8) + 1');
     });
 
@@ -427,19 +418,17 @@ void main() {
         (source: '// hi', cached: null),
         (source: 'Ans + 1', cached: null),
       ]);
-      final parsed = classify('Ans + 1',
-          lineIndex: 2, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 2, scope: {});
+      final parsed = classify('Ans + 1', lineIndex: 2, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 2, scope: {});
       expect(out, '(8) + 1');
     });
 
     test('Ans on line 0 is unresolved (no line above)', () {
       final doc = docOf([(source: 'Ans + 1', cached: null)]);
-      final parsed = classify('Ans + 1',
-          lineIndex: 0, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 0, scope: {});
+      final parsed = classify('Ans + 1', lineIndex: 0, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 0, scope: {});
       // Ans wasn't substituted — engine will see literal `Ans`.
       expect(out, 'Ans + 1');
     });
@@ -449,10 +438,9 @@ void main() {
         (source: '1/0', cached: null), // errored, no cachedResult
         (source: 'Ans + 1', cached: null),
       ]);
-      final parsed = classify('Ans + 1',
-          lineIndex: 1, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 1, scope: {});
+      final parsed = classify('Ans + 1', lineIndex: 1, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 1, scope: {});
       expect(out, 'Ans + 1');
     });
 
@@ -461,10 +449,10 @@ void main() {
         (source: '5', cached: '5'),
         (source: 'AnsOther + Ans', cached: null),
       ]);
-      final parsed = classify('AnsOther + Ans',
-          lineIndex: 1, firstCodeLineIndex: 0);
-      final out = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: 1, scope: {});
+      final parsed =
+          classify('AnsOther + Ans', lineIndex: 1, firstCodeLineIndex: 0);
+      final out =
+          preprocessNotepadLine(parsed, doc: doc, lineIndex: 1, scope: {});
       expect(out, 'AnsOther + (5)');
     });
   });
@@ -506,8 +494,7 @@ void main() {
     });
 
     test('underscore allowed', () {
-      expect(identifierWordsIn('my_var + foo_bar2'),
-          {'my_var', 'foo_bar2'});
+      expect(identifierWordsIn('my_var + foo_bar2'), {'my_var', 'foo_bar2'});
     });
 
     test('digit-leading words are not identifiers', () {
@@ -527,37 +514,32 @@ void main() {
 
   group('dependenciesOfLine + freeVariablesOfLine', () {
     test('expression with one in-scope ref', () {
-      final parsed = classify('tax * 2',
-          lineIndex: 1, firstCodeLineIndex: 0);
+      final parsed = classify('tax * 2', lineIndex: 1, firstCodeLineIndex: 0);
       expect(dependenciesOfLine(parsed, {'tax'}), {'tax'});
       expect(freeVariablesOfLine(parsed, {'tax'}), isEmpty);
     });
 
     test('expression with one out-of-scope ref → free var', () {
-      final parsed = classify('foo + 1',
-          lineIndex: 0, firstCodeLineIndex: 0);
+      final parsed = classify('foo + 1', lineIndex: 0, firstCodeLineIndex: 0);
       expect(dependenciesOfLine(parsed, {'tax'}), isEmpty);
       expect(freeVariablesOfLine(parsed, {'tax'}), {'foo'});
     });
 
     test('reserved CAS names are not free vars', () {
-      final parsed = classify('sin(x) + pi',
-          lineIndex: 0, firstCodeLineIndex: 0);
+      final parsed =
+          classify('sin(x) + pi', lineIndex: 0, firstCodeLineIndex: 0);
       expect(freeVariablesOfLine(parsed, {}), {'x'});
     });
 
     test('Ans is not a free var', () {
-      final parsed = classify('Ans + foo',
-          lineIndex: 1, firstCodeLineIndex: 0);
+      final parsed = classify('Ans + foo', lineIndex: 1, firstCodeLineIndex: 0);
       expect(freeVariablesOfLine(parsed, {}), {'foo'});
     });
 
     test('blank / comment / useDirective return empty deps', () {
       expect(dependenciesOfLine(ParsedNotepadLine.blank(), {'x'}), isEmpty);
       expect(dependenciesOfLine(ParsedNotepadLine.comment(), {'x'}), isEmpty);
-      expect(
-          dependenciesOfLine(
-              ParsedNotepadLine.useDirective(['tax']), {'x'}),
+      expect(dependenciesOfLine(ParsedNotepadLine.useDirective(['tax']), {'x'}),
           isEmpty);
     });
   });
@@ -570,8 +552,7 @@ void main() {
     });
 
     test('single line with no refs has empty dep set', () {
-      final g = buildDependencyGraph(
-          docOf([(source: '5 + 3', cached: null)]));
+      final g = buildDependencyGraph(docOf([(source: '5 + 3', cached: null)]));
       expect(g.dependsOn[0], isEmpty);
       expect(g.dependents[0], isEmpty);
     });
@@ -787,12 +768,11 @@ void main() {
 
     test('engine error → cachedError prefixed evaluation:', () async {
       final doc = docOf([(source: '1/0', cached: null)]);
-      final ev = NotepadEvaluator(
-          dispatcher: (_) async => 'Error: divide by zero');
+      final ev =
+          NotepadEvaluator(dispatcher: (_) async => 'Error: divide by zero');
       await ev.evaluateAll(doc);
       expect(doc.lines[0].cachedResult, isNull);
-      expect(doc.lines[0].cachedError,
-          'evaluation:Error: divide by zero');
+      expect(doc.lines[0].cachedError, 'evaluation:Error: divide by zero');
     });
 
     test('downstream of errored line gets blockedBy with correct alias',
@@ -808,8 +788,7 @@ void main() {
             expr.contains('1/0') ? 'Error: divide by zero' : expr,
       );
       await ev.evaluateAll(doc);
-      expect(doc.lines[0].cachedError,
-          'evaluation:Error: divide by zero');
+      expect(doc.lines[0].cachedError, 'evaluation:Error: divide by zero');
       expect(doc.lines[1].cachedError, startsWith('blockedBy:'));
       expect(doc.lines[1].cachedError, contains(':line1'));
       // Transitive: c is blocked by b (its immediate upstream).
@@ -825,10 +804,8 @@ void main() {
       ]);
       final ev = NotepadEvaluator(dispatcher: echo());
       await ev.evaluateAll(doc);
-      expect(doc.lines[0].cachedError,
-          startsWith('circularReference:'));
-      expect(doc.lines[1].cachedError,
-          startsWith('circularReference:'));
+      expect(doc.lines[0].cachedError, startsWith('circularReference:'));
+      expect(doc.lines[1].cachedError, startsWith('circularReference:'));
       // The innocent line c still evaluates.
       expect(doc.lines[2].cachedResult, '5');
       expect(doc.lines[2].cachedError, isNull);
@@ -840,8 +817,7 @@ void main() {
       ]);
       final ev = NotepadEvaluator(dispatcher: echo());
       await ev.evaluateAll(doc);
-      expect(doc.lines[0].cachedError,
-          startsWith('circularReference:'));
+      expect(doc.lines[0].cachedError, startsWith('circularReference:'));
     });
 
     test('free vars populated on success', () async {
@@ -923,8 +899,7 @@ void main() {
       // b touched once with '(1) * 10'.
       expect(touched['(1) * 10'], 1);
       // c touched once — its preprocessed body uses b's new echo result.
-      expect(
-          touched.keys.where((k) => k.contains('* 100')).length, 1);
+      expect(touched.keys.where((k) => k.contains('* 100')).length, 1);
     });
 
     test('editing a leaf node only re-evaluates that node', () async {
