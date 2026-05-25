@@ -15,8 +15,7 @@ import 'package:crisp_calc/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // First 100 digits of pi. Source: https://www.piday.org/million/
-const _piRef =
-    '3.141592653589793238462643383279502884197169399375105820974944'
+const _piRef = '3.141592653589793238462643383279502884197169399375105820974944'
     '5923078164062862089986280348253421170679';
 
 void main() {
