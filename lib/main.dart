@@ -297,8 +297,7 @@ class _MainScreenState extends State<MainScreen> {
   List<({IconData icon, String label})> _destinations(AppLocalizations t) {
     return [
       (icon: Icons.calculate, label: t.navCalculator),
-      // TODO(phase-8): localize via t.navNotepad once the i18n keys land.
-      (icon: Icons.notes, label: 'Notepad'),
+      (icon: Icons.notes, label: t.navNotepad),
       (icon: Icons.show_chart, label: t.navGraphing),
       (icon: Icons.functions, label: t.navFunctions),
       (icon: Icons.donut_large, label: t.navAnalysis),

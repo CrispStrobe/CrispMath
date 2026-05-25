@@ -17,6 +17,7 @@ abstract class AppLocalizations {
 
   // -- Nav destinations --
   String get navCalculator;
+  String get navNotepad;
   String get navGraphing;
   String get navFunctions;
   String get navAnalysis;
@@ -479,6 +480,8 @@ class EnLocalizations implements AppLocalizations {
 
   @override
   String get navCalculator => 'Calculator';
+  @override
+  String get navNotepad => 'Notepad';
   @override
   String get navGraphing => 'Graphing';
   @override
@@ -1545,6 +1548,8 @@ class DeLocalizations implements AppLocalizations {
 
   @override
   String get navCalculator => 'Rechner';
+  @override
+  String get navNotepad => 'Notizen';
   @override
   String get navGraphing => 'Graphen';
   @override
@@ -2757,6 +2762,8 @@ class FrLocalizations implements AppLocalizations {
 
   @override
   String get navCalculator => 'Calculatrice';
+  @override
+  String get navNotepad => 'Notes';
   @override
   String get navGraphing => 'Graphes';
   @override
@@ -3975,6 +3982,8 @@ class EsLocalizations implements AppLocalizations {
 
   @override
   String get navCalculator => 'Calculadora';
+  @override
+  String get navNotepad => 'Notas';
   @override
   String get navGraphing => 'Gráficos';
   @override
