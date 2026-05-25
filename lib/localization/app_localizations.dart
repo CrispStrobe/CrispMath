@@ -52,6 +52,16 @@ abstract class AppLocalizations {
   String notepadInvalidImport(String name);
   String get notepadEmptyImportList;
   String notepadUseDirective(String code);
+  String get notepadManageTitle;
+  String get notepadManageNotepads;
+  String get notepadOpenDocument;
+  String get notepadExportAsJson;
+  String get notepadImportFromJson;
+  String get notepadImport;
+  String get notepadImportJsonHint;
+  String get notepadJsonCopied;
+  String notepadJsonImported(String name);
+  String get notepadJsonImportFailed;
 
   // -- Calculator screen --
   String get historyHere;
@@ -570,6 +580,27 @@ class EnLocalizations implements AppLocalizations {
   String get notepadEmptyImportList => 'Empty import list';
   @override
   String notepadUseDirective(String code) => 'Use directive: $code';
+  @override
+  String get notepadManageTitle => 'Manage notepads';
+  @override
+  String get notepadManageNotepads => 'Manage notepads…';
+  @override
+  String get notepadOpenDocument => 'Open';
+  @override
+  String get notepadExportAsJson => 'Export as JSON';
+  @override
+  String get notepadImportFromJson => 'Import from JSON';
+  @override
+  String get notepadImport => 'Import';
+  @override
+  String get notepadImportJsonHint => 'Paste a notepad JSON payload here…';
+  @override
+  String get notepadJsonCopied => 'Notepad JSON copied to clipboard';
+  @override
+  String notepadJsonImported(String name) => 'Imported "$name"';
+  @override
+  String get notepadJsonImportFailed =>
+      'Import failed: payload is not valid notepad JSON';
   @override
   String get navGraphing => 'Graphing';
   @override
@@ -1637,7 +1668,7 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get navCalculator => 'Rechner';
   @override
-  String get navNotepad => 'Notizen';
+  String get navNotepad => 'Rechenblock';
   @override
   String get notepadDefaultDocName => 'Unbenannt';
   @override
@@ -1697,6 +1728,28 @@ class DeLocalizations implements AppLocalizations {
   String get notepadEmptyImportList => 'Leere Importliste';
   @override
   String notepadUseDirective(String code) => 'Use-Anweisung: $code';
+  @override
+  String get notepadManageTitle => 'Rechenblöcke verwalten';
+  @override
+  String get notepadManageNotepads => 'Rechenblöcke verwalten…';
+  @override
+  String get notepadOpenDocument => 'Öffnen';
+  @override
+  String get notepadExportAsJson => 'Als JSON exportieren';
+  @override
+  String get notepadImportFromJson => 'Aus JSON importieren';
+  @override
+  String get notepadImport => 'Importieren';
+  @override
+  String get notepadImportJsonHint => 'Hier ein Rechenblock-JSON einfügen…';
+  @override
+  String get notepadJsonCopied =>
+      'Rechenblock-JSON in die Zwischenablage kopiert';
+  @override
+  String notepadJsonImported(String name) => '„$name" importiert';
+  @override
+  String get notepadJsonImportFailed =>
+      'Import fehlgeschlagen: kein gültiges Rechenblock-JSON';
   @override
   String get navGraphing => 'Graphen';
   @override
@@ -2970,6 +3023,29 @@ class FrLocalizations implements AppLocalizations {
   String get notepadEmptyImportList => 'Liste d\'imports vide';
   @override
   String notepadUseDirective(String code) => 'Directive use : $code';
+  @override
+  String get notepadManageTitle => 'Gérer les notes';
+  @override
+  String get notepadManageNotepads => 'Gérer les notes…';
+  @override
+  String get notepadOpenDocument => 'Ouvrir';
+  @override
+  String get notepadExportAsJson => 'Exporter en JSON';
+  @override
+  String get notepadImportFromJson => 'Importer depuis JSON';
+  @override
+  String get notepadImport => 'Importer';
+  @override
+  String get notepadImportJsonHint =>
+      'Collez ici une charge utile JSON de note…';
+  @override
+  String get notepadJsonCopied =>
+      'JSON de note copié dans le presse-papiers';
+  @override
+  String notepadJsonImported(String name) => '« $name » importé';
+  @override
+  String get notepadJsonImportFailed =>
+      'Échec de l\'import : charge utile JSON de note invalide';
   @override
   String get navGraphing => 'Graphes';
   @override
@@ -4249,6 +4325,29 @@ class EsLocalizations implements AppLocalizations {
   String get notepadEmptyImportList => 'Lista de imports vacía';
   @override
   String notepadUseDirective(String code) => 'Directiva use: $code';
+  @override
+  String get notepadManageTitle => 'Gestionar notas';
+  @override
+  String get notepadManageNotepads => 'Gestionar notas…';
+  @override
+  String get notepadOpenDocument => 'Abrir';
+  @override
+  String get notepadExportAsJson => 'Exportar como JSON';
+  @override
+  String get notepadImportFromJson => 'Importar desde JSON';
+  @override
+  String get notepadImport => 'Importar';
+  @override
+  String get notepadImportJsonHint =>
+      'Pega aquí una carga JSON de la nota…';
+  @override
+  String get notepadJsonCopied =>
+      'JSON de la nota copiado al portapapeles';
+  @override
+  String notepadJsonImported(String name) => '«$name» importado';
+  @override
+  String get notepadJsonImportFailed =>
+      'Importación fallida: la carga no es un JSON de nota válido';
   @override
   String get navGraphing => 'Gráficos';
   @override

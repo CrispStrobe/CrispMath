@@ -34,6 +34,7 @@ import '../services/engine_service.dart';
 import '../utils/error_formatter.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/math_display_utils.dart';
+import '../widgets/notepad_manager_dialog.dart';
 
 /// Layout breakpoint matching the app shell's nav-rail switch
 /// (decision #17). At or above this width the input + result render
@@ -771,6 +772,10 @@ class _NotepadScreenState extends State<NotepadScreen> {
             value: 'open-welcome',
             child: Text(t.notepadOpenWelcomeSample),
           ));
+          items.add(PopupMenuItem(
+            value: 'manage',
+            child: Text(t.notepadManageNotepads),
+          ));
           if (doc != null) {
             items.add(const PopupMenuDivider());
             items.add(PopupMenuItem(
@@ -805,6 +810,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
       _newDocument();
     } else if (value == 'open-welcome') {
       _openWelcomeSample();
+    } else if (value == 'manage') {
+      showNotepadManagerDialog(context, onSwitchTo: (_) {});
     } else if (value.startsWith('open:')) {
       _openDocument(value.substring('open:'.length));
     } else if (value == 'recalc') {
