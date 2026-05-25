@@ -33,6 +33,12 @@ class SudokuGrid extends StatelessWidget {
   /// drop handler (e.g. during visualizer playback).
   final void Function(int cellIndex, int? digit)? onDropDigit;
 
+  /// Round 88: cells participating in a constraint violation —
+  /// rendered with a soft red wash. Computed by the screen via
+  /// [SudokuSolver.computeConflicts] after every edit. Empty when
+  /// no conflicts or when the visualizer is replaying a trace.
+  final Set<int>? conflictIndexes;
+
   /// V3: optional per-cell candidate sets. When non-null, each
   /// empty cell renders a sub-grid of candidate digits (pencil
   /// marks) in light/dim color. List length must equal `side²`;
@@ -56,6 +62,7 @@ class SudokuGrid extends StatelessWidget {
     this.onDropDigit,
     this.candidates,
     this.cages,
+    this.conflictIndexes,
   });
 
   /// Maps each cell index to its cage index, or -1 if uncaged.
@@ -102,6 +109,11 @@ class SudokuGrid extends StatelessWidget {
                               isSelected: selectedIndex == r * layout.side + c,
                               isHighlighted:
                                   highlightIndex == r * layout.side + c,
+                              // Round 88: red wash for cells caught
+                              // by computeConflicts.
+                              isConflict: conflictIndexes
+                                      ?.contains(r * layout.side + c) ??
+                                  false,
                               cellSize: cellSize,
                               candidates: candidates?[r * layout.side + c],
                               onTap: onTapCell == null
@@ -161,6 +173,7 @@ class _Cell extends StatelessWidget {
   final bool isClue;
   final bool isSelected;
   final bool isHighlighted;
+  final bool isConflict;
   final double cellSize;
   final Set<int>? candidates;
   final VoidCallback? onTap;
@@ -174,6 +187,7 @@ class _Cell extends StatelessWidget {
     required this.isClue,
     required this.isSelected,
     required this.isHighlighted,
+    required this.isConflict,
     required this.cellSize,
     required this.candidates,
     required this.onTap,
@@ -207,6 +221,12 @@ class _Cell extends StatelessWidget {
           bg = isClue
               ? scheme.error.withValues(alpha: 0.25)
               : scheme.tertiary.withValues(alpha: 0.30);
+        } else if (isConflict) {
+          // Round 88: red wash trumps highlight + selection so the
+          // user sees the conflict immediately. Stacks under the
+          // green drag-target tint though (drag drop is the user's
+          // active intent and they can fix the conflict next).
+          bg = scheme.error.withValues(alpha: 0.22);
         } else if (isHighlighted) {
           bg = scheme.primary.withValues(alpha: 0.30);
         } else if (isSelected) {

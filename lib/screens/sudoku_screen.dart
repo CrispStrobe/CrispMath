@@ -553,6 +553,15 @@ class _SudokuScreenState extends State<SudokuScreen> {
       }
     }
 
+    // Round 88: compute conflicts against the live displayed grid
+    // so the SudokuGrid can red-wash any cell participating in a
+    // constraint violation. Skip during visualizer playback (the
+    // mid-frame solver state legitimately has duplicates the user
+    // shouldn't see flagged).
+    final conflicts = _trace == null
+        ? SudokuSolver.computeConflicts(_puzzle, _displayed)
+        : const <int>{};
+
     // Round 87b: stack the grid + an animated win-celebration
     // overlay. The overlay appears when [_winStatus == true] and
     // the user hasn't dismissed it; it fades + scales in from
@@ -574,6 +583,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
             // pad. Non-null digit fills the cell; null clears it.
             // Wired only when the visualizer isn't active.
             onDropDigit: _trace == null ? _onDropDigitOnCell : null,
+            conflictIndexes: conflicts,
           ),
           if (_winStatus == true && !_winOverlayDismissed)
             Positioned.fill(

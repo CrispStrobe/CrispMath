@@ -2,6 +2,64 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 88) — Sudoku conflict highlighting + 8×8 uniqueness audit
+
+Two tightly-coupled Sudoku polishes after the round-87 UX
+overhaul. Round 87b's win chip surfaced the "Has errors"
+status but didn't say *which* cells were broken — a known gap.
+Round 82's 8×8 X / Disjoint presets shipped without uniqueness
+checks (only Killer was audited); a silent regression risk.
+
+### Engine: `SudokuSolver.computeConflicts`
+
+New pure-Dart function in `lib/engine/sudoku.dart`. Walks every
+`allDifferent` overlay the puzzle's variant registers (rows,
+columns, boxes, Sudoku-X diagonals, disjoint groups, killer
+cages) and flags every cell index participating in a duplicate.
+For Killer it also flags entire cages whose `targetSum` doesn't
+match the actual sum — but only when the cage is fully filled,
+so mid-entry partial cages don't false-positive.
+
+Complexity O(side² + cages × cells). Fast enough to run on
+every keystroke; the screen invokes it once per build.
+
+### Widget: red conflict wash
+
+`SudokuGrid` gets a new `conflictIndexes: Set<int>?` prop;
+`_Cell` gets a corresponding `isConflict` flag. Conflicting
+cells render with a 22% alpha `scheme.error` wash. Z-order:
+drag-target green hover wins (active intent), then conflict
+red, then highlight (visualizer playback), then selection
+blue. The screen skips conflict computation during visualizer
+playback (mid-frame solver states legitimately have duplicates
+that aren't user errors).
+
+### 8×8 X / Disjoint uniqueness audit
+
+Two new tests in `sudoku_test.dart` extend the round-82
+`hasUniqueSolution` check pattern to `eight8x8X` and
+`eight8x8Disjoint`. Both pass — those presets are uniquely
+solvable, no regeneration needed.
+
+### Tests
+
+10 new `SudokuSolver.computeConflicts` tests cover: empty grid
+clean; valid solved grid clean; row / column / box dupes flag
+both cells; Sudoku-X main-diagonal dupes flag both; disjoint
+in-box-position dupes flag both; Killer cage dupes flag every
+cell; Killer fully-filled cage with wrong sum flags every cell;
+Killer partially-filled cage with mid-mismatch does NOT flag.
+Plus the two new 8×8 uniqueness audits.
+
+Suite 1437 → 1451 in this worktree. `flutter analyze` clean;
+`dart format` applied.
+
+### Worktree
+
+Implemented in the `feat/sudoku-conflicts` branch on the
+existing `CrispCalc-sudoku-ui` worktree (reused after round
+87b's `feat/sudoku-win-celebrate` merge to main).
+
 ## 2026-05-25 (round 87) — Sudoku UI overhaul (8 fixes)
 
 Eight specific UX gaps the user surfaced after living with the

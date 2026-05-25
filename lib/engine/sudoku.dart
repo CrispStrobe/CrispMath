@@ -377,6 +377,98 @@ class SudokuSolver {
   /// candidate v must leave room for the remaining cells to sum
   /// to the residue, i.e. residue - (r-1)*n ≤ v ≤ residue - (r-1)).
   /// The tight sum bound from available digits is V2.
+  /// Round 88: identify cells that violate the puzzle's constraints
+  /// against [displayed]. Returns every cell index participating in
+  /// a duplicate within a row / column / box / diagonal /
+  /// disjoint-group / cage `allDifferent` overlay. Also flags
+  /// fully-filled cages whose sum doesn't match `targetSum` (every
+  /// cell in the offending cage gets marked).
+  ///
+  /// Pure-Dart, O(side² + cages × cells), fast enough to run on
+  /// every keystroke. Empty cells (value 0) are never flagged on
+  /// their own — they only contribute via constraint relationships
+  /// when their cage is fully filled.
+  static Set<int> computeConflicts(SudokuPuzzle puzzle, List<int> displayed) {
+    final layout = puzzle.layout;
+    final n = layout.side;
+    final conflicts = <int>{};
+
+    // Helper: scan a list of indexes; whenever two share the same
+    // non-zero value, mark both.
+    void scanForDuplicates(List<int> indexes) {
+      final valueToFirst = <int, int>{};
+      for (final idx in indexes) {
+        final v = displayed[idx];
+        if (v == 0) continue;
+        final prior = valueToFirst[v];
+        if (prior != null) {
+          conflicts.add(prior);
+          conflicts.add(idx);
+        } else {
+          valueToFirst[v] = idx;
+        }
+      }
+    }
+
+    // Rows.
+    for (var r = 0; r < n; r++) {
+      scanForDuplicates([for (var c = 0; c < n; c++) r * n + c]);
+    }
+    // Columns.
+    for (var c = 0; c < n; c++) {
+      scanForDuplicates([for (var r = 0; r < n; r++) r * n + c]);
+    }
+    // Boxes.
+    final boxesPerRow = n ~/ layout.boxCols;
+    for (var br = 0; br < n ~/ layout.boxRows; br++) {
+      for (var bc = 0; bc < boxesPerRow; bc++) {
+        final cells = <int>[];
+        for (var dr = 0; dr < layout.boxRows; dr++) {
+          for (var dc = 0; dc < layout.boxCols; dc++) {
+            cells.add(
+                (br * layout.boxRows + dr) * n + (bc * layout.boxCols + dc));
+          }
+        }
+        scanForDuplicates(cells);
+      }
+    }
+    // Sudoku-X diagonals.
+    if (puzzle.variant == SudokuVariant.x) {
+      scanForDuplicates([for (var i = 0; i < n; i++) i * n + i]);
+      scanForDuplicates([for (var i = 0; i < n; i++) i * n + (n - 1 - i)]);
+    }
+    // Disjoint groups: cells with the same in-box position across
+    // every box share an allDifferent overlay.
+    if (puzzle.variant == SudokuVariant.disjoint) {
+      final byKey = <int, List<int>>{};
+      for (var r = 0; r < n; r++) {
+        for (var c = 0; c < n; c++) {
+          final key =
+              (r % layout.boxRows) * layout.boxCols + (c % layout.boxCols);
+          byKey.putIfAbsent(key, () => []).add(r * n + c);
+        }
+      }
+      for (final group in byKey.values) {
+        scanForDuplicates(group);
+      }
+    }
+    // Killer cages: allDifferent within the cage AND, when the cage
+    // is fully filled, the sum must match targetSum.
+    if (puzzle.variant == SudokuVariant.killer && puzzle.cages != null) {
+      for (final cage in puzzle.cages!) {
+        scanForDuplicates(cage.cellIndexes);
+        final allFilled = cage.cellIndexes.every((i) => displayed[i] != 0);
+        if (allFilled) {
+          final sum = cage.cellIndexes.fold<int>(0, (s, i) => s + displayed[i]);
+          if (sum != cage.targetSum) {
+            conflicts.addAll(cage.cellIndexes);
+          }
+        }
+      }
+    }
+    return conflicts;
+  }
+
   static List<Set<int>> computeCandidates(SudokuPuzzle puzzle) {
     final layout = puzzle.layout;
     final n = layout.side;

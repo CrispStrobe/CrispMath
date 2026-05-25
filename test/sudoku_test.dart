@@ -527,6 +527,174 @@ void main() {
       final unique = await SudokuSolver.hasUniqueSolution(p);
       expect(unique, isTrue, reason: 'killer8x8 must be uniquely solvable');
     }, timeout: const Timeout(Duration(seconds: 120)));
+
+    // Round 88: audit the X and Disjoint 8×8 presets the same way
+    // round 82 audited the Killer one. These were shipped without
+    // a uniqueness check; the test catches any silent regression
+    // if a future preset edit drops below the unique-solution
+    // threshold.
+    test('8×8 Sudoku-X preset has a UNIQUE solution', () async {
+      final p = SudokuPresets.eight8x8X;
+      final unique = await SudokuSolver.hasUniqueSolution(p);
+      expect(unique, isTrue, reason: 'eight8x8X must be uniquely solvable');
+    }, timeout: const Timeout(Duration(seconds: 120)));
+
+    test('8×8 Disjoint preset has a UNIQUE solution', () async {
+      final p = SudokuPresets.eight8x8Disjoint;
+      final unique = await SudokuSolver.hasUniqueSolution(p);
+      expect(unique, isTrue,
+          reason: 'eight8x8Disjoint must be uniquely solvable');
+    }, timeout: const Timeout(Duration(seconds: 120)));
+  });
+
+  group('SudokuSolver.computeConflicts (round 88)', () {
+    test('empty grid has no conflicts', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: List<int>.filled(81, 0),
+      );
+      expect(SudokuSolver.computeConflicts(puzzle, puzzle.cells), isEmpty);
+    });
+
+    test('valid solved grid has no conflicts', () async {
+      final p = SudokuPresets.standard9x9Easy;
+      final solved = await SudokuSolver.solve(p);
+      expect(solved, isNotNull);
+      expect(SudokuSolver.computeConflicts(p, solved!), isEmpty);
+    }, timeout: const Timeout(Duration(seconds: 30)));
+
+    test('duplicate in a row flags both cells', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: List<int>.filled(81, 0),
+      );
+      // Place 5 at (0,0) and (0,5).
+      final displayed = List<int>.from(puzzle.cells);
+      displayed[0] = 5;
+      displayed[5] = 5;
+      final c = SudokuSolver.computeConflicts(puzzle, displayed);
+      expect(c, containsAll([0, 5]));
+    });
+
+    test('duplicate in a column flags both cells', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: List<int>.filled(81, 0),
+      );
+      final displayed = List<int>.from(puzzle.cells);
+      displayed[0] = 7; // (0,0)
+      displayed[27] = 7; // (3,0)
+      final c = SudokuSolver.computeConflicts(puzzle, displayed);
+      expect(c, containsAll([0, 27]));
+    });
+
+    test('duplicate in a box flags both cells', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        cells: List<int>.filled(81, 0),
+      );
+      final displayed = List<int>.from(puzzle.cells);
+      displayed[0] = 3; // (0,0) top-left of box 1
+      displayed[10] = 3; // (1,1) — also in box 1
+      final c = SudokuSolver.computeConflicts(puzzle, displayed);
+      expect(c, containsAll([0, 10]));
+    });
+
+    test('Sudoku-X: duplicate on main diagonal flags both', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        variant: SudokuVariant.x,
+        cells: List<int>.filled(81, 0),
+      );
+      final displayed = List<int>.from(puzzle.cells);
+      // (0,0) and (8,8) — both on main diagonal, far enough apart
+      // to not collide on a row/column/box too.
+      displayed[0] = 6;
+      displayed[80] = 6;
+      final c = SudokuSolver.computeConflicts(puzzle, displayed);
+      expect(c, containsAll([0, 80]));
+    });
+
+    test('Disjoint: duplicate in the same in-box position flags both', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.standard,
+        variant: SudokuVariant.disjoint,
+        cells: List<int>.filled(81, 0),
+      );
+      final displayed = List<int>.from(puzzle.cells);
+      // (0,0) and (3,3) — both at top-left of their respective
+      // boxes (in-box position key 0). Disjoint constraint flags
+      // them. Row/col/box don't overlap so any flag is from the
+      // disjoint group.
+      displayed[0] = 4;
+      displayed[30] = 4; // (3,3)
+      final c = SudokuSolver.computeConflicts(puzzle, displayed);
+      expect(c, containsAll([0, 30]));
+    });
+
+    test('Killer: cage with duplicate value flags every cell in cage', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.small,
+        variant: SudokuVariant.killer,
+        cells: List<int>.filled(16, 0),
+        cages: const [
+          KillerCage(cellIndexes: [0, 1, 4, 5], targetSum: 10),
+          KillerCage(cellIndexes: [2, 3, 6, 7], targetSum: 20),
+          KillerCage(
+              cellIndexes: [8, 9, 10, 11, 12, 13, 14, 15], targetSum: 36),
+        ],
+      );
+      // Place 2 at (0,0) and (0,1) — both in cage 0. Even though
+      // they're in the same row too, the cage scan also marks them.
+      final displayed = List<int>.from(puzzle.cells);
+      displayed[0] = 2;
+      displayed[1] = 2;
+      final c = SudokuSolver.computeConflicts(puzzle, displayed);
+      expect(c, containsAll([0, 1]));
+    });
+
+    test('Killer: fully-filled cage with wrong sum flags every cell', () {
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.small,
+        variant: SudokuVariant.killer,
+        cells: List<int>.filled(16, 0),
+        cages: const [
+          KillerCage(cellIndexes: [0, 1], targetSum: 5),
+          KillerCage(cellIndexes: [2, 3], targetSum: 5),
+          KillerCage(cellIndexes: [4, 5, 6, 7], targetSum: 10),
+          KillerCage(
+              cellIndexes: [8, 9, 10, 11, 12, 13, 14, 15], targetSum: 26),
+        ],
+      );
+      final displayed = List<int>.from(puzzle.cells);
+      // Cage 0: fill 1 + 2 (sum 3, target 5) → flag both.
+      displayed[0] = 1;
+      displayed[1] = 2;
+      final c = SudokuSolver.computeConflicts(puzzle, displayed);
+      expect(c, containsAll([0, 1]));
+    });
+
+    test('Killer: partially-filled cage with mid-mismatch does NOT flag', () {
+      // Until all cells are filled, the sum check would be lossy
+      // (target 10, partial 3 might still reach target 10 with 7
+      // remaining). We only flag fully-filled cages.
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.small,
+        variant: SudokuVariant.killer,
+        cells: List<int>.filled(16, 0),
+        cages: const [
+          KillerCage(cellIndexes: [0, 1, 4, 5], targetSum: 10),
+          KillerCage(cellIndexes: [2, 3, 6, 7], targetSum: 20),
+          KillerCage(
+              cellIndexes: [8, 9, 10, 11, 12, 13, 14, 15], targetSum: 36),
+        ],
+      );
+      final displayed = List<int>.from(puzzle.cells);
+      // Only one cell filled in cage 0, with target 10 — partial.
+      displayed[0] = 3;
+      final c = SudokuSolver.computeConflicts(puzzle, displayed);
+      expect(c, isEmpty);
+    });
   });
 
   group('Sudoku V2 — 10×10 / 12×12 / 15×15 layouts (round 83)', () {
