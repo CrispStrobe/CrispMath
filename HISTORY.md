@@ -2,6 +2,78 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 77) — CSP Round E: noOverlap (single-machine scheduling)
+
+Round 74 added optimization (`minimize` / `maximize`) to the
+DSL but the constraint vocabulary was still pure
+arithmetic — there was no compact way to express "these tasks
+can't run at the same time," the canonical single-machine
+scheduling rule. HANDOFF §6 listed `addNoOverlap` /
+`addCumulative` as the next CSP arc; this round ships the first
+half (no-overlap; cumulative-with-heights stays open for a
+follow-up).
+
+### Grammar
+
+```
+noOverlap(s1=4, s2=3, s3=2)
+```
+
+Each `name=integer` pair declares a task: `name` is a
+previously-declared start variable, the integer is its constant
+duration. The half-open intervals `[name, name + duration)` are
+constrained to be pairwise disjoint. The parser validates that
+every name is declared and every duration is non-negative;
+empty bodies and malformed pairs surface clear line-numbered
+errors.
+
+### Engine
+
+A new `NoOverlapGroup` typedef (`(starts, durations)`) carries
+the parsed groups. Both `solveDiophantine` and
+`solveOptimization` gain an optional `noOverlap` named
+parameter; after the regular constraint loop they call
+`problem.addNoOverlap(starts, durations)` per group. dart_csp's
+helper itself dispatches to the cumulative time-table
+propagator (capacity 1, heights all 1) — strictly stronger
+pruning than a hand-rolled O(n²) pairwise disjunction.
+
+### Composition with round 74
+
+The new `schedulingMakespan` gallery entry shows the canonical
+"schedule three tasks on one machine, minimize makespan" form:
+
+```
+vars: s1, s2, s3 in 0..9
+vars: makespan in 0..9
+noOverlap(s1=4, s2=3, s3=2)
+makespan - s1 >= 4
+makespan - s2 >= 3
+makespan - s3 >= 2
+minimize makespan
+```
+
+Optimal makespan is 9 (sum of durations on a single resource).
+
+The constraints are written as `makespan - sN >= dN` rather
+than the more natural `sN + dN <= makespan` because the
+current linear-expression parser requires the RHS to be a
+numeric literal. Extending the parser to handle
+expression-on-both-sides is queued as a follow-up.
+
+### Tests
+
+Six new engine tests in `csp_solver_test.dart`:
+- noOverlap enumerates only valid schedules (pairwise
+  non-overlap verified directly from the solver's output)
+- noOverlap + minimize returns the optimum makespan
+- undeclared start var, malformed pair, empty body, and
+  negative duration each produce clear errors
+
+One new gallery entry + i18n × 4 locales. Both gallery tests
+(locale-coverage + dsl: sentinel) updated. Suite total: 1231
+tests.
+
 ## 2026-05-25 (round 76) — Sudoku Disjoint Groups variant
 
 HANDOFF §6 listed Disjoint Groups as a one-session pick that

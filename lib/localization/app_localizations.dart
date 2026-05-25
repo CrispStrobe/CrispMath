@@ -1078,6 +1078,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Ordered triples summing to 20';
       case 'coinChangeMin':
         return 'Coin change (minimize coins)';
+      case 'schedulingMakespan':
+        return 'Scheduling — minimize makespan';
     }
     return id;
   }
@@ -2112,6 +2114,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Geordnete Tripel mit Summe 20';
       case 'coinChangeMin':
         return 'Münzwechsel (Anzahl minimieren)';
+      case 'schedulingMakespan':
+        return 'Scheduling — Makespan minimieren';
     }
     return id;
   }
@@ -3269,6 +3273,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Triplets ordonnés sommant à 20';
       case 'coinChangeMin':
         return 'Rendu de monnaie (minimiser les pièces)';
+      case 'schedulingMakespan':
+        return 'Ordonnancement — minimiser le makespan';
     }
     return id;
   }
@@ -4425,6 +4431,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Tripletes ordenados que suman 20';
       case 'coinChangeMin':
         return 'Cambio de monedas (minimizar piezas)';
+      case 'schedulingMakespan':
+        return 'Planificación — minimizar el makespan';
     }
     return id;
   }

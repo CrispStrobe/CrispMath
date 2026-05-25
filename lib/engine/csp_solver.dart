@@ -25,6 +25,14 @@ import 'package:dart_csp/dart_csp.dart' as csp;
 /// One (variable → integer) solution from `solveDiophantine`.
 typedef DiophantineSolution = Map<String, int>;
 
+/// Round 76: one no-overlap (scheduling) group. The parallel lists
+/// `starts` and `durations` describe a set of tasks whose half-open
+/// intervals `[start_i, start_i + duration_i)` may not overlap —
+/// the canonical single-machine scheduling constraint. Routes to
+/// dart_csp's `Problem.addNoOverlap` which expands to the
+/// cumulative time-table propagator under the hood.
+typedef NoOverlapGroup = ({List<String> starts, List<int> durations});
+
 /// Result envelope returned by [CspSolver.solveDiophantine]. Holds
 /// either a list of solutions or an error message — never both.
 class DiophantineResult {
@@ -113,6 +121,7 @@ class CspSolver {
   static Future<DiophantineResult> solveDiophantine({
     required Map<String, ({int min, int max})> variables,
     required List<String> constraints,
+    List<NoOverlapGroup> noOverlap = const [],
     int maxSolutions = 100,
   }) async {
     if (variables.isEmpty) {
@@ -166,6 +175,12 @@ class CspSolver {
           continue;
         }
         problem.addStringConstraint(c);
+      }
+      // Round 76: scheduling overlays. Each group routes to
+      // dart_csp's cumulative-backed addNoOverlap; the helper
+      // validates start vars + non-negative durations itself.
+      for (final group in noOverlap) {
+        problem.addNoOverlap(group.starts, group.durations);
       }
     } catch (e) {
       return DiophantineResult.failure(
@@ -412,6 +427,7 @@ class CspSolver {
       {int maxSolutions = 100}) async {
     final vars = <String, ({int min, int max})>{};
     final constraints = <String>[];
+    final noOverlap = <NoOverlapGroup>[];
     ({String op, String expr, int lineNum})? objective;
 
     final lines = input.split('\n');
@@ -493,6 +509,58 @@ class CspSolver {
         continue;
       }
 
+      // Round 77: scheduling overlay.
+      //
+      //   noOverlap(s1=4, s2=3, s3=2)
+      //
+      // Each `name=int` pair describes a task: `name` is a
+      // previously-declared start variable, `int` is its constant
+      // duration. The half-open intervals
+      // `[name, name + duration)` must be pairwise disjoint —
+      // single-machine / single-resource scheduling.
+      //
+      // We validate names against [vars] (must be declared first)
+      // and durations as non-negative integers; the rest is left
+      // to dart_csp's `addNoOverlap` itself.
+      final noOverlapMatch =
+          RegExp(r'^noOverlap\s*\(\s*([^)]*)\s*\)$').firstMatch(line);
+      if (noOverlapMatch != null) {
+        final inner = noOverlapMatch.group(1)!.trim();
+        if (inner.isEmpty) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: noOverlap needs at least one '
+              'task pair `name=duration`.');
+        }
+        final starts = <String>[];
+        final durations = <int>[];
+        for (final raw in inner.split(',')) {
+          final pair = raw.trim();
+          final m = RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(-?\d+)$')
+              .firstMatch(pair);
+          if (m == null) {
+            return DiophantineResult.failure(
+                'Line ${lineNum + 1}: noOverlap pair "$pair" — '
+                'expected `name=integer`.');
+          }
+          final name = m.group(1)!;
+          final dur = int.parse(m.group(2)!);
+          if (!vars.containsKey(name)) {
+            return DiophantineResult.failure(
+                'Line ${lineNum + 1}: noOverlap references undeclared '
+                'variable "$name".');
+          }
+          if (dur < 0) {
+            return DiophantineResult.failure(
+                'Line ${lineNum + 1}: noOverlap duration for "$name" '
+                'must be non-negative (got $dur).');
+          }
+          starts.add(name);
+          durations.add(dur);
+        }
+        noOverlap.add((starts: starts, durations: durations));
+        continue;
+      }
+
       // Anything else is a constraint.
       constraints.add(line);
     }
@@ -508,12 +576,14 @@ class CspSolver {
         constraints: constraints,
         minimize: objective.op == 'minimize',
         objectiveExpr: objective.expr,
+        noOverlap: noOverlap,
       );
     }
 
     return solveDiophantine(
       variables: vars,
       constraints: constraints,
+      noOverlap: noOverlap,
       maxSolutions: maxSolutions,
     );
   }
@@ -540,6 +610,7 @@ class CspSolver {
     required List<String> constraints,
     required bool minimize,
     required String objectiveExpr,
+    List<NoOverlapGroup> noOverlap = const [],
   }) async {
     if (variables.isEmpty) {
       return DiophantineResult.failure('No variables declared.');
@@ -617,6 +688,9 @@ class CspSolver {
           continue;
         }
         problem.addStringConstraint(c);
+      }
+      for (final group in noOverlap) {
+        problem.addNoOverlap(group.starts, group.durations);
       }
     } catch (e) {
       return DiophantineResult.failure(

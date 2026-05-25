@@ -254,6 +254,97 @@ x + y == 6
     });
   });
 
+  group('CspSolver.solveDsl — Round 77 noOverlap', () {
+    test(
+        'noOverlap enumerates only the schedules whose tasks do not '
+        'overlap', () async {
+      // Three tasks of durations 4, 3, 2 in a 0..8 horizon. Every
+      // returned (s1, s2, s3) must satisfy pairwise disjointness of
+      // [s, s+d).
+      const dsl = '''
+vars: s1, s2, s3 in 0..8
+noOverlap(s1=4, s2=3, s3=2)
+''';
+      final r = await CspSolver.solveDsl(dsl, maxSolutions: 200);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      for (final s in r.solutions) {
+        // Intervals: t1=[s1,s1+4), t2=[s2,s2+3), t3=[s3,s3+2).
+        final s1 = s['s1']!, s2 = s['s2']!, s3 = s['s3']!;
+        bool nonOverlap(int a, int aLen, int b, int bLen) =>
+            a + aLen <= b || b + bLen <= a;
+        expect(nonOverlap(s1, 4, s2, 3), isTrue,
+            reason: 's1=$s1 d=4 overlaps s2=$s2 d=3');
+        expect(nonOverlap(s1, 4, s3, 2), isTrue,
+            reason: 's1=$s1 d=4 overlaps s3=$s3 d=2');
+        expect(nonOverlap(s2, 3, s3, 2), isTrue,
+            reason: 's2=$s2 d=3 overlaps s3=$s3 d=2');
+      }
+    }, timeout: const Timeout(Duration(seconds: 30)));
+
+    test(
+        'noOverlap + minimize makespan returns the proven optimum '
+        '(sum of durations on a single machine)', () async {
+      // Total work = 4+3+2 = 9. With a single machine and no idle,
+      // the makespan optimum is exactly 9.
+      // Constraint form `makespan - sN >= dN` (the linear-parser
+      // currently requires the RHS to be a numeric literal; a
+      // future round can extend it to expression-on-both-sides).
+      const dsl = '''
+vars: s1, s2, s3 in 0..9
+vars: makespan in 0..9
+noOverlap(s1=4, s2=3, s3=2)
+makespan - s1 >= 4
+makespan - s2 >= 3
+makespan - s3 >= 2
+minimize makespan
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.objective, 9);
+      expect(r.solutions, hasLength(1));
+    }, timeout: const Timeout(Duration(seconds: 30)));
+
+    test('noOverlap referencing an undeclared start var is rejected', () async {
+      const dsl = '''
+vars: s1 in 0..5
+noOverlap(s1=2, s9=3)
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isFalse);
+      expect(r.error, contains('undeclared'));
+    });
+
+    test('noOverlap with malformed pair is rejected', () async {
+      const dsl = '''
+vars: s1, s2 in 0..5
+noOverlap(s1=2, s2)
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isFalse);
+      expect(r.error, contains('expected'));
+    });
+
+    test('noOverlap with empty body is rejected', () async {
+      const dsl = '''
+vars: s1 in 0..5
+noOverlap()
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isFalse);
+    });
+
+    test('negative duration is rejected', () async {
+      const dsl = '''
+vars: s1, s2 in 0..5
+noOverlap(s1=2, s2=-1)
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isFalse);
+      expect(r.error, contains('non-negative'));
+    });
+  });
+
   group('CspSolver.solveCryptarithm', () {
     test('SEND + MORE = MONEY finds the unique assignment', () async {
       final r = await CspSolver.solveCryptarithm('SEND + MORE = MONEY');

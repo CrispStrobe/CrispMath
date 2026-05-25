@@ -82,6 +82,7 @@ void main() {
         'mapColoring',
         'orderedTriples',
         'coinChangeMin',
+        'schedulingMakespan',
       };
       var seen = 0;
       for (final e in WorkedExamples.all) {

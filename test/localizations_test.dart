@@ -340,6 +340,7 @@ void main() {
           t.constraintsDslExampleTitle('mapColoring'),
           t.constraintsDslExampleTitle('orderedTriples'),
           t.constraintsDslExampleTitle('coinChangeMin'),
+          t.constraintsDslExampleTitle('schedulingMakespan'),
           t.constraintsOptimalHeader(4),
           t.constraintsDiophantineIntro,
           t.constraintsCryptarithmIntro,
