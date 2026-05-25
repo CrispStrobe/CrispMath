@@ -532,7 +532,7 @@ but become *moat-building* rather than *positioning*, since the moat
       add / delete / drag-reorder lines all work, doc switching
       via the `⋮` menu persists across relaunch, Welcome doc
       appears once on first launch.
-    - **Phase 5 — Live recalc pipeline.** Per **#9**: on every
+    - **Phase 5 done 2026-05-25 (`main`).** Per **#9**: on every
       line edit, 300 ms debounce → `evaluateFrom(doc, lineIndex)`.
       Use `EngineService.cancelInFlight()` (`engine_service.dart:88`)
       when a fresh edit arrives while the previous run is still
@@ -553,7 +553,7 @@ but become *moat-building* rather than *positioning*, since the moat
       typing doesn't queue up stale evals; blocked-by chip jumps
       to the correct upstream line on tap; free-var tag updates
       as variables are defined / removed.
-    - **Phase 6 — Unit syntax + scope-local assignments + `use`.**
+    - **Phase 6 done 2026-05-25 (`main`).** Unit syntax + scope-local assignments + `use`.
       Before the generic `evaluate` route, call
       `UnitExpressionEvaluator.tryEvaluate(preprocessed)` at
       `lib/engine/unit_expression.dart:50-198`; on non-null

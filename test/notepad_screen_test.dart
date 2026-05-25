@@ -359,6 +359,68 @@ void main() {
     });
   });
 
+  group('NotepadScreen — Phase 6 use directive', () {
+    testWidgets('unknown import flags the use line as errored',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+
+      // Build a doc with `use foo` against a variable that doesn't
+      // exist in AppState.userVariables.
+      final doc = NotepadDocument.fresh(name: 'P6 unknown');
+      doc.lines.clear();
+      doc.lines.addAll([
+        NotepadLine.fresh(source: 'use foo'),
+        NotepadLine.fresh(source: '2 + 3'),
+      ]);
+      AppState().setNotepadDocument(doc);
+      AppState().setCurrentNotepadDoc(doc.id);
+      await tester.pumpAndSettle();
+
+      // Recalculate all → resolver sets the unknown-import error
+      // BEFORE the evaluator runs (post-eval ordering would be
+      // engine-isolate-dependent and unreliable in test env).
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Recalculate all'));
+      // A short pump is enough — the use-line error is set
+      // synchronously inside _runRecalcBody before any await.
+      await tester.pump(const Duration(milliseconds: 100));
+      final useLine = AppState()
+          .notepadDocuments[AppState().currentNotepadDocId!]!
+          .lines[0];
+      expect(useLine.cachedError, contains('unknownImport:foo'));
+    });
+
+    testWidgets('known import populates the document scope',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      AppState().setVariable('mytax', '0.085');
+      final doc = NotepadDocument.fresh(name: 'P6 known');
+      doc.lines.clear();
+      doc.lines.addAll([
+        NotepadLine.fresh(source: 'use mytax'),
+        NotepadLine.fresh(source: 'mytax'),
+      ]);
+      AppState().setNotepadDocument(doc);
+      AppState().setCurrentNotepadDoc(doc.id);
+      await _gotoNotepad(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Recalculate all'));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final useLine = AppState()
+          .notepadDocuments[AppState().currentNotepadDocId!]!
+          .lines[0];
+      // Resolver finds mytax → no unknown-import error set.
+      expect(useLine.cachedError, isNull,
+          reason: 'resolved import should not set an error');
+    });
+  });
+
   group('NotepadScreen — persistence', () {
     testWidgets('doc switch survives a force-reload', (tester) async {
       await _bootApp(tester, size: const Size(1280, 800));

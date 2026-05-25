@@ -28,6 +28,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import '../engine/app_state.dart';
 import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
+import '../engine/unit_expression.dart';
 import '../localization/app_localizations.dart';
 import '../services/engine_service.dart';
 import '../utils/error_formatter.dart';
@@ -100,10 +101,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
   /// in flight, no concurrent kill races.
   Future<void>? _activeRecalc;
 
-  /// Shared evaluator instance bound to [_dispatcher]. Pure-Dart
-  /// orchestrator; the engine calls go through `EngineService`.
-  late final NotepadEvaluator _evaluator =
-      NotepadEvaluator(dispatcher: _dispatcher);
+  /// Evaluator is rebuilt per recalc so the `externalScope` reflects
+  /// the doc's current `use` directive resolved against
+  /// `AppState.userVariables` (Phase 6).
 
   @override
   void initState() {
@@ -391,24 +391,124 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
   /// Engine dispatcher injected into [NotepadEvaluator]. Receives a
   /// notepad-preprocessed body (scope names + Ans already
-  /// substituted by Phase 2) and returns either a normalized result
+  /// substituted by Phase 2) and returns either a formatted result
   /// string or an `Error: ...` string the evaluator wraps with
-  /// [NotepadErrorPrefix.fromEngine]. No `AppState.userVariables` /
-  /// `userFunctions` reach-in here — those land in Phase 6 via the
-  /// `use` directive.
+  /// [NotepadErrorPrefix.fromEngine].
+  ///
+  /// Phase 6 wiring:
+  ///   - Try [UnitExpressionEvaluator.tryEvaluate] first so
+  ///     `5 km + 3 m`, `100 km/h in mph` etc. parse inline, mirroring
+  ///     `calculator_screen.dart:745-753`.
+  ///   - Otherwise route through `EngineService.evaluateAsync` after
+  ///     `preprocessNativeExpression` (same native-format step the
+  ///     calculator uses).
+  ///   - Pass the resulting string through `AppState.formatNumber`
+  ///     so the global `NumberDisplayFormat` setting (decision #19)
+  ///     applies consistently — same display semantics as the
+  ///     calculator's history rows.
   Future<String> _dispatcher(String preprocessed) async {
     if (preprocessed.trim().isEmpty) return '';
+
+    // Try the unit evaluator first against the raw preprocessed
+    // body and again with outer-paren-stripping — Phase 2's Ans
+    // substitution wraps the previous-line result in parens (so
+    // `Ans + 1` binds correctly), which would otherwise blind
+    // `UnitExpressionEvaluator` to `(8 km) in miles`-shaped input.
+    var unitResult = UnitExpressionEvaluator.tryEvaluate(preprocessed);
+    if (unitResult == null) {
+      final stripped = _stripOuterParens(preprocessed);
+      if (stripped != preprocessed) {
+        unitResult = UnitExpressionEvaluator.tryEvaluate(stripped);
+      }
+    }
+    if (unitResult != null) return _appState.formatNumber(unitResult);
+
     final native =
         ExpressionPreprocessingUtils.preprocessNativeExpression(preprocessed);
     try {
       final raw = await EngineService.evaluateAsync(native);
       if (raw.startsWith('Error')) return raw;
-      return ExpressionPreprocessingUtils.normalizeComplexResult(raw);
+      final normalized =
+          ExpressionPreprocessingUtils.normalizeComplexResult(raw);
+      return _appState.formatNumber(normalized);
     } on EngineCancelled {
       return 'Error: cancelled';
     } catch (e) {
       return 'Error: $e';
     }
+  }
+
+  /// Strip a *single* layer of matched outer parens (only when
+  /// they enclose the entire expression). Used as a fallback when
+  /// the unit evaluator fails on a paren-wrapped Ans substitution
+  /// like `(8 km) in miles`. Returns the input unchanged when no
+  /// outer paren pair encloses the whole thing.
+  String _stripOuterParens(String s) {
+    final trimmed = s.trim();
+    if (!trimmed.startsWith('(') || !trimmed.endsWith(')')) return s;
+    var depth = 0;
+    for (var i = 0; i < trimmed.length; i++) {
+      final ch = trimmed[i];
+      if (ch == '(') {
+        depth++;
+      } else if (ch == ')') {
+        depth--;
+        // Only strip if the outermost `(` closes at the very end.
+        if (depth == 0 && i < trimmed.length - 1) return s;
+      }
+    }
+    return trimmed.substring(1, trimmed.length - 1).trim();
+  }
+
+  /// Resolve the doc's optional `use name1, name2, ...` directive
+  /// against the global namespaces (decision #20). Variables in
+  /// `AppState.userVariables` are inlined directly into the
+  /// document-local scope (a name → value-string map that
+  /// [NotepadEvaluator]'s `externalScope` consumes). Unknown names
+  /// — neither a global variable nor a user function — bubble up
+  /// as an `unknownImport:<name>` error attached to the use line.
+  ///
+  /// V1 limitation: user functions in `AppState.userFunctions` (which
+  /// take arguments) can't be substituted via a flat name → value
+  /// map, so they're treated as unknown imports for now. Calling
+  /// user functions from inside a notepad doc is a polish item for
+  /// Phase 7.
+  _UseDirectiveResolution _resolveUseDirective(NotepadDocument doc) {
+    final firstCode = firstCodeLineIndexOf(doc);
+    if (firstCode < 0) return _UseDirectiveResolution.empty();
+    final parsed = classifyNotepadLine(
+      doc.lines[firstCode].source,
+      lineIndex: firstCode,
+      firstCodeLineIndex: firstCode,
+    );
+    if (parsed.kind != NotepadLineKind.useDirective) {
+      return _UseDirectiveResolution.empty();
+    }
+    // Parse-level errors (invalid identifier, empty list) keep the
+    // evaluator's existing handling — we don't second-guess them.
+    if (parsed.directiveError != null) {
+      return _UseDirectiveResolution(
+        useLineIndex: firstCode,
+        externalScope: const {},
+        unknownImports: const [],
+      );
+    }
+    final scope = <String, String>{};
+    final unknown = <String>[];
+    for (final name in parsed.imports) {
+      final v = _appState.userVariables[name];
+      if (v != null) {
+        scope[name] = v;
+        continue;
+      }
+      // V1 doesn't support user-function imports; treat as unknown.
+      unknown.add(name);
+    }
+    return _UseDirectiveResolution(
+      useLineIndex: firstCode,
+      externalScope: scope,
+      unknownImports: unknown,
+    );
   }
 
   /// Debounce a recalc starting from [startIndex]. Each fresh
@@ -462,13 +562,46 @@ class _NotepadScreenState extends State<NotepadScreen> {
   }) async {
     if (!mounted) return;
 
+    // Phase 6: resolve `use name1, name2, ...` against AppState
+    // before each eval pass so a user variable changing elsewhere
+    // is picked up on the next recalc. We set the unknown-import
+    // error on the use line up front (before the evaluator runs) —
+    // the evaluator's useDirective branch is patched to preserve
+    // a pre-existing `useDirective:` error, so this survives the
+    // evaluator's pass.
+    final useResolution = _resolveUseDirective(doc);
+    if (useResolution.useLineIndex >= 0 &&
+        useResolution.useLineIndex < doc.lines.length) {
+      final useLine = doc.lines[useResolution.useLineIndex];
+      if (useResolution.unknownImports.isNotEmpty) {
+        useLine.cachedResult = null;
+        useLine.cachedError =
+            '${NotepadErrorPrefix.useDirective}unknownImport:${useResolution.unknownImports.first}';
+        useLine.cachedFreeVars = [];
+      } else if (useLine.cachedError != null &&
+          useLine.cachedError!
+              .startsWith(NotepadErrorPrefix.useDirective)) {
+        // Stale unknown-import from a previous resolution: clear it
+        // now since the imports resolve cleanly this time.
+        useLine.cachedError = null;
+      }
+    }
+
+    final evaluator = NotepadEvaluator(
+      dispatcher: _dispatcher,
+      externalScope: useResolution.externalScope,
+    );
+
     final indices = <int>{};
     if (startIndex == null) {
       for (var i = 0; i < doc.lines.length; i++) {
         indices.add(i);
       }
     } else if (startIndex >= 0 && startIndex < doc.lines.length) {
-      final graph = buildDependencyGraph(doc);
+      final graph = buildDependencyGraph(
+        doc,
+        externalScope: useResolution.externalScope,
+      );
       indices.addAll(downstreamFrom(startIndex, graph));
     }
     setState(() {
@@ -482,9 +615,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
     try {
       if (startIndex == null) {
-        await _evaluator.evaluateAll(doc);
+        await evaluator.evaluateAll(doc);
       } else if (startIndex >= 0 && startIndex < doc.lines.length) {
-        await _evaluator.evaluateFrom(doc, startIndex);
+        await evaluator.evaluateFrom(doc, startIndex);
       }
     } catch (_) {/* dispatcher swallows errors into the cache */}
 
@@ -1138,8 +1271,20 @@ class _NotepadResultColumn extends StatelessWidget {
 
     if (rawError.startsWith(NotepadErrorPrefix.useDirective)) {
       final code = rawError.substring(NotepadErrorPrefix.useDirective.length);
+      String label;
+      if (code.startsWith('unknownImport:')) {
+        final name = code.substring('unknownImport:'.length);
+        label = 'Unknown import: "$name" not in global variables';
+      } else if (code.startsWith('invalidImport:')) {
+        final name = code.substring('invalidImport:'.length);
+        label = 'Invalid import name: "$name"';
+      } else if (code == 'emptyImportList') {
+        label = 'Empty import list';
+      } else {
+        label = 'Use directive: $code';
+      }
       return Text(
-        'Use directive: $code',
+        label,
         style: TextStyle(color: cs.error, fontSize: 12),
         textAlign: textAlign,
       );
@@ -1162,6 +1307,28 @@ class _NotepadResultColumn extends StatelessWidget {
       textAlign: textAlign,
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6: use-directive resolution result
+// ---------------------------------------------------------------------------
+
+class _UseDirectiveResolution {
+  final int useLineIndex;
+  final Map<String, String> externalScope;
+  final List<String> unknownImports;
+
+  const _UseDirectiveResolution({
+    required this.useLineIndex,
+    required this.externalScope,
+    required this.unknownImports,
+  });
+
+  factory _UseDirectiveResolution.empty() => const _UseDirectiveResolution(
+        useLineIndex: -1,
+        externalScope: {},
+        unknownImports: [],
+      );
 }
 
 // ---------------------------------------------------------------------------

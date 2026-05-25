@@ -640,9 +640,19 @@ class NotepadEvaluator {
         return;
       case NotepadLineKind.useDirective:
         line.cachedResult = null;
-        line.cachedError = parsed.directiveError == null
-            ? null
-            : '${NotepadErrorPrefix.useDirective}${parsed.directiveError}';
+        // Preserve a pre-existing useDirective: error so callers
+        // (Phase 6's screen-level `use` resolver) can set
+        // `unknownImport:<name>` against AppState BEFORE the
+        // evaluator runs without losing it on the way through.
+        // Parse-level errors (invalidImport, emptyImportList) still
+        // win because we set them unconditionally here when the
+        // pre-existing cachedError isn't already one of ours.
+        if (line.cachedError == null ||
+            !line.cachedError!.startsWith(NotepadErrorPrefix.useDirective)) {
+          line.cachedError = parsed.directiveError == null
+              ? null
+              : '${NotepadErrorPrefix.useDirective}${parsed.directiveError}';
+        }
         line.cachedFreeVars = [];
         return;
       case NotepadLineKind.assignment:
