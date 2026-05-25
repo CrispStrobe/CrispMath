@@ -211,14 +211,14 @@ class _NotepadScreenState extends State<NotepadScreen> {
   /// Compute the next "Untitled N" name that isn't already in use.
   /// `Untitled` (no suffix) is preferred when free; otherwise we go
   /// `Untitled 2`, `Untitled 3`, …
-  String _nextUntitledName() {
+  String _nextUntitledName(String base) {
     final used = _appState.notepadDocuments.values.map((d) => d.name).toSet();
-    if (!used.contains('Untitled')) return 'Untitled';
+    if (!used.contains(base)) return base;
     var n = 2;
-    while (used.contains('Untitled $n')) {
+    while (used.contains('$base $n')) {
       n++;
     }
-    return 'Untitled $n';
+    return '$base $n';
   }
 
   // ---------------------------------------------------------------------------
@@ -268,7 +268,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       _scheduleRecalc(doc, clamped);
     }
     _showUndoSnackbar(
-      label: 'Line deleted',
+      label: AppLocalizations.of(context).notepadLineDeleted,
       onUndo: () {
         final pending = _pendingDeletion;
         if (pending == null || pending.kind != _PendingDeletionKind.line) {
@@ -295,7 +295,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _newDocument() {
-    final doc = NotepadDocument.fresh(name: _nextUntitledName());
+    final base = AppLocalizations.of(context).notepadDefaultDocName;
+    final doc = NotepadDocument.fresh(name: _nextUntitledName(base));
     _appState.setNotepadDocument(doc);
     _appState.setCurrentNotepadDoc(doc.id);
   }
@@ -344,7 +345,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       previousCurrentId: previousCurrent,
     );
     _showUndoSnackbar(
-      label: 'Document "${doc.name}" deleted',
+      label: AppLocalizations.of(context).notepadDocumentDeleted(doc.name),
       onUndo: () {
         final pending = _pendingDeletion;
         if (pending == null || pending.kind != _PendingDeletionKind.doc) {
@@ -378,9 +379,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
     buf.writeln('```');
     Clipboard.setData(ClipboardData(text: buf.toString()));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Copied as Markdown'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(AppLocalizations.of(context).notepadCopiedAsMarkdown),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -632,7 +633,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
         content: Text(label),
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
-          label: 'Undo',
+          label: AppLocalizations.of(context).notepadUndo,
           onPressed: onUndo,
         ),
       ),
@@ -741,19 +742,20 @@ class _NotepadScreenState extends State<NotepadScreen> {
   }
 
   List<Widget> _buildActions(NotepadDocument? doc) {
+    final t = AppLocalizations.of(context);
     return [
       if (doc != null)
         IconButton(
           icon: const Icon(Icons.add),
-          tooltip: 'Add line',
+          tooltip: t.notepadAddLine,
           onPressed: () => _appendLine(doc),
         ),
       PopupMenuButton<String>(
-        tooltip: 'Document menu',
+        tooltip: t.notepadDocumentMenu,
         onSelected: _onMenuSelected,
         itemBuilder: (context) {
           final items = <PopupMenuEntry<String>>[
-            const PopupMenuItem(value: 'new', child: Text('New document')),
+            PopupMenuItem(value: 'new', child: Text(t.notepadNewDocument)),
           ];
           final others = _otherDocsForMenu();
           if (others.isNotEmpty) {
@@ -766,31 +768,31 @@ class _NotepadScreenState extends State<NotepadScreen> {
             }
           }
           items.add(const PopupMenuDivider());
-          items.add(const PopupMenuItem(
+          items.add(PopupMenuItem(
             value: 'open-welcome',
-            child: Text('Open Welcome sample'),
+            child: Text(t.notepadOpenWelcomeSample),
           ));
           if (doc != null) {
             items.add(const PopupMenuDivider());
-            items.add(const PopupMenuItem(
+            items.add(PopupMenuItem(
               value: 'recalc',
-              child: Text('Recalculate all'),
+              child: Text(t.notepadRecalculateAll),
             ));
-            items.add(const PopupMenuItem(
+            items.add(PopupMenuItem(
               value: 'rename',
-              child: Text('Rename'),
+              child: Text(t.notepadRename),
             ));
-            items.add(const PopupMenuItem(
+            items.add(PopupMenuItem(
               value: 'duplicate',
-              child: Text('Duplicate'),
+              child: Text(t.notepadDuplicate),
             ));
-            items.add(const PopupMenuItem(
+            items.add(PopupMenuItem(
               value: 'copy-markdown',
-              child: Text('Copy as Markdown'),
+              child: Text(t.notepadCopyAsMarkdown),
             ));
-            items.add(const PopupMenuItem(
+            items.add(PopupMenuItem(
               value: 'delete',
-              child: Text('Delete document'),
+              child: Text(t.notepadDeleteDocument),
             ));
           }
           return items;
@@ -820,6 +822,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
   }
 
   Widget _buildEmptyState() {
+    final t = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -828,27 +831,25 @@ class _NotepadScreenState extends State<NotepadScreen> {
           children: [
             const Icon(Icons.notes, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            const Text(
-              'No documents yet',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Text(
+              t.notepadEmptyTitle,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Create a new document or open the Welcome sample to get started.',
-              textAlign: TextAlign.center,
-            ),
+            Text(t.notepadEmptyBody, textAlign: TextAlign.center),
             const SizedBox(height: 24),
             Wrap(
               spacing: 12,
               children: [
                 FilledButton.icon(
                   icon: const Icon(Icons.add),
-                  label: const Text('New document'),
+                  label: Text(t.notepadNewDocument),
                   onPressed: _newDocument,
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.menu_book),
-                  label: const Text('Open Welcome sample'),
+                  label: Text(t.notepadOpenWelcomeSample),
                   onPressed: _openWelcomeSample,
                 ),
               ],
@@ -1050,7 +1051,7 @@ class _DeleteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: Icon(Icons.close, size: 18, color: Colors.grey[600]),
-      tooltip: 'Delete line',
+      tooltip: AppLocalizations.of(context).notepadDeleteLine,
       visualDensity: VisualDensity.compact,
       onPressed: onPressed,
     );
@@ -1174,6 +1175,7 @@ class _NotepadResultColumn extends StatelessWidget {
   }
 
   void _showResultActions(BuildContext context, String plain, String latex) {
+    final t = AppLocalizations.of(context);
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -1182,28 +1184,28 @@ class _NotepadResultColumn extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.content_copy),
-              title: const Text('Copy result'),
+              title: Text(t.notepadCopyResult),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: plain));
                 Navigator.of(sheetContext).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Copied result'),
-                    duration: Duration(seconds: 2),
+                  SnackBar(
+                    content: Text(t.notepadCopiedResult),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               },
             ),
             ListTile(
               leading: const Icon(Icons.code),
-              title: const Text('Copy as LaTeX'),
+              title: Text(t.notepadCopyAsLatex),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: latex));
                 Navigator.of(sheetContext).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Copied as LaTeX'),
-                    duration: Duration(seconds: 2),
+                  SnackBar(
+                    content: Text(t.notepadCopiedAsLatex),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               },

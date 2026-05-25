@@ -23,6 +23,29 @@ abstract class AppLocalizations {
   String get navAnalysis;
   String get navSettings;
 
+  // -- Notepad screen --
+  String get notepadDefaultDocName;
+  String get notepadAddLine;
+  String get notepadDeleteLine;
+  String get notepadDocumentMenu;
+  String get notepadNewDocument;
+  String get notepadOpenWelcomeSample;
+  String get notepadRecalculateAll;
+  String get notepadRename;
+  String get notepadDuplicate;
+  String get notepadCopyAsMarkdown;
+  String get notepadDeleteDocument;
+  String get notepadUndo;
+  String get notepadLineDeleted;
+  String notepadDocumentDeleted(String name);
+  String get notepadCopiedAsMarkdown;
+  String get notepadCopyResult;
+  String get notepadCopyAsLatex;
+  String get notepadCopiedResult;
+  String get notepadCopiedAsLatex;
+  String get notepadEmptyTitle;
+  String get notepadEmptyBody;
+
   // -- Calculator screen --
   String get historyHere;
   String get historyLabel;
@@ -482,6 +505,49 @@ class EnLocalizations implements AppLocalizations {
   String get navCalculator => 'Calculator';
   @override
   String get navNotepad => 'Notepad';
+  @override
+  String get notepadDefaultDocName => 'Untitled';
+  @override
+  String get notepadAddLine => 'Add line';
+  @override
+  String get notepadDeleteLine => 'Delete line';
+  @override
+  String get notepadDocumentMenu => 'Document menu';
+  @override
+  String get notepadNewDocument => 'New document';
+  @override
+  String get notepadOpenWelcomeSample => 'Open Welcome sample';
+  @override
+  String get notepadRecalculateAll => 'Recalculate all';
+  @override
+  String get notepadRename => 'Rename';
+  @override
+  String get notepadDuplicate => 'Duplicate';
+  @override
+  String get notepadCopyAsMarkdown => 'Copy as Markdown';
+  @override
+  String get notepadDeleteDocument => 'Delete document';
+  @override
+  String get notepadUndo => 'Undo';
+  @override
+  String get notepadLineDeleted => 'Line deleted';
+  @override
+  String notepadDocumentDeleted(String name) => 'Document "$name" deleted';
+  @override
+  String get notepadCopiedAsMarkdown => 'Copied as Markdown';
+  @override
+  String get notepadCopyResult => 'Copy result';
+  @override
+  String get notepadCopyAsLatex => 'Copy as LaTeX';
+  @override
+  String get notepadCopiedResult => 'Copied result';
+  @override
+  String get notepadCopiedAsLatex => 'Copied as LaTeX';
+  @override
+  String get notepadEmptyTitle => 'No documents yet';
+  @override
+  String get notepadEmptyBody =>
+      'Create a new document or open the Welcome sample to get started.';
   @override
   String get navGraphing => 'Graphing';
   @override
@@ -1550,6 +1616,49 @@ class DeLocalizations implements AppLocalizations {
   String get navCalculator => 'Rechner';
   @override
   String get navNotepad => 'Notizen';
+  @override
+  String get notepadDefaultDocName => 'Unbenannt';
+  @override
+  String get notepadAddLine => 'Zeile hinzufügen';
+  @override
+  String get notepadDeleteLine => 'Zeile löschen';
+  @override
+  String get notepadDocumentMenu => 'Dokumentmenü';
+  @override
+  String get notepadNewDocument => 'Neues Dokument';
+  @override
+  String get notepadOpenWelcomeSample => 'Willkommen-Beispiel öffnen';
+  @override
+  String get notepadRecalculateAll => 'Alles neu berechnen';
+  @override
+  String get notepadRename => 'Umbenennen';
+  @override
+  String get notepadDuplicate => 'Duplizieren';
+  @override
+  String get notepadCopyAsMarkdown => 'Als Markdown kopieren';
+  @override
+  String get notepadDeleteDocument => 'Dokument löschen';
+  @override
+  String get notepadUndo => 'Rückgängig';
+  @override
+  String get notepadLineDeleted => 'Zeile gelöscht';
+  @override
+  String notepadDocumentDeleted(String name) => 'Dokument „$name" gelöscht';
+  @override
+  String get notepadCopiedAsMarkdown => 'Als Markdown kopiert';
+  @override
+  String get notepadCopyResult => 'Ergebnis kopieren';
+  @override
+  String get notepadCopyAsLatex => 'Als LaTeX kopieren';
+  @override
+  String get notepadCopiedResult => 'Ergebnis kopiert';
+  @override
+  String get notepadCopiedAsLatex => 'Als LaTeX kopiert';
+  @override
+  String get notepadEmptyTitle => 'Noch keine Dokumente';
+  @override
+  String get notepadEmptyBody =>
+      'Lege ein neues Dokument an oder öffne das Willkommen-Beispiel.';
   @override
   String get navGraphing => 'Graphen';
   @override
@@ -2764,6 +2873,50 @@ class FrLocalizations implements AppLocalizations {
   String get navCalculator => 'Calculatrice';
   @override
   String get navNotepad => 'Notes';
+  @override
+  String get notepadDefaultDocName => 'Sans titre';
+  @override
+  String get notepadAddLine => 'Ajouter une ligne';
+  @override
+  String get notepadDeleteLine => 'Supprimer la ligne';
+  @override
+  String get notepadDocumentMenu => 'Menu du document';
+  @override
+  String get notepadNewDocument => 'Nouveau document';
+  @override
+  String get notepadOpenWelcomeSample => 'Ouvrir l\'exemple de bienvenue';
+  @override
+  String get notepadRecalculateAll => 'Tout recalculer';
+  @override
+  String get notepadRename => 'Renommer';
+  @override
+  String get notepadDuplicate => 'Dupliquer';
+  @override
+  String get notepadCopyAsMarkdown => 'Copier en Markdown';
+  @override
+  String get notepadDeleteDocument => 'Supprimer le document';
+  @override
+  String get notepadUndo => 'Annuler';
+  @override
+  String get notepadLineDeleted => 'Ligne supprimée';
+  @override
+  String notepadDocumentDeleted(String name) =>
+      'Document « $name » supprimé';
+  @override
+  String get notepadCopiedAsMarkdown => 'Copié en Markdown';
+  @override
+  String get notepadCopyResult => 'Copier le résultat';
+  @override
+  String get notepadCopyAsLatex => 'Copier en LaTeX';
+  @override
+  String get notepadCopiedResult => 'Résultat copié';
+  @override
+  String get notepadCopiedAsLatex => 'Copié en LaTeX';
+  @override
+  String get notepadEmptyTitle => 'Aucun document';
+  @override
+  String get notepadEmptyBody =>
+      'Créez un nouveau document ou ouvrez l\'exemple de bienvenue pour commencer.';
   @override
   String get navGraphing => 'Graphes';
   @override
@@ -3984,6 +4137,50 @@ class EsLocalizations implements AppLocalizations {
   String get navCalculator => 'Calculadora';
   @override
   String get navNotepad => 'Notas';
+  @override
+  String get notepadDefaultDocName => 'Sin título';
+  @override
+  String get notepadAddLine => 'Añadir línea';
+  @override
+  String get notepadDeleteLine => 'Eliminar línea';
+  @override
+  String get notepadDocumentMenu => 'Menú del documento';
+  @override
+  String get notepadNewDocument => 'Nuevo documento';
+  @override
+  String get notepadOpenWelcomeSample => 'Abrir muestra de bienvenida';
+  @override
+  String get notepadRecalculateAll => 'Recalcular todo';
+  @override
+  String get notepadRename => 'Renombrar';
+  @override
+  String get notepadDuplicate => 'Duplicar';
+  @override
+  String get notepadCopyAsMarkdown => 'Copiar como Markdown';
+  @override
+  String get notepadDeleteDocument => 'Eliminar documento';
+  @override
+  String get notepadUndo => 'Deshacer';
+  @override
+  String get notepadLineDeleted => 'Línea eliminada';
+  @override
+  String notepadDocumentDeleted(String name) =>
+      'Documento «$name» eliminado';
+  @override
+  String get notepadCopiedAsMarkdown => 'Copiado como Markdown';
+  @override
+  String get notepadCopyResult => 'Copiar resultado';
+  @override
+  String get notepadCopyAsLatex => 'Copiar como LaTeX';
+  @override
+  String get notepadCopiedResult => 'Resultado copiado';
+  @override
+  String get notepadCopiedAsLatex => 'Copiado como LaTeX';
+  @override
+  String get notepadEmptyTitle => 'Aún no hay documentos';
+  @override
+  String get notepadEmptyBody =>
+      'Crea un nuevo documento o abre la muestra de bienvenida para empezar.';
   @override
   String get navGraphing => 'Gráficos';
   @override
