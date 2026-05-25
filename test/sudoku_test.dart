@@ -388,6 +388,61 @@ void main() {
       expect(cands[2], equals({3, 4}));
     });
 
+    test(
+        'Killer variant (tight bound): 2-cell cage summing to 8 in 4×4 has '
+        'no valid pair (4+4 violates all-different)', () {
+      // Round 72 regression: the loose round-67 bound left {4}
+      // as a candidate. The tight bound correctly returns {},
+      // since no two DISTINCT digits from 1..4 sum to 8.
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.small,
+        cells: List<int>.filled(16, 0),
+        variant: SudokuVariant.killer,
+        cages: const [
+          KillerCage(cellIndexes: [0, 1], targetSum: 8),
+          KillerCage(cellIndexes: [2, 3], targetSum: 2),
+          KillerCage(cellIndexes: [4, 5], targetSum: 4),
+          KillerCage(cellIndexes: [6, 7], targetSum: 6),
+          KillerCage(cellIndexes: [8, 9], targetSum: 4),
+          KillerCage(cellIndexes: [10, 11], targetSum: 6),
+          KillerCage(cellIndexes: [12, 13], targetSum: 6),
+          KillerCage(cellIndexes: [14, 15], targetSum: 4),
+        ],
+      );
+      final cands = SudokuSolver.computeCandidates(puzzle);
+      expect(cands[0], isEmpty,
+          reason: 'no 2-cell pair in 1..4 sums to 8 distinctly');
+      expect(cands[1], isEmpty);
+    });
+
+    test(
+        'Killer variant (tight bound): 3-cell cage summing to 6 in 4×4 only '
+        'reaches {1,2,3}', () {
+      // Loose bound: v ≤ 6 - 2 = 4, v ≥ 6 - 2*4 = -2 → {1,2,3,4}.
+      // Tight bound: only triple is (1,2,3) → reachable = {1,2,3}.
+      final puzzle = SudokuPuzzle(
+        layout: SudokuLayout.small,
+        cells: List<int>.filled(16, 0),
+        variant: SudokuVariant.killer,
+        cages: const [
+          KillerCage(cellIndexes: [0, 1, 2], targetSum: 6),
+          KillerCage(cellIndexes: [3], targetSum: 4),
+          KillerCage(cellIndexes: [4, 5], targetSum: 6),
+          KillerCage(cellIndexes: [6, 7], targetSum: 4),
+          KillerCage(cellIndexes: [8, 9], targetSum: 4),
+          KillerCage(cellIndexes: [10, 11], targetSum: 6),
+          KillerCage(cellIndexes: [12, 13], targetSum: 6),
+          KillerCage(cellIndexes: [14, 15], targetSum: 4),
+        ],
+      );
+      final cands = SudokuSolver.computeCandidates(puzzle);
+      for (final i in [0, 1, 2]) {
+        expect(cands[i], equals({1, 2, 3}),
+            reason: 'cell $i should not include 4 — no triple summing to 6 '
+                'contains 4');
+      }
+    });
+
     test('Killer variant: filled cage cells return empty candidates', () {
       final cells = [1, 2, 0, 0, ...List<int>.filled(12, 0)];
       final puzzle = SudokuPuzzle(

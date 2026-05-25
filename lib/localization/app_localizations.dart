@@ -310,6 +310,9 @@ abstract class AppLocalizations {
   String get constraintsTabDsl;
   String get constraintsDslIntro;
   String get constraintsDslInputLabel;
+  String get constraintsDslExamplesButton;
+  String get constraintsDslExamplesTooltip;
+  String constraintsDslExampleTitle(String id);
   String get constraintsDiophantineIntro;
   String get constraintsCryptarithmIntro;
   String get constraintsVariablesLabel;
@@ -1034,6 +1037,25 @@ class EnLocalizations implements AppLocalizations {
       'write any other line as a constraint (e.g. `x + 2*y == 10`).';
   @override
   String get constraintsDslInputLabel => 'Constraint program';
+  @override
+  String get constraintsDslExamplesButton => 'Examples';
+  @override
+  String get constraintsDslExamplesTooltip => 'Load a pre-built example';
+  @override
+  String constraintsDslExampleTitle(String id) {
+    switch (id) {
+      case 'magicSum':
+        return '3-digit magic sum';
+      case 'magicSquare3':
+        return '3×3 magic square';
+      case 'mapColoring':
+        return 'Map coloring (K4)';
+      case 'orderedTriples':
+        return 'Ordered triples summing to 20';
+    }
+    return id;
+  }
+
   @override
   String get constraintsDiophantineIntro =>
       'Declare bounded integer variables, list the constraints they '
@@ -2025,6 +2047,25 @@ class DeLocalizations implements AppLocalizations {
       'jede weitere Zeile ist eine Bedingung (z.B. `x + 2*y == 10`).';
   @override
   String get constraintsDslInputLabel => 'Bedingungsprogramm';
+  @override
+  String get constraintsDslExamplesButton => 'Beispiele';
+  @override
+  String get constraintsDslExamplesTooltip => 'Vorgefertigtes Beispiel laden';
+  @override
+  String constraintsDslExampleTitle(String id) {
+    switch (id) {
+      case 'magicSum':
+        return '3-stellige magische Summe';
+      case 'magicSquare3':
+        return '3×3 magisches Quadrat';
+      case 'mapColoring':
+        return 'Landkartenfärbung (K4)';
+      case 'orderedTriples':
+        return 'Geordnete Tripel mit Summe 20';
+    }
+    return id;
+  }
+
   @override
   String get constraintsDiophantineIntro =>
       'Beschränkte ganzzahlige Variablen deklarieren, die zu '
@@ -3128,6 +3169,26 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get constraintsDslInputLabel => 'Programme de contraintes';
   @override
+  String get constraintsDslExamplesButton => 'Exemples';
+  @override
+  String get constraintsDslExamplesTooltip =>
+      'Charger un exemple pré-construit';
+  @override
+  String constraintsDslExampleTitle(String id) {
+    switch (id) {
+      case 'magicSum':
+        return 'Somme magique à 3 chiffres';
+      case 'magicSquare3':
+        return 'Carré magique 3×3';
+      case 'mapColoring':
+        return 'Coloration de carte (K4)';
+      case 'orderedTriples':
+        return 'Triplets ordonnés sommant à 20';
+    }
+    return id;
+  }
+
+  @override
   String get constraintsDiophantineIntro =>
       'Déclare des variables entières bornées, liste les contraintes '
       'à satisfaire — le solveur énumère toutes les solutions '
@@ -4229,6 +4290,25 @@ class EsLocalizations implements AppLocalizations {
       '(p. ej. `x + 2*y == 10`).';
   @override
   String get constraintsDslInputLabel => 'Programa de restricciones';
+  @override
+  String get constraintsDslExamplesButton => 'Ejemplos';
+  @override
+  String get constraintsDslExamplesTooltip => 'Cargar un ejemplo prediseñado';
+  @override
+  String constraintsDslExampleTitle(String id) {
+    switch (id) {
+      case 'magicSum':
+        return 'Suma mágica de 3 dígitos';
+      case 'magicSquare3':
+        return 'Cuadrado mágico 3×3';
+      case 'mapColoring':
+        return 'Coloración de mapa (K4)';
+      case 'orderedTriples':
+        return 'Tripletes ordenados que suman 20';
+    }
+    return id;
+  }
+
   @override
   String get constraintsDiophantineIntro =>
       'Declara variables enteras acotadas, lista las restricciones a '

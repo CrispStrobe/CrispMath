@@ -326,21 +326,73 @@ class SudokuSolver {
           final cage = puzzle.cages![ci];
           // Cage all-different.
           candidates = candidates.difference(cagePlaced[ci]!);
-          // Cage sum residue + loose remaining-cell bound.
           final placedSum = cagePlaced[ci]!.fold<int>(0, (a, b) => a + b);
           final residue = cage.targetSum - placedSum;
           final empty = cageEmptyCount[ci]!;
-          final upperBound = residue - (empty - 1); // others ≥ 1 each
-          final lowerBound = residue - (empty - 1) * n; // others ≤ n each
-          candidates = {
-            for (final v in candidates)
-              if (v >= lowerBound && v <= upperBound) v
-          };
+          // Round 72: tight cage-sum bound. Enumerate every
+          // `empty`-element subset of (1..n minus placed-in-cage)
+          // summing to residue; the union of values appearing in
+          // any such subset is the set of digits reachable by ANY
+          // cell of this cage. Strictly tighter than the round-67
+          // loose 1..n bound — e.g. a 2-cell cage summing to 8 in
+          // 4×4 has NO valid (1..4) pairs (4+4 violates the cage
+          // all-different) so candidates correctly become {},
+          // whereas the loose bound left {4}.
+          //
+          // Cap enumeration at empty ≤ 7. Beyond that the cage
+          // covers most of a row and the row/col/box constraints
+          // already carry the real information. C(9, 7) = 36
+          // subsets, so the cap is generous for 9×9.
+          if (empty <= 7) {
+            final available = all.difference(cagePlaced[ci]!);
+            final reachable = _reachableDigits(available, empty, residue);
+            candidates = candidates.intersection(reachable);
+          } else {
+            final upperBound = residue - (empty - 1);
+            final lowerBound = residue - (empty - 1) * n;
+            candidates = {
+              for (final v in candidates)
+                if (v >= lowerBound && v <= upperBound) v
+            };
+          }
         }
         out[idx] = candidates;
       }
     }
     return out;
+  }
+
+  /// Round 72 helper: union of digits that appear in ANY
+  /// `k`-element subset of `source` summing exactly to `target`.
+  /// Used to tighten Killer-cage candidate sets — if `v` is not in
+  /// any such subset, no cell of the cage can take value `v`.
+  /// Returns the empty set when no valid subset exists.
+  static Set<int> _reachableDigits(Set<int> source, int k, int target) {
+    if (k == 0) return const <int>{};
+    if (k > source.length) return const <int>{};
+    final sorted = source.toList()..sort();
+    final reachable = <int>{};
+    final picked = <int>[];
+    void recurse(int start, int needed, int remaining) {
+      if (needed == 0) {
+        if (remaining == 0) reachable.addAll(picked);
+        return;
+      }
+      for (var i = start; i <= sorted.length - needed; i++) {
+        final v = sorted[i];
+        if (v > remaining) break; // ascending — future values too large
+        // Min sum of `needed` smallest values >= v: drops too low
+        // once v makes the running min exceed the remaining target,
+        // but we just rely on the early `v > remaining` break + the
+        // recursive check, which is fast enough for k ≤ 7.
+        picked.add(v);
+        recurse(i + 1, needed - 1, remaining - v);
+        picked.removeLast();
+      }
+    }
+
+    recurse(0, k, target);
+    return reachable;
   }
 
   // === Internals ==========================================================

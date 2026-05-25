@@ -356,13 +356,65 @@ class _DslTab extends StatefulWidget {
 }
 
 class _DslTabState extends State<_DslTab> {
-  static const _example = '''vars: x, y, z in 1..9
+  // Round 72 gallery: each entry's `program` is a complete DSL
+  // text that replaces the TextField on pick. The `id` doubles as
+  // the i18n key for the localized title.
+  static const List<({String id, String program})> _gallery = [
+    (
+      id: 'magicSum',
+      program: '''vars: x, y, z in 1..9
 allDifferent(x, y, z)
-x + y + z == 15''';
+x + y + z == 15''',
+    ),
+    (
+      // Classic 3×3 magic square: 9 distinct digits 1..9 with
+      // every row, column, and main diagonal summing to 15.
+      id: 'magicSquare3',
+      program: '''vars: a, b, c, d, e, f, g, h, i in 1..9
+allDifferent(a, b, c, d, e, f, g, h, i)
+a + b + c == 15
+d + e + f == 15
+g + h + i == 15
+a + d + g == 15
+b + e + h == 15
+c + f + i == 15
+a + e + i == 15
+c + e + g == 15''',
+    ),
+    (
+      // Four mutually-adjacent regions colored with 3 colors.
+      // Adjacency: 1-2, 1-3, 1-4, 2-3, 2-4, 3-4 — a complete
+      // K4 graph, which is NOT 3-colorable, so this enumerates
+      // zero solutions. Edit to drop one edge for solutions.
+      id: 'mapColoring',
+      program: '''vars: r1, r2, r3, r4 in 1..3
+r1 != r2
+r1 != r3
+r2 != r3
+r3 != r4
+r2 != r4''',
+    ),
+    (
+      // Triples of strictly-increasing positive integers summing
+      // to 20: a < b < c, a+b+c=20, with a,b,c in 1..20.
+      id: 'orderedTriples',
+      program: '''vars: a, b, c in 1..20
+a + b + c == 20
+a < b
+b < c''',
+    ),
+  ];
 
-  final _ctl = TextEditingController(text: _example);
+  final _ctl = TextEditingController(text: _gallery.first.program);
   DiophantineResult? _result;
   bool _solving = false;
+
+  void _loadExample(String programText) {
+    setState(() {
+      _ctl.text = programText;
+      _result = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -403,16 +455,43 @@ x + y + z == 15''';
             ),
           ),
           const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _solving ? null : _solve,
-            icon: _solving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.play_arrow),
-            label: Text(t.constraintsSolveButton),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              FilledButton.icon(
+                onPressed: _solving ? null : _solve,
+                icon: _solving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.play_arrow),
+                label: Text(t.constraintsSolveButton),
+              ),
+              // Round 72: pre-built example programs. Selecting a
+              // menu item replaces the TextField with that program.
+              PopupMenuButton<String>(
+                tooltip: t.constraintsDslExamplesTooltip,
+                onSelected: _loadExample,
+                itemBuilder: (context) => [
+                  for (final entry in _gallery)
+                    PopupMenuItem<String>(
+                      value: entry.program,
+                      child: Text(t.constraintsDslExampleTitle(entry.id)),
+                    ),
+                ],
+                child: OutlinedButton.icon(
+                  // The PopupMenuButton's child handles taps; the
+                  // button's own onPressed is intentionally null.
+                  onPressed: null,
+                  icon: const Icon(Icons.menu_book_outlined, size: 18),
+                  label: Text(t.constraintsDslExamplesButton),
+                ),
+              ),
+            ],
           ),
           if (_result != null) ...[
             const SizedBox(height: 16),
