@@ -452,6 +452,81 @@ void main() {
       expect(sol, isNotNull);
       _expectValidSudoku(SudokuLayout.eight, sol!);
     }, timeout: const Timeout(Duration(seconds: 120)));
+
+    // Round 82: 8×8 X / Disjoint / Killer presets.
+    test('8×8 Sudoku-X preset solves under the X overlay', () async {
+      final p = SudokuPresets.eight8x8X;
+      expect(p.variant, SudokuVariant.x);
+      final out = await SudokuSolver.solve(p);
+      expect(out, isNotNull);
+      _expectValidSudoku(SudokuLayout.eight, out!);
+      // Both diagonals carry 8 distinct digits 1..8.
+      final mainDiag = <int>{
+        for (var i = 0; i < 8; i++) out[i * 8 + i],
+      };
+      final antiDiag = <int>{
+        for (var i = 0; i < 8; i++) out[i * 8 + (7 - i)],
+      };
+      expect(mainDiag.length, 8, reason: 'main diagonal: $mainDiag');
+      expect(antiDiag.length, 8, reason: 'anti diagonal: $antiDiag');
+    }, timeout: const Timeout(Duration(seconds: 60)));
+
+    test('8×8 Disjoint preset solves under the disjoint overlay', () async {
+      final p = SudokuPresets.eight8x8Disjoint;
+      expect(p.variant, SudokuVariant.disjoint);
+      final out = await SudokuSolver.solve(p);
+      expect(out, isNotNull);
+      _expectValidSudoku(SudokuLayout.eight, out!);
+      // Each disjoint group (in-box position) carries 8 distinct
+      // digits across the 8 boxes.
+      // For 2×4 boxes: 8 disjoint groups, one per in-box position.
+      final byGroup = <int, Set<int>>{};
+      for (var r = 0; r < 8; r++) {
+        for (var c = 0; c < 8; c++) {
+          final groupKey = (r % 2) * 4 + (c % 4);
+          byGroup.putIfAbsent(groupKey, () => <int>{}).add(out[r * 8 + c]);
+        }
+      }
+      for (final s in byGroup.values) {
+        expect(s.length, 8, reason: 'disjoint group missing digits: $s');
+      }
+    }, timeout: const Timeout(Duration(seconds: 60)));
+
+    test('8×8 Killer preset partitions every cell into exactly one cage', () {
+      final p = SudokuPresets.eight8x8Killer;
+      expect(p.variant, SudokuVariant.killer);
+      expect(p.cages, isNotNull);
+      final seen = <int>{};
+      for (final cage in p.cages!) {
+        for (final idx in cage.cellIndexes) {
+          expect(seen.add(idx), isTrue,
+              reason: 'cell $idx appears in more than one cage');
+        }
+      }
+      expect(seen.length, 64);
+    });
+
+    test('8×8 Killer preset is feasible and cage sums match a solution',
+        () async {
+      final p = SudokuPresets.eight8x8Killer;
+      final out = await SudokuSolver.solve(p);
+      expect(out, isNotNull, reason: 'killer8x8 must have a solution');
+      _expectValidSudoku(SudokuLayout.eight, out!);
+      for (final cage in p.cages!) {
+        final s = cage.cellIndexes.fold<int>(0, (sum, i) => sum + out[i]);
+        expect(s, cage.targetSum,
+            reason: 'cage ${cage.cellIndexes} sum mismatch');
+      }
+    }, timeout: const Timeout(Duration(seconds: 60)));
+
+    test('8×8 Killer preset has a UNIQUE solution', () async {
+      // High singleton count + remaining cells partitioned into
+      // pair/triple cages buys uniqueness, mirroring the round-66
+      // killer9x9 pattern.
+      final p = SudokuPresets.eight8x8Killer;
+      final unique = await SudokuSolver.hasUniqueSolution(p);
+      expect(unique, isTrue, reason: 'killer8x8 must be uniquely solvable');
+    }, timeout: const Timeout(Duration(seconds: 120)));
   });
 
   group('Sudoku V3 — computeCandidates (hint mode)', () {

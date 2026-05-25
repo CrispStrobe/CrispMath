@@ -987,6 +987,12 @@ class EnLocalizations implements AppLocalizations {
         return '6×6 medium';
       case 'eight8x8':
         return '8×8 medium';
+      case 'eight8x8X':
+        return '8×8 Sudoku-X medium';
+      case 'eight8x8Disjoint':
+        return '8×8 Disjoint medium';
+      case 'eight8x8Killer':
+        return '8×8 Killer';
       case 'standard9x9Easy':
         return '9×9 easy';
       case 'standard9x9Medium':
@@ -2039,6 +2045,12 @@ class DeLocalizations implements AppLocalizations {
         return '6×6 mittel';
       case 'eight8x8':
         return '8×8 mittel';
+      case 'eight8x8X':
+        return '8×8 Sudoku-X mittel';
+      case 'eight8x8Disjoint':
+        return '8×8 Disjunkt mittel';
+      case 'eight8x8Killer':
+        return '8×8 Killer';
       case 'standard9x9Easy':
         return '9×9 leicht';
       case 'standard9x9Medium':
@@ -3228,6 +3240,12 @@ class FrLocalizations implements AppLocalizations {
         return '6×6 moyen';
       case 'eight8x8':
         return '8×8 moyen';
+      case 'eight8x8X':
+        return '8×8 Sudoku-X moyen';
+      case 'eight8x8Disjoint':
+        return '8×8 Disjoint moyen';
+      case 'eight8x8Killer':
+        return '8×8 Killer';
       case 'standard9x9Easy':
         return '9×9 facile';
       case 'standard9x9Medium':
@@ -4419,6 +4437,12 @@ class EsLocalizations implements AppLocalizations {
         return '6×6 medio';
       case 'eight8x8':
         return '8×8 medio';
+      case 'eight8x8X':
+        return '8×8 Sudoku-X medio';
+      case 'eight8x8Disjoint':
+        return '8×8 Disjunto medio';
+      case 'eight8x8Killer':
+        return '8×8 Killer';
       case 'standard9x9Easy':
         return '9×9 fácil';
       case 'standard9x9Medium':

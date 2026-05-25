@@ -2,6 +2,57 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 82) — 8×8 Sudoku variant presets (X / Disjoint / Killer)
+
+Round 75 added the 8×8 layout (2×4 boxes) but only a Regular
+preset. The variant picker exposed Sudoku-X / Killer / Disjoint
+on 8×8, but selecting them rebooted to an empty grid — no
+curated preset existed. This round adds one preset per variant.
+
+### Engine
+
+Three new `SudokuPuzzle` constants in
+`lib/engine/sudoku.dart`:
+
+- `eight8x8X` — generated under the X variant with seed 1881;
+  the completion respects both diagonals. 30 cells empty / 34
+  clues.
+- `eight8x8Disjoint` — generated under the disjoint variant
+  with seed 1882. The 8 disjoint groups (one per in-box
+  position across all 8 boxes) tighten the search similarly to
+  Sudoku-X.
+- `eight8x8Killer` — partition derived from the canonical 8×8
+  grid `1 2 3 4 5 6 7 8 / 5 6 7 8 1 2 3 4 / ...`. 10 singleton
+  pin cages + 25 multi-cell cages (mostly pair, three triples
+  that absorb corner-trapped cells where greedy pair packing
+  would orphan them). Mirrors the round-66 9×9 pattern.
+
+All three registered in `SudokuPresets.all` so they show in
+the preset picker.
+
+### Localization
+
+Four locales × three preset ids = 12 new label strings:
+`eight8x8X` ("8×8 Sudoku-X medium" / "mittel" / "moyen" /
+"medio"), `eight8x8Disjoint` ("8×8 Disjoint" /
+"Disjunkt" / "Disjoint" / "Disjunto"), `eight8x8Killer`
+("8×8 Killer" — same word across all four locales).
+
+### Tests
+
+Five new tests in `sudoku_test.dart`:
+- X preset solves + both diagonals carry 8 distinct digits 1..8
+- Disjoint preset solves + each disjoint group carries 8
+  distinct digits across the 8 boxes
+- Killer preset partitions every cell into exactly one cage
+- Killer preset's cage sums match a valid 8×8 solution
+- Killer preset has a UNIQUE solution (mirrors the round-66
+  `killer9x9` uniqueness guarantee — see HANDOFF.md §4.6 on
+  why high singleton count is what buys uniqueness without a
+  Killer generator)
+
+Suite grows 1269 → 1274.
+
 ## 2026-05-25 (round 81) — Sudoku step-trace constraint-context annotations
 
 HANDOFF.md §6 listed step-trace "why" annotations as the next

@@ -1320,11 +1320,106 @@ class SudokuPresets {
     ],
   );
 
-  // Note: no Sudoku-X preset ships. Off-the-shelf 9×9 puzzles
-  // tend to have completions whose main / anti-diagonals contain
-  // duplicate digits — fine under regular rules, infeasible
-  // under the X overlay. Users get X-variant puzzles via the
-  // variant toggle + Generate.
+  // Note: no Sudoku-X preset ships at 9×9. Off-the-shelf 9×9
+  // puzzles tend to have completions whose main / anti-diagonals
+  // contain duplicate digits — fine under regular rules,
+  // infeasible under the X overlay. Users get 9×9 X-variant
+  // puzzles via the variant toggle + Generate.
+
+  // Round 82: 8×8 Sudoku-X (medium). Generated under the X
+  // variant with seed 1881, so the completion respects both
+  // diagonals. 30 cells empty / 34 clues — well above the
+  // medium clue count; the X overlay tightens the search enough
+  // that fewer clues would push solve time up.
+  static final SudokuPuzzle eight8x8X = SudokuPuzzle(
+    layout: SudokuLayout.eight,
+    variant: SudokuVariant.x,
+    cells: [
+      0, 5, 0, 0, 4, 0, 6, 0, //
+      1, 0, 0, 0, 0, 0, 0, 8, //
+      0, 3, 0, 2, 0, 0, 0, 0, //
+      6, 0, 0, 0, 0, 2, 0, 5, //
+      5, 0, 3, 0, 6, 0, 0, 4, //
+      2, 0, 6, 0, 0, 0, 3, 0, //
+      0, 0, 0, 5, 0, 0, 1, 3, //
+      0, 6, 1, 0, 0, 0, 4, 7, //
+    ],
+  );
+
+  // Round 82: 8×8 Disjoint Groups (medium). Generated under the
+  // disjoint variant with seed 1882. The 8 disjoint groups
+  // (one per in-box position across all 8 boxes) tighten the
+  // problem similarly to Sudoku-X; the preset clue count is
+  // sized to keep solve time short.
+  static final SudokuPuzzle eight8x8Disjoint = SudokuPuzzle(
+    layout: SudokuLayout.eight,
+    variant: SudokuVariant.disjoint,
+    cells: [
+      0, 0, 5, 1, 0, 8, 0, 0, //
+      7, 8, 6, 0, 3, 4, 0, 0, //
+      0, 2, 4, 3, 0, 7, 0, 0, //
+      5, 0, 0, 0, 0, 0, 0, 0, //
+      3, 0, 2, 4, 0, 0, 7, 6, //
+      0, 0, 0, 0, 0, 1, 3, 0, //
+      2, 4, 0, 0, 0, 0, 0, 8, //
+      0, 0, 0, 8, 0, 0, 0, 0, //
+    ],
+  );
+
+  // Round 82: 8×8 Killer (medium). Cage partition derived from
+  // the canonical 8×8 grid
+  //   1 2 3 4 5 6 7 8 / 5 6 7 8 1 2 3 4 / 2 4 1 3 6 7 8 5 /
+  //   6 8 5 7 2 4 1 3 / 3 1 6 2 8 5 4 7 / 4 7 8 5 3 1 2 6 /
+  //   7 3 2 6 4 8 5 1 / 8 5 4 1 7 3 6 2
+  // 10 singleton "pin" cages plus 25 multi-cell cages (mostly
+  // pair, three triples) partition all 64 cells. The triples
+  // absorb corner-trapped cells where greedy pair packing
+  // would orphan them — see HANDOFF.md §4.6 on Killer
+  // uniqueness for the 9×9 antecedent.
+  static final SudokuPuzzle eight8x8Killer = SudokuPuzzle(
+    layout: SudokuLayout.eight,
+    variant: SudokuVariant.killer,
+    cells: List<int>.filled(64, 0),
+    cages: const [
+      // Singleton pins (10).
+      KillerCage(cellIndexes: [0], targetSum: 1),
+      KillerCage(cellIndexes: [7], targetSum: 8),
+      KillerCage(cellIndexes: [11], targetSum: 8),
+      KillerCage(cellIndexes: [21], targetSum: 7),
+      KillerCage(cellIndexes: [24], targetSum: 6),
+      KillerCage(cellIndexes: [36], targetSum: 8),
+      KillerCage(cellIndexes: [38], targetSum: 4),
+      KillerCage(cellIndexes: [39], targetSum: 7),
+      KillerCage(cellIndexes: [50], targetSum: 2),
+      KillerCage(cellIndexes: [63], targetSum: 2),
+      // Pair + triple cages over the remaining 54 cells.
+      KillerCage(cellIndexes: [1, 2], targetSum: 5),
+      KillerCage(cellIndexes: [3, 4], targetSum: 9),
+      KillerCage(cellIndexes: [5, 6], targetSum: 13),
+      KillerCage(cellIndexes: [8, 9], targetSum: 11),
+      KillerCage(cellIndexes: [10, 18], targetSum: 8), // vertical
+      KillerCage(cellIndexes: [12, 13], targetSum: 3),
+      KillerCage(cellIndexes: [14, 15], targetSum: 7),
+      KillerCage(cellIndexes: [16, 17], targetSum: 6),
+      KillerCage(cellIndexes: [19, 20], targetSum: 9),
+      KillerCage(cellIndexes: [22, 23], targetSum: 13),
+      KillerCage(cellIndexes: [25, 26], targetSum: 13),
+      KillerCage(cellIndexes: [27, 28], targetSum: 9),
+      KillerCage(cellIndexes: [29, 30, 31], targetSum: 8), // row-3 right edge
+      KillerCage(cellIndexes: [32, 33], targetSum: 4),
+      KillerCage(cellIndexes: [34, 35], targetSum: 8),
+      KillerCage(cellIndexes: [37, 45], targetSum: 6), // vertical
+      KillerCage(cellIndexes: [40, 41], targetSum: 11),
+      KillerCage(cellIndexes: [42, 43], targetSum: 13),
+      KillerCage(cellIndexes: [44, 52], targetSum: 7), // vertical
+      KillerCage(cellIndexes: [46, 47], targetSum: 8),
+      KillerCage(cellIndexes: [48, 49], targetSum: 10),
+      KillerCage(cellIndexes: [51, 59], targetSum: 7), // vertical
+      KillerCage(cellIndexes: [53, 54, 55], targetSum: 14), // row-6 right edge
+      KillerCage(cellIndexes: [56, 57, 58], targetSum: 17), // row-7 left
+      KillerCage(cellIndexes: [60, 61, 62], targetSum: 16), // row-7 middle
+    ],
+  );
 
   // === Killer Sudoku presets (round 63) ============================
   //
@@ -1427,6 +1522,9 @@ class SudokuPresets {
     (id: 'small4x4Hard', puzzle: small4x4Hard),
     (id: 'medium6x6', puzzle: medium6x6),
     (id: 'eight8x8', puzzle: eight8x8),
+    (id: 'eight8x8X', puzzle: eight8x8X),
+    (id: 'eight8x8Disjoint', puzzle: eight8x8Disjoint),
+    (id: 'eight8x8Killer', puzzle: eight8x8Killer),
     (id: 'standard9x9Easy', puzzle: standard9x9Easy),
     (id: 'standard9x9Medium', puzzle: standard9x9Medium),
     (id: 'standard9x9Hard', puzzle: standard9x9Hard),

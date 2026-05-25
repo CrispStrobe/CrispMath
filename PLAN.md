@@ -594,10 +594,13 @@ Roadmap (ship one round at a time):
     pre-session). "Check uniqueness" button + chip on the Sudoku
     screen reports "Unique solution" / "Multiple solutions".
   - **V6 — 8×8 + Disjoint Groups** done 2026-05-25 (HISTORY rounds
-    75 + 76). `SudokuLayout.eight` (2×4 boxes) with a 28-clue
+    75 + 76 + 82). `SudokuLayout.eight` (2×4 boxes) with a 28-clue
     medium preset; `SudokuVariant.disjoint` with the in-box-position
     `_disjointGroups` walker. Both pick up the parameterized
-    engine cleanly.
+    engine cleanly. Round 82 closed the variant coverage with
+    `eight8x8X`, `eight8x8Disjoint`, and `eight8x8Killer` presets
+    so the variant picker has a curated puzzle for every
+    8×8 variant.
     **V7 SHIPPED** in HISTORY round 81: step-trace
     *constraint-context* annotations. Each visualizer frame now
     names the row / column / box / cage / diagonal /
