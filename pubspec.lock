@@ -61,8 +61,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "7a05fe5"
-      resolved-ref: "7a05fe50c0acb816a9cc9066bed6d2633d175ce8"
+      ref: e3cce21
+      resolved-ref: e3cce21b5ae3e3788127bdfda0b5f58972822c88
       url: "https://github.com/CrispStrobe/dart_csp.git"
     source: git
     version: "2.1.0"
