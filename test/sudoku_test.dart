@@ -529,6 +529,63 @@ void main() {
     }, timeout: const Timeout(Duration(seconds: 120)));
   });
 
+  group('Sudoku V2 — 10×10 / 12×12 / 15×15 layouts (round 83)', () {
+    test('10×10 layout: side=10, 2×5 boxes', () {
+      const l = SudokuLayout.ten;
+      expect(l.side, 10);
+      expect(l.boxRows, 2);
+      expect(l.boxCols, 5);
+    });
+
+    test('12×12 layout: side=12, 3×4 boxes', () {
+      const l = SudokuLayout.twelve;
+      expect(l.side, 12);
+      expect(l.boxRows, 3);
+      expect(l.boxCols, 4);
+    });
+
+    test('15×15 layout: side=15, 3×5 boxes', () {
+      const l = SudokuLayout.fifteen;
+      expect(l.side, 15);
+      expect(l.boxRows, 3);
+      expect(l.boxCols, 5);
+    });
+
+    test('10×10 medium preset solves to a valid grid', () async {
+      final p = SudokuPresets.ten10x10;
+      expect(p.cells.length, 100);
+      final out = await SudokuSolver.solve(p);
+      expect(out, isNotNull);
+      _expectValidSudoku(SudokuLayout.ten, out!);
+      // Clues preserved.
+      for (var i = 0; i < p.cells.length; i++) {
+        if (p.cells[i] != 0) expect(out[i], p.cells[i]);
+      }
+    }, timeout: const Timeout(Duration(seconds: 120)));
+
+    test('12×12 medium preset solves to a valid grid', () async {
+      final p = SudokuPresets.twelve12x12;
+      expect(p.cells.length, 144);
+      final out = await SudokuSolver.solve(p);
+      expect(out, isNotNull);
+      _expectValidSudoku(SudokuLayout.twelve, out!);
+      for (var i = 0; i < p.cells.length; i++) {
+        if (p.cells[i] != 0) expect(out[i], p.cells[i]);
+      }
+    }, timeout: const Timeout(Duration(seconds: 180)));
+
+    test('15×15 medium preset solves to a valid grid', () async {
+      final p = SudokuPresets.fifteen15x15;
+      expect(p.cells.length, 225);
+      final out = await SudokuSolver.solve(p);
+      expect(out, isNotNull);
+      _expectValidSudoku(SudokuLayout.fifteen, out!);
+      for (var i = 0; i < p.cells.length; i++) {
+        if (p.cells[i] != 0) expect(out[i], p.cells[i]);
+      }
+    }, timeout: const Timeout(Duration(seconds: 300)));
+  });
+
   group('Sudoku V3 — computeCandidates (hint mode)', () {
     test('empty 4×4 has every digit 1..4 candidate for every cell', () {
       final puzzle = SudokuPuzzle(

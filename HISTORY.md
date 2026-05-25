@@ -2,6 +2,55 @@
 
 Completed work, newest first.
 
+## 2026-05-25 (round 83) — 10×10 / 12×12 / 15×15 Sudoku layouts
+
+Pure surface-area growth on the parameterized Sudoku engine.
+Round 75's 8×8 (2×4 boxes) demonstrated the pattern works for
+any layout where `boxRows × boxCols == side`; this round adds
+three more: 10×10 (2×5), 12×12 (3×4), and 15×15 (3×5). Same
+parameterized solver, generator, hint mode, and visualizer
+pick them up automatically — only new artefacts are the layout
+constants, the curated medium-difficulty presets, and the
+`_targetClueCount` branches calibrated for each cell-count.
+
+### Engine
+
+`SudokuLayout.ten` / `twelve` / `fifteen` added to the public
+catalog and `SudokuLayout.all`. The order in `all` (small,
+medium, eight, standard, ten, twelve, fifteen, large) places
+the new layouts between 9×9 and 16×16 in size, matching the
+preset picker's logical ordering.
+
+`_targetClueCount` gains three new switch cases. Targets scale
+the 9×9 baselines (40/30/22) by cell-count ratio and pad
+generously on 15×15 (130/105/85) to keep the peel-while-unique
+loop's worst-case time bounded.
+
+### Presets
+
+`ten10x10`, `twelve12x12`, `fifteen15x15` — all generated with
+fixed seeds (10/12/15) under the medium-difficulty
+configuration. The 12×12 and 15×15 cells confirm the engine
+handles digits past 9 cleanly (values 10..15 appear in the
+puzzles). Registered in `SudokuPresets.all`.
+
+### Localization
+
+12 new labels (4 locales × 3 ids): `ten10x10` / `twelve12x12`
+/ `fifteen15x15` with "medium" / "mittel" / "moyen" / "medio".
+
+### Tests
+
+Six new tests cover layout invariants (3 size assertions) +
+preset solves (3 puzzles × valid completion + clues
+preserved). Suite 1274 → 1280.
+
+The full suite still passes — the parameterized engine's
+existing solver, generator, hint mode, computeCandidates
+(including disjoint and Sudoku-X overlays), and visualizer
+code paths all handle the new layouts without per-size
+special-casing.
+
 ## 2026-05-25 (round 82) — 8×8 Sudoku variant presets (X / Disjoint / Killer)
 
 Round 75 added the 8×8 layout (2×4 boxes) but only a Regular

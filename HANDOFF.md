@@ -112,7 +112,7 @@ lib/
 test/
   sudoku_test.dart, csp_solver_test.dart, ui_flows_test.dart,
   localizations_test.dart, worked_examples_test.dart,
-  ... (~50 test files, ~1274 tests total)
+  ... (~50 test files, ~1280 tests total)
 PLAN.md                    ← Roadmap; mark items SHIPPED with round refs
 HISTORY.md                 ← Newest-first changelog (this file's source of truth)
 ```
@@ -139,6 +139,8 @@ project depends on it via a git ref pin in `pubspec.yaml`.
   captions (row / col / box / cage / diagonal / disjoint group)
 - **Round 82** — 8×8 Sudoku variant presets (X / Disjoint /
   Killer) on the round-75 2×4-box layout
+- **Round 83** — 10×10 / 12×12 / 15×15 Sudoku layouts + medium
+  presets; same parameterized engine, no per-size code paths
 
 ## 4. Land mines we have already hit
 
@@ -445,12 +447,7 @@ fresh feature arcs.
 
 ### Small / medium (1 session each)
 
-1. **10×10 / 12×12 / 15×15 Sudoku layouts** (~30 min each) —
-   pure surface-area growth, mirrors the round-75 pattern (one
-   layout constant + one preset + one clue-count branch +
-   locale labels). Wikipedia's minimum-clue table provides
-   target counts.
-2. **Multi-resource cumulative + RCPSP gallery** (~1 hour) —
+1. **Multi-resource cumulative + RCPSP gallery** (~1 hour) —
    round 80 ships single-resource `cumulative`. The natural
    extension is the classical RCPSP (multiple parallel
    `cumulative` overlays representing distinct resource types);
@@ -458,7 +455,7 @@ fresh feature arcs.
    nothing else has to change in the engine. The lift is one
    curated multi-resource gallery example plus the discovery
    wiring.
-3. **dart_csp propagation-callback identity** — round 81
+2. **dart_csp propagation-callback identity** — round 81
    shipped constraint-*context* captions; the next tightening
    is to expose **which** constraint actually propagated each
    pruning step through dart_csp's `CspCallback` so the
@@ -496,7 +493,7 @@ fresh feature arcs.
 # Run-and-iterate
 flutter run -d macos              # dev build (debug, hot reload)
 flutter analyze                   # must be clean before commit
-flutter test                      # full suite; expect ~1274 tests, ~1 min
+flutter test                      # full suite; expect ~1280 tests, ~1 min
 dart format <files>               # CI runs format check on pinned Dart toolchain
 
 # CI
@@ -518,8 +515,8 @@ If something in this file is wrong by the time you read it,
 work around it. Stale handover docs cause future regressions.
 
 Specifically:
-- Test count drifts as features land — update §3's "~1274 tests"
-  and §7's "expect ~1274 tests". Adding a WorkedExample entry
+- Test count drifts as features land — update §3's "~1280 tests"
+  and §7's "expect ~1280 tests". Adding a WorkedExample entry
   auto-generates 6 tests (3 non-EN locales × title + description)
   via `worked_examples_localization_test.dart`, so the count can
   jump even on docs-only rounds.

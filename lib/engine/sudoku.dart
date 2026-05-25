@@ -71,12 +71,31 @@ class SudokuLayout {
   /// 9×9; same parameterized engine, no special-cased solver.
   static const eight = SudokuLayout(side: 8, boxRows: 2, boxCols: 4);
   static const standard = SudokuLayout(side: 9, boxRows: 3, boxCols: 3);
+
+  /// Round 83: 10×10 with 2×5 boxes. Same parameterized engine.
+  static const ten = SudokuLayout(side: 10, boxRows: 2, boxCols: 5);
+
+  /// Round 83: 12×12 with 3×4 boxes.
+  static const twelve = SudokuLayout(side: 12, boxRows: 3, boxCols: 4);
+
+  /// Round 83: 15×15 with 3×5 boxes.
+  static const fifteen = SudokuLayout(side: 15, boxRows: 3, boxCols: 5);
+
   static const large = SudokuLayout(side: 16, boxRows: 4, boxCols: 4);
 
   /// Every layout the V2 module exposes. Generator + UI iterate
   /// over this rather than naming constants directly so adding a
   /// new size is a one-line change.
-  static const all = <SudokuLayout>[small, medium, eight, standard, large];
+  static const all = <SudokuLayout>[
+    small,
+    medium,
+    eight,
+    standard,
+    ten,
+    twelve,
+    fifteen,
+    large,
+  ];
 }
 
 /// A Sudoku puzzle = layout + variant + initial clues. `cells` is
@@ -882,6 +901,39 @@ class SudokuGenerator {
           case SudokuDifficulty.hard:
             return 18;
         }
+      case 10:
+        // 10×10 (round 83): 100 cells. Scale from 9×9 baselines
+        // (40/30/22) by cell-count ratio (100/81 ≈ 1.23).
+        switch (difficulty) {
+          case SudokuDifficulty.easy:
+            return 50;
+          case SudokuDifficulty.medium:
+            return 38;
+          case SudokuDifficulty.hard:
+            return 28;
+        }
+      case 12:
+        // 12×12 (round 83): 144 cells. Scale from 9×9.
+        switch (difficulty) {
+          case SudokuDifficulty.easy:
+            return 72;
+          case SudokuDifficulty.medium:
+            return 54;
+          case SudokuDifficulty.hard:
+            return 40;
+        }
+      case 15:
+        // 15×15 (round 83): 225 cells. The peel loop's
+        // uniqueness check is the bottleneck; keep the target
+        // generous so generation finishes within ~2 minutes.
+        switch (difficulty) {
+          case SudokuDifficulty.easy:
+            return 130;
+          case SudokuDifficulty.medium:
+            return 105;
+          case SudokuDifficulty.hard:
+            return 85;
+        }
       case 16:
         // 16×16 generation is heavy — keep the target high so the
         // peel loop terminates within a reasonable per-call time.
@@ -1326,6 +1378,70 @@ class SudokuPresets {
   // infeasible under the X overlay. Users get 9×9 X-variant
   // puzzles via the variant toggle + Generate.
 
+  // Round 83: 10×10 medium preset (2×5 boxes), generated with
+  // seed 10. Comfortable clue count on a layout with a search
+  // space between 9×9 and 16×16.
+  static final SudokuPuzzle ten10x10 = SudokuPuzzle(
+    layout: SudokuLayout.ten,
+    cells: [
+      2, 7, 0, 0, 10, 3, 0, 1, 0, 0, //
+      0, 3, 4, 5, 0, 7, 0, 0, 0, 0, //
+      9, 0, 6, 0, 8, 0, 7, 0, 1, 0, //
+      3, 0, 0, 0, 0, 0, 9, 4, 0, 0, //
+      0, 0, 0, 0, 0, 6, 0, 0, 0, 3, //
+      0, 5, 0, 0, 4, 8, 0, 0, 7, 9, //
+      0, 0, 2, 8, 0, 0, 0, 0, 0, 1, //
+      0, 6, 0, 0, 3, 2, 5, 0, 0, 0, //
+      0, 0, 10, 7, 9, 0, 6, 0, 0, 0, //
+      0, 0, 3, 0, 0, 0, 10, 9, 0, 0, //
+    ],
+  );
+
+  // Round 83: 12×12 medium preset (3×4 boxes), generated with
+  // seed 12. Cells with values 10/11/12 confirm the engine
+  // handles digits past 9 cleanly.
+  static final SudokuPuzzle twelve12x12 = SudokuPuzzle(
+    layout: SudokuLayout.twelve,
+    cells: [
+      0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 4, //
+      4, 0, 0, 12, 0, 0, 3, 0, 11, 5, 0, 0, //
+      1, 0, 0, 0, 0, 0, 6, 0, 0, 9, 0, 0, //
+      0, 5, 1, 0, 0, 9, 7, 4, 6, 12, 0, 0, //
+      9, 10, 12, 0, 0, 0, 0, 0, 5, 1, 7, 0, //
+      7, 0, 8, 0, 10, 0, 0, 5, 4, 0, 0, 2, //
+      0, 1, 0, 5, 0, 0, 0, 0, 0, 0, 12, 0, //
+      0, 0, 6, 9, 12, 0, 0, 0, 2, 0, 0, 0, //
+      0, 8, 0, 0, 0, 4, 0, 0, 3, 0, 0, 6, //
+      0, 3, 2, 0, 7, 8, 4, 0, 0, 0, 0, 11, //
+      0, 0, 5, 7, 0, 0, 10, 11, 0, 0, 0, 0, //
+      0, 12, 9, 10, 0, 0, 0, 0, 0, 8, 0, 0, //
+    ],
+  );
+
+  // Round 83: 15×15 medium preset (3×5 boxes), generated with
+  // seed 15. The largest non-power-of-2 layout we ship; the
+  // peel-while-unique loop is the dominant cost in generation.
+  static final SudokuPuzzle fifteen15x15 = SudokuPuzzle(
+    layout: SudokuLayout.fifteen,
+    cells: [
+      0, 2, 0, 4, 0, 0, 7, 0, 0, 0, 0, 0, 13, 14, 0, //
+      0, 0, 5, 9, 10, 0, 12, 13, 0, 0, 0, 2, 0, 0, 6, //
+      0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 5, 7, 8, 0, 10, //
+      2, 0, 1, 0, 0, 0, 11, 9, 0, 0, 14, 15, 10, 0, 7, //
+      14, 0, 0, 12, 11, 13, 3, 4, 0, 0, 0, 0, 0, 8, 9, //
+      9, 0, 7, 0, 13, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, //
+      0, 0, 10, 0, 0, 0, 0, 0, 0, 13, 0, 0, 15, 0, 0, //
+      4, 14, 0, 0, 8, 0, 1, 15, 2, 12, 9, 0, 7, 0, 13, //
+      0, 0, 6, 0, 0, 7, 0, 10, 3, 0, 0, 0, 1, 2, 5, //
+      5, 0, 9, 0, 0, 0, 4, 0, 0, 7, 10, 8, 0, 15, 3, //
+      0, 0, 4, 2, 14, 0, 0, 0, 11, 3, 7, 13, 9, 12, 0, //
+      13, 0, 0, 10, 0, 9, 14, 0, 0, 0, 6, 0, 2, 5, 11, //
+      6, 0, 8, 11, 3, 0, 0, 0, 0, 4, 0, 9, 0, 0, 0, //
+      10, 0, 0, 0, 0, 3, 0, 0, 8, 9, 15, 6, 0, 0, 14, //
+      15, 0, 14, 13, 12, 0, 10, 0, 6, 0, 0, 3, 5, 1, 0, //
+    ],
+  );
+
   // Round 82: 8×8 Sudoku-X (medium). Generated under the X
   // variant with seed 1881, so the completion respects both
   // diagonals. 30 cells empty / 34 clues — well above the
@@ -1525,6 +1641,9 @@ class SudokuPresets {
     (id: 'eight8x8X', puzzle: eight8x8X),
     (id: 'eight8x8Disjoint', puzzle: eight8x8Disjoint),
     (id: 'eight8x8Killer', puzzle: eight8x8Killer),
+    (id: 'ten10x10', puzzle: ten10x10),
+    (id: 'twelve12x12', puzzle: twelve12x12),
+    (id: 'fifteen15x15', puzzle: fifteen15x15),
     (id: 'standard9x9Easy', puzzle: standard9x9Easy),
     (id: 'standard9x9Medium', puzzle: standard9x9Medium),
     (id: 'standard9x9Hard', puzzle: standard9x9Hard),

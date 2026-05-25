@@ -993,6 +993,12 @@ class EnLocalizations implements AppLocalizations {
         return '8×8 Disjoint medium';
       case 'eight8x8Killer':
         return '8×8 Killer';
+      case 'ten10x10':
+        return '10×10 medium';
+      case 'twelve12x12':
+        return '12×12 medium';
+      case 'fifteen15x15':
+        return '15×15 medium';
       case 'standard9x9Easy':
         return '9×9 easy';
       case 'standard9x9Medium':
@@ -2051,6 +2057,12 @@ class DeLocalizations implements AppLocalizations {
         return '8×8 Disjunkt mittel';
       case 'eight8x8Killer':
         return '8×8 Killer';
+      case 'ten10x10':
+        return '10×10 mittel';
+      case 'twelve12x12':
+        return '12×12 mittel';
+      case 'fifteen15x15':
+        return '15×15 mittel';
       case 'standard9x9Easy':
         return '9×9 leicht';
       case 'standard9x9Medium':
@@ -3246,6 +3258,12 @@ class FrLocalizations implements AppLocalizations {
         return '8×8 Disjoint moyen';
       case 'eight8x8Killer':
         return '8×8 Killer';
+      case 'ten10x10':
+        return '10×10 moyen';
+      case 'twelve12x12':
+        return '12×12 moyen';
+      case 'fifteen15x15':
+        return '15×15 moyen';
       case 'standard9x9Easy':
         return '9×9 facile';
       case 'standard9x9Medium':
@@ -4443,6 +4461,12 @@ class EsLocalizations implements AppLocalizations {
         return '8×8 Disjunto medio';
       case 'eight8x8Killer':
         return '8×8 Killer';
+      case 'ten10x10':
+        return '10×10 medio';
+      case 'twelve12x12':
+        return '12×12 medio';
+      case 'fifteen15x15':
+        return '15×15 medio';
       case 'standard9x9Easy':
         return '9×9 fácil';
       case 'standard9x9Medium':
