@@ -579,7 +579,7 @@ but become *moat-building* rather than *positioning*, since the moat
       `use mygridsize` at the top reads the global
       `mygridsize` user variable; an unknown `use foo` flags the
       directive line as errored.
-    - **Phase 7 — Export / Import + share single doc + snackbar
+    - **Phase 7 done 2026-05-25 (`main`).** Export / Import + share single doc + snackbar
       undo.** Plumb `notepadDocuments` + `currentNotepadDocId`
       into the JSON shape at `app_state.dart:663-679`
       (forward-compatible: missing keys tolerated, same as
