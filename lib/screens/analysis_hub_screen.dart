@@ -11,6 +11,7 @@ import 'constraints_screen.dart';
 import 'curve_analysis_input_screen.dart';
 import 'graphing_3d_screen.dart';
 import 'plane_analysis_screen.dart';
+import 'scene_3d_screen.dart';
 import 'statistics_screen.dart';
 import 'sudoku_screen.dart';
 
@@ -120,6 +121,19 @@ class AnalysisHubScreen extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => const SudokuScreen(),
+              ));
+            },
+          ),
+          // P9-A2: 3D Scene module appended at the end so existing
+          // ui_flows_test scrolls don't have to be retuned. Semantic
+          // grouping next to Planes can come later.
+          _ModuleCard(
+            icon: Icons.deblur,
+            title: t.module3DScene,
+            subtitle: t.module3DSceneSubtitle,
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const Scene3DScreen(),
               ));
             },
           ),

@@ -1777,27 +1777,24 @@ geometry invariants (plane.contains, line.throughPoints,
 quadric.evaluate), and JSON round-trip across all six kinds. Total
 suite 1465 → 1484.
 
-#### Round A2 — Scene screen + 3D viewport + plane rendering
+#### Round A2 — Scene screen + 3D viewport + plane rendering — **SHIPPED**
 
-New `Scene3DScreen` in `lib/screens/scene_3d_screen.dart`,
-registered as an Analysis-hub module card. Layout: object list on
-the left (or top on narrow), viewport on the right (or bottom),
-add-object FAB. Wire `Scene3D` persistence into `AppState` (one
-"current scene" key + a map of named scenes, mirrors the notepad
-docs pattern from Phase 1).
-
-Renderer: extract `_Surface3DPainter`'s rotation/projection helpers
-into a reusable `Scene3DRenderer` and call them from a new painter
-that iterates `Scene3D.objects`. Planes render as bordered
-parallelograms (sample on a 16×16 u/v grid within the view
-range, draw outline + a few interior cross-lines so depth is
-readable).
-
-Add-Plane dialog: coord-form `a, b, c, d` + label + color picker.
-
-i18n: new strings — `module3DScene`, `scene3DAddPlane`,
-`scene3DAddLine`, `scene3DAddSphere`, `scene3DEdit`,
-`scene3DDelete`, `scene3DHide`, `scene3DShow`, etc.
+Done 2026-05-26 — see HISTORY round 93. `Scene3DScreen`
+registered as an Analysis-hub module (appended at the end of
+the list — original-plan placement next to Planes pushed Sudoku
+just past the test viewport and `scrollUntilVisible→tap` raced,
+so the card moved to the bottom). Adaptive side-by-side /
+stacked layout at the 720px breakpoint. Drag-to-rotate +
+pinch-to-zoom on the viewport, persisted via
+`AppState.updateSceneViewport`. Add/Edit Plane dialog with
+coord-form + label + 8-swatch color picker. The Scene3D
+serializes into both prefs and the existing Export/Import
+JSON. A fresh painter at `lib/widgets/scene_3d_painter.dart`
+draws plane patches (translucent fill + outline + interior
+cross-lines + centroid dot); A3+ extends the dispatcher with
+line / sphere / quadric / parametric drawing. A shared
+projection helper deferred until A3 has settled the rendering
+surface.
 
 #### Round A3 — Lines + spheres in the viewport
 

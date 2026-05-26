@@ -113,6 +113,26 @@ abstract class AppLocalizations {
   String get module3DRangeLabel;
   String get module3DResample;
   String get module3DTapPlot;
+
+  // -- P9-A2: 3D Scene module --
+  String get module3DScene;
+  String get module3DSceneSubtitle;
+  String get scene3DAddPlane;
+  String get scene3DEditPlane;
+  String get scene3DEmpty;
+  String get scene3DPanelEmpty;
+  String get scene3DObjectLabel;
+  String get scene3DColor;
+  String get scene3DAdd;
+  String get scene3DSave;
+  String get scene3DEdit;
+  String get scene3DDelete;
+  String get scene3DHide;
+  String get scene3DShow;
+  String get scene3DLabelRequired;
+  String get scene3DCoefRequired;
+  String get scene3DCoefInvalid;
+  String get scene3DPlaneZeroNormal;
   String get moduleUnitConverterTitle;
   String get moduleUnitConverterSubtitle;
   // -- Variable / function panel --
@@ -729,6 +749,48 @@ class EnLocalizations implements AppLocalizations {
   String get module3DResample => 'Re-sample grid';
   @override
   String get module3DTapPlot => 'Enter a function of x and y, then tap Plot.';
+
+  // -- P9-A2 --
+  @override
+  String get module3DScene => '3D Scene';
+  @override
+  String get module3DSceneSubtitle =>
+      'Render multiple 3D objects together — planes, lines, spheres, quadrics';
+  @override
+  String get scene3DAddPlane => 'Add plane';
+  @override
+  String get scene3DEditPlane => 'Edit plane';
+  @override
+  String get scene3DEmpty =>
+      'Drag to rotate · pinch to zoom · tap the + button to add a plane';
+  @override
+  String get scene3DPanelEmpty => 'No objects yet';
+  @override
+  String get scene3DObjectLabel => 'Label';
+  @override
+  String get scene3DColor => 'Color';
+  @override
+  String get scene3DAdd => 'Add';
+  @override
+  String get scene3DSave => 'Save';
+  @override
+  String get scene3DEdit => 'Edit';
+  @override
+  String get scene3DDelete => 'Delete';
+  @override
+  String get scene3DHide => 'Hide';
+  @override
+  String get scene3DShow => 'Show';
+  @override
+  String get scene3DLabelRequired => 'Label required';
+  @override
+  String get scene3DCoefRequired => 'Required';
+  @override
+  String get scene3DCoefInvalid => 'Not a number';
+  @override
+  String get scene3DPlaneZeroNormal =>
+      'Normal vector (a, b, c) must be non-zero';
+
   @override
   String get moduleUnitConverterTitle => 'Unit Converter';
   @override
@@ -1915,6 +1977,48 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get module3DTapPlot =>
       'Funktion in x und y eingeben, dann auf Zeichnen tippen.';
+
+  // -- P9-A2 --
+  @override
+  String get module3DScene => '3D-Szene';
+  @override
+  String get module3DSceneSubtitle =>
+      'Mehrere 3D-Objekte zusammen darstellen — Ebenen, Geraden, Kugeln, Quadriken';
+  @override
+  String get scene3DAddPlane => 'Ebene hinzufügen';
+  @override
+  String get scene3DEditPlane => 'Ebene bearbeiten';
+  @override
+  String get scene3DEmpty =>
+      'Ziehen zum Drehen · Pinch zum Zoomen · + tippen, um eine Ebene hinzuzufügen';
+  @override
+  String get scene3DPanelEmpty => 'Noch keine Objekte';
+  @override
+  String get scene3DObjectLabel => 'Bezeichnung';
+  @override
+  String get scene3DColor => 'Farbe';
+  @override
+  String get scene3DAdd => 'Hinzufügen';
+  @override
+  String get scene3DSave => 'Speichern';
+  @override
+  String get scene3DEdit => 'Bearbeiten';
+  @override
+  String get scene3DDelete => 'Löschen';
+  @override
+  String get scene3DHide => 'Ausblenden';
+  @override
+  String get scene3DShow => 'Einblenden';
+  @override
+  String get scene3DLabelRequired => 'Bezeichnung erforderlich';
+  @override
+  String get scene3DCoefRequired => 'Erforderlich';
+  @override
+  String get scene3DCoefInvalid => 'Keine gültige Zahl';
+  @override
+  String get scene3DPlaneZeroNormal =>
+      'Normalenvektor (a, b, c) darf nicht null sein';
+
   @override
   String get moduleUnitConverterTitle => 'Einheitenumrechner';
   @override
@@ -3245,6 +3349,48 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get module3DTapPlot =>
       'Saisissez une fonction de x et y, puis appuyez sur Tracer.';
+
+  // -- P9-A2 --
+  @override
+  String get module3DScene => 'Scène 3D';
+  @override
+  String get module3DSceneSubtitle =>
+      'Rendre plusieurs objets 3D ensemble — plans, droites, sphères, quadriques';
+  @override
+  String get scene3DAddPlane => 'Ajouter un plan';
+  @override
+  String get scene3DEditPlane => 'Modifier le plan';
+  @override
+  String get scene3DEmpty =>
+      'Glisser pour tourner · pincer pour zoomer · appuyer sur + pour ajouter un plan';
+  @override
+  String get scene3DPanelEmpty => 'Aucun objet pour l\'instant';
+  @override
+  String get scene3DObjectLabel => 'Étiquette';
+  @override
+  String get scene3DColor => 'Couleur';
+  @override
+  String get scene3DAdd => 'Ajouter';
+  @override
+  String get scene3DSave => 'Enregistrer';
+  @override
+  String get scene3DEdit => 'Modifier';
+  @override
+  String get scene3DDelete => 'Supprimer';
+  @override
+  String get scene3DHide => 'Masquer';
+  @override
+  String get scene3DShow => 'Afficher';
+  @override
+  String get scene3DLabelRequired => 'Étiquette requise';
+  @override
+  String get scene3DCoefRequired => 'Requis';
+  @override
+  String get scene3DCoefInvalid => 'Nombre invalide';
+  @override
+  String get scene3DPlaneZeroNormal =>
+      'Le vecteur normal (a, b, c) doit être non nul';
+
   @override
   String get moduleUnitConverterTitle => 'Convertisseur d\'unités';
   @override
@@ -4580,6 +4726,48 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get module3DTapPlot =>
       'Introduce una función de x e y y pulsa Representar.';
+
+  // -- P9-A2 --
+  @override
+  String get module3DScene => 'Escena 3D';
+  @override
+  String get module3DSceneSubtitle =>
+      'Renderiza varios objetos 3D juntos — planos, rectas, esferas, cuádricas';
+  @override
+  String get scene3DAddPlane => 'Añadir plano';
+  @override
+  String get scene3DEditPlane => 'Editar plano';
+  @override
+  String get scene3DEmpty =>
+      'Arrastra para rotar · pellizca para hacer zoom · pulsa + para añadir un plano';
+  @override
+  String get scene3DPanelEmpty => 'Aún no hay objetos';
+  @override
+  String get scene3DObjectLabel => 'Etiqueta';
+  @override
+  String get scene3DColor => 'Color';
+  @override
+  String get scene3DAdd => 'Añadir';
+  @override
+  String get scene3DSave => 'Guardar';
+  @override
+  String get scene3DEdit => 'Editar';
+  @override
+  String get scene3DDelete => 'Eliminar';
+  @override
+  String get scene3DHide => 'Ocultar';
+  @override
+  String get scene3DShow => 'Mostrar';
+  @override
+  String get scene3DLabelRequired => 'Etiqueta requerida';
+  @override
+  String get scene3DCoefRequired => 'Requerido';
+  @override
+  String get scene3DCoefInvalid => 'Número no válido';
+  @override
+  String get scene3DPlaneZeroNormal =>
+      'El vector normal (a, b, c) no puede ser cero';
+
   @override
   String get moduleUnitConverterTitle => 'Conversor de unidades';
   @override

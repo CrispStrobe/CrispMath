@@ -20,6 +20,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/exact_integer.dart';
 import 'notepad.dart';
+import 'scene_3d/scene_object.dart';
+import 'scene_3d/scene_state.dart';
 
 enum HistoryEntryType { calculation, solve }
 
@@ -120,6 +122,7 @@ class AppState extends ChangeNotifier {
   static const _kUserFunctions = 'crisp.userFunctions';
   static const _kNotepadDocs = 'crisp.notepadDocs';
   static const _kCurrentNotepadDoc = 'crisp.currentNotepadDoc';
+  static const _kScene3D = 'crisp.scene3d';
 
   static const int _kGraphSlotCount = 10;
   static const int _kHistoryCap = 200;
@@ -305,6 +308,17 @@ class AppState extends ChangeNotifier {
         }
       }
       _currentNotepadDocId = _prefs!.getString(_kCurrentNotepadDoc);
+      final sceneJson = _prefs!.getString(_kScene3D);
+      if (sceneJson != null) {
+        try {
+          final raw = jsonDecode(sceneJson);
+          if (raw is Map) {
+            _scene3D = Scene3D.fromJson(Map<String, dynamic>.from(raw));
+          }
+        } catch (e) {
+          debugPrint('STATE: failed to parse scene3D: $e');
+        }
+      }
     } catch (e) {
       debugPrint('STATE: failed to load prefs: $e');
     }
@@ -505,6 +519,56 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // -- P9-A2: 3D scene mutations ------------------------------------
+
+  /// Append [obj] to the scene, or replace the existing entry with
+  /// the same id. Persists immediately.
+  void addOrUpdateSceneObject(SceneObject obj) {
+    _scene3D = _scene3D.withObject(obj);
+    _persistScene3D();
+    notifyListeners();
+  }
+
+  /// Remove the scene object with the given [id]. No-op if it
+  /// doesn't exist.
+  void removeSceneObject(String id) {
+    final next = _scene3D.withoutObject(id);
+    if (identical(next.objects, _scene3D.objects)) return;
+    _scene3D = next;
+    _persistScene3D();
+    notifyListeners();
+  }
+
+  /// Live viewport update for rotate / zoom gestures. Persists on
+  /// every commit — cheap because the JSON is small and SharedPrefs
+  /// debounces under the hood.
+  void updateSceneViewport({
+    double? azimuth,
+    double? elevation,
+    double? zoom,
+    double? range,
+  }) {
+    if (azimuth != null) _scene3D.azimuth = azimuth;
+    if (elevation != null) _scene3D.elevation = elevation;
+    if (zoom != null) _scene3D.zoom = zoom;
+    if (range != null) _scene3D.range = range;
+    _persistScene3D();
+    notifyListeners();
+  }
+
+  /// Reset the viewport to the default starting orientation.
+  void resetSceneViewport() {
+    _scene3D.azimuth = kDefaultSceneAzimuth;
+    _scene3D.elevation = kDefaultSceneElevation;
+    _scene3D.zoom = kDefaultSceneZoom;
+    _persistScene3D();
+    notifyListeners();
+  }
+
+  void _persistScene3D() {
+    _prefs?.setString(_kScene3D, jsonEncode(_scene3D.toJson()));
+  }
+
   // --- Volatile (now also persisted) state --------------------------------
 
   final List<CalculationEntry> history = [];
@@ -528,6 +592,13 @@ class AppState extends ChangeNotifier {
   /// notepad re-opens whichever doc was last viewed.
   String? _currentNotepadDocId;
   String? get currentNotepadDocId => _currentNotepadDocId;
+
+  /// P9-A2: the (single) 3D scene the user is editing. V1 ships one
+  /// global scene; multi-scene named documents are deferred to a
+  /// later round. Always non-null — defaults to an empty scene that
+  /// can be populated via [addOrUpdateSceneObject].
+  Scene3D _scene3D = Scene3D.empty(name: 'Scene');
+  Scene3D get scene3D => _scene3D;
 
   /// Cross-screen "insert this expression into the calculator field"
   /// signal. Set by [requestInsertExpression] (typically from a dialog
@@ -865,6 +936,17 @@ class AppState extends ChangeNotifier {
         _persistCurrentNotepadDoc();
       }
     }
+    if (json['scene3D'] is Map) {
+      try {
+        _scene3D =
+            Scene3D.fromJson(Map<String, dynamic>.from(json['scene3D'] as Map));
+        _persistScene3D();
+        imported.add('3D scene');
+      } catch (_) {
+        // Tolerated — older exports won't have this key, malformed
+        // payloads just keep the existing scene.
+      }
+    }
 
     notifyListeners();
     return imported.isEmpty
@@ -896,6 +978,7 @@ class AppState extends ChangeNotifier {
           .map((d) => d.toJson())
           .toList(growable: false),
       'currentNotepadDocId': _currentNotepadDocId,
+      'scene3D': _scene3D.toJson(),
     };
   }
 

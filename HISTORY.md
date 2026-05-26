@@ -2,6 +2,78 @@
 
 Completed work, newest first.
 
+## 2026-05-26 (round 93, P9-A2) — 3D Scene screen + viewport + plane rendering
+
+First *visible* slice of the 3D Scene arc. New
+`Scene3DScreen` registered as an Analysis-hub module, the
+Scene3D persists through AppState, planes render as bordered
+parallelograms in a rotatable viewport, and the Add-Plane
+dialog accepts coordinate form (a, b, c, d) + label + color.
+
+### What's new
+
+- `lib/widgets/scene_3d_painter.dart` — CustomPainter that takes a
+  `Scene3D` and dispatches per `SceneObjectKind`. A2 implements
+  plane rendering (translucent fill + outline + interior
+  cross-lines + centroid dot for legibility); other kinds are
+  no-op until A3 / A5 / A6. Hand-rolled rotation matrix +
+  orthographic projection, same shape as Graphing3DScreen — a
+  shared helper is on the table after A3 settles the rendering
+  surface for line + sphere.
+- `lib/widgets/scene_3d_object_dialogs.dart` — Add/Edit Plane
+  dialog with coord-form (a·x + b·y + c·z = d), label, and an
+  8-swatch color picker. Validates against a zero normal
+  (`(a, b, c) = 0` rejected with a clear snackbar).
+- `lib/screens/scene_3d_screen.dart` — adaptive layout
+  (side-by-side at ≥720px, stacked below): rotatable viewport
+  on one side, object-list panel with visibility-toggle / edit /
+  delete buttons on the other. FAB launches Add Plane. The
+  viewport handles drag-to-rotate + pinch-to-zoom; angles
+  persist via [AppState.updateSceneViewport].
+- `lib/engine/app_state.dart` — new `scene3D` field
+  (`Scene3D _scene3D = Scene3D.empty(name: 'Scene')`), prefs
+  key `'crisp.scene3d'`, load block, `addOrUpdateSceneObject`
+  / `removeSceneObject` / `updateSceneViewport` /
+  `resetSceneViewport` / `_persistScene3D`, plus `'scene3D'`
+  in export/import JSON for forward-compatible backup/restore.
+- `lib/screens/analysis_hub_screen.dart` — new
+  `_ModuleCard` ("3D Scene", deblur icon) at the **end of the
+  list**. Original plan was to place it next to Planes, but
+  the existing `ui_flows_test` Sudoku tests rely on the
+  current scroll distance to that card; inserting before
+  Sudoku pushed it just past the 1280×800 test viewport and
+  the `scrollUntilVisible` → `tap` sequence raced. Append is
+  the easiest non-test-touching fix; A4 can re-sort.
+
+### i18n
+
+19 new strings × 4 locales (en/de/fr/es): `module3DScene`,
+`module3DSceneSubtitle`, `scene3DAddPlane`, `scene3DEditPlane`,
+`scene3DEmpty`, `scene3DPanelEmpty`, `scene3DObjectLabel`,
+`scene3DColor`, `scene3DAdd`, `scene3DSave`, `scene3DEdit`,
+`scene3DDelete`, `scene3DHide`, `scene3DShow`,
+`scene3DLabelRequired`, `scene3DCoefRequired`,
+`scene3DCoefInvalid`, `scene3DPlaneZeroNormal`.
+
+### Tests
+
+3 new widget smoke tests in `test/scene_3d_screen_test.dart`:
+the empty-state hint shows; a plane added through `AppState`
+appears in the panel; `removeSceneObject` empties the panel.
+Doesn't exercise the painter (covered by the engine round-trip
+tests in A1).
+
+Total suite 1484 → 1487. All four ui_flows Sudoku regression
+tests still pass.
+
+### Deferred to A3 (next round)
+
+- Line + sphere rendering and their Add dialogs.
+- Drag-handle reorder on the object list.
+- A shared `Scene3DProjection` helper once the rendering APIs
+  for line + sphere settle (so A4's intersection-line drawing
+  can share the same world→screen pipeline).
+
 ## 2026-05-26 (round 92, P9-A1) — 3D Scene engine scaffolding
 
 User asked for a real 3D Scene module that supersedes the
