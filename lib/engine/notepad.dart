@@ -86,13 +86,22 @@ class NotepadLine {
   /// `free: x, y` tag (decision #15). List, not Set, for JSON.
   List<String> cachedFreeVars;
 
+  /// Names this line contributes to the document scope beyond its
+  /// auto-alias (`lineN`) and assignment LHS. Currently populated
+  /// only by `fzn:` lines (Round E.4): each scalar output_var from
+  /// the FlatZinc solution lands here, so downstream lines can
+  /// reference the solved values by their FlatZinc names.
+  Map<String, String> cachedExports;
+
   NotepadLine({
     required this.id,
     required this.source,
     this.cachedResult,
     this.cachedError,
     List<String>? cachedFreeVars,
-  }) : cachedFreeVars = cachedFreeVars ?? <String>[];
+    Map<String, String>? cachedExports,
+  })  : cachedFreeVars = cachedFreeVars ?? <String>[],
+        cachedExports = cachedExports ?? <String, String>{};
 
   factory NotepadLine.fresh({required String source}) => NotepadLine(
         id: generateNotepadId(),
@@ -107,6 +116,7 @@ class NotepadLine {
     if (cachedResult != null) map['r'] = cachedResult;
     if (cachedError != null) map['e'] = cachedError;
     if (cachedFreeVars.isNotEmpty) map['f'] = cachedFreeVars;
+    if (cachedExports.isNotEmpty) map['x'] = cachedExports;
     return map;
   }
 
@@ -118,6 +128,12 @@ class NotepadLine {
         cachedFreeVars: (j['f'] as List<dynamic>? ?? const [])
             .map((v) => v.toString())
             .toList(),
+        cachedExports: (j['x'] is Map)
+            ? Map<String, String>.from(
+                (j['x'] as Map)
+                    .map((k, v) => MapEntry(k.toString(), v.toString())),
+              )
+            : <String, String>{},
       );
 }
 

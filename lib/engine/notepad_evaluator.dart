@@ -28,6 +28,11 @@ enum NotepadLineKind {
   /// isn't a reserved CAS keyword (decision #14).
   assignment,
 
+  /// `fzn: <FlatZinc source>` — the body (possibly multi-line via
+  /// the textarea's `maxLines: null`) is sent to dart_csp's
+  /// FlatZinc frontend. Round E.4 inline directive variant.
+  flatzinc,
+
   /// Anything else — passed verbatim to the engine.
   expression,
 }
@@ -81,6 +86,11 @@ class ParsedNotepadLine {
         body: body,
       );
 
+  factory ParsedNotepadLine.flatzinc(String body) => ParsedNotepadLine._(
+        kind: NotepadLineKind.flatzinc,
+        body: body,
+      );
+
   factory ParsedNotepadLine.expression(String body) => ParsedNotepadLine._(
         kind: NotepadLineKind.expression,
         body: body,
@@ -130,6 +140,15 @@ ParsedNotepadLine classifyNotepadLine(
 }) {
   if (source.trim().isEmpty) {
     return ParsedNotepadLine.blank();
+  }
+  // FlatZinc detection runs BEFORE comment stripping because the
+  // body may contain `//` inside string literals or as part of a
+  // future spec extension; FlatZinc itself uses `%` for comments,
+  // so leaving the body verbatim is safe for the dart_csp parser.
+  final fznMatch = _flatzincDirectiveRegex.firstMatch(source);
+  if (fznMatch != null) {
+    final body = fznMatch.group(1) ?? '';
+    return ParsedNotepadLine.flatzinc(body);
   }
   final stripped = _stripComment(source).trim();
   if (stripped.isEmpty) {
@@ -217,9 +236,6 @@ Map<String, String> buildNotepadScope(
   final firstCode = firstCodeLineIndexOf(doc);
   for (var i = 0; i < doc.lines.length; i++) {
     final line = doc.lines[i];
-    final cached = line.cachedResult;
-    if (cached == null) continue;
-
     final parsed = classifyNotepadLine(line.source,
         lineIndex: i, firstCodeLineIndex: firstCode);
     if (parsed.kind == NotepadLineKind.blank ||
@@ -227,6 +243,22 @@ Map<String, String> buildNotepadScope(
         parsed.kind == NotepadLineKind.useDirective) {
       continue;
     }
+    // FlatZinc lines contribute multiple scalar exports (one per
+    // `:: output_var` annotation) plus their own `lineN` alias
+    // bound to the formatted output text. Each export wins over a
+    // pre-seeded external import.
+    if (parsed.kind == NotepadLineKind.flatzinc) {
+      final cached = line.cachedResult;
+      if (cached != null) {
+        scope['line${i + 1}'] = cached;
+      }
+      for (final entry in line.cachedExports.entries) {
+        scope[entry.key] = entry.value;
+      }
+      continue;
+    }
+    final cached = line.cachedResult;
+    if (cached == null) continue;
     scope['line${i + 1}'] = cached;
     if (parsed.kind == NotepadLineKind.assignment) {
       scope[parsed.name!] = cached;
@@ -311,6 +343,59 @@ final RegExp _identifierRegex = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
 final RegExp _importListStartRegex = RegExp(r'[A-Za-z_0-9,]');
 final RegExp _identifierWordRegex = RegExp(r'[A-Za-z_][A-Za-z0-9_]*');
 
+/// `fzn:` directive — must be the first non-whitespace token on the
+/// notepad line. Body captures everything after the colon and any
+/// immediately following whitespace, including embedded newlines
+/// (the screen's TextField uses `maxLines: null` so a single
+/// NotepadLine.source can carry multi-line FlatZinc).
+final RegExp _flatzincDirectiveRegex = RegExp(
+  r'^\s*fzn:\s*([\s\S]*)$',
+  caseSensitive: true,
+);
+
+/// Names declared with a `:: output_var` annotation in a FlatZinc
+/// source. Matched statically so the dependency graph can be built
+/// before any evaluation runs. Only scalar output_var names are
+/// surfaced; array outputs (`output_array(...)`) stay in the
+/// formatted result text but don't enter the document scope, since
+/// a single FlatZinc array doesn't map cleanly to a scalar scope
+/// value.
+Set<String> flatzincOutputVarsIn(String source) {
+  final out = <String>{};
+  for (final m in _flatzincOutputVarRegex.allMatches(source)) {
+    out.add(m.group(1)!);
+  }
+  return out;
+}
+
+/// Parse the standard FlatZinc output format into `name → value`
+/// pairs for scalar (non-array) assignments. Array lines (`name =
+/// array1d(...);`) are skipped — see [flatzincOutputVarsIn] for the
+/// rationale. Anything between `=====UNSATISFIABLE=====` or after
+/// the first `----------` separator is also ignored, so multi-
+/// solution outputs only contribute the first solution's bindings.
+Map<String, String> parseFlatZincScalarOutputs(String output) {
+  final out = <String, String>{};
+  final firstSolution = output.split('\n----------').first;
+  if (firstSolution.contains('=====UNSATISFIABLE=====')) return out;
+  for (final line in firstSolution.split('\n')) {
+    final m = _flatzincScalarLineRegex.firstMatch(line);
+    if (m == null) continue;
+    out[m.group(1)!] = m.group(2)!.trim();
+  }
+  return out;
+}
+
+final RegExp _flatzincOutputVarRegex = RegExp(
+  r'\b([A-Za-z_][A-Za-z0-9_]*)\b\s*::\s*output_var\b',
+);
+final RegExp _flatzincScalarLineRegex = RegExp(
+  // Value disallows `(` so array1d(...) / array2d(...) lines fall
+  // through. A scalar value is a number, a sign-prefixed number,
+  // or `true`/`false` — no parens.
+  r'^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([^;(]+?)\s*;\s*$',
+);
+
 // ---------------------------------------------------------------------------
 // Phase 3: dependency graph + topological evaluation.
 // ---------------------------------------------------------------------------
@@ -331,10 +416,15 @@ Set<String> identifierWordsIn(String source) {
 /// [scopeKeys] that appears as an identifier in [parsed]'s body.
 /// `Ans` is handled separately by the evaluator and isn't a scope
 /// key, so it doesn't show up here.
+///
+/// FlatZinc lines are independent — the body uses FlatZinc's own
+/// variable namespace, which is unrelated to the document scope —
+/// so they never produce dependency edges.
 Set<String> dependenciesOfLine(
   ParsedNotepadLine parsed,
   Set<String> scopeKeys,
 ) {
+  if (parsed.kind == NotepadLineKind.flatzinc) return const {};
   final body = parsed.body;
   if (body == null) return const {};
   final words = identifierWordsIn(body);
@@ -353,6 +443,9 @@ Set<String> freeVariablesOfLine(
   ParsedNotepadLine parsed,
   Set<String> scopeKeys,
 ) {
+  // FlatZinc identifiers live in their own namespace; surfacing
+  // them as "free vars" in the doc would be misleading noise.
+  if (parsed.kind == NotepadLineKind.flatzinc) return const {};
   final body = parsed.body;
   if (body == null) return const {};
   final words = identifierWordsIn(body);
@@ -410,6 +503,15 @@ NotepadDependencyGraph buildDependencyGraph(
         break;
       case NotepadLineKind.expression:
         nameToLine['line${i + 1}'] = i;
+        break;
+      case NotepadLineKind.flatzinc:
+        nameToLine['line${i + 1}'] = i;
+        // Statically extract output_var names from the FlatZinc
+        // source so downstream refs route correctly even before
+        // the line has been evaluated for the first time.
+        for (final name in flatzincOutputVarsIn(parsed.body ?? '')) {
+          nameToLine[name] = i;
+        }
         break;
       case NotepadLineKind.blank:
       case NotepadLineKind.comment:
@@ -548,6 +650,27 @@ class NotepadErrorPrefix {
 typedef NotepadEngineDispatcher = Future<String> Function(
     String preprocessedExpression);
 
+/// Result of running a `fzn:` line: the standard FlatZinc output
+/// text (for `cachedResult`) plus the scalar `output_var` bindings
+/// extracted from the first solution (for `cachedExports`). Errors
+/// from the FlatZinc parser / solver bubble up as a thrown
+/// exception — the evaluator catches them and writes the message
+/// into `cachedError`.
+class NotepadFlatZincResult {
+  final String formatted;
+  final Map<String, String> scalarBindings;
+  const NotepadFlatZincResult({
+    required this.formatted,
+    required this.scalarBindings,
+  });
+}
+
+/// Signature of the FlatZinc dispatcher. Tests inject a stub that
+/// returns canned bindings; production wires this to
+/// `FlatZinc.solve(source)` + [parseFlatZincScalarOutputs].
+typedef NotepadFlatZincDispatcher = Future<NotepadFlatZincResult> Function(
+    String flatzincSource);
+
 /// Orchestrates per-line evaluation across a `NotepadDocument`:
 /// builds the dependency graph, processes lines in topological
 /// order, propagates blocked-by errors downstream, flags cycle
@@ -558,6 +681,13 @@ typedef NotepadEngineDispatcher = Future<String> Function(
 class NotepadEvaluator {
   final NotepadEngineDispatcher dispatcher;
 
+  /// Optional FlatZinc dispatcher. When null, `fzn:` lines fail
+  /// with a "FlatZinc dispatcher not wired" error — useful in
+  /// tests that don't care about FlatZinc support. Production
+  /// wiring (NotepadScreen) always passes a real callback that
+  /// hits dart_csp's FlatZinc.solve.
+  final NotepadFlatZincDispatcher? flatzincDispatcher;
+
   /// Optional [externalScope] — populated by Phase 6 from the doc's
   /// `use` directive resolved against `AppState.userVariables` /
   /// `userFunctions`. Phase 3 just sees the map and uses it for
@@ -567,6 +697,7 @@ class NotepadEvaluator {
 
   const NotepadEvaluator({
     required this.dispatcher,
+    this.flatzincDispatcher,
     this.externalScope = const {},
   });
 
@@ -655,6 +786,9 @@ class NotepadEvaluator {
         }
         line.cachedFreeVars = [];
         return;
+      case NotepadLineKind.flatzinc:
+        await _evaluateFlatZincLine(line, parsed);
+        return;
       case NotepadLineKind.assignment:
       case NotepadLineKind.expression:
         break;
@@ -722,6 +856,57 @@ class NotepadEvaluator {
       line.cachedResult = result;
       line.cachedError = null;
       line.cachedFreeVars = freeVars;
+    }
+  }
+
+  /// Dispatch a `fzn:` line to the FlatZinc backend. On success the
+  /// formatted FlatZinc output goes to `cachedResult` and the
+  /// parsed scalar bindings populate `cachedExports`. Without a
+  /// `flatzincDispatcher` wired, surfaces a friendly error so the
+  /// missing-dispatcher case isn't silent.
+  Future<void> _evaluateFlatZincLine(
+    NotepadLine line,
+    ParsedNotepadLine parsed,
+  ) async {
+    final body = parsed.body ?? '';
+    if (body.trim().isEmpty) {
+      line.cachedResult = null;
+      line.cachedError =
+          '${NotepadErrorPrefix.evaluation}Error: empty FlatZinc body';
+      line.cachedFreeVars = [];
+      line.cachedExports = {};
+      return;
+    }
+    final dispatch = flatzincDispatcher;
+    if (dispatch == null) {
+      line.cachedResult = null;
+      line.cachedError =
+          '${NotepadErrorPrefix.evaluation}Error: FlatZinc dispatcher not wired';
+      line.cachedFreeVars = [];
+      line.cachedExports = {};
+      return;
+    }
+    try {
+      final result = await dispatch(body);
+      // Treat a UNSATISFIABLE marker as an error so dependents
+      // block correctly — there is no value to substitute.
+      if (result.formatted.contains('=====UNSATISFIABLE=====')) {
+        line.cachedResult = null;
+        line.cachedError = '${NotepadErrorPrefix.evaluation}Error: '
+            'unsatisfiable FlatZinc model';
+        line.cachedFreeVars = [];
+        line.cachedExports = {};
+        return;
+      }
+      line.cachedResult = result.formatted;
+      line.cachedError = null;
+      line.cachedFreeVars = [];
+      line.cachedExports = Map<String, String>.from(result.scalarBindings);
+    } catch (e) {
+      line.cachedResult = null;
+      line.cachedError = '${NotepadErrorPrefix.evaluation}Error: $e';
+      line.cachedFreeVars = [];
+      line.cachedExports = {};
     }
   }
 

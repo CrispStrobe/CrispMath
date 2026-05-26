@@ -21,6 +21,7 @@
 
 import 'dart:async';
 
+import 'package:dart_csp/dart_csp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
@@ -515,6 +516,20 @@ class _NotepadScreenState extends State<NotepadScreen> {
     }
   }
 
+  /// FlatZinc dispatcher for `fzn:` lines (Round E.4). Calls
+  /// dart_csp's FlatZinc frontend directly. The returned
+  /// [NotepadFlatZincResult.formatted] is the standard FlatZinc
+  /// output (suitable for the result-column render) and the
+  /// scalar bindings populate `cachedExports` so downstream
+  /// notepad lines can reference the solved values by name.
+  Future<NotepadFlatZincResult> _flatzincDispatcher(String source) async {
+    final formatted = await FlatZinc.solve(source);
+    return NotepadFlatZincResult(
+      formatted: formatted,
+      scalarBindings: parseFlatZincScalarOutputs(formatted),
+    );
+  }
+
   /// Detect a single CAS function call like `diff(x^3, x)` or
   /// `integrate(sin(x), x)` and route it to the corresponding
   /// `EngineService.runOpAsync(EngineOp(...))` path. Returns null
@@ -754,6 +769,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
     final evaluator = NotepadEvaluator(
       dispatcher: _dispatcher,
+      flatzincDispatcher: _flatzincDispatcher,
       externalScope: useResolution.externalScope,
     );
 
@@ -1345,7 +1361,16 @@ class _NotepadResultColumn extends StatelessWidget {
   }
 
   Widget _buildResult(BuildContext context, String res, TextAlign textAlign) {
-    final color = Theme.of(context).colorScheme.primary;
+    final scheme = Theme.of(context).colorScheme;
+    // FlatZinc lines (Round E.4) produce multi-line `name = value;`
+    // output blocks plus separator markers — Math.tex can't render
+    // that, so route them to a monospace SelectableText block. Use
+    // the raw line source for detection so we don't have to re-
+    // classify (the dispatcher already ran).
+    if (line.source.trimLeft().startsWith('fzn:')) {
+      return _buildFlatZincResult(context, res);
+    }
+    final color = scheme.primary;
     final style = TextStyle(fontSize: 16, color: color);
     final latex = MathDisplayUtils.toHistoryDisplayLatex(res);
     Widget body;
@@ -1363,6 +1388,31 @@ class _NotepadResultColumn extends StatelessWidget {
       onLongPress: () => _showResultActions(context, res, latex),
       onSecondaryTap: () => _showResultActions(context, res, latex),
       child: body,
+    );
+  }
+
+  Widget _buildFlatZincResult(BuildContext context, String res) {
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: () => _showResultActions(context, res, res),
+      onSecondaryTap: () => _showResultActions(context, res, res),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: SelectableText(
+          res,
+          style: TextStyle(
+            fontSize: 12,
+            fontFamily: 'monospace',
+            color: scheme.onSurface,
+          ),
+        ),
+      ),
     );
   }
 
