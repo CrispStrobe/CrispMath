@@ -1706,13 +1706,13 @@ Surfaces:
 
 i18n: 4-5 new strings × 4 locales.
 
-##### Round 91b — Naming-dialog UX polish
+##### Round 91b — Naming-dialog UX polish — **SHIPPED**
 
-The naming dialog needs to surface conflicts ("a variable
-named `x` already exists — overwrite?") and to suggest a
-default name (e.g. the next unused single-letter name, or
-`fnN()` for functions). One-screen modal with validation;
-nothing fancy. ~30 min after round 91 lands.
+Done 2026-05-26 — see HISTORY round 100. Both dialogs
+pre-fill with the next unused single-letter name (a..z,
+skipping reserved + existing + parameter), and an
+overwrite-confirm AlertDialog now fires when the entered
+name already exists. 3 i18n strings × 4 locales.
 
 ---
 

@@ -2,6 +2,42 @@
 
 Completed work, newest first.
 
+## 2026-05-26 (round 100, R91b) — Naming-dialog polish
+
+Closes the two known rough edges from R91's store-as-
+variable / store-as-function dialogs: empty input field and
+silent overwrite when the name already exists.
+
+### Default name suggestion
+
+Both dialogs pre-fill the name field with the next unused
+single-letter (a..z), skipping reserved names, existing
+variables, existing user functions, and — for the function
+case — the parameter name itself, so `f(x) = …` won't
+suggest `x` as the function name.
+`StoreResultDialogs._nextUnusedSingleLetterName({Set
+<String> exclude = const {}})` is the shared helper.
+
+### Overwrite confirmation
+
+When the entered name already exists in
+`AppState.userVariables` (or `.userFunctions`), the save
+button opens an AlertDialog showing the current value
+before clobbering. The user must explicitly confirm
+("Overwrite") to proceed. This matches what users coming
+from the function-store flow expect; the calculator's
+existing M+/store semantics silently clobbered, which was
+surprising in the new right-click flow.
+
+3 new i18n strings × 4 locales:
+`storeOverwriteTitle(name)`, `storeOverwriteCurrent
+(existing)`, `storeOverwriteConfirm`.
+
+Suite at 1708; no new tests for the dialog polish — the
+confirmation flow is awkward to drive from `flutter_test`
+without the full app shell, and the existing R91 smoke
+tests still exercise the happy path.
+
 ## 2026-05-26 (round 99, P9-A6) — Parametric surfaces + curves (closes P9 V1)
 
 Last two object kinds in the V1 3D Scene module. Both

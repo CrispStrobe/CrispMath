@@ -12,15 +12,19 @@ import '../utils/expression_preprocessing_utils.dart';
 class StoreResultDialogs {
   /// Prompts for a variable name, then persists [value] via
   /// [AppState.setVariable]. Returns the chosen name on save, or null
-  /// if the user cancelled. Existing variables are overwritten without
-  /// confirmation (matches the calculator's existing M+/store
-  /// semantics).
+  /// if the user cancelled. If the entered name already exists, the
+  /// user gets an overwrite-confirmation dialog (round 91b — the
+  /// original 91 silently clobbered, matching the M+/store semantics
+  /// but surprising users coming from the function-store flow).
   static Future<String?> promptStoreAsVariable({
     required BuildContext context,
     required String value,
   }) async {
     final t = AppLocalizations.of(context);
-    final controller = TextEditingController();
+    // R91b: pre-fill with the next unused single-letter name so the
+    // user can hit Enter to accept the suggestion.
+    final suggested = _nextUnusedSingleLetterName();
+    final controller = TextEditingController(text: suggested);
     final formKey = GlobalKey<FormState>();
     final saved = await showDialog<String>(
       context: context,
@@ -66,9 +70,19 @@ class StoreResultDialogs {
               child: Text(t.cancel),
             ),
             FilledButton(
-              onPressed: () {
+              onPressed: () async {
                 if (!(formKey.currentState?.validate() ?? false)) return;
-                Navigator.of(ctx).pop(controller.text.trim());
+                final name = controller.text.trim();
+                if (AppState().userVariables.containsKey(name)) {
+                  final ok = await _confirmOverwrite(
+                    ctx,
+                    name: name,
+                    existingValue: AppState().userVariables[name],
+                  );
+                  if (ok != true) return;
+                }
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop(name);
               },
               child: Text(t.storeButton),
             ),
@@ -97,7 +111,11 @@ class StoreResultDialogs {
     if (freeVars.isEmpty) return null;
     final defaultParam =
         freeVars.firstWhere((v) => v.length == 1, orElse: () => freeVars.first);
-    final nameCtrl = TextEditingController();
+    // R91b: suggest the next unused single-letter that doesn't
+    // collide with the parameter (so f(x) doesn't get suggested as
+    // `x`).
+    final suggestedName = _nextUnusedSingleLetterName(exclude: {defaultParam});
+    final nameCtrl = TextEditingController(text: suggestedName);
     final paramCtrl = TextEditingController(text: defaultParam);
     final formKey = GlobalKey<FormState>();
     final saved = await showDialog<String>(
@@ -158,9 +176,21 @@ class StoreResultDialogs {
               child: Text(t.cancel),
             ),
             FilledButton(
-              onPressed: () {
+              onPressed: () async {
                 if (!(formKey.currentState?.validate() ?? false)) return;
-                Navigator.of(ctx).pop(nameCtrl.text.trim().toLowerCase());
+                final name = nameCtrl.text.trim().toLowerCase();
+                if (AppState().userFunctions.containsKey(name)) {
+                  final existing = AppState().userFunctions[name]!;
+                  final ok = await _confirmOverwrite(
+                    ctx,
+                    name: name,
+                    existingValue:
+                        '${existing.name}(${existing.paramVar}) = ${existing.body}',
+                  );
+                  if (ok != true) return;
+                }
+                if (!ctx.mounted) return;
+                Navigator.of(ctx).pop(name);
               },
               child: Text(t.storeButton),
             ),
@@ -197,5 +227,65 @@ class StoreResultDialogs {
       return t.storeNameReserved;
     }
     return null;
+  }
+
+  /// R91b: walk the single-letter alphabet for the next name that
+  /// isn't already a variable, a user function, a reserved CAS
+  /// token, or in the [exclude] set (used to avoid suggesting the
+  /// parameter name as the function name). Falls back to 'x' if
+  /// the alphabet is exhausted — extremely unlikely in practice.
+  static String _nextUnusedSingleLetterName({Set<String> exclude = const {}}) {
+    final s = AppState();
+    final taken = {
+      ...s.userVariables.keys,
+      ...s.userFunctions.keys,
+      ...exclude,
+    };
+    for (var c = 'a'.codeUnitAt(0); c <= 'z'.codeUnitAt(0); c++) {
+      final candidate = String.fromCharCode(c);
+      if (taken.contains(candidate)) continue;
+      if (ExpressionPreprocessingUtils.isReservedName(candidate)) continue;
+      return candidate;
+    }
+    return 'x';
+  }
+
+  /// R91b: confirm before clobbering an existing variable or
+  /// function. Returns `true` when the user confirms, `false` /
+  /// `null` to abort the save.
+  static Future<bool?> _confirmOverwrite(
+    BuildContext context, {
+    required String name,
+    required String? existingValue,
+  }) async {
+    final t = AppLocalizations.of(context);
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t.storeOverwriteTitle(name)),
+        content: existingValue == null
+            ? null
+            : Text(
+                t.storeOverwriteCurrent(existingValue),
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  color: Theme.of(ctx)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
+                ),
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(t.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(t.storeOverwriteConfirm),
+          ),
+        ],
+      ),
+    );
   }
 }

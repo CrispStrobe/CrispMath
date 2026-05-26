@@ -390,6 +390,11 @@ abstract class AppLocalizations {
   String get storeNameReserved;
   String storeSavedAs(String name);
 
+  // -- R91b: overwrite confirmation --
+  String storeOverwriteTitle(String name);
+  String storeOverwriteCurrent(String existing);
+  String get storeOverwriteConfirm;
+
   // -- Settings tile labels for the new entries --
   String get settingsExportData;
   String get settingsExportDataSubtitle;
@@ -1377,6 +1382,14 @@ class EnLocalizations implements AppLocalizations {
   String get storeNameReserved => 'Reserved by a built-in';
   @override
   String storeSavedAs(String name) => 'Saved as $name';
+
+  // -- R91b --
+  @override
+  String storeOverwriteTitle(String name) => 'Overwrite "$name"?';
+  @override
+  String storeOverwriteCurrent(String existing) => 'Currently: $existing';
+  @override
+  String get storeOverwriteConfirm => 'Overwrite';
 
   @override
   String get settingsExportData => 'Export data';
@@ -2757,6 +2770,14 @@ class DeLocalizations implements AppLocalizations {
   String get storeNameReserved => 'Name ist von einer Funktion belegt';
   @override
   String storeSavedAs(String name) => 'Als $name gespeichert';
+
+  // -- R91b --
+  @override
+  String storeOverwriteTitle(String name) => '„$name" überschreiben?';
+  @override
+  String storeOverwriteCurrent(String existing) => 'Aktuell: $existing';
+  @override
+  String get storeOverwriteConfirm => 'Überschreiben';
 
   @override
   String get settingsExportData => 'Daten exportieren';
@@ -4280,6 +4301,14 @@ class FrLocalizations implements AppLocalizations {
   @override
   String storeSavedAs(String name) => 'Enregistré comme $name';
 
+  // -- R91b --
+  @override
+  String storeOverwriteTitle(String name) => 'Remplacer « $name » ?';
+  @override
+  String storeOverwriteCurrent(String existing) => 'Actuellement : $existing';
+  @override
+  String get storeOverwriteConfirm => 'Remplacer';
+
   @override
   String get settingsExportData => 'Exporter les données';
   @override
@@ -5802,6 +5831,14 @@ class EsLocalizations implements AppLocalizations {
   String get storeNameReserved => 'Nombre reservado por una función integrada';
   @override
   String storeSavedAs(String name) => 'Guardado como $name';
+
+  // -- R91b --
+  @override
+  String storeOverwriteTitle(String name) => '¿Sobrescribir "$name"?';
+  @override
+  String storeOverwriteCurrent(String existing) => 'Actualmente: $existing';
+  @override
+  String get storeOverwriteConfirm => 'Sobrescribir';
 
   @override
   String get settingsExportData => 'Exportar datos';
