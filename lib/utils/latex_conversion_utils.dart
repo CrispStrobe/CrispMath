@@ -23,49 +23,48 @@ class LatexConversionUtils {
       return 'sqrt(${m.group(1)})';
     });
 
-    // Handle fractions: \frac{num}{den} -> (num)/(den)
-    result =
-        result.replaceAllMapped(RegExp(r'\\frac\{([^}]+)\}\{([^}]+)\}'), (m) {
-      return '(${m.group(1)})/(${m.group(2)})';
-    });
-
-    // Handle differentiation: \frac{d}{dx}(expr) -> d/dx(expr)
-    result = result.replaceAllMapped(
-        RegExp(r'\\frac\{d\}\{d([a-zA-Z])\}\(([^)]+)\)'), (m) {
-      return 'd/d${m.group(1)}(${m.group(2)})';
-    });
-
-    // Handle differentiation with braces: \frac{d}{dx}{expr} -> d/dx(expr)
-    result = result.replaceAllMapped(
-        RegExp(r'\\frac\{d\}\{d([a-zA-Z])\}\{([^}]+)\}'), (m) {
-      return 'd/d${m.group(1)}(${m.group(2)})';
-    });
-
     // Sized-delimiter normalization — LaTeX accepts `\bigg (` or
     // `\bigg(` interchangeably (command + optional whitespace +
     // argument), and the LatexController sometimes stores the
-    // form-with-space. Collapse the optional space first so the
-    // downstream patterns can use plain literals.
+    // form-with-space. Collapse the optional space FIRST so the
+    // d/dx detection patterns below can use plain literals.
     result = result.replaceAllMapped(
       RegExp(
           r'\\(left|right|big|Big|bigg|Bigg|bigl|bigr|Bigl|Bigr|biggl|biggr|Biggl|Biggr)\s+(?=[(){}\[\]])'),
       (m) => '\\${m[1]!}',
     );
 
-    // Handle differentiation with various sized-delimiter pairs.
-    // The keypad's d/dx button emits the \bigg form (fixed-size
-    // delimiter that renders cleanly even with empty contents,
-    // unlike \left/\right). All forms strip down to plain
-    // d/dx(expr) for the engine.
+    // Differentiation detection MUST run before the generic
+    // `\frac{num}{den}` rewrite below — otherwise `\frac{d}{dx}`
+    // collapses into `(d)/(dx)` and the d/dx pattern never gets a
+    // chance to match. Try the sized-delimiter forms first, then
+    // bare parens / braces.
     final dPatterns = ['left', 'Big', 'bigg', 'Bigg', 'Bigl', 'Bigr'];
     for (final p in dPatterns) {
-      final close = p == 'left'
-          ? 'right'
-          : (p == 'Bigl' ? 'Bigr' : p);
+      final close = p == 'left' ? 'right' : (p == 'Bigl' ? 'Bigr' : p);
       result = result.replaceAllMapped(
-          RegExp('\\\\frac\\{d\\}\\{d([a-zA-Z])\\}\\\\$p\\((.*?)\\\\$close\\)'),
-          (m) => 'd/d${m.group(1)}(${m.group(2)})');
+        RegExp(
+            '\\\\frac\\{d\\}\\{d([a-zA-Z])\\}\\\\$p\\((.*?)\\\\$close\\)'),
+        (m) => 'd/d${m.group(1)}(${m.group(2)})',
+      );
     }
+    // Bare-paren and braced forms (manually typed or older keypad
+    // emissions).
+    result = result.replaceAllMapped(
+        RegExp(r'\\frac\{d\}\{d([a-zA-Z])\}\(([^)]+)\)'), (m) {
+      return 'd/d${m.group(1)}(${m.group(2)})';
+    });
+    result = result.replaceAllMapped(
+        RegExp(r'\\frac\{d\}\{d([a-zA-Z])\}\{([^}]+)\}'), (m) {
+      return 'd/d${m.group(1)}(${m.group(2)})';
+    });
+
+    // NOW the generic fraction rewrite — any remaining `\frac{a}{b}`
+    // wasn't a derivative pattern, so safe to fold into `(a)/(b)`.
+    result =
+        result.replaceAllMapped(RegExp(r'\\frac\{([^}]+)\}\{([^}]+)\}'), (m) {
+      return '(${m.group(1)})/(${m.group(2)})';
+    });
 
     // Generic sized-delimiter strip — keep just the underlying
     // bracket character. Covers anything pasted in or future
