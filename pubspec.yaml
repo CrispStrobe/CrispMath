@@ -36,7 +36,7 @@ dependencies:
   dart_csp:
     git:
       url: https://github.com/CrispStrobe/dart_csp.git
-      ref: "e3cce21"
+      ref: "69a9cfb"
 
   # Math rendering
   flutter_math_fork: ^0.7.2
