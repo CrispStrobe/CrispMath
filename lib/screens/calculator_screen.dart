@@ -778,7 +778,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // its result. The whole-expression dispatch below catches
       // the bare case; this handles the compound case where the
       // derivative is a subterm.
+      debugPrint('CALC: pre-inline-deriv converted="$converted"');
       converted = await _expandInlineDerivatives(converted);
+      debugPrint('CALC: post-inline-deriv converted="$converted"');
 
       // Inline unit arithmetic: `5 km + 3 m`, `100 km in mph`, etc.
       // Runs before the normal dispatcher so SymEngine never sees raw
