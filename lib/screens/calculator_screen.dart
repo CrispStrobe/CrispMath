@@ -565,12 +565,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
         break;
 
       case 'd/dx':
-        // `\Bigl( … \Bigr)` is a fixed-size delimiter pair that's
-        // taller than baseline parens — visually matches the
-        // stacked fraction height. Unlike `\left( … \right)` it
-        // renders with empty contents, so the keypad button can
-        // insert it before the user has typed anything inside.
-        _latexController.insert(r'\frac{d}{dx}\Bigl(\Bigr)',
+        // `\Big( … \Big)` — fixed-size delimiter that's taller
+        // than baseline parens. Visually matches the stacked
+        // fraction height and renders cleanly even with empty
+        // contents. The `l`/`r` ("left"/"right") variants
+        // (`\Bigl(\Bigr)`) aren't recognized by flutter_math_fork
+        // — it parses `\Bigl` as `\Big` plus a literal `l`.
+        _latexController.insert(r'\frac{d}{dx}\Big(\Big)',
             cursorOffsetFromEnd: -5);
         break;
 

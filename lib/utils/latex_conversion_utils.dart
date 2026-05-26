@@ -54,6 +54,10 @@ class LatexConversionUtils {
         RegExp(r'\\frac\{d\}\{d([a-zA-Z])\}\\Bigl\((.*?)\\Bigr\)'), (m) {
       return 'd/d${m.group(1)}(${m.group(2)})';
     });
+    result = result.replaceAllMapped(
+        RegExp(r'\\frac\{d\}\{d([a-zA-Z])\}\\Big\((.*?)\\Big\)'), (m) {
+      return 'd/d${m.group(1)}(${m.group(2)})';
+    });
 
     // Generic sized-delimiter strip — keep just the underlying
     // bracket character. Covers anything pasted in or future
@@ -65,7 +69,11 @@ class LatexConversionUtils {
         .replaceAll(r'\bigl(', '(').replaceAll(r'\bigr)', ')')
         .replaceAll(r'\Bigl(', '(').replaceAll(r'\Bigr)', ')')
         .replaceAll(r'\biggl(', '(').replaceAll(r'\biggr)', ')')
-        .replaceAll(r'\Biggl(', '(').replaceAll(r'\Biggr)', ')');
+        .replaceAll(r'\Biggl(', '(').replaceAll(r'\Biggr)', ')')
+        .replaceAll(r'\big(', '(').replaceAll(r'\big)', ')')
+        .replaceAll(r'\Big(', '(').replaceAll(r'\Big)', ')')
+        .replaceAll(r'\bigg(', '(').replaceAll(r'\bigg)', ')')
+        .replaceAll(r'\Bigg(', '(').replaceAll(r'\Bigg)', ')');
 
     // === STEP 2: Handle function notation with braces ===
 
