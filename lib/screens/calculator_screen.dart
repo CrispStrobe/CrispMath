@@ -565,13 +565,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
         break;
 
       case 'd/dx':
-        // \left( … \right) scales the parens to the fraction's height
-        // so the brackets line up vertically with the d/dx
-        // numerator-over-denominator. Plain `()` after `\frac` left
-        // the open/close parens floating at the baseline,
-        // misaligned with the (tall) fraction.
-        _latexController.insert(r'\frac{d}{dx}\left(\right)',
-            cursorOffsetFromEnd: -7);
+        // Plain `()` after `\frac{d}{dx}` looks slightly small
+        // next to the stacked fraction, but `\left( … \right)`
+        // can't render with empty contents — flutter_math_fork
+        // throws and the whole input goes blank. The parens fill
+        // out and start to look right as soon as the user types
+        // any character inside.
+        _latexController.insert(r'\frac{d}{dx}()', cursorOffsetFromEnd: -1);
         break;
 
       case 'd/dx⌄':
@@ -1536,9 +1536,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
     await showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        // The menu has ~8 ListTiles; without a scroll wrapper the
+        // Column overflows on short bottom sheets (the ~half-screen
+        // default modal height). Wrap so it scrolls instead of
+        // throwing a layout assertion.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             ListTile(
               leading: const Icon(Icons.show_chart),
               title: Text(t.funcCtxShowOnGraph),
@@ -1650,6 +1655,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
           ],
+          ),
         ),
       ),
     );
