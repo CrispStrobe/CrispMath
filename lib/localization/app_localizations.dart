@@ -473,11 +473,20 @@ abstract class AppLocalizations {
   String get constraintsTabDiophantine;
   String get constraintsTabCryptarithm;
   String get constraintsTabDsl;
+  String get constraintsTabFlatZinc;
   String get constraintsDslIntro;
   String get constraintsDslInputLabel;
   String get constraintsDslExamplesButton;
   String get constraintsDslExamplesTooltip;
   String constraintsDslExampleTitle(String id);
+  String get constraintsFlatZincIntro;
+  String get constraintsFlatZincInputLabel;
+  String get constraintsFlatZincAllSolutions;
+  String get constraintsFlatZincFirstSolution;
+  String get constraintsFlatZincExhaustiveOne;
+  String constraintsFlatZincExhaustiveN(int n);
+  String get constraintsFlatZincUnsatisfiable;
+  String constraintsFlatZincExampleTitle(String id);
   String get constraintsDiophantineIntro;
   String get constraintsCryptarithmIntro;
   String get constraintsVariablesLabel;
@@ -1564,6 +1573,8 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get constraintsTabDsl => 'Free-form';
   @override
+  String get constraintsTabFlatZinc => 'FlatZinc';
+  @override
   String get constraintsDslIntro =>
       'Declare variables with `vars: x, y in 1..9`, '
       'use `allDifferent(x, y, z)` for distinctness, and '
@@ -1593,6 +1604,35 @@ class EnLocalizations implements AppLocalizations {
         return 'Cumulative scheduling — capacity 2';
       case 'rcpsp':
         return 'RCPSP — crew + equipment';
+    }
+    return id;
+  }
+
+  @override
+  String get constraintsFlatZincIntro =>
+      'Paste a FlatZinc model (typically produced by mzn2fzn from a '
+      'MiniZinc source). The solver returns standard FlatZinc output: '
+      '`name = value;` lines per `:: output_var` annotation, ended by '
+      '`----------`, with `==========` after the last solution.';
+  @override
+  String get constraintsFlatZincInputLabel => 'FlatZinc source';
+  @override
+  String get constraintsFlatZincAllSolutions => 'All solutions';
+  @override
+  String get constraintsFlatZincFirstSolution => 'First solution';
+  @override
+  String get constraintsFlatZincExhaustiveOne => '1 solution (exhaustive)';
+  @override
+  String constraintsFlatZincExhaustiveN(int n) => '$n solutions (exhaustive)';
+  @override
+  String get constraintsFlatZincUnsatisfiable => 'Unsatisfiable';
+  @override
+  String constraintsFlatZincExampleTitle(String id) {
+    switch (id) {
+      case 'nqueens4':
+        return '4-Queens';
+      case 'binPacking':
+        return 'Bin packing (3 items, 2 bins)';
     }
     return id;
   }
@@ -2955,6 +2995,8 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get constraintsTabDsl => 'Freitext';
   @override
+  String get constraintsTabFlatZinc => 'FlatZinc';
+  @override
   String get constraintsDslIntro =>
       'Variablen deklarieren mit `vars: x, y in 1..9`, '
       'für Verschiedenheit `allDifferent(x, y, z)`, '
@@ -2984,6 +3026,36 @@ class DeLocalizations implements AppLocalizations {
         return 'Kumulatives Scheduling — Kapazität 2';
       case 'rcpsp':
         return 'RCPSP — Crew + Ausrüstung';
+    }
+    return id;
+  }
+
+  @override
+  String get constraintsFlatZincIntro =>
+      'FlatZinc-Modell einfügen (typischerweise von mzn2fzn aus einer '
+      'MiniZinc-Quelle erzeugt). Der Solver liefert die Standard-'
+      'FlatZinc-Ausgabe: `name = wert;` pro `:: output_var`-Annotation, '
+      'beendet mit `----------`, gefolgt von `==========` nach der '
+      'letzten Lösung.';
+  @override
+  String get constraintsFlatZincInputLabel => 'FlatZinc-Quelltext';
+  @override
+  String get constraintsFlatZincAllSolutions => 'Alle Lösungen';
+  @override
+  String get constraintsFlatZincFirstSolution => 'Erste Lösung';
+  @override
+  String get constraintsFlatZincExhaustiveOne => '1 Lösung (vollständig)';
+  @override
+  String constraintsFlatZincExhaustiveN(int n) => '$n Lösungen (vollständig)';
+  @override
+  String get constraintsFlatZincUnsatisfiable => 'Unerfüllbar';
+  @override
+  String constraintsFlatZincExampleTitle(String id) {
+    switch (id) {
+      case 'nqueens4':
+        return '4-Damen-Problem';
+      case 'binPacking':
+        return 'Bin-Packing (3 Objekte, 2 Behälter)';
     }
     return id;
   }
@@ -4485,6 +4557,8 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get constraintsTabDsl => 'Texte libre';
   @override
+  String get constraintsTabFlatZinc => 'FlatZinc';
+  @override
   String get constraintsDslIntro =>
       'Déclarer des variables avec `vars: x, y in 1..9`, '
       'utiliser `allDifferent(x, y, z)` pour la distinction, '
@@ -4516,6 +4590,36 @@ class FrLocalizations implements AppLocalizations {
         return 'Ordonnancement cumulatif — capacité 2';
       case 'rcpsp':
         return 'RCPSP — équipe + équipement';
+    }
+    return id;
+  }
+
+  @override
+  String get constraintsFlatZincIntro =>
+      'Coller un modèle FlatZinc (typiquement produit par mzn2fzn à '
+      "partir d'une source MiniZinc). Le solveur renvoie la sortie "
+      'FlatZinc standard : lignes `nom = valeur;` par annotation '
+      '`:: output_var`, terminées par `----------`, suivies de '
+      '`==========` après la dernière solution.';
+  @override
+  String get constraintsFlatZincInputLabel => 'Code source FlatZinc';
+  @override
+  String get constraintsFlatZincAllSolutions => 'Toutes les solutions';
+  @override
+  String get constraintsFlatZincFirstSolution => 'Première solution';
+  @override
+  String get constraintsFlatZincExhaustiveOne => '1 solution (exhaustif)';
+  @override
+  String constraintsFlatZincExhaustiveN(int n) => '$n solutions (exhaustif)';
+  @override
+  String get constraintsFlatZincUnsatisfiable => 'Insatisfiable';
+  @override
+  String constraintsFlatZincExampleTitle(String id) {
+    switch (id) {
+      case 'nqueens4':
+        return '4 reines';
+      case 'binPacking':
+        return 'Bin-packing (3 objets, 2 boîtes)';
     }
     return id;
   }
@@ -6015,6 +6119,8 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get constraintsTabDsl => 'Texto libre';
   @override
+  String get constraintsTabFlatZinc => 'FlatZinc';
+  @override
   String get constraintsDslIntro =>
       'Declare variables con `vars: x, y in 1..9`, '
       'use `allDifferent(x, y, z)` para distinción, '
@@ -6045,6 +6151,36 @@ class EsLocalizations implements AppLocalizations {
         return 'Planificación acumulativa — capacidad 2';
       case 'rcpsp':
         return 'RCPSP — equipo + equipamiento';
+    }
+    return id;
+  }
+
+  @override
+  String get constraintsFlatZincIntro =>
+      'Pegue un modelo FlatZinc (típicamente generado por mzn2fzn '
+      'a partir de una fuente MiniZinc). El solver devuelve la '
+      'salida estándar FlatZinc: líneas `nombre = valor;` por cada '
+      'anotación `:: output_var`, terminadas con `----------`, '
+      'seguidas de `==========` tras la última solución.';
+  @override
+  String get constraintsFlatZincInputLabel => 'Código fuente FlatZinc';
+  @override
+  String get constraintsFlatZincAllSolutions => 'Todas las soluciones';
+  @override
+  String get constraintsFlatZincFirstSolution => 'Primera solución';
+  @override
+  String get constraintsFlatZincExhaustiveOne => '1 solución (exhaustivo)';
+  @override
+  String constraintsFlatZincExhaustiveN(int n) => '$n soluciones (exhaustivo)';
+  @override
+  String get constraintsFlatZincUnsatisfiable => 'Insatisfacible';
+  @override
+  String constraintsFlatZincExampleTitle(String id) {
+    switch (id) {
+      case 'nqueens4':
+        return '4 reinas';
+      case 'binPacking':
+        return 'Bin packing (3 objetos, 2 cajas)';
     }
     return id;
   }
