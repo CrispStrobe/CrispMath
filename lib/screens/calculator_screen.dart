@@ -11,6 +11,7 @@ import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
 
 // Widget imports
+import '../widgets/boolean_chip.dart';
 import '../widgets/calculator_keypad.dart';
 import '../widgets/latex_input_field.dart';
 import '../widgets/memory_dialogs.dart';
@@ -200,28 +201,15 @@ class CalculatorScreenState extends State<CalculatorScreen>
     );
   }
 
-  /// Round 110 (P7 kickoff): render a boolean result as a colored chip
-  /// in the history row. Reuses the secondaryContainer / errorContainer
-  /// pair used for the Sudoku win chip so the two surfaces feel
-  /// consistent.
+  /// Round 113 (P7): the history-cell boolean chip now lives in
+  /// `lib/widgets/boolean_chip.dart` so the notepad result column can
+  /// share it. The calculator wraps it in an `Align` to keep the chip
+  /// right-aligned inside the column; notepad places it in an already
+  /// end-aligned column and doesn't need the wrapper.
   Widget _buildBooleanChip(BuildContext context, bool value) {
-    final scheme = Theme.of(context).colorScheme;
     return Align(
       alignment: Alignment.centerRight,
-      child: Chip(
-        visualDensity: VisualDensity.compact,
-        backgroundColor:
-            value ? scheme.secondaryContainer : scheme.errorContainer,
-        label: Text(
-          value ? 'true' : 'false',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color:
-                value ? scheme.onSecondaryContainer : scheme.onErrorContainer,
-          ),
-        ),
-      ),
+      child: BooleanChip(value: value),
     );
   }
 

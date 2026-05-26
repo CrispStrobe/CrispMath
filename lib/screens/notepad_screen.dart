@@ -37,6 +37,7 @@ import '../utils/error_formatter.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/latex_conversion_utils.dart';
 import '../utils/math_display_utils.dart';
+import '../widgets/boolean_chip.dart';
 import '../widgets/notepad_manager_dialog.dart';
 import '../widgets/store_result_dialogs.dart';
 
@@ -1399,6 +1400,14 @@ class _NotepadResultColumn extends StatelessWidget {
     // classify (the dispatcher already ran).
     if (line.source.trimLeft().startsWith('fzn:')) {
       return _buildFlatZincResult(context, res);
+    }
+    // Round 113 (P7): boolean predicates render as the same chip the
+    // calculator history uses. `normalizeBooleanResult` lowercases
+    // SymEngine's `True`/`False` before they reach the cache, so a
+    // simple string match suffices.
+    final trimmedRes = res.trim();
+    if (trimmedRes == 'true' || trimmedRes == 'false') {
+      return BooleanChip(value: trimmedRes == 'true', fontSize: 16);
     }
     final color = scheme.primary;
     final style = TextStyle(fontSize: 16, color: color);

@@ -17,6 +17,7 @@ import 'package:crisp_calc/engine/notepad.dart';
 import 'package:crisp_calc/engine/notepad_evaluator.dart';
 import 'package:crisp_calc/main.dart';
 import 'package:crisp_calc/services/engine_service.dart';
+import 'package:crisp_calc/widgets/boolean_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -266,6 +267,61 @@ void main() {
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
 
+      expect(find.byType(Math), findsWidgets);
+    });
+
+    testWidgets('Round 113: cachedResult "true" renders a BooleanChip',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      doc.lines.add(NotepadLine(
+        id: 'r-bool-true',
+        source: '2 == 2',
+        cachedResult: 'true',
+      ));
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BooleanChip), findsOneWidget);
+      final chip = tester.widget<BooleanChip>(find.byType(BooleanChip));
+      expect(chip.value, isTrue);
+      expect(find.text('true'), findsOneWidget);
+    });
+
+    testWidgets('Round 113: cachedResult "false" renders a BooleanChip',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      doc.lines.add(NotepadLine(
+        id: 'r-bool-false',
+        source: '2 == 3',
+        cachedResult: 'false',
+      ));
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BooleanChip), findsOneWidget);
+      final chip = tester.widget<BooleanChip>(find.byType(BooleanChip));
+      expect(chip.value, isFalse);
+      expect(find.text('false'), findsOneWidget);
+    });
+
+    testWidgets('Round 113: non-boolean result skips the chip path',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      doc.lines.add(NotepadLine(
+        id: 'r-num',
+        source: '2 + 2',
+        cachedResult: '4',
+      ));
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BooleanChip), findsNothing);
       expect(find.byType(Math), findsWidgets);
     });
 
