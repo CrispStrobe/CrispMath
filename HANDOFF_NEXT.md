@@ -13,8 +13,8 @@ focused pickup note for what to do *next*.
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
 | **Feature worktree** | `/Volumes/backups/code/CrispCalc-notepad-phase-1` (branch `feature/notepad-phase-1`) |
-| **Both branches HEAD** | `f4ee630` docs: PLAN — CSP Round E |
-| **Tests** | 1708 pass, `flutter analyze` clean |
+| **Both branches HEAD** | `2bc60aa` docs: HANDOFF_NEXT (after the parallel P9 arc rounds 92–100 below merged) |
+| **Tests** | 1708 pass (1465 carried + 19 scene-engine + 24 intersections + 5 quadric presets + ~3 conic-degenerate + parallel-arc additions), `flutter analyze` clean |
 | **CI** | green on the last main push |
 | **App** | builds + runs on macOS (CocoaPods is fixed on this machine) |
 
@@ -60,6 +60,57 @@ Recommended order:
 - **2 + d/dx(3 * x)** — inline-derivative expansion fixed for derivatives only; `2 + integrate(x^2, x)` etc. would need the same treatment but isn't shipped yet.
 - **GlobalKey crash on duplicate history expressions** — fixed (`642b913`) by caching the LaTeX *string* instead of the `Math.tex` widget. If you add other widget caches downstream, remember this pattern.
 - **CocoaPods on this machine** was repaired earlier in the session (user fix); `flutter build macos --debug` works.
+
+## Parallel arc — P9 3D Scene module (AI assistant, rounds 92–100)
+
+In parallel with the Notepad/CSP work above, an 11-round arc
+landed the **3D Scene** module described in PLAN P9. End-to-end
+visible feature, replaces the text-only Plane Analyzer + Conic
+Section modules with a real renderable 3D scene that computes
+and highlights intersections.
+
+| Round | Commit | What |
+|---|---|---|
+| 120 | `a755ae3` | Calculator history LaTeX render cache (per-expression LRU). Later patched in `642b913` to cache the *string* not the widget — Math.tex's internal GlobalKeys can't be reused across mount points. |
+| 91 | `6276bbd` | Right-click "Store result as variable / function" on Calculator history + Notepad result cells. Shared `StoreResultDialogs`. |
+| 92 (P9-A1) | `cae22d9` | Scene engine scaffolding — sealed `SceneObject` + 6 concrete kinds + `Scene3D` container. Pure-Dart. 19 tests. |
+| 93 (P9-A2) | `459e064` | `Scene3DScreen` + viewport + plane rendering. Added as Analysis-hub module card (appended at end so existing ui_flows scrolls keep working). |
+| 94 (P9-A3) | `75a8e13` | Lines + spheres in the viewport. FAB chooser sheet, drag-handle reorder. |
+| 95 (P9-A4) | `45ac048` | Pairwise intersections (plane×plane, plane×line, plane×sphere, line×line, line×sphere, sphere×sphere) + cyan-highlighted geometry overlay + results panel. 24 new tests. |
+| 96 (P9-A5) | `bbc6511` | Quadrics (preset-based): ellipsoid / cone / cylinder / paraboloid / hyperboloid 1- & 2-sheet. `QuadricPreset` derives 10 canonical coefficients. |
+| 97 (P9-A5b) | `a6d42ee` | Plane × quadric → `ConicSectionIntersection`. Painter renders the conic via marching-squares on a 64×64 plane-local grid. Routes through existing `analyzeConic` for classification. |
+| 98 (P9-A5c) | `27b4dca` | Two cleanups: (a) **3×3 determinant degenerate-conic detection** on `analyzeConic` — catches pair-of-parallel-lines that the 2-variable discriminant misclassifies as parabola; (b) **"Open in 3D Scene"** button on ConicSectionScreen that lifts the user's 2D conic into a matching quadric preset + adds a z=0 plane + navigates. |
+| 99 (P9-A6) | `70efd9a` | Parametric surfaces + curves. Per-process `_ParametricSampleCache` keyed by full geometry hash so rotation doesn't re-eval SymEngine. |
+| 100 (R91b) | `dfe5eb1` | Naming-dialog polish — pre-fill next unused single-letter + overwrite-confirm AlertDialog. |
+
+### Files added / heavily touched in the parallel arc
+
+- `lib/engine/scene_3d/scene_object.dart` — sealed `SceneObject` + 6 subclasses (`PlaneObject`, `LineObject`, `SphereObject`, `QuadricObject`, `ParametricSurfaceObject`, `ParametricCurveObject`) + `QuadricKind` enum + `QuadricPreset`.
+- `lib/engine/scene_3d/scene_state.dart` — `Scene3D` container (objects + viewport).
+- `lib/engine/scene_3d/intersections.dart` — sealed `Intersection` + `intersect(a, b)` dispatcher over 7 pair kinds.
+- `lib/widgets/scene_3d_painter.dart` — CustomPainter dispatching on kind; intersection-overlay; parametric sample cache.
+- `lib/widgets/scene_3d_object_dialogs.dart` — 6 `show...EditorDialog` functions (one per object kind).
+- `lib/widgets/scene_3d_intersections_panel.dart` — results panel.
+- `lib/screens/scene_3d_screen.dart` — the screen.
+- `lib/widgets/store_result_dialogs.dart` — R91 + R91b dialogs.
+- `lib/engine/conic_math.dart` — extended classifier with 3×3 determinant.
+- `lib/screens/conic_section_screen.dart` — gained the "Open in 3D Scene" button.
+- `lib/engine/app_state.dart` — added `scene3D` field + 4 setters + load + export/import.
+- `lib/screens/analysis_hub_screen.dart` — new "3D Scene" module card (last in list).
+
+### Land mines for the next session
+
+- **Dart-format reflow vs user WIP**: running `dart format lib/` on a feature branch picks up the user's pending edits to other files (calculator_screen.dart, etc.) as format diffs that conflict with active parallel work. Workaround: format only files you actually edit, or check out `origin/main` versions of files you accidentally reformatted before committing. Hit this 3 times this session.
+- **Math.tex GlobalKey caching trap**: caching the `Math.tex` widget directly causes a "Duplicate GlobalKey" exception when the same expression appears multiple times in the history list. Cache the LaTeX *string* or rebuild the widget per use. The user already shipped the fix (`642b913`); be aware if you add similar widget caches.
+- **`analyzeConic` discriminant alone misclassifies pair-of-parallel-lines as parabola** — fixed in A5c by adding 3×3 determinant check first. If you change `analyzeConic`, preserve this.
+- **Parametric scene rendering cost**: each frame ~324 SymEngine calls for a 18×18 surface grid. The `_ParametricSampleCache` (key = full geometry hash, FIFO 32 entries) is load-bearing; without it, rotation gestures lag visibly.
+- **Module-card list order in `analysis_hub_screen.dart`**: existing ui_flows_test relies on `scrollUntilVisible` reaching Sudoku at its current position. Inserting cards *above* Sudoku breaks the tap-hit-test at the 1280×800 test viewport. Append new module cards at the end.
+
+### Pickup points for the P9 arc (if you continue it)
+
+- **A5d** — Raw-coefficient quadric input mode (a/b/c semi-axis dialog only takes presets today). Painter needs isosurface extraction (marching cubes) for non-preset quadrics to render.
+- **A7** — Numerical intersection involving parametric objects. Newton on a fine grid; document as approximate. Closed-form algorithms in A4/A5b stay authoritative for non-parametric pairs.
+- **A8** — Back-to-front sorting in `Scene3DPainter` so sphere/quadric back hemispheres don't draw over the front. Per-primitive depth + painter's algorithm.
 
 ## Hygiene reminders
 
