@@ -163,6 +163,45 @@ class WorkedExamples {
       description: 'isprime(2027) — quick trial division.',
       expression: 'isprime(2027)',
     ),
+    // Round 92 (P6): precision-arc + ntheory surfacing. All five
+    // route through CalculatorEngine.tryEvaluatePrecisionCall and
+    // produce results without touching SymEngine.
+    WorkedExample(
+      id: 'piPrecision',
+      category: WorkedExampleCategory.numberTheory,
+      title: 'π to 100 digits',
+      description: 'pi(100) — MPFR-backed high-precision constant.',
+      expression: 'pi(100)',
+    ),
+    WorkedExample(
+      id: 'ePrecision',
+      category: WorkedExampleCategory.numberTheory,
+      title: 'e to 50 digits',
+      description: 'e(50) — same MPFR pipeline as pi(N).',
+      expression: 'e(50)',
+    ),
+    WorkedExample(
+      id: 'factorint360',
+      category: WorkedExampleCategory.numberTheory,
+      title: 'Prime factorization',
+      description: 'factorint(360) → 2³ · 3² · 5 with Unicode superscripts.',
+      expression: 'factorint(360)',
+    ),
+    WorkedExample(
+      id: 'nextprime1000',
+      category: WorkedExampleCategory.numberTheory,
+      title: 'Next prime after 1000',
+      description: 'nextprime(1000) — FLINT-backed via SymEngine ntheory.',
+      expression: 'nextprime(1000)',
+    ),
+    WorkedExample(
+      id: 'mersenneM31',
+      category: WorkedExampleCategory.numberTheory,
+      title: 'Mersenne M31',
+      description: 'factorint(2^31 - 1) — confirms the eighth Mersenne '
+          'prime as a single factor.',
+      expression: 'factorint(2147483647)',
+    ),
 
     // === Statistics ==========================================================
     WorkedExample(

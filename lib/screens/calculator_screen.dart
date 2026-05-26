@@ -662,6 +662,38 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _latexController.insert('isprime()', cursorOffsetFromEnd: -1);
         break;
 
+      // === Round 92 (P6): precision-arc + number-theory templates ===
+
+      case 'π(N)':
+        _latexController.insert('pi()', cursorOffsetFromEnd: -1);
+        break;
+
+      case 'e(N)':
+        _latexController.insert('e()', cursorOffsetFromEnd: -1);
+        break;
+
+      case 'γ(N)':
+        _latexController.insert('EulerGamma()', cursorOffsetFromEnd: -1);
+        break;
+
+      case '√(2,N)':
+        // sqrt(2, N) — the precision pre-pass recognizes the
+        // two-arg form; one-arg sqrt() falls through to SymEngine.
+        _latexController.insert('sqrt(2, )', cursorOffsetFromEnd: -1);
+        break;
+
+      case 'nextprime':
+        _latexController.insert('nextprime()', cursorOffsetFromEnd: -1);
+        break;
+
+      case 'prevprime':
+        _latexController.insert('prevprime()', cursorOffsetFromEnd: -1);
+        break;
+
+      case 'factorint':
+        _latexController.insert('factorint()', cursorOffsetFromEnd: -1);
+        break;
+
       case 'mod':
         _latexController.insert(' \\bmod ', cursorOffsetFromEnd: 0);
         break;

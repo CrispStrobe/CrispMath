@@ -3234,6 +3234,16 @@ class DeLocalizations implements AppLocalizations {
         return 'ggT mit Euklid';
       case 'isprime':
         return 'Primzahltest (kleines n)';
+      case 'piPrecision':
+        return 'π auf 100 Stellen';
+      case 'ePrecision':
+        return 'e auf 50 Stellen';
+      case 'factorint360':
+        return 'Primfaktorzerlegung';
+      case 'nextprime1000':
+        return 'Nächste Primzahl nach 1000';
+      case 'mersenneM31':
+        return 'Mersenne-Primzahl M31';
       case 'compoundInterest':
         return 'Zinseszins';
       case 'zScore':
@@ -3301,6 +3311,17 @@ class DeLocalizations implements AppLocalizations {
         return 'gcd(252, 105) — die ursprüngliche Rekursion.';
       case 'isprime':
         return 'isprime(2027) — schnelle Probedivision.';
+      case 'piPrecision':
+        return 'pi(100) — hochpräzise Konstante über MPFR.';
+      case 'ePrecision':
+        return 'e(50) — gleiche MPFR-Pipeline wie pi(N).';
+      case 'factorint360':
+        return 'factorint(360) → 2³ · 3² · 5 mit Unicode-Hochzahlen.';
+      case 'nextprime1000':
+        return 'nextprime(1000) — FLINT-gestützt über SymEngine ntheory.';
+      case 'mersenneM31':
+        return 'factorint(2^31 − 1) — bestätigt die achte Mersenne-Primzahl '
+            'als einzelnen Faktor.';
       case 'compoundInterest':
         return '1000 € zu 5 % über 10 Jahre, jährliche Verzinsung.';
       case 'zScore':
@@ -4815,6 +4836,16 @@ class FrLocalizations implements AppLocalizations {
         return 'PGCD par Euclide';
       case 'isprime':
         return 'Test de primalité (petit n)';
+      case 'piPrecision':
+        return 'π à 100 chiffres';
+      case 'ePrecision':
+        return 'e à 50 chiffres';
+      case 'factorint360':
+        return 'Factorisation en facteurs premiers';
+      case 'nextprime1000':
+        return 'Premier suivant après 1000';
+      case 'mersenneM31':
+        return 'Premier de Mersenne M31';
       case 'compoundInterest':
         return 'Intérêts composés';
       case 'zScore':
@@ -4882,6 +4913,17 @@ class FrLocalizations implements AppLocalizations {
         return 'gcd(252, 105) — la récurrence d\'origine.';
       case 'isprime':
         return 'isprime(2027) — division d\'essai rapide.';
+      case 'piPrecision':
+        return 'pi(100) — constante haute précision via MPFR.';
+      case 'ePrecision':
+        return 'e(50) — même pipeline MPFR que pi(N).';
+      case 'factorint360':
+        return 'factorint(360) → 2³ · 3² · 5 avec exposants Unicode.';
+      case 'nextprime1000':
+        return 'nextprime(1000) — appuyé par FLINT via SymEngine ntheory.';
+      case 'mersenneM31':
+        return 'factorint(2^31 − 1) — confirme le huitième nombre '
+            'premier de Mersenne comme facteur unique.';
       case 'compoundInterest':
         return '1000 € à 5 % sur 10 ans, capitalisation annuelle.';
       case 'zScore':
@@ -6391,6 +6433,16 @@ class EsLocalizations implements AppLocalizations {
         return 'MCD por Euclides';
       case 'isprime':
         return 'Test de primalidad (n pequeño)';
+      case 'piPrecision':
+        return 'π con 100 dígitos';
+      case 'ePrecision':
+        return 'e con 50 dígitos';
+      case 'factorint360':
+        return 'Factorización en primos';
+      case 'nextprime1000':
+        return 'Primo siguiente después de 1000';
+      case 'mersenneM31':
+        return 'Primo de Mersenne M31';
       case 'compoundInterest':
         return 'Interés compuesto';
       case 'zScore':
@@ -6458,6 +6510,17 @@ class EsLocalizations implements AppLocalizations {
         return 'gcd(252, 105) — la recurrencia original.';
       case 'isprime':
         return 'isprime(2027) — división de prueba rápida.';
+      case 'piPrecision':
+        return 'pi(100) — constante de alta precisión vía MPFR.';
+      case 'ePrecision':
+        return 'e(50) — misma canalización MPFR que pi(N).';
+      case 'factorint360':
+        return 'factorint(360) → 2³ · 3² · 5 con superíndices Unicode.';
+      case 'nextprime1000':
+        return 'nextprime(1000) — respaldado por FLINT vía SymEngine ntheory.';
+      case 'mersenneM31':
+        return 'factorint(2^31 − 1) — confirma el octavo primo de '
+            'Mersenne como factor único.';
       case 'compoundInterest':
         return '1000 € al 5 % durante 10 años, capitalización anual.';
       case 'zScore':

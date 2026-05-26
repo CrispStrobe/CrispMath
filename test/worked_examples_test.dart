@@ -46,11 +46,13 @@ void main() {
     test('total entries is in the curated range', () {
       // V1 promised 12-20 entries; below 12 means we under-delivered.
       // Cap raised to 30 in round 73 to accommodate the constraints
-      // category (Killer + DSL sentinels). If we go past 30 the
-      // dialog should grow proper category-grouping rather than the
-      // flat ListView it has today.
+      // category (Killer + DSL sentinels). Raised to 40 in round 92
+      // for the precision-arc surfacing (pi/e/factorint/nextprime/
+      // mersenne added). If we go past 40 the dialog should grow
+      // proper category-grouping rather than the flat ListView it has
+      // today.
       expect(WorkedExamples.all.length, greaterThanOrEqualTo(12));
-      expect(WorkedExamples.all.length, lessThanOrEqualTo(30));
+      expect(WorkedExamples.all.length, lessThanOrEqualTo(40));
     });
 
     test('round 69: constraints category surfaces Killer + DSL entries', () {

@@ -155,6 +155,16 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
     'norm',
     'unit',
     'i',
+    // Round 92 (P6): precision-arc + number-theory functions. Templates
+    // are inserted with the cursor positioned between the parens so
+    // typing the precision / target number lands in the right slot.
+    'π(N)',
+    'e(N)',
+    'γ(N)',
+    '√(2,N)',
+    'nextprime',
+    'prevprime',
+    'factorint',
   ];
 
   List<String> _keysFor(_PaneKind kind) {
