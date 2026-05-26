@@ -1171,26 +1171,25 @@ the upstream HEAD which has landed two major features:
 
 ###### Prerequisite — bump the dart_csp pin
 
-- [ ] **Bump pubspec `dart_csp.ref:` from `e3cce21` to a HEAD SHA**
-  carrying both features. Smoke-test the existing
-  `csp_solver_test.dart` + `sudoku_test.dart` suite (≥ 100 tests
-  on the wrapper) since the explain/MUS commits touched the
-  `Problem` API surface. The FlatZinc + explain features are
-  additive — no breaking changes expected from a read of the
-  changelog — but verify before merging.
+- [x] ~~**Bump pubspec `dart_csp.ref:` from `e3cce21` to a HEAD SHA**
+  carrying both features.~~ Done 2026-05-26 — bumped to `69a9cfb`
+  (commit `2ca864f`). The full 1708-test suite was green against
+  the new pin, no API drift to the existing csp_solver / sudoku
+  wrappers.
 
 ###### CSP Round E — what to ship on top
 
-- [ ] **Round E.1 — "Paste FlatZinc" tab** in `ConstraintsScreen`.
-  New 4th tab (Diophantine / Cryptarithm / Free-form DSL /
-  FlatZinc). Plain textarea + Solve button. Calls
-  `FlatZinc.solve(source)` and prints the standard FlatZinc output
-  format in the result block. Optional `-a` / `--all-solutions`
-  toggle. Single biggest-reach extension we can ship — gives
-  CrispCalc access to the MiniZinc Challenge corpus and every
-  textbook FlatZinc example without writing a new parser. Two
-  gallery entries: NQueens-4 + Bin-packing (both ~10-line
-  models). ~half a day incl. result rendering.
+- [x] ~~**Round E.1 — "Paste FlatZinc" tab** in `ConstraintsScreen`.~~
+  Done 2026-05-26 — commit `e853874`. New 4th tab; textarea +
+  Solve button + `All solutions` FilterChip + 2-entry gallery
+  (NQueens-4 with diagonal `int_lin_ne` pairs, Bin-packing via
+  `bin_packing_load`). Result block renders the standard FlatZinc
+  output text; header switches between "First solution" /
+  "N solutions (exhaustive)" / "Unsatisfiable" by inspecting the
+  trailer. Localized en/de/fr/es (7 new chrome keys + 2 gallery
+  titles). `test/flatzinc_tab_test.dart` locks both gallery
+  snippets through `FlatZinc.solve` plus the exhaustive / unsat
+  output shapes (4 tests).
 
 - [ ] **Round E.2 — "Why no solution?" panel using QuickXplain
   MUS**. When a Diophantine / DSL / FlatZinc problem returns no
@@ -1211,47 +1210,39 @@ the upstream HEAD which has landed two major features:
   linear constraints, `allDifferent`, `noOverlap` (FlatZinc's
   `disjunctive`), `cumulative`. ~half a day.
 
-- [ ] **Round E.4 — Notepad ↔ FlatZinc integration** *(novel)*.
-  CrispCalc's Notepad is text-based and lines are addressable.
-  Plumbing the FlatZinc frontend INTO the Notepad turns it into
-  the first calculator-grade notepad with first-class constraint
-  problems alongside symbolic math. Two flavors:
+- [~] **Round E.4 — Notepad ↔ FlatZinc integration** *(novel)*.
+  Inline `fzn:` directive variant shipped 2026-05-26 (commit
+  `d90280b`). A notepad line whose source starts with `fzn:`
+  (with optional leading whitespace) treats everything after the
+  colon as FlatZinc source. The TextField's `maxLines: null` lets
+  one NotepadLine carry multi-line FlatZinc — natural fit, no
+  multi-line cell model needed for V1. Result lands in a
+  monospace block (rendered by a new `_buildFlatZincResult`);
+  scalar `output_var` bindings populate the new
+  `NotepadLine.cachedExports` map which `buildNotepadScope`
+  merges into doc scope, so downstream lines can reference
+  solved values by their FlatZinc names. Output_array values stay
+  in the formatted result text but don't enter scope (no clean
+  scalar mapping). Unsatisfiable models error the fzn line and
+  block dependents via the standard `blockedBy` chip. Tests:
+  `test/notepad_flatzinc_test.dart` — 18 cases covering classify,
+  the helpers, evaluator with a stub dispatcher, and one
+  end-to-end through real `FlatZinc.solve`.
 
-  - **Inline `fzn:` line directive** (smaller). A notepad line
-    that starts with `fzn:` treats the rest of the line (or a
-    fenced ```fzn …``` block) as FlatZinc source, runs the
-    solver, and exposes each output variable into the
-    document-local scope. The numbered alias `lineN` resolves
-    to the full solution map (rendered as `{x=3, y=4}`).
-    Subsequent lines can reference `x` and `y` directly:
-    ```
-    fzn: var 0..10: x; var 0..10: y;
-         constraint x + y == 7; constraint x < y;
-         solve satisfy;
-    x * 2 + y           # auto-uses x=1, y=6 (or whichever first soln)
-    ```
-    Fits the existing line-evaluator architecture (Phase 3's
-    `NotepadEvaluator`) cleanly — the dispatcher just gets a
-    new pre-pass that routes `fzn:`-prefixed bodies. ~1 day
-    incl. error chip + multi-solution disambiguation.
-
-  - **Constraint-block as a multi-line cell** (larger).
+  - **Constraint-block as a multi-line cell** *(deferred V2)*.
     Extend the line model to support multi-line cells (one
     cell containing the whole `.fzn` source) with a header
-    `// CSP block`. Cell result is the assignment + optional
-    objective, exposed to downstream cells as named variables.
-    Closest analog: a Jupyter cell. Requires data-model
-    changes (one cell ≠ one line) so plumb through Phase 1's
-    `NotepadDocument`. ~2–3 days, but it's the more natural
-    fit for non-trivial CSP problems users would actually
-    paste in.
+    `// CSP block`. The V1 inline variant already supports
+    multi-line bodies via `maxLines: null`, so the V2 cell
+    model is no longer urgent — would be a structural change
+    for prettier separation of CSP cells from regular notepad
+    lines (toolbar, fold/unfold, etc.).
 
   - **Why this matters strategically** — calculator apps don't
     do constraint problems. Notebooks don't ship a CAS *and*
     constraint solver in the same surface. The combo isn't a
-    polished feature elsewhere; landing it would give
-    CrispCalc a defensible "what is this app even" answer for
-    discovery.
+    polished feature elsewhere; landing it gives CrispCalc a
+    defensible "what is this app even" answer for discovery.
 
 - [ ] **Round E.5 — Bundle `dart_csp_fzn` as a MiniZinc solver**.
   Distribution play: ship the compiled CLI + `.msc` config in
