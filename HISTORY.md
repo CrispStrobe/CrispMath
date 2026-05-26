@@ -2,6 +2,188 @@
 
 Completed work, newest first.
 
+## 2026-05-26 (P6 Rounds 93+94) — Worked Examples out of Settings + surface filtering
+
+P6's first shippable slice: move the Worked Examples library
+from a buried Settings tile to first-class affordances on the
+Calculator and Notepad screens. The library has carried 30+
+curated entries since round 54 but discovery required two
+levels of Settings navigation.
+
+### Round 93 — discoverability icon
+
+Both surfaces now carry a `menu_book_outlined` IconButton that
+opens `WorkedExamplesDialog`. On Notepad it slots into the
+AppBar `actions:` row ahead of the existing `+` and `⋮`
+buttons. The Calculator has no AppBar of its own, so the icon
+lives in the existing top toolbar row that previously hosted
+only the LaTeX/Plain toggle + history search + clear. That
+toolbar was guarded by `_appState.history.isNotEmpty`, which
+meant the icon would have been invisible from a cold start —
+so the container now renders unconditionally and the
+history-specific controls are guarded inside the row instead.
+
+The Settings card stays put but its subtitle now points at the
+new icon. Localized across en/de/fr/es.
+
+`menu_book_outlined` was chosen over `help_outline` so that
+Round 101's future help-mode toggle has its own iconography.
+
+### Round 94 — surface filtering
+
+`WorkedExamplesDialog` gained a `surface:
+WorkedExamplesSurface` ctor parameter (defaults to
+`calculator` so the existing Settings call site keeps
+full-library behaviour). The Notepad call site passes
+`notepad`, which restricts both the category chip row and the
+example list to `{calculus, algebra, linearAlgebra,
+numberTheory}` — three module-bound categories (statistics
+has its own data-table UI; units is PLAN-scoped to calculator
+content; constraints entries are `open:` / `dsl:` sentinels
+that navigate to a different module) disappear from the chip
+row entirely.
+
+`numberTheory` was added to the notepad allowlist beyond
+PLAN's strict `{calculus, algebra, linearAlgebra}` spec
+because P7's boolean predicates + the precision arc both ship
+`numberTheory` entries (`isprime(2027)`, `2 == 2`,
+`pi(100)`) that work fine inline in a notepad line. Hiding
+them would have been a regression.
+
+### Deferred: Round 95
+
+Per-module pre-loading via parameterised
+`open:<module>?key=value` sentinels (Sudoku preset, Statistics
+demo data) is carved out as a future round — it needs new
+AppState slots, receiver-side drain on Sudoku + Statistics
+screens, a sentinel parser extension, and new worked-examples
+entries. HANDOFF_NEXT.md has the concrete checklist.
+
+Suite 1905 → 1911. +4 dialog filter tests + 2 ui_flows icon-
+discovery tests.
+
+## 2026-05-26 (P7 Round 113) — Notepad boolean integration
+
+Closes P7's UI layer: notepad result cells now render boolean
+results as the same chip the calculator history uses.
+
+Lifted calculator's local `_buildBooleanChip` to a shared
+`lib/widgets/boolean_chip.dart` (`BooleanChip` widget; `value`
++ `fontSize` params). Calculator's wrapper collapses to
+`Align(BooleanChip(...))`. Notepad's `_buildResult` branches
+on `trimmedRes == 'true' || 'false'` before falling through
+to `Math.tex` — `normalizeBooleanResult` already lowercases
+SymEngine's `True`/`False` before the value reaches the cache,
+so a simple string match is enough. Font 16 on notepad to
+match the surrounding text; calc defaults to 18.
+
+**V1 decision on arithmetic-with-boolean coercion: no
+coercion.** If SymEngine's `evaluate` returns a symbolic form
+for `1 + (2 == 2)`, the user sees the symbolic form; if it
+returns an error, the user sees the error. The chip path is
+purely a display layer over already-normalized boolean
+strings — it doesn't touch typing behaviour. Bool→int
+promotion can be revisited if a real user surface demands it.
+
+Suite 1898 → 1905. +4 BooleanChip widget tests, +3 notepad
+chip-render tests.
+
+## 2026-05-26 (P7 Round 111b) — `if(cond, t, e)` Dart fold + descent comma split
+
+Round 111 deferred conditional folding to follow-up. This
+round delivers it, plus fixes a latent descent bug uncovered
+during implementation.
+
+`ExpressionPreprocessingUtils.tryFoldIfConditional(input,
+evaluator)` detects an `if(...)` call spanning the whole
+input, runs the condition through the supplied evaluator, and
+returns the chosen branch (trimmed) or `null` for non-`if` /
+symbolic-condition inputs. Calculator + notepad both call it
+after the boolean rewrite finishes — that ordering matters
+because the condition itself usually contains relational +
+logical operators that need rewriting first.
+
+The descent-into-paren-groups walker now splits the inner
+content by **top-level** commas before recursing. Previously
+the entire inner-paren string was passed to recursive rewrite
+as a single operand — so `Min(2 == 2, x + 1)` mangled
+because the comma inside `Min(...)` confused the relational
+operator scanner. Adding `_splitTopLevelByComma` makes
+multi-argument calls work correctly across the rewrite layer,
+which is what makes `if(cond, t, e)` args parse cleanly.
+
+New `if` Adv key + `booleanIfFold` worked example. Worked-
+examples cap test bumped 40→50. Suite 1880 → 1898.
+
+## 2026-05-26 (P7 Round 112) — Adv-keypad keys + boolean worked examples
+
+P7's surfacing layer: the eleven new operators (including
+`if`) get Adv-tab keys, and the worked-examples library
+gains five new entries demonstrating boolean predicates.
+
+Ten new Adv keys appended to `_advKeys` in
+`calculator_keypad.dart`: `==` `≠` `<` `≤` `>` `≥` `and` `or`
+`not` `xor` (the `if` key landed alongside in 111b). Each key
+shows a glyph label and inserts the ASCII form
+(`==` / `!=` / etc.) so the preprocessor's regex doesn't have
+to know about Unicode. The Adv tab already groups precision +
+ntheory keys; the boolean set slots in without a new section.
+
+Five new worked-examples entries in the `numberTheory`
+category: `boolean1Simple` (`isprime(17) and 17 < 20`),
+`boolean2Equality` (`2 == 2`), `boolean3Not` (`not
+isprime(15)`), `boolean4Or` (`(5 > 3) or (1 == 2)`), and
+`booleanIfFold` (`if(isprime(7), 100, 200)` — added in
+111b). Titles + descriptions localized across en/de/fr/es.
+
+Suite 1856 → 1880.
+
+## 2026-05-26 (P7 Round 111) — Logical operator preprocessor
+
+Builds on Round 110's relational preprocessor with the second
+half of P7's engine layer: the Python-style logical
+connectives `not`, `and`, `or`, `xor`.
+
+`ExpressionPreprocessingUtils.preprocessLogicalOperators(input)`
+does a two-phase walk. Phase A recurses into each paren-group
+so nested expressions get the same treatment. Phase B at the
+leaf splits at depth-0 in precedence order (`or` < `xor` <
+`and`), checks for leading `not`, and falls through to the
+relational rewrite. Chained ops collapse to n-ary
+`And(a, b, c)` / `Or(...)` / `Xor(...)` rather than nested
+binary applications, which is what SymEngine wants.
+
+Word-boundary checks make `random` / `factor` / `notation`
+safe; users with variables literally named `and`/`or`/`xor`/
+`not` would collide, but the names are obviously reserved.
+
+Calculator + notepad both swap from the relational call to
+this combined entry point. `if(cond, ...)` folding was
+deferred to Round 111b. Suite 1832 → 1856.
+
+## 2026-05-26 (P7 Round 110) — Relational operator preprocessor (P7 kickoff)
+
+P7's first round: extend the engine to accept boolean
+predicates by rewriting relational operators into SymEngine's
+`Eq` / `Ne` / `Le` / `Ge` / `Lt` / `Gt` calls.
+
+`ExpressionPreprocessingUtils.preprocessRelationalOperators`
+does a paren-depth-0 longest-match scan and rewrites the six
+two-char + single-char operators. Both surfaces' assignment
+regexes were tightened with `=(?!=)` so `x == 1` no longer
+trips the assignment classifier into thinking `x = ` is a
+variable bind.
+
+New `normalizeBooleanResult` lowercases SymEngine's `True` /
+`False` strings to `true` / `false` for the display layer.
+Calculator history renders boolean results as a coloured chip
+via `_buildBooleanChip` — the chip path uses the
+`secondaryContainer` / `errorContainer` pair that Sudoku's
+win chip already established. Notepad chip rendering shipped
+in Round 113.
+
+Suite 1810 → 1832.
+
 ## 2026-05-26 (round 100, R91b) — Naming-dialog polish
 
 Closes the two known rough edges from R91's store-as-

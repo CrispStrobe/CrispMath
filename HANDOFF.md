@@ -104,9 +104,9 @@ so the bridge's `copy_xcframeworks.sh` finds xcframework outputs
 in the precision worktree. Repoint if you switch math-stack
 worktrees.
 
-**Tests at session end**: 1810 (1708 → 1810 across Round E.1 + E.2
-+ E.3 + E.4-inline + Round 91 precision-arc binding + Round 92
-keypad/catalog). All green; CI 6-job matrix on every main push.
+**Tests at session end**: 1911 (1810 → 1832 → 1856 → 1880 → 1898 →
+1905 → 1911 across P7 rounds 110/111/112/111b/113 and P6 rounds
+93+94). All green; CI 6-job matrix on every main push.
 
 **Working mode change (2026-05-26 EOD)**: parallel-arc work is paused.
 All edits now go directly on `main` in `/Volumes/backups/code/CrispCalc`.
