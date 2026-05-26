@@ -768,9 +768,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // itself doesn't care, but our dispatch table prefix-matches
       // on `name(` and would otherwise fall through to the generic
       // evaluate path on the space-padded form.
-      final converted = convertedExpression
+      var converted = convertedExpression
           .trim()
           .replaceAllMapped(RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}(');
+
+      // Inline-derivative expansion: any `d/dx(expr)` or
+      // `diff(expr, var)` *inside* a larger expression (e.g.
+      // `2 + d/dx(3*x)`) gets pre-evaluated and substituted with
+      // its result. The whole-expression dispatch below catches
+      // the bare case; this handles the compound case where the
+      // derivative is a subterm.
+      converted = await _expandInlineDerivatives(converted);
 
       // Inline unit arithmetic: `5 km + 3 m`, `100 km in mph`, etc.
       // Runs before the normal dispatcher so SymEngine never sees raw
@@ -1083,6 +1091,74 @@ class CalculatorScreenState extends State<CalculatorScreen>
     } catch (e) {
       return 'Error: Invalid solve() syntax';
     }
+  }
+
+  /// Walk [src] looking for `d/dx(…)` or `diff(…)` subexpressions,
+  /// evaluate each derivative, and substitute the result wrapped
+  /// in parens. Multiple occurrences are handled left-to-right; if
+  /// any one fails, the corresponding span is left as-is and the
+  /// rest of the expression continues. Lets users write compound
+  /// expressions like `2 + d/dx(3*x)` and have the derivative
+  /// computed in place — the calculator's whole-expression dispatch
+  /// can't catch this on its own.
+  Future<String> _expandInlineDerivatives(String src) async {
+    var s = src;
+    // Try each prefix until no more occurrences. `d/dx(` first
+    // because it overlaps `d/d` in `diff`-less inputs; the order
+    // is otherwise irrelevant.
+    for (final prefix in const ['d/dx(', 'diff(']) {
+      while (true) {
+        final start = s.indexOf(prefix);
+        if (start < 0) break;
+        // Walk to find the matching close-paren of the prefix's `(`.
+        final openIdx = start + prefix.length - 1;
+        var depth = 0;
+        var closeIdx = -1;
+        for (var i = openIdx; i < s.length; i++) {
+          final ch = s[i];
+          if (ch == '(') {
+            depth++;
+          } else if (ch == ')') {
+            depth--;
+            if (depth == 0) {
+              closeIdx = i;
+              break;
+            }
+          }
+        }
+        if (closeIdx < 0) break;
+        final args = s.substring(openIdx + 1, closeIdx);
+        // depth-naive comma split is fine — inner derivatives have
+        // already been expanded by a prior pass, and balanced
+        // sub-parens don't contain top-level commas in typical
+        // calculus inputs. Falls back to detect-variable when
+        // there's just one arg.
+        final parts = args.split(',');
+        final expr = parts[0].trim();
+        final variable = parts.length > 1
+            ? parts[1].trim()
+            : ExpressionPreprocessingUtils.detectVariable(expr);
+        final preprocessed =
+            ExpressionPreprocessingUtils.preprocessNativeExpression(
+          ExpressionPreprocessingUtils.preprocessExpression(expr, _appState),
+        );
+        String derivResult;
+        try {
+          derivResult = await _runEngineOpMaybeAsync(
+              'differentiate', preprocessed,
+              arg2: variable,
+              fallback: () => _engine.differentiate(preprocessed, variable));
+        } catch (_) {
+          // If the derivative fails, leave the span alone and bail
+          // out of this prefix's loop so we don't infinite-loop on
+          // the same failing input.
+          break;
+        }
+        if (derivResult.startsWith('Error')) break;
+        s = '${s.substring(0, start)}($derivResult)${s.substring(closeIdx + 1)}';
+      }
+    }
+    return s;
   }
 
   /// Pull a single scalar value out of a solve() result string.

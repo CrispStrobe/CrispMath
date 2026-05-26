@@ -247,6 +247,16 @@ class _MainScreenState extends State<MainScreen> {
       if (!AppState().onboardingDismissed) {
         OnboardingTour.show(context);
       }
+      // Calculator's own initState postFrame already requests focus,
+      // but it can lose the focus race when the IndexedStack mounts
+      // sibling screens (Notepad, Graphing, etc.) and their
+      // TextEditingControllers/FocusNodes get instantiated. Belt-and-
+      // suspender re-request here ensures the calculator captures
+      // hardware-keyboard focus on cold launch without the user
+      // having to tap the "reset focus" recovery action.
+      if (_selectedIndex == _kCalculator) {
+        _calculatorKey.currentState?.requestFocus();
+      }
     });
     // Worked-examples V2: when a dialog signals "insert this into the
     // calculator", switch to the Calculator tab. The CalculatorScreen
