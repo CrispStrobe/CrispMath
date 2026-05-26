@@ -74,6 +74,26 @@ void main() {
       expect(find.text('pi(N)'), findsOneWidget);
     });
 
+    testWidgets('round 99: module-surface entry hides Try-in-Calculator button',
+        (tester) async {
+      await _showDialog(tester);
+
+      // `welch_t` is a Round-99 stats entry with runnable: false.
+      // Filter, expand, and verify the Try button is NOT rendered
+      // (the See-worked-example cross-link is still there because
+      // `statsHypothesisTests` resolves).
+      await tester.enterText(find.byType(TextField), 'welch_t');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tests → Two-sample t (Welch)'));
+      await tester.pumpAndSettle();
+
+      // The cross-link button surfaces (the worked-example resolves);
+      // the Try-in-Calculator button must not.
+      expect(find.text('See worked example'), findsOneWidget);
+      expect(find.text('Try in Calculator'), findsNothing);
+    });
+
     testWidgets('round 97: CAS-filtered list shows expand + diff entries',
         (tester) async {
       await _showDialog(tester);

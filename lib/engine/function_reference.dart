@@ -33,8 +33,16 @@
 // `Matrix(...)` literal syntax, `det`, `inv`, `transpose`,
 // `rref`, plus a combined matrix-arithmetic entry. Eigenvalues
 // are NOT shipped (PLAN's "if shipped" carve-out) and are
-// deferred until a bridge binding exists. Round 99 grows stats /
-// constraints categories.
+// deferred until a bridge binding exists. Round 99 fills the
+// statistics / constraints / sudoku categories with 19 module-
+// surface entries — these aren't directly callable from the
+// calculator (the stats tests live in the Statistics module
+// UI; the DSL operators live inside the Constraints module's
+// DSL editor; the Sudoku variants are module presets), so they
+// carry `runnable: false` which suppresses the Try-in-Calculator
+// action on those rows. The See-worked-example cross-link is
+// the proper landing — those worked-examples entries dispatch
+// `open:<module>` sentinels that the WE dialog already handles.
 
 import 'worked_examples.dart' show WorkedExample;
 
@@ -80,6 +88,19 @@ class FunctionRef {
   /// "See worked example" button on the detail panel.
   final String? workedExampleId;
 
+  /// Whether the first example's `input` is a calculator-runnable
+  /// expression. Defaults to true (CAS / number theory / precision /
+  /// matrix entries are all callable from the calculator). Set to
+  /// false for Round 99 module-surface entries (stats hypothesis
+  /// tests live in the Statistics module UI, DSL operators live
+  /// inside the Constraints module's DSL editor, Sudoku variants are
+  /// module presets) — the dialog hides the "Try in Calculator"
+  /// action button when this is false, since pasting `welchT(...)`
+  /// into the calculator would just produce an unknown-function
+  /// error. The cross-link to a worked example (which dispatches
+  /// `open:<module>?...` sentinels) is the proper landing for these.
+  final bool runnable;
+
   const FunctionRef({
     required this.id,
     required this.category,
@@ -88,6 +109,7 @@ class FunctionRef {
     this.examples = const [],
     this.seeAlso = const [],
     this.workedExampleId,
+    this.runnable = true,
   });
 }
 
@@ -887,6 +909,549 @@ class FunctionReferences {
         ),
       ],
       seeAlso: ['det', 'inv', 'matrix_literal'],
+    ),
+    // === Statistics ==========================================================
+    // All stats entries are module-surface (runnable: false). The
+    // hypothesis tests live in the Statistics module's "Tests" tab
+    // (lib/screens/statistics_screen.dart, _TestKind enum); the
+    // engine code is `lib/engine/hypothesis_tests.dart`. Cross-link
+    // to `statsHypothesisTests` (the `open:statistics?tab=tests`
+    // sentinel) so "See worked example" lands the user there.
+    FunctionRef(
+      id: 'mean',
+      category: FunctionRefCategory.statistics,
+      signature: 'Descriptive Stats → Sample mean',
+      shortDescription:
+          'Sample arithmetic mean of a numeric list. Surfaced in the '
+          'Statistics module\'s Descriptive Stats tab alongside the '
+          'standard summary statistics.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'data = [1, 2, 3, 4, 5]',
+          expected: 'mean = 3.0',
+          hint: 'In CrispCalc, `mean` is computed by `DescriptiveStats.mean` '
+              '(see `lib/engine/statistics.dart`) — a single-pass sum / n. '
+              'For paired or grouped data the Stats module also exposes '
+              'standard deviation, median, quartiles, and the IQR.',
+        ),
+        FunctionRefExample(
+          input: 'data = [2.1, 2.3, 1.9, 2.0, 2.4]',
+          expected: 'mean = 2.14',
+          hint: 'Floating-point input — the implementation accumulates in '
+              '`double`, so very large or mixed-magnitude lists may need '
+              'a stable summation algorithm if you need >15 digits.',
+        ),
+      ],
+      seeAlso: ['welch_t', 'paired_t', 'anova_1'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    FunctionRef(
+      id: 'welch_t',
+      category: FunctionRefCategory.statistics,
+      signature: 'Tests → Two-sample t (Welch)',
+      shortDescription:
+          'Two-sample t-test with unequal variances (Welch–Satterthwaite). '
+          'Robust default when the two groups may have different spreads.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'A = [...], B = [...]',
+          expected: 't, df, p',
+          hint:
+              'In CrispCalc, `welchT` lives in `lib/engine/hypothesis_tests.dart`. '
+              'The underlying call computes the test statistic '
+              't = (x̄_A − x̄_B) / √(s_A²/n_A + s_B²/n_B), then approximates '
+              'the degrees of freedom via Welch–Satterthwaite, and reads the '
+              'p-value off `TDistribution.cdf`.',
+        ),
+        FunctionRefExample(
+          input: 'A = [1, 2, 3], B = [4, 5, 6]',
+          expected: 't = -3.674, df ≈ 4, p ≈ 0.021',
+          hint:
+              'Tiny-sample case — the Welch df ≈ 4 even though n_A + n_B = 6, '
+              'because the two-sample t-distribution adjusts for the variance '
+              'estimate uncertainty.',
+        ),
+      ],
+      seeAlso: ['paired_t', 'wilcoxon', 'anova_1'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    FunctionRef(
+      id: 'paired_t',
+      category: FunctionRefCategory.statistics,
+      signature: 'Tests → Paired t',
+      shortDescription:
+          'Paired t-test on within-subject differences against μ₀ = 0. '
+          'Use when the same units are measured twice (before/after).',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'before = [...], after = [...]',
+          expected: 't, df = n-1, p',
+          hint: 'In CrispCalc, `pairedT` reduces to a one-sample t-test on the '
+              'difference vector d = after − before. The underlying call is '
+              'the same `TDistribution.cdf` route used by `welchT`, but with '
+              'df = n - 1 (no Welch adjustment because there\'s only one '
+              'variance estimate to make).',
+        ),
+        FunctionRefExample(
+          input: 'before = [1, 2, 3], after = [4, 5, 6]',
+          expected: 't = ∞ (zero variance in d), p = 0',
+          hint: 'Edge case: identical shifts produce zero variance in the '
+              'differences, which the implementation surfaces as the limiting '
+              'p = 0 rather than a NaN.',
+        ),
+      ],
+      seeAlso: ['welch_t', 'sign_test', 'wilcoxon'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    FunctionRef(
+      id: 'anova_1',
+      category: FunctionRefCategory.statistics,
+      signature: 'Tests → One-way ANOVA',
+      shortDescription:
+          'One-way ANOVA across K independent groups. Tests whether group '
+          'means differ; reports an F-statistic and p-value.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'groups = [[...], [...], [...]]',
+          expected: 'F, df1 = K-1, df2 = N-K, p',
+          hint: 'In CrispCalc, `anovaOneWay` partitions total SS into '
+              'between-group SS and within-group SS. The underlying call is '
+              'F = MS_between / MS_within with df1 = K - 1 and df2 = N - K, '
+              'then `FDistribution.sf` for the upper-tail p-value.',
+        ),
+        FunctionRefExample(
+          input: 'groups = [[1, 2], [3, 4], [5, 6]]',
+          expected: 'F = 16, df1 = 2, df2 = 3, p ≈ 0.025',
+          hint: 'Equal-spread, well-separated means produce a high F. Reject '
+              'H₀ (all means equal) at α = 0.05.',
+        ),
+      ],
+      seeAlso: ['welch_t', 'chi2_independence', 'wilcoxon'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    FunctionRef(
+      id: 'chi2_goodness',
+      category: FunctionRefCategory.statistics,
+      signature: 'Tests → χ² goodness-of-fit',
+      shortDescription:
+          'Chi-squared goodness-of-fit test: do observed counts match a '
+          'hypothesised distribution?',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'observed = [10, 20, 30], expected = [15, 20, 25]',
+          expected: 'χ² = 2.67, df = 2, p ≈ 0.264',
+          hint:
+              'In CrispCalc, `chiSquareGof` evaluates Σ (O - E)² / E and reads '
+              'the upper-tail p-value off `ChiSquaredDistribution.sf` with '
+              'df = k - 1 where k is the number of categories. Underlying '
+              'cell counts are assumed ≥ 5 — the implementation does not '
+              'auto-Yates-correct.',
+        ),
+        FunctionRefExample(
+          input: 'observed = [50, 50], expected = [50, 50]',
+          expected: 'χ² = 0, df = 1, p = 1.0',
+          hint: 'Perfect match → χ² = 0 → fail to reject H₀ at any α.',
+        ),
+      ],
+      seeAlso: ['chi2_independence', 'fisher_exact', 'sign_test'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    FunctionRef(
+      id: 'chi2_independence',
+      category: FunctionRefCategory.statistics,
+      signature: 'Tests → χ² test of independence',
+      shortDescription:
+          'Chi-squared independence test on a contingency table — are two '
+          'categorical variables independent?',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'table = [[10, 20], [15, 25]]',
+          expected: 'χ² ≈ 0.06, df = 1, p ≈ 0.81',
+          hint:
+              'In CrispCalc, `chiSquareIndependence` computes expected counts '
+              'from row × column marginals (E_ij = row_i · col_j / total), '
+              'then Σ (O - E)² / E with df = (rows - 1) · (cols - 1). The '
+              'underlying p-value comes from `ChiSquaredDistribution.sf`.',
+        ),
+        FunctionRefExample(
+          input: 'table = [[8, 2], [1, 9]]',
+          expected: 'χ² ≈ 7.2, df = 1, p ≈ 0.007',
+          hint: 'Strong off-diagonal concentration → low p. For sparse 2×2 '
+              'tables prefer `fisher_exact`, which doesn\'t rely on the '
+              'large-sample chi-squared approximation.',
+        ),
+      ],
+      seeAlso: ['chi2_goodness', 'fisher_exact', 'anova_1'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    FunctionRef(
+      id: 'fisher_exact',
+      category: FunctionRefCategory.statistics,
+      signature: 'Tests → Fisher\'s exact (2×2)',
+      shortDescription:
+          'Fisher\'s exact test on a 2×2 contingency table. Exact '
+          'hypergeometric p-value — no large-sample approximation.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'table = [[8, 2], [1, 9]]',
+          expected: 'p ≈ 0.0055',
+          hint:
+              'In CrispCalc, `fisherExact` enumerates all 2×2 tables with the '
+              'same marginals and sums the hypergeometric probabilities of '
+              'tables at least as extreme as observed. The underlying call '
+              'computes log-Choose terms to avoid overflow on large totals, '
+              'then exponentiates; two-sided p follows R\'s convention '
+              '(sum of tail probabilities ≤ observed).',
+        ),
+        FunctionRefExample(
+          input: 'table = [[5, 5], [5, 5]]',
+          expected: 'p = 1.0',
+          hint: 'Symmetric table → no evidence of association.',
+        ),
+      ],
+      seeAlso: ['chi2_independence', 'chi2_goodness', 'sign_test'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    FunctionRef(
+      id: 'wilcoxon',
+      category: FunctionRefCategory.statistics,
+      signature: 'Tests → Wilcoxon rank-sum',
+      shortDescription:
+          'Wilcoxon rank-sum / Mann–Whitney U — nonparametric two-sample '
+          'test on ranks. Robust to non-normal data.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'A = [...], B = [...]',
+          expected: 'W, z, p',
+          hint: 'In CrispCalc, `wilcoxonRankSum` pools both samples, assigns '
+              'midrank-corrected ranks, sums the ranks of group A, and '
+              'reports the normal-approximation z. The underlying call '
+              'applies a tie correction to the variance and reads the '
+              'two-sided p-value off the normal CDF.',
+        ),
+        FunctionRefExample(
+          input: 'A = [1, 2, 3], B = [4, 5, 6]',
+          expected: 'W = 6, z ≈ -1.96, p ≈ 0.05',
+          hint: 'Tiny-sample case — the normal approximation is borderline at '
+              'n_A + n_B = 6. For very small samples the exact permutation '
+              'distribution should be preferred (not yet shipped).',
+        ),
+      ],
+      seeAlso: ['welch_t', 'sign_test', 'anova_1'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    FunctionRef(
+      id: 'sign_test',
+      category: FunctionRefCategory.statistics,
+      signature: 'Tests → Paired sign test',
+      shortDescription:
+          'Paired sign test — nonparametric median-based test on paired '
+          'differences. Counts how often `after > before`.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'before = [...], after = [...]',
+          expected: 's, n, p',
+          hint:
+              'In CrispCalc, `pairedSign` discards pairs with zero difference, '
+              'counts positives among the remaining n, and tests against '
+              'Binomial(n, 0.5). The underlying p-value uses the exact '
+              'binomial tail — no normal approximation, so it\'s the right '
+              'choice for very small paired samples.',
+        ),
+        FunctionRefExample(
+          input: 'before = [1, 2, 3, 4], after = [2, 3, 5, 4]',
+          expected: 's = 3, n = 3, p = 0.25',
+          hint: 'One tied pair (4 → 4) is dropped, leaving n = 3 positives '
+              'out of 3 informative pairs. The two-sided exact p is '
+              '2 · min(Binom(3, 0.5).cdf(3), …).',
+        ),
+      ],
+      seeAlso: ['paired_t', 'wilcoxon', 'fisher_exact'],
+      workedExampleId: 'statsHypothesisTests',
+    ),
+    // === Constraints DSL =====================================================
+    // All constraints entries are module-surface (runnable: false).
+    // The DSL parser is `lib/engine/csp_solver.dart` (class
+    // `DslToFlatZinc`); each operator is transpiled to a FlatZinc
+    // constraint, which the dart_csp solver consumes. Cross-link to
+    // the rich gallery of DSL worked examples.
+    FunctionRef(
+      id: 'vars',
+      category: FunctionRefCategory.constraints,
+      signature: 'vars: x, y in 1..9',
+      shortDescription:
+          'Declare integer decision variables and their domain. Always the '
+          'first line of a CrispCalc DSL program.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'vars: a, b, c in 1..20',
+          expected: '(declares three CP-int variables)',
+          hint: 'In CrispCalc, the `vars:` line is parsed by `DslToFlatZinc` '
+              '(see `lib/engine/csp_solver.dart`) and emits one FlatZinc '
+              '`var int: x :: …` declaration per name. The domain bounds '
+              'are concrete integers; symbolic domains aren\'t supported.',
+        ),
+        FunctionRefExample(
+          input: 'vars: x in 0..1',
+          expected: '(boolean-shaped int)',
+          hint: 'A `0..1` domain models a boolean variable. FlatZinc has a '
+              'separate `var bool` type — the parser doesn\'t pick it up, '
+              'but the solver handles the 0/1 int just as efficiently.',
+        ),
+      ],
+      seeAlso: ['all_different', 'minimize', 'maximize'],
+      workedExampleId: 'dslMagicSquare',
+    ),
+    FunctionRef(
+      id: 'all_different',
+      category: FunctionRefCategory.constraints,
+      signature: 'allDifferent(a, b, c, …)',
+      shortDescription:
+          'Global "all values pairwise distinct" constraint. The flagship '
+          'CP constraint — much stronger propagation than n·(n-1)/2 '
+          'pairwise `!=` clauses.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'allDifferent(a, b, c)',
+          expected: '(adds the constraint)',
+          hint: 'In CrispCalc, `allDifferent` transpiles to FlatZinc\'s '
+              '`all_different_int([a, b, c])`. The underlying solver '
+              '(dart_csp) implements bound-consistency propagation via '
+              'Régin\'s matching algorithm — much faster than pairwise on '
+              'large argument lists.',
+        ),
+        FunctionRefExample(
+          input: 'allDifferent(row1) and allDifferent(row2) and ...',
+          expected: '(Sudoku row constraints)',
+          hint: 'The Sudoku presets in the Sudoku module are built on stacks '
+              'of `allDifferent` constraints — one per row, column, box, '
+              'and any variant zones.',
+        ),
+      ],
+      seeAlso: ['vars', 'no_overlap', 'cumulative'],
+      workedExampleId: 'dslMagicSquare',
+    ),
+    FunctionRef(
+      id: 'no_overlap',
+      category: FunctionRefCategory.constraints,
+      signature: 'noOverlap(s1=d1, s2=d2, …)',
+      shortDescription:
+          'Disjunctive scheduling: tasks with given start variables and '
+          'fixed durations cannot overlap in time on a single machine.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'noOverlap(s1=4, s2=3, s3=2)',
+          expected: '(disjunctive constraint on three tasks)',
+          hint: 'In CrispCalc, `noOverlap` transpiles to FlatZinc\'s '
+              '`disjunctive([s1, s2, s3], [4, 3, 2])`. The underlying '
+              'solver uses edge-finding plus Vilím\'s θ-tree propagator — '
+              'the same algorithm as MiniZinc\'s built-in.',
+        ),
+        FunctionRefExample(
+          input:
+              'noOverlap(s1=4, s2=3, s3=2) and minimize max(s1+4, s2+3, s3+2)',
+          expected: '(makespan minimization on a single machine)',
+          hint: 'Classic single-machine sequencing problem. Combine with '
+              '`minimize` over the makespan expression to get the optimal '
+              'schedule. See the worked example for the full DSL program.',
+        ),
+      ],
+      seeAlso: ['cumulative', 'minimize', 'all_different'],
+      workedExampleId: 'dslSchedulingMakespan',
+    ),
+    FunctionRef(
+      id: 'cumulative',
+      category: FunctionRefCategory.constraints,
+      signature: 'cumulative(s1=d1@r1, …; capacity=C)',
+      shortDescription:
+          'Cumulative scheduling on a renewable resource of fixed capacity. '
+          'Each task has a duration and a per-task resource demand.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'cumulative(s1=2@2, s2=3@1, s3=2@2; capacity=3)',
+          expected: '(at most 3 units of resource used at any time)',
+          hint: 'In CrispCalc, `cumulative` transpiles to FlatZinc\'s '
+              '`cumulative([starts], [durations], [resources], capacity)`. '
+              'The underlying solver uses timetable propagation plus '
+              'energetic reasoning — capacity-aware versions of the '
+              '`noOverlap` propagators.',
+        ),
+        FunctionRefExample(
+          input:
+              'cumulative(crew tasks; capacity=3) and cumulative(equip tasks; capacity=3)',
+          expected: '(RCPSP — two parallel cumulative overlays)',
+          hint: 'The Resource-Constrained Project Scheduling Problem (RCPSP) '
+              'stacks multiple `cumulative` constraints, one per resource '
+              'type. See the `dslRcpsp` worked example for a two-resource '
+              'project.',
+        ),
+      ],
+      seeAlso: ['no_overlap', 'minimize', 'all_different'],
+      workedExampleId: 'dslCumulativeScheduling',
+    ),
+    FunctionRef(
+      id: 'minimize',
+      category: FunctionRefCategory.constraints,
+      signature: 'minimize <linear-expression>',
+      shortDescription:
+          'Objective: minimize a linear expression over the decision '
+          'variables. Combine with constraints to solve optimization CSPs.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'minimize x + y',
+          expected: '(finds the assignment with smallest x + y)',
+          hint: 'In CrispCalc, `minimize` emits FlatZinc\'s '
+              '`solve minimize __obj__;` after constructing the objective '
+              'variable via linear-expression parsing. The underlying '
+              'solver uses branch-and-bound — feasibility check, then tighten '
+              'the upper bound on every improving solution.',
+        ),
+        FunctionRefExample(
+          input: 'minimize coins_1 + coins_5 + coins_10 + coins_25',
+          expected: '(coin-change: pay 17¢ with fewest coins)',
+          hint: 'See the `dslCoinChange` worked example — minimize over a sum '
+              'of indicator variables to find the smallest set of coins '
+              'totalling the target.',
+        ),
+      ],
+      seeAlso: ['maximize', 'vars', 'no_overlap'],
+      workedExampleId: 'dslCoinChange',
+    ),
+    FunctionRef(
+      id: 'maximize',
+      category: FunctionRefCategory.constraints,
+      signature: 'maximize <linear-expression>',
+      shortDescription:
+          'Objective: maximize a linear expression. Mirror image of '
+          '`minimize` — same branch-and-bound, opposite direction.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'maximize 3*a + 2*b',
+          expected: '(finds the assignment with largest 3a + 2b)',
+          hint: 'In CrispCalc, `maximize` emits FlatZinc\'s '
+              '`solve maximize __obj__;`. The underlying solver does '
+              'branch-and-bound just like `minimize` but with the '
+              'lower-bound tightening flipped.',
+        ),
+        FunctionRefExample(
+          input:
+              'maximize sum(profit_i * x_i) subject to sum(weight_i * x_i) <= C',
+          expected:
+              '(knapsack — pack the highest-value bundle within capacity)',
+          hint: 'Classic 0/1 knapsack. The DSL handles this naturally as a '
+              '`vars: x_1, ... in 0..1` declaration plus a linear capacity '
+              'constraint and a linear objective.',
+        ),
+      ],
+      seeAlso: ['minimize', 'vars', 'all_different'],
+      workedExampleId: 'constraintEditor',
+    ),
+    // === Sudoku variants =====================================================
+    // Sudoku entries describe the variant rules — they're presets in
+    // the Sudoku module, not DSL operators. All carry runnable: false
+    // and cross-link to the `killerSudoku` worked example (which
+    // dispatches `open:sudoku?preset=killer9x9`).
+    FunctionRef(
+      id: 'sudoku_regular',
+      category: FunctionRefCategory.sudoku,
+      signature: 'Sudoku → Regular preset',
+      shortDescription:
+          'Classic Sudoku rules: each row, column, and box contains every '
+          'digit exactly once. Presets ship for 4×4, 6×6, 8×8, 9×9, 10×10, '
+          '12×12, 15×15, and 16×16.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'Sudoku module → preset → "Regular 9×9"',
+          expected: '(loads a standard 9×9 grid)',
+          hint:
+              'In CrispCalc, the Regular variant lives in `lib/engine/sudoku.dart` '
+              'as `SudokuVariant.regular`. The underlying solver instantiates '
+              'one `allDifferent` per row, column, and box (27 in total for '
+              '9×9), and hands them off to `dart_csp`.',
+        ),
+      ],
+      seeAlso: ['sudoku_x', 'sudoku_disjoint', 'sudoku_killer'],
+      workedExampleId: 'killerSudoku',
+    ),
+    FunctionRef(
+      id: 'sudoku_x',
+      category: FunctionRefCategory.sudoku,
+      signature: 'Sudoku → X preset',
+      shortDescription:
+          'Sudoku-X: regular Sudoku rules plus both main diagonals are also '
+          'allDifferent. Ships as an 8×8 preset.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'Sudoku module → preset → "X 8×8"',
+          expected: '(loads an 8×8 grid with diagonal constraints)',
+          hint:
+              'In CrispCalc, Sudoku-X is `SudokuVariant.x` (`lib/engine/sudoku.dart`). '
+              'The underlying solver adds two extra `allDifferent` constraints '
+              'on top of the regular row/column/box trio — one per diagonal.',
+        ),
+      ],
+      seeAlso: ['sudoku_regular', 'sudoku_disjoint', 'sudoku_killer'],
+      workedExampleId: 'killerSudoku',
+    ),
+    FunctionRef(
+      id: 'sudoku_disjoint',
+      category: FunctionRefCategory.sudoku,
+      signature: 'Sudoku → Disjoint Groups preset',
+      shortDescription:
+          'Disjoint Groups: regular rules plus an additional allDifferent '
+          'across cells in the same in-box position across all boxes.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'Sudoku module → preset → "Disjoint 8×8"',
+          expected: '(loads an 8×8 grid with disjoint-group constraints)',
+          hint:
+              'In CrispCalc, this is `SudokuVariant.disjoint`. For an N×N grid '
+              'with √N × √N boxes, the constraint adds N more `allDifferent` '
+              'overlays — one per in-box position. The 8×8 ships as a single '
+              'preset.',
+        ),
+      ],
+      seeAlso: ['sudoku_regular', 'sudoku_x', 'sudoku_killer'],
+      workedExampleId: 'killerSudoku',
+    ),
+    FunctionRef(
+      id: 'sudoku_killer',
+      category: FunctionRefCategory.sudoku,
+      signature: 'Sudoku → Killer preset',
+      shortDescription:
+          'Killer Sudoku: no givens; instead, the grid is partitioned into '
+          '"cages", each cage allDifferent and summing to a given target.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'Sudoku module → preset → "Killer 9×9"',
+          expected: '(loads a 9×9 cage-puzzle)',
+          hint: 'In CrispCalc, this is `SudokuVariant.killer`. The underlying '
+              'solver layers per-cage `allDifferent` + a per-cage `sum = '
+              'target` over the regular row/column/box trio. The 4×4 and '
+              '9×9 killer presets both ship.',
+        ),
+      ],
+      seeAlso: ['sudoku_regular', 'sudoku_x', 'sudoku_disjoint'],
+      workedExampleId: 'killerSudoku',
     ),
   ];
 }

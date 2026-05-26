@@ -219,7 +219,14 @@ class _FunctionRefRow extends StatelessWidget {
                   onPressed: () =>
                       _openWorkedExample(context, entry.workedExampleId!),
                 ),
-              if (entry.examples.isNotEmpty)
+              // Round 99: the `runnable` flag suppresses the Try
+              // button on module-surface entries (stats hypothesis
+              // tests, Constraints DSL operators, Sudoku variants).
+              // Pasting `welchT(...)` into the calculator would just
+              // error — the See-worked-example cross-link is the
+              // proper landing for these entries since the WE
+              // dialog dispatches `open:<module>` sentinels.
+              if (entry.runnable && entry.examples.isNotEmpty)
                 ElevatedButton.icon(
                   icon: const Icon(Icons.input, size: 16),
                   label: Text(t.functionRefTryInCalculator),

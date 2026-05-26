@@ -96,6 +96,60 @@ void main() {
       }
     });
 
+    test('round 99: catalogue covers the stats / constraints / sudoku slate',
+        () {
+      // PLAN P6 §99 names ~15 module-surface entries; Round 99
+      // ships 9 stats + 6 constraints + 4 sudoku = 19. All carry
+      // `runnable: false` because they aren't directly calculator-
+      // callable.
+      final ids = {for (final e in FunctionReferences.all) e.id};
+      const expectedStats = {
+        'mean',
+        'welch_t',
+        'paired_t',
+        'anova_1',
+        'chi2_goodness',
+        'chi2_independence',
+        'fisher_exact',
+        'wilcoxon',
+        'sign_test',
+      };
+      const expectedConstraints = {
+        'vars',
+        'all_different',
+        'no_overlap',
+        'cumulative',
+        'minimize',
+        'maximize',
+      };
+      const expectedSudoku = {
+        'sudoku_regular',
+        'sudoku_x',
+        'sudoku_disjoint',
+        'sudoku_killer',
+      };
+      for (final id in {
+        ...expectedStats,
+        ...expectedConstraints,
+        ...expectedSudoku
+      }) {
+        expect(ids, contains(id), reason: 'Round 99 slate missing "$id"');
+      }
+      // Round 99 entries are module-surface, not calculator-callable —
+      // they must all carry runnable: false. Catches a regression
+      // where a stats entry gets accidentally flagged runnable and
+      // exposes a broken Try-in-Calculator button.
+      final byId = {for (final e in FunctionReferences.all) e.id: e};
+      for (final id in {
+        ...expectedStats,
+        ...expectedConstraints,
+        ...expectedSudoku
+      }) {
+        expect(byId[id]!.runnable, isFalse,
+            reason: 'Round 99 entry "$id" should carry runnable: false');
+      }
+    });
+
     test('round 98: catalogue covers the matrix / linear-algebra slate', () {
       // PLAN P6 §98 names det / inv / transpose / rref / Matrix(...)
       // syntax plus eigenvalues (the last "if shipped" — bridge has
