@@ -1475,32 +1475,66 @@ category-chip row compact.
 
 #### Rounds 93-95: Move worked examples out of Settings
 
-##### Round 93 — Add (?) icon + lift dialog to Calculator + Notepad
+##### Round 93 — Add (?) icon + lift dialog to Calculator + Notepad ✅
 
-Both Calculator and Notepad screens get a `(?)` icon in the
-AppBar. Tapping opens the existing `WorkedExamplesDialog`. The
-Settings entry stays but its subtitle changes from "Browse
-and copy ready-to-paste calculator expressions covering the
-major problem types" to "(see the **?** icon on the
-Calculator and Notepad screens)".
+Both surfaces now carry an open-book `(menu_book_outlined)`
+IconButton that opens the existing `WorkedExamplesDialog`. On
+the Notepad it slots into the AppBar `actions:` row ahead of
+the existing `+` and `⋮` buttons. The Calculator has no AppBar
+of its own, so the icon lives in the same top toolbar row that
+used to host only the LaTeX/Plain toggle + history search + clear.
+That toolbar was previously hidden when history was empty —
+now it always renders so the icon stays reachable from a cold
+start, with the history controls still gated on
+`history.isNotEmpty`.
 
-##### Round 94 — Pre-filter the dialog by the active surface
+The Settings entry stays but its subtitle now points at the
+new icon, in all four locales.
 
-When opened from the Calculator screen, the dialog defaults to
-the "All" category. When opened from Notepad, it filters to
-categories that make sense for the document model
-(calculus / algebra / linear algebra; **not** Sudoku /
-constraints / units which are surface-specific). Same dialog,
-different default filter.
+Used the open-book glyph rather than `Icons.help_outline`
+because the latter is reserved for the future Round 101
+help-mode toggle, and an open book matches the Settings card's
+own `menu_book_outlined` leading icon — users can mentally
+connect the two.
 
-##### Round 95 — Examples open the right module
+##### Round 94 — Pre-filter the dialog by the active surface ✅
 
-Today every example inserts a string into the calculator. With
-the round-69 `open:<module>` sentinel and round-73 `dsl:<id>`
-sentinel patterns already in place, extend so a Sudoku example
-opens the Sudoku module pre-loaded, a Statistics example opens
-the Statistics module with the data pre-filled, etc. Round 92's
-new precision entries all stay calculator-bound.
+`WorkedExamplesDialog` gained a `surface:
+WorkedExamplesSurface` parameter (defaults to `calculator` so
+the existing call site from Settings keeps full-library
+behaviour). The Notepad call site passes `notepad`, which
+restricts both the category-chip row and the example list to
+`{calculus, algebra, linearAlgebra, numberTheory}`. The three
+module-bound categories (statistics — has its own data-table
+UI; units — V1 PLAN scopes notepad to math content;
+constraints — entries are `open:` / `dsl:` sentinels that
+navigate to a different module) disappear from the chip row.
+
+The PLAN's original spec called for `{calculus, algebra,
+linearAlgebra}` only; `numberTheory` was added because P7's
+boolean predicates + the precision arc both ship entries that
+work fine inline in a notepad line (`isprime(2027)`,
+`2 == 2`), and hiding them would be a regression.
+
+##### Round 95 — Examples open the right module (deferred)
+
+Today's session shipped rounds 93+94. Round 95 — pre-loading
+state when an example opens its module (Sudoku preset,
+Statistics demo data) — is **deferred** because it cuts
+across three module screens with new pre-load APIs:
+
+- AppState needs `_pendingSudokuPreset` + `_pendingStatisticsDemo`
+  slots (mirror of `_pendingDslProgramId` from round 73).
+- `SudokuScreen` + `StatisticsScreen` need init-side drain.
+- `WorkedExamplesDialog._insert` needs a parameterised sentinel
+  parser, e.g. `open:sudoku?preset=killer4x4`.
+- New worked-examples entries to actually use them.
+
+That's roughly a 3-piece-change round and warrants its own
+session. Today's `open:sudoku` / `open:constraints` / `dsl:<id>`
+sentinels still work as before (each opens the module bare).
+Round 92's precision entries stay calculator-bound as PLAN
+already specified.
 
 #### Rounds 96-100: Function Reference surface
 

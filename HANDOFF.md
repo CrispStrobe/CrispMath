@@ -408,6 +408,22 @@ project depends on it via a git ref pin in `pubspec.yaml`.
   P7's engine + UI layers (only Round 114 — Function Reference
   catalog + help-mode wiring — remains, and that's gated on
   P6 round 97).
+- **Round 93 (P6 kickoff)** — Worked Examples library out of
+  Settings. Open-book `(menu_book_outlined)` IconButton on
+  the Calculator top toolbar + the Notepad AppBar `actions:`
+  row. Settings card stays but its subtitle now points at the
+  icon. The Calculator's existing top toolbar used to hide
+  when history was empty; it now renders unconditionally so
+  the icon stays reachable from cold start.
+- **Round 94** — Surface-scoped filtering.
+  `WorkedExamplesDialog` gained a `surface:
+  WorkedExamplesSurface` parameter (default `calculator`).
+  Notepad passes `notepad`, restricting the chip row + example
+  list to `{calculus, algebra, linearAlgebra, numberTheory}`
+  — hiding three module-bound categories (statistics, units,
+  constraints). PLAN's spec said the first three only;
+  numberTheory included because P7 + the precision arc ship
+  entries that work fine inline in notepad.
 - **Docs P6 / P7 / P8 (no round numbers)** — 565 lines of
   PLAN.md added: discoverability + help-system overhaul (P6,
   rounds 91-105), boolean type + relational/logical operators
@@ -838,13 +854,15 @@ the round table). What's left:
    - **A8** — Back-to-front sorting for proper occlusion.
      Cosmetic for now: the back hemisphere of a sphere draws
      over the front when seen edge-on.
-4. **P6 — Discoverability + help (15-round arc, mostly
-   untouched).** The notepad arc and the 3D Scene arc both
-   made parts of P6 less load-bearing (the new module IS
-   discoverable from the hub; the user-side bug-fix round
-   touched some of the keypad surface). Re-read P6 with
-   fresh eyes before committing to it as the next strategic
-   direction.
+4. **P6 — Discoverability + help (15-round arc, ~⅙ shipped).**
+   Rounds 93 + 94 shipped today (Worked Examples icon on
+   Calculator + Notepad + surface-scoped filtering). Round 95
+   (per-module pre-loading via parameterised `open:<module>?…`
+   sentinels) is **deferred** — it needs new AppState slots +
+   receiver-side drain on Sudoku/Statistics, a sentinel
+   parser, and new worked-examples entries. Next from P6:
+   Round 95, then the Round 96-100 Function Reference arc.
+   Re-read PLAN P6 before committing to the next slice.
 
 ### Bigger strategic next: discoverability + help (P6, rounds 91-105)
 
