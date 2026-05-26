@@ -1191,24 +1191,34 @@ the upstream HEAD which has landed two major features:
   snippets through `FlatZinc.solve` plus the exhaustive / unsat
   output shapes (4 tests).
 
-- [ ] **Round E.2 — "Why no solution?" panel using QuickXplain
-  MUS**. When a Diophantine / DSL / FlatZinc problem returns no
-  solution, run QuickXplain over the labeled constraints, show
-  the user the minimal subset that conflicts. Renders inline in
-  the result block with an "Explain failure" button (skippable
-  for happy paths — running QuickXplain isn't free). Requires
-  threading `ConstraintRef` labels through every `addConstraint`
-  / `addLinearEquals` / `addAllDifferent` call in
-  `lib/engine/csp_solver.dart`. ~1 day.
+- [x] ~~**Round E.2 — "Why no solution?" panel using QuickXplain
+  MUS**.~~ Done 2026-05-26 — commit `79a1067`. Four new explain
+  methods on `CspSolver` (`explainDiophantine` / `explainDsl` /
+  `explainCryptarithm` / `explainFlatZinc`) rebuild the Problem
+  with `label:` threaded through every add* call, then run
+  `findMinimalUnsatisfiableSubsetQuickXplain`. Shared
+  `_ExplainSection` widget renders an "Explain failure" button on
+  every tab when its solve returns 0 solutions /
+  `=====UNSATISFIABLE=====` / "No assignment satisfies"; tap
+  reveals the MUS as one row per labeled conflict with a
+  constraint-kind chip. Localized en/de/fr/es (4 new keys). 12
+  new tests in `test/csp_mus_test.dart`. Engine refactor is
+  purely additive — happy-path solvers untouched.
 
-- [ ] **Round E.3 — DSL → FlatZinc export**. "Export as FlatZinc"
-  button on the DSL tab's result panel. Emits a `.fzn` text the
-  user can paste into Choco, Gecode, OR-Tools, MiniZinc IDE for
-  cross-solver verification or for serious problems CrispCalc's
-  in-process search can't crack. Maps the existing DSL AST to
-  FlatZinc declarations — algebraic since both share variables,
-  linear constraints, `allDifferent`, `noOverlap` (FlatZinc's
-  `disjunctive`), `cumulative`. ~half a day.
+- [x] ~~**Round E.3 — DSL → FlatZinc export**.~~ Done 2026-05-26 —
+  commit `991f764`. New `DslToFlatZinc.export(input)` produces a
+  ready-to-paste FlatZinc model from any DSL program (vars /
+  allDifferent / linear ==/<=/>=/</>/!= / noOverlap →
+  disjunctive / cumulative / minimize / maximize via synthetic
+  __obj__). "Export as FlatZinc" button on the DSL tab; result
+  lands in a copyable `_FlatZincExportBlock`. Non-linear
+  constraints fail with a friendly "not a linear constraint"
+  error rather than producing a partial model. Localized
+  en/de/fr/es (2 new keys). 20 new tests in
+  `test/dsl_to_flatzinc_test.dart` — 12 structural shape checks,
+  5 error paths, and 3 **round-trip** tests that feed the emitted
+  FlatZinc back through `FlatZinc.solve` to prove the translation
+  is parseable + solvable.
 
 - [~] **Round E.4 — Notepad ↔ FlatZinc integration** *(novel)*.
   Inline `fzn:` directive variant shipped 2026-05-26 (commit
