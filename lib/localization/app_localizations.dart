@@ -491,6 +491,8 @@ abstract class AppLocalizations {
   String get constraintsExplainHeader;
   String get constraintsExplainSatisfiable;
   String constraintsExplainEntryCount(int n);
+  String get constraintsExportFlatZinc;
+  String get constraintsExportedHeader;
   String get constraintsDiophantineIntro;
   String get constraintsCryptarithmIntro;
   String get constraintsVariablesLabel;
@@ -1651,6 +1653,10 @@ class EnLocalizations implements AppLocalizations {
   @override
   String constraintsExplainEntryCount(int n) =>
       n == 1 ? '1 conflicting constraint' : '$n conflicting constraints';
+  @override
+  String get constraintsExportFlatZinc => 'Export as FlatZinc';
+  @override
+  String get constraintsExportedHeader => 'FlatZinc translation';
 
   @override
   String get constraintsDiophantineIntro =>
@@ -3086,6 +3092,10 @@ class DeLocalizations implements AppLocalizations {
   String constraintsExplainEntryCount(int n) => n == 1
       ? '1 widersprüchliche Bedingung'
       : '$n widersprüchliche Bedingungen';
+  @override
+  String get constraintsExportFlatZinc => 'Als FlatZinc exportieren';
+  @override
+  String get constraintsExportedHeader => 'FlatZinc-Übersetzung';
 
   @override
   String get constraintsDiophantineIntro =>
@@ -4661,6 +4671,10 @@ class FrLocalizations implements AppLocalizations {
   @override
   String constraintsExplainEntryCount(int n) =>
       n == 1 ? '1 contrainte conflictuelle' : '$n contraintes conflictuelles';
+  @override
+  String get constraintsExportFlatZinc => 'Exporter en FlatZinc';
+  @override
+  String get constraintsExportedHeader => 'Traduction FlatZinc';
 
   @override
   String get constraintsDiophantineIntro =>
@@ -6233,6 +6247,10 @@ class EsLocalizations implements AppLocalizations {
   @override
   String constraintsExplainEntryCount(int n) =>
       n == 1 ? '1 restricción en conflicto' : '$n restricciones en conflicto';
+  @override
+  String get constraintsExportFlatZinc => 'Exportar como FlatZinc';
+  @override
+  String get constraintsExportedHeader => 'Traducción FlatZinc';
 
   @override
   String get constraintsDiophantineIntro =>

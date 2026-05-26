@@ -1478,3 +1478,386 @@ class _DslExplainParse {
         error: message,
       );
 }
+
+/// Result of [CspSolver.exportDslToFlatZinc]. Either [source] holds
+/// a ready-to-paste FlatZinc model or [error] explains why the DSL
+/// couldn't be translated.
+class FlatZincExportResult {
+  final String? source;
+  final String? error;
+  bool get ok => source != null;
+  const FlatZincExportResult._({this.source, this.error});
+  factory FlatZincExportResult.ok(String src) =>
+      FlatZincExportResult._(source: src);
+  factory FlatZincExportResult.failure(String msg) =>
+      FlatZincExportResult._(error: msg);
+}
+
+/// Round E.3 — DSL → FlatZinc transpiler.
+///
+/// Lifts the DSL's vars / allDifferent / linear constraints /
+/// noOverlap / cumulative / minimize / maximize directives into the
+/// standard FlatZinc subset every CP solver (Choco, Gecode,
+/// OR-Tools, MiniZinc IDE) consumes. Output is plain text the user
+/// can paste into another solver for cross-verification or to crack
+/// problems CrispCalc's in-process search times out on.
+///
+/// Mapping (DSL → FlatZinc):
+///   vars: x in 1..9             →  var 1..9: x :: output_var;
+///   allDifferent(x, y, z)       →  constraint all_different_int([x, y, z]);
+///   a*x + b*y == k              →  constraint int_lin_eq([a, b], [x, y], k);
+///   a*x + b*y <= k              →  constraint int_lin_le([a, b], [x, y], k);
+///   a*x + b*y >= k              →  constraint int_lin_le([-a, -b], [x, y], -k);
+///   a*x + b*y < k               →  constraint int_lin_le([a, b], [x, y], k - 1);
+///   a*x + b*y > k               →  constraint int_lin_le([-a, -b], [x, y], -(k + 1));
+///   a*x + b*y != k              →  constraint int_lin_ne([a, b], [x, y], k);
+///   noOverlap(s1=4, s2=3)       →  constraint disjunctive([s1, s2], [4, 3]);
+///   cumulative(s1=2@2; cap=N)   →  constraint cumulative([s1], [2], [2], N);
+///   minimize expr               →  var lo..hi: __obj__ :: output_var;
+///                                  constraint int_lin_eq([..., -1], [vars..., __obj__], -const);
+///                                  solve minimize __obj__;
+///
+/// Unsupported lines (free-form non-linear, `!=` with non-linear,
+/// arithmetic in scheduling demands) cause a friendly error rather
+/// than a partial / wrong FlatZinc model.
+class DslToFlatZinc {
+  static FlatZincExportResult export(String input) {
+    final vars = <String, ({int min, int max})>{};
+    final declOrder = <String>[];
+    final allDifferentCalls = <List<String>>[];
+    final linearConstraints = <_LinearFlatZinc>[];
+    final noOverlapGroups = <NoOverlapGroup>[];
+    final cumulativeGroups = <CumulativeGroup>[];
+    ({String op, String expr, int lineNum})? objective;
+
+    final lines = input.split('\n');
+    for (var lineNum = 0; lineNum < lines.length; lineNum++) {
+      var line = lines[lineNum].trim();
+      final hash = line.indexOf('#');
+      if (hash >= 0) line = line.substring(0, hash).trim();
+      if (line.isEmpty) continue;
+
+      final optMatch = RegExp(r'^(minimize|maximize)\s+(.+)$').firstMatch(line);
+      if (optMatch != null) {
+        if (objective != null) {
+          return FlatZincExportResult.failure(
+              'Line ${lineNum + 1}: only one minimize/maximize allowed.');
+        }
+        objective = (
+          op: optMatch.group(1)!,
+          expr: optMatch.group(2)!.trim(),
+          lineNum: lineNum,
+        );
+        continue;
+      }
+
+      final varsMatch =
+          RegExp(r'^vars\s*:\s*(.+?)\s+in\s+(-?\d+)\s*\.\.\s*(-?\d+)$')
+              .firstMatch(line);
+      if (varsMatch != null) {
+        final names = varsMatch
+            .group(1)!
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+        final lo = int.parse(varsMatch.group(2)!);
+        final hi = int.parse(varsMatch.group(3)!);
+        if (hi < lo) {
+          return FlatZincExportResult.failure(
+              'Line ${lineNum + 1}: invalid range $lo..$hi.');
+        }
+        for (final name in names) {
+          if (!RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$').hasMatch(name)) {
+            return FlatZincExportResult.failure(
+                'Line ${lineNum + 1}: invalid variable name "$name".');
+          }
+          if (vars.containsKey(name)) {
+            return FlatZincExportResult.failure(
+                'Line ${lineNum + 1}: variable "$name" already declared.');
+          }
+          if (name == '__obj__') {
+            return FlatZincExportResult.failure(
+                'Line ${lineNum + 1}: "__obj__" is reserved for the '
+                'objective variable on minimize/maximize.');
+          }
+          vars[name] = (min: lo, max: hi);
+          declOrder.add(name);
+        }
+        continue;
+      }
+
+      final allDiffMatch =
+          RegExp(r'^allDifferent\s*\(\s*([^)]*)\s*\)$').firstMatch(line);
+      if (allDiffMatch != null) {
+        final names = allDiffMatch
+            .group(1)!
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+        if (names.length < 2) {
+          return FlatZincExportResult.failure(
+              'Line ${lineNum + 1}: allDifferent needs ≥ 2 variables.');
+        }
+        for (final n in names) {
+          if (!vars.containsKey(n)) {
+            return FlatZincExportResult.failure(
+                'Line ${lineNum + 1}: allDifferent references undeclared '
+                'variable "$n".');
+          }
+        }
+        allDifferentCalls.add(names);
+        continue;
+      }
+
+      final noOverlapMatch =
+          RegExp(r'^noOverlap\s*\(\s*([^)]*)\s*\)$').firstMatch(line);
+      if (noOverlapMatch != null) {
+        final inner = noOverlapMatch.group(1)!.trim();
+        final starts = <String>[];
+        final durations = <int>[];
+        for (final raw in inner.split(',')) {
+          final pair = raw.trim();
+          final m = RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(-?\d+)$')
+              .firstMatch(pair);
+          if (m == null) {
+            return FlatZincExportResult.failure(
+                'Line ${lineNum + 1}: noOverlap pair "$pair" — expected '
+                '`name=integer`.');
+          }
+          final name = m.group(1)!;
+          if (!vars.containsKey(name)) {
+            return FlatZincExportResult.failure(
+                'Line ${lineNum + 1}: noOverlap references undeclared '
+                'variable "$name".');
+          }
+          starts.add(name);
+          durations.add(int.parse(m.group(2)!));
+        }
+        if (starts.isEmpty) {
+          return FlatZincExportResult.failure(
+              'Line ${lineNum + 1}: noOverlap needs at least one task.');
+        }
+        noOverlapGroups.add((starts: starts, durations: durations));
+        continue;
+      }
+
+      final cumulativeMatch =
+          RegExp(r'^cumulative\s*\(\s*([^)]*)\s*\)$').firstMatch(line);
+      if (cumulativeMatch != null) {
+        final inner = cumulativeMatch.group(1)!.trim();
+        final parts = inner.split(';');
+        if (parts.length != 2) {
+          return FlatZincExportResult.failure(
+              'Line ${lineNum + 1}: cumulative expects '
+              '`tasks; capacity=N`.');
+        }
+        final capMatch =
+            RegExp(r'^capacity\s*=\s*(-?\d+)$').firstMatch(parts[1].trim());
+        if (capMatch == null) {
+          return FlatZincExportResult.failure(
+              'Line ${lineNum + 1}: cumulative — expected `capacity=N`.');
+        }
+        final capacity = int.parse(capMatch.group(1)!);
+        final starts = <String>[];
+        final durations = <int>[];
+        final demands = <int>[];
+        for (final raw in parts[0].trim().split(',')) {
+          final pair = raw.trim();
+          final m =
+              RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(-?\d+)\s*@\s*(-?\d+)$')
+                  .firstMatch(pair);
+          if (m == null) {
+            return FlatZincExportResult.failure(
+                'Line ${lineNum + 1}: cumulative pair "$pair" — '
+                'expected `name=duration@demand`.');
+          }
+          final name = m.group(1)!;
+          if (!vars.containsKey(name)) {
+            return FlatZincExportResult.failure(
+                'Line ${lineNum + 1}: cumulative references undeclared '
+                'variable "$name".');
+          }
+          starts.add(name);
+          durations.add(int.parse(m.group(2)!));
+          demands.add(int.parse(m.group(3)!));
+        }
+        if (starts.isEmpty) {
+          return FlatZincExportResult.failure(
+              'Line ${lineNum + 1}: cumulative needs at least one task.');
+        }
+        cumulativeGroups.add((
+          starts: starts,
+          durations: durations,
+          demands: demands,
+          capacity: capacity,
+        ));
+        continue;
+      }
+
+      // Anything else: must be a linear (in)equality. Reuse the
+      // existing _tryParseLinear router via CspSolver. We support
+      // ==/<=/>=/</>; `!=` falls through to int_lin_ne when both
+      // sides parse as linear expressions.
+      final knownVars = vars.keys.toSet();
+      final neq = _tryParseLinearNe(line, knownVars);
+      if (neq != null) {
+        linearConstraints.add(_LinearFlatZinc(
+            coeffs: neq.coeffs, vars: neq.vars, op: '!=', bound: neq.bound));
+        continue;
+      }
+      final lin = CspSolver._tryParseLinear(line, knownVars);
+      if (lin == null) {
+        return FlatZincExportResult.failure(
+            'Line ${lineNum + 1}: "$line" is not a linear constraint over '
+            'the declared variables. Only `a*x + b*y op k` shapes '
+            '(==/<=/>=/</>/!=) export to FlatZinc.');
+      }
+      linearConstraints.add(_LinearFlatZinc(
+        coeffs: lin.coeffs,
+        vars: lin.vars,
+        op: lin.op,
+        bound: lin.bound,
+      ));
+    }
+
+    if (vars.isEmpty) {
+      return FlatZincExportResult.failure(
+          'No variables declared. Use `vars: x, y in 1..9`.');
+    }
+
+    final buf = StringBuffer();
+    buf.writeln('% Generated from CrispCalc DSL — CSP Round E.3');
+    buf.writeln('% Paste into Choco / Gecode / OR-Tools / MiniZinc IDE.');
+    buf.writeln();
+
+    for (final name in declOrder) {
+      final (min: lo, max: hi) = vars[name]!;
+      buf.writeln('var $lo..$hi: $name :: output_var;');
+    }
+    buf.writeln();
+
+    for (final group in allDifferentCalls) {
+      buf.writeln('constraint all_different_int([${group.join(', ')}]);');
+    }
+    for (final lc in linearConstraints) {
+      buf.writeln(lc.toFlatZinc());
+    }
+    for (final g in noOverlapGroups) {
+      buf.writeln('constraint disjunctive([${g.starts.join(', ')}], '
+          '[${g.durations.join(', ')}]);');
+    }
+    for (final g in cumulativeGroups) {
+      buf.writeln('constraint cumulative([${g.starts.join(', ')}], '
+          '[${g.durations.join(', ')}], '
+          '[${g.demands.join(', ')}], ${g.capacity});');
+    }
+
+    if (objective != null) {
+      final knownVars = vars.keys.toSet();
+      final parsed = CspSolver._parseLinearTerms(objective.expr, knownVars);
+      if (parsed == null || parsed.vars.isEmpty) {
+        return FlatZincExportResult.failure(
+            'Line ${objective.lineNum + 1}: could not parse '
+            '${objective.op} expression "${objective.expr}" — must be '
+            'linear in the declared variables.');
+      }
+      // Tight bound on Σ coef·var + constant so __obj__ gets a real
+      // domain. Mirrors CspSolver.solveOptimization.
+      final objConst = parsed.constant.toInt();
+      var objLo = objConst;
+      var objHi = objConst;
+      for (var i = 0; i < parsed.vars.length; i++) {
+        final coef = parsed.coeffs[i].toInt();
+        final range = vars[parsed.vars[i]]!;
+        final a = coef * range.min;
+        final b = coef * range.max;
+        objLo += a < b ? a : b;
+        objHi += a < b ? b : a;
+      }
+      buf.writeln();
+      buf.writeln('var $objLo..$objHi: __obj__ :: output_var;');
+      // Bind __obj__ = Σ coef·var + constant.
+      //   ⇔ Σ coef·var − __obj__ == −constant
+      final coeffs = [...parsed.coeffs.map((c) => c.toInt()), -1];
+      final binds = [...parsed.vars, '__obj__'];
+      buf.writeln('constraint int_lin_eq([${coeffs.join(', ')}], '
+          '[${binds.join(', ')}], ${-objConst});');
+      buf.writeln('solve ${objective.op} __obj__;');
+    } else {
+      buf.writeln();
+      buf.writeln('solve satisfy;');
+    }
+
+    return FlatZincExportResult.ok(buf.toString());
+  }
+
+  /// Tiny shim for `!=` — splits on `!=` and reuses _parseLinearTerms
+  /// on both sides. CspSolver._tryParseLinear deliberately declines
+  /// `!=` so it stays on the dart_csp string-parser path, but for
+  /// the FlatZinc export we want it as `int_lin_ne` instead.
+  static ({List<String> vars, List<num> coeffs, num bound})? _tryParseLinearNe(
+    String constraint,
+    Set<String> knownVars,
+  ) {
+    final stripped = constraint.replaceAll(' ', '');
+    final m = RegExp(r'^(.+?)!=(.+)$').firstMatch(stripped);
+    if (m == null) return null;
+    final lhs = CspSolver._parseLinearTerms(m.group(1)!, knownVars);
+    final rhs = CspSolver._parseLinearTerms(m.group(2)!, knownVars);
+    if (lhs == null || rhs == null) return null;
+    final vars = <String>[...lhs.vars, ...rhs.vars];
+    final coeffs = <num>[
+      ...lhs.coeffs,
+      for (final c in rhs.coeffs) -c,
+    ];
+    if (vars.isEmpty) return null;
+    return (vars: vars, coeffs: coeffs, bound: rhs.constant - lhs.constant);
+  }
+}
+
+class _LinearFlatZinc {
+  final List<num> coeffs;
+  final List<String> vars;
+  final String op; // == / <= / >= / < / > / !=
+  final num bound;
+  const _LinearFlatZinc({
+    required this.coeffs,
+    required this.vars,
+    required this.op,
+    required this.bound,
+  });
+
+  String toFlatZinc() {
+    final intCoeffs = coeffs.map((c) => c.toInt()).toList();
+    final intBound = bound.toInt();
+    switch (op) {
+      case '==':
+        return _emit('int_lin_eq', intCoeffs, vars, intBound);
+      case '<=':
+        return _emit('int_lin_le', intCoeffs, vars, intBound);
+      case '<':
+        return _emit('int_lin_le', intCoeffs, vars, intBound - 1);
+      case '>=':
+        // a·x >= k  ⇔  −a·x <= −k
+        return _emit(
+            'int_lin_le', intCoeffs.map((c) => -c).toList(), vars, -intBound);
+      case '>':
+        return _emit('int_lin_le', intCoeffs.map((c) => -c).toList(), vars,
+            -(intBound + 1));
+      case '!=':
+        return _emit('int_lin_ne', intCoeffs, vars, intBound);
+    }
+    throw StateError('unreachable op $op');
+  }
+
+  static String _emit(
+    String name,
+    List<int> coeffs,
+    List<String> vars,
+    int bound,
+  ) =>
+      'constraint $name([${coeffs.join(', ')}], '
+      '[${vars.join(', ')}], $bound);';
+}

@@ -823,6 +823,10 @@ minimize makespan''',
   bool _solving = false;
   CspMusResult? _mus;
   bool _explaining = false;
+  // Round E.3: FlatZinc export state. Cleared on every fresh
+  // solve / example load so a stale translation can't linger
+  // after the user has edited the program.
+  FlatZincExportResult? _export;
 
   @override
   void initState() {
@@ -846,7 +850,12 @@ minimize makespan''',
       _ctl.text = programText;
       _result = null;
       _mus = null;
+      _export = null;
     });
+  }
+
+  void _doExport() {
+    setState(() => _export = DslToFlatZinc.export(_ctl.text));
   }
 
   @override
@@ -859,6 +868,7 @@ minimize makespan''',
     setState(() {
       _solving = true;
       _mus = null;
+      _export = null;
     });
     final r = await CspSolver.solveDsl(_ctl.text);
     if (!mounted) return;
@@ -937,6 +947,15 @@ minimize makespan''',
                   label: Text(t.constraintsDslExamplesButton),
                 ),
               ),
+              // Round E.3: emit a FlatZinc translation of the
+              // currently-typed program. Sits next to Examples so
+              // the cluster of "what to do with this DSL"
+              // affordances stays in one place.
+              OutlinedButton.icon(
+                onPressed: _doExport,
+                icon: const Icon(Icons.code, size: 18),
+                label: Text(t.constraintsExportFlatZinc),
+              ),
             ],
           ),
           if (_result != null) ...[
@@ -951,8 +970,85 @@ minimize makespan''',
               ),
             ],
           ],
+          if (_export != null) ...[
+            const SizedBox(height: 16),
+            _FlatZincExportBlock(result: _export!),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// Renders a [FlatZincExportResult]: either a copyable monospace
+/// block with the translated FlatZinc text, or a friendly error
+/// when the DSL didn't translate cleanly. Round E.3.
+class _FlatZincExportBlock extends StatelessWidget {
+  final FlatZincExportResult result;
+  const _FlatZincExportBlock({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    if (!result.ok) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: scheme.errorContainer,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.error_outline, color: scheme.onErrorContainer),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(result.error!,
+                  style: TextStyle(color: scheme.onErrorContainer)),
+            ),
+          ],
+        ),
+      );
+    }
+    final src = result.source!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(t.constraintsExportedHeader,
+                style: Theme.of(context).textTheme.titleSmall),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.copy, size: 18),
+              tooltip: t.constraintsCopyResult,
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: src));
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(t.constraintsCopiedToast),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: SelectableText(
+            src,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          ),
+        ),
+      ],
     );
   }
 }
