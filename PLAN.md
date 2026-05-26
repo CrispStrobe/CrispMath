@@ -1427,24 +1427,30 @@ visible user value rather than chunks of plumbing.
 
 #### Rounds 91-92: Precision-arc surfacing (the low-hanging fruit)
 
-##### Round 91 — Calculator parser binds precision arc
+##### Round 91 — Calculator parser binds precision arc ✅
 
-Engine: in `CalculatorEngine.evaluate` (and the notepad
-dispatcher), pre-parse:
+Done 2026-05-26 — commit `c8ccd6c`. New
+`CalculatorEngine.tryEvaluatePrecisionCall(input)` returns the
+result for a recognized standalone precision-arc call or `null`
+to fall through. Top-level only (in-expression calls left to the
+existing preprocessor + SymEngine, since substituting `'true'` /
+Unicode-superscript strings mid-expression doesn't always make
+algebraic sense).
 
-- `pi(N)` / `e(N)` / `EulerGamma(N)` / `sqrt(2, N)` →
-  route to the round-85/86 `getXWithPrecision` getters.
-- `isprime(n)` / `nextprime(n)` / `prevprime(n)` →
-  route to the round-89 ntheory methods.
-- `factorint(n)` → route to round 90; format the result as
-  `2³ · 3² · 5` (Unicode superscripts) inline.
+Hooks: `calculator_screen.dart` `_calculate` and
+`notepad_screen.dart` `_dispatcher`, both before the unit
+evaluator (since `e(50)` would otherwise tokenize as the bare
+symbol `e`). NotepadScreenState gains a main-isolate
+`CalculatorEngine` purely for this pre-pass; heavy CAS calls
+still route through `EngineService`.
 
-Tests: each of the 8 new shapes produces the right string in
-history. Errors (invalid N, too-large factorint input)
-surface as friendly inline messages.
+factorint formats with Unicode superscript digits + `·`
+separators (`factorint(360) → 2³ · 3² · 5`). Empty result
+(n ∈ {0, ±1}) returns the original input verbatim.
 
-Round 91 is the load-bearing UI round — without it,
-rounds 85-90's wrappers are unreachable from the UI.
+18 new tests in `test/precision_call_pass_test.dart` covering
+dispatch, non-matches, error paths, and the formatter. Full
+suite: 1780 pass.
 
 ##### Round 92 — Adv keypad buttons + worked-examples entries
 

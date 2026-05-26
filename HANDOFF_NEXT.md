@@ -1,10 +1,27 @@
 # CrispCalc — handover for the next session
 
-Single-shot briefing from the **2026-05-26 (evening) session** that
-shipped the remaining Round E chunks (E.2 + E.3). The longer-lived
-`HANDOFF.md` is still the load-bearing reference for repo
-conventions; this file is a focused pickup note for what to do
-*next*.
+Single-shot briefing from the **2026-05-26 (late) session** that
+shipped Round E end-to-end plus Round 91 (precision-arc parser
+binding). The longer-lived `HANDOFF.md` is still the load-bearing
+reference for repo conventions; this file is a focused pickup note
+for what to do *next*.
+
+---
+
+## ⚠ Working-mode change
+
+**Parallel-arc work is paused.** All edits now go **directly on
+`main`** in `/Volumes/backups/code/CrispCalc`. The old "create a
+feature branch / worktree for every round" rule (HANDOFF §0a) is
+suspended until the user reactivates the parallel worker. The
+existing feature-branch worktrees stay on disk as reference but
+have been trimmed (`build/` + `.dart_tool/` removed — about 635
+MB reclaimed). `flutter pub get` regenerates them if anyone wants
+to resume on a side branch.
+
+If you accidentally start editing in a feature-branch worktree,
+either move the edits to `/Volumes/backups/code/CrispCalc` or
+remind yourself the user wants main.
 
 ---
 
@@ -13,113 +30,109 @@ conventions; this file is a focused pickup note for what to do
 | | |
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
-| **Feature worktree (reusable)** | `/Volumes/backups/code/CrispCalc-csp-e` (branch `feat/csp-round-e`) |
-| **Notepad worktree (kept in sync)** | `/Volumes/backups/code/CrispCalc-notepad-phase-1` (branch `feature/notepad-phase-1`) |
-| **All three branches HEAD** | `ff7d645` docs: PLAN — Round E.2 + E.3 shipped |
-| **Tests** | **1762 pass** (1730 → 1762 across E.2 + E.3) — `flutter analyze` clean |
-| **dart_csp pin** | `69a9cfb` (HEAD with FlatZinc frontend + QuickXplain MUS — bumped earlier today) |
-| **CI** | green at the previous push; this session pushed in two batches, watch for the first run |
+| **main HEAD** | `c8ccd6c` Round 91 (P6) precision-arc parser binding |
+| **Tests** | **1780 pass** (1708 → 1780 across Round E.1 + E.2 + E.3 + E.4-inline + Round 91) — `flutter analyze` clean |
+| **dart_csp pin** | `69a9cfb` (HEAD with FlatZinc frontend + QuickXplain MUS) |
+| **CI** | Round-91 push at `c8ccd6c` not yet observed; previous push was green |
 
 Only dirty file is `.claude/scheduled_tasks.lock` (harness state — leave alone).
 
-## What this session shipped (4 commits on top of the morning's 5)
+## What this session shipped (full day total: 9 commits)
 
 | Round | Commit | What |
 |---|---|---|
-| **E.2** | `7fa290f` | QuickXplain MUS "Why no solution?" panel for all four Constraints tabs. Four new `CspSolver.explain*` methods rebuild the Problem with `label:` threaded through every add* call, then call `findMinimalUnsatisfiableSubsetQuickXplain`. Shared `_ExplainSection` widget renders the button + the labeled conflict rows. en/de/fr/es (4 keys). 12 tests in `test/csp_mus_test.dart`. |
-| **E.3** | `6f6be22` | DSL → FlatZinc export. New `DslToFlatZinc.export(input)` produces a ready-to-paste `.fzn` model from any DSL program (vars / allDifferent / linear ==/<=/>=/</>/!= / noOverlap → disjunctive / cumulative / minimize / maximize via synthetic `__obj__`). "Export as FlatZinc" button on the DSL tab; result lands in a copyable `_FlatZincExportBlock`. Non-linear constraints fail with a friendly error. en/de/fr/es (2 keys). 20 tests in `test/dsl_to_flatzinc_test.dart` — 12 structural, 5 error, **3 round-trip** through `FlatZinc.solve` to prove the translation actually solves. |
-| Docs | `ff7d645` | PLAN.md struck E.2 + E.3. Only E.5 (MiniZinc solver bundling) remains on Round E. |
+| Prereq | `2ca864f` | Bumped `dart_csp` pin from `e3cce21` → `69a9cfb`. |
+| **E.1** | `e853874` | New 4th "FlatZinc" tab on `ConstraintsScreen` — paste FlatZinc source, hit Solve, see standard output. Two gallery entries (NQueens-4, Bin-packing). 4 tests. |
+| **E.4 inline** | `d90280b` | Notepad `fzn:` directive — multi-line FlatZinc per row, exports scalar `output_var` bindings into doc scope so downstream lines can reference solved values by name. 18 tests. |
+| Docs | `82de781` | PLAN.md prereq + E.1 + E.4-inline marks. |
+| Docs | `8bb2fb3` | HANDOFF refresh (mid-day). |
+| **E.2** | `7fa290f` | QuickXplain MUS "Why no solution?" panel for all four Constraints tabs. Four new `CspSolver.explain*` methods rebuild the Problem with `label:` threaded through every add* call. Shared `_ExplainSection` widget. 12 tests. |
+| **E.3** | `6f6be22` | DSL → FlatZinc export. New `DslToFlatZinc.export(input)` produces a paste-ready `.fzn` model with full operator coverage (vars / allDifferent / linear ==/<=/>=/</>/!= / noOverlap→disjunctive / cumulative / minimize·maximize via synthetic `__obj__`). 20 tests including 3 round-trip through `FlatZinc.solve`. |
+| Docs | `ff7d645` | PLAN.md E.2 + E.3 marks. |
+| Docs | `23ef461` | HANDOFF refresh (after E.2 + E.3). |
+| **Round 91** | `c8ccd6c` | Precision-arc parser binding — `pi(N)` / `e(N)` / `EulerGamma(N)` / `sqrt(2,N)` / `isprime(n)` / `nextprime(n)` / `prevprime(n)` / `factorint(n)` now route to the round-85/86/89/90 wrappers from calculator + notepad input. factorint formats as `2³ · 3² · 5` with Unicode superscripts. 18 tests. |
 
-(Earlier in the day: `2ca864f` pin bump + `e853874` E.1 tab + `d90280b` E.4 inline `fzn:` directive + `8bb2fb3` HANDOFF refresh.)
+## Pickup points — next strategic slot
 
-## What's left on Round E
+With Round E complete (modulo E.5 distribution play) and Round 91
+landed, the natural follow-ons:
 
-Just **E.5 — Bundle `dart_csp_fzn` CLI as a MiniZinc solver**. Niche
-distribution play; ship the compiled CLI + `.msc` config in the
-macOS/Linux app bundles so MiniZinc Challenge entrants can register
-CrispCalc's solver. **Blocked on P4** (App Store / notarization).
-Don't start until the distribution pipeline lands.
+1. **Round 92 — Adv-keypad buttons + worked-examples entries** for
+   the same eight precision functions. Makes them *discoverable*
+   in the UI now that they're parsable. PLAN P6 round 92 has the
+   full list: π(N), e(N), √2(N), γ(N), isprime, nextprime,
+   prevprime, factorint as keypad buttons + 5-8 catalog entries
+   in `lib/engine/worked_examples.dart`. Small round.
+2. **Round 110 — Booleans (P7 kickoff)**. Preprocessor maps
+   `a == b` → `Eq(a, b)`, `a and b` → `And(a, b)`, etc.;
+   `true` / `false` render as colored chips in history.
+3. **P6 rounds 93-95 — Move Worked Examples out of Settings**.
+   `(?)` icon on Calculator + Notepad opens the existing dialog;
+   the entry stays in Settings as a soft link. Three small rounds.
+4. **CSP Round E.5** (deferred) — bundle `dart_csp_fzn` CLI as a
+   MiniZinc solver. Blocked on P4 distribution pipeline.
+5. **P9 follow-ups** (A5d / A7 / A8) — 3D Scene polish.
+6. **Precision arc round 4** (`modpow` / `modinv` / `totient` /
+   `jacobi`) — multi-repo. See `HANDOFF_PRECISION.md`. The user
+   paused parallel work; this would be a cross-repo arc, ask
+   before starting.
 
-## Pickup points — Strategic next
+## Known issues / context (Round 91)
 
-With Round E nearly complete, the strategic next slot opens up:
+- **`tryEvaluatePrecisionCall` is top-level only by design.** An
+  in-expression call like `pi(50) + 1` falls through to the
+  existing preprocessor + SymEngine path. Substituting `'true'`,
+  `'false'`, or a Unicode-superscript-formatted string mid-
+  expression doesn't always make algebraic sense; we keep
+  SymEngine the only expression evaluator. If a future round
+  wants in-expression precision-constant substitution (the
+  numeric `pi(N)` / `e(N)` / etc. would be safe), extend
+  this method with a separate substitution pass that only
+  replaces the numeric-constant forms.
+- **`NotepadScreenState` now instantiates a `CalculatorEngine`
+  on the main isolate** purely for the precision-arc pre-pass.
+  Heavy CAS calls still route through `EngineService`'s worker
+  isolate. If the precision pre-pass gets bigger (e.g.
+  computes `pi(10000)`, which is a few hundred ms), consider
+  moving it to the worker as well via `EngineOp`.
+- **Case-sensitive.** `PI(50)` and `Eulergamma(20)` fall
+  through; only the canonical `pi` / `e` / `EulerGamma`
+  spellings are intercepted. Matches the rest of the
+  expression preprocessor.
 
-1. **P7 booleans (5-round arc, starts at round 110)**. Calculator
-   preprocessor: `a == b` → `Eq(a, b)`, `a and b` → `And(a, b)`,
-   etc. `true`/`false` render as colored chips in history. PLAN P7
-   has the full 5-round breakdown. Self-contained engine work; no
-   cross-repo work needed.
-2. **P6 discoverability + help (15-round arc, starts at round 91)**.
-   Move Worked Examples out of Settings; new Function Reference
-   dialog; app-wide `(?)` help-mode overlay; precision-arc /
-   ntheory surfacing in the parsers. The bigger strategic
-   direction. Round 91 (precision-arc calculator binding) is
-   load-bearing for surfacing the round-85/86/89/90 wrappers.
-3. **P9 follow-ups for the 3D Scene module** — A5d (raw-coefficient
-   quadrics), A7 (parametric intersections), A8 (back-to-front
-   sorting). Polish, not load-bearing.
-4. **Precision arc round 4** (`modpow` / `modinv` / `totient` /
-   `jacobi`) — see `HANDOFF_PRECISION.md`. Smallest cross-repo arc;
-   the three-repo pipeline is well-trodden now.
+## Hygiene reminders
 
-## Known issues / context (Round E.2 + E.3)
-
-- **Cryptarithm MUS only fires on the "No assignment satisfies"
-  error**, not on shape-parse errors. The shape-parse path
-  (`Expected WORD1 + WORD2 = WORD3`) means the model wasn't built
-  at all, so MUS would be meaningless. Check
-  `constraints_screen.dart` — `_result!.error!.contains('No assignment')`.
-- **FlatZinc MUS labels are derived from `kind(vars)`**, not from
-  user labels. The dart_csp FlatZinc lowering doesn't currently
-  thread user labels through, so a FlatZinc MUS reads like
-  `linearEquals(x, y)` rather than `C3: x + y == 7`. If you want
-  source-line labels on FlatZinc MUS, that's a dart_csp lowering
-  PR (multi-repo).
-- **`DslToFlatZinc.export` reuses `CspSolver._tryParseLinear` and
-  `CspSolver._parseLinearTerms` directly** (they're library-private
-  in the same file). If you split the file, mind the visibility.
-- **The export's `__obj__` variable name is reserved** —
-  `vars: __obj__ in 0..5` is explicitly rejected with a clear
-  error. Same name dart_csp's `CspSolver.solveOptimization` uses,
-  so the two solvers stay symmetric.
-- **DSL `!=` constraints** in the export go through a small
-  separate `_tryParseLinearNe` path (since `_tryParseLinear`
-  deliberately declines `!=` to keep it on the dart_csp string-
-  parser path during normal solves). For the FlatZinc export we
-  want it as `int_lin_ne`, so the shim splits on `!=` and parses
-  each side as linear.
-- **Background `flutter test` runs race each other** on the
-  `.dart_tool/test/incremental_kernel_*` cache. Don't launch
-  multiple `flutter test` in parallel — run sync or one at a time.
-  Bit me twice this session.
-
-## Hygiene reminders (unchanged)
-
-- **`dart format`** before push — CI's "Verify formatting" step
-  rejects unformatted files. Format only files you actually
-  touched, not `lib/` wholesale (HANDOFF §4.17).
-- **Both branches in sync** — when you commit to `main`,
-  fast-forward `feature/notepad-phase-1` in
-  `/Volumes/backups/code/CrispCalc-notepad-phase-1` and push too.
-  This session did so.
-- **Don't push from main** if it has uncommitted WIP. Always
-  commit + push from a feature-branch worktree; only do
-  `git merge --ff-only` + `git push origin main` from main, and
-  check `git status` first.
+- **`dart format`** before push. Format only files you touched,
+  not `lib/` wholesale (HANDOFF §4.17).
+- **Don't run multiple `flutter test` in parallel** — they race
+  on `.dart_tool/test/incremental_kernel_*` and all fail. Run
+  sync or one at a time. Burnt me twice today.
+- **Don't touch `.claude/`** — harness state.
+- **Working on main now.** If you start a feature branch out of
+  habit, ask first.
 
 ## Quick-reference paths
 
 - CSP wrapper: `lib/engine/csp_solver.dart`
-  (new this session: `MusEntry`, `CspMusResult`, `explainDiophantine`,
-  `explainDsl`, `explainCryptarithm`, `explainFlatZinc`,
-  `FlatZincExportResult`, `DslToFlatZinc.export`, `_LinearFlatZinc`)
+  (Round E.2: explain* methods; Round E.3: `DslToFlatZinc.export`)
 - CSP UI: `lib/screens/constraints_screen.dart`
-  (new this session: `_ExplainSection`, `_MusBlock`,
-  `_FlatZincExportBlock`; each tab gained `_mus` / `_explaining`
-  state and the DSL tab gained `_export`)
+  (4 tabs incl. FlatZinc, `_ExplainSection`, `_MusBlock`,
+  `_FlatZincExportBlock`)
+- Calculator engine: `lib/engine/calculator_engine.dart`
+  (Round 91: `tryEvaluatePrecisionCall`, `formatFactorint`)
+- Calculator screen: `lib/screens/calculator_screen.dart`
+  (Round 91 hook in `_calculate` before unit eval)
+- Notepad evaluator: `lib/engine/notepad_evaluator.dart`
+  (Round E.4: `NotepadLineKind.flatzinc`,
+  `flatzincOutputVarsIn`, `parseFlatZincScalarOutputs`)
+- Notepad screen: `lib/screens/notepad_screen.dart`
+  (Round 91 hook in `_dispatcher`; main-isolate `_engine` field)
+- Notepad data model: `lib/engine/notepad.dart`
+  (Round E.4: `NotepadLine.cachedExports`)
 - Localization: `lib/localization/app_localizations.dart`
-  (6 new constraint keys × 4 locales)
-- Tests: `test/csp_mus_test.dart`, `test/dsl_to_flatzinc_test.dart`,
-  earlier `test/flatzinc_tab_test.dart`, `test/notepad_flatzinc_test.dart`
+  (en/de/fr/es)
+- Tests this session: `test/flatzinc_tab_test.dart`,
+  `test/notepad_flatzinc_test.dart`, `test/csp_mus_test.dart`,
+  `test/dsl_to_flatzinc_test.dart`, `test/precision_call_pass_test.dart`
 
 Good luck.

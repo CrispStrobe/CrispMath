@@ -24,7 +24,7 @@ this file remains the load-bearing pattern catalog.
 
 | Repo                       | Branch | Last shipped |
 | -------------------------- | ------ | ------------ |
-| CrispCalc                  | main   | `ff7d645` docs: PLAN — Round E.2 + E.3 shipped (E.5 deferred on P4) |
+| CrispCalc                  | main   | `c8ccd6c` Round 91 (P6) precision-arc parser binding |
 | symbolic_math_bridge       | main   | `505074d` round-90 factorint binding (unchanged today) |
 | math-stack-ios-builder     | master | `34ec0fdf` round-90 fmpz_factor wrapper (unchanged) |
 | dart_csp (pinned via pubspec) | main | `69a9cfb` (bumped 2026-05-26 — FlatZinc frontend + QuickXplain MUS) |
@@ -104,19 +104,35 @@ so the bridge's `copy_xcframeworks.sh` finds xcframework outputs
 in the precision worktree. Repoint if you switch math-stack
 worktrees.
 
-**Tests at session end**: 1762 (1708 → 1762 across Round E.1 + E.2
-+ E.3 + E.4-inline). All green; CI 6-job matrix on every main push.
+**Tests at session end**: 1780 (1708 → 1780 across Round E.1 + E.2
++ E.3 + E.4-inline + Round 91 precision-arc binding). All green;
+CI 6-job matrix on every main push.
+
+**Working mode change (2026-05-26 EOD)**: parallel-arc work is paused.
+All edits now go directly on `main` in `/Volumes/backups/code/CrispCalc`.
+The existing feature-branch worktrees (`CrispCalc-csp-e`,
+`CrispCalc-notepad-phase-1`, `CrispCalc-round-91`, `CrispCalc-precision`,
+`CrispCalc-sudoku-ui`) stay on disk as reference but their `build/` +
+`.dart_tool/` were trimmed (~635 MB reclaimed). `flutter pub get` +
+`flutter build` will regenerate them if anyone needs to resume work
+on a side branch.
 
 ---
 
-## 0a. Worktree discipline (load-bearing — read this first)
+## 0a. Worktree discipline (now superseded — see §0 working-mode change)
 
-**All edits go through feature-branch worktrees, never on
-main/master directly.** The convention was established when
-the precision arc started directly on main in all three repos
-(round 85) and caused a near-miss when I misread the main
-worktree's truncated diff state. Saved as a memory entry
-under `~/.claude/projects/-Volumes-backups-code-CrispCalc/memory/`.
+**Until 2026-05-26 EOD this said: all edits through feature-branch
+worktrees, never on main directly.** That rule was paused — the user
+disabled the parallel worker and asked for direct work on main.
+The rest of this section is kept as reference for if/when parallel
+arcs resume.
+
+**Old convention**: all edits through feature-branch worktrees,
+never on main/master directly. Established when the precision arc
+started directly on main in all three repos (round 85) and caused a
+near-miss when I misread the main worktree's truncated diff state.
+Saved as a memory entry under
+`~/.claude/projects/-Volumes-backups-code-CrispCalc/memory/`.
 
 ### The pattern
 
