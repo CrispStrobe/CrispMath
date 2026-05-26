@@ -850,14 +850,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
         debugPrint('CALC: post-inline-deriv converted="$converted"');
       }
 
-      // Round 110 (P7 kickoff): rewrite a top-level relational operator
-      // into the matching SymEngine function call before the dispatch
-      // so `x == 1` doesn't get pulled into `_solveBareEquation` and
-      // `2 == 2` doesn't tokenize as a malformed equation. After this
-      // pass the expression contains no top-level `==`, `!=`, `<`,
-      // `<=`, `>`, `>=`.
+      // Round 110 + 111 (P7): rewrite the word-form logical operators
+      // (`not`, `and`, `or`, `xor`) plus the top-level relational
+      // operators (`==`, `!=`, `<`, `<=`, `>`, `>=`) into SymEngine's
+      // named-function form before the dispatch. After this pass the
+      // expression contains no word logicals and no top-level
+      // relationals — everything is `Not(...)`, `And(...)`,
+      // `Or(...)`, `Xor(...)`, `Eq(...)`, `Lt(...)`, etc. Round 110's
+      // `=(?!=)` tightening on the assignment regex above keeps
+      // `name == value` out of the assignment route.
       converted =
-          ExpressionPreprocessingUtils.preprocessRelationalOperators(converted);
+          ExpressionPreprocessingUtils.preprocessLogicalOperators(converted);
 
       // Round 91 (P6): precision-arc top-level calls — `pi(100)`,
       // `factorint(360)`, `isprime(2027)`, etc. Routes to the bridge's

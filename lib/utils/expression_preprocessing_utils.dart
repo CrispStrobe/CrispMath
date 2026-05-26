@@ -172,6 +172,143 @@ class ExpressionPreprocessingUtils {
     return expression;
   }
 
+  /// Round 111 (P7): rewrite the word-form logical operators
+  /// (`not`, `and`, `or`, `xor`) into SymEngine's named-function form
+  /// (`Not(...)`, `And(...)`, `Or(...)`, `Xor(...)`), then finish with
+  /// the round-110 relational rewrite at the leaf. Precedence matches
+  /// Python: `not` binds tighter than `and` which binds tighter than
+  /// `xor` which binds tighter than `or`. Relational operators bind
+  /// tighter than `not`, so `not x == 5` reads as `Not(Eq(x, 5))`.
+  ///
+  /// Recurses into parenthesized subexpressions so nested operators
+  /// like `not (x and y)` lower correctly. Word-operators are matched
+  /// with word-boundary checks so `random` / `noFold` / etc. aren't
+  /// mistaken for one. Each split returns the trimmed non-empty
+  /// pieces; chained `a and b and c` becomes a single n-ary
+  /// `And(a, b, c)` (SymEngine accepts arbitrary arity).
+  ///
+  /// `=`, `==`, `<`, etc. fall through to
+  /// [preprocessRelationalOperators] at the leaf, so callers should
+  /// invoke this instead of the relational rewrite directly.
+  static String preprocessLogicalOperators(String expression) {
+    if (expression.isEmpty) return expression;
+    final descended = _logicalDescendIntoParens(expression);
+    return _logicalTopLevel(descended);
+  }
+
+  static String _logicalDescendIntoParens(String s) {
+    final out = StringBuffer();
+    var i = 0;
+    while (i < s.length) {
+      if (s[i] == '(') {
+        var depth = 1;
+        var j = i + 1;
+        while (j < s.length && depth > 0) {
+          if (s[j] == '(') {
+            depth++;
+          } else if (s[j] == ')') {
+            depth--;
+          }
+          if (depth == 0) break;
+          j++;
+        }
+        if (j >= s.length || depth != 0) {
+          // Unbalanced — leave the rest of the string alone and stop
+          // descending; SymEngine will surface the syntax error.
+          out.write(s.substring(i));
+          return out.toString();
+        }
+        final inner = s.substring(i + 1, j);
+        out.write('(');
+        out.write(preprocessLogicalOperators(inner));
+        out.write(')');
+        i = j + 1;
+      } else {
+        out.write(s[i]);
+        i++;
+      }
+    }
+    return out.toString();
+  }
+
+  static String _logicalTopLevel(String s) {
+    // Lowest precedence first: `or`. Each successive split is tighter.
+    for (final pair in const <List<String>>[
+      ['or', 'Or'],
+      ['xor', 'Xor'],
+      ['and', 'And'],
+    ]) {
+      final parts = _splitAtTopLevelWord(s, pair[0]);
+      if (parts.length > 1) {
+        final mapped = parts.map(_logicalTopLevel).join(', ');
+        return '${pair[1]}($mapped)';
+      }
+    }
+    // Unary `not` at the start of the expression: wrap the rest.
+    final notMatch = RegExp(r'^\s*not\s+').matchAsPrefix(s);
+    if (notMatch != null) {
+      final rest = s.substring(notMatch.end).trim();
+      if (rest.isNotEmpty) {
+        return 'Not(${_logicalTopLevel(rest)})';
+      }
+    }
+    return preprocessRelationalOperators(s);
+  }
+
+  /// Whole-word, depth-0 split. Empty / trailing-only segments are
+  /// dropped so `a and b and` doesn't produce a phantom third
+  /// operand. Returns a single-element `[s]` if no split point
+  /// fires (caller treats this as "no split").
+  static List<String> _splitAtTopLevelWord(String s, String word) {
+    final wordChar = RegExp(r'[A-Za-z0-9_]');
+    final parts = <String>[];
+    var depth = 0;
+    var start = 0;
+    var i = 0;
+    while (i < s.length) {
+      final c = s[i];
+      if (c == '(' || c == '[' || c == '{') {
+        depth++;
+        i++;
+        continue;
+      }
+      if (c == ')' || c == ']' || c == '}') {
+        depth--;
+        i++;
+        continue;
+      }
+      if (depth != 0) {
+        i++;
+        continue;
+      }
+      if (i + word.length > s.length) {
+        i++;
+        continue;
+      }
+      if (s.substring(i, i + word.length) != word) {
+        i++;
+        continue;
+      }
+      final beforeOk = i == 0 || !wordChar.hasMatch(s[i - 1]);
+      final afterEnd = i + word.length;
+      final afterOk = afterEnd == s.length || !wordChar.hasMatch(s[afterEnd]);
+      if (!(beforeOk && afterOk)) {
+        i++;
+        continue;
+      }
+      parts.add(s.substring(start, i));
+      i += word.length;
+      start = i;
+    }
+    parts.add(s.substring(start));
+    final cleaned = parts
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList(growable: false);
+    if (cleaned.length <= 1) return [s];
+    return cleaned;
+  }
+
   /// Normalize SymEngine's capitalized boolean literals (`True` /
   /// `False`) down to the rest of the codebase's `true` / `false`
   /// convention. Applied to result strings, not inputs.

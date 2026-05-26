@@ -458,10 +458,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // Also collapse whitespace between a function name and its
     // `(` so `solve (x, y)` matches the CAS dispatch the same as
     // `solve(x, y)`.
-    final preNative =
-        ExpressionPreprocessingUtils.preprocessRelationalOperators(
-            LatexConversionUtils.fromLatex(preprocessed).replaceAllMapped(
-                RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}('));
+    final preNative = ExpressionPreprocessingUtils.preprocessLogicalOperators(
+        LatexConversionUtils.fromLatex(preprocessed).replaceAllMapped(
+            RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}('));
 
     // Round 91 (P6): precision-arc top-level calls — `pi(100)`,
     // `factorint(360)`, `isprime(2027)`, etc. Runs before the unit
