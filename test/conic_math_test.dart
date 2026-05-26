@@ -63,6 +63,23 @@ void main() {
       final r = analyzeConic(1, 0, 1, 0, 0, 0);
       expect(r.kind, ConicKind.degenerate);
     });
+
+    // P9-A5c.1: the 3×3 determinant check now catches the
+    // pair-of-parallel-lines case that the 2-variable
+    // discriminant alone misclassifies as a parabola.
+    test('pair of parallel lines x² = 1 reports degenerate', () {
+      // A=1, B=0, C=0, D=0, E=0, F=-1 → curve is x = ±1.
+      // det3 = 1·(0·-1 − 0) − 0·(0·-1 − 0) + 0·(0·0 − 0·0) = 0.
+      final r = analyzeConic(1, 0, 0, 0, 0, -1);
+      expect(r.kind, ConicKind.degenerate);
+    });
+
+    test('two intersecting lines x² − y² = 0 reports degenerate', () {
+      // A=1, B=0, C=-1, all other 0.
+      // det3 = 1·((−1)·0 − 0) − 0·(0 − 0) + 0 = 0.
+      final r = analyzeConic(1, 0, -1, 0, 0, 0);
+      expect(r.kind, ConicKind.degenerate);
+    });
   });
 
   group('analyzeConic — rotation', () {

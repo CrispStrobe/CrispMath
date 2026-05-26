@@ -173,6 +173,10 @@ abstract class AppLocalizations {
   String get quadricKindHyperboloid1;
   String get quadricKindHyperboloid2;
 
+  // -- P9-A5c.3: Conic Section → 3D Scene bridge --
+  String get conicOpenIn3DScene;
+  String get conicLiftNotAConic;
+
   String get moduleUnitConverterTitle;
   String get moduleUnitConverterSubtitle;
   // -- Variable / function panel --
@@ -956,6 +960,13 @@ class EnLocalizations implements AppLocalizations {
   String get quadricKindHyperboloid1 => 'Hyperboloid (1 sheet)';
   @override
   String get quadricKindHyperboloid2 => 'Hyperboloid (2 sheets)';
+
+  // -- P9-A5c.3 --
+  @override
+  String get conicOpenIn3DScene => 'Open in 3D Scene';
+  @override
+  String get conicLiftNotAConic =>
+      'Not a conic — nothing to lift. Add quadratic terms first.';
 
   @override
   String get moduleUnitConverterTitle => 'Unit Converter';
@@ -2310,6 +2321,13 @@ class DeLocalizations implements AppLocalizations {
   String get quadricKindHyperboloid1 => 'Einschaliges Hyperboloid';
   @override
   String get quadricKindHyperboloid2 => 'Zweischaliges Hyperboloid';
+
+  // -- P9-A5c.3 --
+  @override
+  String get conicOpenIn3DScene => 'In 3D-Szene öffnen';
+  @override
+  String get conicLiftNotAConic =>
+      'Kein Kegelschnitt — nichts anzuheben. Erst quadratische Terme hinzufügen.';
 
   @override
   String get moduleUnitConverterTitle => 'Einheitenumrechner';
@@ -3809,6 +3827,13 @@ class FrLocalizations implements AppLocalizations {
   String get quadricKindHyperboloid1 => 'Hyperboloïde (1 nappe)';
   @override
   String get quadricKindHyperboloid2 => 'Hyperboloïde (2 nappes)';
+
+  // -- P9-A5c.3 --
+  @override
+  String get conicOpenIn3DScene => 'Ouvrir dans la scène 3D';
+  @override
+  String get conicLiftNotAConic =>
+      'Ce n\'est pas une conique — rien à transposer. Ajoutez d\'abord des termes quadratiques.';
 
   @override
   String get moduleUnitConverterTitle => 'Convertisseur d\'unités';
@@ -5312,6 +5337,13 @@ class EsLocalizations implements AppLocalizations {
   String get quadricKindHyperboloid1 => 'Hiperboloide (1 hoja)';
   @override
   String get quadricKindHyperboloid2 => 'Hiperboloide (2 hojas)';
+
+  // -- P9-A5c.3 --
+  @override
+  String get conicOpenIn3DScene => 'Abrir en escena 3D';
+  @override
+  String get conicLiftNotAConic =>
+      'No es una cónica — nada que elevar. Añade primero términos cuadráticos.';
 
   @override
   String get moduleUnitConverterTitle => 'Conversor de unidades';

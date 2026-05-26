@@ -2,6 +2,67 @@
 
 Completed work, newest first.
 
+## 2026-05-26 (round 98, P9-A5c) — Conic Section ↔ 3D Scene bridge
+
+Two cleanups that finish the A5 arc:
+
+### 3×3 determinant degenerate-conic detection
+
+`lib/engine/conic_math.dart` classifies via the full 3×3
+form matrix
+`[[A, B/2, D/2], [B/2, C, E/2], [D/2, E/2, F]]` before the
+2-variable discriminant. `det3 == 0` ⇒ degenerate; otherwise
+the discriminant classifies ellipse / circle / parabola /
+hyperbola.
+
+This catches the pair-of-parallel-lines case from A5b's
+relaxed test (cylinder cut along its axis: `x² − 1 = 0`,
+`B² − 4AC = 0` matched parabola). A5b's regression test is
+tightened back to `ConicKind.degenerate`. Two new
+`conic_math_test` cases:
+- `pair of parallel lines x² = 1 reports degenerate`
+- `two intersecting lines x² − y² = 0 reports degenerate`
+
+### "Open in 3D Scene" on the Conic Section module
+
+`lib/screens/conic_section_screen.dart` gains an
+`OutlinedButton.icon` alongside Classify. Tapping it:
+
+1. Runs `analyzeConic` on the user's 6 coefficients.
+2. Picks a matching quadric preset (`_liftToQuadricPreset`):
+   - Circle / Ellipse → Ellipsoid with the analyzer's
+     semi-axes
+   - Parabola → Elliptic Paraboloid
+   - Hyperbola → Hyperboloid (1 sheet)
+   - Degenerate / notAConic → Ellipsoid placeholder
+3. Adds the quadric + a `z = 0` cutting plane to
+   `AppState.scene3D`.
+4. Navigates to `Scene3DScreen`.
+
+The lift isn't a 1:1 reproduction (a 2D ellipse can be the
+equator of an ellipsoid, the boundary of a cylinder, or many
+other 3D shapes) — it's a useful starting scene the user can
+rotate, edit, and explore. The `z = 0` plane immediately
+shows the original conic as the highlighted intersection,
+which is the point.
+
+### i18n
+
+2 new strings × 4 locales: `conicOpenIn3DScene`,
+`conicLiftNotAConic`. `_quadricLabelFor` reuses the existing
+`quadricKind*` labels for naming the lifted quadric.
+
+### Deferred (A5d)
+
+- Raw-coefficient quadric input mode in the Add Quadric
+  dialog.
+- Painter support for raw-coefficient quadrics (isosurface
+  extraction). Pre-req if A5d wants user-entered raw
+  coefficients to be visible.
+
+Suite 1663 → 1703 (parallel-work tests + 3 conic-math
+regressions).
+
 ## 2026-05-26 (round 97, P9-A5b) — Plane × quadric → conic section
 
 The bridge between the new 3D Scene module and the existing

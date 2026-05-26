@@ -80,9 +80,37 @@ ConicAnalysis analyzeConic(
 
   final disc = b * b - 4 * a * c;
 
+  // P9-A5c.1: classify the full 3×3 form first to catch
+  // degenerate cases the 2-variable discriminant alone can't
+  // distinguish from a true parabola/ellipse/hyperbola.
+  //
+  // The matrix of the homogeneous form
+  //   A x² + B xy + C y² + D x + E y + F = 0
+  // is
+  //   M3 = [[  A    B/2  D/2 ]
+  //         [ B/2    C   E/2 ]
+  //         [ D/2  E/2    F  ]]
+  // and the conic is degenerate iff det(M3) == 0 (pair of lines,
+  // a single point, or an imaginary set with no real points).
+  // The discriminant Δ = B² − 4AC then tells the residual shape:
+  // Δ < 0 → point / imaginary, Δ > 0 → pair of intersecting
+  // lines, Δ = 0 → pair of parallel lines (the cylinder-axis
+  // case from A5b's relaxed test).
+  final m11 = a;
+  final m22 = c;
+  final m33 = f;
+  final m12 = b / 2;
+  final m13 = d / 2;
+  final m23 = e / 2;
+  final det3 = m11 * (m22 * m33 - m23 * m23) -
+      m12 * (m12 * m33 - m23 * m13) +
+      m13 * (m12 * m23 - m22 * m13);
+
   // Classify by discriminant.
   ConicKind kind;
-  if (disc.abs() < 1e-9) {
+  if (det3.abs() < 1e-9) {
+    kind = ConicKind.degenerate;
+  } else if (disc.abs() < 1e-9) {
     kind = ConicKind.parabola;
   } else if (disc < 0) {
     kind = (a == c && b == 0) ? ConicKind.circle : ConicKind.ellipse;

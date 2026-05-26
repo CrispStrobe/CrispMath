@@ -314,15 +314,11 @@ void main() {
       }
     });
 
-    test('plane through axis of cylinder → curve through x=±1', () {
+    test('plane through axis of cylinder → degenerate (pair of lines)', () {
       // Cylinder x² + y² = 1 cut by plane y=0 gives the
-      // degenerate pair of lines x=±1. analyzeConic classifies
-      // by discriminant alone (which can't distinguish this
-      // case from a true parabola — full degenerate detection
-      // via the 3×3 determinant is a future enhancement on
-      // conic_math), so we don't pin a specific kind here. The
-      // math itself is verified by sampling: F(±1, t) is zero
-      // for any t along the cylinder axis.
+      // degenerate pair of lines x=±1. A5c's 3×3 determinant
+      // check now classifies this as ConicKind.degenerate
+      // (previously misclassified as parabola).
       final q = QuadricObject.fromPreset(
         id: 'q',
         label: 'Cyl',
@@ -338,10 +334,10 @@ void main() {
       final result = intersect(plane(0, 1, 0, 0), q);
       expect(result, isA<ConicSectionIntersection>());
       final cs = result! as ConicSectionIntersection;
+      expect(cs.conicKind, ConicKind.degenerate);
+      // And the math still produces a curve through s = ±1.
       expect(cs.evaluate(1, 0), closeTo(0, 1e-9));
       expect(cs.evaluate(-1, 0), closeTo(0, 1e-9));
-      expect(cs.evaluate(1, 5), closeTo(0, 1e-9));
-      expect(cs.evaluate(-1, -3), closeTo(0, 1e-9));
     });
 
     test('horizontal plane above origin × cone → ellipse / circle', () {

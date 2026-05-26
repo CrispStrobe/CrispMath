@@ -16,8 +16,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../engine/app_state.dart';
 import '../engine/conic_math.dart';
+import '../engine/plane_math.dart' show Vector3;
+import '../engine/scene_3d/scene_object.dart';
 import '../localization/app_localizations.dart';
+import 'scene_3d_screen.dart';
 
 class ConicSectionScreen extends StatefulWidget {
   const ConicSectionScreen({super.key});
@@ -187,11 +191,23 @@ class _ConicSectionScreenState extends State<ConicSectionScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.calculate),
-              label: Text(t.buttonClassify),
-              onPressed: _analyze,
-            ),
+            Row(children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.calculate),
+                  label: Text(t.buttonClassify),
+                  onPressed: _analyze,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.deblur),
+                  label: Text(t.conicOpenIn3DScene),
+                  onPressed: _openIn3DScene,
+                ),
+              ),
+            ]),
             const SizedBox(height: 16),
             if (_output != null)
               Card(
@@ -210,6 +226,139 @@ class _ConicSectionScreenState extends State<ConicSectionScreen> {
         ),
       ),
     );
+  }
+
+  /// P9-A5c.3: lift the user's 2D conic into a 3D quadric that
+  /// — when intersected with `z = 0` in the new 3D Scene module —
+  /// reproduces a 3D analogue of the conic. The mapping classifies
+  /// the user's conic and picks a matching quadric preset:
+  ///
+  /// - Circle      → Sphere
+  /// - Ellipse     → Ellipsoid with the analyzer's semi-axes
+  /// - Parabola    → Elliptic Paraboloid
+  /// - Hyperbola   → Hyperboloid (1 sheet)
+  /// - Degenerate / notAConic → fall back to an ellipsoid placeholder
+  ///   the user can edit in the scene.
+  ///
+  /// The lift isn't a 1:1 reproduction (a 2D ellipse can be the
+  /// equator of an ellipsoid, the boundary of a cylinder, or many
+  /// other 3D shapes); it's a useful "starting scene" the user can
+  /// rotate, edit, and explore. The z = 0 plane is added alongside
+  /// so the original conic shows up as the highlighted intersection.
+  Future<void> _openIn3DScene() async {
+    final t = AppLocalizations.of(context);
+    final result = analyzeConic(
+      _parse(_a),
+      _parse(_b),
+      _parse(_c),
+      _parse(_d),
+      _parse(_e),
+      _parse(_f),
+    );
+    if (result.kind == ConicKind.notAConic) {
+      _toast(t.conicLiftNotAConic);
+      return;
+    }
+
+    final preset = _liftToQuadricPreset(result);
+    final quadric = QuadricObject.fromPreset(
+      id: generateSceneObjectId(),
+      label: _quadricLabelFor(result.kind, t),
+      color: 0xFF8E24AA, // purple
+      preset: preset,
+    );
+    const planeColor = 0xFF1E88E5;
+    final plane = PlaneObject(
+      id: generateSceneObjectId(),
+      label: 'z = 0',
+      color: planeColor,
+      a: 0,
+      b: 0,
+      c: 1,
+      d: 0,
+    );
+    AppState()
+      ..addOrUpdateSceneObject(quadric)
+      ..addOrUpdateSceneObject(plane);
+
+    if (!mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => const Scene3DScreen(),
+    ));
+  }
+
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      duration: const Duration(seconds: 3),
+    ));
+  }
+
+  String _quadricLabelFor(ConicKind k, AppLocalizations t) {
+    switch (k) {
+      case ConicKind.circle:
+      case ConicKind.ellipse:
+        return t.quadricKindEllipsoid;
+      case ConicKind.parabola:
+        return t.quadricKindParaboloid;
+      case ConicKind.hyperbola:
+        return t.quadricKindHyperboloid1;
+      case ConicKind.degenerate:
+      case ConicKind.notAConic:
+        return t.quadricKindEllipsoid;
+    }
+  }
+
+  QuadricPreset _liftToQuadricPreset(ConicAnalysis a) {
+    // Use the analyzer's center when available (central conics).
+    final cx = a.center?.x ?? 0.0;
+    final cy = a.center?.y ?? 0.0;
+    final center = Vector3(cx, cy, 0);
+    // Semi-axes: use major/minor from the analyzer when set; pick
+    // sensible defaults otherwise. The third axis is the geometric
+    // mean of the two so the lifted 3D shape has roughly the same
+    // visual scale on each side.
+    final sa = a.semiMajor ?? 2.0;
+    final sb = a.semiMinor ?? sa;
+    final sc = math.sqrt(sa * sb);
+
+    switch (a.kind) {
+      case ConicKind.circle:
+      case ConicKind.ellipse:
+        return QuadricPreset(
+          kind: QuadricKind.ellipsoid,
+          center: center,
+          a: sa,
+          b: sb,
+          c: sc,
+        );
+      case ConicKind.parabola:
+        return QuadricPreset(
+          kind: QuadricKind.ellipticParaboloid,
+          center: center,
+          a: sa,
+          b: sb,
+          c: 1.0,
+          tExtent: math.max(sa, sb) * 2,
+        );
+      case ConicKind.hyperbola:
+        return QuadricPreset(
+          kind: QuadricKind.hyperboloid1Sheet,
+          center: center,
+          a: sa,
+          b: sb,
+          c: sc,
+        );
+      case ConicKind.degenerate:
+      case ConicKind.notAConic:
+        return const QuadricPreset(
+          kind: QuadricKind.ellipsoid,
+          center: Vector3(0, 0, 0),
+          a: 2,
+          b: 2,
+          c: 2,
+        );
+    }
   }
 
   Widget _num(TextEditingController c, String label) {
