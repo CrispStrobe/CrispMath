@@ -104,10 +104,11 @@ so the bridge's `copy_xcframeworks.sh` finds xcframework outputs
 in the precision worktree. Repoint if you switch math-stack
 worktrees.
 
-**Tests at session end**: 1949 (1810 → 1832 → 1856 → 1880 → 1898 →
-1905 → 1911 → 1931 → 1944 → 1949 across P7 rounds 110/111/112/111b/113,
-P6 rounds 93+94+95+96, and the Round 96 follow-up). All green;
-CI 6-job matrix on every main push.
+**Tests at session end**: 1955 (1810 → 1832 → 1856 → 1880 → 1898 →
+1905 → 1911 → 1931 → 1944 → 1949 → 1952 → 1953 → 1955 across P7
+rounds 110/111/112/111b/113, P6 rounds 93+94+95+96 + the Round 96
+follow-up, then P6 rounds 97+98+99 in the late-night extension).
+All green; CI 6-job matrix on every main push.
 
 **Working mode change (2026-05-26 EOD)**: parallel-arc work is paused.
 All edits now go directly on `main` in `/Volumes/backups/code/CrispCalc`.
@@ -453,6 +454,48 @@ project depends on it via a git ref pin in `pubspec.yaml`.
   work across UI languages). `FunctionReferenceDialog`
   threads the linked id through so tapping the cross-link
   surfaces exactly the linked entry filtered.
+- **Round 97** — Function Reference CAS + precision arc
+  entries (the big content round). `FunctionReferences.all`
+  grows 3 → 20: 12 CAS entries (`expand` / `simplify` /
+  `factor` / `diff` / `integrate` / `subst` / `limit` /
+  `gcd` / `lcm` / `factorial` / `fibonacci` plus the upgraded
+  `solve`), the precision arc fills out (`e_precision` /
+  `sqrt_precision` / `eulergamma_precision`), and three new
+  number-theory rows (`nextprime` / `prevprime` /
+  `factorint`). Each carries an "in CrispCalc, X returns Y;
+  the underlying call is SymEngine's / MPFR's / FLINT's Z"
+  prose paragraph in the first example's hint. `series` and
+  `taylor` deferred — no `SymEngine::series_expansion`
+  binding in the bridge yet. Tests: +2 slate invariants
+  (CAS + precision), tightened the seeAlso resolver (every
+  target now resolves).
+- **Round 98** — Function Reference matrix + linear algebra
+  entries. Catalogue 20 → 26. Six entries:
+  `matrix_literal` (the `Matrix([[…]])` syntax), `det`,
+  `inv`, `transpose`, `rref`, `matrix_arithmetic` (the
+  `+ / - / *` operator triplet on `Matrix(...)` operands as
+  one entry). Underlying-call prose cites Bareiss for `det`,
+  Gauss–Jordan for `inv` / `rref`, the Dart-side cell-swap
+  for `transpose` (no bridge entry point), and
+  `add_dense_dense` / `mul_dense_dense` for the binary ops.
+  Eigenvalues deferred (no bridge binding). +1 slate test.
+- **Round 99** — Function Reference stats + constraints +
+  sudoku entries. Catalogue 26 → 45 (P6 §99 closed). Three
+  module-surface categories filled: 9 stats hypothesis
+  tests (`mean` / `welch_t` / `paired_t` / `anova_1` / four
+  chi-squared and exact tests / `wilcoxon` / `sign_test`),
+  6 Constraints DSL operators (`vars` / `all_different` /
+  `no_overlap` / `cumulative` / `minimize` / `maximize`),
+  and 4 Sudoku variants (`sudoku_regular` / `sudoku_x` /
+  `sudoku_disjoint` / `sudoku_killer`). `FunctionRef` gains
+  a `runnable: bool` field (default true) — `runnable:
+  false` rows hide the Try-in-Calculator button so pasting
+  `welchT(...)` into the calculator doesn't just error.
+  Every Round-99 entry cross-links to an existing worked
+  example (stats → `statsHypothesisTests`; constraints →
+  the DSL gallery; sudoku → `killerSudoku`). +1 slate test,
+  +1 dialog widget test. Catalogue now spans all nine
+  categories the model defined back in Round 96.
 - **Docs P6 / P7 / P8 (no round numbers)** — 565 lines of
   PLAN.md added: discoverability + help-system overhaul (P6,
   rounds 91-105), boolean type + relational/logical operators
@@ -883,15 +926,20 @@ the round table). What's left:
    - **A8** — Back-to-front sorting for proper occlusion.
      Cosmetic for now: the back hemisphere of a sphere draws
      over the front when seen edge-on.
-4. **P6 — Discoverability + help (15-round arc, ~¼ shipped).**
-   Rounds 93 + 94 + 95 + 96 shipped today — Worked Examples
-   icon on Calculator + Notepad, surface-scoped filtering,
-   per-module pre-loading via parameterised
-   `open:<module>?key=value` sentinels, and the Function
-   Reference scaffolding (model + dialog + 3-entry seed).
-   Next from P6: Round 97 fills the CAS category with ~15
-   entries (the largest content round so far in the P6 arc).
-   Re-read PLAN P6 §96-100 before committing.
+4. **P6 — Discoverability + help (15-round arc, ~½ shipped).**
+   Rounds 93 + 94 + 95 + 96 + 97 + 98 + 99 are all in. Worked
+   Examples icon on Calculator + Notepad, surface-scoped
+   filtering, per-module pre-loading via parameterised
+   `open:<module>?key=value` sentinels, Function Reference
+   scaffolding (Round 96), then three content rounds —
+   97 (CAS + precision), 98 (matrix), 99 (stats + constraints
+   + sudoku) — that grew the catalogue from a 3-entry seed
+   to 45 entries spanning all nine categories. Next from P6:
+   Round 100 i18n pass (~30k words across 4 locales; triage
+   100a-EN, 100b-DE, 100c-FR+ES). Re-read PLAN P6 §100-104
+   before committing — Round 100 needs a per-entry string
+   lookup pattern (the existing per-entry data is hardcoded
+   English on the const).
 
 ### Bigger strategic next: discoverability + help (P6, rounds 91-105)
 
@@ -900,8 +948,9 @@ information architecture:
 
 - Move Worked Examples out of Settings into a `(?)` icon on
   Calculator + Notepad.
-- New Function Reference dialog (operator dictionary: ~50
-  entries × 4 locales).
+- New Function Reference dialog (operator dictionary: 45
+  entries shipped as of Round 99, × 4 locales pending in Round
+  100).
 - App-wide help-mode `(?)` overlay system; tap any button /
   cell / history row / notepad line for an inline explanation
   of "how was this computed?"
