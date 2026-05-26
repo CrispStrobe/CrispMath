@@ -40,6 +40,7 @@ import '../utils/math_display_utils.dart';
 import '../widgets/boolean_chip.dart';
 import '../widgets/notepad_manager_dialog.dart';
 import '../widgets/store_result_dialogs.dart';
+import '../widgets/worked_examples_dialog.dart';
 
 /// Layout breakpoint matching the app shell's nav-rail switch
 /// (decision #17). At or above this width the input + result render
@@ -976,6 +977,22 @@ class _NotepadScreenState extends State<NotepadScreen> {
   List<Widget> _buildActions(NotepadDocument? doc) {
     final t = AppLocalizations.of(context);
     return [
+      // Round 93 (P6): worked-examples library is now reachable from
+      // the notepad AppBar rather than buried in Settings. Always
+      // visible — discovery is the whole point of this round.
+      // Round 94 scopes the surface to notepad so module-bound
+      // categories (constraints / sudoku / statistics / units) are
+      // hidden from the filter row.
+      IconButton(
+        icon: const Icon(Icons.menu_book_outlined),
+        tooltip: t.workedExamplesTitle,
+        onPressed: () => showDialog<void>(
+          context: context,
+          builder: (_) => const WorkedExamplesDialog(
+            surface: WorkedExamplesSurface.notepad,
+          ),
+        ),
+      ),
       if (doc != null)
         IconButton(
           icon: const Icon(Icons.add),

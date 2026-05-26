@@ -18,6 +18,7 @@ import '../widgets/memory_dialogs.dart';
 import '../widgets/function_picker_dialogs.dart';
 import '../widgets/progress_overlay.dart';
 import '../widgets/steps_dialog.dart';
+import '../widgets/worked_examples_dialog.dart';
 import '../engine/step_engine.dart';
 import '../engine/unit_expression.dart';
 
@@ -2071,14 +2072,29 @@ class CalculatorScreenState extends State<CalculatorScreen>
               flex: 3,
               child: Column(
                 children: [
-                  // Toggle button for LaTeX/Plain text display (VISIBLE NOW!)
-                  if (_appState.history.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
+                  // Top toolbar. Round 93 (P6): the worked-examples
+                  // `(?)` icon lives here and is **always** visible,
+                  // so the container renders unconditionally now. The
+                  // history-specific controls (LaTeX/Plain toggle,
+                  // search, clear) only render once there's history
+                  // to act on.
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.menu_book_outlined, size: 20),
+                          tooltip:
+                              AppLocalizations.of(context).workedExamplesTitle,
+                          onPressed: () => showDialog<void>(
+                            context: context,
+                            builder: (_) => const WorkedExamplesDialog(),
+                          ),
+                        ),
+                        if (_appState.history.isNotEmpty) ...[
+                          const SizedBox(width: 8),
                           Text(
                             AppLocalizations.of(context).historyLabel,
                             style: TextStyle(
@@ -2144,8 +2160,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
                             onPressed: _confirmClearHistory,
                           ),
                         ],
-                      ),
+                      ],
                     ),
+                  ),
 
                   if (_historySearchOpen && _appState.history.isNotEmpty)
                     Padding(

@@ -14,8 +14,21 @@ import '../localization/app_localizations.dart';
 import '../screens/constraints_screen.dart';
 import '../screens/sudoku_screen.dart';
 
+/// Round 94 (P6): which surface opened the dialog. Drives category
+/// filtering. Calculator surface shows everything (the default that
+/// matches the pre-round-94 behaviour); notepad scopes down to
+/// categories that fit a free-form expression-per-line document
+/// (calculus / algebra / linear algebra / number theory) and hides
+/// the module-bound categories (sudoku/constraints / statistics /
+/// units), which are surface-specific affordances.
+enum WorkedExamplesSurface { calculator, notepad }
+
 class WorkedExamplesDialog extends StatefulWidget {
-  const WorkedExamplesDialog({super.key});
+  final WorkedExamplesSurface surface;
+  const WorkedExamplesDialog({
+    super.key,
+    this.surface = WorkedExamplesSurface.calculator,
+  });
 
   @override
   State<WorkedExamplesDialog> createState() => _WorkedExamplesDialogState();
@@ -29,6 +42,28 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  /// Round 94 (P6): categories surfaced for the active screen. The
+  /// notepad surface hides three categories: `statistics` (the
+  /// Statistics module has its own data-table UI; inserting a stats
+  /// expression into a notepad line doesn't help), `units` (notepad
+  /// supports unit math but the PLAN scopes this round to math
+  /// content), and `constraints` (the entries are `open:` / `dsl:`
+  /// sentinels that navigate to a different module). The calculator
+  /// surface keeps the original behaviour and shows everything.
+  Iterable<WorkedExampleCategory> _allowedCategories() {
+    switch (widget.surface) {
+      case WorkedExamplesSurface.calculator:
+        return WorkedExampleCategory.values;
+      case WorkedExamplesSurface.notepad:
+        return const [
+          WorkedExampleCategory.calculus,
+          WorkedExampleCategory.algebra,
+          WorkedExampleCategory.linearAlgebra,
+          WorkedExampleCategory.numberTheory,
+        ];
+    }
   }
 
   String _categoryLabel(BuildContext context, WorkedExampleCategory c) {
@@ -64,7 +99,9 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
     String descFor(WorkedExample e) =>
         t.workedExampleDescription(e.id) ?? e.description;
 
+    final allowed = _allowedCategories().toSet();
     final filtered = WorkedExamples.all.where((e) {
+      if (!allowed.contains(e.category)) return false;
       if (_category != null && e.category != _category) return false;
       if (query.isEmpty) return true;
       return titleFor(e).toLowerCase().contains(query) ||
@@ -100,7 +137,7 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
                     selected: _category == null,
                     onSelected: (_) => setState(() => _category = null),
                   ),
-                  for (final c in WorkedExampleCategory.values) ...[
+                  for (final c in _allowedCategories()) ...[
                     const SizedBox(width: 4),
                     ChoiceChip(
                       label: Text(_categoryLabel(context, c)),

@@ -1754,8 +1754,8 @@ class EnLocalizations implements AppLocalizations {
   String get settingsWorkedExamples => 'Worked examples library';
   @override
   String get settingsWorkedExamplesSubtitle =>
-      'Browse and copy ready-to-paste calculator expressions covering '
-      'the major problem types.';
+      'Now also reachable from the open-book icon at the top of the '
+      'Calculator and Notepad screens. Tap here for the full library.';
 
   @override
   String get importDataTitle => 'Import data';
@@ -3362,8 +3362,8 @@ class DeLocalizations implements AppLocalizations {
   String get settingsWorkedExamples => 'Bibliothek mit Beispielaufgaben';
   @override
   String get settingsWorkedExamplesSubtitle =>
-      'Vorgefertigte Rechnerausdrücke zu den wichtigsten Aufgabentypen '
-      'durchsuchen und kopieren.';
+      'Jetzt auch über das Buchsymbol oben im Rechner und im Notizblock '
+      'erreichbar. Hier tippen für die vollständige Bibliothek.';
 
   @override
   String get importDataTitle => 'Daten importieren';
@@ -4987,8 +4987,9 @@ class FrLocalizations implements AppLocalizations {
   String get settingsWorkedExamples => 'Bibliothèque d\'exemples résolus';
   @override
   String get settingsWorkedExamplesSubtitle =>
-      'Parcourir et copier des expressions de calculatrice prêtes à '
-      'coller couvrant les grands types de problèmes.';
+      'Désormais accessible aussi via l\'icône livre en haut de la '
+      'Calculatrice et du Bloc-notes. Appuyez ici pour la bibliothèque '
+      'complète.';
 
   @override
   String get importDataTitle => 'Importer les données';
@@ -6608,8 +6609,9 @@ class EsLocalizations implements AppLocalizations {
   String get settingsWorkedExamples => 'Biblioteca de ejemplos resueltos';
   @override
   String get settingsWorkedExamplesSubtitle =>
-      'Explora y copia expresiones de la calculadora listas para pegar '
-      'que cubren los principales tipos de problemas.';
+      'Ahora también accesible mediante el icono de libro en la parte '
+      'superior de la Calculadora y el Bloc de notas. Toca aquí para la '
+      'biblioteca completa.';
 
   @override
   String get importDataTitle => 'Importar datos';

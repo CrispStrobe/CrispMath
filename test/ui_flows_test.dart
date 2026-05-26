@@ -74,6 +74,44 @@ Future<void> _gotoAnalysisModule(WidgetTester tester, String title) async {
 }
 
 void main() {
+  group('Worked examples — Round 93 (P6) discoverability', () {
+    testWidgets('Calculator AppBar surfaces the open-book icon',
+        (tester) async {
+      await _pumpApp(tester);
+      // Default tab is Calculator. The icon lives in the top
+      // toolbar row above the history area.
+      expect(find.byIcon(Icons.menu_book_outlined), findsOneWidget);
+
+      // Tapping it opens the WorkedExamplesDialog (verified by the
+      // dialog title — "Worked examples" — appearing).
+      await tester.tap(find.byIcon(Icons.menu_book_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Worked examples'), findsWidgets);
+      // Calculator surface shows every category — the Constraints
+      // chip is one of the surface-bound ones that the notepad
+      // surface hides.
+      expect(find.text('Constraints'), findsOneWidget);
+    });
+
+    testWidgets('Notepad AppBar surfaces the open-book icon', (tester) async {
+      await _pumpApp(tester);
+      await tester.tap(find.text('Notepad').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.menu_book_outlined), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.menu_book_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Worked examples'), findsWidgets);
+      // Round 94: notepad surface hides Constraints / Units /
+      // Statistics chips because they're module-bound and don't
+      // belong inline in a notepad line.
+      expect(find.text('Constraints'), findsNothing);
+      expect(find.text('Units'), findsNothing);
+      expect(find.text('Statistics'), findsNothing);
+    });
+  });
+
   group('Settings flows', () {
     testWidgets('Help screen lists the function reference', (tester) async {
       await _pumpApp(tester);
