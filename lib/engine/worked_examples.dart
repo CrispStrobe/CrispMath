@@ -239,6 +239,14 @@ class WorkedExamples {
           'whole disjunction is true.',
       expression: '(5 > 3) or (1 == 2)',
     ),
+    WorkedExample(
+      id: 'booleanIfFold',
+      category: WorkedExampleCategory.numberTheory,
+      title: 'Conditional fold',
+      description: 'if(isprime(7), 100, 200) — condition folds to true so '
+          'the then-branch wins.',
+      expression: 'if(isprime(7), 100, 200)',
+    ),
 
     // === Statistics ==========================================================
     WorkedExample(

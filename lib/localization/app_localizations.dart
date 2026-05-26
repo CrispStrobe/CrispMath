@@ -3252,6 +3252,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Negation';
       case 'booleanOrChain':
         return 'Disjunktion über Vergleiche';
+      case 'booleanIfFold':
+        return 'Bedingte Auswertung';
       case 'compoundInterest':
         return 'Zinseszins';
       case 'zScore':
@@ -3340,6 +3342,9 @@ class DeLocalizations implements AppLocalizations {
       case 'booleanOrChain':
         return '(5 > 3) oder (1 == 2) — der erste Teil ist wahr, deshalb ist '
             'die gesamte Disjunktion wahr.';
+      case 'booleanIfFold':
+        return 'if(isprime(7), 100, 200) — die Bedingung wird zu „wahr" '
+            'ausgewertet, also gewinnt der Then-Zweig.';
       case 'compoundInterest':
         return '1000 € zu 5 % über 10 Jahre, jährliche Verzinsung.';
       case 'zScore':
@@ -4872,6 +4877,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Négation';
       case 'booleanOrChain':
         return 'Disjonction sur des comparaisons';
+      case 'booleanIfFold':
+        return 'Évaluation conditionnelle';
       case 'compoundInterest':
         return 'Intérêts composés';
       case 'zScore':
@@ -4960,6 +4967,9 @@ class FrLocalizations implements AppLocalizations {
       case 'booleanOrChain':
         return '(5 > 3) ou (1 == 2) — la première clause est vraie, '
             'donc la disjonction entière est vraie.';
+      case 'booleanIfFold':
+        return 'if(isprime(7), 100, 200) — la condition se réduit à vrai, '
+            'donc la branche then l\'emporte.';
       case 'compoundInterest':
         return '1000 € à 5 % sur 10 ans, capitalisation annuelle.';
       case 'zScore':
@@ -6487,6 +6497,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Negación';
       case 'booleanOrChain':
         return 'Disyunción sobre comparaciones';
+      case 'booleanIfFold':
+        return 'Evaluación condicional';
       case 'compoundInterest':
         return 'Interés compuesto';
       case 'zScore':
@@ -6576,6 +6588,9 @@ class EsLocalizations implements AppLocalizations {
       case 'booleanOrChain':
         return '(5 > 3) o (1 == 2) — la primera cláusula es verdadera, '
             'así que la disyunción entera es verdadera.';
+      case 'booleanIfFold':
+        return 'if(isprime(7), 100, 200) — la condición se reduce a '
+            'verdadero, por lo que gana la rama then.';
       case 'compoundInterest':
         return '1000 € al 5 % durante 10 años, capitalización anual.';
       case 'zScore':

@@ -825,6 +825,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
       case 'xor':
         _latexController.insert(' xor ');
         break;
+      case 'if':
+        // Round 111b: cursor lands inside the parens, ready for
+        // the condition. User tabs through comma slots.
+        _latexController.insert('if(, , )', cursorOffsetFromEnd: -5);
+        break;
 
       default:
         _latexController.insert(value);
@@ -897,6 +902,25 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // `name == value` out of the assignment route.
       converted =
           ExpressionPreprocessingUtils.preprocessLogicalOperators(converted);
+
+      // Round 111b (P7): fold `if(cond, then, else)` when the
+      // condition evaluates to a known boolean. Symbolic
+      // conditions return null and we leave the original
+      // `if(...)` form alone so SymEngine surfaces the error.
+      // After the logical preprocess the condition is already
+      // in `Eq(...)` / `And(...)` form so it's directly engine-
+      // ready.
+      final ifFolded = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        converted,
+        (cond) async => await _runEngineOpMaybeAsync(
+          'evaluate',
+          cond,
+          fallback: () => _engine.evaluate(cond),
+        ),
+      );
+      if (ifFolded != null) {
+        converted = ifFolded;
+      }
 
       // Round 91 (P6): precision-arc top-level calls — `pi(100)`,
       // `factorint(360)`, `isprime(2027)`, etc. Routes to the bridge's

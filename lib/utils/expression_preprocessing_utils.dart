@@ -219,8 +219,17 @@ class ExpressionPreprocessingUtils {
           return out.toString();
         }
         final inner = s.substring(i + 1, j);
+        // Round 111b: split the inner content by top-level commas
+        // before recursing. A paren-group can be a function-call
+        // arg list (`Min(a, b)`, `if(c, t, e)`); without the split
+        // a relational at depth 0 of the inner would gobble the
+        // commas and produce `Min(Eq(2, 2, x + 1))`. Splitting
+        // first means each arg is rewritten independently and
+        // rejoined with `, `.
+        final args = _splitTopLevelByComma(inner);
+        final rewritten = args.map(preprocessLogicalOperators).join(', ');
         out.write('(');
-        out.write(preprocessLogicalOperators(inner));
+        out.write(rewritten);
         out.write(')');
         i = j + 1;
       } else {
@@ -307,6 +316,79 @@ class ExpressionPreprocessingUtils {
         .toList(growable: false);
     if (cleaned.length <= 1) return [s];
     return cleaned;
+  }
+
+  /// Split [s] on every top-level comma (depth 0 with respect to
+  /// `(` / `[` / `{`). Each piece is trimmed so the rejoin doesn't
+  /// introduce double spaces around the separator. Used by the
+  /// paren-descent step to break function-call arg lists into
+  /// individual operands and by [tryFoldIfConditional] to extract
+  /// the three `if(...)` args.
+  static List<String> _splitTopLevelByComma(String s) {
+    final parts = <String>[];
+    var depth = 0;
+    var start = 0;
+    for (var i = 0; i < s.length; i++) {
+      final c = s[i];
+      if (c == '(' || c == '[' || c == '{') {
+        depth++;
+      } else if (c == ')' || c == ']' || c == '}') {
+        depth--;
+      } else if (c == ',' && depth == 0) {
+        parts.add(s.substring(start, i).trim());
+        start = i + 1;
+      }
+    }
+    parts.add(s.substring(start).trim());
+    return parts;
+  }
+
+  /// Round 111b (P7): Dart-side fold of an `if(cond, then, else)`
+  /// conditional. Detects the call at the top of [input], runs the
+  /// condition through [evaluator] after standard preprocessing, and
+  /// returns the chosen branch (trimmed) when the condition folds
+  /// to a constant `true` / `false`. Returns null when [input]
+  /// isn't an `if(...)` shape, when arg-count isn't 3, or when the
+  /// condition stays symbolic — the caller should leave the
+  /// original expression in place and let downstream surface the
+  /// error.
+  ///
+  /// SymEngine's text parser has no `Piecewise` entry, so the
+  /// PLAN's original lowering target (`Piecewise((t, cond),
+  /// (e, true))`) doesn't work. This Dart-side fold is the
+  /// practical replacement.
+  static Future<String?> tryFoldIfConditional(
+    String input,
+    Future<String> Function(String) evaluator,
+  ) async {
+    final trimmed = input.trim();
+    if (!trimmed.startsWith('if(') || !trimmed.endsWith(')')) return null;
+    // Walk parens from the opening `(` to be sure the closing `)`
+    // really matches it (defends against `if(c, t) + 1` where the
+    // outer call doesn't actually span the whole input).
+    var depth = 0;
+    var matchedEnd = -1;
+    for (var i = 2; i < trimmed.length; i++) {
+      final c = trimmed[i];
+      if (c == '(') {
+        depth++;
+      } else if (c == ')') {
+        depth--;
+        if (depth == 0) {
+          matchedEnd = i;
+          break;
+        }
+      }
+    }
+    if (matchedEnd != trimmed.length - 1) return null;
+    final args = _splitTopLevelByComma(trimmed.substring(3, matchedEnd));
+    if (args.length != 3) return null;
+    final pre = preprocessNativeExpression(args[0].trim());
+    final raw = await evaluator(pre);
+    final normalized = normalizeBooleanResult(raw).trim();
+    if (normalized == 'true') return args[1].trim();
+    if (normalized == 'false') return args[2].trim();
+    return null;
   }
 
   /// Normalize SymEngine's capitalized boolean literals (`True` /

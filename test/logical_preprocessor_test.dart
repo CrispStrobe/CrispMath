@@ -221,4 +221,122 @@ void main() {
       );
     });
   });
+
+  group('preprocessLogicalOperators — paren-descent comma split (111b)', () {
+    test('multi-arg function call with relational in one arg', () {
+      // Pre-fix bug: the relational scan inside the descent walked
+      // past the comma and produced `Min(Eq(2, 2, x + 1))`. With the
+      // comma split each arg is rewritten independently.
+      expect(
+        ExpressionPreprocessingUtils.preprocessLogicalOperators(
+            'Min(2 == 2, x + 1)'),
+        'Min(Eq(2, 2), x + 1)',
+      );
+    });
+
+    test('if(cond, t, e) shape rewrites condition in place', () {
+      // Required for `tryFoldIfConditional` to find a clean
+      // `Eq(...)` form in the first arg.
+      expect(
+        ExpressionPreprocessingUtils.preprocessLogicalOperators(
+            'if(2 == 2, x^2, x + 1)'),
+        'if(Eq(2, 2), x^2, x + 1)',
+      );
+    });
+
+    test('three-arg call with one relational and one logical', () {
+      expect(
+        ExpressionPreprocessingUtils.preprocessLogicalOperators(
+            'if(a and b, x < 5, x)'),
+        'if(And(a, b), Lt(x, 5), x)',
+      );
+    });
+
+    test('single-arg call still works', () {
+      // No commas to split — degenerate case of the new splitter.
+      expect(
+        ExpressionPreprocessingUtils.preprocessLogicalOperators('isprime(17)'),
+        'isprime(17)',
+      );
+    });
+  });
+
+  group('tryFoldIfConditional', () {
+    Future<String> trueEvaluator(String _) async => 'True';
+    Future<String> falseEvaluator(String _) async => 'False';
+    Future<String> symbolicEvaluator(String s) async => 'Eq(x, 5)';
+
+    test('returns then-branch when condition folds to true', () async {
+      final r = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        'if(Eq(2, 2), x^2, x + 1)',
+        trueEvaluator,
+      );
+      expect(r, 'x^2');
+    });
+
+    test('returns else-branch when condition folds to false', () async {
+      final r = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        'if(Eq(2, 3), x^2, x + 1)',
+        falseEvaluator,
+      );
+      expect(r, 'x + 1');
+    });
+
+    test('returns null when condition stays symbolic', () async {
+      final r = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        'if(Eq(x, 5), x^2, x + 1)',
+        symbolicEvaluator,
+      );
+      expect(r, isNull);
+    });
+
+    test('returns null for non-if input', () async {
+      final r = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        'x + 1',
+        trueEvaluator,
+      );
+      expect(r, isNull);
+    });
+
+    test('returns null for wrong arg count', () async {
+      // `if(c, t)` — missing else.
+      final r = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        'if(Eq(1, 1), x)',
+        trueEvaluator,
+      );
+      expect(r, isNull);
+    });
+
+    test('refuses partial-span if(...)', () async {
+      // `if(...) + 1` — the closing `)` doesn't match the outer
+      // `if(` opening because the call ends before the final
+      // character. We don't fold this; let SymEngine handle it
+      // (and report the error).
+      final r = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        'if(Eq(2, 2), x^2, x + 1) + 1',
+        trueEvaluator,
+      );
+      expect(r, isNull);
+    });
+
+    test('lowercase true / false from normalizer also folds', () async {
+      // The normalizer in production turns `True` → `true`, but the
+      // fold should match either form so callers passing through
+      // already-normalized evaluators still work.
+      Future<String> lowerTrue(String _) async => 'true';
+      final r = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        'if(c, t, e)',
+        lowerTrue,
+      );
+      expect(r, 't');
+    });
+
+    test('whitespace tolerated around the call', () async {
+      final r = await ExpressionPreprocessingUtils.tryFoldIfConditional(
+        '  if(Eq(2, 2), x^2, x + 1)  ',
+        trueEvaluator,
+      );
+      expect(r, 'x^2');
+    });
+  });
 }

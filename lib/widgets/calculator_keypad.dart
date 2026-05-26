@@ -179,6 +179,10 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
     'or',
     'not',
     'xor',
+    // Round 111b (P7): conditional. Inserts an `if(, , )`
+    // template with the cursor positioned right after the `(`
+    // so the user types the condition first.
+    'if',
   ];
 
   List<String> _keysFor(_PaneKind kind) {
