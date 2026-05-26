@@ -1864,13 +1864,30 @@ evaluates to `True`/`False` we return `thenExpr`/`elseExpr`;
 symbolic conditions stay as the original `if(...)` form. Not
 a blocker for the rest of P7.
 
-##### Round 112 — Boolean keypad + worked examples
+##### Round 112 — Boolean keypad + worked examples ✅ (`if` deferred)
 
-- New keypad tab section "Logic" with: `==`, `!=`, `<`, `>`,
-  `and`, `or`, `not`, `xor`, `if`. Adv tab integration.
-- Worked-example entries: "Is 17 prime AND less than 20?"
-  → `isprime(17) and 17 < 20` → `true`. Plus 3-4 more
-  classroom-flavored examples.
+Done 2026-05-26. Ten new Adv-tab keys (`==`, `≠`, `<`, `≤`,
+`>`, `≥`, `and`, `or`, `not`, `xor`) — button labels use the
+mathematical glyphs while dispatch inserts the ASCII form
+the round-110 / 111 preprocessor recognises (`!=`, `<=`,
+`>=`). Word operators insert with surrounding spaces so they
+don't jam against adjacent identifiers. `if` is omitted
+while round 111b (Dart-side conditional fold) is still
+deferred — adding the button without a working fold would
+mislead users.
+
+Four new worked-examples entries in the `numberTheory`
+category (`booleanIsprimeAnd`, `booleanEqualityFold`,
+`booleanNotPrime`, `booleanOrChain`), all classroom-flavored
+predicates that fold to `true` once SymEngine sees them.
+Catalog is now 39 entries; the existing test cap of 40 still
+holds. Titles + descriptions localised across en/de/fr/es;
+the locale-coverage test picked up every new id automatically.
+
+A separate logic-tab section was considered but the existing
+Adv tab already groups precision-arc + ntheory in one place,
+so the boolean keys slot into the same tab without a new
+section. Full suite: 1856 → 1880 pass.
 
 ##### Round 113 — Notepad integration
 

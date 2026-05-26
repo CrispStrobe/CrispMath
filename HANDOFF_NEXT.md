@@ -1,11 +1,10 @@
 # CrispCalc — handover for the next session
 
 Pickup note from the **2026-05-26 (late) session** that shipped
-Rounds 110 + 111 (P7 — relational + logical operators) on top of
-the already-shipped Round E (FlatZinc + MUS) and Rounds 91-92
-(precision-arc surfacing). The longer-lived `HANDOFF.md` is still
-the load-bearing reference for repo conventions; this file is a
-focused pickup note for what to do *next*.
+Rounds 110 + 111 + 112 of P7 (booleans). The longer-lived
+`HANDOFF.md` is still the load-bearing reference for repo
+conventions; this file is a focused pickup note for what to do
+*next*.
 
 ---
 
@@ -27,10 +26,10 @@ remind yourself the user wants main.
 | | |
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
-| **main HEAD** | (this session — Round 111 + docs) |
-| **Tests** | **1856 pass** (1810 → 1832 from Round 110, → 1856 from Round 111) — `flutter analyze` clean |
+| **main HEAD** | (this session — Round 112 + docs) |
+| **Tests** | **1880 pass** (1810 → 1832 → 1856 → 1880 across rounds 110/111/112 + locale-coverage growth) — `flutter analyze` clean |
 | **dart_csp pin** | `69a9cfb` (FlatZinc frontend + QuickXplain MUS) |
-| **CI** | Round-110 + 111 pushes not yet observed; previous push was green |
+| **CI** | Round-110/111/112 pushes not yet observed; previous push was green |
 
 Only dirty file is `.claude/scheduled_tasks.lock` (harness state — leave alone).
 
@@ -39,65 +38,85 @@ Only dirty file is `.claude/scheduled_tasks.lock` (harness state — leave alone
 | Round | What |
 |---|---|
 | **Round 110** | Relational-operator preprocessor (P7 kickoff). `preprocessRelationalOperators` does a paren-depth-0 scan + longest-match rewrite of `==` `!=` `<=` `>=` `<` `>` into SymEngine's `Eq` `Ne` `Le` `Ge` `Lt` `Gt`. Calculator + notepad assignment regexes tightened with `=(?!=)`. New `normalizeBooleanResult` lowercases `True`/`False` for display. Calculator history renders bool results as a colored chip (secondaryContainer / errorContainer) via `_buildBooleanChip`. 22 tests. |
-| **Round 111** | Logical-operator preprocessor. `preprocessLogicalOperators` does a two-phase walk: phase A recurses into parens, phase B splits at depth 0 in precedence order (`or` < `xor` < `and`) and checks for leading `not`, then falls through to the relational rewrite at the leaf. Python-style precedence (`not` binds tighter than `and`; relational tighter than `not`). Chained collapse to n-ary `And`/`Or`/`Xor`. Calculator + notepad swapped from the relational call to the combined logical entry point. 24 tests. |
+| **Round 111** | Logical-operator preprocessor. `preprocessLogicalOperators` does a two-phase walk: phase A recurses into parens, phase B splits at depth 0 in precedence order (`or` < `xor` < `and`) and checks for leading `not`, then falls through to the relational rewrite at the leaf. Python-style precedence. Chained collapse to n-ary `And`/`Or`/`Xor`. Calculator + notepad swapped from the relational call to the combined entry point. 24 tests. |
+| **Round 112** | Adv-keypad keys + worked examples for P7. Ten new Adv keys (`==`, `≠`, `<`, `≤`, `>`, `≥`, `and`, `or`, `not`, `xor`) with glyph labels + ASCII insertion. Four worked-examples entries (boolean predicates) in the `numberTheory` category, localized en/de/fr/es. `if` button omitted while round 111b is still deferred. |
 
 ## Pickup points — next strategic slot
 
-P7 is in mid-flight; the remaining round is Round 112 (keypad +
-worked examples) and Round 113 (notepad boolean integration).
-Plus the deferred Round 111b. Alternatives if the user wants to
-switch tracks are listed below.
+P7 has two open items: round 111b (`if(...)` conditional) and
+round 113 (notepad chip integration). Plus a latent edge case in
+the round-111 paren descent to clean up. Tracks below in priority
+order.
 
-1. **Round 111b — `if(cond, thenExpr, elseExpr)`** (deferred from
-   111). Lowering to `Piecewise(...)` is blocked because
-   SymEngine's text parser doesn't recognize `Piecewise`. Clean
-   path: a Dart-side `_evaluateIfConditional(s)` that recognizes
-   `if(...)` at the top level, evaluates the condition first
-   (via `preprocessLogicalOperators` + `EngineService`), and
-   returns `thenExpr` / `elseExpr` based on whether the result
-   is `true` / `false`. Symbolic conditions stay as `if(...)`
-   unchanged. Tested via condition-folding.
-2. **Round 112 — Boolean keypad + worked examples**. New Adv-tab
-   keys (`==`, `!=`, `<`, `>`, `and`, `or`, `not`, `xor`, `if`)
-   plus 3-4 classroom-flavored worked-example entries
-   (`isprime(17) and 17 < 20`, etc.). Pattern matches the
-   round-92 keypad/worked-examples surfacing.
-3. **Round 113 — Notepad boolean integration**. Notepad result
-   cells render bool chips like the calculator does. Plus the
-   decision on what arithmetic-with-boolean coerces to
-   (0/1 vs. error).
-4. **P6 rounds 93-95** — Move Worked Examples out of Settings.
+1. **Round 111b — `if(cond, then, else)` Dart-side fold.** Detect
+   the call at the top of the dispatch, evaluate the condition
+   via the engine (it'll already be in `Eq(...)` / `And(...)` form
+   after the round-111 rewrite), pick the appropriate branch, and
+   continue dispatch on that branch. Symbolic conditions leave
+   the `if(...)` form unchanged and SymEngine surfaces the error.
+   Once shipped, also add the `if` button to the Adv keypad +
+   one worked-example entry showcasing it.
+
+2. **Round 113 — Notepad boolean integration.** Notepad result
+   cells render bool chips like the calculator does (the
+   `_buildBooleanChip` helper can be lifted to a shared widget
+   or duplicated). Plus the decision on what arithmetic-with-
+   boolean coerces to (0/1 vs. error). Today notepad just
+   renders `true` / `false` as plain text.
+
+3. **Round 111c — Paren-descent comma split (bug fix).** When
+   `preprocessLogicalOperators` recurses into a paren-group that
+   contains commas (e.g. `Min(2 == 2, x + 1)` or, once 111b
+   lands, `if(2 == 2, x^2, x + 1)`), the inner relational scan
+   walks past the comma and produces `Min(Eq(2, 2, x + 1))`. Fix:
+   in `_logicalDescendIntoParens`, split the inner content by
+   top-level commas and recurse on each piece independently
+   before rejoining with `, `. Triggers exotic-only today
+   (multi-arg function calls with relationals inside an arg);
+   becomes load-bearing for 111b.
+
+4. **Round 114 — Help-mode + Function Reference wiring**. P6
+   round 97's Function Reference catalog needs entries for every
+   relational + logical operator. Help mode (round 102) on a
+   logic button should show a truth-table popover. Both depend
+   on the round-93-105 discoverability arc being further along.
+
+5. **P6 rounds 93-95** — Move Worked Examples out of Settings.
    Three small rounds, independent of P7.
-5. **CSP Round E.5** (deferred) — bundle `dart_csp_fzn` CLI as a
+
+6. **CSP Round E.5** (deferred) — bundle `dart_csp_fzn` CLI as a
    MiniZinc solver. Blocked on P4 distribution pipeline.
-6. **P9 follow-ups** (A5d / A7 / A8) — 3D Scene polish.
-7. **Precision arc round 4** (`modpow` / `modinv` / `totient` /
+
+7. **P9 follow-ups** (A5d / A7 / A8) — 3D Scene polish.
+
+8. **Precision arc round 4** (`modpow` / `modinv` / `totient` /
    `jacobi`) — multi-repo. See `HANDOFF_PRECISION.md`. Cross-repo
    arc; ask before starting.
 
-## Known issues / context (Rounds 110 + 111)
+## Known issues / context
 
-- **`if(cond, t, e)` not yet handled.** Round 111 deliberately
-  stops at `not`/`and`/`or`/`xor`. The PLAN suggested lowering
-  to SymEngine `Piecewise(...)` but the text parser doesn't
-  expose it — the C++ class exists, the parser registration
-  doesn't. Round 111b will fold the condition Dart-side.
-- **Inside-parens not lifted (round 110 relational).** `(x < 5)`
-  stays as `(x < 5)` after the relational pass — but
-  `preprocessLogicalOperators` now recurses into parens, so the
-  inner `<` does get rewritten when round-111 runs. Net result:
-  `(x < 5)` → `(Lt(x, 5))`. SymEngine accepts either form.
+- **`if(cond, t, e)` not yet handled.** Round 111 stops at
+  `not`/`and`/`or`/`xor`; the PLAN's `Piecewise` lowering target
+  isn't in SymEngine's text-parser grammar. Round 111b will fold
+  the condition Dart-side. The `if` button is intentionally
+  missing from the Adv keypad until 111b lands.
+- **Paren-descent comma latent bug.** `preprocessLogicalOperators`
+  recurses into every paren-group and runs the relational scan
+  on the inner content; the scan doesn't respect commas. So
+  `Min(2 == 2, x + 1)` mangles into `Min(Eq(2, 2, x + 1))`. Not
+  exercised today by any common input but blocks the round-111b
+  `if(...)` shape. Fix in round 111c.
 - **History chip rendering is calculator-only.** Notepad result
   cells still show `true` / `false` as plain text. Round 113
   brings the chip there.
-- **Chained mixed-precedence collapses correctly.** `a and b and
-  c` → `And(a, b, c)` (n-ary). `a or b and c` → `Or(a, And(b,
-  c))`. Trace test cases live in
-  `test/logical_preprocessor_test.dart`.
+- **Chip detection key is the lowercase string.** Bool-chip
+  rendering keys on `entry.result.trim() == 'true'/'false'`.
+  Anyone else stuffing a bare `true`/`false` literal into history
+  (e.g. a future `isprime(...)` shortcut) will pick up the chip
+  rendering for free.
 - **Word-boundary safety.** `random` / `factor` / `notation` are
-  safe — the splitter checks both sides for `[A-Za-z0-9_]`. New
-  reserved words: `and`, `or`, `xor`, `not`. A variable literally
-  named one of these would collide; users would notice fast
+  safe from accidental rewrites. Variables literally named
+  `and`/`or`/`xor`/`not` would collide; users would notice fast
   enough.
 
 ## Hygiene reminders
@@ -116,17 +135,22 @@ switch tracks are listed below.
 - Boolean preprocessor: `lib/utils/expression_preprocessing_utils.dart`
   (Round 110: `preprocessRelationalOperators`,
    `normalizeBooleanResult`; Round 111:
-   `preprocessLogicalOperators`, private helpers
-   `_logicalDescendIntoParens`, `_logicalTopLevel`,
-   `_splitAtTopLevelWord`)
+   `preprocessLogicalOperators`)
 - Calculator dispatch: `lib/screens/calculator_screen.dart`
   (Round 110/111: `_calculate` hook + tightened assignment
-   regex + `_buildBooleanChip` + history chip render branch)
+   regex + `_buildBooleanChip`; Round 112: dispatch cases for
+   `==`/`≠`/`<`/`≤`/`>`/`≥`/`and`/`or`/`not`/`xor`)
+- Calculator keypad: `lib/widgets/calculator_keypad.dart`
+  (Round 112: 10 new keys appended to `_advKeys`)
 - Notepad dispatch: `lib/screens/notepad_screen.dart`
   (Round 110/111: combined rewrite in `_dispatcher`'s
    `preNative` + `normalizeBooleanResult` at evaluate tail)
 - Notepad classifier: `lib/engine/notepad_evaluator.dart`
   (Round 110: `_assignmentRegex` tightened with `(?!=)`)
+- Worked-examples catalog: `lib/engine/worked_examples.dart`
+  (Round 112: 4 new booleanX entries in numberTheory category)
+- Localization: `lib/localization/app_localizations.dart`
+  (Round 112: titles + descriptions for 4 new ids × 4 locales)
 - Tests this session: `test/relational_preprocessor_test.dart`,
   `test/logical_preprocessor_test.dart`
 
