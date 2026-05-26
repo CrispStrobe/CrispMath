@@ -2,6 +2,76 @@
 
 Completed work, newest first.
 
+## 2026-05-26 (P6 Round 97) — Function Reference CAS + precision arc entries
+
+Grows `FunctionReferences.all` from the 3-entry seed list
+shipped in Round 96 to a 20-entry catalogue covering the
+PLAN P6 §97 slate. Round 97 is content, not plumbing — the
+data model + dialog from Round 96 carry it unchanged.
+
+### What's in the catalogue now
+
+CAS (12 entries): `solve`, `expand`, `simplify`, `factor`,
+`diff`, `integrate`, `subst`, `limit`, `gcd`, `lcm`,
+`factorial`, `fibonacci`. Each has 2-3 examples and an
+"in CrispCalc, X returns Y; the underlying call is SymEngine's
+Z" prose paragraph in the first example's hint.
+
+Precision arc (4 entries): `pi_precision`, `e_precision`,
+`sqrt_precision`, `eulergamma_precision`. All cite MPFR
+under the hood, with the same "⌈N·log2(10)⌉ + 16 guard bits"
+note PLAN asked for.
+
+Number theory (4 entries): `isprime`, `nextprime`, `prevprime`,
+`factorint`. The first cites GMP's Miller-Rabin; the last
+cites FLINT's `fmpz_factor`.
+
+The three Round-96 seeds (`solve`, `isprime`, `pi_precision`)
+each gained a third example and richer underlying-call prose.
+
+### What's deferred
+
+`series` and `taylor`: PLAN names them in the §97 slate but
+the bridge has no `SymEngine::series_expansion` binding yet.
+Both deferred — tracked as a comment in the catalogue header.
+The Round-97 test asserting CAS-slate coverage explicitly
+excludes them; when the bridge gains support they go in
+alongside.
+
+### seeAlso graph
+
+Every `seeAlso` pointer now resolves to a catalogue entry —
+the V1 carve-out in the invariants test is gone. The cross-
+link graph is structured loosely (each entry has 3 neighbours
+that suggest the next natural exploration step): `solve` → `expand` /
+`factor` / `simplify`; `diff` → `integrate` / `limit` / `subst`;
+`isprime` → `nextprime` / `prevprime` / `factorint`; and so on.
+
+### workedExampleId coverage
+
+12 of the 20 entries cross-link to a `WorkedExample`. The
+remaining 8 (`subst`, `lcm`, `prevprime`, `sqrt_precision`,
+`eulergamma_precision`) don't have a worked-example sibling
+in `WorkedExamples.all` yet; the dialog's "See worked example"
+button correctly degrades to hidden when the id is null.
+
+### Tests
+
+`test/function_reference_test.dart` gains two slate-coverage
+tests (CAS + precision) so a regression that drops an entry is
+caught immediately. The `seeAlso` resolver tightens from the
+v1 carve-out (skip unknowns) to a hard assertion (every target
+resolves).
+
+`test/function_reference_dialog_test.dart` gains one new spot-
+check on the CAS-filtered list (`expand` + `diff` signatures
+visible after picking the CAS chip). Two existing tests that
+found `isprime(n)` / `pi(N)` directly are patched to filter via
+the search field first — the grown catalogue pushes those rows
+below the dialog's 480px viewport.
+
+Suite 1949 → 1952.
+
 ## 2026-05-26 (P6 Round 96 follow-up) — `initialSearch` deep-link
 
 Tightens the See-worked-example cross-link shipped in Round

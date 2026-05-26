@@ -1660,7 +1660,7 @@ panel). Cards link to a "Try in Calculator" deep-link
 (uses the existing `pendingInsertExpression` AppState slot)
 and a "See worked example" cross-link.
 
-##### Round 97 — Write CAS function entries (the meat)
+##### Round 97 — Write CAS function entries (the meat) — **SHIPPED**
 
 ~15 entries for the CAS category alone: `solve`, `expand`,
 `simplify`, `factor`, `diff`, `integrate`, `subst`, `limit`,
@@ -1673,6 +1673,23 @@ they're "in CrispCalc, `solve(x^2 - 1, x)` returns `[-1, 1]`
 as a list; the underlying call is SymEngine's
 `solve_poly()`; for transcendental equations it falls through
 to the numerical solver".
+
+**Shipped (Round 97):** all CAS entries except `series` /
+`taylor` (no SymEngine `series_expansion` binding in the
+bridge yet — deferred until the binding lands). Precision arc
+grew from the 1-entry `pi(N)` seed to cover `e(N)`, `sqrt(k, N)`,
+and `EulerGamma(N)`. Number theory grew to cover `nextprime`,
+`prevprime`, and `factorint`. The existing `solve` / `isprime` /
+`pi_precision` entries each gained a third example and richer
+"underlying call" prose in their first hint. Catalogue size went
+from 3 → 20 entries. Tests: tightened the seeAlso resolver (every
+seeAlso target now resolves to a catalogue entry — the v1
+carve-out is gone), added slate-coverage tests for the CAS +
+precision sets, plus one new dialog spot-check on the CAS-
+filtered list. Two existing dialog tests that found `isprime(n)`
+/ `pi(N)` directly were patched to filter via the search field
+first because the grown catalogue pushes those rows below the
+dialog viewport.
 
 ##### Round 98 — Matrix + linear algebra entries
 
