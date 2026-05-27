@@ -21,6 +21,7 @@ import '../engine/conic_math.dart';
 import '../engine/plane_math.dart' show Vector3;
 import '../engine/scene_3d/scene_object.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/module_help_dialog.dart';
 import 'scene_3d_screen.dart';
 
 class ConicSectionScreen extends StatefulWidget {
@@ -157,7 +158,10 @@ class _ConicSectionScreenState extends State<ConicSectionScreen> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(t.moduleConics)),
+      appBar: AppBar(
+        title: Text(t.moduleConics),
+        actions: const [ModuleHelpButton(kind: ModuleHelpKind.conicSections)],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

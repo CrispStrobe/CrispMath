@@ -30,6 +30,7 @@ import 'package:flutter/services.dart';
 import '../engine/app_state.dart';
 import '../engine/csp_solver.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/module_help_dialog.dart';
 
 class ConstraintsScreen extends StatefulWidget {
   const ConstraintsScreen({super.key});
@@ -67,6 +68,7 @@ class _ConstraintsScreenState extends State<ConstraintsScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(t.moduleConstraintsTitle),
+        actions: const [ModuleHelpButton(kind: ModuleHelpKind.constraints)],
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,

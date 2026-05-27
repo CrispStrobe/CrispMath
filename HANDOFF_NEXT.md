@@ -1,10 +1,13 @@
 # CrispCalc — handover for the next session
 
-Pickup note from the **2026-05-27 (Rounds 103 + 102b + 104) session**.
-Shipped the P6 help-popover sweep across Calculator history rows
-(R103), CAS-tab keypad buttons (R102b — Adv was already in R102),
-and Notepad lines (R104). All three surfaces now reuse the same
-`HistoryRowHelpModal` + `detectHistoryHelp` routing table.
+Pickup note from the **2026-05-27 (Rounds 103 + 102b + 104 + 105)
+session**. Shipped the P6 help-popover sweep across Calculator
+history rows (R103), CAS-tab keypad buttons (R102b — Adv was
+already in R102), Notepad lines (R104), and now per-module
+explainers on all 8 Analyze-hub screens (R105). All "row" surfaces
+share the same `HistoryRowHelpModal` + `detectHistoryHelp`; module
+screens use a separate, simpler `ModuleHelpDialog` because the
+intent is one-shot module overview, not per-element popovers.
 
 - **103** — `HistoryRowHelpModal` + `detectHistoryHelp` in
   `lib/widgets/history_help_modal.dart`. Routing table maps
@@ -29,6 +32,16 @@ and Notepad lines (R104). All three surfaces now reuse the same
   intentionally omitted — the row doesn't have a `CalculatorEngine`
   reference; pasting the line into Calculator + tapping `solve⌄` /
   `d/dx⌄` / `∫⌄` is the workflow. +2 widget tests (1984 → 1986).
+- **105** — Per-module `(?)` button on every Analyze-hub screen.
+  New `ModuleHelpKind` enum (engine/) + `ModuleHelpDialog` /
+  `ModuleHelpButton` (widgets/). 8 modules covered: curveSketching
+  / planes / conicSections / statistics / graphing3D / scene3D /
+  constraints / sudoku. 3 carry a FunctionRef Learn-more deep-link
+  (statistics → welch_t, constraints → all_different, sudoku →
+  sudoku_regular); the 5 visual / geometric modules don't (no
+  single FR row summarizes them). 19 i18n strings (1 tooltip +
+  9 titles + 9 descriptions) × 4 locales = 76 new translations.
+  +5 widget tests (1986 → 1991).
 
 `HANDOFF.md` remains the load-bearing pattern reference.
 
@@ -52,10 +65,10 @@ remind yourself the user wants main.
 | | |
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
-| **main HEAD** | R103 at `c226d91`; R102b + R104 commit to follow |
-| **Tests** | **1986 pass** (1965 → 1982 → 1984 → 1986), 1 pre-existing skip — `flutter analyze` clean |
+| **main HEAD** | R102b + R104 at `d6bbd19`; R105 commit to follow |
+| **Tests** | **1991 pass** (1965 → 1982 → 1984 → 1986 → 1991), 1 pre-existing skip — `flutter analyze` clean |
 | **dart_csp pin** | `69a9cfb` (unchanged) |
-| **CI** | R102 pushed; R97-99 + R101 + R102 + R103 status not yet observed |
+| **CI** | R102 pushed; R97-99 + R101 + R102 + R103 + R102b + R104 status not yet observed |
 
 Only dirty file at session start was `.claude/scheduled_tasks.lock`
 (harness state — left alone).
@@ -67,30 +80,38 @@ Only dirty file at session start was `.claude/scheduled_tasks.lock`
 | **103** | History-row help popover on Calculator. New `lib/widgets/history_help_modal.dart`: `HistoryHelpInfo` + `HistoryStepKind` + `detectHistoryHelp` (pure routing table) + `HistoryRowHelpModal` widget. Wiring on `HelpTarget.onHelpTap` for history rows in `calculator_screen.dart`. Modal explains the engine (`SymEngine.solve`, `MPFR`, `FLINT.ntheory`, `Dart (matrix)` / `Dart (BigInt)`, or fallback `Direct evaluation`), shows the FunctionRef signature + shortDescription, and offers Learn-more (deep-link) plus Show-steps (re-runs `StepEngine`). 4 new i18n strings × 4 locales (`historyHelpTitle`, `historyHelpComputedVia(engine)`, `historyHelpDirectEvaluation`, `historyHelpShowSteps`). +17 tests (1965 → 1982). |
 | **102b** | CAS-tab keypad popovers in `lib/widgets/calculator_keypad.dart`. New `_kCasKeyHelpRefId` map (10 mappings); both narrow tabbed and wide two-pane layouts now wire `helpRefIdFor` + `onHelpTap` on the CAS pane via `showKeypadHelpPopover`. `⌄` step-trace variants and `=` / `,` / `f(x)` punctuation are deliberately omitted — they're calculator UX, not engine surface. +2 widget tests (1982 → 1984). |
 | **104** | Notepad line help popovers. `_NotepadLineRow._showLineHelp` wires `HelpTarget.onHelpTap` on both row layouts (sideBySide + stacked) to the shared `HistoryRowHelpModal`. Reuses `detectHistoryHelp` over `line.source`; result is `cachedError ?? cachedResult ?? ''`. Show-steps suppressed (no engine reference); Learn-more deep-links to `FunctionReferenceDialog`. +2 widget tests (1984 → 1986). |
+| **105** | Per-module `(?)` AppBar button on every Analyze-hub screen. New `lib/engine/module_help_kind.dart` (pure enum, breaks the `app_localizations.dart` ↔ widget cycle) + `lib/widgets/module_help_dialog.dart` (`ModuleHelpDialog` + `ModuleHelpButton`). Wired on 8 screens: curve_analysis_input, plane_analysis, conic_section, statistics, graphing_3d, scene_3d, constraints, sudoku. Optional FunctionRef Learn-more deep-link via `_kModuleRefId` map (statistics → welch_t, constraints → all_different, sudoku → sudoku_regular). 19 new l10n strings × 4 locales: `moduleHelpTooltip`, `moduleHelpTitle(ModuleHelpKind)`, `moduleHelpDescription(ModuleHelpKind)`. +5 widget tests (1986 → 1991). |
 
 ## Pickup points — next strategic slot
 
-P6 §103 + §102b + §104 done. The help-popover sweep across all
-three "row" surfaces is now complete (Calculator history,
-Notepad lines, Calculator keypad CAS + Adv tabs). Next obvious
-moves:
+P6 §103 + §102b + §104 + §105 done. The help-popover sweep is
+**complete across all major surfaces**: Calculator history,
+Notepad lines, Calculator keypad (Adv + CAS), and all 8 Analyze
+hub modules. Next obvious moves:
 
-1. **Round 105 — Help on Analyze hub modules**. `(?)` button
-   per module screen. See PLAN P6 §105. With history + notepad +
-   keypad covered, the Analyze hub is the largest remaining
-   surface area without help affordances.
-
-2. **Round 100 — Function Reference i18n pass (~30k words)**.
-   Still pending. With Rounds 103 + 104 shipped, the FR strings
-   (`signature`, `shortDescription`) are now visible to users
-   in **7 contexts** (FR dialog list, FR dialog detail, Adv
-   keypad popover, **CAS keypad popover**, deep-linked FR
-   dialog, **Calculator history popover**, **Notepad line
-   popover**). Translating raises the user-visible payoff
-   materially.
+1. **Round 100 — Function Reference i18n pass (~30k words)**.
+   Now the highest-leverage open item. With Rounds 103 + 104 + 105
+   shipped, the FR strings (`signature`, `shortDescription`) are
+   visible to users in **8 contexts** (FR dialog list, FR dialog
+   detail, Adv keypad popover, CAS keypad popover, deep-linked FR
+   dialog, Calculator history popover, Notepad line popover, and
+   now **Analyze-module Learn-more deep-links**). Translating
+   raises the user-visible payoff materially.
    - **100a**: EN-only refinements / typos / consistency.
    - **100b**: DE.
    - **100c**: FR + ES.
+
+2. **Round 105b — per-element popovers inside Statistics /
+   Constraints / Sudoku**. PLAN §105 also calls for:
+   - Statistics: p-value chip, confidence-interval chip, per-test
+     popovers
+   - Constraints DSL: per-operator popovers (`allDifferent`,
+     `noOverlap`, `cumulative`, `minimize` with side-by-side
+     example)
+   - Sudoku: variant-rules popovers (X, Killer, Disjoint),
+     hint-level explainer
+   Round 105 (this session) only shipped the module-level
+   explainers; per-element follow-ups are a natural extension.
 
 3. **Round 104 follow-up — Notepad Show-steps wiring**. The
    modal supports `onShowSteps` but Round 104 omits it because
@@ -141,6 +162,29 @@ moves:
   full `CalculatorScreen`. The State-side wiring
   (`_showHistoryHelpModal`, `_runStepTraceForHistory`) stays
   private — only the State has the `_engine` instance.
+
+### Round 105 specifically
+
+- **Module help is a direct dialog, NOT a global help-mode toggle**.
+  The `(?)` button on each module screen opens the explainer
+  immediately; there's no "help mode" gate. Mental model: "what
+  does this thing do?" → tap, read, dismiss. Per-element popovers
+  inside modules (the Stats p-value chip, the DSL `allDifferent`
+  operator, etc.) would need the toggle-mode pattern from
+  Calculator / Notepad — they're not in this round.
+- **`ModuleHelpKind` lives in `lib/engine/`** (not `widgets/`) so
+  `app_localizations.dart` can import it without creating a cycle.
+  Both `module_help_dialog.dart` and `app_localizations.dart`
+  `export` it for convenience — callers can import either path.
+- **5 modules don't carry a FunctionRef refId** (curveSketching,
+  planes, conicSections, graphing3D, scene3D) — they have no
+  single FR row that summarizes them. The Learn-more button is
+  hidden on those. Stats / Constraints / Sudoku do have refIds.
+- **Tested in EN + DE**: each kind's title + description is
+  switched-cased in all 4 locales; DE test is a spot-check that
+  the locale dispatch reaches the override correctly. Full FR + ES
+  smoke covered by `flutter analyze` and the locale-non-emptiness
+  test that the project already runs.
 
 ### Round 104 specifically
 
@@ -217,6 +261,13 @@ moves:
 
 ## Quick-reference paths
 
+- **Module help (R105)**: `lib/widgets/module_help_dialog.dart`
+  (`ModuleHelpDialog` + `ModuleHelpButton`) + enum in
+  `lib/engine/module_help_kind.dart`. Wired in 8 module screens
+  (curve_analysis_input, plane_analysis, conic_section, statistics,
+  graphing_3d, scene_3d, constraints, sudoku) via
+  `actions: const [ModuleHelpButton(kind: ...)]` on the Scaffold's
+  AppBar.
 - **History-row help modal**:
   `lib/widgets/history_help_modal.dart` (Round 103:
   `HistoryHelpInfo` + `detectHistoryHelp` routing table +

@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 
 import '../engine/plane_math.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/module_help_dialog.dart';
 
 class PlaneAnalysisScreen extends StatefulWidget {
   const PlaneAnalysisScreen({super.key});
@@ -146,7 +147,10 @@ class _PlaneAnalysisScreenState extends State<PlaneAnalysisScreen> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(t.planeAnalysisTitle)),
+      appBar: AppBar(
+        title: Text(t.planeAnalysisTitle),
+        actions: const [ModuleHelpButton(kind: ModuleHelpKind.planes)],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

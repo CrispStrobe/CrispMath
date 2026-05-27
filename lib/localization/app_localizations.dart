@@ -7,7 +7,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../engine/module_help_kind.dart';
 import '../engine/step_engine.dart' show StepNote;
+
+export '../engine/module_help_kind.dart' show ModuleHelpKind;
 
 abstract class AppLocalizations {
   static AppLocalizations of(BuildContext context) {
@@ -542,6 +545,19 @@ abstract class AppLocalizations {
   /// opens the step-by-step trace dialog (only shown when the call
   /// has a step trace — solve / diff / integrate).
   String get historyHelpShowSteps;
+
+  /// Round 105: tooltip on the `(?)` AppBar button rendered on every
+  /// Analyze-hub module screen.
+  String get moduleHelpTooltip;
+
+  /// Round 105: title shown in the [ModuleHelpDialog] for a given
+  /// module. Caller passes the enum value; localizations dispatch
+  /// per locale.
+  String moduleHelpTitle(ModuleHelpKind kind);
+
+  /// Round 105: body text — what the module does, the inputs, the
+  /// outputs. 2-3 sentences each.
+  String moduleHelpDescription(ModuleHelpKind kind);
 
   // -- Worked examples library --
   String get workedExamplesTitle;
@@ -1774,6 +1790,84 @@ class EnLocalizations implements AppLocalizations {
       'Direct numerical evaluation — no symbolic call involved.';
   @override
   String get historyHelpShowSteps => 'Show steps';
+
+  @override
+  String get moduleHelpTooltip => 'What does this module do?';
+  @override
+  String moduleHelpTitle(ModuleHelpKind kind) {
+    switch (kind) {
+      case ModuleHelpKind.curveSketching:
+        return 'Curve sketching';
+      case ModuleHelpKind.planes:
+        return 'Plane analysis';
+      case ModuleHelpKind.conicSections:
+        return 'Conic sections';
+      case ModuleHelpKind.statistics:
+        return 'Statistics';
+      case ModuleHelpKind.graphing3D:
+        return '3D graphing';
+      case ModuleHelpKind.scene3D:
+        return '3D scene';
+      case ModuleHelpKind.constraints:
+        return 'Constraints';
+      case ModuleHelpKind.sudoku:
+        return 'Sudoku';
+    }
+  }
+
+  @override
+  String moduleHelpDescription(ModuleHelpKind kind) {
+    switch (kind) {
+      case ModuleHelpKind.curveSketching:
+        return 'Full analysis of a single-variable function f(x): '
+            'domain, intercepts, derivative + critical points, extrema, '
+            'inflection points, asymptotes, and a sketch. Enter the '
+            'function in the input box; results appear on tap.';
+      case ModuleHelpKind.planes:
+        return 'Analyze 3D planes given in coordinate form '
+            '(ax + by + cz = d) or parametric form (point + two direction '
+            'vectors). Computes the normal vector, intersections with the '
+            'coordinate axes, and pairwise plane relationships.';
+      case ModuleHelpKind.conicSections:
+        return 'Classify a general conic Ax² + Bxy + Cy² + Dx + Ey + F = 0 '
+            'as ellipse, hyperbola, parabola, or degenerate, and extract '
+            'centre, axes, foci, and eccentricity. Uses the discriminant '
+            'B² − 4AC for the classification.';
+      case ModuleHelpKind.statistics:
+        return 'Descriptive statistics (mean, median, variance, …), '
+            'linear regression with R² and residuals, the normal and '
+            'binomial distributions with PDF / CDF / quantile lookups, '
+            'and hypothesis tests: Welch t, paired t, one-way ANOVA, '
+            'chi-square goodness-of-fit and independence, Fisher exact, '
+            'Wilcoxon signed-rank, and the sign test. Tests report the '
+            'statistic, the p-value, and (where applicable) a confidence '
+            'interval at the chosen α.';
+      case ModuleHelpKind.graphing3D:
+        return 'Plot z = f(x, y) as a rotatable wireframe surface. '
+            'Drag to rotate; pinch / scroll to zoom. The resample action '
+            'rebuilds the mesh at the current zoom level so detail '
+            'tracks the camera distance.';
+      case ModuleHelpKind.scene3D:
+        return 'Render multiple 3D objects together — planes, lines, '
+            'spheres, and quadrics — in a shared scene. Useful for '
+            'visualizing intersections (e.g. two planes meeting along a '
+            'line) and for building up geometric arguments piece by piece.';
+      case ModuleHelpKind.constraints:
+        return 'Solve combinatorial problems: Diophantine equations '
+            '(integer solutions to ax + by = c), cryptarithms '
+            '(SEND + MORE = MONEY style digit assignments), a small DSL '
+            'for finite-domain constraint programming (`allDifferent`, '
+            '`noOverlap`, `cumulative`, `minimize` / `maximize`), and a '
+            'FlatZinc compatibility tab for problems written in the '
+            'MiniZinc intermediate format.';
+      case ModuleHelpKind.sudoku:
+        return 'Solve 4×4 and 9×9 puzzles including X (diagonal), '
+            'Killer (cage-sum), and Disjoint-Groups variants. The '
+            'step-by-step solver shows the search tree so you can see '
+            'how the engine narrows the candidates. Hint levels expose '
+            'either the next-cell answer or a logical reason for it.';
+    }
+  }
 
   @override
   String get workedExamplesTitle => 'Worked examples';
@@ -3266,6 +3360,87 @@ class DeLocalizations implements AppLocalizations {
       'Direkte numerische Auswertung — kein symbolischer Aufruf.';
   @override
   String get historyHelpShowSteps => 'Schritte anzeigen';
+
+  @override
+  String get moduleHelpTooltip => 'Was macht dieses Modul?';
+  @override
+  String moduleHelpTitle(ModuleHelpKind kind) {
+    switch (kind) {
+      case ModuleHelpKind.curveSketching:
+        return 'Kurvendiskussion';
+      case ModuleHelpKind.planes:
+        return 'Ebenenanalyse';
+      case ModuleHelpKind.conicSections:
+        return 'Kegelschnitte';
+      case ModuleHelpKind.statistics:
+        return 'Statistik';
+      case ModuleHelpKind.graphing3D:
+        return '3D-Diagramme';
+      case ModuleHelpKind.scene3D:
+        return '3D-Szene';
+      case ModuleHelpKind.constraints:
+        return 'Bedingungen';
+      case ModuleHelpKind.sudoku:
+        return 'Sudoku';
+    }
+  }
+
+  @override
+  String moduleHelpDescription(ModuleHelpKind kind) {
+    switch (kind) {
+      case ModuleHelpKind.curveSketching:
+        return 'Vollständige Analyse einer Funktion f(x) einer Variablen: '
+            'Definitionsbereich, Nullstellen, Ableitung und kritische '
+            'Punkte, Extrema, Wendepunkte, Asymptoten sowie eine Skizze. '
+            'Funktion in das Eingabefeld eingeben — Ergebnisse erscheinen '
+            'bei Tipp.';
+      case ModuleHelpKind.planes:
+        return 'Analyse von 3D-Ebenen in Koordinatenform '
+            '(ax + by + cz = d) oder Parameterform (Punkt + zwei '
+            'Richtungsvektoren). Berechnet Normalenvektor, Achsen-'
+            'schnittpunkte und paarweise Lagebeziehungen.';
+      case ModuleHelpKind.conicSections:
+        return 'Klassifiziert einen allgemeinen Kegelschnitt '
+            'Ax² + Bxy + Cy² + Dx + Ey + F = 0 als Ellipse, Hyperbel, '
+            'Parabel oder entartet und liefert Mittelpunkt, Achsen, '
+            'Brennpunkte und Exzentrizität. Nutzt die Diskriminante '
+            'B² − 4AC zur Klassifizierung.';
+      case ModuleHelpKind.statistics:
+        return 'Deskriptive Statistik (Mittel, Median, Varianz, …), '
+            'lineare Regression mit R² und Residuen, Normal- und '
+            'Binomialverteilung mit PDF / CDF / Quantilen sowie '
+            'Hypothesentests: Welch-t, gepaarter t-Test, einfache '
+            'ANOVA, Chi-Quadrat-Anpassungs- und Unabhängigkeitstest, '
+            'Fisher-Exakt, Wilcoxon-Vorzeichen-Rang und Vorzeichentest. '
+            'Die Tests liefern Teststatistik, p-Wert und (falls '
+            'anwendbar) ein Konfidenzintervall zum gewählten α.';
+      case ModuleHelpKind.graphing3D:
+        return 'Stellt z = f(x, y) als drehbares Drahtgitter dar. '
+            'Ziehen zum Drehen; Pinch / Scrollen zum Zoomen. Die '
+            'Resample-Aktion baut das Netz für die aktuelle Zoomstufe '
+            'neu auf, sodass das Detail der Kameradistanz folgt.';
+      case ModuleHelpKind.scene3D:
+        return 'Mehrere 3D-Objekte gemeinsam darstellen — Ebenen, '
+            'Geraden, Kugeln und Quadriken — in einer geteilten Szene. '
+            'Hilfreich zur Visualisierung von Schnitten (etwa zweier '
+            'Ebenen entlang einer Geraden) und zum schrittweisen Aufbau '
+            'geometrischer Argumentationen.';
+      case ModuleHelpKind.constraints:
+        return 'Löst kombinatorische Probleme: diophantische '
+            'Gleichungen (ganzzahlige Lösungen von ax + by = c), '
+            'Kryptarithmen (SEND + MORE = MONEY-Stil), eine kleine '
+            'DSL für endliche Bereichsbedingungen (`allDifferent`, '
+            '`noOverlap`, `cumulative`, `minimize` / `maximize`) sowie '
+            'einen FlatZinc-Tab für Probleme im MiniZinc-Zwischenformat.';
+      case ModuleHelpKind.sudoku:
+        return 'Löst 4×4- und 9×9-Rätsel einschließlich der Varianten '
+            'X (Diagonale), Killer (Käfigsummen) und Disjoint-Groups. '
+            'Der schrittweise Solver zeigt den Suchbaum, sodass '
+            'nachvollziehbar wird, wie der Algorithmus die Kandidaten '
+            'einschränkt. Tippstufen zeigen entweder die nächste '
+            'Zellantwort oder eine logische Begründung dafür.';
+    }
+  }
 
   @override
   String get workedExamplesTitle => 'Beispielaufgaben';
@@ -4951,6 +5126,90 @@ class FrLocalizations implements AppLocalizations {
   String get historyHelpShowSteps => 'Afficher les étapes';
 
   @override
+  String get moduleHelpTooltip => 'Que fait ce module ?';
+  @override
+  String moduleHelpTitle(ModuleHelpKind kind) {
+    switch (kind) {
+      case ModuleHelpKind.curveSketching:
+        return 'Étude de courbe';
+      case ModuleHelpKind.planes:
+        return 'Analyse de plans';
+      case ModuleHelpKind.conicSections:
+        return 'Coniques';
+      case ModuleHelpKind.statistics:
+        return 'Statistiques';
+      case ModuleHelpKind.graphing3D:
+        return 'Graphique 3D';
+      case ModuleHelpKind.scene3D:
+        return 'Scène 3D';
+      case ModuleHelpKind.constraints:
+        return 'Contraintes';
+      case ModuleHelpKind.sudoku:
+        return 'Sudoku';
+    }
+  }
+
+  @override
+  String moduleHelpDescription(ModuleHelpKind kind) {
+    switch (kind) {
+      case ModuleHelpKind.curveSketching:
+        return 'Étude complète d\'une fonction à une variable f(x) : '
+            'domaine, intersections, dérivée et points critiques, '
+            'extrema, points d\'inflexion, asymptotes, et un croquis. '
+            'Entrez la fonction dans la zone de saisie ; les résultats '
+            'apparaissent au tap.';
+      case ModuleHelpKind.planes:
+        return 'Analyse de plans 3D donnés sous forme cartésienne '
+            '(ax + by + cz = d) ou paramétrique (point + deux vecteurs '
+            'directeurs). Calcule le vecteur normal, les intersections '
+            'avec les axes de coordonnées et les relations entre plans.';
+      case ModuleHelpKind.conicSections:
+        return 'Classifie une conique générale '
+            'Ax² + Bxy + Cy² + Dx + Ey + F = 0 comme ellipse, '
+            'hyperbole, parabole ou dégénérée, et extrait centre, axes, '
+            'foyers et excentricité. Utilise le discriminant '
+            'B² − 4AC pour la classification.';
+      case ModuleHelpKind.statistics:
+        return 'Statistiques descriptives (moyenne, médiane, variance, '
+            '…), régression linéaire avec R² et résidus, lois normale '
+            'et binomiale avec PDF / CDF / quantiles, et tests '
+            'd\'hypothèses : t de Welch, t apparié, ANOVA à un facteur, '
+            'chi-deux d\'ajustement et d\'indépendance, test exact de '
+            'Fisher, test des rangs signés de Wilcoxon et test des '
+            'signes. Les tests fournissent la statistique, la valeur '
+            'p, et (si applicable) un intervalle de confiance au seuil α '
+            'choisi.';
+      case ModuleHelpKind.graphing3D:
+        return 'Trace z = f(x, y) sous forme de surface filaire '
+            'rotative. Faites glisser pour faire pivoter ; pincez / '
+            'défilez pour zoomer. L\'action de rééchantillonnage '
+            'reconstruit le maillage au niveau de zoom courant pour '
+            'que le détail suive la distance de la caméra.';
+      case ModuleHelpKind.scene3D:
+        return 'Rendu de plusieurs objets 3D ensemble — plans, '
+            'droites, sphères et quadriques — dans une scène partagée. '
+            'Utile pour visualiser les intersections (par exemple deux '
+            'plans se rencontrant le long d\'une droite) et construire '
+            'des arguments géométriques étape par étape.';
+      case ModuleHelpKind.constraints:
+        return 'Résout des problèmes combinatoires : équations '
+            'diophantiennes (solutions entières de ax + by = c), '
+            'cryptarithmes (style SEND + MORE = MONEY), un petit '
+            'DSL de programmation par contraintes à domaines finis '
+            '(`allDifferent`, `noOverlap`, `cumulative`, `minimize` / '
+            '`maximize`), et un onglet FlatZinc pour les problèmes '
+            'écrits au format intermédiaire MiniZinc.';
+      case ModuleHelpKind.sudoku:
+        return 'Résout les grilles 4×4 et 9×9, y compris les variantes '
+            'X (diagonales), Killer (sommes de cages) et Disjoint-'
+            'Groups. Le solveur pas à pas montre l\'arbre de recherche '
+            'pour observer comment le moteur restreint les candidats. '
+            'Les niveaux d\'indice révèlent soit la réponse de la '
+            'cellule suivante, soit une justification logique.';
+    }
+  }
+
+  @override
   String get workedExamplesTitle => 'Exemples résolus';
   @override
   String get workedExamplesSearchHint => 'Rechercher des exemples…';
@@ -6631,6 +6890,90 @@ class EsLocalizations implements AppLocalizations {
       'Evaluación numérica directa — sin llamada simbólica.';
   @override
   String get historyHelpShowSteps => 'Mostrar pasos';
+
+  @override
+  String get moduleHelpTooltip => '¿Qué hace este módulo?';
+  @override
+  String moduleHelpTitle(ModuleHelpKind kind) {
+    switch (kind) {
+      case ModuleHelpKind.curveSketching:
+        return 'Estudio de curvas';
+      case ModuleHelpKind.planes:
+        return 'Análisis de planos';
+      case ModuleHelpKind.conicSections:
+        return 'Cónicas';
+      case ModuleHelpKind.statistics:
+        return 'Estadística';
+      case ModuleHelpKind.graphing3D:
+        return 'Gráficos 3D';
+      case ModuleHelpKind.scene3D:
+        return 'Escena 3D';
+      case ModuleHelpKind.constraints:
+        return 'Restricciones';
+      case ModuleHelpKind.sudoku:
+        return 'Sudoku';
+    }
+  }
+
+  @override
+  String moduleHelpDescription(ModuleHelpKind kind) {
+    switch (kind) {
+      case ModuleHelpKind.curveSketching:
+        return 'Análisis completo de una función de una variable f(x): '
+            'dominio, intersecciones, derivada y puntos críticos, '
+            'extremos, puntos de inflexión, asíntotas y un croquis. '
+            'Introduce la función en el cuadro de entrada; los '
+            'resultados aparecen al tocar.';
+      case ModuleHelpKind.planes:
+        return 'Analiza planos 3D dados en forma cartesiana '
+            '(ax + by + cz = d) o paramétrica (punto + dos vectores '
+            'directores). Calcula el vector normal, las intersecciones '
+            'con los ejes y las relaciones entre planos.';
+      case ModuleHelpKind.conicSections:
+        return 'Clasifica una cónica general '
+            'Ax² + Bxy + Cy² + Dx + Ey + F = 0 como elipse, hipérbola, '
+            'parábola o degenerada, y obtiene centro, ejes, focos y '
+            'excentricidad. Usa el discriminante B² − 4AC para la '
+            'clasificación.';
+      case ModuleHelpKind.statistics:
+        return 'Estadística descriptiva (media, mediana, varianza, …), '
+            'regresión lineal con R² y residuos, distribuciones normal '
+            'y binomial con PDF / CDF / cuantiles, y pruebas de '
+            'hipótesis: t de Welch, t pareada, ANOVA de un factor, '
+            'chi-cuadrado de bondad de ajuste e independencia, prueba '
+            'exacta de Fisher, prueba de los rangos con signo de '
+            'Wilcoxon y prueba de signos. Las pruebas devuelven el '
+            'estadístico, el valor p y (si procede) un intervalo de '
+            'confianza al α elegido.';
+      case ModuleHelpKind.graphing3D:
+        return 'Representa z = f(x, y) como una superficie alámbrica '
+            'rotable. Arrastra para rotar; pellizca / desplaza para '
+            'hacer zoom. La acción de remuestreo reconstruye la malla '
+            'al nivel de zoom actual para que el detalle siga a la '
+            'distancia de la cámara.';
+      case ModuleHelpKind.scene3D:
+        return 'Renderiza varios objetos 3D juntos — planos, rectas, '
+            'esferas y cuádricas — en una escena compartida. Útil para '
+            'visualizar intersecciones (por ejemplo dos planos que se '
+            'encuentran en una recta) y para construir argumentos '
+            'geométricos paso a paso.';
+      case ModuleHelpKind.constraints:
+        return 'Resuelve problemas combinatorios: ecuaciones '
+            'diofánticas (soluciones enteras de ax + by = c), '
+            'criptaritmos (estilo SEND + MORE = MONEY), un pequeño DSL '
+            'de programación con restricciones de dominio finito '
+            '(`allDifferent`, `noOverlap`, `cumulative`, `minimize` / '
+            '`maximize`) y una pestaña FlatZinc para problemas '
+            'escritos en el formato intermedio MiniZinc.';
+      case ModuleHelpKind.sudoku:
+        return 'Resuelve puzzles 4×4 y 9×9, incluidas las variantes '
+            'X (diagonal), Killer (sumas de jaulas) y Disjoint-Groups. '
+            'El solucionador paso a paso muestra el árbol de búsqueda, '
+            'permitiendo ver cómo el motor reduce los candidatos. Los '
+            'niveles de pista exponen la respuesta de la siguiente '
+            'celda o una justificación lógica.';
+    }
+  }
 
   @override
   String get workedExamplesTitle => 'Ejemplos resueltos';

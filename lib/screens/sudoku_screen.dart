@@ -23,6 +23,7 @@ import 'package:flutter/services.dart';
 import '../engine/app_state.dart';
 import '../engine/sudoku.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/module_help_dialog.dart';
 import '../widgets/sudoku_grid.dart';
 
 class SudokuScreen extends StatefulWidget {
@@ -784,7 +785,10 @@ class _SudokuScreenState extends State<SudokuScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.moduleSudokuTitle)),
+      appBar: AppBar(
+        title: Text(t.moduleSudokuTitle),
+        actions: const [ModuleHelpButton(kind: ModuleHelpKind.sudoku)],
+      ),
       // Round 87: Focus + onKeyEvent wrap so digit / arrow / delete
       // keys land on _handleKey when the user has selected a cell.
       // autofocus true so the user can start typing without an

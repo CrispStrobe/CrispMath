@@ -11,6 +11,7 @@ import '../utils/keyboard_input_handler.dart';
 import '../utils/latex_conversion_utils.dart';
 import '../widgets/calculator_keypad.dart';
 import '../widgets/latex_input_field.dart';
+import '../widgets/module_help_dialog.dart';
 import 'curve_analysis_results_screen.dart';
 
 class CurveAnalysisInputScreen extends StatefulWidget {
@@ -254,6 +255,7 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
             tooltip: 'Select from saved functions',
             onPressed: _selectFromFunctions,
           ),
+          const ModuleHelpButton(kind: ModuleHelpKind.curveSketching),
         ],
       ),
       body: KeyboardListener(

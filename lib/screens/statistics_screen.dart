@@ -15,6 +15,7 @@ import '../engine/distributions.dart';
 import '../engine/hypothesis_tests.dart';
 import '../engine/statistics.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/module_help_dialog.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -63,6 +64,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(t.statisticsTitle),
+        actions: const [ModuleHelpButton(kind: ModuleHelpKind.statistics)],
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,

@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import '../engine/calculator_engine.dart';
 import '../localization/app_localizations.dart';
 import '../utils/expression_preprocessing_utils.dart';
+import '../widgets/module_help_dialog.dart';
 
 class Graphing3DScreen extends StatefulWidget {
   const Graphing3DScreen({super.key});
@@ -119,6 +120,7 @@ class _Graphing3DScreenState extends State<Graphing3DScreen> {
               _zoom = 1.0;
             }),
           ),
+          const ModuleHelpButton(kind: ModuleHelpKind.graphing3D),
         ],
       ),
       body: Column(

@@ -14,6 +14,7 @@ import '../engine/app_state.dart';
 import '../engine/scene_3d/intersections.dart';
 import '../engine/scene_3d/scene_object.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/module_help_dialog.dart';
 import '../widgets/scene_3d_intersections_panel.dart';
 import '../widgets/scene_3d_object_dialogs.dart';
 import '../widgets/scene_3d_painter.dart';
@@ -273,6 +274,7 @@ class _Scene3DScreenState extends State<Scene3DScreen> {
             tooltip: t.resetView,
             onPressed: _appState.resetSceneViewport,
           ),
+          const ModuleHelpButton(kind: ModuleHelpKind.scene3D),
         ],
       ),
       body: wide
