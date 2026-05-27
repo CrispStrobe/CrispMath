@@ -4,7 +4,6 @@
 // (only present when a refId is mapped), and the omission of
 // Learn-more for modules without a FunctionRef summary.
 
-import 'package:crisp_calc/engine/module_help_kind.dart';
 import 'package:crisp_calc/localization/app_localizations.dart';
 import 'package:crisp_calc/widgets/function_reference_dialog.dart';
 import 'package:crisp_calc/widgets/module_help_dialog.dart';
@@ -90,16 +89,16 @@ void main() {
   // DeLocalizations override correctly.
   testWidgets('DE locale dispatches translated title + description',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: const [
+    await tester.pumpWidget(const MaterialApp(
+      localizationsDelegates: [
         AppLocalizationsDelegate(),
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('de')],
-      locale: const Locale('de'),
-      home: const Scaffold(
+      supportedLocales: [Locale('de')],
+      locale: Locale('de'),
+      home: Scaffold(
         body: ModuleHelpDialog(kind: ModuleHelpKind.sudoku),
       ),
     ));

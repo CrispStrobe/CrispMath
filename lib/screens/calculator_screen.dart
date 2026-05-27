@@ -1931,55 +1931,15 @@ class CalculatorScreenState extends State<CalculatorScreen>
   /// extracted from a history expression and opens [StepsDialog].
   /// Mirrors the dialog shape used by the explicit `solve⌄` /
   /// `d/dx⌄` / `∫⌄` keypad buttons, minus the input prompt — values
-  /// come from the history row's parsed call.
+  /// come from the history row's parsed call. Round 104b lifted the
+  /// dispatch into [runHistoryStepTrace] so the Notepad row can share
+  /// the same trace without duplicating the switch.
   Future<void> _runStepTraceForHistory(HistoryHelpInfo info) async {
-    if (info.stepExpr == null || info.stepVar == null) return;
-    final t = AppLocalizations.of(context);
-    final preprocessed =
-        ExpressionPreprocessingUtils.preprocessNativeExpression(
-      ExpressionPreprocessingUtils.preprocessExpression(
-          info.stepExpr!, _appState),
-    );
-    final variable = info.stepVar!;
-    final List<MathStep> steps;
-    final String title;
-    final String? headlineLatex;
-    final String subtitle;
-    switch (info.stepKind) {
-      case HistoryStepKind.solve:
-        steps = StepEngine.solve(preprocessed, variable, _engine);
-        title = t.solveStepsTitle;
-        subtitle = t.solveStepsHeader(variable);
-        headlineLatex = preprocessed.contains('=')
-            ? preprocessed.replaceAll('=', r' \,=\, ')
-            : '$preprocessed = 0';
-        break;
-      case HistoryStepKind.diff:
-        steps = StepEngine.differentiate(preprocessed, variable, _engine);
-        title = t.differentiationStepsTitle;
-        subtitle = t.differentiationStepsHeader(variable);
-        headlineLatex = null;
-        break;
-      case HistoryStepKind.integrate:
-        steps = StepEngine.integrate(preprocessed, variable, _engine);
-        title = t.integrationStepsTitle;
-        subtitle = t.integrationStepsHeader(variable);
-        headlineLatex = r'\int ' + _toLatex(preprocessed) + r' \, d' + variable;
-        break;
-      case HistoryStepKind.none:
-        return;
-    }
-    if (!mounted) return;
-    await showDialog<void>(
+    await runHistoryStepTrace(
       context: context,
-      builder: (ctx) => StepsDialog(
-        title: title,
-        expression: preprocessed,
-        variable: variable,
-        steps: steps,
-        subtitle: subtitle,
-        headlineLatex: headlineLatex,
-      ),
+      info: info,
+      engine: _engine,
+      appState: _appState,
     );
   }
 

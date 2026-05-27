@@ -12,9 +12,13 @@
 import 'package:flutter/material.dart';
 
 import '../engine/app_state.dart';
+import '../engine/calculator_engine.dart';
 import '../engine/function_reference.dart';
+import '../engine/step_engine.dart';
 import '../localization/app_localizations.dart';
 import '../utils/expression_preprocessing_utils.dart';
+import '../utils/math_display_utils.dart';
+import 'steps_dialog.dart';
 
 /// Which [StepEngine] entry-point applies to a row, or `none` when the
 /// row's computation has no step trace.
@@ -362,4 +366,68 @@ class HistoryRowHelpModal extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Round 104b (P6): shared step-trace runner. Re-runs the appropriate
+/// [StepEngine] entry-point on the args extracted from a history /
+/// notepad expression and opens [StepsDialog]. Calculator and Notepad
+/// both call into this — the State-side wrappers used to duplicate
+/// the dispatch switch; Round 104b lifts it here so the Notepad row
+/// (which doesn't sit on State) can reach it through a simple
+/// callback wired by the host screen.
+Future<void> runHistoryStepTrace({
+  required BuildContext context,
+  required HistoryHelpInfo info,
+  required CalculatorEngine engine,
+  required AppState appState,
+}) async {
+  if (info.stepExpr == null || info.stepVar == null) return;
+  final t = AppLocalizations.of(context);
+  final preprocessed = ExpressionPreprocessingUtils.preprocessNativeExpression(
+    ExpressionPreprocessingUtils.preprocessExpression(info.stepExpr!, appState),
+  );
+  final variable = info.stepVar!;
+  final List<MathStep> steps;
+  final String title;
+  final String? headlineLatex;
+  final String subtitle;
+  switch (info.stepKind) {
+    case HistoryStepKind.solve:
+      steps = StepEngine.solve(preprocessed, variable, engine);
+      title = t.solveStepsTitle;
+      subtitle = t.solveStepsHeader(variable);
+      headlineLatex = preprocessed.contains('=')
+          ? preprocessed.replaceAll('=', r' \,=\, ')
+          : '$preprocessed = 0';
+      break;
+    case HistoryStepKind.diff:
+      steps = StepEngine.differentiate(preprocessed, variable, engine);
+      title = t.differentiationStepsTitle;
+      subtitle = t.differentiationStepsHeader(variable);
+      headlineLatex = null;
+      break;
+    case HistoryStepKind.integrate:
+      steps = StepEngine.integrate(preprocessed, variable, engine);
+      title = t.integrationStepsTitle;
+      subtitle = t.integrationStepsHeader(variable);
+      headlineLatex = r'\int ' +
+          MathDisplayUtils.toHistoryDisplayLatex(preprocessed) +
+          r' \, d' +
+          variable;
+      break;
+    case HistoryStepKind.none:
+      return;
+  }
+  if (!context.mounted) return;
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => StepsDialog(
+      title: title,
+      expression: preprocessed,
+      variable: variable,
+      steps: steps,
+      subtitle: subtitle,
+      headlineLatex: headlineLatex,
+    ),
+  );
 }

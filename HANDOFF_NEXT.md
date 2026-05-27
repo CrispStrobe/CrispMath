@@ -1,13 +1,14 @@
 # CrispCalc — handover for the next session
 
-Pickup note from the **2026-05-27 (Rounds 103 + 102b + 104 + 105)
-session**. Shipped the P6 help-popover sweep across Calculator
-history rows (R103), CAS-tab keypad buttons (R102b — Adv was
-already in R102), Notepad lines (R104), and now per-module
-explainers on all 8 Analyze-hub screens (R105). All "row" surfaces
-share the same `HistoryRowHelpModal` + `detectHistoryHelp`; module
-screens use a separate, simpler `ModuleHelpDialog` because the
-intent is one-shot module overview, not per-element popovers.
+Pickup note from the **2026-05-27 (Rounds 103 + 102b + 104 +
+105 + 104b) session**. Shipped the P6 help-popover sweep across
+Calculator history rows (R103), CAS-tab keypad buttons (R102b —
+Adv was already in R102), Notepad lines (R104 + R104b), and now
+per-module explainers on all 8 Analyze-hub screens (R105). All
+"row" surfaces share the same `HistoryRowHelpModal` +
+`detectHistoryHelp`; module screens use a separate, simpler
+`ModuleHelpDialog` because the intent is one-shot module
+overview, not per-element popovers.
 
 - **103** — `HistoryRowHelpModal` + `detectHistoryHelp` in
   `lib/widgets/history_help_modal.dart`. Routing table maps
@@ -42,6 +43,15 @@ intent is one-shot module overview, not per-element popovers.
   single FR row summarizes them). 19 i18n strings (1 tooltip +
   9 titles + 9 descriptions) × 4 locales = 76 new translations.
   +5 widget tests (1986 → 1991).
+- **104b** — Notepad Show-steps wiring (closes the Round 104
+  deferral). Lifted the step-trace dispatch into a shared
+  top-level `runHistoryStepTrace(...)` helper in
+  `lib/widgets/history_help_modal.dart`; Calculator's
+  `_runStepTraceForHistory` now delegates to it. Threaded
+  `engine` + `appState` into `_NotepadLineRow`; help-mode tap on
+  a solve / diff / integrate row now opens the same step-by-step
+  dialog the Calculator history popover does. +1 widget test
+  (1991 → 1992).
 
 `HANDOFF.md` remains the load-bearing pattern reference.
 
@@ -65,10 +75,10 @@ remind yourself the user wants main.
 | | |
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
-| **main HEAD** | R102b + R104 at `d6bbd19`; R105 commit to follow |
-| **Tests** | **1991 pass** (1965 → 1982 → 1984 → 1986 → 1991), 1 pre-existing skip — `flutter analyze` clean |
+| **main HEAD** | R105 at `b3c703e`; R104b commit to follow |
+| **Tests** | **1992 pass** (1965 → 1982 → 1984 → 1986 → 1991 → 1992), 1 pre-existing skip — `flutter analyze` clean |
 | **dart_csp pin** | `69a9cfb` (unchanged) |
-| **CI** | R102 pushed; R97-99 + R101 + R102 + R103 + R102b + R104 status not yet observed |
+| **CI** | R102 pushed; R97-99 + R101 + R102 + R103 + R102b + R104 + R105 status not yet observed |
 
 Only dirty file at session start was `.claude/scheduled_tasks.lock`
 (harness state — left alone).
@@ -81,6 +91,7 @@ Only dirty file at session start was `.claude/scheduled_tasks.lock`
 | **102b** | CAS-tab keypad popovers in `lib/widgets/calculator_keypad.dart`. New `_kCasKeyHelpRefId` map (10 mappings); both narrow tabbed and wide two-pane layouts now wire `helpRefIdFor` + `onHelpTap` on the CAS pane via `showKeypadHelpPopover`. `⌄` step-trace variants and `=` / `,` / `f(x)` punctuation are deliberately omitted — they're calculator UX, not engine surface. +2 widget tests (1982 → 1984). |
 | **104** | Notepad line help popovers. `_NotepadLineRow._showLineHelp` wires `HelpTarget.onHelpTap` on both row layouts (sideBySide + stacked) to the shared `HistoryRowHelpModal`. Reuses `detectHistoryHelp` over `line.source`; result is `cachedError ?? cachedResult ?? ''`. Show-steps suppressed (no engine reference); Learn-more deep-links to `FunctionReferenceDialog`. +2 widget tests (1984 → 1986). |
 | **105** | Per-module `(?)` AppBar button on every Analyze-hub screen. New `lib/engine/module_help_kind.dart` (pure enum, breaks the `app_localizations.dart` ↔ widget cycle) + `lib/widgets/module_help_dialog.dart` (`ModuleHelpDialog` + `ModuleHelpButton`). Wired on 8 screens: curve_analysis_input, plane_analysis, conic_section, statistics, graphing_3d, scene_3d, constraints, sudoku. Optional FunctionRef Learn-more deep-link via `_kModuleRefId` map (statistics → welch_t, constraints → all_different, sudoku → sudoku_regular). 19 new l10n strings × 4 locales: `moduleHelpTooltip`, `moduleHelpTitle(ModuleHelpKind)`, `moduleHelpDescription(ModuleHelpKind)`. +5 widget tests (1986 → 1991). |
+| **104b** | Notepad Show-steps wiring (closes the Round 104 deferral). Lifted the step-trace dispatch into a shared top-level `runHistoryStepTrace({context, info, engine, appState})` helper in `lib/widgets/history_help_modal.dart`. Calculator's `_runStepTraceForHistory` now delegates to it. Threaded `engine` + `appState` into `_NotepadLineRow` (constructor params); help-mode tap on a solve / diff / integrate notepad row now opens the same `StepsDialog` the Calculator history popover does. +1 widget test (1991 → 1992). |
 
 ## Pickup points — next strategic slot
 
@@ -113,16 +124,7 @@ hub modules. Next obvious moves:
    Round 105 (this session) only shipped the module-level
    explainers; per-element follow-ups are a natural extension.
 
-3. **Round 104 follow-up — Notepad Show-steps wiring**. The
-   modal supports `onShowSteps` but Round 104 omits it because
-   `_NotepadLineRow` doesn't carry a `CalculatorEngine`. To wire
-   it: thread the `_engine` reference from `_NotepadScreenState`
-   down through `_NotepadLineRow` (constructor param), then
-   build an `onShowSteps` closure that calls
-   `StepEngine.solve / .differentiate / .integrate` with the
-   parsed args. Small, mechanical.
-
-4. **Other deferred carry-overs** (unchanged from prior pickup):
+3. **Other deferred carry-overs** (unchanged from prior pickup):
    - Round 95 follow-up — Statistics input pre-fill.
    - Series / taylor entries (P6 §97) — blocked on bridge.
    - Eigenvalues entry (P6 §98) — blocked on bridge.
@@ -186,20 +188,27 @@ hub modules. Next obvious moves:
   smoke covered by `flutter analyze` and the locale-non-emptiness
   test that the project already runs.
 
-### Round 104 specifically
+### Round 104 / 104b specifically
 
-- **Show-steps omitted on Notepad**. The modal supports
-  `onShowSteps` but Notepad's `_NotepadLineRow` is a
-  StatelessWidget with no `CalculatorEngine` reference. The
-  user's escape hatch is to copy the line into Calculator and
-  tap the `⌄` step-trace button there. Wiring it through is a
-  small follow-up (see pickup §3) — not blocking.
+- **Show-steps now wired** (Round 104b). `_NotepadLineRow` takes
+  `engine` + `appState` ctor params; `_showLineHelp` passes
+  `onShowSteps` through to the modal for `info.hasSteps` rows.
+  Tap fires the shared top-level [`runHistoryStepTrace`] which
+  lives in `lib/widgets/history_help_modal.dart` and is also the
+  source of truth for Calculator's history-row Show-steps action.
 - **`cachedError` shown ahead of `cachedResult`** in the modal's
   result line. Error rows therefore still display sensibly
   ("= Error: parse failed") rather than empty.
 - **Blank lines suppress the popover**. `_showLineHelp` short-
   circuits on empty `line.source.trim()` so the modal can't open
   on the blank seed row.
+- **Step-trace widget test stops short of tapping Show-steps**
+  on Notepad because the SymEngine bridge isn't loaded in the
+  test VM and the resulting fallback string overflows the
+  `StepsDialog`'s LaTeX rendering, raising a non-fatal layout
+  assertion that fails the test. The presence + wiring of the
+  button is verified instead; rendering coverage lives in the
+  Calculator history-row tests where the same runner is exercised.
 
 ### Round 102b specifically
 

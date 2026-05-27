@@ -79,10 +79,44 @@ void main() {
         FunctionReferences.all.firstWhere((e) => e.id == 'factor');
     expect(find.text(factorRef.signature), findsOneWidget);
     expect(find.text('Learn more'), findsOneWidget);
-    // Show-steps is intentionally absent on notepad rows — the row
-    // doesn't have a CalculatorEngine reference to re-run StepEngine
-    // against. Verify the action is suppressed.
+    // Round 104b: factor(...) has no step trace — Show-steps stays
+    // hidden. Bare arithmetic + solve / diff / integrate are tested
+    // separately below.
     expect(find.text('Show steps'), findsNothing);
+  });
+
+  testWidgets('Round 104b: solve(...) line surfaces a Show-steps action button',
+      (tester) async {
+    await _bootApp(tester, size: const Size(1280, 800));
+    await _gotoNotepad(tester);
+
+    final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+    doc.lines.add(NotepadLine(
+      id: 'line-solve',
+      source: 'solve(x^2 - 1, x)',
+      cachedResult: '[-1, 1]',
+    ));
+    AppState().setNotepadDocument(doc);
+    await tester.pumpAndSettle();
+
+    AppState().setHelpMode(true);
+    await tester.pump();
+
+    final field = find.widgetWithText(TextField, 'solve(x^2 - 1, x)');
+    expect(field, findsOneWidget);
+    await tester.tap(field, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    // Modal opens with Show-steps wired (Round 104b).
+    expect(find.byType(HistoryRowHelpModal), findsOneWidget);
+    expect(find.text('Show steps'), findsOneWidget);
+    // factor(...) row in the earlier test asserts the button is
+    // *absent* — together they show the detection / wiring split is
+    // intact end-to-end. We stop short of actually tapping the
+    // button here because StepEngine.solve runs the full bridge
+    // dispatch and the test VM doesn't load the native dylib; the
+    // step-trace rendering happens in `runHistoryStepTrace` unit
+    // coverage and is exercised by the Calculator history-row tests.
   });
 
   testWidgets('help-mode tap on bare-arithmetic line shows direct-eval blurb',

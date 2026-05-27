@@ -1156,6 +1156,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
             onChanged: (v) => _onLineEdited(doc, line, v),
             onDelete: () => _deleteLine(doc, index),
             onScrollToLineId: _scrollToLineId,
+            engine: _engine,
+            appState: _appState,
           );
         },
       );
@@ -1178,6 +1180,14 @@ class _NotepadLineRow extends StatelessWidget {
   final VoidCallback onDelete;
   final void Function(String lineId) onScrollToLineId;
 
+  /// Round 104b (P6): used by [_showLineHelp] to wire the Show-steps
+  /// button on solve / diff / integrate rows. The notepad row didn't
+  /// originally carry an engine reference; Round 104 deferred this
+  /// wiring, Round 104b threads it through so help mode reaches the
+  /// same [StepEngine] trace the Calculator history popover does.
+  final CalculatorEngine engine;
+  final AppState appState;
+
   const _NotepadLineRow({
     super.key,
     required this.line,
@@ -1189,6 +1199,8 @@ class _NotepadLineRow extends StatelessWidget {
     required this.onChanged,
     required this.onDelete,
     required this.onScrollToLineId,
+    required this.engine,
+    required this.appState,
   });
 
   bool get _isBlank => line.source.trim().isEmpty;
@@ -1281,11 +1293,10 @@ class _NotepadLineRow extends StatelessWidget {
   /// [HistoryRowHelpModal]. Reuses the calculator-history routing
   /// table; the line's `source` is the expression, and the modal
   /// surfaces `cachedError` ahead of `cachedResult` so error lines
-  /// still display sensibly. Show-steps is intentionally omitted —
-  /// the notepad row doesn't have a `CalculatorEngine` reference,
-  /// and threading one through is more wiring than the action is
-  /// worth (the user can copy the line into the Calculator and tap
-  /// `solve⌄` / `d/dx⌄` / `∫⌄` to get the same trace).
+  /// still display sensibly. Round 104b wires Show-steps via the
+  /// shared [runHistoryStepTrace] runner — solve / diff / integrate
+  /// rows now re-render the same step-by-step dialog the Calculator
+  /// uses.
   void _showLineHelp(BuildContext context) {
     final source = line.source.trim();
     if (source.isEmpty) return;
@@ -1300,6 +1311,17 @@ class _NotepadLineRow extends StatelessWidget {
       builder: (dialogContext) => HistoryRowHelpModal(
         entry: entry,
         info: info,
+        onShowSteps: info.hasSteps
+            ? () {
+                Navigator.of(dialogContext).pop();
+                runHistoryStepTrace(
+                  context: context,
+                  info: info,
+                  engine: engine,
+                  appState: appState,
+                );
+              }
+            : null,
         onLearnMore: info.refId == null
             ? null
             : () {
