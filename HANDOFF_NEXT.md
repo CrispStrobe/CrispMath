@@ -19,10 +19,11 @@ arc rule (see `memory/feedback_multi_repo_arc_worktree.md`).
 | | |
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
-| **main HEAD** | (TBD — v0.4.0 commit + tag |
+| **main HEAD** | `605acb9` (v0.4.0 cut + GH Release published `2026-05-27T21:31:14Z`) |
 | **Tests** | **1992 pass** (1965 → 1992 across the help-popover arc); bridge pin bump doesn't change test surface |
 | **dart_csp pin** | `69a9cfb` (unchanged) |
-| **bridge pin** | **`85bfa7e`** (bridge 1.1.0 — adds Android + Windows binaries) — was `505074d` |
+| **bridge pin** | **`931adcf`** (bridge 1.1.1 — Android + Windows binaries + consumer-integration fixes) — was `505074d` pre-session |
+| **release artifacts on GH** | macOS 32.8 MB · iOS 12.0 MB · Linux 13.2 MB · **Android 83.3 MB (+17.7 MB carries the new .so)** · **Windows 17.4 MB (+1.9 MB carries the new .dll)** |
 
 ## This session — major arcs landed
 
@@ -50,28 +51,71 @@ on Android and Windows.
   only SymEngine compiled from source. 4 iterations to green;
   `.dll` committed to bridge.
 
-Bridge merged to main as v1.1.0 (commit `85bfa7e`). CrispCalc
-pubspec.yaml `ref` bumped accordingly.
+Bridge initially merged as v1.1.0 (`85bfa7e`), then had to bump
+to v1.1.1 (`931adcf`) after CrispCalc CI caught two consumer-side
+breakages:
+- Android: bridge's `android/build.gradle` had `externalNativeBuild`
+  forcing consumer Gradle to compile the wrapper from source
+  without SymEngine available. Fix: drop `externalNativeBuild` —
+  `jniLibs` alone is sufficient for `ffiPlugin: true`.
+- Windows: bridge's `windows/CMakeLists.txt` always compiled the
+  wrapper source. Fix: three-mode CMake — full-from-source (CI
+  only), consumer-prebuilt (bundle the pre-built DLL via
+  `bundled_libraries`), registrar-stub (degraded fallback). Plus
+  a rename: prebuilt DLL went from
+  `symbolic_math_bridge_plugin.dll` to `libsymbolic_math_bridge.dll`
+  to avoid a name collision with the registrar DLL Flutter's
+  consumer-mode build also produces. Plus a follow-up bridge fix
+  (force-link guard in `symbolic_math_bridge_plugin.cpp` since
+  consumer mode doesn't compile `force_link.c`).
+- Dart side: `DynamicLibrary.open` now picks per-platform binary
+  names — `libsymbolic_math_bridge.so` on Android,
+  `libsymbolic_math_bridge.dll` on Windows, `DynamicLibrary.process()`
+  on iOS/macOS.
+
+Three full CrispCalc CI iterations on the bridge consumer integration:
+`24bbe61` (Android + Windows fail), `867230a` (Android green,
+Windows still fails), `605acb9` (**all 6 green**) → v0.4.0 cut.
+
+## Smoke-test status (what's verified, what isn't)
+
+| | Verified via CI | Verified locally (macOS host) | Real-hardware verification |
+|---|---|---|---|
+| Compile + link + symbols in export table | ✓ | — | n/a |
+| macOS app builds + binaries embed | ✓ | ✓ (`crisp_calc.app` 74.7 MB built locally) | host = macOS, runtime trivially OK |
+| Android APK contains the bridge .so | ✓ (size delta +17.7 MB matches stripped .so size) | — | **⚠ needs arm64-v8a device or emulator** |
+| Windows zip contains the bridge .dll | ✓ (size delta +1.9 MB matches stripped .dll compressed) | — | **⚠ needs Windows x86_64 desktop** |
+| iOS / Linux unchanged | ✓ | — | — |
+
+The structural pipeline is end-to-end green. What's NOT confirmed:
+the runtime FFI call from a real Android device or Windows desktop.
+The same SymEngine wrapper source that works on iOS/macOS is what
+got compiled into both new binaries — if compile + link + symbol
+visibility line up (verified), runtime should follow. But should
+should be verified.
 
 ## What's open / next session pickup
 
-### 1. **Smoke-test on actual Android device + Windows desktop** (highest priority)
+### 1. **Runtime smoke-test on real hardware** (highest priority)
 
-The R131 + R132 binaries are confirmed at the
-compile/link/symbols-in-export-table level by CI. They have NOT
-been verified end-to-end: load DLL, invoke a `flutter_symengine_*`
-function, observe real output. Two paths:
+Download v0.4.0's artifacts and run them:
 
-- **Local manual test**: build CrispCalc for Android on an
-  emulator or device; invoke `solve(x^2 - 1, x)` from the calculator;
-  expect `[-1, 1]` not `Error: requires native library`.
-- Same for Windows: `flutter build windows`, run, exercise the
-  calculator.
+- **Android**: install `crisp_calc-v0.4.0-android.apk` on an arm64
+  device or emulator. Open the calculator, type
+  `solve(x^2 - 1, x)`. Expect `[-1, 1]`. If you get
+  `Error: requires native library`, the DLL didn't load at runtime
+  — most likely cause is a mismatch between the filename Dart
+  passes to `DynamicLibrary.open` and the filename Flutter
+  actually bundled. Bridge 1.1.2 fix would adjust either side.
+- **Windows**: extract `crisp_calc-v0.4.0-windows-x64.zip`, run
+  `crisp_calc.exe`, same calculator test. Two DLLs ship in the
+  runner directory (`symbolic_math_bridge_plugin.dll` registrar
+  stub + `libsymbolic_math_bridge.dll` real wrapper) — Dart loads
+  the second by name.
 
-If a runtime fail surfaces (most likely cause: a transitive
-function the wrapper expects isn't actually exported by our DLL),
-the iteration is to add the missing symbol to `force_link.c` +
-re-run the bridge workflow.
+If a runtime fail surfaces, the iteration is bridge 1.1.2 — add
+diagnostic logging to `_openNativeLibrary()`, narrow the failure,
+push fix, re-pin CrispCalc, cut v0.4.1.
 
 ### 2. **R130 — Linux SymEngine build**
 

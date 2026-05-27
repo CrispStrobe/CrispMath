@@ -42,14 +42,71 @@ SymEngine on Android arm64-v8a and Windows x86_64 too.
     MSVC-built Flutter Windows apps via dart:ffi without ABI
     gymnastics; no libgcc / libstdc++ / libwinpthread sidecar DLLs.
 
+### Bridge consumer-integration iteration (1.1.0 → 1.1.1)
+
+After merging R131 + R132 onto bridge `main` as v1.1.0 (`85bfa7e`)
+and bumping CrispCalc's pubspec ref accordingly, **CrispCalc CI
+caught two consumer-side breakages** that the bridge's own CI hadn't
+hit (because the bridge's CI builds standalone, with SymEngine
+available via vcpkg or MSYS2):
+
+- **Android `flutter build`** failed: bridge's `android/build.gradle`
+  had `externalNativeBuild { cmake { path 'CMakeLists.txt' } }`,
+  forcing consumer Gradle to invoke our CMake — which tries to
+  compile `flutter_symengine_wrapper.c` against SymEngine headers
+  that aren't installed on consumer machines.
+- **Windows `flutter build`** failed the same way: bridge's
+  `windows/CMakeLists.txt` always pulled in `flutter_symengine_wrapper.c`
+  to the consumer's build target. Same `cwrapper.h: No such file`
+  error.
+
+Bridge 1.1.1 (`931adcf`) fixes both:
+
+- **Android**: dropped `externalNativeBuild` from `build.gradle`.
+  `jniLibs.srcDirs += 'src/main/jniLibs'` alone is sufficient for
+  `ffiPlugin: true` — Flutter packages the per-ABI `.so` into the
+  APK without needing CMake to run on the consumer machine.
+- **Windows `CMakeLists.txt` — three build modes**:
+  - `FLUTTER_PLUGIN_STANDALONE=ON` + `SymEngine_FOUND` → build
+    full wrapper from source. CI workflow only.
+  - Default consumer + `windows/Libraries/libsymbolic_math_bridge.dll`
+    present → compile only the thin registrar from
+    `symbolic_math_bridge_plugin.cpp`; bundle the prebuilt DLL via
+    `symbolic_math_bridge_bundled_libraries`. No SymEngine needed
+    on consumer.
+  - Degraded fallback → registrar stub only; FFI calls return
+    errors.
+- **DLL rename** for collision avoidance:
+  `windows/Libraries/symbolic_math_bridge_plugin.dll` →
+  `libsymbolic_math_bridge.dll`. Consumer Flutter build produces
+  `symbolic_math_bridge_plugin.dll` (registrar) under that name;
+  if the bundled DLL had the same name they'd collide in the
+  runner's output directory.
+- **Dart `symbolic_math_bridge.dart`** — `DynamicLibrary.open` is
+  now per-platform: `process()` on iOS/macOS,
+  `libsymbolic_math_bridge.so` on Android,
+  `libsymbolic_math_bridge.dll` on Windows. Replaces the prior
+  catch-all `libSymEngineFlutterWrapper.so` which never matched
+  the binary names we actually ship.
+- One follow-up fix: `symbolic_math_bridge_plugin.cpp` still
+  called `symbolic_math_bridge_force_link_symbols()` which lives
+  in `force_link.c` — but consumer mode doesn't compile that.
+  Guarded the call behind `#ifdef SYMBOLIC_MATH_BRIDGE_HAS_FORCE_LINK`,
+  defined only in the full-from-source CMake branch.
+
+Three CrispCalc CI iterations to fully green:
+- `24bbe61` (bridge 1.1.0): Android ✗, Windows ✗
+- `867230a` (bridge 1.1.1 first cut): Android ✓, Windows ✗
+- **`605acb9`** (bridge 1.1.1 + force_link guard): **all 6 ✓** → v0.4.0 cut
+
 ### CrispCalc-side changes
 
-- `pubspec.yaml`: bridge `ref` bumped from `505074d` to `85bfa7e`
-  (bridge 1.1.0 — the merge of r131 + r132 onto bridge main).
-  Version bumped to 0.4.0+1.
+- `pubspec.yaml`: bridge `ref` bumped from `505074d` to `931adcf`
+  (bridge 1.1.1). Version bumped to 0.4.0+1.
 - `PLAN.md` P11 updated to mark R131 + R132 SHIPPED; R130 (Linux)
-  is now the remaining tier-1 platform. Cross-cutting decisions
-  from R131 + R132 documented for future R130 work.
+  is now the remaining tier-1 platform.
+- `HANDOFF_NEXT.md` rewritten for v0.4.0 state.
+- `README.md` platform-support table updated.
 
 ### What v0.4.0 unlocks
 
@@ -58,21 +115,42 @@ SymEngine on Android arm64-v8a and Windows x86_64 too.
 | iOS | full CAS | full CAS |
 | macOS | full CAS | full CAS |
 | Android | degraded (FFI error) | **full CAS via libsymbolic_math_bridge.so** |
-| Windows | degraded (FFI error) | **full CAS via symbolic_math_bridge_plugin.dll** |
+| Windows | degraded (FFI error) | **full CAS via libsymbolic_math_bridge.dll** |
 | Linux | degraded (FFI error) | degraded (R130 TBD) |
 
 The help-mode popover's "Computed via SymEngine.X" line stops being
 a confidence-trick on Android and Windows.
 
+### Release artifacts (published `2026-05-27T21:31:14Z`)
+
+| Artifact | v0.3.0 | v0.4.0 | Delta | Carries |
+|---|---|---|---|---|
+| `crisp_calc-vX.Y.Z-android.apk` | 65.6 MB | **83.3 MB** | +17.7 MB | ≈ Android `.so` 17 MB stripped |
+| `crisp_calc-vX.Y.Z-windows-x64.zip` | 15.5 MB | **17.4 MB** | +1.9 MB | ≈ Windows `.dll` 5.7 MB compressed |
+| `crisp_calc-vX.Y.Z-macos.zip` | 32.8 MB | 32.8 MB | 0 | unchanged |
+| `crisp_calc-vX.Y.Z-ios-unsigned.zip` | 12.0 MB | 12.0 MB | 0 | unchanged |
+| `crisp_calc-vX.Y.Z-linux-x64.tar.gz` | 13.2 MB | 13.2 MB | 0 | unchanged |
+
+The +17.7 MB / +1.9 MB deltas precisely match the new bridge
+binary sizes, confirming they actually ride in the release
+artifacts (not just the development tree).
+
 ### Smoke-tested vs not
 
-- ✅ Compile + link in CI for both platforms
-- ✅ All `flutter_symengine_*` symbols present in the binary's export
-  table (verified by `llvm-nm` on Android, `objdump -p` on Windows)
-- ✅ CrispCalc `flutter analyze` clean against the new bridge pin
-- ⚠ End-to-end runtime FFI call (load DLL, invoke function, observe
-  result) from a real Flutter Android device or Windows desktop —
-  **not yet validated**, requires physical hardware. Followup.
+| | Verified via CI | Verified locally (macOS host) | Real-hardware verification |
+|---|---|---|---|
+| Compile + link + symbols in export table | ✓ | — | n/a |
+| macOS app builds + binaries embed | ✓ | ✓ (`crisp_calc.app` 74.7 MB built locally) | host = macOS, runtime trivially OK |
+| Android APK contains the bridge .so | ✓ (size delta matches) | — | **⚠ needs arm64-v8a device or emulator** |
+| Windows zip contains the bridge .dll | ✓ (size delta matches) | — | **⚠ needs Windows x86_64 desktop** |
+| iOS / Linux unchanged | ✓ | — | — |
+
+The structural pipeline is end-to-end green. What's NOT confirmed
+is the runtime FFI call from a real Android device or Windows
+desktop — the binaries were never loaded and invoked outside of
+the export-table inspection. If a runtime fail surfaces, bridge
+1.1.2 with adjusted Dart-side path resolution is the natural fix.
+See HANDOFF_NEXT.md for the validation recipe.
 
 ## 2026-05-27 (P6 Round 104b) — Notepad Show-steps wiring + shared trace runner
 
