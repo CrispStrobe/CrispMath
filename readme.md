@@ -100,12 +100,29 @@ CrispCalc/
 
 ```bash
 flutter pub get
-flutter test            # 120+ unit tests run without the native bridge
+flutter test            # 1992 unit tests run without the native bridge
 flutter run             # Runs the app; SymEngine bridge required for math
 ```
 
 The native side lives in the `symbolic_math_bridge` plugin (separate
-repository / path-dependency). See its README for the SymEngine build.
+repository, git-pinned in `pubspec.yaml`). See its README for the SymEngine
+build.
+
+## Platform support (v0.4.0)
+
+| Platform | SymEngine bridge | Notes |
+|---|---|---|
+| **iOS** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
+| **macOS** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
+| **Android arm64-v8a** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg+NDK build (PLAN P11 R132) |
+| **Windows x86_64** | ✓ full | `symbolic_math_bridge_plugin.dll`, MSYS2/MinGW64 build (PLAN P11 R131) |
+| Linux x86_64 | ✗ degraded | symbolic ops return "Error: requires native library". PLAN P11 R130 tracking. |
+| Android x86_64 / armeabi-v7a | ✗ not built | extend the bridge's build matrix when needed |
+| Web (Vercel / HF / etc.) | ✗ not built | `dart:ffi` doesn't reach WASM directly; PLAN P10 has three paths |
+
+Releases ship platform binaries via GitHub Actions; see GH Releases
+for `crisp_calc-vX.Y.Z-{macos.zip,ios-unsigned.zip,linux-x64.tar.gz,
+windows-x64.zip,android.apk}`.
 
 ## Known limitations
 
@@ -115,10 +132,8 @@ repository / path-dependency). See its README for the SymEngine build.
 - Matrix entry via the dedicated editor works; running operations like `det`
   and `inv` depends on SymEngine being able to parse the `Matrix([...])`
   syntax we emit.
-- High-precision evaluation (GMP/MPFR direct calls) is stubbed in the bridge
-  and not yet wired into the engine.
-- Localization covers tab labels and a few error strings; most user-facing
-  text is still English.
+- Linux desktop still falls back to the bridge-unavailable error path; see
+  PLAN P11 R130.
 
 See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
 recently.
