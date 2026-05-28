@@ -1,11 +1,12 @@
 # CrispCalc — handover for the next session
 
-Pickup note from the **2026-05-29 session** (P11 R130 + R100). Two
-arcs landed: **Linux x86_64 SymEngine** (bridge v1.2.0 — the last
-tier-1 platform; every native target now ships full SymEngine) and
+Pickup note from the **2026-05-29 session** (P11 R130 + R100 + R105b).
+Three arcs landed: **Linux x86_64 SymEngine** (bridge v1.2.0 — the
+last tier-1 platform; every native target now ships full SymEngine),
 the **German Function Reference i18n** (R100 — complete DE coverage
-of the ~45-entry catalog). Prior session (2026-05-27) cut v0.4.0 with
-Android + Windows.
+of the ~45-entry catalog), and **R105b** per-element help popovers on
+the Statistics / Sudoku / Constraints DSL screens. Prior session
+(2026-05-27) cut v0.4.0 with Android + Windows.
 
 ## ⚠ Working-mode change (unchanged)
 
@@ -20,8 +21,8 @@ arc rule (see `memory/feedback_multi_repo_arc_worktree.md`).
 | | |
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
-| **main HEAD** | `46aeef3` (R130 + R100 landed; CI green; no new GH Release cut yet — see open item) |
-| **Tests** | **2129 pass** (1992 → 2129 via the R100 DE-completeness localization test) |
+| **main HEAD** | R130 + R100 + R105b landed; CI green; no new GH Release cut yet — see open item |
+| **Tests** | **2137 pass** (1992 → 2129 via R100 DE-completeness; → 2137 via R105b popover tests) |
 | **dart_csp pin** | `69a9cfb` (unchanged) |
 | **bridge pin** | **`0907768`** (bridge 1.2.0 — adds Linux x86_64 `.so`) — was `931adcf` pre-session |
 | **bridge main HEAD** | `0907768` (v1.2.0; `r130-linux` merged) |
@@ -124,9 +125,6 @@ workflow comment. Each ABI is its own ~15-min build slot.
 
 ### 4. **Carry-overs from prior sessions**
 
-- Round 105b — Per-element popovers inside Statistics /
-  Constraints DSL / Sudoku (continues the P6 help arc; now the
-  highest-leverage UI item after R100-DE).
 - Round 95 follow-up — Statistics input pre-fill.
 - `open:` / `dsl:` dispatch in Try-in-Calculator (R99 followup).
 - CSP Round E.5 — `dart_csp_fzn` CLI (blocked on P4).

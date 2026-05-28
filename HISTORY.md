@@ -58,6 +58,28 @@ help surface. Fixed by mirroring the worked-examples precedent:
   catalog entry without its German translation fails CI. FR/ES remain
   on the English fallback (hook ready). Suite: 1992 → **2129 pass**.
 
+### Arc C: R105b — per-element help popovers on the module screens
+
+Extends the P6 deep-help arc from the calculator keypad to the three
+module-surface screens. A new shared
+`showFunctionRefHelpPopover(context, refId)` (extracted from the
+keypad's `showKeypadHelpPopover`, which now delegates to it and gains
+the R100 localized description) backs all of them:
+
+- **Statistics Tests tab**: each test-picker chip (welch_t, paired_t,
+  anova_1, chi2_*, fisher_exact, sign_test, wilcoxon) opens its
+  popover in help mode instead of selecting. one-sample-t has no
+  catalog entry, so it stays a plain selector.
+- **Sudoku variant selector**: all four variant chips (regular / x /
+  killer / disjoint) open their rules popover.
+- **Constraints DSL**: the operators have no standing widgets, so help
+  mode reveals a reference row of operator chips (vars / allDifferent
+  / noOverlap / cumulative / minimize / maximize); normal-mode UX is
+  unchanged.
+
+Each screen has a focused widget test (help-off vs help-on behaviour,
+DE description on Statistics). Suite: 2129 → **2137 pass**.
+
 ## 2026-05-27 (P11 Rounds 131 + 132) — Full SymEngine on Android + Windows
 
 Closes the platform-support gap the P6 help arc made visible: every
