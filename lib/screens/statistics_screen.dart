@@ -15,6 +15,8 @@ import '../engine/distributions.dart';
 import '../engine/hypothesis_tests.dart';
 import '../engine/statistics.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/function_ref_help_popover.dart';
+import '../widgets/help_target.dart';
 import '../widgets/module_help_dialog.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -590,6 +592,24 @@ class _TestsTab extends StatefulWidget {
 
 class _TestsTabState extends State<_TestsTab> {
   _TestKind _kind = _TestKind.oneSampleT;
+
+  // Round 105b (P6): a test-picker chip. When [refId] is non-null and
+  // help mode is on, tapping the chip opens the Function Reference
+  // popover for that test instead of selecting it (the HelpTarget's
+  // absorbing overlay suppresses onSelected). Outside help mode it's a
+  // plain ChoiceChip.
+  Widget _testChip(String label, _TestKind kind, String? refId) {
+    final chip = ChoiceChip(
+      label: Text(label),
+      selected: _kind == kind,
+      onSelected: (_) => setState(() => _kind = kind),
+    );
+    if (refId == null) return chip;
+    return HelpTarget(
+      onHelpTap: () => showFunctionRefHelpPopover(context, refId),
+      child: chip,
+    );
+  }
 
   // One-sample t-test inputs.
   final _oneSampleData = TextEditingController(text: '172, 174, 168, 180, 176');
@@ -1178,61 +1198,28 @@ class _TestsTabState extends State<_TestsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Test picker.
+          // Test picker. Round 105b (P6): in help mode each chip whose
+          // test has a Function Reference entry shows a per-element
+          // help popover instead of selecting (oneSampleT has no
+          // catalog entry yet, so it stays a plain chip).
           Wrap(
             spacing: 6,
             runSpacing: 4,
             children: [
-              ChoiceChip(
-                label: const Text('One-sample t'),
-                selected: _kind == _TestKind.oneSampleT,
-                onSelected: (_) => setState(() => _kind = _TestKind.oneSampleT),
-              ),
-              ChoiceChip(
-                label: const Text('Two-sample t (Welch)'),
-                selected: _kind == _TestKind.twoSampleT,
-                onSelected: (_) => setState(() => _kind = _TestKind.twoSampleT),
-              ),
-              ChoiceChip(
-                label: const Text('Paired t'),
-                selected: _kind == _TestKind.pairedT,
-                onSelected: (_) => setState(() => _kind = _TestKind.pairedT),
-              ),
-              ChoiceChip(
-                label: const Text('ANOVA (one-way)'),
-                selected: _kind == _TestKind.anovaOneWay,
-                onSelected: (_) =>
-                    setState(() => _kind = _TestKind.anovaOneWay),
-              ),
-              ChoiceChip(
-                label: const Text('χ² goodness-of-fit'),
-                selected: _kind == _TestKind.chiSquareGof,
-                onSelected: (_) =>
-                    setState(() => _kind = _TestKind.chiSquareGof),
-              ),
-              ChoiceChip(
-                label: const Text('χ² independence'),
-                selected: _kind == _TestKind.chiSquareIndep,
-                onSelected: (_) =>
-                    setState(() => _kind = _TestKind.chiSquareIndep),
-              ),
-              ChoiceChip(
-                label: const Text("Fisher's exact 2×2"),
-                selected: _kind == _TestKind.fisherExact,
-                onSelected: (_) =>
-                    setState(() => _kind = _TestKind.fisherExact),
-              ),
-              ChoiceChip(
-                label: const Text('Paired sign'),
-                selected: _kind == _TestKind.pairedSign,
-                onSelected: (_) => setState(() => _kind = _TestKind.pairedSign),
-              ),
-              ChoiceChip(
-                label: const Text('Wilcoxon rank-sum'),
-                selected: _kind == _TestKind.wilcoxonRankSum,
-                onSelected: (_) =>
-                    setState(() => _kind = _TestKind.wilcoxonRankSum),
-              ),
+              _testChip('One-sample t', _TestKind.oneSampleT, null),
+              _testChip(
+                  'Two-sample t (Welch)', _TestKind.twoSampleT, 'welch_t'),
+              _testChip('Paired t', _TestKind.pairedT, 'paired_t'),
+              _testChip('ANOVA (one-way)', _TestKind.anovaOneWay, 'anova_1'),
+              _testChip('χ² goodness-of-fit', _TestKind.chiSquareGof,
+                  'chi2_goodness'),
+              _testChip('χ² independence', _TestKind.chiSquareIndep,
+                  'chi2_independence'),
+              _testChip(
+                  "Fisher's exact 2×2", _TestKind.fisherExact, 'fisher_exact'),
+              _testChip('Paired sign', _TestKind.pairedSign, 'sign_test'),
+              _testChip(
+                  'Wilcoxon rank-sum', _TestKind.wilcoxonRankSum, 'wilcoxon'),
             ],
           ),
           const SizedBox(height: 12),

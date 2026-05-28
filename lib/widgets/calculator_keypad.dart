@@ -15,9 +15,8 @@
 import 'package:flutter/material.dart';
 
 import '../engine/app_state.dart';
-import '../engine/function_reference.dart';
 import '../localization/app_localizations.dart';
-import 'function_reference_dialog.dart';
+import 'function_ref_help_popover.dart';
 import 'keypad_grid.dart';
 import 'variable_viewer.dart';
 
@@ -71,49 +70,14 @@ const Map<String, String> _kCasKeyHelpRefId = {
 };
 
 /// Round 102: shows a small AlertDialog explaining a single
-/// FunctionRef. "Learn more" deep-links to the full
-/// [FunctionReferenceDialog] filtered by id.
-void showKeypadHelpPopover(BuildContext context, String refId) {
-  final ref = FunctionReferences.all.firstWhere(
-    (e) => e.id == refId,
-    orElse: () => const FunctionRef(
-      id: '',
-      category: FunctionRefCategory.cas,
-      signature: '',
-      shortDescription: '',
-    ),
-  );
-  if (ref.id.isEmpty) return;
-  final t = AppLocalizations.of(context);
-  showDialog<void>(
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: Text(
-          ref.signature,
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 16),
-        ),
-        content: Text(ref.shortDescription),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(t.dialogClose),
-          ),
-          FilledButton.tonal(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              showDialog<void>(
-                context: context,
-                builder: (_) => FunctionReferenceDialog(initialSearch: ref.id),
-              );
-            },
-            child: Text(t.keypadHelpLearnMore),
-          ),
-        ],
-      );
-    },
-  );
-}
+/// FunctionRef. "Learn more" deep-links to the full Function Reference
+/// filtered by id. Round 105b: the implementation now lives in the
+/// shared [showFunctionRefHelpPopover] (also used by the Statistics /
+/// Constraints / Sudoku module screens); this keeps the keypad's
+/// existing call sites working and picks up the localized-description
+/// behaviour for free.
+void showKeypadHelpPopover(BuildContext context, String refId) =>
+    showFunctionRefHelpPopover(context, refId);
 
 class CalculatorKeypad extends StatefulWidget {
   const CalculatorKeypad({
