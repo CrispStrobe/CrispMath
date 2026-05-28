@@ -2619,7 +2619,12 @@ post-merge). Per-platform iteration logs in
 + [`WINDOWS_STATUS.md`](https://github.com/CrispStrobe/symbolic_math_bridge/blob/main/WINDOWS_STATUS.md)
 inside the bridge repo.
 
-R130 (Linux) is the remaining tier-1 platform — outline below.
+**R130 (Linux) SHIPPED in bridge 1.2.0** (2026-05-29) — green on the
+first CI run (`build-linux.yml` run 26604981909, 19m5s). 18.3 MB
+stripped `.so`, GLIBC 2.35 baseline, fully static-linked math stack.
+CrispCalc pubspec re-pinned to `0907768`. All tier-1 native platforms
+(iOS / macOS / Android arm64 / Windows x64 / Linux x64) now ship full
+SymEngine. See `symbolic_math_bridge/LINUX_STATUS.md` for detail.
 
 | Platform | Native lib | Status |
 |---|---|---|
@@ -2627,7 +2632,7 @@ R130 (Linux) is the remaining tier-1 platform — outline below.
 | iOS | `.xcframework` bundles | ✓ shipped (pre-session) |
 | **Android arm64-v8a** | `libsymbolic_math_bridge.so` (17 MB) | **✓ R132 SHIPPED** |
 | **Windows x86_64** | `symbolic_math_bridge_plugin.dll` (5.7 MB) | **✓ R131 SHIPPED** |
-| Linux x86_64 | `libsymbolic_math_bridge.so` (TBD) | R130, not started |
+| **Linux x86_64** | `libsymbolic_math_bridge.so` (18.3 MB) | **✓ R130 SHIPPED** |
 | Android x86_64 / armeabi-v7a | extend matrix | deferred |
 | Windows ARM64 | extend matrix | deferred (Copilot+ PCs) |
 
@@ -2655,7 +2660,25 @@ Windows as "medium-large". Empirically they inverted:
   Only SymEngine itself compiles from source (~3-5 min on MinGW
   vs hours on MSVC). Total ~7 min cold; ~5 min cached.
 
-### R130 — Linux — next up
+### R130 — Linux — SHIPPED (v1.2.0, first-try green)
+
+Followed the Android pattern as predicted — no chainload toolchain
+needed since the runner IS Linux, and vcpkg's `x64-linux` static
+triplet resolved the host build cleanly. What actually shipped, vs.
+the outline below:
+
+- Ran on **`ubuntu-22.04`** (not `ubuntu-latest`) to pin the GLIBC
+  baseline at 2.35 — the committed `.so` references nothing newer.
+- **Hybrid CMake**: static-link like Android + three-mode consumer
+  plumbing like Windows. But simpler than both — a Linux `ffiPlugin`
+  needs no registrar `.cc`, so the consumer path is pure bundling
+  with no filename-collision workaround (Dart opens
+  `libsymbolic_math_bridge.so`, exactly what `add_library()` emits).
+- No iteration: the Android/Windows lessons (drop `arb`, don't pin
+  `builtin-baseline`, camelcase `find_package(SymEngine)`) carried
+  over and attempt 1 was green.
+
+Original outline (kept for the record):
 
 Should follow the Android pattern most closely. Linux is what
 `ubuntu-latest` IS, so no chainload toolchain needed; vcpkg

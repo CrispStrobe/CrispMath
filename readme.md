@@ -116,7 +116,7 @@ build.
 | **macOS** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
 | **Android arm64-v8a** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg+NDK build (PLAN P11 R132) |
 | **Windows x86_64** | ✓ full | `symbolic_math_bridge_plugin.dll`, MSYS2/MinGW64 build (PLAN P11 R131) |
-| Linux x86_64 | ✗ degraded | symbolic ops return "Error: requires native library". PLAN P11 R130 tracking. |
+| **Linux x86_64** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg `x64-linux` static build on ubuntu-22.04 / GLIBC 2.35 (PLAN P11 R130) |
 | Android x86_64 / armeabi-v7a | ✗ not built | extend the bridge's build matrix when needed |
 | Web (Vercel / HF / etc.) | ✗ not built | `dart:ffi` doesn't reach WASM directly; PLAN P10 has three paths |
 
@@ -132,8 +132,6 @@ windows-x64.zip,android.apk}`.
 - Matrix entry via the dedicated editor works; running operations like `det`
   and `inv` depends on SymEngine being able to parse the `Matrix([...])`
   syntax we emit.
-- Linux desktop still falls back to the bridge-unavailable error path; see
-  PLAN P11 R130.
 
 See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
 recently.
