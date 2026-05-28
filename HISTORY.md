@@ -2,6 +2,62 @@
 
 Completed work, newest first.
 
+## 2026-05-29 (P11 R130 + R100) — Linux SymEngine + German Function Reference
+
+Two arcs landed in one session.
+
+### Arc A: P11 R130 — Linux x86_64 SymEngine (bridge v1.2.0)
+
+The last tier-1 platform. With it, every native target (iOS / macOS /
+Android arm64-v8a / Windows x86_64 / **Linux x86_64**) ships full
+SymEngine; the only place CAS is unavailable is the not-yet-built web
+target.
+
+Bridge work (separate repo `CrispStrobe/symbolic_math_bridge`, branch
+`r130-linux` → `main` at `0907768`):
+
+- **`linux/` plugin** — a hybrid of R132 (Android) and R131 (Windows):
+  static-link the whole math stack into one
+  `libsymbolic_math_bridge.so` (Android pattern) with a three-mode
+  `CMakeLists.txt` (`full-from-source` CI / `consumer-prebuilt` /
+  `degraded`, Windows pattern). Simpler than both: a Linux `ffiPlugin`
+  needs no registrar `.cc` and no `flutter` linkage, so the consumer
+  path is pure bundling — and no filename collision, since Dart opens
+  `libsymbolic_math_bridge.so`, exactly what `add_library()` emits.
+- **`build-linux.yml`** — vcpkg `x64-linux` (static) on `ubuntu-22.04`
+  (GLIBC 2.35 baseline). **Green on the first CI run** (19m5s): 18.3 MB
+  stripped `.so`, only libc/libstdc++/libm/libgcc_s dynamic (verified
+  by `ldd`), all `flutter_symengine_*` in `.dynsym`, max referenced
+  symbol GLIBC_2.35. No iteration — the Android/Windows lessons (drop
+  `arb`, don't pin `builtin-baseline`, camelcase `find_package`)
+  transferred cleanly.
+- Committed `.so`, bumped to v1.2.0, merged to bridge `main`.
+
+CrispCalc side: re-pinned `pubspec.yaml` to `0907768`; CI's Build
+Linux job moved from degraded to full (consumer-prebuilt mode bundles
+the `.so` — no source-compile attempt, the failure mode that hit
+Windows/Android in v1.1.0). README + PLAN updated.
+
+### Arc B: R100 — Function Reference content i18n (German)
+
+The Function Reference dialog localized its chrome but read entry
+descriptions + example hints straight from the English catalog —
+English content leaked into DE/FR/ES, the most deeply-discoverable
+help surface. Fixed by mirroring the worked-examples precedent:
+
+- **Mechanism**: `AppLocalizations.functionRefDescription(id)` +
+  `functionRefExampleHint(id, index)` return a localized override or
+  null (→ English catalog fallback). EN returns null (catalog is the
+  English source of truth). Dialog wired at description, hint
+  (threading entryId + example index), and search.
+- **Complete German translation** of all ~45 catalog entries across
+  every category (CAS, number theory, precision, matrix, statistics,
+  constraints DSL, Sudoku) — descriptions + every example hint.
+  Terminology per German math didactics (Bildungspläne / de.wikipedia).
+- Localization test enforces **full DE completeness** — adding a
+  catalog entry without its German translation fails CI. FR/ES remain
+  on the English fallback (hook ready). Suite: 1992 → **2129 pass**.
+
 ## 2026-05-27 (P11 Rounds 131 + 132) — Full SymEngine on Android + Windows
 
 Closes the platform-support gap the P6 help arc made visible: every

@@ -1,10 +1,11 @@
 # CrispCalc — handover for the next session
 
-Pickup note from the **2026-05-27 (v0.4.0 cut session)**. This
-session was a multi-arc landing run — the P6 help-popover sweep
-PLUS the P11 cross-platform SymEngine bridge work. v0.4.0 ships
-full SymEngine on iOS / macOS / **Android arm64-v8a** / **Windows
-x86_64**.
+Pickup note from the **2026-05-29 session** (P11 R130 + R100). Two
+arcs landed: **Linux x86_64 SymEngine** (bridge v1.2.0 — the last
+tier-1 platform; every native target now ships full SymEngine) and
+the **German Function Reference i18n** (R100 — complete DE coverage
+of the ~45-entry catalog). Prior session (2026-05-27) cut v0.4.0 with
+Android + Windows.
 
 ## ⚠ Working-mode change (unchanged)
 
@@ -19,137 +20,122 @@ arc rule (see `memory/feedback_multi_repo_arc_worktree.md`).
 | | |
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
-| **main HEAD** | `605acb9` (v0.4.0 cut + GH Release published `2026-05-27T21:31:14Z`) |
-| **Tests** | **1992 pass** (1965 → 1992 across the help-popover arc); bridge pin bump doesn't change test surface |
+| **main HEAD** | `46aeef3` (R130 + R100 landed; CI green; no new GH Release cut yet — see open item) |
+| **Tests** | **2129 pass** (1992 → 2129 via the R100 DE-completeness localization test) |
 | **dart_csp pin** | `69a9cfb` (unchanged) |
-| **bridge pin** | **`931adcf`** (bridge 1.1.1 — Android + Windows binaries + consumer-integration fixes) — was `505074d` pre-session |
-| **release artifacts on GH** | macOS 32.8 MB · iOS 12.0 MB · Linux 13.2 MB · **Android 83.3 MB (+17.7 MB carries the new .so)** · **Windows 17.4 MB (+1.9 MB carries the new .dll)** |
+| **bridge pin** | **`0907768`** (bridge 1.2.0 — adds Linux x86_64 `.so`) — was `931adcf` pre-session |
+| **bridge main HEAD** | `0907768` (v1.2.0; `r130-linux` merged) |
+| **platforms** | iOS · macOS · Android arm64-v8a · Windows x86_64 · **Linux x86_64** — all full-CAS. Web still the only CAS-less target. |
 
-## This session — major arcs landed
+## This session — major arcs landed (2026-05-29)
 
-### Arc A: P6 help-popover sweep (rounds 103 + 102b + 104 + 104b + 105)
+### Arc A: P11 R130 — Linux x86_64 SymEngine (bridge v1.2.0)
 
-Calculator history rows (R103), CAS-tab keypad buttons (R102b —
-Adv was already in R102), Notepad lines (R104 + R104b), and
-per-module explainers on all 8 Analyze-hub screens (R105). All
-shipped, all green, all in v0.3.0 (tagged earlier this session
-at commit `c226d91`). Tests grew 1965 → 1992. See HISTORY entries
-for detail.
+The last tier-1 platform. Bridge branch `r130-linux` → `main`
+(`0907768`). **Green on the first CI run** (`build-linux.yml`
+26604981909, 19m5s) — no iteration. A hybrid of R132 (static-link
+the whole math stack into one `.so`) and R131 (three-mode consumer
+CMake), but simpler: a Linux `ffiPlugin` needs no registrar `.cc` /
+no `flutter` linkage, so the consumer path is pure bundling and there
+is no filename-collision workaround (Dart opens
+`libsymbolic_math_bridge.so`, exactly what `add_library()` emits).
 
-### Arc B: P11 cross-platform SymEngine bridge (R131 + R132)
+- vcpkg `x64-linux` static on `ubuntu-22.04` (GLIBC 2.35 baseline).
+- 18.3 MB stripped `.so`, only libc/libstdc++/libm/libgcc_s dynamic.
+- Committed at `linux/Libraries/`; CrispCalc re-pinned to `0907768`.
+- **All 6 CrispCalc CI jobs green** — the Build Linux job moved from
+  degraded to full via consumer-prebuilt bundling (no source-compile
+  attempt — the v1.1.0 failure mode did NOT recur). README + PLAN +
+  `LINUX_STATUS.md` updated.
 
-The bigger lift. Closes the platform-support gap the P6 help arc
-made visible — "Computed via SymEngine.X" now actually computes
-on Android and Windows.
+### Arc B: R100 — Function Reference content i18n (German)
 
-- **R132 Android arm64-v8a**: 7 CI iterations. vcpkg + NDK
-  cross-compile via `VCPKG_CHAINLOAD_TOOLCHAIN_FILE`. `.so`
-  committed to bridge.
-- **R131 Windows x86_64**: vcpkg+MSVC dead-ended at GHA's 6-hour
-  Windows runner cap (6 attempts cancelled). Pivoted to
-  MSYS2/MinGW64 — flint/mpfr/gmp/mpc/boost pre-built via pacman,
-  only SymEngine compiled from source. 4 iterations to green;
-  `.dll` committed to bridge.
+Was the highest-leverage UI item. The dialog localized its chrome but
+read entry descriptions + example hints from the English catalog —
+fixed by the worked-examples precedent: nullable
+`functionRefDescription(id)` / `functionRefExampleHint(id, index)` on
+`AppLocalizations`, dialog falls back to the catalog on null.
 
-Bridge initially merged as v1.1.0 (`85bfa7e`), then had to bump
-to v1.1.1 (`931adcf`) after CrispCalc CI caught two consumer-side
-breakages:
-- Android: bridge's `android/build.gradle` had `externalNativeBuild`
-  forcing consumer Gradle to compile the wrapper from source
-  without SymEngine available. Fix: drop `externalNativeBuild` —
-  `jniLibs` alone is sufficient for `ffiPlugin: true`.
-- Windows: bridge's `windows/CMakeLists.txt` always compiled the
-  wrapper source. Fix: three-mode CMake — full-from-source (CI
-  only), consumer-prebuilt (bundle the pre-built DLL via
-  `bundled_libraries`), registrar-stub (degraded fallback). Plus
-  a rename: prebuilt DLL went from
-  `symbolic_math_bridge_plugin.dll` to `libsymbolic_math_bridge.dll`
-  to avoid a name collision with the registrar DLL Flutter's
-  consumer-mode build also produces. Plus a follow-up bridge fix
-  (force-link guard in `symbolic_math_bridge_plugin.cpp` since
-  consumer mode doesn't compile `force_link.c`).
-- Dart side: `DynamicLibrary.open` now picks per-platform binary
-  names — `libsymbolic_math_bridge.so` on Android,
-  `libsymbolic_math_bridge.dll` on Windows, `DynamicLibrary.process()`
-  on iOS/macOS.
-
-Three full CrispCalc CI iterations on the bridge consumer integration:
-`24bbe61` (Android + Windows fail), `867230a` (Android green,
-Windows still fails), `605acb9` (**all 6 green**) → v0.4.0 cut.
+- **Complete German** coverage of all ~45 entries (every category) —
+  descriptions + every hint. Terminology per German math didactics.
+- Localization test enforces full DE completeness (new entry without
+  DE → CI fails). Tests 1992 → **2129**.
+- **FR/ES still return null** (English fallback). The mechanism + test
+  are ready; finishing them is a clean follow-up (see open items).
 
 ## Smoke-test status (what's verified, what isn't)
 
-| | Verified via CI | Verified locally (macOS host) | Real-hardware verification |
-|---|---|---|---|
-| Compile + link + symbols in export table | ✓ | — | n/a |
-| macOS app builds + binaries embed | ✓ | ✓ (`crisp_calc.app` 74.7 MB built locally) | host = macOS, runtime trivially OK |
-| Android APK contains the bridge .so | ✓ (size delta +17.7 MB matches stripped .so size) | — | **⚠ needs arm64-v8a device or emulator** |
-| Windows zip contains the bridge .dll | ✓ (size delta +1.9 MB matches stripped .dll compressed) | — | **⚠ needs Windows x86_64 desktop** |
-| iOS / Linux unchanged | ✓ | — | — |
+| | Verified via CI | Real-hardware verification |
+|---|---|---|
+| Compile + link + symbols in export table (all 5 platforms) | ✓ | n/a |
+| macOS app builds + binaries embed | ✓ | host = macOS, runtime OK |
+| Android APK contains the bridge .so | ✓ | **⚠ needs arm64-v8a device/emulator** |
+| Windows zip contains the bridge .dll | ✓ | **⚠ needs Windows x86_64 desktop** |
+| **Linux bundle contains the bridge .so** | ✓ (consumer-prebuilt build green) | **⚠ needs a Linux x86_64 desktop** |
+| iOS unchanged | ✓ | **⚠ needs an iOS device** |
 
-The structural pipeline is end-to-end green. What's NOT confirmed:
-the runtime FFI call from a real Android device or Windows desktop.
-The same SymEngine wrapper source that works on iOS/macOS is what
-got compiled into both new binaries — if compile + link + symbol
-visibility line up (verified), runtime should follow. But should
-should be verified.
+The structural pipeline is end-to-end green on all five platforms.
+What's NOT confirmed: the runtime FFI call from a real Android /
+Windows / Linux machine. Same wrapper source that works on iOS/macOS
+got compiled into each binary — if compile + link + symbol visibility
+line up (verified, incl. Linux `ldd`/`.dynsym` checks), runtime should
+follow. Still worth a hardware pass.
 
 ## What's open / next session pickup
 
 ### 1. **Runtime smoke-test on real hardware** (highest priority)
 
-Download v0.4.0's artifacts and run them:
+Still the one thing CI can't do. Now FIVE platforms have unverified
+runtime FFI: Android / Windows / **Linux** (new) — plus iOS. Grab a
+release artifact (or `flutter run -d <device>`), open the calculator,
+type `solve(x^2 - 1, x)`, expect `[-1, 1]`. `Error: requires native
+library` means the binary didn't load — most likely a filename
+mismatch between what Dart's `DynamicLibrary.open` passes and what
+Flutter bundled.
 
-- **Android**: install `crisp_calc-v0.4.0-android.apk` on an arm64
-  device or emulator. Open the calculator, type
-  `solve(x^2 - 1, x)`. Expect `[-1, 1]`. If you get
-  `Error: requires native library`, the DLL didn't load at runtime
-  — most likely cause is a mismatch between the filename Dart
-  passes to `DynamicLibrary.open` and the filename Flutter
-  actually bundled. Bridge 1.1.2 fix would adjust either side.
-- **Windows**: extract `crisp_calc-v0.4.0-windows-x64.zip`, run
-  `crisp_calc.exe`, same calculator test. Two DLLs ship in the
-  runner directory (`symbolic_math_bridge_plugin.dll` registrar
-  stub + `libsymbolic_math_bridge.dll` real wrapper) — Dart loads
-  the second by name.
+- **Linux**: `flutter build linux` then run the bundle; Dart opens
+  `libsymbolic_math_bridge.so` (bundled from `linux/Libraries/` via
+  consumer-prebuilt mode). GLIBC baseline is 2.35 — older distros may
+  refuse to load.
+- **Android / Windows / iOS**: as before. Note the Windows Dart
+  loader opens `symbolic_math_bridge_plugin.dll` (loader line 325)
+  but consumer mode bundles `libsymbolic_math_bridge.dll` — **verify
+  this on real Windows hardware**; if it fails, that's the bridge
+  1.2.1 fix.
 
-If a runtime fail surfaces, the iteration is bridge 1.1.2 — add
-diagnostic logging to `_openNativeLibrary()`, narrow the failure,
-push fix, re-pin CrispCalc, cut v0.4.1.
+If a runtime fail surfaces, iterate the bridge — add diagnostic
+logging to `_openNativeLibrary()`, narrow it, push, re-pin, release.
 
-### 2. **R130 — Linux SymEngine build**
+### 2. **Finish R100 — French + Spanish Function Reference**
 
-The remaining tier-1 platform. Documented in `PLAN.md` P11. Should
-mirror the Android pattern closely — same `ubuntu-latest` runner,
-same vcpkg dance, but no NDK chainload needed (host IS Linux). 1
-day of work; ~5-10 min cold-cache CI build expected.
+German is complete; the mechanism + completeness test are in place.
+FR/ES currently return null (English fallback). To finish: implement
+`functionRefDescription` / `functionRefExampleHint` in
+`FrLocalizations` + `EsLocalizations` (same id-keyed switch/map as
+`DeLocalizations`), then add `'fr'` / `'es'` to the `complete` map in
+`test/function_reference_localization_test.dart` so they're held to
+full coverage. Source terminology from fr/es Wikipedia + curricula.
+~155 strings per locale — get native review before/after.
 
 ### 3. **Android x86_64 (emulator) and armeabi-v7a (32-bit)**
 
-Extend the `build-android.yml` matrix. Useful when somebody tests
-in an x86 emulator or owns an older phone. Each ABI is its own
-~15-min build slot.
+Extend the `build-android.yml` matrix. Deferred-until-demand per the
+workflow comment. Each ABI is its own ~15-min build slot.
 
-### 4. **Strip ARB references from CrispCalc** (cleanup)
+### 4. **Carry-overs from prior sessions**
 
-While dropping `arb` from the symengine vcpkg port was the right
-move (it transitively re-pulled LLVM), CrispCalc has no calls
-into ARB-only SymEngine APIs (verified). Nothing to remove
-code-side; just verify HISTORY/PLAN entries don't claim we use ARB
-anywhere.
-
-### 5. **Carry-overs from prior sessions**
-
-All from the v0.3.0 HANDOFF; none affected by this session:
-
-- Round 100 — Function Reference i18n pass (~30k words). Still
-  pending. Now the highest-leverage UI-side open item.
 - Round 105b — Per-element popovers inside Statistics /
-  Constraints DSL / Sudoku.
+  Constraints DSL / Sudoku (continues the P6 help arc; now the
+  highest-leverage UI item after R100-DE).
 - Round 95 follow-up — Statistics input pre-fill.
 - `open:` / `dsl:` dispatch in Try-in-Calculator (R99 followup).
 - CSP Round E.5 — `dart_csp_fzn` CLI (blocked on P4).
 - P9 follow-ups (A5d / A7 / A8) — 3D Scene polish.
+
+### 5. **Consider cutting v0.4.1**
+
+main carries the Linux binary + R100-DE but no GH Release has been
+cut. `release.yml` builds the per-platform artifacts; tag when ready.
 
 ## Hygiene reminders
 
