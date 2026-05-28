@@ -23,6 +23,8 @@ import 'package:flutter/services.dart';
 import '../engine/app_state.dart';
 import '../engine/sudoku.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/function_ref_help_popover.dart';
+import '../widgets/help_target.dart';
 import '../widgets/module_help_dialog.dart';
 import '../widgets/sudoku_grid.dart';
 
@@ -1162,16 +1164,30 @@ class _SizeVariantPickers extends StatelessWidget {
         Wrap(
           spacing: 4,
           children: [
+            // Round 105b (P6): in help mode each variant chip opens
+            // the Function Reference popover for that variant's rules
+            // instead of switching to it.
             for (final v in SudokuVariant.values)
-              ChoiceChip(
-                label: Text(switch (v) {
-                  SudokuVariant.regular => labels.sudokuVariantRegular,
-                  SudokuVariant.x => labels.sudokuVariantX,
-                  SudokuVariant.killer => labels.sudokuVariantKiller,
-                  SudokuVariant.disjoint => labels.sudokuVariantDisjoint,
-                }),
-                selected: variant == v,
-                onSelected: (_) => onVariantChanged(v),
+              HelpTarget(
+                onHelpTap: () => showFunctionRefHelpPopover(
+                  context,
+                  switch (v) {
+                    SudokuVariant.regular => 'sudoku_regular',
+                    SudokuVariant.x => 'sudoku_x',
+                    SudokuVariant.killer => 'sudoku_killer',
+                    SudokuVariant.disjoint => 'sudoku_disjoint',
+                  },
+                ),
+                child: ChoiceChip(
+                  label: Text(switch (v) {
+                    SudokuVariant.regular => labels.sudokuVariantRegular,
+                    SudokuVariant.x => labels.sudokuVariantX,
+                    SudokuVariant.killer => labels.sudokuVariantKiller,
+                    SudokuVariant.disjoint => labels.sudokuVariantDisjoint,
+                  }),
+                  selected: variant == v,
+                  onSelected: (_) => onVariantChanged(v),
+                ),
               ),
           ],
         ),
