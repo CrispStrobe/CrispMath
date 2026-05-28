@@ -3715,6 +3715,125 @@ class DeLocalizations implements AppLocalizations {
             '`BigInt`; große `n` werden an SymEngine übergeben.';
       case 'fibonacci':
         return 'n-te Fibonacci-Zahl. `fib(n)` ist der Kurzname.';
+      // --- Zahlentheorie ---
+      case 'isprime':
+        return 'Probabilistischer Primzahltest für ganze Zahlen.';
+      case 'nextprime':
+        return 'Kleinste Primzahl, die echt größer als `n` ist.';
+      case 'prevprime':
+        return 'Größte Primzahl, die echt kleiner als `n` ist. Fehler, wenn '
+            'keine solche Primzahl existiert (z. B. `prevprime(2)`).';
+      case 'factorint':
+        return 'Primfaktorzerlegung als `p₁^e₁ · p₂^e₂ · …` mit hochgestellten '
+            'Unicode-Exponenten.';
+      // --- Hochpräzision ---
+      case 'pi_precision':
+        return 'π auf N Dezimalstellen über MPFR; gibt die reine Ziffernfolge '
+            'zurück.';
+      case 'e_precision':
+        return 'Eulersche Zahl e auf N Dezimalstellen über MPFR.';
+      case 'sqrt_precision':
+        return 'Quadratwurzel der ganzen Zahl `k` auf N Dezimalstellen über '
+            'MPFR. Die zweiargumentige Form wählt den Hochpräzisionspfad.';
+      case 'eulergamma_precision':
+        return 'Euler-Mascheroni-Konstante γ ≈ 0,5772… auf N Dezimalstellen '
+            'über MPFR.';
+      // --- Matrizen / Lineare Algebra ---
+      case 'matrix_literal':
+        return 'Matrix-Literal: eine Liste von Zeilen, jede Zeile eine Liste '
+            'von Zellausdrücken. Zellen können Zahlen, Brüche oder symbolisch '
+            'sein.';
+      case 'det':
+        return 'Determinante einer quadratischen Matrix. Gibt einen '
+            'symbolischen Skalar zurück.';
+      case 'inv':
+        return 'Inverse einer quadratischen, regulären Matrix. Fehler, wenn '
+            '`det = 0`.';
+      case 'transpose':
+        return 'Transponierte: Vertauschen von Zeilen und Spalten. '
+            'Funktioniert auch für rechteckige Matrizen.';
+      case 'rref':
+        return 'Reduzierte Zeilenstufenform über den Gauß-Jordan-Algorithmus. '
+            'Funktioniert über symbolische/rationale Einträge.';
+      case 'matrix_arithmetic':
+        return 'Elementweise Addition/Subtraktion und Matrizenmultiplikation '
+            'auf `Matrix(...)`-Literalen.';
+      // --- Statistik ---
+      case 'mean':
+        return 'Arithmetisches Mittel einer Stichprobe als Zahlenliste. Im '
+            'Reiter „Deskriptive Statistik" des Statistik-Moduls zusammen mit '
+            'den üblichen Kennzahlen verfügbar.';
+      case 'welch_t':
+        return 'Zweistichproben-t-Test bei ungleichen Varianzen '
+            '(Welch-Satterthwaite). Robuste Standardwahl, wenn die beiden '
+            'Gruppen unterschiedliche Streuungen haben können.';
+      case 'paired_t':
+        return 'Gepaarter t-Test auf Differenzen innerhalb der '
+            'Versuchseinheiten gegen μ₀ = 0. Wird verwendet, wenn dieselben '
+            'Einheiten zweimal gemessen werden (vorher/nachher).';
+      case 'anova_1':
+        return 'Einfaktorielle Varianzanalyse (ANOVA) über K unabhängige '
+            'Gruppen. Prüft, ob sich die Gruppenmittelwerte unterscheiden; '
+            'gibt eine F-Statistik und einen p-Wert aus.';
+      case 'chi2_goodness':
+        return 'Chi-Quadrat-Anpassungstest: Stimmen die beobachteten '
+            'Häufigkeiten mit einer angenommenen Verteilung überein?';
+      case 'chi2_independence':
+        return 'Chi-Quadrat-Unabhängigkeitstest auf einer Kontingenztafel — '
+            'sind zwei kategoriale Variablen unabhängig?';
+      case 'fisher_exact':
+        return 'Exakter Test nach Fisher auf einer 2×2-Kontingenztafel. '
+            'Exakter hypergeometrischer p-Wert — keine Näherung für große '
+            'Stichproben.';
+      case 'wilcoxon':
+        return 'Wilcoxon-Rangsummentest / Mann-Whitney-U — nichtparametrischer '
+            'Zweistichprobentest auf Rängen. Robust gegenüber nicht '
+            'normalverteilten Daten.';
+      case 'sign_test':
+        return 'Gepaarter Vorzeichentest — nichtparametrischer, medianbasierter '
+            'Test auf gepaarten Differenzen. Zählt, wie oft `nachher > vorher` '
+            'gilt.';
+      // --- Constraints-DSL ---
+      case 'vars':
+        return 'Deklariert ganzzahlige Entscheidungsvariablen und ihren '
+            'Wertebereich. Stets die erste Zeile eines CrispCalc-DSL-Programms.';
+      case 'all_different':
+        return 'Globale Bedingung „alle Werte paarweise verschieden". Die '
+            'wichtigste CP-Bedingung — deutlich stärkere Propagation als '
+            'n·(n-1)/2 paarweise `!=`-Klauseln.';
+      case 'no_overlap':
+        return 'Disjunktive Ablaufplanung: Aufgaben mit gegebenen '
+            'Startvariablen und festen Dauern dürfen sich auf einer einzelnen '
+            'Maschine zeitlich nicht überlappen.';
+      case 'cumulative':
+        return 'Kumulative Ablaufplanung auf einer erneuerbaren Ressource '
+            'fester Kapazität. Jede Aufgabe hat eine Dauer und einen '
+            'Ressourcenbedarf pro Aufgabe.';
+      case 'minimize':
+        return 'Zielfunktion: minimiert einen linearen Ausdruck über die '
+            'Entscheidungsvariablen. In Kombination mit Bedingungen lassen '
+            'sich Optimierungs-CSPs lösen.';
+      case 'maximize':
+        return 'Zielfunktion: maximiert einen linearen Ausdruck. Spiegelbild '
+            'von `minimize` — dasselbe Branch-and-Bound, in entgegengesetzter '
+            'Richtung.';
+      // --- Sudoku-Varianten ---
+      case 'sudoku_regular':
+        return 'Klassische Sudoku-Regeln: Jede Zeile, Spalte und Box enthält '
+            'jede Ziffer genau einmal. Vorlagen gibt es für 4×4, 6×6, 8×8, '
+            '9×9, 10×10, 12×12, 15×15 und 16×16.';
+      case 'sudoku_x':
+        return 'Sudoku-X: reguläre Sudoku-Regeln plus die beiden '
+            'Hauptdiagonalen sind ebenfalls allDifferent. Wird als '
+            '8×8-Vorlage geliefert.';
+      case 'sudoku_disjoint':
+        return 'Disjunkte Gruppen: reguläre Regeln plus eine zusätzliche '
+            'allDifferent-Bedingung über die Zellen an derselben Position '
+            'innerhalb der Box über alle Boxen hinweg.';
+      case 'sudoku_killer':
+        return 'Killer-Sudoku: keine Vorgaben; stattdessen ist das Gitter in '
+            '„Käfige" unterteilt, jeder Käfig allDifferent und mit einer '
+            'gegebenen Zielsumme.';
       default:
         return null;
     }
@@ -3854,6 +3973,332 @@ class DeLocalizations implements AppLocalizations {
         'Wechselt in den GMP-gestützten Weg. Fast-Doubling vermeidet die '
             'lineare Rekurrenz mit O(n), sodass selbst fib(10000) unter einer '
             'Sekunde bleibt.',
+      ],
+      // --- Zahlentheorie ---
+      'isprime': [
+        'In CrispCalc gibt `isprime(n)` einen booleschen Chip zurück. Der '
+            'zugrunde liegende Aufruf ist GMPs `mpz_probab_prime_p` (25 '
+            'Miller-Rabin-Runden, Fehlerschranke 4^-25 ≈ 9×10^-16) über '
+            'SymEngines `ntheory`-Modul. 2027 ist die 308. Primzahl.',
+        '2024 = 2³·11·23.',
+        'Die neunte Mersenne-Primzahl, M61. Miller-Rabin braucht selbst in '
+            'dieser Größe nur Mikrosekunden — der Aufwand steckt in den '
+            'modularen Potenzierungen, nicht in der Bitlänge.',
+      ],
+      'nextprime': [
+        'In CrispCalc iteriert `nextprime(n)` von `n+1` aufwärts und testet '
+            'jeden Kandidaten. Der zugrunde liegende Aufruf ist SymEngines '
+            '`ntheory::nextprime()`, das über kurze Fenster FLINTs Sieb '
+            'verwendet, wenn die Lücke groß ist.',
+        'Echt größer — `nextprime(p)` ist niemals `p` selbst, auch wenn `p` '
+            'prim ist.',
+      ],
+      'prevprime': [
+        'In CrispCalc geht `prevprime(n)` von `n-1` abwärts. Der zugrunde '
+            'liegende Aufruf ist SymEngines `ntheory::prevprime()`.',
+        'Unter 2 existieren keine Primzahlen; die Bridge wirft einen Fehler, '
+            'statt einen Sentinel-Wert zurückzugeben. CrispCalc zeigt den '
+            'Fehler-Chip an.',
+      ],
+      'factorint': [
+        'In CrispCalc liefert `factorint(n)` eine dargestellte '
+            'Primfaktorzerlegung. Der zugrunde liegende Aufruf ist FLINTs '
+            '`fmpz_factor`, vorgelagert über SymEngines ntheory-Wrapper; '
+            'CrispCalc wandelt die Liste aus (Primzahl, Exponent) in die '
+            'Darstellung mit hochgestellten Unicode-Ziffern um.',
+        'Die 8. Mersenne-Primzahl, M31. Ein einziger Faktor (sie selbst) — '
+            '`factorint` bricht ab, wenn die Eingabe prim ist.',
+        'Sonderfall: Per Konvention hat 1 die leere Faktorzerlegung; CrispCalc '
+            'stellt dies als das Literal `1` dar statt als leere Zeichenkette.',
+      ],
+      // --- Hochpräzision ---
+      'pi_precision': [
+        'In CrispCalc ist `pi(N)` ein gesondert behandelter Aufruf, der vor '
+            'SymEngine auf den Hochpräzisionspfad geleitet wird. Der zugrunde '
+            'liegende Aufruf ist MPFRs `mpfr_const_pi` mit der Genauigkeit '
+            '⌈N·log2(10)⌉ + 16 Schutzbits, gefolgt von der Umwandlung ins '
+            'Dezimalsystem.',
+        'Bei N = 100 beträgt die Arbeitsgenauigkeit ≈ 348 Bit. Die Schutzbits '
+            'verhindern, dass die Basisumwandlung gerundete Endziffern '
+            'anzeigt.',
+      ],
+      'e_precision': [
+        'In CrispCalc spiegelt `e(N)` die Pipeline von `pi(N)` wider: MPFRs '
+            '`mpfr_const_e` (das die Taylor-Reihe Σ 1/k! verwendet) mit der '
+            'Genauigkeit ⌈N·log2(10)⌉ + 16 Schutzbits, dann die Darstellung '
+            'im Dezimalsystem.',
+        'Kurz genug zum Merken — nützlich als schnelle Genauigkeitsprobe gegen '
+            '`limit((1 + 1/n)^n, n, oo)`.',
+      ],
+      'sqrt_precision': [
+        'In CrispCalc ist das zweiargumentige `sqrt(k, N)` der '
+            'Hochpräzisionsweg. Der zugrunde liegende Aufruf ist MPFRs '
+            '`mpfr_sqrt_ui` mit der Genauigkeit ⌈N·log2(10)⌉ + 16 Schutzbits. '
+            'Das einargumentige `sqrt(2)` gibt stattdessen das symbolische '
+            '`sqrt(2)` über SymEngine zurück.',
+        'Nützlich zur Überprüfung — `sqrt(3, N)` sollte mit unabhängig '
+            'hergeleiteten Referenzziffern übereinstimmen.',
+      ],
+      'eulergamma_precision': [
+        'In CrispCalc verwendet `EulerGamma(N)` MPFRs `mpfr_const_euler`, das '
+            'γ über die Brent-McMillan-Formel (modifizierte Bessel-Funktionen) '
+            'auswertet. Die Genauigkeit beträgt ⌈N·log2(10)⌉ + 16 Schutzbits, '
+            'passend zur Pipeline von `pi(N)` und `e(N)`.',
+        'γ hat keine bekannte geschlossene Form. Die MPFR-Routine ist die '
+            'Standard-Referenzimplementierung; CrispCalc stellt lediglich die '
+            'Ziffernfolge dar.',
+      ],
+      // --- Matrizen / Lineare Algebra ---
+      'matrix_literal': [
+        'In CrispCalc wird das Literal `Matrix(...)` vom Matrix-Auswerter '
+            'erkannt, bevor die Engine den Ausdruck sieht. Der zugrunde '
+            'liegende Aufruf ist SymEngines Konstruktor `DenseMatrix` — das '
+            'Zeilen-/Spaltenlayout wird bei der Konstruktion festgelegt.',
+        'Zellen bleiben symbolisch — rationale Zahlen werden nicht zu '
+            'Gleitkommazahlen reduziert. Dasselbe gilt für freie Symbole: '
+            '`Matrix([[a, b], [c, d]])` wird akzeptiert und durch `det` / '
+            '`inv` / `rref` propagiert.',
+        'Nicht-quadratische Matrizen sind für `transpose` und `rref` in '
+            'Ordnung, schlagen aber bei `det` / `inv` fehl, die quadratische '
+            'Eingaben erfordern.',
+      ],
+      'det': [
+        'In CrispCalc wird `det(M)` als einzelner Skalar ausgewertet. Der '
+            'zugrunde liegende Aufruf ist SymEngines `DenseMatrix::det()`, das '
+            'den bruchfreien Bareiss-Algorithmus verwendet — exakt für '
+            'symbolische/rationale Einträge, ohne Aufblähen durch '
+            'Gleitkommazahlen.',
+        'Klassisches 3×3-Lehrbuchbeispiel — die Laplace-Entwicklung nach '
+            'Kofaktoren liefert in 6 Termen dasselbe Ergebnis.',
+        'Symbolische Einträge bleiben unverändert. Bareiss behält das Ergebnis '
+            'als SymEngine-`Add` statt als Gleitkommazahl.',
+      ],
+      'inv': [
+        'In CrispCalc gibt `inv(M)` `adj(M)/det(M)` zurück. Der zugrunde '
+            'liegende Aufruf ist SymEngines `DenseMatrix::inv()`, das den '
+            'Gauß-Jordan-Algorithmus über den rationalen Zahlen verwendet — '
+            'die Einträge kommen als exakte Brüche zurück, nicht als '
+            'Gleitkommazahlen.',
+        'Die Einheitsmatrix ist zu sich selbst invers — eine schnelle '
+            'Funktionsprobe, dass die Bridge korrekt hin- und zurückrechnet.',
+        'Singuläre Eingaben (det = 0) führen zu einem sauberen Fehler, statt '
+            'unsinnig große Zahlen zurückzugeben. Der Fehler-Chip erscheint im '
+            'Rechnerverlauf.',
+      ],
+      'transpose': [
+        'In CrispCalc ist `transpose(M)` auf der Dart-Seite implementiert, '
+            'weil die Bridge keinen Einstiegspunkt zum Transponieren '
+            'bereitstellt. Wir legen eine neue `SymEngineMatrix` mit '
+            'vertauschten Dimensionen an und kopieren die Zellen Element für '
+            'Element.',
+        'Rechteckige Eingabe: aus einer 2×3 wird eine 3×2 — nützlich für '
+            'gepaarte Datenlayouts.',
+        'Idempotent bei zweimaliger Anwendung. Bestätigt, dass das Vertauschen '
+            'der Zellen den symbolischen Inhalt unverändert lässt.',
+      ],
+      'rref': [
+        'In CrispCalc führt `rref` Gauß-Jordan in Dart aus und ruft bei jeder '
+            'Zellaktualisierung SymEngines `simplify()` auf. Die Bridge stellt '
+            '`rref` nicht direkt bereit, daher durchläuft der Algorithmus die '
+            'Spalten von links nach rechts, skaliert die Pivotzeile und '
+            'eliminiert dann die Spalte darüber und darunter.',
+        'Rangdefiziente Eingabe: Die zweite Zeile reduziert sich zu lauter '
+            'Nullen. Nützlich, um lineare Abhängigkeit visuell zu erkennen.',
+        'Die Pivot-Skalierung normiert die führenden Einträge auf 1. Die '
+            'Erkennung symbolischer Nicht-Null-Werte ist die Schwachstelle — '
+            'siehe den Algorithmus-Hinweis in `matrix_evaluator.dart`.',
+      ],
+      'matrix_arithmetic': [
+        'In CrispCalc werden binäre Matrixoperationen vom Matrix-Auswerter '
+            'verarbeitet, wenn beide Operanden als `Matrix(...)`-Literale '
+            'geparst werden. Der zugrunde liegende Aufruf ist SymEngines '
+            '`add_dense_dense`; die Subtraktion läuft über `add_dense_dense` '
+            'mit elementweiser Negation der rechten Seite.',
+        'Die Multiplikation ist das übliche Skalarprodukt Zeile mal Spalte '
+            'über SymEngines `mul_dense_dense`. Die Rechtsmultiplikation mit '
+            'der Einheitsmatrix ist eine Funktionsprobe.',
+        'Die Subtraktion ist elementweise; eine Dimensionsabweichung führt '
+            'sauber zum Fehler `Error: matrix - failed: …`.',
+      ],
+      // --- Statistik ---
+      'mean': [
+        'In CrispCalc wird `mean` von `DescriptiveStats.mean` berechnet (siehe '
+            '`lib/engine/statistics.dart`) — eine Summe in einem Durchlauf / '
+            'n. Für gepaarte oder gruppierte Daten stellt das Statistik-Modul '
+            'außerdem Standardabweichung, Median, Quartile und den '
+            'Interquartilsabstand bereit.',
+        'Gleitkomma-Eingabe — die Implementierung summiert in `double`, daher '
+            'können sehr große oder größenmäßig gemischte Listen einen stabilen '
+            'Summationsalgorithmus erfordern, wenn du >15 Stellen brauchst.',
+      ],
+      'welch_t': [
+        'In CrispCalc liegt `welchT` in `lib/engine/hypothesis_tests.dart`. '
+            'Der zugrunde liegende Aufruf berechnet die Teststatistik '
+            't = (x̄_A − x̄_B) / √(s_A²/n_A + s_B²/n_B), nähert dann die '
+            'Freiheitsgrade über Welch-Satterthwaite an und liest den p-Wert '
+            'aus `TDistribution.cdf` ab.',
+        'Fall mit winziger Stichprobe — der Welch-Freiheitsgrad ≈ 4, obwohl '
+            'n_A + n_B = 6, weil die Zweistichproben-t-Verteilung die '
+            'Unsicherheit der Varianzschätzung berücksichtigt.',
+      ],
+      'paired_t': [
+        'In CrispCalc reduziert sich `pairedT` auf einen Einstichproben-t-Test '
+            'des Differenzvektors d = nachher − vorher. Der zugrunde liegende '
+            'Aufruf ist derselbe `TDistribution.cdf`-Weg wie bei `welchT`, '
+            'jedoch mit df = n - 1 (keine Welch-Korrektur, da nur eine '
+            'Varianzschätzung vorzunehmen ist).',
+        'Sonderfall: Identische Verschiebungen erzeugen eine Varianz von null '
+            'in den Differenzen, was die Implementierung als Grenzfall p = 0 '
+            'darstellt statt als NaN.',
+      ],
+      'anova_1': [
+        'In CrispCalc zerlegt `anovaOneWay` die Gesamt-Quadratsumme in die '
+            'Quadratsumme zwischen den Gruppen und die innerhalb der Gruppen. '
+            'Der zugrunde liegende Aufruf ist F = MS_zwischen / MS_innerhalb '
+            'mit df1 = K - 1 und df2 = N - K, dann `FDistribution.sf` für den '
+            'p-Wert des oberen Endes.',
+        'Gleiche Streuung und gut getrennte Mittelwerte erzeugen ein hohes F. '
+            'H₀ (alle Mittelwerte gleich) wird bei α = 0,05 verworfen.',
+      ],
+      'chi2_goodness': [
+        'In CrispCalc wertet `chiSquareGof` Σ (O - E)² / E aus und liest den '
+            'p-Wert des oberen Endes aus `ChiSquaredDistribution.sf` mit '
+            'df = k - 1 ab, wobei k die Anzahl der Kategorien ist. Es wird '
+            'angenommen, dass die zugrunde liegenden Zellhäufigkeiten ≥ 5 '
+            'sind — die Implementierung wendet keine automatische '
+            'Yates-Korrektur an.',
+        'Perfekte Übereinstimmung → χ² = 0 → H₀ wird bei keinem α verworfen.',
+      ],
+      'chi2_independence': [
+        'In CrispCalc berechnet `chiSquareIndependence` die erwarteten '
+            'Häufigkeiten aus den Randsummen von Zeile × Spalte '
+            '(E_ij = Zeile_i · Spalte_j / Gesamt), dann Σ (O - E)² / E mit '
+            'df = (Zeilen - 1) · (Spalten - 1). Der zugrunde liegende p-Wert '
+            'stammt aus `ChiSquaredDistribution.sf`.',
+        'Starke Konzentration außerhalb der Diagonale → niedriger p-Wert. Bei '
+            'dünn besetzten 2×2-Tafeln ist `fisher_exact` vorzuziehen, das '
+            'nicht auf der Chi-Quadrat-Näherung für große Stichproben beruht.',
+      ],
+      'fisher_exact': [
+        'In CrispCalc zählt `fisherExact` alle 2×2-Tafeln mit denselben '
+            'Randsummen auf und summiert die hypergeometrischen '
+            'Wahrscheinlichkeiten der Tafeln, die mindestens so extrem wie die '
+            'beobachtete sind. Der zugrunde liegende Aufruf berechnet '
+            'log-Binomialterme, um einen Überlauf bei großen Summen zu '
+            'vermeiden, und potenziert dann; der zweiseitige p-Wert folgt der '
+            'Konvention von R (Summe der Endwahrscheinlichkeiten ≤ der '
+            'beobachteten).',
+        'Symmetrische Tafel → kein Hinweis auf einen Zusammenhang.',
+      ],
+      'wilcoxon': [
+        'In CrispCalc fasst `wilcoxonRankSum` beide Stichproben zusammen, '
+            'vergibt mittelwertkorrigierte Ränge, summiert die Ränge der '
+            'Gruppe A und gibt das z der Normalnäherung aus. Der zugrunde '
+            'liegende Aufruf wendet eine Bindungskorrektur auf die Varianz an '
+            'und liest den zweiseitigen p-Wert aus der Normalverteilungs-CDF '
+            'ab.',
+        'Fall mit winziger Stichprobe — die Normalnäherung ist bei '
+            'n_A + n_B = 6 grenzwertig. Für sehr kleine Stichproben ist die '
+            'exakte Permutationsverteilung vorzuziehen (noch nicht enthalten).',
+      ],
+      'sign_test': [
+        'In CrispCalc verwirft `pairedSign` Paare mit Differenz null, zählt '
+            'die positiven unter den verbleibenden n und testet gegen '
+            'Binomial(n, 0,5). Der zugrunde liegende p-Wert nutzt das exakte '
+            'Binomialende — keine Normalnäherung, daher die richtige Wahl für '
+            'sehr kleine gepaarte Stichproben.',
+        'Ein gebundenes Paar (4 → 4) wird verworfen, sodass n = 3 positive von '
+            '3 informativen Paaren übrig bleiben. Der zweiseitige exakte '
+            'p-Wert ist 2 · min(Binom(3, 0,5).cdf(3), …).',
+      ],
+      // --- Constraints-DSL ---
+      'vars': [
+        'In CrispCalc wird die Zeile `vars:` von `DslToFlatZinc` geparst '
+            '(siehe `lib/engine/csp_solver.dart`) und erzeugt pro Name eine '
+            'FlatZinc-Deklaration `var int: x :: …`. Die Bereichsgrenzen sind '
+            'konkrete ganze Zahlen; symbolische Wertebereiche werden nicht '
+            'unterstützt.',
+        'Ein Wertebereich `0..1` modelliert eine boolesche Variable. FlatZinc '
+            'hat einen eigenen Typ `var bool` — der Parser greift ihn nicht '
+            'auf, aber der Solver verarbeitet die 0/1-Ganzzahl genauso '
+            'effizient.',
+      ],
+      'all_different': [
+        'In CrispCalc wird `allDifferent` in FlatZincs '
+            '`all_different_int([a, b, c])` übersetzt. Der zugrunde liegende '
+            'Solver (dart_csp) implementiert die Propagation der '
+            'Schrankenkonsistenz über Régins Matching-Algorithmus — bei großen '
+            'Argumentlisten deutlich schneller als paarweise.',
+        'Die Sudoku-Vorlagen im Sudoku-Modul bauen auf Stapeln von '
+            '`allDifferent`-Bedingungen auf — eine pro Zeile, Spalte, Box und '
+            'etwaige Variantenzonen.',
+      ],
+      'no_overlap': [
+        'In CrispCalc wird `noOverlap` in FlatZincs '
+            '`disjunctive([s1, s2, s3], [4, 3, 2])` übersetzt. Der zugrunde '
+            'liegende Solver verwendet Edge-Finding plus Vilíms '
+            'θ-Baum-Propagator — derselbe Algorithmus wie in MiniZincs '
+            'eingebauter Variante.',
+        'Klassisches Sequenzierungsproblem auf einer Maschine. In Kombination '
+            'mit `minimize` über den Makespan-Ausdruck ergibt sich der optimale '
+            'Ablaufplan. Das vollständige DSL-Programm zeigt das zugehörige '
+            'Beispiel.',
+      ],
+      'cumulative': [
+        'In CrispCalc wird `cumulative` in FlatZincs '
+            '`cumulative([starts], [durations], [resources], capacity)` '
+            'übersetzt. Der zugrunde liegende Solver verwendet '
+            'Timetable-Propagation plus energetisches Schließen — '
+            'kapazitätsbewusste Varianten der `noOverlap`-Propagatoren.',
+        'Das ressourcenbeschränkte Projektplanungsproblem (RCPSP) stapelt '
+            'mehrere `cumulative`-Bedingungen, eine pro Ressourcentyp. Das '
+            'Beispiel `dslRcpsp` zeigt ein Projekt mit zwei Ressourcen.',
+      ],
+      'minimize': [
+        'In CrispCalc erzeugt `minimize` FlatZincs '
+            '`solve minimize __obj__;`, nachdem die Zielvariable durch das '
+            'Parsen des linearen Ausdrucks konstruiert wurde. Der zugrunde '
+            'liegende Solver verwendet Branch-and-Bound — Zulässigkeitsprüfung, '
+            'dann Verschärfen der oberen Schranke bei jeder verbessernden '
+            'Lösung.',
+        'Siehe das Beispiel `dslCoinChange` — minimiere über eine Summe von '
+            'Indikatorvariablen, um die kleinste Menge an Münzen zu finden, '
+            'die den Zielbetrag ergibt.',
+      ],
+      'maximize': [
+        'In CrispCalc erzeugt `maximize` FlatZincs `solve maximize __obj__;`. '
+            'Der zugrunde liegende Solver führt Branch-and-Bound genau wie '
+            '`minimize` aus, jedoch mit umgekehrtem Verschärfen der unteren '
+            'Schranke.',
+        'Klassisches 0/1-Rucksackproblem. Das DSL behandelt dies natürlich als '
+            'Deklaration `vars: x_1, ... in 0..1` plus einer linearen '
+            'Kapazitätsbedingung und einer linearen Zielfunktion.',
+      ],
+      // --- Sudoku-Varianten ---
+      'sudoku_regular': [
+        'In CrispCalc liegt die reguläre Variante in `lib/engine/sudoku.dart` '
+            'als `SudokuVariant.regular`. Der zugrunde liegende Solver '
+            'instanziiert ein `allDifferent` pro Zeile, Spalte und Box '
+            '(insgesamt 27 bei 9×9) und übergibt sie an `dart_csp`.',
+      ],
+      'sudoku_x': [
+        'In CrispCalc ist Sudoku-X `SudokuVariant.x` '
+            '(`lib/engine/sudoku.dart`). Der zugrunde liegende Solver fügt '
+            'zusätzlich zum regulären Trio aus Zeile/Spalte/Box zwei weitere '
+            '`allDifferent`-Bedingungen hinzu — eine pro Diagonale.',
+      ],
+      'sudoku_disjoint': [
+        'In CrispCalc ist dies `SudokuVariant.disjoint`. Für ein N×N-Gitter '
+            'mit √N × √N großen Boxen fügt die Bedingung N weitere '
+            '`allDifferent`-Überlagerungen hinzu — eine pro Position innerhalb '
+            'der Box. Die 8×8 wird als einzelne Vorlage geliefert.',
+      ],
+      'sudoku_killer': [
+        'In CrispCalc ist dies `SudokuVariant.killer`. Der zugrunde liegende '
+            'Solver legt über das reguläre Trio aus Zeile/Spalte/Box je Käfig '
+            'eine `allDifferent`-Bedingung und je Käfig eine Bedingung '
+            '`Summe = Ziel`. Die Killer-Vorlagen für 4×4 und 9×9 werden beide '
+            'geliefert.',
       ],
     };
     final list = hints[id];
