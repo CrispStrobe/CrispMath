@@ -1354,12 +1354,14 @@ Group B (V2 — more specialized, ship after Group A lands):
   surfacing. **Remaining:** `BesselI`/`BesselK` (not in MPFR) and
   `theta` (no MPFR primitive) — would need a series/AGM implementation.
 
-- [ ] **Arbitrary-precision complex** (MPC). When the user opts into
-  "high-precision mode," complex arithmetic stops collapsing to
-  `Complex(double, double)` and uses MPC under the hood, giving
-  correctly-rounded answers for `gamma(1+i)`, `(1+i)^100`,
-  `BesselJ(2, 3+4i)`, etc. Useful only after Bessel/zeta land,
-  since those are where double-precision complex first hurts.
+- [x] ~~**Arbitrary-precision complex** (MPC).~~ **SHIPPED 2026-05-29**
+  as `cevalf(expr, N)` — evaluate any expression to N digits on the MPC
+  path (`basic_evalf` real=0), returning `a + b·I`. `cevalf((1+I)^10, 20)`
+  = `32i`, `cevalf(sqrt(-2), 50)` = `i·√2`. The complement to `evalf`
+  (which rejects non-real results). Full UI surfacing. (A standing
+  "high-precision mode" toggle that makes *all* complex arithmetic use
+  MPC by default is a larger UX change — `cevalf` gives the on-demand
+  capability now.)
 
 ---
 

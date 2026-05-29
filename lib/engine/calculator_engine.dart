@@ -595,6 +595,18 @@ class CalculatorEngine {
     return _bridgeCall('evalf', (b) => b.mpfrEvalf(expression, decimalDigits));
   }
 
+  /// Group B: complex arbitrary-precision numeric evaluation of any
+  /// expression to [decimalDigits] digits via MPC (the `basic_evalf`
+  /// real=0 path). Returns SymEngine's `a + b*I` string. For complex
+  /// values — `cevalf((1+I)^10, 30)`, `cevalf(sqrt(-2), 50)`. Native-only.
+  String cevalfPrecision(String expression, int decimalDigits) {
+    if (decimalDigits < 1 || decimalDigits > 10000) {
+      return 'Error: precision must be in 1..10000';
+    }
+    return _bridgeCall(
+        'cevalf', (b) => b.mpfrCevalf(expression, decimalDigits));
+  }
+
   /// Group B: Bessel function of the first kind Jₙ(x) — integer [order]
   /// `n`, real [x] — via MPFR's `mpfr_jn`. Native-only (SymEngine has no
   /// Bessel functions, so there is no symbolic / fallback path).
@@ -662,6 +674,8 @@ class CalculatorEngine {
   ///   polyfactor(p, mod=k)         → factor p over F_k (Group B,
   ///                                   pure-Dart Berlekamp).
   ///   evalf(expr, N)               → expr to N digits via MPFR
+  ///                                   (Group B, native).
+  ///   cevalf(expr, N)              → complex expr to N digits via MPC
   ///                                   (Group B, native).
   ///   besselj(n, x) / bessely(n, x)→ Bessel J/Y, integer order n,
   ///                                   real x (Group B, MPFR).
@@ -822,6 +836,16 @@ class CalculatorEngine {
         return 'Error: precision must be in 1..10000';
       }
       return evalfPrecision(m.group(1)!, n);
+    }
+
+    // Group B: cevalf(expr, N) — complex arbitrary-precision evaluation.
+    m = RegExp(r'^cevalf\s*\(\s*(.+?)\s*,\s*(\d+)\s*\)$').firstMatch(trimmed);
+    if (m != null) {
+      final n = int.tryParse(m.group(2)!);
+      if (n == null || n < 1 || n > 10000) {
+        return 'Error: precision must be in 1..10000';
+      }
+      return cevalfPrecision(m.group(1)!, n);
     }
 
     // Group B: polyfactor(p, mod=k) / polyfactor(p, k) — factor over F_k.

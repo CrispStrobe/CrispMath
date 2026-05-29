@@ -288,6 +288,13 @@ class WorkedExamples {
           'besselj(0, x).',
       expression: 'besselj(0, 1)',
     ),
+    WorkedExample(
+      id: 'cevalfPow',
+      category: WorkedExampleCategory.numberTheory,
+      title: 'Complex high precision',
+      description: 'cevalf((1+I)^10, 20) — (1+i)¹⁰ = 32i, via MPC.',
+      expression: 'cevalf((1+I)^10, 20)',
+    ),
 
     // === P7 Booleans (Round 112) ============================================
     // Surfaces the relational + logical operator rewrite shipped in

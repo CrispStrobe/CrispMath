@@ -3578,6 +3578,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Arbiträr-präzises evalf';
       case 'besselJZero':
         return 'Besselfunktion';
+      case 'cevalfPow':
+        return 'Komplexe Hochpräzision';
       case 'booleanIsprimeAnd':
         return 'Primzahl und beschränkt';
       case 'booleanEqualityFold':
@@ -3695,6 +3697,8 @@ class DeLocalizations implements AppLocalizations {
       case 'besselJZero':
         return 'besselj(0, 1) — J₀(1) ≈ 0,7652, über MPFR. Zeichne '
             'besselj(0, x).';
+      case 'cevalfPow':
+        return 'cevalf((1+I)^10, 20) — (1+i)¹⁰ = 32i, über MPC.';
       case 'booleanIsprimeAnd':
         return 'isprime(17) und 17 < 20 — beide Teile wahr, also ist die '
             'Konjunktion wahr.';
@@ -3846,6 +3850,10 @@ class DeLocalizations implements AppLocalizations {
         return 'Wertet einen beliebigen reellen Ausdruck auf N Dezimalstellen '
             'über MPFR aus — der arbiträr-präzise Zahlenwert von `expr`.';
       // --- Matrizen / Lineare Algebra ---
+      case 'cevalf':
+        return 'Komplexe arbiträr-präzise Auswertung — wie `evalf`, behält '
+            'aber den Imaginärteil und gibt `a + b·I` auf N Stellen über '
+            'MPC zurück.';
       case 'matrix_literal':
         return 'Matrix-Literal: eine Liste von Zeilen, jede Zeile eine Liste '
             'von Zellausdrücken. Zellen können Zahlen, Brüche oder symbolisch '
@@ -4287,6 +4295,13 @@ class DeLocalizations implements AppLocalizations {
             '(hochpräzises Komplexes ist ein separater Pfad).',
       ],
       // --- Matrizen / Lineare Algebra ---
+      'cevalf': [
+        'In CrispCalc nutzt `cevalf` SymEngines `basic_evalf` auf dem '
+            'MPC-(komplexen)-Pfad. (1+i)¹⁰ = 32i. Die imaginäre Einheit ist '
+            'das Literal `I`.',
+        'Wo `evalf` ein nicht-reelles Ergebnis ablehnt, gibt `cevalf` den '
+            'vollen komplexen Wert zurück: √(−2) = i·√2.',
+      ],
       'matrix_literal': [
         'In CrispCalc wird das Literal `Matrix(...)` vom Matrix-Auswerter '
             'erkannt, bevor die Engine den Ausdruck sieht. Der zugrunde '
@@ -6214,6 +6229,8 @@ class FrLocalizations implements AppLocalizations {
         return 'evalf de précision arbitraire';
       case 'besselJZero':
         return 'Fonction de Bessel';
+      case 'cevalfPow':
+        return 'Haute précision complexe';
       case 'booleanIsprimeAnd':
         return 'Premier et borné';
       case 'booleanEqualityFold':
@@ -6331,6 +6348,8 @@ class FrLocalizations implements AppLocalizations {
       case 'besselJZero':
         return 'besselj(0, 1) — J₀(1) ≈ 0,7652, via MPFR. Tracez '
             'besselj(0, x).';
+      case 'cevalfPow':
+        return 'cevalf((1+I)^10, 20) — (1+i)¹⁰ = 32i, via MPC.';
       case 'booleanIsprimeAnd':
         return 'isprime(17) et 17 < 20 — les deux clauses sont vraies, '
             'donc la conjonction est vraie.';
@@ -6485,6 +6504,10 @@ class FrLocalizations implements AppLocalizations {
         return "Évalue n'importe quelle expression réelle avec N décimales "
             "via MPFR — la valeur numérique de précision arbitraire de "
             "`expr`.";
+      case 'cevalf':
+        return "Évaluation complexe de précision arbitraire — comme `evalf` "
+            "mais conserve la partie imaginaire, renvoyant `a + b·I` avec N "
+            "décimales via MPC.";
       case 'matrix_literal':
         return "Littéral matriciel : une liste de lignes, chaque ligne étant "
             "une liste d'expressions de cellule. Les cellules peuvent être "
@@ -6918,6 +6941,13 @@ class FrLocalizations implements AppLocalizations {
       "À combiner avec les fonctions spéciales pour des valeurs de haute "
           "précision : ζ(2) = π²/6. Les résultats non réels sont rejetés "
           "(le complexe haute précision est un chemin distinct).",
+    ],
+    'cevalf': [
+      "Dans CrispCalc, `cevalf` utilise `basic_evalf` de SymEngine sur le "
+          "chemin MPC (complexe). (1+i)¹⁰ = 32i. L'unité imaginaire est le "
+          "littéral `I`.",
+      "Là où `evalf` rejette un résultat non réel, `cevalf` renvoie la "
+          "valeur complexe complète : √(−2) = i·√2.",
     ],
     'matrix_literal': [
       "Dans CrispCalc, le littéral `Matrix(...)` est reconnu par "
@@ -8833,6 +8863,8 @@ class EsLocalizations implements AppLocalizations {
         return 'evalf de precisión arbitraria';
       case 'besselJZero':
         return 'Función de Bessel';
+      case 'cevalfPow':
+        return 'Alta precisión compleja';
       case 'booleanIsprimeAnd':
         return 'Primo y acotado';
       case 'booleanEqualityFold':
@@ -8951,6 +8983,8 @@ class EsLocalizations implements AppLocalizations {
       case 'besselJZero':
         return 'besselj(0, 1) — J₀(1) ≈ 0,7652, mediante MPFR. Dibuja '
             'besselj(0, x).';
+      case 'cevalfPow':
+        return 'cevalf((1+I)^10, 20) — (1+i)¹⁰ = 32i, mediante MPC.';
       case 'booleanIsprimeAnd':
         return 'isprime(17) y 17 < 20 — ambas cláusulas son verdaderas, '
             'así que la conjunción es verdadera.';
@@ -9100,6 +9134,10 @@ class EsLocalizations implements AppLocalizations {
         return "Evalúa cualquier expresión real con N cifras decimales "
             "mediante MPFR — el valor numérico de precisión arbitraria de "
             "`expr`.";
+      case 'cevalf':
+        return "Evaluación compleja de precisión arbitraria — como `evalf` "
+            "pero conserva la parte imaginaria, devolviendo `a + b·I` con N "
+            "cifras mediante MPC.";
       case 'matrix_literal':
         return "Literal de matriz: una lista de filas, cada fila una lista "
             "de expresiones de celda. Las celdas pueden ser números, "
@@ -9530,6 +9568,12 @@ class EsLocalizations implements AppLocalizations {
       "Combínalo con funciones especiales para valores de alta precisión: "
           "ζ(2) = π²/6. Los resultados no reales se rechazan (el complejo "
           "de alta precisión es una vía aparte).",
+    ],
+    'cevalf': [
+      "En CrispCalc, `cevalf` usa `basic_evalf` de SymEngine en la vía MPC "
+          "(compleja). (1+i)¹⁰ = 32i. La unidad imaginaria es el literal `I`.",
+      "Donde `evalf` rechaza un resultado no real, `cevalf` devuelve el "
+          "valor complejo completo: √(−2) = i·√2.",
     ],
     'matrix_literal': [
       "En CrispCalc, el literal `Matrix(...)` lo reconoce el evaluador de "

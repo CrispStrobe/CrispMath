@@ -66,6 +66,7 @@ const Map<String, String> _kAdvKeyHelpRefId = {
   'lambertw': 'lambertw',
   'beta': 'beta',
   'evalf': 'evalf',
+  'cevalf': 'cevalf',
   'besselj': 'besselj',
   'bessely': 'bessely',
 };
@@ -264,6 +265,7 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
     'beta',
     // Generic arbitrary-precision numeric evaluation.
     'evalf',
+    'cevalf',
     // Bessel functions (MPFR).
     'besselj',
     'bessely',
