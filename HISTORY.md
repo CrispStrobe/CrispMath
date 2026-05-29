@@ -23,7 +23,7 @@ sentinels, so all nine now show the direct "Open module" button.
   orphaned preset fails CI).
 
 Pure-Dart, no new strings (reuses `functionRefOpenModule`). Full suite
-**2618 pass / 1 skip, 0 failures**.
+**2616 pass / 1 skip, 0 failures**.
 
 ## 2026-05-29 — Round 99 follow-up: Function Reference "Open module" button
 

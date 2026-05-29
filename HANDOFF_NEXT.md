@@ -8,7 +8,7 @@ six stats `FunctionRef` entries got matching `openTarget`s — so every
 stats Function Reference entry now shows the direct "Open module" button
 landing on a pre-filled Tests tab. Pure-Dart, no new strings. New test
 enforces both directions (entry→preset and preset→entry). Full suite
-**2618 pass / 1 skip, 0 failures**. Commits sit on `main`; pushed.
+**2616 pass / 1 skip, 0 failures**. Commits sit on `main`; pushed.
 
 If extending further: the Distributions / Regression / Descriptive tabs
 have **no** preset-backed entries yet — `StatisticsPreset.tab` already
