@@ -280,6 +280,14 @@ class WorkedExamples {
       description: 'evalf(ln(10), 50) — any expression to 50 digits.',
       expression: 'evalf(ln(10), 50)',
     ),
+    WorkedExample(
+      id: 'besselJZero',
+      category: WorkedExampleCategory.numberTheory,
+      title: 'Bessel function',
+      description: 'besselj(0, 1) — J₀(1) ≈ 0.7652, via MPFR. Graph '
+          'besselj(0, x).',
+      expression: 'besselj(0, 1)',
+    ),
 
     // === P7 Booleans (Round 112) ============================================
     // Surfaces the relational + logical operator rewrite shipped in

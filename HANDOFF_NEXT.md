@@ -28,15 +28,20 @@ single repo, all on `main`, headless-testable):
    special functions (`evalf(zeta(2), 50)`). Bridge re-pinned; symbol
    verified surviving release dead-strip via `nm`.
 
-All fully surfaced. **2548 tests, 0 failures.** Group B remaining:
-**Bessel{J,Y,I,K} / theta** — SymEngine has **no** Bessel even at the C++
-level, so these would call **MPFR's `mpfr_jn`/`yn` directly** in new
-wrappers (a 3-repo arc + graphing); theta has no MPFR primitive at all.
-And **arbitrary-precision complex** (MPC) — the bridge already does
-complex `evalf` at 53 bits; high-precision complex needs a wrapper
-variant of `evalf` with `real=0`. Pattern: four pure-Dart Group B items +
-one small native wrapper (`evalf`) landed quickly; the last two are
-heavier native/graphing work.
+6. **Bessel `besselj`/`bessely`** — first/second kind, integer order,
+   real arg, via **MPFR `mpfr_jn`/`yn`** (SymEngine has no Bessel). 3-repo
+   wrapper arc; intercepted in `evaluateForGraphing` *before* its
+   comma→dot normalisation (which would mangle the 2-arg call) so they
+   plot. UI fully surfaced.
+
+All fully surfaced. **2571 tests, 0 failures.** Group B remaining:
+**arbitrary-precision complex (MPC)** — the bridge already does complex
+`evalf` at 53 bits; high-precision complex needs a wrapper variant of
+`evalf` with `real=0` (parse the MPC `a + b*I` output string). Also
+**`BesselI`/`BesselK`** (not in MPFR) and **`theta`** (no MPFR
+primitive) would need a series/AGM implementation — deferred. That's the
+practical end of the precision arc's Group B; only MPC is a clean
+remaining native increment.
 
 ⚠ **Fixed a latent regression this session:** `precision_call_pass_test`
 had been red on `main` since the round-4 merge (a stale Round-91
@@ -91,7 +96,7 @@ merged to `master`/`main`. Round-5 (UI-only, CrispCalc) went on `main`.
 |---|---|
 | **Main worktree** | `/Volumes/backups/code/CrispCalc` (branch `main`) |
 | **main HEAD** | Precision Group A (Round 4 + 5) + Group B continued fractions, on top of R130 + R100 + R105b; **v0.4.1 released** |
-| **Tests** | **2548 pass, 0 failures** (… → 2532 special-fns → 2548 evalf); `notepad_screen_test` still a flaky full-suite-only failure (passes in isolation) |
+| **Tests** | **2571 pass, 0 failures** (… → 2548 evalf → 2571 bessel); `notepad_screen_test` still a flaky full-suite-only failure (passes in isolation) |
 | **dart_csp pin** | `69a9cfb` (unchanged) |
 | **bridge pin** | **`ce8af30`** (bridge main, post round-4 merge — modpow/modinv/totient/jacobi) — was `535ce5d` pre-session |
 | **bridge main HEAD** | `ce8af30` (round-4 `precision-round4-modular` merged) |

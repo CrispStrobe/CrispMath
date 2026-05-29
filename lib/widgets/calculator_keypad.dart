@@ -66,6 +66,8 @@ const Map<String, String> _kAdvKeyHelpRefId = {
   'lambertw': 'lambertw',
   'beta': 'beta',
   'evalf': 'evalf',
+  'besselj': 'besselj',
+  'bessely': 'bessely',
 };
 
 /// Round 102b (P6): per-glyph → FunctionRef.id mapping for the CAS
@@ -262,6 +264,9 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
     'beta',
     // Generic arbitrary-precision numeric evaluation.
     'evalf',
+    // Bessel functions (MPFR).
+    'besselj',
+    'bessely',
     // Round 112 (P7): relational + logical operators. Inserts the
     // ASCII form with surrounding spaces so the round-110 / 111
     // preprocessor can lower them into SymEngine's Eq/Lt/.../

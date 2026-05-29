@@ -85,6 +85,11 @@ class CalculatorEngine {
     if (!_nativeAvailable || bridge == null) {
       return 'Error';
     }
+    // Bessel functions can't go through SymEngine; intercept a standalone
+    // besselj/bessely(n, <number>) here, before the comma→dot
+    // normalisation below would mangle the argument comma.
+    final bessel = _besselForGraphing(expression);
+    if (bessel != null) return bessel;
     try {
       var clean = expression.trim().replaceAll(',', '.').replaceAll(' ', '');
       final result = bridge.evaluate(clean);
@@ -590,6 +595,40 @@ class CalculatorEngine {
     return _bridgeCall('evalf', (b) => b.mpfrEvalf(expression, decimalDigits));
   }
 
+  /// Group B: Bessel function of the first kind Jₙ(x) — integer [order]
+  /// `n`, real [x] — via MPFR's `mpfr_jn`. Native-only (SymEngine has no
+  /// Bessel functions, so there is no symbolic / fallback path).
+  String besselJ(int order, String x) =>
+      _bridgeCall('besselj', (b) => b.mpfrBesselJ(order, x));
+
+  /// Group B: Bessel function of the second kind Yₙ(x), via `mpfr_yn`.
+  String besselY(int order, String x) =>
+      _bridgeCall('bessely', (b) => b.mpfrBesselY(order, x));
+
+  /// Intercept a standalone `besselj(n, <number>)` / `bessely(n, <number>)`
+  /// for the graphing path. Bessel cannot go through SymEngine, and
+  /// [evaluateForGraphing]'s comma→dot normalisation would mangle the
+  /// argument separator — so this runs first, on the raw (already
+  /// x-substituted) expression. The numeric argument may be wrapped in
+  /// parentheses (the grapher brackets negatives). Returns the value
+  /// string, `'Error'` on failure, or null if not a Bessel call.
+  String? _besselForGraphing(String expression) {
+    final m = RegExp(
+            r'^(besselj|bessely)\s*\(\s*(-?\d+)\s*,\s*\(?\s*(-?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\)?\s*\)$')
+        .firstMatch(expression.trim());
+    if (m == null) return null;
+    final order = int.tryParse(m.group(2)!);
+    if (order == null) return null;
+    try {
+      final v = m.group(1)! == 'besselj'
+          ? besselJ(order, m.group(3)!)
+          : besselY(order, m.group(3)!);
+      return v.startsWith('Error') ? 'Error' : v;
+    } catch (_) {
+      return 'Error';
+    }
+  }
+
   /// Round 91 (P6): top-level pre-pass that intercepts precision-arc
   /// calls before SymEngine sees them. Returns the result string when
   /// [input] is a recognized standalone precision-arc call, or null
@@ -624,6 +663,8 @@ class CalculatorEngine {
   ///                                   pure-Dart Berlekamp).
   ///   evalf(expr, N)               → expr to N digits via MPFR
   ///                                   (Group B, native).
+  ///   besselj(n, x) / bessely(n, x)→ Bessel J/Y, integer order n,
+  ///                                   real x (Group B, MPFR).
   ///
   /// Only matches when the call is the **entire** input (after
   /// trimming whitespace). In-expression calls like `pi(50) + 1` are
@@ -790,6 +831,18 @@ class CalculatorEngine {
       final prime = int.tryParse(m.group(2)!);
       if (prime == null) return 'Error: polyfactor modulus must be an integer';
       return polyfactor(m.group(1)!, prime);
+    }
+
+    // Group B: besselj(n, x) / bessely(n, x) — integer order, real arg.
+    m = RegExp(
+            r'^(besselj|bessely)\s*\(\s*(-?\d+)\s*,\s*(-?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\)$')
+        .firstMatch(trimmed);
+    if (m != null) {
+      final order = int.tryParse(m.group(2)!);
+      if (order == null) return 'Error: bessel order must be an integer';
+      return m.group(1)! == 'besselj'
+          ? besselJ(order, m.group(3)!)
+          : besselY(order, m.group(3)!);
     }
 
     return null;
