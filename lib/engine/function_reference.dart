@@ -436,6 +436,74 @@ class FunctionReferences {
       seeAlso: ['gcd', 'factor', 'factorint'],
     ),
     FunctionRef(
+      id: 'polygcd',
+      category: FunctionRefCategory.cas,
+      signature: 'polygcd(p, q)',
+      shortDescription:
+          'Monic greatest common divisor of two univariate polynomials '
+          'over ℚ.',
+      examples: [
+        FunctionRefExample(
+          input: 'polygcd(x^2-1, x^2-2x+1)',
+          expected: 'x - 1',
+          hint: 'In CrispCalc, `polygcd` runs the Euclidean algorithm on '
+              'exact rational coefficients (pure Dart). Both polynomials '
+              'share the factor `x - 1`; the result is normalised monic.',
+        ),
+        FunctionRefExample(
+          input: 'polygcd(x^2+1, x-1)',
+          expected: '1',
+          hint: 'Coprime polynomials give the monic constant 1.',
+        ),
+      ],
+      seeAlso: ['polyresultant', 'polydiscriminant', 'factor'],
+    ),
+    FunctionRef(
+      id: 'polyresultant',
+      category: FunctionRefCategory.cas,
+      signature: 'polyresultant(p, q)',
+      shortDescription:
+          'Resultant Res(p, q) — zero exactly when `p` and `q` share a '
+          'non-constant factor.',
+      examples: [
+        FunctionRefExample(
+          input: 'polyresultant(x^2-1, x-1)',
+          expected: '0',
+          hint: 'Computed as the determinant of the Sylvester matrix. It '
+              'vanishes here because both vanish at `x = 1`.',
+        ),
+        FunctionRefExample(
+          input: 'polyresultant(x^2+1, x)',
+          expected: '1',
+          hint: 'A non-zero resultant certifies that the two polynomials are '
+              'coprime over ℚ.',
+        ),
+      ],
+      seeAlso: ['polygcd', 'polydiscriminant'],
+    ),
+    FunctionRef(
+      id: 'polydiscriminant',
+      category: FunctionRefCategory.cas,
+      signature: 'polydiscriminant(p)',
+      shortDescription:
+          'Discriminant of a univariate polynomial (degree ≥ 1) — zero '
+          'exactly when `p` has a repeated root.',
+      examples: [
+        FunctionRefExample(
+          input: 'polydiscriminant(x^2-5x+6)',
+          expected: '1',
+          hint: 'For `x² + bx + c` the discriminant is `b² − 4c` — here '
+              '25 − 24 = 1. CrispCalc uses `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.',
+        ),
+        FunctionRefExample(
+          input: 'polydiscriminant(x^2-4x+4)',
+          expected: '0',
+          hint: '`(x − 2)²` has a double root, so the discriminant is 0.',
+        ),
+      ],
+      seeAlso: ['polyresultant', 'polygcd', 'solve'],
+    ),
+    FunctionRef(
       id: 'factorial',
       category: FunctionRefCategory.cas,
       signature: 'factorial(n)   or   n!',

@@ -2,6 +2,37 @@
 
 Completed work, newest first.
 
+## 2026-05-29 — Precision arc Group B: polynomial arithmetic over ℚ
+
+`polygcd(p, q)`, `polyresultant(p, q)`, `polydiscriminant(p)` — the
+second Group B item. Like continued fractions, **pure-Dart with exact
+`Rational`/BigInt arithmetic**: SymEngine's cwrapper exposes none of
+these (only integer gcd + `basic_solve_poly`) and a C polynomial parser
+would be fragile, so the whole feature lives in
+`lib/engine/polynomial.dart` — no native wrapper, no rebuild, fully
+headless-testable.
+
+- New `lib/engine/polynomial.dart`: an exact `Rational` (BigInt
+  num/den, lowest terms), a univariate `Polynomial` (parser tolerant of
+  `*`/`**`/`^`, implicit multiplication, integer/`p/q`/decimal
+  coefficients; `toString`, `derivative`, `divmod`, `monic`), and the
+  three operations — `gcd` (Euclidean, monic over ℚ), `resultant`
+  (Sylvester-matrix determinant via exact Gaussian elimination), and
+  `discriminant` (`(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`).
+- `calculator_engine.dart`: `polygcd` / `polyresultant` /
+  `polydiscriminant` methods; `tryEvaluatePrecisionCall` dispatch.
+- `test/polynomial_test.dart`: Rational, parser round-trips, and all
+  three operations cross-checked against SymPy (`gcd(x²−1, x²−2x+1) =
+  x−1`; `disc(x³−2) = −108`; `res(x²+1, x) = 1`; …).
+- Full UI surfacing: Adv-keypad buttons, FunctionReference entries
+  (cas category) with DE/FR/ES i18n, and two worked examples
+  (`polyGcdShared`, `polyDiscriminantCubic`).
+
+Full suite **2465 pass** / 1 skip (the pre-existing notepad full-suite
+flake). `polyfactor` over Q is the existing `factor`; over F_p
+(Berlekamp) is a future item. Group B remaining: Bessel/zeta/theta,
+arbitrary-precision complex.
+
 ## 2026-05-29 — Precision arc Group B begins: continued fractions
 
 `cfrac(x, n)` and `convergent(x, k)` — the first **Group B** item.

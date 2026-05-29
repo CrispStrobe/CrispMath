@@ -110,6 +110,21 @@ class WorkedExamples {
       description: 'Reduce (x² − 4)/(x − 2) to lowest terms.',
       expression: 'simplify((x^2 - 4)/(x - 2))',
     ),
+    // Group B (precision arc): polynomial arithmetic over ℚ.
+    WorkedExample(
+      id: 'polyGcdShared',
+      category: WorkedExampleCategory.algebra,
+      title: 'Polynomial GCD',
+      description: 'polygcd(x² − 1, x² − 2x + 1) — the shared factor x − 1.',
+      expression: 'polygcd(x^2 - 1, x^2 - 2x + 1)',
+    ),
+    WorkedExample(
+      id: 'polyDiscriminantCubic',
+      category: WorkedExampleCategory.algebra,
+      title: 'Polynomial discriminant',
+      description: 'polydiscriminant(x³ − 2) — non-zero ⇒ distinct roots.',
+      expression: 'polydiscriminant(x^3 - 2)',
+    ),
 
     // === Linear algebra ======================================================
     WorkedExample(

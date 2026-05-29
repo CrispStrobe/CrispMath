@@ -10,6 +10,7 @@ import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'matrix_evaluator.dart';
 import 'numerical.dart';
+import 'polynomial.dart';
 import 'unit_expression.dart';
 
 class CalculatorEngine {
@@ -500,6 +501,53 @@ class CalculatorEngine {
     return '[${cf.first}; ${cf.skip(1).join(', ')}]';
   }
 
+  // ===== Polynomial arithmetic (precision arc, Group B) ===================
+  //
+  // Pure-Dart, exact rational coefficients — see lib/engine/polynomial.dart.
+  // Univariate, already-expanded form (no parentheses). Factorisation
+  // over Q is the existing `factor`; these add gcd / resultant /
+  // discriminant.
+
+  /// Group B: monic GCD of two univariate polynomials over Q.
+  String polygcd(String p, String q) {
+    final a = Polynomial.tryParse(p);
+    final b = Polynomial.tryParse(q);
+    if (a == null || b == null) {
+      return 'Error: polygcd needs two univariate polynomials';
+    }
+    if (a.degree >= 1 && b.degree >= 1 && a.variable != b.variable) {
+      return 'Error: polygcd arguments use different variables';
+    }
+    return Polynomial.gcd(a, b).toString();
+  }
+
+  /// Group B: the resultant Res(p, q) — zero iff `p` and `q` share a
+  /// non-constant common factor.
+  String polyresultant(String p, String q) {
+    final a = Polynomial.tryParse(p);
+    final b = Polynomial.tryParse(q);
+    if (a == null || b == null) {
+      return 'Error: polyresultant needs two univariate polynomials';
+    }
+    if (a.degree >= 1 && b.degree >= 1 && a.variable != b.variable) {
+      return 'Error: polyresultant arguments use different variables';
+    }
+    return Polynomial.resultant(a, b).toString();
+  }
+
+  /// Group B: the discriminant of a univariate polynomial (degree ≥ 1).
+  /// Zero iff `p` has a repeated root.
+  String polydiscriminant(String p) {
+    final a = Polynomial.tryParse(p);
+    if (a == null) {
+      return 'Error: polydiscriminant needs a univariate polynomial';
+    }
+    if (a.degree < 1) {
+      return 'Error: polydiscriminant needs degree ≥ 1';
+    }
+    return Polynomial.discriminant(a).toString();
+  }
+
   /// Round 91 (P6): top-level pre-pass that intercepts precision-arc
   /// calls before SymEngine sees them. Returns the result string when
   /// [input] is a recognized standalone precision-arc call, or null
@@ -526,6 +574,10 @@ class CalculatorEngine {
   ///                                   (Group B, pure-Dart).
   ///   convergent(x, k)             → k-th rational convergent p/q
   ///                                   (Group B, pure-Dart).
+  ///   polygcd(p, q)                → monic GCD of two polynomials
+  ///                                   (Group B, pure-Dart).
+  ///   polyresultant(p, q)          → resultant Res(p, q) (Group B).
+  ///   polydiscriminant(p)          → discriminant of p (Group B).
   ///
   /// Only matches when the call is the **entire** input (after
   /// trimming whitespace). In-expression calls like `pi(50) + 1` are
@@ -655,6 +707,21 @@ class CalculatorEngine {
       final k = int.tryParse(m.group(2)!);
       if (k == null) return 'Error: convergent index must be in 0..100';
       return convergent(m.group(1)!, k);
+    }
+
+    // Group B: polygcd(p, q) / polyresultant(p, q) — two polynomials.
+    m = RegExp(r'^(polygcd|polyresultant)\s*\(\s*(.+?)\s*,\s*(.+?)\s*\)$')
+        .firstMatch(trimmed);
+    if (m != null) {
+      return m.group(1)! == 'polygcd'
+          ? polygcd(m.group(2)!, m.group(3)!)
+          : polyresultant(m.group(2)!, m.group(3)!);
+    }
+
+    // Group B: polydiscriminant(p) — one polynomial.
+    m = RegExp(r'^polydiscriminant\s*\(\s*(.+?)\s*\)$').firstMatch(trimmed);
+    if (m != null) {
+      return polydiscriminant(m.group(1)!);
     }
 
     return null;

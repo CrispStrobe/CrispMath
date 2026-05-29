@@ -3532,6 +3532,10 @@ class DeLocalizations implements AppLocalizations {
         return 'Binom ausmultiplizieren';
       case 'simplifyRational':
         return 'Rationalen Ausdruck vereinfachen';
+      case 'polyGcdShared':
+        return 'Polynom-ggT';
+      case 'polyDiscriminantCubic':
+        return 'Polynom-Diskriminante';
       case 'matrixDet':
         return 'Determinante einer Matrix';
       case 'matrixInverse':
@@ -3629,6 +3633,11 @@ class DeLocalizations implements AppLocalizations {
         return '(x + 2)⁵ ausmultiplizieren — Pascalsches Dreieck.';
       case 'simplifyRational':
         return '(x² − 4)/(x − 2) auf einfachste Form kürzen.';
+      case 'polyGcdShared':
+        return 'polygcd(x² − 1, x² − 2x + 1) — der gemeinsame Faktor x − 1.';
+      case 'polyDiscriminantCubic':
+        return 'polydiscriminant(x³ − 2) — ungleich null ⇒ verschiedene '
+            'Nullstellen.';
       case 'matrixDet':
         return 'det einer 3×3 — Laplace-Entwicklung oder Zeilen­reduktion.';
       case 'matrixInverse':
@@ -3728,6 +3737,15 @@ class DeLocalizations implements AppLocalizations {
       case 'lcm':
         return 'Kleinstes gemeinsames Vielfaches zweier ganzer Zahlen oder '
             'Polynome.';
+      case 'polygcd':
+        return 'Normierter größter gemeinsamer Teiler zweier univariater '
+            'Polynome über ℚ.';
+      case 'polyresultant':
+        return 'Resultante Res(p, q) — genau dann null, wenn `p` und `q` '
+            'einen nichtkonstanten gemeinsamen Faktor haben.';
+      case 'polydiscriminant':
+        return 'Diskriminante eines univariaten Polynoms (Grad ≥ 1) — genau '
+            'dann null, wenn `p` eine mehrfache Nullstelle besitzt.';
       case 'factorial':
         return 'Exakte ganzzahlige Fakultät. Kleine `n` nutzen Darts '
             '`BigInt`; große `n` werden an SymEngine übergeben.';
@@ -3990,6 +4008,24 @@ class DeLocalizations implements AppLocalizations {
             '18 = 2·3².',
         'Das Polynom-kgV wählt das Vielfache höheren Grades — `x^2 - 1` '
             'enthält `x + 1` bereits als Faktor.',
+      ],
+      'polygcd': [
+        'In CrispCalc führt `polygcd` den euklidischen Algorithmus mit '
+            'exakten rationalen Koeffizienten aus (reines Dart). Beide '
+            'Polynome teilen den Faktor `x - 1`; das Ergebnis wird normiert.',
+        'Teilerfremde Polynome ergeben die normierte Konstante 1.',
+      ],
+      'polyresultant': [
+        'Berechnet als Determinante der Sylvester-Matrix. Sie verschwindet '
+            'hier, weil beide bei `x = 1` null werden.',
+        'Eine von null verschiedene Resultante bestätigt, dass die beiden '
+            'Polynome über ℚ teilerfremd sind.',
+      ],
+      'polydiscriminant': [
+        'Für `x² + bx + c` ist die Diskriminante `b² − 4c` — hier 25 − 24 = '
+            '1. CrispCalc verwendet `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.',
+        '`(x − 2)²` hat eine doppelte Nullstelle, daher ist die Diskriminante '
+            '0.',
       ],
       'factorial': [
         'In CrispCalc sind das Postfix `n!` und `factorial(n)` gleichwertig — '
@@ -6023,6 +6059,10 @@ class FrLocalizations implements AppLocalizations {
         return 'Développer un binôme';
       case 'simplifyRational':
         return 'Simplifier une expression rationnelle';
+      case 'polyGcdShared':
+        return 'PGCD de polynômes';
+      case 'polyDiscriminantCubic':
+        return 'Discriminant d\'un polynôme';
       case 'matrixDet':
         return 'Déterminant d\'une matrice';
       case 'matrixInverse':
@@ -6120,6 +6160,10 @@ class FrLocalizations implements AppLocalizations {
         return 'Développer (x + 2)⁵ — triangle de Pascal.';
       case 'simplifyRational':
         return 'Réduire (x² − 4)/(x − 2) à sa forme la plus simple.';
+      case 'polyGcdShared':
+        return 'polygcd(x² − 1, x² − 2x + 1) — le facteur commun x − 1.';
+      case 'polyDiscriminantCubic':
+        return 'polydiscriminant(x³ − 2) — non nul ⇒ racines distinctes.';
       case 'matrixDet':
         return 'det d\'une 3×3 — développement de Laplace ou réduction.';
       case 'matrixInverse':
@@ -6223,6 +6267,15 @@ class FrLocalizations implements AppLocalizations {
       case 'lcm':
         return "Plus petit commun multiple (PPCM) de deux entiers ou "
             "polynômes.";
+      case 'polygcd':
+        return "Plus grand commun diviseur unitaire de deux polynômes à une "
+            "variable sur ℚ.";
+      case 'polyresultant':
+        return "Résultant Res(p, q) — nul exactement lorsque `p` et `q` "
+            "partagent un facteur non constant.";
+      case 'polydiscriminant':
+        return "Discriminant d'un polynôme à une variable (degré ≥ 1) — nul "
+            "exactement lorsque `p` a une racine multiple.";
       case 'factorial':
         return "Factorielle entière exacte. Les petits `n` utilisent le "
             "`BigInt` de Dart ; les grands `n` sont confiés à SymEngine.";
@@ -6488,6 +6541,23 @@ class FrLocalizations implements AppLocalizations {
           "12 = 2²·3 et 18 = 2·3².",
       "Le PPCM polynomial choisit le multiple de plus haut degré — `x^2 - 1` "
           "contient déjà `x + 1` comme facteur.",
+    ],
+    'polygcd': [
+      "Dans CrispCalc, `polygcd` exécute l'algorithme d'Euclide avec des "
+          "coefficients rationnels exacts (Dart pur). Les deux polynômes "
+          "partagent le facteur `x - 1` ; le résultat est rendu unitaire.",
+      "Des polynômes premiers entre eux donnent la constante unitaire 1.",
+    ],
+    'polyresultant': [
+      "Calculé comme le déterminant de la matrice de Sylvester. Il s'annule "
+          "ici car les deux s'annulent en `x = 1`.",
+      "Un résultant non nul certifie que les deux polynômes sont premiers "
+          "entre eux sur ℚ.",
+    ],
+    'polydiscriminant': [
+      "Pour `x² + bx + c`, le discriminant est `b² − 4c` — ici 25 − 24 = 1. "
+          "CrispCalc utilise `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.",
+      "`(x − 2)²` a une racine double, donc le discriminant est 0.",
     ],
     'factorial': [
       "Dans CrispCalc, le suffixe `n!` et `factorial(n)` sont équivalents — "
@@ -8500,6 +8570,10 @@ class EsLocalizations implements AppLocalizations {
         return 'Desarrollar un binomio';
       case 'simplifyRational':
         return 'Simplificar una expresión racional';
+      case 'polyGcdShared':
+        return 'MCD de polinomios';
+      case 'polyDiscriminantCubic':
+        return 'Discriminante de un polinomio';
       case 'matrixDet':
         return 'Determinante de una matriz';
       case 'matrixInverse':
@@ -8597,6 +8671,11 @@ class EsLocalizations implements AppLocalizations {
         return 'Desarrolla (x + 2)⁵ — triángulo de Pascal.';
       case 'simplifyRational':
         return 'Reduce (x² − 4)/(x − 2) a su forma más simple.';
+      case 'polyGcdShared':
+        return 'polygcd(x² − 1, x² − 2x + 1) — el factor común x − 1.';
+      case 'polyDiscriminantCubic':
+        return 'polydiscriminant(x³ − 2) — distinto de cero ⇒ raíces '
+            'distintas.';
       case 'matrixDet':
         return 'det de una 3×3 — desarrollo de Laplace o reducción.';
       case 'matrixInverse':
@@ -8695,6 +8774,15 @@ class EsLocalizations implements AppLocalizations {
         return "Máximo común divisor (MCD) de dos enteros o polinomios.";
       case 'lcm':
         return "Mínimo común múltiplo (mcm) de dos enteros o polinomios.";
+      case 'polygcd':
+        return "Máximo común divisor mónico de dos polinomios de una variable "
+            "sobre ℚ.";
+      case 'polyresultant':
+        return "Resultante Res(p, q) — cero exactamente cuando `p` y `q` "
+            "comparten un factor no constante.";
+      case 'polydiscriminant':
+        return "Discriminante de un polinomio de una variable (grado ≥ 1) — "
+            "cero exactamente cuando `p` tiene una raíz múltiple.";
       case 'factorial':
         return "Factorial entero exacto. Los `n` pequeños usan el `BigInt` "
             "de Dart; los `n` grandes se delegan en SymEngine.";
@@ -8955,6 +9043,23 @@ class EsLocalizations implements AppLocalizations {
           "12 = 2²·3 y 18 = 2·3².",
       "El mcm de polinomios elige el múltiplo de mayor grado: `x^2 - 1` ya "
           "contiene `x + 1` como factor.",
+    ],
+    'polygcd': [
+      "En CrispCalc, `polygcd` ejecuta el algoritmo de Euclides con "
+          "coeficientes racionales exactos (Dart puro). Ambos polinomios "
+          "comparten el factor `x - 1`; el resultado se normaliza a mónico.",
+      "Polinomios coprimos dan la constante mónica 1.",
+    ],
+    'polyresultant': [
+      "Se calcula como el determinante de la matriz de Sylvester. Se anula "
+          "aquí porque ambos se anulan en `x = 1`.",
+      "Un resultante no nulo certifica que los dos polinomios son coprimos "
+          "sobre ℚ.",
+    ],
+    'polydiscriminant': [
+      "Para `x² + bx + c` el discriminante es `b² − 4c`: aquí 25 − 24 = 1. "
+          "CrispCalc usa `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.",
+      "`(x − 2)²` tiene una raíz doble, así que el discriminante es 0.",
     ],
     'factorial': [
       "En CrispCalc, el sufijo `n!` y `factorial(n)` son equivalentes: el "

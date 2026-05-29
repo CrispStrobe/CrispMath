@@ -743,6 +743,19 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _latexController.insert('convergent()', cursorOffsetFromEnd: -1);
         break;
 
+      // Group B (precision arc): polynomial arithmetic.
+      case 'polygcd':
+        _latexController.insert('polygcd()', cursorOffsetFromEnd: -1);
+        break;
+
+      case 'polyresultant':
+        _latexController.insert('polyresultant()', cursorOffsetFromEnd: -1);
+        break;
+
+      case 'polydiscriminant':
+        _latexController.insert('polydiscriminant()', cursorOffsetFromEnd: -1);
+        break;
+
       case 'mod':
         _latexController.insert(' \\bmod ', cursorOffsetFromEnd: 0);
         break;

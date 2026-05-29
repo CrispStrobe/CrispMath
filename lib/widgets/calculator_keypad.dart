@@ -55,6 +55,9 @@ const Map<String, String> _kAdvKeyHelpRefId = {
   'jacobi': 'jacobi',
   'cfrac': 'cfrac',
   'convergent': 'convergent',
+  'polygcd': 'polygcd',
+  'polyresultant': 'polyresultant',
+  'polydiscriminant': 'polydiscriminant',
 };
 
 /// Round 102b (P6): per-glyph → FunctionRef.id mapping for the CAS
@@ -238,6 +241,10 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
     // Group B (precision arc): continued fractions.
     'cfrac',
     'convergent',
+    // Group B (precision arc): polynomial arithmetic over ℚ.
+    'polygcd',
+    'polyresultant',
+    'polydiscriminant',
     // Round 112 (P7): relational + logical operators. Inserts the
     // ASCII form with surrounding spaces so the round-110 / 111
     // preprocessor can lower them into SymEngine's Eq/Lt/.../

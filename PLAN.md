@@ -1313,12 +1313,16 @@ Group A (recommended first — ship together as one round):
 
 Group B (V2 — more specialized, ship after Group A lands):
 
-- [ ] **Polynomial arithmetic over Z, Q, F_p** (FLINT). New CAS
-  ops: `polyfactor(p, mod=5)`, `polygcd(p, q)`, `polyresultant(p, q)`,
-  `polydiscriminant(p)`. FLINT's `nmod_poly` / `fmpz_poly` already
-  do all the heavy lifting; we'd add a small Dart-side type to
-  represent polynomial-with-modulus and the bindings. Audience:
-  abstract algebra students, undergrad cryptography homework.
+- [x] ~~**Polynomial arithmetic over Q**~~ — `polygcd(p, q)`,
+  `polyresultant(p, q)`, `polydiscriminant(p)` **SHIPPED 2026-05-29**.
+  Implemented **pure-Dart** (`lib/engine/polynomial.dart`: exact
+  `Rational`/BigInt coefficients, univariate parser, Euclidean GCD,
+  Sylvester-determinant resultant, discriminant) — no FLINT wrapper
+  needed, headless-testable, cross-checked against SymPy. Full UI
+  surfacing (keypad + FunctionReference DE/FR/ES + worked examples).
+  **Remaining for a later round:** `polyfactor(p, mod=p)` over F_p
+  (Berlekamp / Cantor–Zassenhaus) — factorisation over Q is already
+  the existing `factor`. Could go pure-Dart or via FLINT `nmod_poly`.
 
 - [x] ~~**Continued fractions** (GMP + MPFR).~~ **SHIPPED 2026-05-29**
   (first Group B item). `cfrac(x, n)` → `[a₀; a₁, …]`;
