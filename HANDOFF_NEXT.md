@@ -8,15 +8,17 @@ Extended the preset pre-fill mechanism beyond the Tests tab. The
 the screen routes the resolved preset only to the tab it targets (so a
 Tests preset can't leak into the Descriptive controllers).
 
-- 3 new presets: `statsDescriptive`, `statsLinearRegression`,
-  `statsNormalDist`.
+- 4 new presets: `statsDescriptive`, `statsLinearRegression`,
+  `statsNormalDist`, `statsBinomialDist`.
 - Function Reference: `mean` re-pointed to the **Descriptive** tab (it
   was mis-landing on the Tests tab via `statsOneSampleT`); new
   `one_sample_t` entry now owns `statsOneSampleT`; new `linreg`
-  (Regression) + `normal_dist` (Distributions). All three new entries
-  fully localized **DE/FR/ES** (description + both hints).
-- Per-tab pre-fill widget tests; open-module consistency count 9 → 12.
-  Full suite **2640 pass / 1 skip / 0 failures**. Pure-Dart, on `main`.
+  (Regression), `normal_dist` + `binomial_dist` (Distributions — both
+  halves of the tab now surfaced). All four new entries fully localized
+  **DE/FR/ES** (description + both hints).
+- Per-tab pre-fill widget tests; open-module consistency count 9 → 13.
+  Full suite **2648 pass / 1 skip / 0 failures**. Pure-Dart, on `main`,
+  pushed.
 - Also committed a stray `linux/flutter/generated_plugins.cmake` (the
   R130 Linux FFI plugin registration that had never been committed).
 
