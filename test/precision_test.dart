@@ -457,6 +457,35 @@ void main() {
     });
   });
 
+  // Group B: complex arbitrary-precision evaluation cevalf(expr, N).
+  group('CalculatorEngine.cevalfPrecision (Group B, MPC)', () {
+    test('precision out of range → friendly error (no bridge needed)', () {
+      expect(engine.cevalfPrecision('I', 0), contains('1..10000'));
+      expect(engine.cevalfPrecision('I', 10001), contains('1..10000'));
+    });
+
+    test('dispatch matches cevalf(expr, N) and is not null', () {
+      expect(
+          engine.tryEvaluatePrecisionCall('cevalf(sqrt(-2), 30)'), isNotNull);
+      // cevalf must not be swallowed by the evalf dispatch.
+      expect(engine.tryEvaluatePrecisionCall('cevalf(pi, 0)'),
+          contains('1..10000'));
+    });
+
+    test('native-backed complex values', () {
+      if (!engine.isNativeAvailable) return;
+      // sqrt(-2) = i·√2 — imaginary, magnitude √2.
+      final s = engine.cevalfPrecision('sqrt(-2)', 30);
+      expect(s, contains('1.4142135623'));
+      expect(s.toUpperCase(), contains('I'));
+      // (1+I)^2 = 2i.
+      final t = engine.cevalfPrecision('(1+I)^2', 20);
+      expect(t.toUpperCase(), contains('I'));
+      // I^2 = -1 (real).
+      expect(engine.cevalfPrecision('I^2', 10), contains('-1'));
+    });
+  });
+
   // Group B: Bessel functions J/Y (MPFR, integer order, real arg).
   group('CalculatorEngine Bessel (Group B)', () {
     test('dispatch matches besselj/bessely(n, x), not null', () {

@@ -780,6 +780,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
       case 'evalf':
         _latexController.insert('evalf(, )', cursorOffsetFromEnd: -3);
         break;
+
+      case 'cevalf':
+        _latexController.insert('cevalf(, )', cursorOffsetFromEnd: -3);
+        break;
       case 'besselj':
         _latexController.insert('besselj(, )', cursorOffsetFromEnd: -3);
         break;

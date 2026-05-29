@@ -2,6 +2,30 @@
 
 Completed work, newest first.
 
+## 2026-05-29 — Precision arc Group B complete: arbitrary-precision complex (cevalf, MPC)
+
+`cevalf(expr, N)` — the complex counterpart of `evalf`: evaluate any
+expression to N digits on the **MPC** path (`basic_evalf` real=0),
+returning SymEngine's `a + b·I` string. Where `evalf` rejects a non-real
+result, `cevalf` returns the full complex value: `cevalf((1+I)^10, 20)` =
+`32i`, `cevalf(sqrt(-2), 50)` = `i·√2`. Low-risk — the 53-bit complex
+path is the same one `flutter_symengine_evaluate` already uses (so MPC is
+proven linked + kept alive); `cevalf` just runs it at arbitrary
+precision. A 3-repo wrapper arc:
+
+- **math-stack** `flutter_symengine_cevalf_with_precision` — mirrors
+  `evalf` but `basic_evalf(..., 0)`. Re-vendored; xcframework rebuilt.
+- **bridge**: `mpfrCevalf(expr, digits)` (reuses the `_EvalfPrecision`
+  typedef) + `+load` keepalive (verified via `nm`, survives dead-strip).
+- **CrispCalc**: `cevalfPrecision` engine + `tryEvaluatePrecisionCall`
+  dispatch `cevalf(expr, N)`; FunctionReference entry (DE/FR/ES), keypad
+  button, `cevalfPow` worked example.
+
+Full suite **2587 pass / 1 skip, 0 failures**. **This closes out the
+practical scope of the precision arc's Group B** — `BesselI`/`BesselK`
+(not in MPFR) and `theta` (no MPFR primitive) would need a series/AGM
+implementation and remain the only deferred items.
+
 ## 2026-05-29 — Precision arc Group B: Bessel functions J/Y (MPFR)
 
 `besselj(n, x)` and `bessely(n, x)` — Bessel functions of the first and

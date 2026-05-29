@@ -34,14 +34,19 @@ single repo, all on `main`, headless-testable):
    comma→dot normalisation (which would mangle the 2-arg call) so they
    plot. UI fully surfaced.
 
-All fully surfaced. **2571 tests, 0 failures.** Group B remaining:
-**arbitrary-precision complex (MPC)** — the bridge already does complex
-`evalf` at 53 bits; high-precision complex needs a wrapper variant of
-`evalf` with `real=0` (parse the MPC `a + b*I` output string). Also
-**`BesselI`/`BesselK`** (not in MPFR) and **`theta`** (no MPFR
-primitive) would need a series/AGM implementation — deferred. That's the
-practical end of the precision arc's Group B; only MPC is a clean
-remaining native increment.
+7. **`cevalf(expr, N)`** — arbitrary-precision **complex** eval (MPC,
+   `basic_evalf` real=0); the complement to `evalf`. `cevalf((1+I)^10,
+   20)` = `32i`. 3-repo wrapper arc; reuses the `_EvalfPrecision`
+   typedef. UI surfaced.
+
+All fully surfaced. **2587 tests, 0 failures.** **Group B is now
+practically complete** (7 increments). The ONLY deferred items are
+`BesselI`/`BesselK` (not in MPFR) and `theta` (no MPFR primitive) —
+each would need a from-scratch series/AGM implementation in the C
+wrapper, not a binding. Next natural directions are *outside* the
+precision arc — see PLAN's Strategic Context (notepad/document paradigm,
+AI-as-verifier-frontend) and the carry-overs below (hardware smoke test,
+Statistics pre-fill, Android ABI matrix).
 
 ⚠ **Fixed a latent regression this session:** `precision_call_pass_test`
 had been red on `main` since the round-4 merge (a stale Round-91

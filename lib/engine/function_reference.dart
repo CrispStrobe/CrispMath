@@ -1175,6 +1175,31 @@ class FunctionReferences {
       ],
       seeAlso: ['pi_precision', 'zeta', 'gamma'],
     ),
+    FunctionRef(
+      id: 'cevalf',
+      category: FunctionRefCategory.precision,
+      signature: 'cevalf(expr, N)',
+      shortDescription:
+          'Complex arbitrary-precision evaluation — like `evalf` but '
+          'keeps the imaginary part, returning `a + b·I` to N digits via '
+          'MPC.',
+      examples: [
+        FunctionRefExample(
+          input: 'cevalf((1+I)^10, 20)',
+          expected: '32.0*I',
+          hint: 'In CrispCalc, `cevalf` routes through SymEngine\'s '
+              '`basic_evalf` on the MPC (complex) path. (1+i)¹⁰ = 32i. Use '
+              'the literal `I` for the imaginary unit.',
+        ),
+        FunctionRefExample(
+          input: 'cevalf(sqrt(-2), 30)',
+          expected: '1.41421356…*I',
+          hint: '√(−2) = i·√2. Where `evalf` rejects a non-real result, '
+              '`cevalf` returns the full complex value.',
+        ),
+      ],
+      seeAlso: ['evalf', 'pi_precision'],
+    ),
     // === Matrix / linear algebra =============================================
     FunctionRef(
       id: 'matrix_literal',
