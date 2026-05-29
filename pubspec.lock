@@ -438,11 +438,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "0907768"
-      resolved-ref: "090776804aff3197a04d92c16ef17aa5b07cbfb8"
+      ref: "535ce5d"
+      resolved-ref: "535ce5d9df55d85fe9951873ee99cb07c8ec59e0"
       url: "https://github.com/CrispStrobe/symbolic_math_bridge.git"
     source: git
-    version: "1.2.0"
+    version: "1.2.1"
   sync_http:
     dependency: transitive
     description:
