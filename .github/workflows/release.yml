@@ -180,16 +180,18 @@ jobs:
             **iOS** (`crisp_calc-…-ios-unsigned.zip`) — full features.
             Inspection only; sideloading needs a paid Apple Developer cert.
 
-            **Linux** (`crisp_calc-…-linux-x64.tar.gz`) — degraded mode.
-            UI, persistence, plane/conic analysis, vectors/tensors and
-            plot rendering all work; symbolic operations (`solve`,
-            `factor`, `expand`, `simplify`, `d/dx`, `integrate`, etc.)
-            return an error string because the SymEngine bridge is
-            iOS/macOS-only at the moment.
+            **Linux** (`crisp_calc-…-linux-x64.tar.gz`) — full symbolic +
+            numeric features. SymEngine bridge ships as a bundled
+            `libsymbolic_math_bridge.so` (GLIBC 2.35 baseline; built on
+            Ubuntu 22.04).
 
-            **Windows** (`crisp_calc-…-windows-x64.zip`) — degraded mode,
-            same caveat as Linux.
+            **Windows** (`crisp_calc-…-windows-x64.zip`) — full symbolic +
+            numeric features via the bundled `libsymbolic_math_bridge.dll`.
 
-            **Android** (`crisp_calc-…-android.apk`) — degraded mode,
-            same caveat. APK is unsigned; install with
+            **Android** (`crisp_calc-…-android.apk`) — full features on
+            arm64-v8a. APK is unsigned; install with
             `adb install crisp_calc-….apk`.
+
+            All five native platforms now ship the SymEngine CAS. Build +
+            link + symbol export are CI-verified on each; full real-device
+            runtime confirmation is still in progress.
