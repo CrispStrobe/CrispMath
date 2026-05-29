@@ -2,6 +2,29 @@
 
 Completed work, newest first.
 
+## 2026-05-29 — Round 99 follow-up cont.: full StatisticsPresets coverage
+
+Extends the "Open module" work so **every** stats Function Reference
+entry — not just the first three — lands on a pre-filled Tests tab.
+`StatisticsPresets` grows 3 → 9: added one-sample t, paired t, χ²
+independence, Fisher's exact, paired sign, and Wilcoxon rank-sum, each
+with a curated dataset that demonstrates the test. The remaining six
+stats `FunctionRef` entries (`mean`, `paired_t`, `chi2_independence`,
+`fisher_exact`, `sign_test`, `wilcoxon`) gain matching `openTarget`
+sentinels, so all nine now show the direct "Open module" button.
+
+- `lib/engine/statistics_presets.dart` — six new `StatisticsPreset`
+  entries (field maps keyed to the Tests-tab controller names).
+- `lib/engine/function_reference.dart` — six new `openTarget`s.
+- Tests: `function_reference_open_module_test.dart` updated — the
+  "resolve to a known preset" count is now 9, every entry's exact
+  target is asserted, and a new test enforces the reverse direction
+  (every `StatisticsPreset` is reachable from some `FunctionRef`, so an
+  orphaned preset fails CI).
+
+Pure-Dart, no new strings (reuses `functionRefOpenModule`). Full suite
+**2618 pass / 1 skip, 0 failures**.
+
 ## 2026-05-29 — Round 99 follow-up: Function Reference "Open module" button
 
 Closes the deferred R99 carry-over (`open:`/`dsl:` dispatch reachable

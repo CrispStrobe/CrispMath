@@ -1,6 +1,24 @@
 # CrispCalc — handover for the next session
 
-## Latest: 2026-05-29 (cont.) — Round 99 follow-up: Function Reference "Open module" button
+## Latest: 2026-05-29 (cont.) — Full StatisticsPresets coverage (9/9 stats entries)
+
+`StatisticsPresets` grew 3 → 9 (added one-sample t, paired t, χ²
+independence, Fisher's exact, paired sign, Wilcoxon) and the remaining
+six stats `FunctionRef` entries got matching `openTarget`s — so every
+stats Function Reference entry now shows the direct "Open module" button
+landing on a pre-filled Tests tab. Pure-Dart, no new strings. New test
+enforces both directions (entry→preset and preset→entry). Full suite
+**2618 pass / 1 skip, 0 failures**. Commits sit on `main`; pushed.
+
+If extending further: the Distributions / Regression / Descriptive tabs
+have **no** preset-backed entries yet — `StatisticsPreset.tab` already
+supports them, but the receiving tabs would each need an `initState`
+pre-fill hook like `_TestsTab` has (only the Tests tab reads
+`preset.fields` today).
+
+---
+
+## 2026-05-29 (cont.) — Round 99 follow-up: Function Reference "Open module" button
 
 Closed the `open:`/`dsl:` Try-in-Calculator carry-over. Module-surface
 Function Reference entries (`runnable: false`) now offer a direct "Open

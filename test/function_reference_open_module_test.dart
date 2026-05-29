@@ -50,10 +50,11 @@ void main() {
         expect(StatisticsPresets.all.containsKey(id), isTrue,
             reason: '${e.id} targets unknown preset "$id"');
       }
-      expect(seen, 3, reason: 'expected exactly 3 preset openTargets');
+      expect(seen, 9,
+          reason: 'all nine stats entries carry preset openTargets');
     });
 
-    test('the three stats entries carry the expected openTargets', () {
+    test('the stats entries carry the expected openTargets', () {
       final byId = {for (final e in FunctionReferences.all) e.id: e};
       expect(byId['welch_t']?.openTarget,
           'open:statistics?preset=statsWelchTwoSample');
@@ -61,6 +62,31 @@ void main() {
           'open:statistics?preset=statsAnovaThreeGroups');
       expect(byId['chi2_goodness']?.openTarget,
           'open:statistics?preset=statsChiSquareGof');
+      expect(
+          byId['mean']?.openTarget, 'open:statistics?preset=statsOneSampleT');
+      expect(
+          byId['paired_t']?.openTarget, 'open:statistics?preset=statsPairedT');
+      expect(byId['chi2_independence']?.openTarget,
+          'open:statistics?preset=statsChiSquareIndep');
+      expect(byId['fisher_exact']?.openTarget,
+          'open:statistics?preset=statsFisherExact');
+      expect(byId['sign_test']?.openTarget,
+          'open:statistics?preset=statsSignTest');
+      expect(
+          byId['wilcoxon']?.openTarget, 'open:statistics?preset=statsWilcoxon');
+    });
+
+    test('every StatisticsPreset is reachable from a FunctionRef entry', () {
+      const prefix = 'open:statistics?preset=';
+      final referenced = <String>{
+        for (final e in FunctionReferences.all)
+          if (e.openTarget != null && e.openTarget!.startsWith(prefix))
+            e.openTarget!.substring(prefix.length),
+      };
+      for (final key in StatisticsPresets.all.keys) {
+        expect(referenced.contains(key), isTrue,
+            reason: 'preset "$key" is not referenced by any FunctionRef');
+      }
     });
   });
 

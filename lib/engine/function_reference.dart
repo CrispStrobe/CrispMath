@@ -1439,6 +1439,7 @@ class FunctionReferences {
       ],
       seeAlso: ['welch_t', 'paired_t', 'anova_1'],
       workedExampleId: 'statsHypothesisTests',
+      openTarget: 'open:statistics?preset=statsOneSampleT',
     ),
     FunctionRef(
       id: 'welch_t',
@@ -1502,6 +1503,7 @@ class FunctionReferences {
       ],
       seeAlso: ['welch_t', 'sign_test', 'wilcoxon'],
       workedExampleId: 'statsHypothesisTests',
+      openTarget: 'open:statistics?preset=statsPairedT',
     ),
     FunctionRef(
       id: 'anova_1',
@@ -1621,6 +1623,7 @@ class FunctionReferences {
       ],
       seeAlso: ['chi2_independence', 'chi2_goodness', 'sign_test'],
       workedExampleId: 'statsHypothesisTests',
+      openTarget: 'open:statistics?preset=statsFisherExact',
     ),
     FunctionRef(
       id: 'wilcoxon',
