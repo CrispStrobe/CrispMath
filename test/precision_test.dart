@@ -457,6 +457,41 @@ void main() {
     });
   });
 
+  // Group B: Bessel functions J/Y (MPFR, integer order, real arg).
+  group('CalculatorEngine Bessel (Group B)', () {
+    test('dispatch matches besselj/bessely(n, x), not null', () {
+      // Matched by the pre-pass; headless it surfaces a native-required
+      // error (non-null) rather than falling through.
+      expect(engine.tryEvaluatePrecisionCall('besselj(0, 1)'), isNotNull);
+      expect(engine.tryEvaluatePrecisionCall('bessely(1, 2)'), isNotNull);
+      expect(engine.tryEvaluatePrecisionCall('besselj(2, -3.5)'), isNotNull);
+      // Not a Bessel shape → falls through.
+      expect(engine.tryEvaluatePrecisionCall('besselj(x, 1)'), isNull);
+    });
+
+    test('classroom values via the native bridge', () {
+      if (!engine.isNativeAvailable) return;
+      expect(engine.besselJ(0, '0'), '1');
+      expect(engine.besselJ(1, '0'), '0');
+      expect(engine.besselJ(0, '1'), startsWith('0.7651976865'));
+      expect(engine.besselJ(1, '1'), startsWith('0.4400505857'));
+      expect(engine.besselJ(0, '2.5'), startsWith('-0.0483837764'));
+      expect(engine.besselJ(2, '3'), startsWith('0.4860912605'));
+      expect(engine.besselY(0, '1'), startsWith('0.0882569642'));
+      expect(engine.besselY(1, '2'), startsWith('-0.1070324315'));
+    });
+
+    test('graphing path intercepts besselj before comma normalisation', () {
+      if (!engine.isNativeAvailable) return;
+      // The grapher substitutes x then calls evaluateForGraphing; a
+      // bracketed negative argument must still parse.
+      expect(engine.evaluateForGraphing('besselj(0, 2.5)'),
+          startsWith('-0.0483837764'));
+      expect(engine.evaluateForGraphing('besselj(0, (2.5))'),
+          startsWith('-0.0483837764'));
+    });
+  });
+
   // Round 4: dispatch through the top-level precision pre-pass.
   group('CalculatorEngine.tryEvaluatePrecisionCall (round 4 shapes)', () {
     test('non-bridge shapes resolve regardless of native availability', () {

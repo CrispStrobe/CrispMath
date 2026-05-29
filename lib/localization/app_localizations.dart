@@ -3576,6 +3576,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Gamma an einer halbzahligen Stelle';
       case 'evalfLn10':
         return 'Arbiträr-präzises evalf';
+      case 'besselJZero':
+        return 'Besselfunktion';
       case 'booleanIsprimeAnd':
         return 'Primzahl und beschränkt';
       case 'booleanEqualityFold':
@@ -3690,6 +3692,9 @@ class DeLocalizations implements AppLocalizations {
         return 'gamma(0.5) — Γ(½) = √π ≈ 1,7725.';
       case 'evalfLn10':
         return 'evalf(ln(10), 50) — beliebiger Ausdruck auf 50 Stellen.';
+      case 'besselJZero':
+        return 'besselj(0, 1) — J₀(1) ≈ 0,7652, über MPFR. Zeichne '
+            'besselj(0, x).';
       case 'booleanIsprimeAnd':
         return 'isprime(17) und 17 < 20 — beide Teile wahr, also ist die '
             'Konjunktion wahr.';
@@ -3781,6 +3786,12 @@ class DeLocalizations implements AppLocalizations {
             'sodass W(x)·e^(W(x)) = x.';
       case 'beta':
         return 'Die Betafunktion B(a, b) = Γ(a)·Γ(b) / Γ(a + b).';
+      case 'besselj':
+        return 'Besselfunktion erster Art Jₙ(x) — ganzzahlige Ordnung n, '
+            'reelles x. Grafikfähig.';
+      case 'bessely':
+        return 'Besselfunktion zweiter Art Yₙ(x) (Weber-Funktion) — '
+            'ganzzahlige Ordnung n, reelles x > 0. Grafikfähig.';
       case 'factorial':
         return 'Exakte ganzzahlige Fakultät. Kleine `n` nutzen Darts '
             '`BigInt`; große `n` werden an SymEngine übergeben.';
@@ -4104,6 +4115,17 @@ class DeLocalizations implements AppLocalizations {
         'B(2, 3) = 1!·2!/4! = 2/24 = 1/12. Grundlage der Beta-Verteilung in '
             'der Statistik.',
         'B(1, 1) = Γ(1)²/Γ(2) = 1 — eine gleichverteilte Beta-Verteilung.',
+      ],
+      'besselj': [
+        'J₀ bei x = 1. Die Jₙ lösen x²y″ + xy′ + (x² − n²)y = 0 — '
+            'schwingende Membranen, Wellenleiter. Über MPFRs `mpfr_jn`. '
+            'Grafikfähig: zeichne `besselj(0, x)`.',
+        'Jₙ(0) = 0 für n ≥ 1, während J₀(0) = 1.',
+      ],
+      'bessely': [
+        'Die zweite unabhängige Lösung der Bessel-Gleichung; Yₙ(x) → −∞ '
+            'für x → 0⁺. Über MPFRs `mpfr_yn`.',
+        'Grafikfähig: zeichne `bessely(0, x)` neben `besselj(0, x)`.',
       ],
       'factorial': [
         'In CrispCalc sind das Postfix `n!` und `factorial(n)` gleichwertig — '
@@ -6190,6 +6212,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Gamma en un demi-entier';
       case 'evalfLn10':
         return 'evalf de précision arbitraire';
+      case 'besselJZero':
+        return 'Fonction de Bessel';
       case 'booleanIsprimeAnd':
         return 'Premier et borné';
       case 'booleanEqualityFold':
@@ -6304,6 +6328,9 @@ class FrLocalizations implements AppLocalizations {
         return 'gamma(0.5) — Γ(½) = √π ≈ 1,7725.';
       case 'evalfLn10':
         return 'evalf(ln(10), 50) — toute expression à 50 décimales.';
+      case 'besselJZero':
+        return 'besselj(0, 1) — J₀(1) ≈ 0,7652, via MPFR. Tracez '
+            'besselj(0, x).';
       case 'booleanIsprimeAnd':
         return 'isprime(17) et 17 < 20 — les deux clauses sont vraies, '
             'donc la conjonction est vraie.';
@@ -6398,6 +6425,12 @@ class FrLocalizations implements AppLocalizations {
             "W(x)·e^(W(x)) = x.";
       case 'beta':
         return "La fonction Bêta B(a, b) = Γ(a)·Γ(b) / Γ(a + b).";
+      case 'besselj':
+        return "Fonction de Bessel de première espèce Jₙ(x) — ordre entier "
+            "n, x réel. Traçable.";
+      case 'bessely':
+        return "Fonction de Bessel de seconde espèce Yₙ(x) (fonction de "
+            "Weber) — ordre entier n, x réel > 0. Traçable.";
       case 'factorial':
         return "Factorielle entière exacte. Les petits `n` utilisent le "
             "`BigInt` de Dart ; les grands `n` sont confiés à SymEngine.";
@@ -6722,6 +6755,17 @@ class FrLocalizations implements AppLocalizations {
       "B(2, 3) = 1!·2!/4! = 2/24 = 1/12. Sous-tend la loi Bêta en "
           "statistique.",
       "B(1, 1) = Γ(1)²/Γ(2) = 1 — une loi Bêta uniforme.",
+    ],
+    'besselj': [
+      "J₀ en x = 1. Les Jₙ résolvent x²y″ + xy′ + (x² − n²)y = 0 — "
+          "membranes vibrantes, guides d'ondes. Via `mpfr_jn` de MPFR. "
+          "Traçable : tracez `besselj(0, x)`.",
+      "Jₙ(0) = 0 pour n ≥ 1, tandis que J₀(0) = 1.",
+    ],
+    'bessely': [
+      "La seconde solution indépendante de l'équation de Bessel ; "
+          "Yₙ(x) → −∞ quand x → 0⁺. Via `mpfr_yn` de MPFR.",
+      "Traçable : tracez `bessely(0, x)` à côté de `besselj(0, x)`.",
     ],
     'factorial': [
       "Dans CrispCalc, le suffixe `n!` et `factorial(n)` sont équivalents — "
@@ -8787,6 +8831,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Gamma en un semientero';
       case 'evalfLn10':
         return 'evalf de precisión arbitraria';
+      case 'besselJZero':
+        return 'Función de Bessel';
       case 'booleanIsprimeAnd':
         return 'Primo y acotado';
       case 'booleanEqualityFold':
@@ -8902,6 +8948,9 @@ class EsLocalizations implements AppLocalizations {
         return 'gamma(0.5) — Γ(½) = √π ≈ 1,7725.';
       case 'evalfLn10':
         return 'evalf(ln(10), 50) — cualquier expresión con 50 cifras.';
+      case 'besselJZero':
+        return 'besselj(0, 1) — J₀(1) ≈ 0,7652, mediante MPFR. Dibuja '
+            'besselj(0, x).';
       case 'booleanIsprimeAnd':
         return 'isprime(17) y 17 < 20 — ambas cláusulas son verdaderas, '
             'así que la conjunción es verdadera.';
@@ -8991,6 +9040,12 @@ class EsLocalizations implements AppLocalizations {
             "W(x)·e^(W(x)) = x.";
       case 'beta':
         return "La función Beta B(a, b) = Γ(a)·Γ(b) / Γ(a + b).";
+      case 'besselj':
+        return "Función de Bessel de primera especie Jₙ(x) — orden entero "
+            "n, x real. Graficable.";
+      case 'bessely':
+        return "Función de Bessel de segunda especie Yₙ(x) (función de "
+            "Weber) — orden entero n, x real > 0. Graficable.";
       case 'factorial':
         return "Factorial entero exacto. Los `n` pequeños usan el `BigInt` "
             "de Dart; los `n` grandes se delegan en SymEngine.";
@@ -9310,6 +9365,17 @@ class EsLocalizations implements AppLocalizations {
       "B(2, 3) = 1!·2!/4! = 2/24 = 1/12. Sustenta la distribución Beta en "
           "estadística.",
       "B(1, 1) = Γ(1)²/Γ(2) = 1 — una distribución Beta uniforme.",
+    ],
+    'besselj': [
+      "J₀ en x = 1. Las Jₙ resuelven x²y″ + xy′ + (x² − n²)y = 0 — "
+          "membranas vibrantes, guías de ondas. Mediante `mpfr_jn` de MPFR. "
+          "Graficable: dibuja `besselj(0, x)`.",
+      "Jₙ(0) = 0 para n ≥ 1, mientras que J₀(0) = 1.",
+    ],
+    'bessely': [
+      "La segunda solución independiente de la ecuación de Bessel; "
+          "Yₙ(x) → −∞ cuando x → 0⁺. Mediante `mpfr_yn` de MPFR.",
+      "Graficable: dibuja `bessely(0, x)` junto a `besselj(0, x)`.",
     ],
     'factorial': [
       "En CrispCalc, el sufijo `n!` y `factorial(n)` son equivalentes: el "

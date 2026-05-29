@@ -647,6 +647,53 @@ class FunctionReferences {
       seeAlso: ['gamma', 'factorial'],
     ),
     FunctionRef(
+      id: 'besselj',
+      category: FunctionRefCategory.cas,
+      signature: 'besselj(n, x)',
+      shortDescription:
+          'Bessel function of the first kind Jₙ(x) — integer order n, '
+          'real x. Plottable.',
+      examples: [
+        FunctionRefExample(
+          input: 'besselj(0, 1)',
+          expected: '0.765197686557967',
+          hint: 'J₀ at x = 1. The Jₙ solve x²y″ + xy′ + (x² − n²)y = 0 — '
+              'vibrating membranes, waveguides. Computed via MPFR\'s '
+              '`mpfr_jn`. Plottable: graph `besselj(0, x)` for the damped '
+              'oscillation.',
+        ),
+        FunctionRefExample(
+          input: 'besselj(1, 0)',
+          expected: '0',
+          hint: 'Jₙ(0) = 0 for n ≥ 1, while J₀(0) = 1.',
+        ),
+      ],
+      seeAlso: ['bessely', 'gamma', 'zeta'],
+    ),
+    FunctionRef(
+      id: 'bessely',
+      category: FunctionRefCategory.cas,
+      signature: 'bessely(n, x)',
+      shortDescription:
+          'Bessel function of the second kind Yₙ(x) (Weber function) — '
+          'integer order n, real x > 0. Plottable.',
+      examples: [
+        FunctionRefExample(
+          input: 'bessely(0, 1)',
+          expected: '0.0882569642156770',
+          hint: 'The second independent solution of Bessel\'s equation; '
+              'Yₙ(x) → −∞ as x → 0⁺. Via MPFR\'s `mpfr_yn`.',
+        ),
+        FunctionRefExample(
+          input: 'bessely(1, 2)',
+          expected: '-0.107032431540938',
+          hint: 'Plottable: graph `bessely(0, x)` alongside `besselj(0, x)` '
+              'for the paired oscillations.',
+        ),
+      ],
+      seeAlso: ['besselj', 'gamma'],
+    ),
+    FunctionRef(
       id: 'factorial',
       category: FunctionRefCategory.cas,
       signature: 'factorial(n)   or   n!',

@@ -1347,9 +1347,12 @@ Group B (V2 — more specialized, ship after Group A lands):
   purely surfacing: notepad recognition, FunctionReference entries
   (`gamma`/`zeta`/`erf`/`lambertw`/`beta`, full DE/FR/ES), keypad
   buttons, worked examples (`zetaBasel`, `gammaHalf`) — all done.
-  **Remaining:** `Bessel{J,Y,I,K}` and `theta` are **not** in SymEngine's
-  parser, so those genuinely need new C++ wrapper functions in
-  math-stack (a 3-repo arc) + the same surfacing.
+  **`besselj` / `bessely` SHIPPED 2026-05-29** — SymEngine has no Bessel
+  at all, so they call **MPFR's `mpfr_jn`/`yn` directly** (3-repo
+  wrapper arc); integer order, real arg; intercepted in
+  `evaluateForGraphing` before comma-normalisation so they plot. Full UI
+  surfacing. **Remaining:** `BesselI`/`BesselK` (not in MPFR) and
+  `theta` (no MPFR primitive) — would need a series/AGM implementation.
 
 - [ ] **Arbitrary-precision complex** (MPC). When the user opts into
   "high-precision mode," complex arithmetic stops collapsing to

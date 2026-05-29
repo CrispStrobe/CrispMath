@@ -2,6 +2,36 @@
 
 Completed work, newest first.
 
+## 2026-05-29 — Precision arc Group B: Bessel functions J/Y (MPFR)
+
+`besselj(n, x)` and `bessely(n, x)` — Bessel functions of the first and
+second kind, integer order n, real argument x. **SymEngine has no Bessel
+functions at all** (not even in C++), so unlike the other specials these
+can't ride the `basic_evalf` path — they call **MPFR's `mpfr_jn` /
+`mpfr_yn` directly**. A 3-repo wrapper arc:
+
+- **math-stack** `flutter_symengine_besselj/bessely(order, x_str)`:
+  `mpfr_set_str` the argument, `mpfr_jn`/`yn` at 64 bits, return a
+  ~15-significant-digit string (double precision — what the grapher
+  consumes). Re-vendored; xcframework rebuilt.
+- **bridge**: `mpfrBesselJ/Y(order, x)` bindings (new `_Bessel` typedef,
+  int+string → string) + `+load` keepalive for the wrappers and the raw
+  `mpfr_jn` / `mpfr_yn` / `mpfr_set_str` (verified via `nm`, survives
+  release dead-strip).
+- **CrispCalc**: `besselJ`/`besselY` engine methods +
+  `tryEvaluatePrecisionCall` dispatch (calculator + notepad). **Graphing
+  integration**: `besselj`/`bessely` are intercepted in
+  `evaluateForGraphing` *before* its comma→dot normalisation (which would
+  otherwise mangle the two-argument call), so `besselj(0, x)` plots. UI:
+  FunctionReference entries (DE/FR/ES), keypad buttons, `besselJZero`
+  worked example.
+
+Verified against mpmath: `J₀(1) ≈ 0.7652`, `J₁(0) = 0`, `Y₀(1) ≈ 0.0883`.
+Full suite **2571 pass / 1 skip, 0 failures**. **BesselI/BesselK** (not
+in MPFR) and **theta** (no MPFR primitive) remain out of scope — they'd
+need a series/AGM implementation. With this, the only Group B item left
+is **arbitrary-precision complex (MPC)**.
+
 ## 2026-05-29 — Precision arc Group B: generic arbitrary-precision evalf(expr, N)
 
 `evalf(expr, N)` — evaluate **any** parseable real expression to N
