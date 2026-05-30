@@ -89,13 +89,17 @@ void main() {
 
     test('basic arithmetic resolves instead of "requires native library"', () {
       // In the test host the native bridge is unavailable, mirroring web.
-      if (engine.isNativeAvailable) return; // native present → SymEngine owns it
+      if (engine.isNativeAvailable) {
+        return; // native present → SymEngine owns it
+      }
       expect(engine.evaluate('123+45'), '168');
       expect(engine.evaluate('sqrt(16)'), '4');
     });
 
     test('symbolic input still reports the native requirement', () {
-      if (engine.isNativeAvailable) return;
+      if (engine.isNativeAvailable) {
+        return;
+      }
       expect(engine.evaluate('2*x'), contains('requires native library'));
     });
   });
