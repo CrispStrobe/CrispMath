@@ -2,6 +2,38 @@
 
 Completed work, newest first.
 
+## 2026-05-30 (cont.) — Germany map coloring: the 4-color foil to Australia
+
+New `mapColoringGermany` DSL gallery entry — Germany's 16 Bundesländer
+(ISO 3166-2:DE codes as variable names; 30 adjacencies; domain `1..4`).
+This is the pedagogical counterpoint to the 3-colorable Australia map:
+**Germany is not 3-colorable**, so it concretely shows the Four Color
+Theorem's bound is tight. The obstruction is a 5-wheel (W₅): Thüringen
+borders five states (Niedersachsen, Sachsen-Anhalt, Sachsen, Bayern,
+Hessen) that themselves form a 5-cycle, and an odd wheel has chromatic
+number 4.
+
+- `lib/widgets/germany_map_painter.dart` — `GermanyMapView`, a stylized
+  16-region map in true relative positions, Berlin and Bremen drawn as
+  enclaves inset within Brandenburg / Niedersachsen. Wired into
+  `_ResultBlock` with the same key-set trigger as Australia.
+- Localized gallery title en/de/fr/es ("needs 4 colors" / "braucht 4
+  Farben" / "4 couleurs requises" / "requiere 4 colores").
+- **Solver tests prove the maths**: 3 colors → unsatisfiable, 4 colors →
+  solvable with all 30 adjacencies respected, and a third test isolates
+  the Thüringen W₅ to show that sub-map alone already forces 4 colors.
+- Painter test: 16 regions present, all vertices within the 0..100 grid,
+  renders without error.
+- **Worked-examples discovery**: added Australia (3-color), Germany
+  (4-color), knapsack, and transportation entries (the OR + map-coloring
+  gallery cluster was previously undiscoverable except via the dropdown),
+  each with DE/FR/ES title + description. Extended the `knownDslIds`
+  guard set in `worked_examples_test.dart` to all current gallery ids.
+- PLAN hygiene: marked the **Schedule Gantt renderer** item done (it had
+  shipped as `_GanttChart`/`_GanttPainter` but the marker was left
+  `- [ ]`).
+- Pure-Dart, single repo, on `main`.
+
 ## 2026-05-30 (cont.) — Australia map: geographically-accurate silhouette
 
 Replaced the stylized polygons in `lib/widgets/australia_map_painter.dart`

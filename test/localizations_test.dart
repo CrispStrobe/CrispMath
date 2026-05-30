@@ -346,6 +346,7 @@ void main() {
           t.constraintsDslExampleTitle('magicSquare4'),
           t.constraintsDslExampleTitle('mapColoring'),
           t.constraintsDslExampleTitle('mapColoringAustralia'),
+          t.constraintsDslExampleTitle('mapColoringGermany'),
           t.constraintsDslExampleTitle('orderedTriples'),
           t.constraintsDslExampleTitle('equalSumSplit'),
           t.constraintsDslExampleTitle('coinChangeMin'),

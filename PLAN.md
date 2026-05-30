@@ -1078,21 +1078,13 @@ Pure-Dart, zero native deps for all of them. Each item slots
 into the existing `ConstraintsScreen` Analysis-hub module or
 extends the Sudoku/CSP engine layer directly.
 
-- [ ] **Schedule Gantt renderer** for `noOverlap` / `cumulative`
-  output (high impact / small effort — *recommended first*).
-  The DSL-tab gallery already produces correct `noOverlap` /
-  `cumulative` solutions, but results render as raw text:
-  ```
-  s1 = 0
-  s2 = 4
-  s3 = 7
-  ```
-  A `CustomPainter`-based Gantt chart would 10× the
-  legibility: each task drawn as a horizontal bar at its
-  start-time with width = duration, colored per resource. For
-  `cumulative` problems the bars stack by demand. ~Half a day;
-  no engine changes. Doubles as the visual hook the
-  worked-examples catalog can point users at.
+- [x] ~~**Schedule Gantt renderer** for `noOverlap` / `cumulative`
+  output (high impact / small effort).~~ **Done** — `_GanttChart`
+  / `_GanttPainter` in `constraints_screen.dart` draw the first
+  solution's start times as horizontal bars (width = duration,
+  per-resource color, capacity strip for `cumulative`), wired into
+  `_ResultBlock` and fed by `DiophantineResult.ganttTasks` /
+  `ganttCapacity`. Marker was left stale; reconciled 2026-05-30.
 
 - [~] **Optimization tab — LP / IP via `minimize` / `maximize`**
   (big impact / medium effort — *strategically biggest win*).
@@ -1158,6 +1150,17 @@ extends the Sudoku/CSP engine layer directly.
     property stays exact. New topology test asserts all 9
     adjacencies share ≥2 vertices, non-adjacent pairs share <2,
     and Tasmania touches nothing. Item complete.
+  - **Germany 4-color map done 2026-05-30**: new
+    `mapColoringGermany` DSL gallery entry — the 16 Bundesländer
+    (ISO 3166-2:DE codes, 30 adjacencies, domain `1..4`). The
+    pedagogical foil to Australia: Germany is *not* 3-colorable
+    (Thüringen + its five neighbours form a 5-wheel W₅, χ=4), so
+    this concretely demonstrates the Four Color Theorem's bound is
+    tight. New `lib/widgets/germany_map_painter.dart` (`GermanyMapView`,
+    Berlin/Bremen drawn as enclaves) + `_ResultBlock` trigger.
+    Localized title en/de/fr/es; worked-examples entries for
+    Australia + Germany + knapsack + transportation. Solver tests:
+    3-color → unsat, 4-color → sat, the isolated W₅ alone forces 4.
 
 - [~] **Magic squares generator** (curiosity / small). 3×3
   through 6×6 magic squares via `allDifferent` + per-row /

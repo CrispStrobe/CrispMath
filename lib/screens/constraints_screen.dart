@@ -34,6 +34,7 @@ import '../engine/csp_solver.dart';
 import '../engine/magic_square.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/australia_map_painter.dart';
+import '../widgets/germany_map_painter.dart';
 import '../widgets/function_ref_help_popover.dart';
 import '../widgets/help_target.dart';
 import '../widgets/module_help_dialog.dart';
@@ -547,6 +548,14 @@ class _ResultBlock extends StatelessWidget {
           const SizedBox(height: 12),
           AustraliaMapView(assignment: result.solutions.first),
         ],
+        // Germany map-coloring overlay: the `mapColoringGermany` gallery
+        // program assigns a color to each of the 16 Bundesländer. Same
+        // trigger as Australia, on the German region key-set.
+        if (result.solutions.isNotEmpty &&
+            GermanyMapView.matches(result.solutions.first)) ...[
+          const SizedBox(height: 12),
+          GermanyMapView(assignment: result.solutions.first),
+        ],
       ],
     );
   }
@@ -955,6 +964,54 @@ sa != nsw
 sa != v
 q != nsw
 nsw != v''',
+    ),
+    (
+      // Germany's 16 Bundesländer (ISO 3166-2:DE codes as variable
+      // names: bw=Baden-Württemberg, by=Bayern, be=Berlin,
+      // bb=Brandenburg, hb=Bremen, hh=Hamburg, he=Hessen,
+      // mv=Mecklenburg-Vorpommern, ni=Niedersachsen,
+      // nw=Nordrhein-Westfalen, rp=Rheinland-Pfalz, sl=Saarland,
+      // sn=Sachsen, st=Sachsen-Anhalt, sh=Schleswig-Holstein,
+      // th=Thüringen). Unlike Australia (3-colorable), this map needs
+      // FOUR colors: Thüringen borders five states (ni, st, sn, by,
+      // he) that themselves form a 5-cycle — a 5-wheel, whose
+      // chromatic number is 4. So the domain here is 1..4; with only
+      // three colors the program is unsatisfiable. Berlin (be) sits
+      // entirely inside Brandenburg (bb); Bremen (hb) inside
+      // Niedersachsen (ni) — both classic enclaves.
+      id: 'mapColoringGermany',
+      program:
+          '''vars: bw, by, be, bb, hb, hh, he, mv, ni, nw, rp, sl, sn, st, sh, th in 1..4
+sh != hh
+sh != ni
+sh != mv
+hh != ni
+mv != ni
+mv != bb
+ni != hb
+ni != st
+ni != bb
+ni != th
+ni != he
+ni != nw
+st != bb
+st != sn
+st != th
+bb != be
+bb != sn
+nw != he
+nw != rp
+he != rp
+he != by
+he != th
+th != sn
+th != by
+sn != by
+rp != sl
+rp != bw
+rp != by
+sl != bw
+bw != by''',
     ),
     (
       // Triples of strictly-increasing positive integers summing

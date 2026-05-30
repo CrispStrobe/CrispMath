@@ -1724,6 +1724,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Map coloring (K4)';
       case 'mapColoringAustralia':
         return 'Map coloring — Australia (3 colors)';
+      case 'mapColoringGermany':
+        return 'Map coloring — Germany (needs 4 colors)';
       case 'orderedTriples':
         return 'Ordered triples summing to 20';
       case 'equalSumSplit':
@@ -3339,6 +3341,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Landkartenfärbung (K4)';
       case 'mapColoringAustralia':
         return 'Landkartenfärbung — Australien (3 Farben)';
+      case 'mapColoringGermany':
+        return 'Landkartenfärbung — Deutschland (braucht 4 Farben)';
       case 'orderedTriples':
         return 'Geordnete Tripel mit Summe 20';
       case 'equalSumSplit':
@@ -3602,6 +3606,14 @@ class DeLocalizations implements AppLocalizations {
         return 'Landkartenfärbung K4 (DSL)';
       case 'dslOrderedTriples':
         return 'Geordnete Tripel mit Summe 20 (DSL)';
+      case 'dslMapColoringAustralia':
+        return 'Landkartenfärbung — Australien, 3 Farben (DSL)';
+      case 'dslMapColoringGermany':
+        return 'Landkartenfärbung — Deutschland, braucht 4 Farben (DSL)';
+      case 'dslKnapsack':
+        return '0/1-Rucksackproblem — Wert maximieren (DSL)';
+      case 'dslTransportation':
+        return 'Transportproblem — kostenminimaler Versand (DSL)';
       case 'dslCoinChange':
         return 'Münzwechsel — Anzahl minimieren (DSL)';
       case 'dslSchedulingMakespan':
@@ -3721,6 +3733,14 @@ class DeLocalizations implements AppLocalizations {
         return 'Lädt eine K4-Graphfärbung mit 3 Farben — bewusst unlösbar, um den "keine Lösungen"-Pfad zu zeigen.';
       case 'dslOrderedTriples':
         return 'Lädt ein DSL-Programm, das (a, b, c) mit a < b < c und a + b + c = 20 aufzählt.';
+      case 'dslMapColoringAustralia':
+        return 'Lädt die 7-Regionen-Australienkarte (Russell & Norvig). Drei Farben genügen; die Lösung wird als farbige Karte dargestellt.';
+      case 'dslMapColoringGermany':
+        return 'Lädt die 16 Bundesländer. Anders als Australien braucht diese Karte vier Farben (ein 5-Rad um Thüringen) — ändere den Wertebereich auf 1..3, um sie unlösbar zu machen.';
+      case 'dslKnapsack':
+        return 'Lädt ein 0/1-Rucksackproblem mit vier Gegenständen unter Gewichtsschranke; `maximize` liefert die wertoptimale Auswahl.';
+      case 'dslTransportation':
+        return 'Lädt ein ausgeglichenes Transportproblem (2 Lager → 3 Kunden, Angebot = Nachfrage); `minimize` liefert den kostenminimalen Versandplan.';
       case 'dslCoinChange':
         return 'Lädt ein DSL-Programm, das 17¢ mit den wenigsten Münzen aus {1, 5, 10, 25} via `minimize` zahlt.';
       case 'dslSchedulingMakespan':
@@ -6096,6 +6116,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Coloration de carte (K4)';
       case 'mapColoringAustralia':
         return 'Coloration de carte — Australie (3 couleurs)';
+      case 'mapColoringGermany':
+        return 'Coloration de carte — Allemagne (4 couleurs requises)';
       case 'orderedTriples':
         return 'Triplets ordonnés sommant à 20';
       case 'equalSumSplit':
@@ -6363,6 +6385,14 @@ class FrLocalizations implements AppLocalizations {
         return 'Coloration de carte K4 (DSL)';
       case 'dslOrderedTriples':
         return 'Triplets ordonnés sommant à 20 (DSL)';
+      case 'dslMapColoringAustralia':
+        return 'Coloration de carte — Australie, 3 couleurs (DSL)';
+      case 'dslMapColoringGermany':
+        return 'Coloration de carte — Allemagne, 4 couleurs requises (DSL)';
+      case 'dslKnapsack':
+        return 'Sac à dos 0/1 — maximiser la valeur (DSL)';
+      case 'dslTransportation':
+        return 'Problème de transport — coût minimal (DSL)';
       case 'dslCoinChange':
         return 'Rendu de monnaie — minimiser les pièces (DSL)';
       case 'dslSchedulingMakespan':
@@ -6482,6 +6512,14 @@ class FrLocalizations implements AppLocalizations {
         return 'Charge une coloration K4 à 3 couleurs — volontairement infaisable pour montrer le chemin « aucune solution ».';
       case 'dslOrderedTriples':
         return 'Charge un programme DSL énumérant (a, b, c) avec a < b < c et a + b + c = 20.';
+      case 'dslMapColoringAustralia':
+        return 'Charge la carte de l\'Australie à 7 régions (Russell & Norvig). Trois couleurs suffisent ; la solution s\'affiche en carte colorée.';
+      case 'dslMapColoringGermany':
+        return 'Charge les 16 Länder allemands. Contrairement à l\'Australie, cette carte exige quatre couleurs (une roue à 5 autour de la Thuringe) — passez le domaine à 1..3 pour la rendre insatisfiable.';
+      case 'dslKnapsack':
+        return 'Charge un sac à dos 0/1 à quatre objets borné en poids ; `maximize` renvoie le sous-ensemble de valeur optimale.';
+      case 'dslTransportation':
+        return 'Charge un problème de transport équilibré (2 entrepôts → 3 clients, offre = demande) ; `minimize` renvoie le plan d\'expédition de coût minimal.';
       case 'dslCoinChange':
         return 'Charge un programme DSL qui paie 17 ¢ avec le moins de pièces de {1, 5, 10, 25} via `minimize`.';
       case 'dslSchedulingMakespan':
@@ -8839,6 +8877,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Coloración de mapa (K4)';
       case 'mapColoringAustralia':
         return 'Coloración de mapa — Australia (3 colores)';
+      case 'mapColoringGermany':
+        return 'Coloración de mapa — Alemania (requiere 4 colores)';
       case 'orderedTriples':
         return 'Tripletes ordenados que suman 20';
       case 'equalSumSplit':
@@ -9106,6 +9146,14 @@ class EsLocalizations implements AppLocalizations {
         return 'Coloración de mapa K4 (DSL)';
       case 'dslOrderedTriples':
         return 'Tripletes ordenados que suman 20 (DSL)';
+      case 'dslMapColoringAustralia':
+        return 'Coloración de mapa — Australia, 3 colores (DSL)';
+      case 'dslMapColoringGermany':
+        return 'Coloración de mapa — Alemania, requiere 4 colores (DSL)';
+      case 'dslKnapsack':
+        return 'Mochila 0/1 — maximizar el valor (DSL)';
+      case 'dslTransportation':
+        return 'Problema de transporte — coste mínimo (DSL)';
       case 'dslCoinChange':
         return 'Cambio de monedas — minimizar piezas (DSL)';
       case 'dslSchedulingMakespan':
@@ -9225,6 +9273,14 @@ class EsLocalizations implements AppLocalizations {
         return 'Carga una coloración K4 con 3 colores — intencionalmente infactible para mostrar la ruta «sin soluciones».';
       case 'dslOrderedTriples':
         return 'Carga un programa DSL que enumera (a, b, c) con a < b < c y a + b + c = 20.';
+      case 'dslMapColoringAustralia':
+        return 'Carga el mapa de Australia de 7 regiones (Russell & Norvig). Bastan tres colores; la solución se muestra como mapa coloreado.';
+      case 'dslMapColoringGermany':
+        return 'Carga los 16 Bundesländer de Alemania. A diferencia de Australia, este mapa necesita cuatro colores (una rueda de 5 en Turingia) — cambia el dominio a 1..3 para volverlo insatisfacible.';
+      case 'dslKnapsack':
+        return 'Carga una mochila 0/1 de cuatro objetos acotada por peso; `maximize` devuelve el subconjunto de valor óptimo.';
+      case 'dslTransportation':
+        return 'Carga un problema de transporte equilibrado (2 almacenes → 3 clientes, oferta = demanda); `minimize` devuelve el plan de envío de coste mínimo.';
       case 'dslCoinChange':
         return 'Carga un programa DSL que paga 17 ¢ con el menor número de monedas de {1, 5, 10, 25} mediante `minimize`.';
       case 'dslSchedulingMakespan':

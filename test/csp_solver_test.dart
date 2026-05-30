@@ -204,6 +204,102 @@ nsw != v
       expect(s.values.every((c) => c >= 1 && c <= 3), isTrue);
     });
 
+    // Germany's 16 Bundesländer. The adjacency list is shared by the
+    // three Germany tests below; it mirrors the `mapColoringGermany`
+    // gallery program's `!=` constraints exactly.
+    const germanyEdges = <List<String>>[
+      ['sh', 'hh'],
+      ['sh', 'ni'],
+      ['sh', 'mv'],
+      ['hh', 'ni'],
+      ['mv', 'ni'],
+      ['mv', 'bb'],
+      ['ni', 'hb'],
+      ['ni', 'st'],
+      ['ni', 'bb'],
+      ['ni', 'th'],
+      ['ni', 'he'],
+      ['ni', 'nw'],
+      ['st', 'bb'],
+      ['st', 'sn'],
+      ['st', 'th'],
+      ['bb', 'be'],
+      ['bb', 'sn'],
+      ['nw', 'he'],
+      ['nw', 'rp'],
+      ['he', 'rp'],
+      ['he', 'by'],
+      ['he', 'th'],
+      ['th', 'sn'],
+      ['th', 'by'],
+      ['sn', 'by'],
+      ['rp', 'sl'],
+      ['rp', 'bw'],
+      ['rp', 'by'],
+      ['sl', 'bw'],
+      ['bw', 'by'],
+    ];
+
+    String germanyProgram(int colors) {
+      final lines = <String>[
+        'vars: bw, by, be, bb, hb, hh, he, mv, ni, nw, rp, sl, sn, st, sh, th '
+            'in 1..$colors',
+        for (final e in germanyEdges) '${e[0]} != ${e[1]}',
+      ];
+      return lines.join('\n');
+    }
+
+    test('Germany map coloring needs 4 colors: 3 colors is unsatisfiable',
+        () async {
+      // Thüringen (th) plus its five neighbours ni, st, sn, by, he form a
+      // 5-wheel (those five make a 5-cycle around th), whose chromatic
+      // number is 4 — so three colors cannot work.
+      final r = await CspSolver.solveDsl(germanyProgram(3));
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isEmpty,
+          reason: 'Germany is not 3-colorable (5-wheel at Thüringen)');
+    });
+
+    test('Germany map coloring is 4-colorable and respects adjacency',
+        () async {
+      final r = await CspSolver.solveDsl(germanyProgram(4));
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      final s = r.solutions.first;
+      expect(s.length, 16);
+      for (final e in germanyEdges) {
+        expect(s[e[0]], isNot(equals(s[e[1]])),
+            reason: '${e[0]} and ${e[1]} share a color');
+      }
+      expect(s.values.every((c) => c >= 1 && c <= 4), isTrue);
+    });
+
+    test('Germany: the Thüringen 5-wheel alone already forces 4 colors',
+        () async {
+      // Isolate the obstruction: th in the hub, ni-st-sn-by-he as a
+      // 5-cycle rim, every rim node also adjacent to th. With 3 colors
+      // this sub-map is unsatisfiable; with 4 it solves.
+      const rim = [
+        ['ni', 'st'],
+        ['st', 'sn'],
+        ['sn', 'by'],
+        ['by', 'he'],
+        ['he', 'ni'],
+      ];
+      const hub = ['ni', 'st', 'sn', 'by', 'he'];
+      String wheel(int colors) => [
+            'vars: th, ni, st, sn, by, he in 1..$colors',
+            for (final spoke in hub) 'th != $spoke',
+            for (final e in rim) '${e[0]} != ${e[1]}',
+          ].join('\n');
+      final three = await CspSolver.solveDsl(wheel(3));
+      expect(three.ok, isTrue, reason: three.error);
+      expect(three.solutions, isEmpty);
+      final four = await CspSolver.solveDsl(wheel(4));
+      expect(four.ok, isTrue, reason: four.error);
+      expect(four.solutions, isNotEmpty);
+    });
+
     test('4×4 magic square: 16 distinct values, every line sums to 34',
         () async {
       const dsl = '''

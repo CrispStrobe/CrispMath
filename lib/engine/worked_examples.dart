@@ -474,6 +474,49 @@ class WorkedExamples {
           'a + b + c = 20.',
       expression: 'dsl:orderedTriples',
     ),
+    // Map coloring contrast pair: Australia (3-colorable) vs Germany
+    // (needs 4). Germany is the concrete demonstration that the Four
+    // Color Theorem's bound is tight — its Thüringen 5-wheel cannot be
+    // 3-colored. Both load a colored map overlay on solve.
+    WorkedExample(
+      id: 'dslMapColoringAustralia',
+      category: WorkedExampleCategory.constraints,
+      title: 'Map coloring — Australia, 3 colors (DSL)',
+      description:
+          'Loads the Russell & Norvig 7-region Australia map. Three colors '
+          'suffice; the solution renders as a colored map.',
+      expression: 'dsl:mapColoringAustralia',
+    ),
+    WorkedExample(
+      id: 'dslMapColoringGermany',
+      category: WorkedExampleCategory.constraints,
+      title: 'Map coloring — Germany, needs 4 colors (DSL)',
+      description:
+          "Loads Germany's 16 Bundesländer. Unlike Australia this map needs "
+          'four colors (a 5-wheel at Thüringen) — try editing the domain to '
+          '1..3 to watch it become unsatisfiable.',
+      expression: 'dsl:mapColoringGermany',
+    ),
+    // Round 73 OR gallery: the linear optimization trio. Each loads a
+    // `minimize`/`maximize` program solved by branch-and-bound.
+    WorkedExample(
+      id: 'dslKnapsack',
+      category: WorkedExampleCategory.constraints,
+      title: '0/1 knapsack — maximize value (DSL)',
+      description:
+          'Loads a four-item 0/1 knapsack capped by weight; `maximize` '
+          'returns the optimal-value subset.',
+      expression: 'dsl:knapsack',
+    ),
+    WorkedExample(
+      id: 'dslTransportation',
+      category: WorkedExampleCategory.constraints,
+      title: 'Transportation — min-cost shipping (DSL)',
+      description: 'Loads a balanced transportation problem (2 warehouses → 3 '
+          'customers, supply = demand); `minimize` returns the unique '
+          'lowest-cost shipping plan.',
+      expression: 'dsl:transportation',
+    ),
     // Round 79: surface the optimization gallery entries shipped
     // in rounds 74 (coin-change) and 77 (scheduling makespan) via
     // the worked-examples discovery library, mirroring the round-73
