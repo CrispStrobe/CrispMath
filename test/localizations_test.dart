@@ -352,6 +352,7 @@ void main() {
           t.constraintsDslExampleTitle('knapsack'),
           t.constraintsDslExampleTitle('productionPlanning'),
           t.constraintsDslExampleTitle('assignmentMinCost'),
+          t.constraintsDslExampleTitle('transportation'),
           t.constraintsDslExampleTitle('schedulingMakespan'),
           t.constraintsOptimalHeader(4),
           t.constraintsDiophantineIntro,

@@ -1736,6 +1736,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Production planning (maximize profit)';
       case 'assignmentMinCost':
         return 'Assignment problem (minimize cost)';
+      case 'transportation':
+        return 'Transportation (min-cost shipping)';
       case 'schedulingMakespan':
         return 'Scheduling — minimize makespan';
       case 'cumulativeScheduling':
@@ -3349,6 +3351,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Produktionsplanung (Gewinn maximieren)';
       case 'assignmentMinCost':
         return 'Zuordnungsproblem (Kosten minimieren)';
+      case 'transportation':
+        return 'Transportproblem (kostenminimaler Versand)';
       case 'schedulingMakespan':
         return 'Scheduling — Makespan minimieren';
       case 'cumulativeScheduling':
@@ -6104,6 +6108,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Planification de production (maximiser le profit)';
       case 'assignmentMinCost':
         return 'Problème d\'affectation (minimiser le coût)';
+      case 'transportation':
+        return 'Problème de transport (coût minimal)';
       case 'schedulingMakespan':
         return 'Ordonnancement — minimiser le makespan';
       case 'cumulativeScheduling':
@@ -8845,6 +8851,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Planificación de producción (maximizar el beneficio)';
       case 'assignmentMinCost':
         return 'Problema de asignación (minimizar el coste)';
+      case 'transportation':
+        return 'Problema de transporte (coste mínimo)';
       case 'schedulingMakespan':
         return 'Planificación — minimizar el makespan';
       case 'cumulativeScheduling':

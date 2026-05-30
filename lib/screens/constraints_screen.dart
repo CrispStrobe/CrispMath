@@ -1032,6 +1032,25 @@ x13 + x23 + x33 == 1
 minimize 9*x11 + 2*x12 + 7*x13 + 6*x21 + 4*x22 + 3*x23 + 5*x31 + 8*x32 + 1*x33''',
     ),
     (
+      // Balanced transportation problem (min-cost distribution).
+      // Two warehouses with supplies S1=4, S2=6 ship to three
+      // customers with demands D1=3, D2=3, D3=4. Supply == demand,
+      // so every warehouse row and customer column is an equality.
+      // x_ij is the integer number of units shipped from warehouse i
+      // to customer j; the unit-cost matrix is
+      //   [[4, 6, 8], [9, 5, 3]].
+      // Branch-and-bound returns the unique min-cost plan, total 40:
+      //   x11=3, x12=1, x22=2, x23=4 (every other route unused).
+      id: 'transportation',
+      program: '''vars: x11, x12, x13, x21, x22, x23 in 0..6
+x11 + x12 + x13 == 4
+x21 + x22 + x23 == 6
+x11 + x21 == 3
+x12 + x22 == 3
+x13 + x23 == 4
+minimize 4*x11 + 6*x12 + 8*x13 + 9*x21 + 5*x22 + 3*x23''',
+    ),
+    (
       // Round 77: single-machine scheduling with minimum makespan.
       // Three tasks of durations 4, 3, 2 must run without overlap;
       // the `noOverlap` overlay enforces pairwise disjointness on

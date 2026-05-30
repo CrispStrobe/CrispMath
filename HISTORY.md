@@ -2,6 +2,32 @@
 
 Completed work, newest first.
 
+## 2026-05-30 (cont.) — CSP transportation gallery entry (min-cost flow)
+
+Added a `transportation` DSL gallery entry to `ConstraintsScreen`'s
+free-form tab — the classic balanced transportation / min-cost-flow
+problem, the fourth member of the OR gallery quartet (alongside
+knapsack, production planning, and assignment). Two warehouses
+(supplies S1=4, S2=6) ship to three customers (demands D1=3, D2=3,
+D3=4); supply equals demand, so every warehouse row and customer
+column is an equality. `x_ij` is the integer units shipped from
+warehouse i to customer j; the unit-cost matrix is
+`[[4, 6, 8], [9, 5, 3]]`. The existing `minimize` branch-and-bound
+returns the unique optimal plan (total cost 40: x11=3, x12=1, x22=2,
+x23=4). No solver or DSL changes — the capability already existed;
+this is a curated example.
+
+- `_DslTabState._gallery` entry `transportation` (constraints_screen.dart).
+- Localized title en/de/fr/es (`Transportation (min-cost shipping)` /
+  `Transportproblem (kostenminimaler Versand)` /
+  `Problème de transport (coût minimal)` /
+  `Problema de transporte (coste mínimo)`).
+- `csp_solver_test.dart` locks objective 40 + the unique assignment +
+  all supply/demand balances; `localizations_test.dart` adds
+  `transportation` to the gallery-id title-coverage list.
+- Pure-Dart, single repo, on `main`. Full suite **2669 pass / 1 skip,
+  0 failures**.
+
 ## 2026-05-30 — Magic-square generator UI (Constraints → Magic square tab)
 
 A dedicated generator, beyond the `magicSquare4` gallery template. New

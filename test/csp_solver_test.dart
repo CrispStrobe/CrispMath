@@ -337,6 +337,38 @@ minimize 9*x11 + 2*x12 + 7*x13 + 6*x21 + 4*x22 + 3*x23 + 5*x31 + 8*x32 + 1*x33
             1);
       }
     });
+
+    test('transportation: optimal cost 40 with the unique shipping plan',
+        () async {
+      const dsl = '''
+vars: x11, x12, x13, x21, x22, x23 in 0..6
+x11 + x12 + x13 == 4
+x21 + x22 + x23 == 6
+x11 + x21 == 3
+x12 + x22 == 3
+x13 + x23 == 4
+minimize 4*x11 + 6*x12 + 8*x13 + 9*x21 + 5*x22 + 3*x23
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.objective, 40);
+      expect(r.solutions, hasLength(1));
+      final s = r.solutions.first;
+      // Supply rows balance.
+      expect(s['x11']! + s['x12']! + s['x13']!, 4);
+      expect(s['x21']! + s['x22']! + s['x23']!, 6);
+      // Demand columns balance.
+      expect(s['x11']! + s['x21']!, 3);
+      expect(s['x12']! + s['x22']!, 3);
+      expect(s['x13']! + s['x23']!, 4);
+      // The optimum is unique.
+      expect(s['x11'], 3);
+      expect(s['x12'], 1);
+      expect(s['x13'], 0);
+      expect(s['x21'], 0);
+      expect(s['x22'], 2);
+      expect(s['x23'], 4);
+    });
   });
 
   group('CspSolver.solveDsl — Round 74 optimization', () {

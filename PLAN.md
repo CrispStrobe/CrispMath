@@ -1118,7 +1118,16 @@ extends the Sudoku/CSP engine layer directly.
     with a structured form (vars/bounds/constraints/objective in
     separate fields) — the DSL surface already covers the
     capability, so the tab is now UX sugar rather than new
-    function; transportation (min-cost flow) gallery entry.
+    function.
+  - **Transportation entry done 2026-05-30**: added a
+    `transportation` DSL gallery entry — a balanced min-cost
+    distribution problem (2 warehouses → 3 customers, supply ==
+    demand, unit-cost matrix `[[4,6,8],[9,5,3]]`). The existing
+    `minimize` branch-and-bound returns the unique optimal shipping
+    plan (total cost 40). Localized title en/de/fr/es; solver test
+    locks the optimum and the unique assignment. Completes the OR
+    gallery quartet (knapsack · production planning · assignment
+    · transportation).
 
 - [~] **Graph / map coloring puzzles** (high pedagogy / small).
   Classic CSP — `allDifferent` between adjacent regions over
