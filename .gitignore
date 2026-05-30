@@ -49,3 +49,5 @@ HANDOFF.md
 HANDOFF_NEXT.md
 HANDOFF_PRECISION.md
 .claude/
+.vercel
+.env*.local
