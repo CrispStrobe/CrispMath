@@ -2,6 +2,33 @@
 
 Completed work, newest first.
 
+## 2026-05-30 — Magic-square generator UI (Constraints → Magic square tab)
+
+A dedicated generator, beyond the `magicSquare4` gallery template. New
+pure-logic `lib/engine/magic_square.dart` (`MagicSquare`): magic constant
+M = N(N²+1)/2, a DSL-program builder for order N, the D4 symmetry
+transforms (`rotate90`, `reflectHorizontal`, `complement`,
+`randomVariant`), `gridFromSolution`, and an `isMagic` validator. New 5th
+tab `_MagicSquareTab` in `ConstraintsScreen`: size chips 3×3 / 4×4 / 5×5
+(auto-computed magic constant shown live), a **Generate** button that
+solves the emitted program and renders the filled square in an N×N
+`_MagicSquareGrid`.
+
+Variety from a deterministic solver: each Generate applies a random
+magic-preserving D4 symmetry (0–3 quarter-turns, optional mirror) plus an
+optional complement, so the displayed square changes without re-solving.
+For order 3 this reaches all 8 essentially-distinct squares.
+
+Solve timing measured: 3×3 ~180 ms, 4×4 ~210 ms, 5×5 ~2.3 s — all run on
+the existing async solve path with a spinner. **6×6 excluded** (36-var
+allDifferent timed out >30 s).
+
+6 new i18n keys × en/de/fr/es (tab title, intro, size label, magic
+constant, generate, hint), added to the `localizations_test` coverage
+list. Tests: `magic_square_test.dart` (maths + transforms + two solver
+end-to-end cases) and `magic_square_tab_test.dart` (widget: generate a
+valid 3×3, size switch updates the constant). `flutter analyze` clean.
+
 ## 2026-05-30 — Map-coloring visualizer: schematic Australia map painter
 
 Adds the "bonus" `CustomPainter` region map from the map-coloring PLAN

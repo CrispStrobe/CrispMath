@@ -489,6 +489,12 @@ abstract class AppLocalizations {
   String get constraintsTabCryptarithm;
   String get constraintsTabDsl;
   String get constraintsTabFlatZinc;
+  String get constraintsTabMagicSquare;
+  String get constraintsMagicIntro;
+  String get constraintsMagicSize;
+  String constraintsMagicConstant(int m);
+  String get constraintsMagicGenerate;
+  String get constraintsMagicHint;
   String get constraintsDslIntro;
   String get constraintsDslInputLabel;
   String get constraintsDslExamplesButton;
@@ -1678,6 +1684,22 @@ class EnLocalizations implements AppLocalizations {
   String get constraintsTabDsl => 'Free-form';
   @override
   String get constraintsTabFlatZinc => 'FlatZinc';
+  @override
+  String get constraintsTabMagicSquare => 'Magic square';
+  @override
+  String get constraintsMagicIntro =>
+      'Generate a magic square of the chosen order: the numbers 1..N² '
+      'arranged so every row, column, and both diagonals share the same '
+      'sum. Each "Generate" shows a different orientation of a solution.';
+  @override
+  String get constraintsMagicSize => 'Size';
+  @override
+  String constraintsMagicConstant(int m) => 'Magic constant: $m';
+  @override
+  String get constraintsMagicGenerate => 'Generate';
+  @override
+  String get constraintsMagicHint =>
+      'Every row, column, and diagonal sums to the magic constant.';
   @override
   String get constraintsDslIntro =>
       'Declare variables with `vars: x, y in 1..9`, '
@@ -3274,6 +3296,23 @@ class DeLocalizations implements AppLocalizations {
   String get constraintsTabDsl => 'Freitext';
   @override
   String get constraintsTabFlatZinc => 'FlatZinc';
+  @override
+  String get constraintsTabMagicSquare => 'Magisches Quadrat';
+  @override
+  String get constraintsMagicIntro =>
+      'Erzeugt ein magisches Quadrat der gewählten Ordnung: die Zahlen '
+      '1..N² so angeordnet, dass jede Zeile, jede Spalte und beide '
+      'Diagonalen dieselbe Summe ergeben. Jedes „Erzeugen“ zeigt eine '
+      'andere Ausrichtung einer Lösung.';
+  @override
+  String get constraintsMagicSize => 'Größe';
+  @override
+  String constraintsMagicConstant(int m) => 'Magische Konstante: $m';
+  @override
+  String get constraintsMagicGenerate => 'Erzeugen';
+  @override
+  String get constraintsMagicHint =>
+      'Jede Zeile, Spalte und Diagonale ergibt die magische Konstante.';
   @override
   String get constraintsDslIntro =>
       'Variablen deklarieren mit `vars: x, y in 1..9`, '
@@ -6011,6 +6050,23 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get constraintsTabFlatZinc => 'FlatZinc';
   @override
+  String get constraintsTabMagicSquare => 'Carré magique';
+  @override
+  String get constraintsMagicIntro =>
+      'Génère un carré magique de l\'ordre choisi : les nombres 1..N² '
+      'disposés de sorte que chaque ligne, chaque colonne et les deux '
+      'diagonales aient la même somme. Chaque « Générer » montre une '
+      'orientation différente d\'une solution.';
+  @override
+  String get constraintsMagicSize => 'Taille';
+  @override
+  String constraintsMagicConstant(int m) => 'Constante magique : $m';
+  @override
+  String get constraintsMagicGenerate => 'Générer';
+  @override
+  String get constraintsMagicHint =>
+      'Chaque ligne, colonne et diagonale somme à la constante magique.';
+  @override
   String get constraintsDslIntro =>
       'Déclarer des variables avec `vars: x, y in 1..9`, '
       'utiliser `allDifferent(x, y, z)` pour la distinction, '
@@ -8735,6 +8791,23 @@ class EsLocalizations implements AppLocalizations {
   String get constraintsTabDsl => 'Texto libre';
   @override
   String get constraintsTabFlatZinc => 'FlatZinc';
+  @override
+  String get constraintsTabMagicSquare => 'Cuadrado mágico';
+  @override
+  String get constraintsMagicIntro =>
+      'Genera un cuadrado mágico del orden elegido: los números 1..N² '
+      'dispuestos de modo que cada fila, cada columna y ambas diagonales '
+      'tengan la misma suma. Cada «Generar» muestra una orientación '
+      'distinta de una solución.';
+  @override
+  String get constraintsMagicSize => 'Tamaño';
+  @override
+  String constraintsMagicConstant(int m) => 'Constante mágica: $m';
+  @override
+  String get constraintsMagicGenerate => 'Generar';
+  @override
+  String get constraintsMagicHint =>
+      'Cada fila, columna y diagonal suma la constante mágica.';
   @override
   String get constraintsDslIntro =>
       'Declare variables con `vars: x, y in 1..9`, '

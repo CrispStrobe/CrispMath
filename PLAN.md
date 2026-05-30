@@ -1148,14 +1148,22 @@ extends the Sudoku/CSP engine layer directly.
   surface — just a different program template. ~Half a day.
   Bonus: the magic-constant input is auto-computed for
   square N as `N(N²+1)/2` (default unless overridden).
-  - **4×4 done 2026-05-30**: new `magicSquare4` DSL gallery
+  - **4×4 gallery done 2026-05-30**: `magicSquare4` DSL gallery
     entry (16 distinct values 1..16, all rows/cols/diagonals
-    == the magic constant 34 = 4·17/2). Solving the program
-    *is* the generator. Solves in ~90 ms; localized title +
-    solver test (permutation of 1..16, all 10 lines == 34).
-    **Deferred**: a dedicated size-picker generator UI and the
-    5×5/6×6 sizes (36-var allDifferent gets heavier — worth a
-    timeboxed check before shipping interactively).
+    == the magic constant 34 = 4·17/2).
+  - **Generator UI done 2026-05-30** (HISTORY same day): new
+    **Magic square tab** in `ConstraintsScreen` (5th tab) +
+    pure-logic `lib/engine/magic_square.dart`. Size chips
+    3×3 / 4×4 / 5×5 (auto-computed magic constant
+    M = N(N²+1)/2 shown live); **Generate** solves the
+    emitted DSL program and renders the filled square in an
+    N×N grid. Variety from a deterministic solver via a random
+    D4 symmetry (+ optional complement) — all magic-preserving.
+    6 new i18n keys × en/de/fr/es; `magic_square_test.dart`
+    (maths + solver end-to-end) + `magic_square_tab_test.dart`
+    (widget). **Deferred**: 6×6 — its 36-var allDifferent
+    solve timed out (>30s); would need a smarter model or a
+    clue-based construction rather than a blind solve.
 
 - [~] **Set partitioning ("equal-sum split")** (small).
   Common interview / pedagogy problem — given a list of
