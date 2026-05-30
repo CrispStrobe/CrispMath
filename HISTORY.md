@@ -2,6 +2,37 @@
 
 Completed work, newest first.
 
+## 2026-05-30 — CSP pedagogy gallery: map coloring / magic square / set partitioning
+
+Three new DSL gallery entries in `ConstraintsScreen`'s DSL tab, each
+closing a named PLAN "CSP Round D" pedagogy gap. Pure-Dart, single repo,
+on `main`, headless-testable — no engine or parser changes, just new
+program templates over the existing DSL surface.
+
+- **`mapColoringAustralia`** — the canonical Russell & Norvig
+  7-region Australia map-coloring CSP (WA/NT/SA/Q/NSW/V/T), 3-colorable.
+  Sits next to the pre-existing `mapColoring` K4 entry, which is
+  intentionally *un*-colorable — the pair contrasts a solvable vs.
+  unsolvable coloring instance.
+- **`magicSquare4`** — 4×4 magic square: 16 distinct values 1..16 with
+  every row/column/main-diagonal summing to the magic constant
+  M = N(N²+1)/2 = 34. Solving the program is itself a generator (7040
+  distinct squares exist); solves in ~90 ms.
+- **`equalSumSplit`** — set partitioning (equal-sum split, K=2) for the
+  multiset {4,3,2,3,2,2}: one 0/1 indicator per number, a single linear
+  constraint forcing the selected subset to half the total (8); the
+  complement is equal by construction.
+
+Localized titles across en/de/fr/es (`constraintsDslExampleTitle`); the
+three new ids added to the `localizations_test` CSP coverage list. New
+`CspSolver.solveDsl — pedagogy gallery` group in `csp_solver_test.dart`
+(3 tests) validates each program's solution structurally.
+
+**Deferred** (noted in PLAN): the map-coloring `CustomPainter` region
+render; a dedicated magic-square size-picker generator UI + 5×5/6×6;
+general-K (>2) set partitioning (needs channeling variables the linear
+DSL can't express).
+
 ## 2026-05-29 — Round 99 follow-up cont.: full StatisticsPresets coverage
 
 Extends the "Open module" work so **every** stats Function Reference

@@ -723,6 +723,27 @@ a + e + i == 15
 c + e + g == 15''',
     ),
     (
+      // 4×4 magic square: 16 distinct values 1..16 with every
+      // row, column, and main diagonal summing to the magic
+      // constant M = N(N²+1)/2 = 4·17/2 = 34. Solving the
+      // program is itself a generator — there are 7040 distinct
+      // 4×4 magic squares (ignoring symmetry), so the solver
+      // returns one of them.
+      id: 'magicSquare4',
+      program: '''vars: a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p in 1..16
+allDifferent(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p)
+a + b + c + d == 34
+e + f + g + h == 34
+i + j + k + l == 34
+m + n + o + p == 34
+a + e + i + m == 34
+b + f + j + n == 34
+c + g + k + o == 34
+d + h + l + p == 34
+a + f + k + p == 34
+d + g + j + m == 34''',
+    ),
+    (
       // Four mutually-adjacent regions colored with 3 colors.
       // Adjacency: 1-2, 1-3, 1-4, 2-3, 2-4, 3-4 — a complete
       // K4 graph, which is NOT 3-colorable, so this enumerates
@@ -736,6 +757,27 @@ r3 != r4
 r2 != r4''',
     ),
     (
+      // The canonical map-coloring CSP (Russell & Norvig): color
+      // the seven Australian states/territories so that no two
+      // adjacent regions share a color. Three colors suffice
+      // (the map is planar). Variables: wa=Western Australia,
+      // nt=Northern Territory, sa=South Australia, q=Queensland,
+      // nsw=New South Wales, v=Victoria, t=Tasmania. Tasmania is
+      // an island with no land border, so it carries no
+      // adjacency constraint and is freely colorable.
+      id: 'mapColoringAustralia',
+      program: '''vars: wa, nt, sa, q, nsw, v, t in 1..3
+wa != nt
+wa != sa
+nt != sa
+nt != q
+sa != q
+sa != nsw
+sa != v
+q != nsw
+nsw != v''',
+    ),
+    (
       // Triples of strictly-increasing positive integers summing
       // to 20: a < b < c, a+b+c=20, with a,b,c in 1..20.
       id: 'orderedTriples',
@@ -743,6 +785,18 @@ r2 != r4''',
 a + b + c == 20
 a < b
 b < c''',
+    ),
+    (
+      // Set partitioning / equal-sum split. Given the multiset
+      // {4, 3, 2, 3, 2, 2} (total 16), split it into two groups
+      // of equal sum (8 each). One 0/1 indicator per number
+      // selects it into group A; the linear constraint forces
+      // group A's weighted sum to half the total. The unselected
+      // numbers form group B, whose sum is then also 8. A 1 in
+      // the solution means "this number goes in group A".
+      id: 'equalSumSplit',
+      program: '''vars: b1, b2, b3, b4, b5, b6 in 0..1
+4*b1 + 3*b2 + 2*b3 + 3*b4 + 2*b5 + 2*b6 == 8''',
     ),
     (
       // Round 74: textbook coin-change. Pay 17 cents with the

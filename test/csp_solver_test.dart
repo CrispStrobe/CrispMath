@@ -161,6 +161,117 @@ vars: x, y in 1..5
     });
   });
 
+  // Pedagogy gallery additions (PLAN P-CSP: map coloring / magic square /
+  // set partitioning). These lock the DSL programs shipped as gallery
+  // entries in `constraints_screen.dart`; the strings are kept in sync by
+  // hand (the gallery list is private to the screen state).
+  group('CspSolver.solveDsl — pedagogy gallery', () {
+    test('Australia map coloring is 3-colorable and respects adjacency',
+        () async {
+      const dsl = '''
+vars: wa, nt, sa, q, nsw, v, t in 1..3
+wa != nt
+wa != sa
+nt != sa
+nt != q
+sa != q
+sa != nsw
+sa != v
+q != nsw
+nsw != v
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      final s = r.solutions.first;
+      // Every declared adjacency must differ.
+      const edges = [
+        ['wa', 'nt'],
+        ['wa', 'sa'],
+        ['nt', 'sa'],
+        ['nt', 'q'],
+        ['sa', 'q'],
+        ['sa', 'nsw'],
+        ['sa', 'v'],
+        ['q', 'nsw'],
+        ['nsw', 'v'],
+      ];
+      for (final e in edges) {
+        expect(s[e[0]], isNot(equals(s[e[1]])),
+            reason: '${e[0]} and ${e[1]} share a color');
+      }
+      // Only three colors are used at most.
+      expect(s.values.every((c) => c >= 1 && c <= 3), isTrue);
+    });
+
+    test('4×4 magic square: 16 distinct values, every line sums to 34',
+        () async {
+      const dsl = '''
+vars: a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p in 1..16
+allDifferent(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p)
+a + b + c + d == 34
+e + f + g + h == 34
+i + j + k + l == 34
+m + n + o + p == 34
+a + e + i + m == 34
+b + f + j + n == 34
+c + g + k + o == 34
+d + h + l + p == 34
+a + f + k + p == 34
+d + g + j + m == 34
+''';
+      final r = await CspSolver.solveDsl(dsl, maxSolutions: 1);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      final s = r.solutions.first;
+      // A permutation of 1..16.
+      expect(s.values.toSet(), {for (var x = 1; x <= 16; x++) x});
+      const lines = [
+        ['a', 'b', 'c', 'd'],
+        ['e', 'f', 'g', 'h'],
+        ['i', 'j', 'k', 'l'],
+        ['m', 'n', 'o', 'p'],
+        ['a', 'e', 'i', 'm'],
+        ['b', 'f', 'j', 'n'],
+        ['c', 'g', 'k', 'o'],
+        ['d', 'h', 'l', 'p'],
+        ['a', 'f', 'k', 'p'],
+        ['d', 'g', 'j', 'm'],
+      ];
+      for (final line in lines) {
+        expect(line.fold<int>(0, (sum, key) => sum + s[key]!), 34);
+      }
+    });
+
+    test('equal-sum split: selected subset and complement both sum to 8',
+        () async {
+      const weights = {
+        'b1': 4,
+        'b2': 3,
+        'b3': 2,
+        'b4': 3,
+        'b5': 2,
+        'b6': 2,
+      };
+      const dsl = '''
+vars: b1, b2, b3, b4, b5, b6 in 0..1
+4*b1 + 3*b2 + 2*b3 + 3*b4 + 2*b5 + 2*b6 == 8
+''';
+      final r = await CspSolver.solveDsl(dsl);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      const total = 16;
+      for (final s in r.solutions) {
+        var groupA = 0;
+        weights.forEach((name, w) {
+          if (s[name] == 1) groupA += w;
+        });
+        expect(groupA, 8);
+        expect(total - groupA, 8); // complement is the equal-sum partner
+      }
+    });
+  });
+
   group('CspSolver.solveDsl — Round 74 optimization', () {
     test('minimize returns the proven optimum + its objective value', () async {
       // Pay 17 cents with the fewest coins drawn from {1, 5, 10}.

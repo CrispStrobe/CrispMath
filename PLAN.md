@@ -1108,28 +1108,53 @@ extends the Sudoku/CSP engine layer directly.
   assignment (min cost matrix), transportation (min cost
   shipping). ~1–2 days.
 
-- [ ] **Graph / map coloring puzzles** (high pedagogy / small).
+- [~] **Graph / map coloring puzzles** (high pedagogy / small).
   Classic CSP — `allDifferent` between adjacent regions over
   a small color domain. New gallery entry in the DSL tab with
   a pre-built adjacency list (e.g. Australian states, US
   Midwest, Germany Bundesländer). Bonus: a `CustomPainter`
   region map colored from the solution. ~1 day with the
   visualizer, ~half a day text-only.
+  - **Text-only done 2026-05-30**: new `mapColoringAustralia`
+    DSL gallery entry — the canonical Russell & Norvig 7-region
+    Australia map, 3-colorable (the pre-existing `mapColoring`
+    K4 entry is intentionally *un*-colorable as a contrast).
+    Localized title across en/de/fr/es; solver test asserts
+    adjacency + ≤3 colors. **Deferred**: the `CustomPainter`
+    region map (real geography render) — UI-only follow-up.
 
-- [ ] **Magic squares generator** (curiosity / small). 3×3
+- [~] **Magic squares generator** (curiosity / small). 3×3
   through 6×6 magic squares via `allDifferent` + per-row /
   per-column / per-diagonal `exactSum(targetMagicNumber)`.
   New gallery entry. Reuses the existing DSL parser
   surface — just a different program template. ~Half a day.
   Bonus: the magic-constant input is auto-computed for
   square N as `N(N²+1)/2` (default unless overridden).
+  - **4×4 done 2026-05-30**: new `magicSquare4` DSL gallery
+    entry (16 distinct values 1..16, all rows/cols/diagonals
+    == the magic constant 34 = 4·17/2). Solving the program
+    *is* the generator. Solves in ~90 ms; localized title +
+    solver test (permutation of 1..16, all 10 lines == 34).
+    **Deferred**: a dedicated size-picker generator UI and the
+    5×5/6×6 sizes (36-var allDifferent gets heavier — worth a
+    timeboxed check before shipping interactively).
 
-- [ ] **Set partitioning ("equal-sum split")** (small).
+- [~] **Set partitioning ("equal-sum split")** (small).
   Common interview / pedagogy problem — given a list of
   numbers, split them into K groups of equal sum. Variables
   are per-number group assignments (domain `0..K-1`);
   constraint is `exactSum(totalSum/K)` per group. Gallery
   entry. ~Half a day.
+  - **K=2 done 2026-05-30**: new `equalSumSplit` DSL gallery
+    entry — one 0/1 indicator per number, a single linear
+    constraint forcing the selected subset to half the total
+    (the complement is then equal by construction). Localized
+    title + solver test (subset and complement both == 8).
+    **Deferred**: general K>2, which needs indicator/channeling
+    variables the linear DSL can't express directly (the
+    `domain 0..K-1` per-number formulation in the original
+    sketch would require conditional sums — out of scope for
+    the current DSL).
 
 - [ ] **Step-trace visualization of AC-3 propagation** (large
   / pedagogy gold). Instrument `dart_csp`'s solver to emit

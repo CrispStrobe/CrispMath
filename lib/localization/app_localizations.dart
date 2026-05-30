@@ -1696,10 +1696,16 @@ class EnLocalizations implements AppLocalizations {
         return '3-digit magic sum';
       case 'magicSquare3':
         return '3×3 magic square';
+      case 'magicSquare4':
+        return '4×4 magic square (constant 34)';
       case 'mapColoring':
         return 'Map coloring (K4)';
+      case 'mapColoringAustralia':
+        return 'Map coloring — Australia (3 colors)';
       case 'orderedTriples':
         return 'Ordered triples summing to 20';
+      case 'equalSumSplit':
+        return 'Equal-sum split (set partitioning)';
       case 'coinChangeMin':
         return 'Coin change (minimize coins)';
       case 'schedulingMakespan':
@@ -3280,10 +3286,16 @@ class DeLocalizations implements AppLocalizations {
         return '3-stellige magische Summe';
       case 'magicSquare3':
         return '3×3 magisches Quadrat';
+      case 'magicSquare4':
+        return '4×4 magisches Quadrat (Konstante 34)';
       case 'mapColoring':
         return 'Landkartenfärbung (K4)';
+      case 'mapColoringAustralia':
+        return 'Landkartenfärbung — Australien (3 Farben)';
       case 'orderedTriples':
         return 'Geordnete Tripel mit Summe 20';
+      case 'equalSumSplit':
+        return 'Gleichsummenteilung (Mengenpartition)';
       case 'coinChangeMin':
         return 'Münzwechsel (Anzahl minimieren)';
       case 'schedulingMakespan':
@@ -6006,10 +6018,16 @@ class FrLocalizations implements AppLocalizations {
         return 'Somme magique à 3 chiffres';
       case 'magicSquare3':
         return 'Carré magique 3×3';
+      case 'magicSquare4':
+        return 'Carré magique 4×4 (constante 34)';
       case 'mapColoring':
         return 'Coloration de carte (K4)';
+      case 'mapColoringAustralia':
+        return 'Coloration de carte — Australie (3 couleurs)';
       case 'orderedTriples':
         return 'Triplets ordonnés sommant à 20';
+      case 'equalSumSplit':
+        return 'Partition en sommes égales';
       case 'coinChangeMin':
         return 'Rendu de monnaie (minimiser les pièces)';
       case 'schedulingMakespan':
@@ -8718,10 +8736,16 @@ class EsLocalizations implements AppLocalizations {
         return 'Suma mágica de 3 dígitos';
       case 'magicSquare3':
         return 'Cuadrado mágico 3×3';
+      case 'magicSquare4':
+        return 'Cuadrado mágico 4×4 (constante 34)';
       case 'mapColoring':
         return 'Coloración de mapa (K4)';
+      case 'mapColoringAustralia':
+        return 'Coloración de mapa — Australia (3 colores)';
       case 'orderedTriples':
         return 'Tripletes ordenados que suman 20';
+      case 'equalSumSplit':
+        return 'Partición de suma igual';
       case 'coinChangeMin':
         return 'Cambio de monedas (minimizar piezas)';
       case 'schedulingMakespan':
