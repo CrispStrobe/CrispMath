@@ -53,8 +53,16 @@ void main() {
       expect(engine.limit('x', 'x', '0'), startsWith('Error'));
     });
 
-    test('integrate() is documented as not yet implemented', () {
-      expect(engine.integrate('x', 'x'), startsWith('Error'));
+    test('integrate() resolves the polynomial case in pure Dart', () {
+      // The C wrapper stubs integrate(); the polynomial antiderivative is
+      // computed exactly in Dart, so it works even without the native lib.
+      expect(engine.integrate('x', 'x'), '1/2x^2 + C');
+      expect(engine.integrate('x^2', 'x', '0', '1'), '1/3'); // definite
+    });
+
+    test('integrate() of a non-polynomial still needs native', () {
+      if (engine.isNativeAvailable) return;
+      expect(engine.integrate('sin(x)', 'x'), startsWith('Error'));
     });
   });
 

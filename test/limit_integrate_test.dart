@@ -31,19 +31,22 @@ void main() {
   });
 
   group('integrate() — fallback / validation', () {
-    test('returns error string when bridge unavailable', () {
+    test('polynomial definite integral resolves without the native bridge', () {
+      // The C wrapper stubs integrate(); the polynomial case is computed
+      // exactly in Dart, so a definite integral works even with no bridge.
       final result = engine.integrate('x', 'x', '0', '1');
-      expect(result, isA<String>());
-      expect(result, startsWith('Error'));
+      expect(result, '1/2'); // ∫₀¹ x dx
     });
 
-    test('indefinite integration without native bridge errors cleanly', () {
-      // In test host the SymEngine bridge isn't loaded, so even with the
-      // FFI binding in place the call falls through to the
-      // not-yet-implemented path.
+    test('polynomial indefinite integral resolves without the native bridge',
+        () {
+      // Exact Dart antiderivative; no native lib needed for the polynomial
+      // subset (non-polynomial integrands still require native).
       final result = engine.integrate('x', 'x');
-      expect(result, startsWith('Error'));
-      expect(result, isNotEmpty);
+      expect(result, '1/2x^2 + C');
+      if (!engine.isNativeAvailable) {
+        expect(engine.integrate('sin(x)', 'x'), startsWith('Error'));
+      }
     });
 
     test(

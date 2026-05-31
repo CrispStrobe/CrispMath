@@ -53,14 +53,12 @@ void main() {
       // Parse the structured summary the harness emits.
       final line = const LineSplitter()
           .convert(out)
-          .firstWhere((l) => l.startsWith('WEB_SMOKE_JSON='),
-              orElse: () => '');
+          .firstWhere((l) => l.startsWith('WEB_SMOKE_JSON='), orElse: () => '');
       expect(line, isNotEmpty,
           reason: 'harness produced no WEB_SMOKE_JSON summary:\n$out');
 
-      final summary =
-          jsonDecode(line.substring('WEB_SMOKE_JSON='.length))
-              as Map<String, dynamic>;
+      final summary = jsonDecode(line.substring('WEB_SMOKE_JSON='.length))
+          as Map<String, dynamic>;
 
       expect(summary['ready'], isTrue,
           reason: 'WASM module never became ready:\n$out');
@@ -71,7 +69,12 @@ void main() {
       final byName = {for (final r in results) r['name'] as String: r};
 
       // Spot-check the headline CAS operations resolved correctly.
-      for (final name in const ['version', 'expand', 'differentiate', 'solve']) {
+      for (final name in const [
+        'version',
+        'expand',
+        'differentiate',
+        'solve'
+      ]) {
         expect(byName[name]?['pass'], isTrue,
             reason: 'WASM case "$name" failed: ${byName[name]}\n$out');
       }

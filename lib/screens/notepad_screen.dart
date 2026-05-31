@@ -141,11 +141,16 @@ class _NotepadScreenState extends State<NotepadScreen> {
     _lastNumberFormat = _appState.numberFormat;
     _lastDecimalPlaces = _appState.decimalPlaces;
     _appState.addListener(_onAppStateChanged);
+    // On web the SymEngine WASM bridge loads asynchronously; recompute the
+    // whole doc once it becomes available so lines that fell back to the
+    // pure-Dart subset (or errored) pick up the full CAS.
+    nativeBridgeStatus.addListener(_onBridgeStatusChanged);
   }
 
   @override
   void dispose() {
     _appState.removeListener(_onAppStateChanged);
+    nativeBridgeStatus.removeListener(_onBridgeStatusChanged);
     _recalcTimer?.cancel();
     for (final c in _controllers.values) {
       c.dispose();
@@ -157,6 +162,15 @@ class _NotepadScreenState extends State<NotepadScreen> {
     _renameFocus?.dispose();
     _listScrollController.dispose();
     super.dispose();
+  }
+
+  /// The WASM/native bridge flipped state (typically loading → ready on
+  /// web). Recompute the active document so stale "requires native" /
+  /// pure-Dart-fallback results are replaced by the real CAS answer.
+  void _onBridgeStatusChanged() {
+    if (!mounted || !nativeBridgeReady) return;
+    final doc = _currentDoc;
+    if (doc != null) _runRecalc(doc, startIndex: null);
   }
 
   void _onAppStateChanged() {

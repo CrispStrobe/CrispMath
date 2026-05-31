@@ -89,6 +89,209 @@ class SymbolicWeb {
     return null; // degree > 2 → native only
   }
 
+  /// Indefinite integral of a single-variable polynomial with respect to
+  /// [variable] (the caller appends "+ C"). Exact rational coefficients;
+  /// `∫ aᵢxⁱ dx = aᵢ/(i+1) · xⁱ⁺¹`. Returns null outside the polynomial
+  /// grammar (the C wrapper stubs integrate(), so this is the web/native-
+  /// less answer for the common polynomial case).
+  static String? integrate(String input, String variable) {
+    final p = _parsePolynomial(input);
+    if (p == null) return null;
+    // A non-constant polynomial in a *different* variable would integrate
+    // to `poly · variable`, which the single-variable model can't hold.
+    if (p.degree >= 1 && p.variable != variable) return null;
+    if (p.isZero) return '0';
+
+    final v = Polynomial.variable(variable);
+    var result = Polynomial.zero(variable);
+    for (var i = 0; i < p.coeffs.length; i++) {
+      if (p.coeffs[i].isZero) continue;
+      final c = p.coeffs[i] / Rational.fromInt(i + 1);
+      result = result + Polynomial.constant(c, variable) * v.pow(i + 1);
+    }
+    return result.toString();
+  }
+
+  /// Definite integral of a polynomial over [lower]..[upper] when both
+  /// bounds are exact rationals: `F(upper) − F(lower)`. Returns null when
+  /// the integrand is non-polynomial or a bound isn't a plain rational
+  /// (e.g. `pi`), so the caller can fall through.
+  static String? definiteIntegral(
+      String input, String variable, String lower, String upper) {
+    final p = _parsePolynomial(input);
+    if (p == null) return null;
+    if (p.degree >= 1 && p.variable != variable) return null;
+    final lo = _parseBound(lower);
+    final hi = _parseBound(upper);
+    if (lo == null || hi == null) return null;
+
+    // Antiderivative coefficients: F has degree+1 terms, F[i+1]=a_i/(i+1).
+    final f = <Rational>[Rational.zero];
+    for (var i = 0; i < p.coeffs.length; i++) {
+      f.add(p.coeffs[i] / Rational.fromInt(i + 1));
+    }
+    Rational evalF(Rational x) {
+      var acc = Rational.zero;
+      for (var i = f.length - 1; i >= 0; i--) {
+        acc = acc * x + f[i];
+      }
+      return acc;
+    }
+
+    return (evalF(hi) - evalF(lo)).toString();
+  }
+
+  static Rational? _parseBound(String s) {
+    final t = s.trim();
+    final frac = RegExp(r'^(-?\d+)/(\d+)$').firstMatch(t);
+    if (frac != null) {
+      return Rational(
+          BigInt.parse(frac.group(1)!), BigInt.parse(frac.group(2)!));
+    }
+    final neg = t.startsWith('-');
+    final r = _PolyExprParser._rationalFromDecimal(neg ? t.substring(1) : t);
+    if (r == null) return null;
+    return neg ? -r : r;
+  }
+
+  /// Factor a single-variable polynomial over ℚ. Extracts the leading
+  /// coefficient and every rational linear factor (with multiplicity) via
+  /// the Rational Root Theorem + exact division; any remaining factor with
+  /// no rational roots is left intact (it is reported correctly, just not
+  /// necessarily fully split — e.g. `x^4 + 4` stays as-is). Returns null
+  /// for anything outside the polynomial grammar (multivariate,
+  /// transcendental, rational functions), so the caller can fall through.
+  ///
+  /// This exists because the native C wrapper aliases `factor` to `expand`
+  /// (a known correctness bug); doing real factoring in Dart fixes the
+  /// common cases on every platform, web included.
+  static String? factor(String input) {
+    final p = _parsePolynomial(input);
+    if (p == null) return null;
+    if (p.isZero) return '0';
+    final variable = p.variable;
+    if (p.degree == 0) return p.coeffs[0].toString();
+
+    final candidates = _rationalRootCandidates(p);
+    if (candidates == null) return null; // coefficients too large for RRT
+
+    final c = p.leading;
+    var m = p.monic();
+    final factors = <({Rational root, int mult})>[];
+    for (final r in candidates) {
+      var mult = 0;
+      final lin = Polynomial.variable(variable) -
+          Polynomial.constant(r, variable); // (x - r)
+      while (m.degree >= 1 && _evalAt(m, r).isZero) {
+        final qr = m.divmod(lin);
+        if (!qr.remainder.isZero) break; // defensive; shouldn't happen
+        m = qr.quotient;
+        mult++;
+      }
+      if (mult > 0) factors.add((root: r, mult: mult));
+    }
+    factors.sort((a, b) => (a.root - b.root).sign);
+    return _formatFactorization(c, factors, m, variable);
+  }
+
+  /// Horner evaluation of [p] at the rational [r].
+  static Rational _evalAt(Polynomial p, Rational r) {
+    var acc = Rational.zero;
+    for (var i = p.coeffs.length - 1; i >= 0; i--) {
+      acc = acc * r + p.coeffs[i];
+    }
+    return acc;
+  }
+
+  /// Candidate rational roots p/q (both signs) from the Rational Root
+  /// Theorem: p divides the lowest non-zero coefficient, q divides the
+  /// leading coefficient. Includes 0 when the constant term is 0. Returns
+  /// null when a coefficient is too large to enumerate divisors cheaply.
+  static Set<Rational>? _rationalRootCandidates(Polynomial p) {
+    final ints = _integerize(p);
+    final an = ints.last.abs();
+    final lowIdx = ints.indexWhere((v) => v != BigInt.zero);
+    final aLow = ints[lowIdx].abs();
+
+    final numDivs = _divisors(aLow);
+    final denDivs = _divisors(an);
+    if (numDivs == null || denDivs == null) return null;
+
+    final out = <Rational>{};
+    if (lowIdx > 0) out.add(Rational.zero); // constant term is 0 → root 0
+    for (final num in numDivs) {
+      for (final den in denDivs) {
+        final r = Rational(num, den);
+        out.add(r);
+        out.add(-r);
+      }
+    }
+    return out;
+  }
+
+  /// Clear denominators: return integer coefficients (low-degree-first)
+  /// proportional to [p].
+  static List<BigInt> _integerize(Polynomial p) {
+    var l = BigInt.one;
+    for (final c in p.coeffs) {
+      l = _lcm(l, c.denominator);
+    }
+    return [for (final c in p.coeffs) c.numerator * (l ~/ c.denominator)];
+  }
+
+  /// Positive divisors of [n] (n > 0), or null when [n] is too large to
+  /// enumerate by trial division.
+  static Set<BigInt>? _divisors(BigInt n) {
+    if (n <= BigInt.zero) return {BigInt.one};
+    if (n > BigInt.from(1000000000000)) return null; // 1e12 cap
+    final divs = <BigInt>{};
+    var i = BigInt.one;
+    while (i * i <= n) {
+      if (n % i == BigInt.zero) {
+        divs.add(i);
+        divs.add(n ~/ i);
+      }
+      i += BigInt.one;
+    }
+    return divs;
+  }
+
+  static BigInt _gcd(BigInt a, BigInt b) =>
+      b == BigInt.zero ? a : _gcd(b, a % b);
+  static BigInt _lcm(BigInt a, BigInt b) => a ~/ _gcd(a, b) * b;
+
+  /// Render `c · ∏(x - rᵢ)^mᵢ · remaining` with the app's conventions.
+  static String _formatFactorization(
+    Rational c,
+    List<({Rational root, int mult})> factors,
+    Polynomial remaining,
+    String variable,
+  ) {
+    final parts = <String>[];
+
+    String linear(Rational r) {
+      if (r.isZero) return variable;
+      if (r.sign < 0) return '($variable + ${(-r)})';
+      return '($variable - $r)';
+    }
+
+    for (final f in factors) {
+      final base = linear(f.root);
+      parts.add(f.mult > 1 ? '$base^${f.mult}' : base);
+    }
+    if (remaining.degree >= 1) {
+      // Parens only when it sits in a product (other factors or a scalar);
+      // a lone irreducible polynomial prints bare (`x^2 + 1`, not `(x^2+1)`).
+      final sole = factors.isEmpty && c == Rational.one;
+      parts.add(sole ? remaining.toString() : '($remaining)');
+    }
+
+    if (parts.isEmpty) return c.toString(); // fully constant
+    if (c == Rational.one) return parts.join('*');
+    if (c == Rational.fromInt(-1)) return '-${parts.join('*')}';
+    return '$c*${parts.join('*')}';
+  }
+
   // --- quadratic ---------------------------------------------------------
 
   /// Exact roots of `a*x^2 + b*x + c = 0` (a ≠ 0): a single string for a
