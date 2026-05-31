@@ -51,8 +51,7 @@ void main() {
       expect(nativeBridgeStatus.value, NativeBridgeStatus.ready);
     });
 
-    test('engine reports unavailable and serves the pure-Dart fallback',
-        () {
+    test('engine reports unavailable and serves the pure-Dart fallback', () {
       nativeBridgeStatus.value = NativeBridgeStatus.loading;
       final engine = CalculatorEngine();
       expect(engine.isNativeAvailable, isFalse);
