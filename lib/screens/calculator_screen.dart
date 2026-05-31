@@ -102,11 +102,20 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // here, MainScreen routes us, and we drain the slot on the next
     // listener fire).
     _appState.addListener(_consumePendingInsert);
+    // On web the WASM bridge loads asynchronously; repaint once it's ready
+    // so availability-dependent chrome stays consistent. (History is a log
+    // of past calculations and is intentionally not rewritten; new
+    // calculations pick up the live bridge automatically.)
+    nativeBridgeStatus.addListener(_onBridgeStatusChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculatorFocusNode.requestFocus();
       _consumePendingInsert();
     });
+  }
+
+  void _onBridgeStatusChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -143,6 +152,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   void dispose() {
     appRouteObserver.unsubscribe(this);
     _appState.removeListener(_consumePendingInsert);
+    nativeBridgeStatus.removeListener(_onBridgeStatusChanged);
     _tabController.dispose();
     _latexController.removeListener(_onInputChanged);
     _latexController.dispose();

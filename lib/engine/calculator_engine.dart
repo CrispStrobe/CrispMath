@@ -240,8 +240,18 @@ class CalculatorEngine {
     }
   }
 
-  String factor(String expression) =>
-      _bridgeCall('factor', (b) => b.factor(expression));
+  String factor(String expression) {
+    // The native/WASM C wrapper aliases factor() to expand() — a known
+    // upstream limitation (SymEngine's C API exposes no symbolic polynomial
+    // factorization, and the boostmp WASM build has no FLINT). So do real
+    // univariate-over-ℚ factoring in Dart first on EVERY platform; fall
+    // through to the bridge only for input outside the polynomial grammar
+    // (multivariate, transcendental, …), where the bridge's expand-alias is
+    // no worse than today.
+    final web = SymbolicWeb.factor(expression);
+    if (web != null) return web;
+    return _bridgeCall('factor', (b) => b.factor(expression));
+  }
 
   String expand(String expression) {
     // Web / native-less: expand single-variable polynomials in pure Dart.
@@ -252,8 +262,16 @@ class CalculatorEngine {
     return _bridgeCall('expand', (b) => b.expand(expression));
   }
 
-  String simplify(String expression) =>
-      _bridgeCall('simplify', (b) => b.simplify(expression));
+  String simplify(String expression) {
+    // The wrapper aliases simplify() to expand(); mirror that in the web
+    // fallback (expand the polynomial subset in Dart) so the browser build
+    // doesn't error where native would have expanded.
+    if (!isNativeAvailable) {
+      final web = SymbolicWeb.expand(expression);
+      if (web != null) return web;
+    }
+    return _bridgeCall('simplify', (b) => b.simplify(expression));
+  }
 
   String differentiate(String expression, String variable) {
     // Web / native-less: differentiate polynomials in pure Dart;
@@ -1116,29 +1134,50 @@ class CalculatorEngine {
   String integrate(String expression, String variable,
       [String? lower, String? upper]) {
     final bridge = _liveBridge;
+    final indefinite = lower == null || upper == null;
+
+    // Web / native-less: the C wrapper stubs integrate() (SymEngine's C API
+    // exposes none), so resolve the polynomial subset exactly in Dart.
     if (bridge == null) {
+      if (indefinite) {
+        final web = SymbolicWeb.integrate(expression, variable);
+        if (web != null) return '$web + C';
+        return 'Error: integrate requires native library';
+      }
+      final web =
+          SymbolicWeb.definiteIntegral(expression, variable, lower, upper);
+      if (web != null) return web;
       return 'Error: integrate requires native library';
     }
 
-    // Indefinite integration: native only.
-    if (lower == null || upper == null) {
-      if (!bridge.hasIntegrate) {
-        return 'Error: indefinite integrate() is not available in this '
-            'build of the symbolic_math_bridge';
+    // Indefinite integration.
+    if (indefinite) {
+      if (bridge.hasIntegrate) {
+        try {
+          final r = bridge.integrate(expression, variable);
+          if (!r.startsWith('Error')) return r;
+        } catch (_) {
+          // fall through to the Dart polynomial integrator
+        }
       }
-      try {
-        return bridge.integrate(expression, variable);
-      } catch (e) {
-        return 'Error: $e';
-      }
+      // The bridge lacks integrate() (or its stub errored): try the exact
+      // polynomial antiderivative in Dart before giving up.
+      final web = SymbolicWeb.integrate(expression, variable);
+      if (web != null) return '$web + C';
+      return 'Error: indefinite integrate() is not available in this '
+          'build of the symbolic_math_bridge';
     }
 
-    // Definite integration. Try the exact symbolic route first (FTC).
+    // Definite integration. Try the exact symbolic route first (FTC),
+    // then the exact Dart polynomial definite integral, then numerical.
     if (bridge.hasIntegrate) {
       final exact = _definiteFromAntiderivative(
           bridge, expression, variable, lower, upper);
       if (exact != null) return exact;
     }
+    final webDef =
+        SymbolicWeb.definiteIntegral(expression, variable, lower, upper);
+    if (webDef != null) return webDef;
     return _definiteNumerical(bridge, expression, variable, lower, upper);
   }
 

@@ -147,6 +147,96 @@ void main() {
     });
   });
 
+  group('SymbolicWeb.factor', () {
+    // Factors are emitted in ascending-root order (deterministic). The
+    // round-trip test below is the real correctness guard.
+    test('difference of squares', () {
+      expect(SymbolicWeb.factor('x^2 - 1'), '(x + 1)*(x - 1)');
+    });
+
+    test('monic quadratic with two integer roots', () {
+      expect(SymbolicWeb.factor('x^2 - 5x + 6'), '(x - 2)*(x - 3)');
+    });
+
+    test('cubic with three integer roots', () {
+      expect(SymbolicWeb.factor('x^3 - 6x^2 + 11x - 6'),
+          '(x - 1)*(x - 2)*(x - 3)');
+    });
+
+    test('repeated root carries multiplicity', () {
+      expect(SymbolicWeb.factor('x^2 - 2x + 1'), '(x - 1)^2');
+    });
+
+    test('common integer content is pulled out', () {
+      expect(SymbolicWeb.factor('2x^2 - 2'), '2*(x + 1)*(x - 1)');
+    });
+
+    test('factors out a zero root', () {
+      expect(SymbolicWeb.factor('x^2 - x'), 'x*(x - 1)');
+    });
+
+    test('irreducible-over-Q quadratic is returned intact', () {
+      // No rational roots → reported correctly, just not split.
+      expect(SymbolicWeb.factor('x^2 + 1'), 'x^2 + 1');
+      expect(SymbolicWeb.factor('x^2 - 2'), 'x^2 - 2');
+    });
+
+    test('rational root yields a fractional linear factor', () {
+      // 2x^2 - 3x + 1 = 2(x - 1/2)(x - 1)
+      expect(SymbolicWeb.factor('2x^2 - 3x + 1'), '2*(x - 1/2)*(x - 1)');
+    });
+
+    test('non-x variable preserved', () {
+      expect(SymbolicWeb.factor('y^2 - 9'), '(y + 3)*(y - 3)');
+    });
+
+    test('out-of-grammar input returns null', () {
+      expect(SymbolicWeb.factor('sin(x)'), isNull);
+      expect(SymbolicWeb.factor('x*y - 1'), isNull); // multivariate
+    });
+
+    test('the product of the reported factors re-expands to the input', () {
+      // Round-trip guard: factor then expand each case back.
+      for (final input in ['x^2 - 1', 'x^3 - 6x^2 + 11x - 6', '2x^2 - 2']) {
+        final f = SymbolicWeb.factor(input)!;
+        expect(SymbolicWeb.expand(f), SymbolicWeb.expand(input),
+            reason: 'factor($input) = $f did not re-expand to $input');
+      }
+    });
+  });
+
+  group('SymbolicWeb.integrate', () {
+    test('power rule', () {
+      expect(SymbolicWeb.integrate('x^2', 'x'), '1/3x^3');
+    });
+
+    test('linearity', () {
+      expect(SymbolicWeb.integrate('3x^2 + 2x', 'x'), 'x^3 + x^2');
+    });
+
+    test('constant', () {
+      expect(SymbolicWeb.integrate('5', 'x'), '5x');
+    });
+
+    test('identity', () {
+      expect(SymbolicWeb.integrate('x', 'x'), '1/2x^2');
+    });
+
+    test('non-polynomial returns null', () {
+      expect(SymbolicWeb.integrate('sin(x)', 'x'), isNull);
+    });
+
+    test('definite integral with rational bounds is exact', () {
+      expect(SymbolicWeb.definiteIntegral('x^2', 'x', '0', '1'), '1/3');
+      expect(SymbolicWeb.definiteIntegral('x', 'x', '0', '2'), '2');
+      expect(SymbolicWeb.definiteIntegral('2x + 1', 'x', '1', '3'), '10');
+    });
+
+    test('definite integral with a non-rational bound returns null', () {
+      expect(SymbolicWeb.definiteIntegral('x^2', 'x', '0', 'pi'), isNull);
+    });
+  });
+
   group('CalculatorEngine routes CAS through the web fallback native-less', () {
     late CalculatorEngine engine;
     setUpAll(() => engine = CalculatorEngine());

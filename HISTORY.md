@@ -2,6 +2,51 @@
 
 Completed work, newest first.
 
+## 2026-05-31 — Web-CAS follow-ups: real factor/integrate, recalc-on-ready, browser smoke suite
+
+Methodical close-out of the loose ends from the WASM-wiring work, plus an
+auto-driven browser test suite. First verified upstream (the user's prompt):
+fetched all three repos — the `factor`/`simplify` → `expand` alias and the
+`integrate` C-API stub are **still live** on bridge `main` (== our pin
+`0100ef4`) and math-stack `origin/master` (== `3f1fa789`, the commit that
+built the shipped WASM). Not fixed in parallel, and not fixable at the C
+level (SymEngine's C API has no symbolic factorization/integration, the
+boostmp WASM build has no FLINT, and rebuilding WASM needs `emcc`, which
+isn't installed). So the right fix is pure-Dart interception in CrispCalc —
+which works on **every** platform, web included.
+
+- **Real `factor` over ℚ** (`SymbolicWeb.factor`): leading-coefficient +
+  rational-root-theorem linear factoring with multiplicity and exact
+  division; irreducible remainders are reported intact (e.g. `x^2 + 1`).
+  `CalculatorEngine.factor` now tries this first on all platforms and only
+  falls through to the bridge's expand-alias for non-polynomial input.
+  `x^2 - 1 → (x + 1)*(x - 1)`, `x^3 - 6x^2 + 11x - 6 → (x-1)(x-2)(x-3)`,
+  `2x^2 - 2 → 2*(x + 1)*(x - 1)`.
+- **Real polynomial `integrate`** (`SymbolicWeb.integrate` /
+  `definiteIntegral`): exact antiderivative `∫aᵢxⁱ = aᵢ/(i+1)xⁱ⁺¹` and exact
+  definite integrals over rational bounds. `CalculatorEngine.integrate`
+  uses it on web and as an override when the native stub errors, so
+  `∫x² dx → 1/3x^3 + C` and `∫₀¹ x² dx → 1/3` work everywhere. (The
+  StepEngine walker couldn't be reused — it falls through to
+  `engine.integrate`, which would recurse.)
+- **`simplify` web fallback**: mirrors the wrapper's expand-alias in Dart so
+  the browser doesn't error where native would have expanded.
+- **Recalc on WASM-ready**: the Notepad (live-results surface) now listens to
+  `nativeBridgeStatus` and recomputes the whole doc once the WASM module
+  loads, so any line that came up on the pure-Dart fallback upgrades to the
+  full CAS. The Calculator repaints on the same signal; its history is a log
+  and is intentionally not rewritten (new calcs use the live bridge).
+- **Auto-driven browser smoke suite**: `tool/web_smoke.mjs` drives headless
+  Chrome via the DevTools Protocol (zero deps) against the deploy and asserts
+  the in-browser WASM CAS computes (version/expand/diff/solve/gcd/evaluate) +
+  that the Flutter view renders. `test/web_smoke_test.dart` wires it into
+  `flutter test` as an opt-in gate (`CRISPCALC_WEB_SMOKE=1`), so offline CI is
+  unaffected. Validated 8/8 green against https://crisp-calc.vercel.app.
+
+New tests in `test/symbolic_web_test.dart` (factor + integrate groups) and
+`test/calculator_engine_test.dart` (integrate now resolves polynomials).
+`flutter build web --release` green.
+
 ## 2026-05-31 — Wire up the WASM web CAS (make the merged arc actually run)
 
 The SymEngine→WASM arc merged earlier today shipped `web/symengine.js` +
