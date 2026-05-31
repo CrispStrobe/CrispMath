@@ -30,6 +30,7 @@
 // Built so the WASM-backed impl can supersede it without UI changes.
 
 import 'polynomial.dart';
+import 'multivariate_poly.dart';
 
 class SymbolicWeb {
   /// Expand [input] (parentheses, products, integer powers) into a
@@ -154,6 +155,14 @@ class SymbolicWeb {
     return neg ? -r : r;
   }
 
+  /// Factor a multivariate polynomial over ℚ using pattern matching and
+  /// Kronecker substitution. Returns the factored form as a string, or
+  /// null when the input is not a supported multivariate polynomial or
+  /// cannot be factored.
+  static String? factorMultivariate(String input) {
+    return MultivariateFactoring.factor(input);
+  }
+
   /// Factor a single-variable polynomial over ℚ. Extracts the leading
   /// coefficient and every rational linear factor (with multiplicity) via
   /// the Rational Root Theorem + exact division; any remaining factor with
@@ -167,7 +176,10 @@ class SymbolicWeb {
   /// common cases on every platform, web included.
   static String? factor(String input) {
     final p = _parsePolynomial(input);
-    if (p == null) return null;
+    if (p == null) {
+      // Univariate parse failed — try multivariate factoring.
+      return factorMultivariate(input);
+    }
     if (p.isZero) return '0';
     final variable = p.variable;
     if (p.degree == 0) return p.coeffs[0].toString();

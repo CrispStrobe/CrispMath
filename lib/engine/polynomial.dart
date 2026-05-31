@@ -98,6 +98,14 @@ class Polynomial {
   factory Polynomial.variable(String name) =>
       Polynomial._(List.unmodifiable([Rational.zero, Rational.one]), name);
 
+  /// Build from a low-degree-first coefficient list (trailing zeros trimmed).
+  factory Polynomial.fromCoeffs(List<Rational> coeffs, [String variable = 'x']) {
+    var n = coeffs.length;
+    while (n > 0 && coeffs[n - 1].isZero) n--;
+    if (n == 0) return Polynomial.zero(variable);
+    return Polynomial._(List.unmodifiable(coeffs.sublist(0, n)), variable);
+  }
+
   int get degree => coeffs.length - 1;
   bool get isZero => coeffs.isEmpty;
   Rational get leading => coeffs[coeffs.length - 1];
