@@ -53,10 +53,11 @@ const CASES = [
   { name: 'factor', fn: 'flutter_symengine_factor', types: ['string'], args: ['x**4 + 4'], expect: (v) => v.includes('2 + 2*x + x**2') && v.includes('2 - 2*x + x**2') },
   { name: 'isprime', fn: 'flutter_symengine_isprime', types: ['string'], args: ['97'], expect: (v) => v.trim() === 'true' },
   { name: 'factorint', fn: 'flutter_symengine_factorint', types: ['string'], args: ['360'], expect: (v) => v.replace(/\s/g, '') === '2^3*3^2*5' },
-  // Real simplify (rational cancellation). Multivariate factor is native-
-  // only — FLINT's fmpz_mpoly_factor aborts under wasm32 — so it's covered
-  // by the native integration suite, not here.
+  // Real simplify (rational cancellation).
   { name: 'simplify', fn: 'flutter_symengine_simplify', types: ['string'], args: ['(x**2 - 1)/(x - 1)'], expect: (v) => v.replace(/\s/g, '') === '1+x' || v.replace(/\s/g, '') === 'x+1' },
+  // Trig simplification (identity rewrite engine): sin²+cos² → 1.
+  // Requires the trig_simplify C++ rewriter (math-stack-ios-builder 4cd0d53+).
+  { name: 'trig_simp', fn: 'flutter_symengine_simplify', types: ['string'], args: ['sin(x)**2 + cos(x)**2'], expect: (v) => v.trim() === '1' },
 ];
 
 function findChrome() {
@@ -118,14 +119,18 @@ async function main() {
   console.log(`url     : ${URL}`);
 
   const profile = mkdtempSync(join(tmpdir(), 'cc-web-smoke-'));
+  const extraFlags = (process.env.CHROME_FLAGS || '').split(/\s+/).filter(Boolean);
   const proc = spawn(chrome, [
     '--headless=new',
     '--disable-gpu',
     '--no-first-run',
     '--no-default-browser-check',
+    '--no-sandbox',
+    '--disable-dev-shm-usage',
     `--remote-debugging-port=${DEBUG_PORT}`,
     '--remote-allow-origins=*',
     `--user-data-dir=${profile}`,
+    ...extraFlags,
     'about:blank',
   ], { stdio: 'ignore' });
 
