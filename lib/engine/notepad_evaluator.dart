@@ -372,14 +372,56 @@ Map<String, String> buildNotepadScope(
 /// name like `pi` doesn't accidentally splice into `epigraph`.
 /// The substitution wraps the value in parens (`(value)`) so
 /// surrounding operators bind correctly.
+/// Resolve cross-document references of the form `{doc:name}.varName`
+/// or `{doc:name}.lineN`. [allDocs] is the full set of notepad
+/// documents keyed by id. Returns the input with all resolvable
+/// cross-refs replaced by their cached values.
+String resolveCrossDocRefs(
+    String input, Map<String, NotepadDocument> allDocs) {
+  return input.replaceAllMapped(_crossDocRefRegex, (match) {
+    final docName = match.group(1)!;
+    final varName = match.group(2)!;
+
+    // Find the target document by name (case-insensitive).
+    final targetDoc = allDocs.values.firstWhere(
+      (d) => d.name.toLowerCase() == docName.toLowerCase(),
+      orElse: () => NotepadDocument(
+        id: '',
+        name: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        lines: [],
+      ),
+    );
+    if (targetDoc.id.isEmpty) return match.group(0)!; // Not found.
+
+    // Build the target doc's scope and look up the variable.
+    final scope = buildNotepadScope(targetDoc);
+    final value = scope[varName];
+    if (value != null) return '($value)';
+
+    return match.group(0)!; // Unresolved — leave as-is.
+  });
+}
+
+/// Pattern: `{doc:name}.variable` where name can contain spaces.
+final RegExp _crossDocRefRegex =
+    RegExp(r'\{doc:([^}]+)\}\.([A-Za-z_][A-Za-z0-9_]*)');
+
 String? preprocessNotepadLine(
   ParsedNotepadLine parsed, {
   required NotepadDocument doc,
   required int lineIndex,
   required Map<String, String> scope,
+  Map<String, NotepadDocument>? allDocs,
 }) {
   if (parsed.body == null) return null;
   var out = parsed.body!;
+
+  // Resolve cross-document references before anything else.
+  if (allDocs != null && out.contains('{doc:')) {
+    out = resolveCrossDocRefs(out, allDocs);
+  }
 
   if (out.contains('Ans')) {
     final ansValue = _resolveAns(doc, lineIndex);

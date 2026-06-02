@@ -46,10 +46,24 @@ class DateTimeEvaluator {
     if (addMatch != null) {
       final date = _parseDate(addMatch.group(1)!.trim());
       final op = addMatch.group(2)!;
-      final dur = _parseDuration(addMatch.group(3)!.trim());
-      if (date != null && dur != null) {
-        final result = op == '+' ? date.add(dur) : date.subtract(dur);
-        return _formatDate(result);
+      final durStr = addMatch.group(3)!.trim();
+      if (date != null) {
+        // Try month/year offset first (can't express as Duration).
+        final monthYear = _parseMonthYearOffset(durStr);
+        if (monthYear != null) {
+          final sign = op == '+' ? 1 : -1;
+          final result = DateTime(
+            date.year + sign * monthYear.years,
+            date.month + sign * monthYear.months,
+            date.day,
+          );
+          return _formatDate(result);
+        }
+        final dur = _parseDuration(durStr);
+        if (dur != null) {
+          final result = op == '+' ? date.add(dur) : date.subtract(dur);
+          return _formatDate(result);
+        }
       }
     }
 
@@ -163,9 +177,11 @@ class DateTimeEvaluator {
     return null;
   }
 
-  static Duration _durationFromUnit(int n, String unit) {
+  static Duration? _durationFromUnit(int n, String unit) {
     if (unit.startsWith('day')) return Duration(days: n);
     if (unit.startsWith('week')) return Duration(days: n * 7);
+    if (unit.startsWith('month')) return null; // Can't express as Duration.
+    if (unit.startsWith('year')) return null;
     if (unit.startsWith('hour') || unit == 'h') return Duration(hours: n);
     if (unit.startsWith('min') || unit == 'm') return Duration(minutes: n);
     if (unit.startsWith('sec') || unit == 's') return Duration(seconds: n);
@@ -238,8 +254,20 @@ class DateTimeEvaluator {
   );
 
   static final _simpleDurRe = RegExp(
-    r'^(\d+)\s*(days?|weeks?|hours?|minutes?|mins?|seconds?|secs?|h|m|s)$',
+    r'^(\d+)\s*(days?|weeks?|months?|years?|hours?|minutes?|mins?|seconds?|secs?|h|m|s)$',
   );
 
   static final _hmDurRe = RegExp(r'^(\d+)h\s*(\d+)m$');
+
+  /// Parse "N months" or "N years" as a structured offset (not a Duration).
+  static ({int months, int years})? _parseMonthYearOffset(String s) {
+    final lower = s.toLowerCase().trim();
+    final match = RegExp(r'^(\d+)\s*(months?|years?)$').firstMatch(lower);
+    if (match == null) return null;
+    final n = int.tryParse(match.group(1)!) ?? 0;
+    final unit = match.group(2)!;
+    if (unit.startsWith('month')) return (months: n, years: 0);
+    if (unit.startsWith('year')) return (months: 0, years: n);
+    return null;
+  }
 }

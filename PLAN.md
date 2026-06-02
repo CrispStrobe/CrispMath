@@ -755,13 +755,13 @@ but become *moat-building* rather than *positioning*, since the moat
 
   #### Tier C — polish and advanced
 
-  - [ ] **Currency conversion (offline rates).** Recognize
+  - [x] ~~**Currency conversion (offline rates).**~~ Done 2026-06-02 — `currency_evaluator.dart` with 44 currencies. Recognize
     `$150 in EUR`, `¥10000 in USD`. Ship a bundled snapshot of
     exchange rates (updated on each app release); optionally
     fetch live rates on demand with a network call. Extends the
     existing unit evaluator with a "currency" dimension.
 
-  - [ ] **Incremental subgraph recalc.** V1 re-evaluates from
+  - [x] ~~**Incremental subgraph recalc.**~~ Already implemented in Phase 3 via `downstreamFrom` + `evaluateFrom`. V1 re-evaluates from
     the edited line to the end of the doc. V2 builds a true
     dependency DAG and only recomputes the downstream transitive
     closure of the edited line. Matters for docs with 50+ lines
