@@ -1044,14 +1044,153 @@ but become *moat-building* rather than *positioning*, since the moat
 
 #### Input
 
-- [ ] **Photo OCR of handwritten or printed equations**. Camera-to-
+- [~] **Photo OCR of handwritten or printed equations**. Camera-to-
   equation has become table stakes in the consumer math-help category.
-  Possible on-device with TFLite or Apple's `VisionKit` (iOS); cloud
-  OCR is faster to ship but conflicts with the on-device promise.
-  **Strategic promotion (2026 reset)**: slots into the AI copilot's
-  Job 1 (Translate) — OCR converts image to text, the LLM translates
-  that text to engine syntax. Ship after AI copilot V1 so the
-  translation pipeline is already proven on typed input.
+
+  ### OCR implementation plan (June 2026)
+
+  Four tiers, each independently shippable, all using NC-free
+  licenses (Apache 2.0 / MIT) compatible with CrispCalc's AGPL-3.
+
+  #### Tier 1 — Scaffolding + UI (pure Dart, no new deps)
+
+  Done 2026-06-02 — `lib/engine/ocr_provider.dart`.
+
+  - **`OcrProvider` abstract interface** — `recognize(imageBytes,
+    width, height) → OcrResult?`. Each backend implements this.
+    `OcrResult` carries `text` (engine-ready), `rawOutput` (for
+    audit), `confidence`, `providerName`.
+  - **`OcrProviders` registry** — static list of available
+    providers; the active one is stored in `AppState`.
+  - **`postProcessOcrText()`** — converts common OCR artifacts to
+    engine syntax: Unicode superscripts (² → ^2), operators
+    (× → *, ÷ → /, √ → sqrt()), Greek letters (π → pi),
+    common misreads (O vs 0).
+  - **`latexToEngineSyntax()`** — converts LaTeX output from
+    pix2tex / LLMs to engine syntax: `\frac{a}{b}` → `(a)/(b)`,
+    `\sqrt{x}` → `sqrt(x)`, `x^{n}` → `x^n`, named functions
+    (`\sin` → `sin`), symbols (`\pi` → `pi`).
+  - **UI** (deferred until image_picker is added): camera/gallery
+    button on Calculator + Notepad AppBar. Opens image picker,
+    runs the active OCR provider, shows a confirmation dialog
+    where the user can edit the recognized expression before
+    evaluating.
+
+  #### Tier 2 — On-device general OCR (needs `google_mlkit_text_recognition`)
+
+  - **Package**: `google_mlkit_text_recognition` (Apache 2.0).
+    On-device, free, ~5 MB, Android + iOS only.
+  - **What it does well**: printed equations in textbooks, typed
+    math on screens, clean handwriting. Returns text blocks with
+    bounding boxes.
+  - **What it doesn't do**: structural math parsing (fractions as
+    vertical stacks, superscripts as position, integral signs).
+    The `postProcessOcrText()` heuristic bridges the gap for
+    simple cases.
+  - **Implementation**: `MlKitOcrProvider implements OcrProvider`.
+    Registers itself on Android/iOS; no-op on desktop/web.
+  - **Also**: `image_picker` (Apache 2.0) for camera/gallery access.
+
+  #### Tier 3 — Cloud LLM OCR (needs AI copilot API-key infra)
+
+  - **Package**: HTTP client only (already available via `dart:io`
+    / `http` package). The user supplies their own API key in
+    Settings (same flow as the AI copilot's Job 1).
+  - **Prompt**: send the image + a system prompt:
+    *"Convert this handwritten or printed math to CrispCalc
+    syntax. Use: solve(expr, var), diff(expr, var),
+    integrate(expr, var), factor(expr), expand(expr). Return
+    ONLY the expression, no explanation."*
+  - **Providers**: Claude (via Anthropic API), GPT-4o (via
+    OpenAI API), Gemini (via Google AI API). All support
+    image input.
+  - **Best accuracy**: handles fractions, integrals, matrices,
+    handwriting, messy photos. This is the quality tier.
+  - **Implementation**: `CloudLlmOcrProvider implements OcrProvider`.
+    Configurable provider + model + API key in Settings.
+
+  #### Tier 4 — On-device neural math OCR via CrispEmbed (pix2tex GGUF)
+
+  The crown jewel — runs the pix2tex (MIT) vision-transformer
+  model entirely on-device via the existing CrispEmbed C++/ggml
+  infrastructure. No Python, no ONNX, no cloud.
+
+  **Architecture**:
+  ```
+  Camera image → preprocess (224×224, normalize)
+       │
+       ▼
+  ViT encoder (pix2tex's 12-layer ViT-small, ~22M params)
+       │  ← runs via ggml in CrispEmbed
+       ▼
+  Transformer decoder (autoregressive, ~20M params)
+       │  ← same ggml graph, greedy/beam-search decoding
+       ▼
+  LaTeX token sequence → "x^{2} + 2x + 1"
+       │
+       ▼
+  latexToEngineSyntax() → "x^2 + 2*x + 1"
+  ```
+
+  **Model conversion pipeline** (in CrispEmbed repo):
+  1. Export pix2tex PyTorch weights → numpy arrays.
+  2. Pack into GGUF with ggml tensor layout + tokenizer vocab
+     in metadata (same process as BERT/SigLIP models).
+  3. Quantize: F32 (~80 MB), Q8_0 (~20 MB), Q4_K (~12 MB).
+  4. Publish to HuggingFace as `CrispStrobe/pix2tex-gguf`.
+
+  **CrispEmbed changes** (`/mnt/storage/CrispEmbed`):
+  - New `src/math_ocr.cpp` / `math_ocr.h` — ViT encoder + decoder
+    forward pass. The ViT encoder reuses `bidirlm_vision.h`'s
+    patch-embedding + transformer-layer infrastructure. The
+    decoder is new but follows the same pattern as
+    `decoder_embed.cpp` (KV-cache, autoregressive sampling).
+  - New C API: `crispembed_ocr_math(ctx, pixels, w, h, &len)
+    → const char*` returns LaTeX string.
+  - Build: extends existing `build-ios.sh` / `build-macos.sh` /
+    `build-android.sh` / `build-windows.bat` with the new TU.
+
+  **CrispCalc integration**:
+  - New `CrispEmbedOcrProvider implements OcrProvider` in
+    `lib/engine/ocr_crispembed.dart`.
+  - FFI binding: `DynamicLibrary.open('libcrispembed.so')` →
+    `crispembed_ocr_math`. Same pattern as `symbolic_math_bridge`.
+  - Model download: on first use, fetch the GGUF from HuggingFace
+    into the app's documents directory. Show a progress bar.
+    ~12 MB for Q4_K — comparable to a font download.
+  - **Platform matrix**: iOS / macOS / Android / Linux / Windows.
+    Web: not feasible (ggml doesn't compile to WASM cleanly for
+    this model size). Web falls back to Tier 3 (cloud LLM).
+
+  **Why CrispEmbed and not a standalone FFI plugin**:
+  - The ggml graph runtime, tokenizer, image preprocessor, and
+    ViT encoder are already built and tested in CrispEmbed.
+  - The model registry + download infrastructure exists.
+  - The Flutter FFI plugin skeleton exists (`flutter/crispembed/`).
+  - The cross-platform build scripts (CMake + vcpkg) are proven.
+  - One binary handles both embeddings and OCR — no second native
+    library to manage.
+
+  **Risks**:
+  - pix2tex's decoder is a custom architecture (not a standard
+    BERT/GPT); the GGUF conversion needs careful weight mapping.
+  - Accuracy on handwriting is lower than cloud LLMs — pix2tex
+    was trained primarily on LaTeX-rendered images, not photos
+    of notebook paper. Tier 3 remains the quality fallback.
+  - The ViT + decoder together are ~42M params — inference on a
+    low-end phone (Snapdragon 4xx) may take 1-2s per image.
+    Acceptable for a tap-to-capture flow.
+
+  **Sequencing**:
+  - Tier 1 (scaffolding): done.
+  - Tier 2 (ML Kit): ship with `image_picker` + `google_mlkit_text_recognition`.
+    ~1 day. Unblocks the camera button on mobile.
+  - Tier 3 (cloud LLM): ship with AI copilot V1. ~1-2 days on top
+    of the API-key infra.
+  - Tier 4 (CrispEmbed): 1-2 weeks in CrispEmbed (model conversion
+    + decoder impl + build), then ~1 day in CrispCalc (FFI binding
+    + provider registration). The real work is the GGUF converter
+    and the decoder forward pass in ggml.
 - [ ] **Pen / handwriting input**. Apple Pencil + macOS trackpad
   handwriting recognition (`PKCanvasView` + `MLHandwritingRecognizer`)
   for math expressions. iPad specifically — closes the parity gap
