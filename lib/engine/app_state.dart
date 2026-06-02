@@ -339,7 +339,8 @@ class AppState extends ChangeNotifier {
     // so its content stays in sync across releases.
     if (notepadDocuments.isEmpty) {
       final untitled = NotepadDocument.fresh(name: 'Untitled');
-      final welcome = buildWelcomeNotepadDocument();
+      final welcome =
+          buildWelcomeNotepadDocument(locale: _locale.languageCode);
       notepadDocuments[untitled.id] = untitled;
       notepadDocuments[welcome.id] = welcome;
       _currentNotepadDocId = untitled.id;

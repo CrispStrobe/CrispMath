@@ -112,25 +112,25 @@ Multi-agent audit of the three-repo chain (math-stack-ios-builder → symbolic_m
 ## P1 — Open follow-ups
 
 - [x] ~~Make `CrispCalc` repo public.~~ Done 2026-05-17 — see HISTORY.
-- [ ] **Native `limit`.** The native bridge doesn't expose a `limit`
-  entry point and SymEngine itself doesn't ship a general
-  `limit(f, x, a)` — there's nothing to bind to yet. To unblock, work
-  has to land in the bridge's C++ layer first, then a one-line Dart
-  binding follows. Three tiers, increasing effort:
-  1. **Series-based**: use SymEngine's `series_n` to compute a Taylor
-     expansion at the point and return the constant term. Handles
-     analytic functions with finite limits. Misses `sin(x)/x`, most
-     transcendental ratios.
-  2. **L'Hôpital loop**: handcrafted in C++ over SymEngine's `diff`
-     and `subs`. Handles 0/0 and ∞/∞ for ratios; iterates until the
-     limit is determinate or a step budget is hit. Covers the common
-     calculus-textbook cases.
-  3. **Gruntz algorithm**: full general limit-finding. Real CAS
-     engineering — port from SymPy's reference implementation. Wide
-     coverage but a multi-week project.
-  Numerical one-sided / infinity limits (`lib/engine/numerical.dart`)
-  stay as the safety net regardless of which tier ships. Native
-  `integrate` was bound similarly — see HISTORY round 7.
+- [~] **Native `limit`.** SymEngine has no general `limit(f, x, a)`.
+  **Tiers 1+2 SHIPPED 2026-06-01** — pure-Dart symbolic limit engine
+  (`lib/engine/symbolic_limit.dart`). Uses the bridge's existing
+  `differentiate`, `substitute`, and `evaluate` to compute limits
+  without a new C++ binding:
+  - **Tier 1 — direct substitution**: substitute the point, evaluate;
+    accept if finite and variable-free.
+  - **Tier 2 — L'Hôpital's rule**: for ratio expressions that yield
+    0/0 at the point, iterate numerator/denominator differentiation
+    (up to 8 steps) until the limit resolves.
+  - **Infinity limits**: try SymEngine's `oo`/`-oo` substitution,
+    then fall back to leading-degree comparison for rational funcs.
+  - **Numerical fallback**: the existing `oneSidedLimit` /
+    `limitAtInfinity` from `lib/engine/numerical.dart` remains as
+    the tier-3 safety net.
+  Works on all platforms (native + WASM web).
+  **Still open**: Gruntz algorithm (tier 3, multi-week); non-ratio
+  indeterminate forms (e.g. `x * ln(x)` as x→0⁺) that aren't
+  caught by the ratio parser.
 - [x] ~~**`flutter build macos --release`: SymEngine wrapper symbols dropped.**~~
   Fixed 2026-05-17 — see HISTORY round 13. Bridge plugin now uses an
   `+load` keepalive with an asm-clobber `DoNotOptimize` loop over every
@@ -630,37 +630,174 @@ but become *moat-building* rather than *positioning*, since the moat
       import a doc previously exported on another device;
       delete-and-undo round-trips a doc or a line with no data
       loss.
-    - **Phase 8 — Localization + onboarding + tests.** Add strings
-      across en/de/fr/es in
-      `lib/localization/app_localizations.dart`: tab name
-      (`Notepad` / `Notizen` / `Notes` / `Notas`), default doc
-      name (`Untitled` / `Unbenannt` / `Sans titre` / `Sin
-      título`), Welcome sample doc body (one short version per
-      locale — a 6-line sample covering an assignment, a unit
-      expression, an `Ans`, and a comment), empty-state hint,
-      and the new error / chrome keys (`blockedByLine`,
-      `circularReference`, `useDirectiveNotFirst`, `unknownImport`,
-      `freeVariables`, `restored`, `undo`, `copyAsMarkdown`,
-      `renameDocument`, `openWelcomeSample`). The existing locale
-      non-emptiness test will fail CI if any locale is missed.
-      Extend `OnboardingTour`
-      (`lib/widgets/onboarding_tour.dart`) per **#7** with a
-      5th card describing the Notepad and pointing the user to
-      the Welcome sample. New `test/notepad_evaluator_test.dart`
-      (parser, scope, cycle, topo, `use` handling, blocked-by
-      propagation) and `test/notepad_screen_test.dart` (build,
-      add line, drag-reorder, edit + debounce + result, snackbar
-      undo). **Done when**: locale tests + unit tests + widget
-      tests all green; manual smoke on macOS confirms the doc
-      loads after relaunch and the Welcome doc renders.
-  - **Out of scope for V1** (push to V2 / V3): incremental
-    subgraph recalc (V1 just re-evals from the edited line down,
-    full DAG walk, which is fine for docs up to a few hundred
-    lines); inline-LaTeX input via `LatexController` (V2);
-    left-rail document list on wide screens (V1 uses the `⋮`
-    menu); cross-document references (`{doc:taxes}.line4`); PDF
-    export of a doc; rich-text formatting / headings within a
-    doc; collaborative editing; per-doc number-format override.
+    - **Phase 8 done 2026-06-01 (`main`).** Onboarding tour extended
+      with a 5th Notepad card (2nd position, after Keypad) — new
+      `onboardingNotepadTitle` / `onboardingNotepadBody` i18n keys
+      across en/de/fr/es. Welcome sample doc localized: comment lines
+      and doc name switch per locale (`buildWelcomeNotepadDocument(
+      locale:)`) — de/fr/es, math expressions universal. Both
+      `AppState` first-launch seed and `NotepadScreen._openWelcomeSample`
+      now pass the current locale. Most notepad error/chrome keys
+      (`notepadBlockedBy`, `notepadCycle`, `notepadUnknownImport`,
+      `notepadFreeVars`, `notepadUndo`, `notepadCopyAsMarkdown`,
+      `notepadRename`, `notepadOpenWelcomeSample`) were already
+      shipped in Phases 4-7; the remaining notepad evaluator and
+      screen tests were shipped in those phases as well
+      (`test/notepad_evaluator_test.dart` — 940 lines,
+      `test/notepad_screen_test.dart` — 495 lines).
+  - **Out of scope for V1** (push to V2 / V3): see the Notepad
+    V2/V3 roadmap below.
+
+  ### Notepad V2/V3 roadmap — closing the SOTA gap
+
+  The 2024–2026 wave of notepad-style math apps redefined what
+  users expect from "type math, see results." CrispCalc's V1
+  notepad has the engine breadth (CAS, units, CSP) but lags on
+  the *surface*: plain TextField input, no formatting, no
+  percentage shorthand, no date math, no inline plots, no
+  autocomplete. This roadmap closes those gaps in priority order.
+
+  #### Tier A — highest-leverage, ship first
+
+  - [x] ~~**Percentage operations.**~~ `20% of 150` → 30. `150 + 20%`
+    → 180. `what % of 200 is 40` → 20%. `150 - 10%` → 135.
+    The preprocessor rewrites these to arithmetic before the engine
+    sees them. This is the single most-requested notepad feature
+    in the consumer category and CrispCalc has zero support today.
+    Pure preprocessor work, no engine change.
+
+  - [x] ~~**Subtotals and running sums.**~~ A line containing just
+    `total` (or `subtotal`) computes the sum of all numeric results
+    between it and the previous `total` / top-of-doc. `average`
+    computes the mean. `count` counts the non-blank result lines.
+    These are contextual keywords resolved by the notepad evaluator
+    (not the CAS) — they scan `cachedResult` of preceding lines.
+    Optionally a `sum(line3:line7)` range syntax.
+
+  - [x] ~~**Section headings and visual separators.**~~ Lines starting
+    with `##` render as styled heading text (larger font, bold,
+    theme-colored) instead of being sent to the engine. `---` on
+    its own renders as a horizontal divider. Both are "chrome
+    lines" that carry no result and don't participate in scope.
+    Low effort, high visual payoff — turns a flat list of
+    expressions into a readable document.
+
+  - [x] ~~**Syntax highlighting in the input field.**~~ Color variables,
+    numbers, operators, function names, comments, and keywords
+    differently in the input TextField. Use a `TextInputFormatter`
+    or a custom `TextEditingController` with `buildTextSpan` to
+    overlay a lightweight lexer. Distinguishes CrispCalc from
+    every plain-text notepad.
+
+  - [x] ~~**Per-line result format toggle.**~~ Long-press (or a small
+    chip under) the result to switch between: auto, decimal,
+    fraction, scientific notation, hexadecimal, binary, engineering.
+    Stored per-line in `NotepadLine.resultFormat`. The engine
+    result is re-formatted on display — the underlying value
+    doesn't change.
+
+  - [x] ~~**Autocomplete / intelligent suggestions.**~~ As the user
+    types, show a small popup with matching:
+    - Variable names from the doc's scope
+    - Function names from the engine (solve, factor, diff, …)
+    - Unit names from the unit catalog
+    - Constants (pi, e, γ, …)
+    Use `OverlayEntry` anchored to the cursor position.
+    Tab / tap to accept. Especially valuable on mobile where
+    discovering function syntax is hard.
+
+  #### Tier B — significant differentiation
+
+  - [x] ~~**Date and time arithmetic.**~~ Recognize ISO dates
+    (`2026-06-01`), relative dates (`today`, `tomorrow`,
+    `3 weeks from now`), and durations (`2h30m`, `45 min`).
+    Operations: `date2 - date1` → days, `date + 3 weeks` → date,
+    `duration1 + duration2` → duration. A `DateTime` result type
+    in the notepad evaluator, formatted per locale. Pure Dart
+    (`DateTime` + `Duration`), no bridge.
+
+  - [x] ~~**Inline mini-plots.**~~ A line containing `plot(expr)` or
+    `plot(expr, x, -5, 5)` renders a compact inline chart (120 px
+    tall, full-width of the result column) instead of a text
+    result. Samples the expression via the engine (same path as
+    the graphing screen) and draws with a lightweight
+    `CustomPainter`. Tap to expand into the full graphing screen.
+
+  - [x] ~~**Collapsible sections.**~~ Heading lines (`##`) become
+    fold/unfold toggles: tap the heading to collapse all lines
+    until the next heading (or end of doc). Collapsed sections
+    show a "N lines hidden" summary. Fold state is transient
+    (not persisted) for V2; persistent fold in V3.
+
+  - [x] ~~**Multi-level undo/redo.**~~ Today only delete-line /
+    delete-doc have snackbar undo. Implement a proper undo stack
+    (insert, delete, edit, reorder) with Cmd+Z / Ctrl+Z. Use an
+    `UndoHistory` ring buffer (capped at 50 entries) per document.
+    Redo via Cmd+Shift+Z.
+
+  - [~] **Inline LaTeX input rendering.** Replace the plain
+    `TextField` with `LatexController` so the input renders
+    as typeset math while the user types. Already partially
+    specified (V2 in the original plan). The layout needs to
+    stabilize first — inline LaTeX changes line heights
+    dynamically, which interacts with `ReorderableListView`.
+
+  - [x] ~~**Left-rail document list on wide screens.**~~ At the
+    ≥ 1200 px breakpoint, show a persistent sidebar listing all
+    documents (with rename, delete, drag-reorder). The `⋮` menu
+    stays on narrow screens. Matches the app's existing
+    split-view pattern for Calculator + Graph.
+
+  - [x] ~~**Search within document.**~~ Cmd+F / Ctrl+F opens a search
+    bar that highlights matching text across all lines and
+    scrolls to the first hit. Optional replace. Builds on the
+    existing line-list structure.
+
+  #### Tier C — polish and advanced
+
+  - [ ] **Currency conversion (offline rates).** Recognize
+    `$150 in EUR`, `¥10000 in USD`. Ship a bundled snapshot of
+    exchange rates (updated on each app release); optionally
+    fetch live rates on demand with a network call. Extends the
+    existing unit evaluator with a "currency" dimension.
+
+  - [ ] **Incremental subgraph recalc.** V1 re-evaluates from
+    the edited line to the end of the doc. V2 builds a true
+    dependency DAG and only recomputes the downstream transitive
+    closure of the edited line. Matters for docs with 50+ lines
+    where unrelated expressions shouldn't re-eval on every
+    keystroke.
+
+  - [ ] **Cross-document references.** `{doc:taxes}.line4` or
+    `{doc:taxes}.totalTax` resolves a variable from another
+    document in the same notepad store. Requires a
+    cross-document dependency tracker and a re-eval signal
+    when the source doc changes.
+
+  - [ ] **PDF / rich export.** Export a document as a styled
+    PDF (LaTeX-rendered expressions + results side by side,
+    headings preserved). Requires the `pdf` package +
+    `flutter_math_fork`'s render-to-image.
+
+  - [x] ~~**Document templates.**~~ Predefined document skeletons:
+    "Homework helper" (heading + 10 blank lines + total),
+    "Unit conversion sheet", "Budget calculator" (income lines +
+    expense lines + balance), "Lab report" (data entry +
+    stats block). Accessible from the new-doc menu.
+
+  - [ ] **Drag-and-drop results.** Long-press a result to grab
+    it, then drop onto another line's input to insert the value
+    or the source expression. Uses Flutter's `LongPressDraggable`
+    + `DragTarget` on the input fields.
+
+  - [~] **Line pinning.** Model + persistence done (NotepadLine.pinned). Pin one or more lines to a sticky
+    header above the scrolling list so key results (e.g. a
+    running total) stay visible while editing below.
+
+  - [ ] **Collaborative / shared documents.** Real-time sync
+    of a notepad document via a server (Firebase / Supabase /
+    custom). Far out — requires auth, conflict resolution,
+    cursor presence. V3+ at the earliest.
 
 - [ ] **AI copilot — verifier-frontend, never solver**. The defining
   property: every numeric or symbolic answer continues to come from
@@ -1975,19 +2112,21 @@ already carries enough info (parsed expression + result + any
 errors) for the modal to fire. Long-press on touch
 platforms; right-click on desktop.
 
-#### Round 105 — Help on Analyze hub modules
+#### Round 105 — Help on Analyze hub modules — **SHIPPED (partial)**
 
-Each module's screen gets a `(?)` button that, in help mode,
-explains the module: what it computes, what the inputs mean,
-what the output represents, and links into a worked example.
-Notable per-module additions:
+**R105b SHIPPED 2026-05-29**: `ModuleHelpButton` + `ModuleHelpDialog`
+wired into every module screen AppBar. Per-element help popovers on
+Statistics test chips, Sudoku variant chips, Constraints DSL operator
+row. Shared `showFunctionRefHelpPopover` picks up localized
+descriptions.
 
-- **Statistics**: explain p-value, confidence interval, what
-  the test types do.
-- **Constraints (DSL)**: explain `allDifferent`, `noOverlap`,
-  `cumulative`, `minimize` with a side-by-side example.
-- **Sudoku**: explain the variant rules (X, Killer,
-  Disjoint), the hint levels, the win-check semantics.
+**R105c SHIPPED 2026-06-01**: Analysis Hub itself gains a help-mode
+toggle in the AppBar + `HelpTarget` wrapping on all 8 module cards
+(curve sketching, planes, conics, statistics, 3D graphing, constraints,
+sudoku, 3D scene). In help mode, tapping a card opens `ModuleHelpDialog`
+for that module instead of navigating into it. Unit converter and
+constants cards pass through without a help wrapper (no `ModuleHelpKind`
+for them).
 
 ### Distribution surfaces (information architecture, refined)
 
@@ -2306,12 +2445,16 @@ signal, we'd be building speculative behaviour.
 screen tests verifying chip render on `true`/`false` and
 absence on numeric results).
 
-##### Round 114 — Reference + help-mode wiring
+##### Round 114 — Reference + help-mode wiring ✅
 
-Round-97 Function Reference gets a new "Logic" category with
-entries for every relational + logical operator. Help mode
-(round 102) on a logic button shows a quick truth-table popover
-for the operator.
+Done 2026-06-01. `FunctionRefCategory.logic` added; 11 `FunctionRef`
+entries (`eq_op`..`if_cond`) covering all relational (`==`, `!=`,
+`<`, `<=`, `>`, `>=`) and logical (`and`, `or`, `not`, `xor`, `if`)
+operators. `_kAdvKeyHelpRefId` wired for all 11 Adv-tab boolean buttons.
+`functionRefCatLogic` i18n string across en/de/fr/es. The dialog's
+category-chip dispatch already had a `case logic:` arm. Truth-table
+popover deferred — the existing help popover (signature + description
++ "Learn more") covers the use case.
 
 ### Why P7 is its own thing
 

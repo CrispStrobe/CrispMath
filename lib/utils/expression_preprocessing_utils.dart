@@ -61,6 +61,10 @@ class ExpressionPreprocessingUtils {
   static String preprocessNativeExpression(String expression) {
     var p = expression;
 
+    // Percentage operations — must run before any other rewrite because
+    // `%` would otherwise collide with the `mod` → `%` rewrite below.
+    p = preprocessPercentage(p);
+
     // Expand vector calls — `dot([1,2,3], [4,5,6])` → `(1*4 + 2*5 + 3*6)` etc.
     // Done first so subsequent rules see plain arithmetic, not call syntax.
     p = VectorMath.preprocess(p);
@@ -122,6 +126,89 @@ class ExpressionPreprocessingUtils {
     );
 
     return preprocessSpecialFunctions(p);
+  }
+
+  /// Notepad V2 — percentage operations.
+  ///
+  /// Rewrites percentage patterns into arithmetic before the engine
+  /// sees them. Order matters: longer patterns first to avoid partial
+  /// matches.
+  ///
+  /// Supported forms:
+  ///   - `what % of M is N` / `what percent of M is N` → `(N)/(M)*100`
+  ///   - `N% of M`          → `(N)/100*(M)`
+  ///   - `M + N%`           → `(M)*(1+(N)/100)` (markup)
+  ///   - `M - N%`           → `(M)*(1-(N)/100)` (discount)
+  ///   - `M * N%`           → `(M)*(N)/100`
+  ///   - bare `N%`          → `(N)/100`
+  ///
+  /// A number here is any run of digits, optional decimal point, and
+  /// optional leading minus — or a parenthesized sub-expression.
+  @visibleForTesting
+  static String preprocessPercentage(String input) {
+    var p = input.trim();
+
+    // ---- "what % of M is N" / "what percent of M is N" ----
+    // Must run first — longest pattern.
+    final whatPctRe = RegExp(
+      r'(?:what|wieviel|quel|qué)\s+(?:%|percent|prozent|pourcent|por\s*ciento)'
+      r'\s+(?:of|von|de)\s+(.+?)\s+(?:is|ist|est|es)\s+(.+)',
+      caseSensitive: false,
+    );
+    final whatMatch = whatPctRe.firstMatch(p);
+    if (whatMatch != null) {
+      final m = whatMatch.group(1)!.trim();
+      final n = whatMatch.group(2)!.trim();
+      return '($n)/($m)*100';
+    }
+
+    // ---- N% of M ----
+    final pctOfRe = RegExp(
+      r'(\(?[\d.]+\)?)\s*%\s+(?:of|von|de)\s+(.+)',
+      caseSensitive: false,
+    );
+    final pctOfMatch = pctOfRe.firstMatch(p);
+    if (pctOfMatch != null) {
+      final n = pctOfMatch.group(1)!.trim();
+      final m = pctOfMatch.group(2)!.trim();
+      return '($n)/100*($m)';
+    }
+
+    // ---- M + N% / M - N% / M * N% ----
+    // Match the rightmost `<number>%` after a `+`, `-`, or `*`.
+    // Use a greedy left operand to capture the full M expression.
+    final binPctRe = RegExp(
+      r'^(.+?)\s*([+\-*])\s*(\(?[\d.]+\)?)\s*%\s*$',
+    );
+    final binMatch = binPctRe.firstMatch(p);
+    if (binMatch != null) {
+      final m = binMatch.group(1)!.trim();
+      final op = binMatch.group(2)!;
+      final n = binMatch.group(3)!.trim();
+      if (op == '*') {
+        return '($m)*($n)/100';
+      }
+      // + or -: markup / discount.
+      return '($m)*(1$op($n)/100)';
+    }
+
+    // ---- Bare N% (possibly with a leading expression via `=`) ----
+    // Match a trailing `<number>%` that isn't followed by anything.
+    final barePctRe = RegExp(r'^(.*?)(\(?[\d.]+\)?)\s*%\s*$');
+    final bareMatch = barePctRe.firstMatch(p);
+    if (bareMatch != null) {
+      final prefix = bareMatch.group(1)!.trim();
+      final n = bareMatch.group(2)!.trim();
+      if (prefix.isEmpty) {
+        return '($n)/100';
+      }
+      // There's something before the N% that isn't caught by the
+      // binary patterns above (e.g. "tax = 8.5%"). Leave it as
+      // `prefix (N)/100`.
+      return '$prefix ($n)/100';
+    }
+
+    return p;
   }
 
   /// Round 110 (P7 kickoff): rewrite a top-level relational operator

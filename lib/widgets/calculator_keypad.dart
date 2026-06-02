@@ -69,6 +69,18 @@ const Map<String, String> _kAdvKeyHelpRefId = {
   'cevalf': 'cevalf',
   'besselj': 'besselj',
   'bessely': 'bessely',
+  // Boolean / logic operators (Round 114).
+  '==': 'eq_op',
+  '≠': 'ne_op',
+  '<': 'lt_op',
+  '≤': 'le_op',
+  '>': 'gt_op',
+  '≥': 'ge_op',
+  'and': 'and_op',
+  'or': 'or_op',
+  'not': 'not_op',
+  'xor': 'xor_op',
+  'if': 'if_cond',
 };
 
 /// Round 102b (P6): per-glyph → FunctionRef.id mapping for the CAS

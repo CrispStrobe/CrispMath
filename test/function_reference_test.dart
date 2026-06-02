@@ -21,7 +21,7 @@ void main() {
       // dialog already scrolls + searches + filters by category chip,
       // so this is a soft guard, not a hard UX limit.
       expect(FunctionReferences.all.length, greaterThan(0));
-      expect(FunctionReferences.all.length, lessThanOrEqualTo(70));
+      expect(FunctionReferences.all.length, lessThanOrEqualTo(90));
     });
 
     test('ids are non-empty, unique, and snake_case-shaped', () {
@@ -197,11 +197,9 @@ void main() {
   });
 
   group('FunctionRefCategory enum', () {
-    test('contains all nine PLAN-specified categories', () {
-      // PLAN P6 Round 96 spec — keep these names + count stable
-      // so rounds 97-100 can target categories by name rather than
-      // ordinal.
-      expect(FunctionRefCategory.values.length, 9);
+    test('contains all ten PLAN-specified categories', () {
+      // PLAN P6 Round 96 spec + P7 Round 114 (logic).
+      expect(FunctionRefCategory.values.length, 10);
       expect(FunctionRefCategory.values.map((e) => e.name).toSet(), {
         'cas',
         'numberTheory',
@@ -212,6 +210,7 @@ void main() {
         'constraints',
         'sudoku',
         'units',
+        'logic',
       });
     });
   });

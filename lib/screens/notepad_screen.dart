@@ -28,8 +28,12 @@ import 'package:flutter_math_fork/flutter_math.dart';
 
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
+import '../engine/currency_evaluator.dart';
+import '../engine/date_time_evaluator.dart';
 import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
+import '../engine/notepad_templates.dart';
+import '../engine/notepad_undo.dart';
 import '../engine/unit_expression.dart';
 import '../localization/app_localizations.dart';
 import '../services/engine_service.dart';
@@ -38,6 +42,9 @@ import '../utils/expression_preprocessing_utils.dart';
 import '../utils/latex_conversion_utils.dart';
 import '../utils/math_display_utils.dart';
 import '../widgets/boolean_chip.dart';
+import '../widgets/mini_plot_widget.dart';
+import '../widgets/notepad_autocomplete.dart';
+import '../widgets/syntax_highlighting_controller.dart';
 import '../widgets/function_reference_dialog.dart';
 import '../widgets/help_target.dart';
 import '../widgets/history_help_modal.dart';
@@ -94,6 +101,14 @@ class _NotepadScreenState extends State<NotepadScreen> {
   /// line lives here until the 5-second snackbar dismisses; the
   /// Undo action restores it.
   _PendingDeletion? _pendingDeletion;
+
+  /// Notepad V2: collapsed heading line IDs. Transient — not persisted.
+  final Set<String> _collapsedHeadings = {};
+
+  /// Notepad V2: per-document undo history, keyed by doc id.
+  final Map<String, UndoHistory> _undoHistories = {};
+  UndoHistory _undoFor(NotepadDocument doc) =>
+      _undoHistories.putIfAbsent(doc.id, () => UndoHistory());
 
   /// Scroll controller for the line list so blocked-by chips can
   /// scroll the upstream line into view on tap.
@@ -228,7 +243,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // Create controllers for newly-appeared lines.
     for (final line in doc.lines) {
       if (!_controllers.containsKey(line.id)) {
-        final c = TextEditingController(text: line.source);
+        final c = SyntaxHighlightingController(text: line.source);
         _controllers[line.id] = c;
       }
       if (!_focusNodes.containsKey(line.id)) {
@@ -291,7 +306,17 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
   void _onLineEdited(NotepadDocument doc, NotepadLine line, String value) {
     if (line.source == value) return;
+    final prev = line.source;
     line.source = value;
+    // Record for undo (debounced — only first edit in a burst matters,
+    // but for simplicity we record each keystroke; the undo stack cap
+    // keeps memory bounded).
+    _undoFor(doc).record(UndoOp(
+      kind: UndoOpKind.edit,
+      index: doc.lines.indexOf(line),
+      lineId: line.id,
+      previousValue: prev,
+    ));
     // Drop stale cache immediately so the row stops showing a wrong
     // value during the 300 ms debounce window. The recalc below
     // re-populates it.
@@ -305,6 +330,11 @@ class _NotepadScreenState extends State<NotepadScreen> {
   void _appendLine(NotepadDocument doc) {
     final line = NotepadLine.fresh(source: '');
     doc.lines.add(line);
+    _undoFor(doc).record(UndoOp(
+      kind: UndoOpKind.insert,
+      index: doc.lines.length - 1,
+      lineId: line.id,
+    ));
     _persistDoc(doc);
     // Focus the new line on the next frame so the user can type.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -313,9 +343,205 @@ class _NotepadScreenState extends State<NotepadScreen> {
     });
   }
 
+  void _performUndo(NotepadDocument doc) {
+    final op = _undoFor(doc).undo();
+    if (op == null) return;
+    final modified = applyUndo(doc, op);
+    if (modified) {
+      _syncControllersFor(doc);
+      _persistDoc(doc);
+      setState(() {});
+      _scheduleRecalc(doc, 0);
+    }
+  }
+
+  void _performRedo(NotepadDocument doc) {
+    final op = _undoFor(doc).redo();
+    if (op == null) return;
+    final modified = applyRedo(doc, op);
+    if (modified) {
+      _syncControllersFor(doc);
+      _persistDoc(doc);
+      setState(() {});
+      _scheduleRecalc(doc, 0);
+    }
+  }
+
+  // --- Item 15: Search within document ---
+
+  bool _searchOpen = false;
+  String _searchQuery = '';
+
+  void _toggleSearch() {
+    setState(() {
+      _searchOpen = !_searchOpen;
+      if (!_searchOpen) _searchQuery = '';
+    });
+  }
+
+  Widget _buildDocSidebar() {
+    final docs = _appState.notepadDocuments.values.toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final currentId = _appState.currentNotepadDocId;
+    final t = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Text(
+            t.notepadManageTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final doc = docs[index];
+              final selected = doc.id == currentId;
+              return ListTile(
+                dense: true,
+                selected: selected,
+                selectedTileColor: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
+                title: Text(
+                  doc.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  '${doc.lines.length} lines',
+                  style: const TextStyle(fontSize: 11),
+                ),
+                onTap: () => _openDocument(doc.id),
+                trailing: doc.id == kWelcomeNotepadDocId
+                    ? const Icon(Icons.menu_book, size: 16)
+                    : null,
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: TextButton.icon(
+            icon: const Icon(Icons.add, size: 18),
+            label: Text(t.notepadNewDocument),
+            onPressed: _newDocument,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar(NotepadDocument doc) {
+    final matchCount = _searchQuery.isEmpty
+        ? 0
+        : doc.lines
+            .where((l) =>
+                l.source.toLowerCase().contains(_searchQuery.toLowerCase()))
+            .length;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              autofocus: true,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'Search…',
+                border: InputBorder.none,
+                suffixText: _searchQuery.isEmpty ? '' : '$matchCount matches',
+              ),
+              style: const TextStyle(fontSize: 14),
+              onChanged: (v) => setState(() => _searchQuery = v),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: _toggleSearch,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Whether a line matches the current search query.
+  bool _lineMatchesSearch(NotepadLine line) {
+    if (_searchQuery.isEmpty) return false;
+    return line.source.toLowerCase().contains(_searchQuery.toLowerCase());
+  }
+
+  void _toggleCollapse(String lineId) {
+    setState(() {
+      if (_collapsedHeadings.contains(lineId)) {
+        _collapsedHeadings.remove(lineId);
+      } else {
+        _collapsedHeadings.add(lineId);
+      }
+    });
+  }
+
+  /// Build the list of line indices that are currently visible
+  /// (not hidden under a collapsed heading).
+  List<int> _visibleLineIndices(NotepadDocument doc) {
+    final visible = <int>[];
+    String? collapsedUntilNextHeading;
+    for (var i = 0; i < doc.lines.length; i++) {
+      final line = doc.lines[i];
+      final isHeading = line.source.trim().startsWith('## ');
+      if (isHeading) {
+        // A heading always shows; it also ends any prior collapse.
+        collapsedUntilNextHeading = null;
+        visible.add(i);
+        if (_collapsedHeadings.contains(line.id)) {
+          collapsedUntilNextHeading = line.id;
+        }
+      } else if (collapsedUntilNextHeading != null) {
+        // Hidden under a collapsed heading — skip.
+        continue;
+      } else {
+        visible.add(i);
+      }
+    }
+    return visible;
+  }
+
+  int _hiddenLinesUnder(NotepadDocument doc, int headingIndex) {
+    var count = 0;
+    for (var i = headingIndex + 1; i < doc.lines.length; i++) {
+      if (doc.lines[i].source.trim().startsWith('## ')) break;
+      count++;
+    }
+    return count;
+  }
+
+  Set<String> _docScopeNames(NotepadDocument doc) {
+    return buildNotepadScope(doc).keys.toSet();
+  }
+
+  void _cycleLineFormat(NotepadDocument doc, NotepadLine line) {
+    final formats = LineResultFormat.values;
+    final next = formats[(line.resultFormat.index + 1) % formats.length];
+    setState(() {
+      line.resultFormat = next;
+    });
+    _persistDoc(doc);
+  }
+
   void _deleteLine(NotepadDocument doc, int index) {
     if (index < 0 || index >= doc.lines.length) return;
     final removed = doc.lines.removeAt(index);
+    _undoFor(doc).record(UndoOp(
+      kind: UndoOpKind.delete,
+      index: index,
+      lineId: removed.id,
+      previousValue: removed.source,
+    ));
     _persistDoc(doc);
     _pendingDeletion =
         _PendingDeletion.line(doc: doc, line: removed, index: index);
@@ -346,6 +572,12 @@ class _NotepadScreenState extends State<NotepadScreen> {
     if (oldIndex < newIndex) newIndex -= 1;
     final moved = doc.lines.removeAt(oldIndex);
     doc.lines.insert(newIndex, moved);
+    _undoFor(doc).record(UndoOp(
+      kind: UndoOpKind.reorder,
+      index: oldIndex,
+      newIndex: newIndex,
+      lineId: moved.id,
+    ));
     _persistDoc(doc);
     // Positional aliases (`lineN`) shift on reorder; assignment names
     // follow the line. Either way, the safe thing is a full recompute
@@ -366,7 +598,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
   void _openWelcomeSample() {
     if (!_appState.notepadDocuments.containsKey(kWelcomeNotepadDocId)) {
-      _appState.setNotepadDocument(buildWelcomeNotepadDocument());
+      _appState.setNotepadDocument(buildWelcomeNotepadDocument(
+        locale: _appState.locale.languageCode,
+      ));
     }
     _appState.setCurrentNotepadDoc(kWelcomeNotepadDocId);
   }
@@ -500,6 +734,14 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // function name. Bypasses SymEngine entirely.
     final precisionResult = _engine.tryEvaluatePrecisionCall(preNative);
     if (precisionResult != null) return _appState.formatNumber(precisionResult);
+
+    // Notepad V2: date/time arithmetic.
+    final dateResult = DateTimeEvaluator.tryEvaluate(preNative);
+    if (dateResult != null) return dateResult;
+
+    // Notepad V2 Tier C: currency conversion.
+    final currencyResult = CurrencyEvaluator.tryEvaluate(preNative);
+    if (currencyResult != null) return currencyResult;
 
     // Try the unit evaluator first against the LaTeX-stripped
     // body and again with all parens stripped — Phase 2's Ans
@@ -956,12 +1198,62 @@ class _NotepadScreenState extends State<NotepadScreen> {
     final doc = _currentDoc;
     _syncControllersFor(doc);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _buildTitle(doc),
-        actions: _buildActions(doc),
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): () {
+          if (doc != null) _performUndo(doc);
+        },
+        const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true): () {
+          if (doc != null) _performRedo(doc);
+        },
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
+          if (doc != null) _performUndo(doc);
+        },
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true): () {
+          if (doc != null) _performRedo(doc);
+        },
+        // Item 15: Cmd+F / Ctrl+F opens search.
+        const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () {
+          if (doc != null) _toggleSearch();
+        },
+        const SingleActivator(LogicalKeyboardKey.keyF, control: true): () {
+          if (doc != null) _toggleSearch();
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          appBar: AppBar(
+            title: _buildTitle(doc),
+            actions: _buildActions(doc),
+          ),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final wideEnough = constraints.maxWidth >= 1200;
+              final docBody = doc == null
+                  ? _buildEmptyState()
+                  : Column(
+                      children: [
+                        if (_searchOpen) _buildSearchBar(doc),
+                        Expanded(child: _buildDocBody(doc)),
+                      ],
+                    );
+              if (!wideEnough) return docBody;
+              // Wide layout: left-rail document list + main doc.
+              return Row(
+                children: [
+                  SizedBox(
+                    width: 240,
+                    child: _buildDocSidebar(),
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(child: docBody),
+                ],
+              );
+            },
+          ),
+        ),
       ),
-      body: doc == null ? _buildEmptyState() : _buildDocBody(doc),
     );
   }
 
@@ -1038,6 +1330,18 @@ class _NotepadScreenState extends State<NotepadScreen> {
         itemBuilder: (context) {
           final items = <PopupMenuEntry<String>>[
             PopupMenuItem(value: 'new', child: Text(t.notepadNewDocument)),
+            // Template picker sub-items.
+            for (final tmpl in NotepadTemplates.all)
+              PopupMenuItem(
+                value: 'template:${tmpl.id}',
+                child: Row(
+                  children: [
+                    const Icon(Icons.description_outlined, size: 16),
+                    const SizedBox(width: 8),
+                    Text(tmpl.name),
+                  ],
+                ),
+              ),
           ];
           final others = _otherDocsForMenu();
           if (others.isNotEmpty) {
@@ -1088,6 +1392,17 @@ class _NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _onMenuSelected(String value) {
+    if (value.startsWith('template:')) {
+      final id = value.substring('template:'.length);
+      final tmpl = NotepadTemplates.all.firstWhere(
+        (t) => t.id == id,
+        orElse: () => NotepadTemplates.all.first,
+      );
+      final doc = tmpl.createDocument();
+      _appState.setNotepadDocument(doc);
+      _appState.setCurrentNotepadDoc(doc.id);
+      return;
+    }
     if (value == 'new') {
       _newDocument();
     } else if (value == 'open-welcome') {
@@ -1150,30 +1465,111 @@ class _NotepadScreenState extends State<NotepadScreen> {
   Widget _buildDocBody(NotepadDocument doc) {
     return LayoutBuilder(builder: (context, constraints) {
       final sideBySide = constraints.maxWidth >= _kSideBySideBreakpoint;
-      return ReorderableListView.builder(
+      // Build visible-line index list, hiding lines under collapsed
+      // headings. A heading line is always visible; lines between a
+      // collapsed heading and the next heading/divider are hidden.
+      final visibleIndices = _visibleLineIndices(doc);
+
+      // Pinned lines render as a sticky section above the scrolling list.
+      final pinnedIndices = <int>[
+        for (var i = 0; i < doc.lines.length; i++)
+          if (doc.lines[i].pinned) i,
+      ];
+
+      final listView = ReorderableListView.builder(
         scrollController: _listScrollController,
         padding: const EdgeInsets.symmetric(vertical: 8),
         buildDefaultDragHandles: false,
-        itemCount: doc.lines.length,
-        onReorder: (oldIndex, newIndex) =>
-            _reorderLines(doc, oldIndex, newIndex),
-        itemBuilder: (context, index) {
-          final line = doc.lines[index];
+        itemCount: visibleIndices.length,
+        onReorder: (oldVisIdx, newVisIdx) {
+          final oldReal = visibleIndices[oldVisIdx];
+          // Adjust new index for the real list.
+          final newReal = newVisIdx < visibleIndices.length
+              ? visibleIndices[newVisIdx]
+              : doc.lines.length;
+          _reorderLines(doc, oldReal, newReal);
+        },
+        itemBuilder: (context, visIdx) {
+          final realIndex = visibleIndices[visIdx];
+          final line = doc.lines[realIndex];
+          final isHeading = line.source.trim().startsWith('## ');
+          final isCollapsed = _collapsedHeadings.contains(line.id);
+          // Count hidden lines for the collapse chip.
+          final hiddenCount = isHeading && isCollapsed
+              ? _hiddenLinesUnder(doc, realIndex)
+              : 0;
           return _NotepadLineRow(
             key: ValueKey(line.id),
             line: line,
-            index: index,
+            index: realIndex,
             sideBySide: sideBySide,
             isPending: _pendingLineIds.contains(line.id),
             controller: _controllers[line.id]!,
             focusNode: _focusNodes[line.id]!,
             onChanged: (v) => _onLineEdited(doc, line, v),
-            onDelete: () => _deleteLine(doc, index),
+            onDelete: () => _deleteLine(doc, realIndex),
             onScrollToLineId: _scrollToLineId,
             engine: _engine,
             appState: _appState,
+            onFormatCycle: () => _cycleLineFormat(doc, line),
+            scopeNames: _docScopeNames(doc),
+            isCollapsedHeading: isHeading && isCollapsed,
+            hiddenLineCount: hiddenCount,
+            highlightSearch: _lineMatchesSearch(line),
+            onToggleCollapse: isHeading
+                ? () => _toggleCollapse(line.id)
+                : null,
           );
         },
+      );
+
+      if (pinnedIndices.isEmpty) return listView;
+
+      // Show pinned lines in a non-scrolling section at the top.
+      return Column(
+        children: [
+          Container(
+            color: Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.3),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final pi in pinnedIndices)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.push_pin, size: 14),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            doc.lines[pi].source,
+                            style: const TextStyle(
+                                fontFamily: 'monospace', fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          doc.lines[pi].cachedResult ?? '',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(child: listView),
+        ],
       );
     });
   }
@@ -1202,6 +1598,13 @@ class _NotepadLineRow extends StatelessWidget {
   final CalculatorEngine engine;
   final AppState appState;
 
+  final VoidCallback? onFormatCycle;
+  final Set<String> scopeNames;
+  final bool isCollapsedHeading;
+  final int hiddenLineCount;
+  final VoidCallback? onToggleCollapse;
+  final bool highlightSearch;
+
   const _NotepadLineRow({
     super.key,
     required this.line,
@@ -1215,9 +1618,34 @@ class _NotepadLineRow extends StatelessWidget {
     required this.onScrollToLineId,
     required this.engine,
     required this.appState,
+    this.onFormatCycle,
+    this.scopeNames = const {},
+    this.isCollapsedHeading = false,
+    this.hiddenLineCount = 0,
+    this.onToggleCollapse,
+    this.highlightSearch = false,
   });
 
   bool get _isBlank => line.source.trim().isEmpty;
+  Set<String> get _scopeNames => scopeNames;
+
+  NotepadLineKind get _lineKind {
+    // Lightweight classification for rendering — only checks heading
+    // and divider patterns (the full classify needs firstCodeLineIndex
+    // which we don't carry here).
+    final t = line.source.trim();
+    if (t.startsWith('## ')) return NotepadLineKind.heading;
+    if (RegExp(r'^-{3,}\s*$').hasMatch(t)) return NotepadLineKind.divider;
+    return NotepadLineKind.expression; // generic fallback
+  }
+
+  Widget _maybeHighlight(Widget child, BuildContext context) {
+    if (!highlightSearch) return child;
+    return Container(
+      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+      child: child,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1239,8 +1667,74 @@ class _NotepadLineRow extends StatelessWidget {
       );
     }
 
-    if (sideBySide) {
+    // Section headings: `## text` — larger, bold, theme-colored.
+    // Fold/unfold toggle + hidden-line-count chip when collapsed.
+    if (_lineKind == NotepadLineKind.heading) {
       return Padding(
+        key: ValueKey('row-${line.id}'),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _DragHandle(index: index),
+            if (onToggleCollapse != null)
+              IconButton(
+                icon: Icon(
+                  isCollapsedHeading
+                      ? Icons.expand_more
+                      : Icons.expand_less,
+                  size: 20,
+                ),
+                onPressed: onToggleCollapse,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 28,
+                  minHeight: 28,
+                ),
+                tooltip: isCollapsedHeading ? 'Expand' : 'Collapse',
+              ),
+            Expanded(child: _buildInputField(context, heading: true)),
+            if (isCollapsedHeading && hiddenLineCount > 0)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Chip(
+                  label: Text('$hiddenLineCount hidden'),
+                  labelStyle: const TextStyle(fontSize: 11),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            _DeleteButton(onPressed: onDelete),
+          ],
+        ),
+      );
+    }
+
+    // Horizontal dividers: `---` — render a line instead of result.
+    if (_lineKind == NotepadLineKind.divider) {
+      return Padding(
+        key: ValueKey('row-${line.id}'),
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _DragHandle(index: index),
+            Expanded(
+              child: Column(
+                children: [
+                  _buildInputField(context, dense: true),
+                  const Divider(height: 1, thickness: 1),
+                ],
+              ),
+            ),
+            _DeleteButton(onPressed: onDelete),
+          ],
+        ),
+      );
+    }
+
+    if (sideBySide) {
+      return _maybeHighlight(Padding(
         key: ValueKey('row-${line.id}'),
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         child: HelpTarget(
@@ -1260,17 +1754,19 @@ class _NotepadLineRow extends StatelessWidget {
                   line: line,
                   isPending: isPending,
                   onScrollToLineId: onScrollToLineId,
+                  onFormatCycle: onFormatCycle,
+                  engine: engine,
                 ),
               ),
               _DeleteButton(onPressed: onDelete),
             ],
           ),
         ),
-      );
+      ), context);
     }
 
     // Stacked layout for narrow screens.
-    return Padding(
+    return _maybeHighlight(Padding(
       key: ValueKey('row-${line.id}'),
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: HelpTarget(
@@ -1291,6 +1787,8 @@ class _NotepadLineRow extends StatelessWidget {
                       isPending: isPending,
                       onScrollToLineId: onScrollToLineId,
                       alignStart: true,
+                      onFormatCycle: onFormatCycle,
+                      engine: engine,
                     ),
                   ),
                 ],
@@ -1300,7 +1798,7 @@ class _NotepadLineRow extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ), context);
   }
 
   /// Round 104 (P6): help-mode tap on a notepad line opens the shared
@@ -1350,14 +1848,22 @@ class _NotepadLineRow extends StatelessWidget {
     );
   }
 
-  Widget _buildInputField(BuildContext context, {bool dense = false}) {
-    return TextField(
+  Widget _buildInputField(BuildContext context,
+      {bool dense = false, bool heading = false}) {
+    final textField = TextField(
       controller: controller,
       focusNode: focusNode,
       onChanged: onChanged,
       minLines: 1,
       maxLines: null,
-      style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+      style: heading
+          ? TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            )
+          : const TextStyle(fontFamily: 'monospace', fontSize: 14),
       decoration: InputDecoration(
         isDense: dense,
         border: InputBorder.none,
@@ -1367,6 +1873,14 @@ class _NotepadLineRow extends StatelessWidget {
           fontStyle: FontStyle.italic,
         ),
       ),
+    );
+    // Skip autocomplete for dense/heading/divider rows.
+    if (dense || heading) return textField;
+    return NotepadAutocompleteOverlay(
+      controller: controller,
+      focusNode: focusNode,
+      scopeNames: _scopeNames,
+      child: textField,
     );
   }
 }
@@ -1419,12 +1933,16 @@ class _NotepadResultColumn extends StatelessWidget {
   final bool isPending;
   final void Function(String lineId) onScrollToLineId;
   final bool alignStart;
+  final VoidCallback? onFormatCycle;
+  final CalculatorEngine engine;
 
   const _NotepadResultColumn({
     required this.line,
     required this.isPending,
     required this.onScrollToLineId,
+    required this.engine,
     this.alignStart = false,
+    this.onFormatCycle,
   });
 
   @override
@@ -1449,10 +1967,34 @@ class _NotepadResultColumn extends StatelessWidget {
       );
     }
 
-    final res = line.cachedResult;
+    final rawRes = line.cachedResult;
+    // Apply per-line format override if set.
+    final res = rawRes != null && line.resultFormat != LineResultFormat.auto
+        ? (formatLineResult(rawRes, line.resultFormat) ?? rawRes)
+        : rawRes;
     final children = <Widget>[];
     if (res != null && res.isNotEmpty) {
       children.add(_buildResult(context, res, textAlign));
+    }
+    // Show a small format indicator when a non-auto format is active.
+    if (rawRes != null &&
+        rawRes.isNotEmpty &&
+        line.resultFormat != LineResultFormat.auto) {
+      children.add(GestureDetector(
+        onTap: onFormatCycle,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text(
+            _formatLabel(line.resultFormat),
+            style: TextStyle(
+              fontSize: 10,
+              color: cs.primary.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: textAlign,
+          ),
+        ),
+      ));
     }
     if (line.cachedFreeVars.isNotEmpty) {
       children.add(Padding(
@@ -1508,6 +2050,11 @@ class _NotepadResultColumn extends StatelessWidget {
 
   Widget _buildResult(BuildContext context, String res, TextAlign textAlign) {
     final scheme = Theme.of(context).colorScheme;
+    // Inline plot: the evaluator stores a `__plot__:` sentinel.
+    final plotSpec = PlotSpec.tryParse(res);
+    if (plotSpec != null) {
+      return MiniPlotWidget(spec: plotSpec, engine: engine);
+    }
     // FlatZinc lines (Round E.4) produce multi-line `name = value;`
     // output blocks plus separator markers — Math.tex can't render
     // that, so route them to a monospace SelectableText block. Use
@@ -1568,6 +2115,23 @@ class _NotepadResultColumn extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static String _formatLabel(LineResultFormat f) {
+    switch (f) {
+      case LineResultFormat.auto:
+        return '';
+      case LineResultFormat.decimal:
+        return 'dec';
+      case LineResultFormat.fraction:
+        return 'frac';
+      case LineResultFormat.scientific:
+        return 'sci';
+      case LineResultFormat.hex:
+        return 'hex';
+      case LineResultFormat.binary:
+        return 'bin';
+    }
   }
 
   void _showResultActions(BuildContext context, String plain, String latex) {

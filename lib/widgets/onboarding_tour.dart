@@ -51,6 +51,11 @@ class _OnboardingTourState extends State<OnboardingTour> {
         body: t.onboardingKeypadBody,
       ),
       _TourCard(
+        icon: Icons.description,
+        title: t.onboardingNotepadTitle,
+        body: t.onboardingNotepadBody,
+      ),
+      _TourCard(
         icon: Icons.history,
         title: t.onboardingHistoryTitle,
         body: t.onboardingHistoryBody,

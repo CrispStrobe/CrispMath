@@ -72,6 +72,8 @@ class _FunctionReferenceDialogState extends State<FunctionReferenceDialog> {
         return t.functionRefCatSudoku;
       case FunctionRefCategory.units:
         return t.functionRefCatUnits;
+      case FunctionRefCategory.logic:
+        return t.functionRefCatLogic;
     }
   }
 

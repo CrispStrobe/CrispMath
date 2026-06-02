@@ -3,8 +3,11 @@
 
 import 'package:flutter/material.dart';
 
+import '../engine/app_state.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/constants_dialog.dart';
+import '../widgets/help_target.dart';
+import '../widgets/module_help_dialog.dart';
 import '../widgets/unit_converter_dialog.dart';
 import 'conic_section_screen.dart';
 import 'constraints_screen.dart';
@@ -21,124 +24,185 @@ class AnalysisHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t.analysisModulesTitle),
-        centerTitle: true,
+    final appState = AppState();
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(t.analysisModulesTitle),
+            centerTitle: true,
+            actions: [
+              IconButton(
+                icon: Icon(appState.helpMode
+                    ? Icons.help
+                    : Icons.help_outline),
+                tooltip: appState.helpMode
+                    ? t.helpModeDisableTooltip
+                    : t.helpModeEnableTooltip,
+                onPressed: () => appState.toggleHelpMode(),
+              ),
+            ],
+          ),
+          body: ListView(
+            padding: const EdgeInsets.only(top: 8),
+            children: [
+              _helpCard(
+                context,
+                helpKind: ModuleHelpKind.curveSketching,
+                child: _ModuleCard(
+                  icon: Icons.show_chart,
+                  title: t.moduleCurveSketching,
+                  subtitle: t.moduleCurveSketchingSubtitle,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const CurveAnalysisInputScreen(),
+                    ));
+                  },
+                ),
+              ),
+              _helpCard(
+                context,
+                helpKind: ModuleHelpKind.planes,
+                child: _ModuleCard(
+                  icon: Icons.view_in_ar,
+                  title: t.modulePlanes,
+                  subtitle: t.modulePlanesSubtitle,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const PlaneAnalysisScreen(),
+                    ));
+                  },
+                ),
+              ),
+              _helpCard(
+                context,
+                helpKind: ModuleHelpKind.conicSections,
+                child: _ModuleCard(
+                  icon: Icons.circle_outlined,
+                  title: t.moduleConics,
+                  subtitle: t.moduleConicsSubtitle,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const ConicSectionScreen(),
+                    ));
+                  },
+                ),
+              ),
+              _helpCard(
+                context,
+                helpKind: ModuleHelpKind.statistics,
+                child: _ModuleCard(
+                  icon: Icons.bar_chart,
+                  title: t.moduleStatistics,
+                  subtitle: t.moduleStatisticsSubtitle,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const StatisticsScreen(),
+                    ));
+                  },
+                ),
+              ),
+              _helpCard(
+                context,
+                helpKind: ModuleHelpKind.graphing3D,
+                child: _ModuleCard(
+                  icon: Icons.threed_rotation,
+                  title: t.module3DTitle,
+                  subtitle: t.module3DSubtitle,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const Graphing3DScreen(),
+                    ));
+                  },
+                ),
+              ),
+              // Unit converter + Constants have no ModuleHelpKind — pass
+              // through without a help wrapper.
+              _ModuleCard(
+                icon: Icons.swap_horiz,
+                title: t.moduleUnitConverterTitle,
+                subtitle: t.moduleUnitConverterSubtitle,
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => const UnitConverterDialog(),
+                  );
+                },
+              ),
+              _ModuleCard(
+                icon: Icons.science_outlined,
+                title: t.settingsConstants,
+                subtitle: t.settingsConstantsSubtitle,
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => const ConstantsDialog(),
+                  );
+                },
+              ),
+              _helpCard(
+                context,
+                helpKind: ModuleHelpKind.constraints,
+                child: _ModuleCard(
+                  icon: Icons.account_tree_outlined,
+                  title: t.moduleConstraintsTitle,
+                  subtitle: t.moduleConstraintsSubtitle,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const ConstraintsScreen(),
+                    ));
+                  },
+                ),
+              ),
+              _helpCard(
+                context,
+                helpKind: ModuleHelpKind.sudoku,
+                child: _ModuleCard(
+                  icon: Icons.grid_4x4,
+                  title: t.moduleSudokuTitle,
+                  subtitle: t.moduleSudokuSubtitle,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const SudokuScreen(),
+                    ));
+                  },
+                ),
+              ),
+              _helpCard(
+                context,
+                helpKind: ModuleHelpKind.scene3D,
+                child: _ModuleCard(
+                  icon: Icons.deblur,
+                  title: t.module3DScene,
+                  subtitle: t.module3DSceneSubtitle,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const Scene3DScreen(),
+                    ));
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Wrap a module card in a [HelpTarget] that, in help mode, opens
+  /// the [ModuleHelpDialog] for the given kind instead of navigating.
+  static Widget _helpCard(
+    BuildContext context, {
+    required ModuleHelpKind helpKind,
+    required Widget child,
+  }) {
+    return HelpTarget(
+      onHelpTap: () => showDialog<void>(
+        context: context,
+        builder: (_) => ModuleHelpDialog(kind: helpKind),
       ),
-      body: ListView(
-        padding: const EdgeInsets.only(top: 8),
-        children: [
-          _ModuleCard(
-            icon: Icons.show_chart,
-            title: t.moduleCurveSketching,
-            subtitle: t.moduleCurveSketchingSubtitle,
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const CurveAnalysisInputScreen(),
-              ));
-            },
-          ),
-          _ModuleCard(
-            icon: Icons.view_in_ar,
-            title: t.modulePlanes,
-            subtitle: t.modulePlanesSubtitle,
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const PlaneAnalysisScreen(),
-              ));
-            },
-          ),
-          _ModuleCard(
-            icon: Icons.circle_outlined,
-            title: t.moduleConics,
-            subtitle: t.moduleConicsSubtitle,
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const ConicSectionScreen(),
-              ));
-            },
-          ),
-          _ModuleCard(
-            icon: Icons.bar_chart,
-            title: t.moduleStatistics,
-            subtitle: t.moduleStatisticsSubtitle,
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const StatisticsScreen(),
-              ));
-            },
-          ),
-          _ModuleCard(
-            icon: Icons.threed_rotation,
-            title: t.module3DTitle,
-            subtitle: t.module3DSubtitle,
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const Graphing3DScreen(),
-              ));
-            },
-          ),
-          _ModuleCard(
-            icon: Icons.swap_horiz,
-            title: t.moduleUnitConverterTitle,
-            subtitle: t.moduleUnitConverterSubtitle,
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (_) => const UnitConverterDialog(),
-              );
-            },
-          ),
-          // Round 71: Constants reference was previously buried in
-          // Settings — surface it here in the Analysis hub alongside
-          // its peers.
-          _ModuleCard(
-            icon: Icons.science_outlined,
-            title: t.settingsConstants,
-            subtitle: t.settingsConstantsSubtitle,
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (_) => const ConstantsDialog(),
-              );
-            },
-          ),
-          _ModuleCard(
-            icon: Icons.account_tree_outlined,
-            title: t.moduleConstraintsTitle,
-            subtitle: t.moduleConstraintsSubtitle,
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const ConstraintsScreen(),
-              ));
-            },
-          ),
-          _ModuleCard(
-            icon: Icons.grid_4x4,
-            title: t.moduleSudokuTitle,
-            subtitle: t.moduleSudokuSubtitle,
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const SudokuScreen(),
-              ));
-            },
-          ),
-          // P9-A2: 3D Scene module appended at the end so existing
-          // ui_flows_test scrolls don't have to be retuned. Semantic
-          // grouping next to Planes can come later.
-          _ModuleCard(
-            icon: Icons.deblur,
-            title: t.module3DScene,
-            subtitle: t.module3DSceneSubtitle,
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const Scene3DScreen(),
-              ));
-            },
-          ),
-        ],
-      ),
+      child: child,
     );
   }
 }

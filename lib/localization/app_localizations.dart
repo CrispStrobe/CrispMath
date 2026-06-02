@@ -665,6 +665,7 @@ abstract class AppLocalizations {
   String get functionRefCatConstraints;
   String get functionRefCatSudoku;
   String get functionRefCatUnits;
+  String get functionRefCatLogic;
   String get settingsFunctionRef;
   String get settingsFunctionRefSubtitle;
 
@@ -709,6 +710,8 @@ abstract class AppLocalizations {
   String get onboardingFunctionsBody;
   String get onboardingAnalysisTitle;
   String get onboardingAnalysisBody;
+  String get onboardingNotepadTitle;
+  String get onboardingNotepadBody;
   String get settingsReplayTour;
   String get settingsReplayTourSubtitle;
 
@@ -2113,6 +2116,8 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get functionRefCatUnits => 'Units';
   @override
+  String get functionRefCatLogic => 'Logic';
+  @override
   String get settingsFunctionRef => 'Function reference';
   @override
   String get settingsFunctionRefSubtitle =>
@@ -2217,6 +2222,13 @@ class EnLocalizations implements AppLocalizations {
   String get onboardingAnalysisBody =>
       'Curve sketching, planes, conics, 3D plotting, statistics, and '
       'the unit converter all live in the Analysis tab.';
+  @override
+  String get onboardingNotepadTitle => 'Notepad';
+  @override
+  String get onboardingNotepadBody =>
+      'Type math like a document — one expression per line, results '
+      'in the right column. Define variables (tax = 0.085), reference '
+      'earlier lines, and watch everything update live as you edit.';
   @override
   String get settingsReplayTour => 'Replay onboarding tour';
   @override
@@ -4937,6 +4949,8 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get functionRefCatUnits => 'Einheiten';
   @override
+  String get functionRefCatLogic => 'Logik';
+  @override
   String get settingsFunctionRef => 'Funktionsreferenz';
   @override
   String get settingsFunctionRefSubtitle =>
@@ -5044,6 +5058,14 @@ class DeLocalizations implements AppLocalizations {
   String get onboardingAnalysisBody =>
       'Kurvendiskussion, Ebenen, Kegelschnitte, 3D-Diagramme, Statistik '
       'und der Einheitenrechner finden sich alle im Reiter Analyse.';
+  @override
+  String get onboardingNotepadTitle => 'Notizblock';
+  @override
+  String get onboardingNotepadBody =>
+      'Mathe wie ein Dokument schreiben — ein Ausdruck pro Zeile, '
+      'Ergebnisse in der rechten Spalte. Variablen definieren '
+      '(tax = 0.085), frühere Zeilen referenzieren und zusehen, '
+      'wie sich alles live aktualisiert.';
   @override
   String get settingsReplayTour => 'Einführungstour erneut anzeigen';
   @override
@@ -7768,6 +7790,8 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get functionRefCatUnits => 'Unités';
   @override
+  String get functionRefCatLogic => 'Logique';
+  @override
   String get settingsFunctionRef => 'Référence des fonctions';
   @override
   String get settingsFunctionRefSubtitle =>
@@ -7875,6 +7899,14 @@ class FrLocalizations implements AppLocalizations {
   String get onboardingAnalysisBody =>
       'Étude de fonction, plans, coniques, tracé 3D, statistiques et '
       'le convertisseur d\'unités sont tous dans l\'onglet Analyse.';
+  @override
+  String get onboardingNotepadTitle => 'Bloc-notes';
+  @override
+  String get onboardingNotepadBody =>
+      'Écrivez des maths comme un document — une expression par ligne, '
+      'résultats dans la colonne de droite. Définissez des variables '
+      '(tax = 0.085), référencez les lignes précédentes et voyez tout '
+      'se recalculer en direct.';
   @override
   String get settingsReplayTour => 'Revoir la visite guidée';
   @override
@@ -10575,6 +10607,8 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get functionRefCatUnits => 'Unidades';
   @override
+  String get functionRefCatLogic => 'Lógica';
+  @override
   String get settingsFunctionRef => 'Referencia de funciones';
   @override
   String get settingsFunctionRefSubtitle =>
@@ -10682,6 +10716,14 @@ class EsLocalizations implements AppLocalizations {
   String get onboardingAnalysisBody =>
       'Estudio de curvas, planos, cónicas, gráficos 3D, estadística y '
       'el conversor de unidades están todos en la pestaña Análisis.';
+  @override
+  String get onboardingNotepadTitle => 'Bloc de notas';
+  @override
+  String get onboardingNotepadBody =>
+      'Escribe matemáticas como un documento — una expresión por línea, '
+      'resultados en la columna derecha. Define variables (tax = 0.085), '
+      'referencia líneas anteriores y observa cómo todo se actualiza '
+      'en tiempo real.';
   @override
   String get settingsReplayTour => 'Repetir la visita guiada';
   @override

@@ -33,6 +33,23 @@ enum NotepadLineKind {
   /// FlatZinc frontend. Round E.4 inline directive variant.
   flatzinc,
 
+  /// Aggregate keyword — `total`, `subtotal`, `average`, `count`.
+  /// Resolved by the evaluator without an engine call by scanning
+  /// the cached results of preceding lines.
+  aggregate,
+
+  /// Section heading — line starts with `## `. Rendered as styled
+  /// text; no engine dispatch, no result, no scope contribution.
+  heading,
+
+  /// Horizontal divider — line is exactly `---` (3+ hyphens).
+  /// Rendered as a visual separator; same semantics as heading.
+  divider,
+
+  /// Inline plot — `plot(expr)` or `plot(expr, var, lo, hi)`.
+  /// Rendered as a compact chart widget instead of a text result.
+  plot,
+
   /// Anything else — passed verbatim to the engine.
   expression,
 }
@@ -91,6 +108,35 @@ class ParsedNotepadLine {
         body: body,
       );
 
+  factory ParsedNotepadLine.aggregate(String aggregateKind) =>
+      ParsedNotepadLine._(
+        kind: NotepadLineKind.aggregate,
+        name: aggregateKind,
+      );
+
+  factory ParsedNotepadLine.heading(String text) => ParsedNotepadLine._(
+        kind: NotepadLineKind.heading,
+        body: text,
+      );
+
+  factory ParsedNotepadLine.divider() =>
+      const ParsedNotepadLine._(kind: NotepadLineKind.divider);
+
+  /// [body] carries the expression; [name] carries the variable
+  /// (default 'x'); [imports] carries [lo, hi] as strings.
+  factory ParsedNotepadLine.plot({
+    required String expression,
+    String variable = 'x',
+    String lo = '-10',
+    String hi = '10',
+  }) =>
+      ParsedNotepadLine._(
+        kind: NotepadLineKind.plot,
+        body: expression,
+        name: variable,
+        imports: [lo, hi],
+      );
+
   factory ParsedNotepadLine.expression(String body) => ParsedNotepadLine._(
         kind: NotepadLineKind.expression,
         body: body,
@@ -129,6 +175,8 @@ const Set<String> kReservedNotepadNames = {
   'pi', 'Pi', 'PI', 'e', 'E', 'euler', 'EulerGamma', 'gamma',
   // Stats-ish
   'min', 'max', 'mean', 'median', 'sum', 'mod',
+  // Notepad aggregates
+  'total', 'subtotal', 'average', 'count',
 };
 
 /// Classify a single line.
@@ -147,6 +195,35 @@ ParsedNotepadLine classifyNotepadLine(
   if (source.trim().isEmpty) {
     return ParsedNotepadLine.blank();
   }
+  // Section headings (`## text`) and dividers (`---`). Checked before
+  // comment stripping because `#` is a comment marker and `## heading`
+  // would otherwise be stripped to empty.
+  final trimmed = source.trim();
+  if (trimmed.startsWith('## ')) {
+    return ParsedNotepadLine.heading(trimmed.substring(3).trim());
+  }
+  if (RegExp(r'^-{3,}\s*$').hasMatch(trimmed)) {
+    return ParsedNotepadLine.divider();
+  }
+
+  // Inline plot: `plot(expr)` or `plot(expr, var, lo, hi)`.
+  final plotMatch = _plotRegex.firstMatch(trimmed);
+  if (plotMatch != null) {
+    final args = plotMatch.group(1)!;
+    final parts = _splitTopLevelCommas(args);
+    if (parts.length == 1) {
+      return ParsedNotepadLine.plot(expression: parts[0].trim());
+    } else if (parts.length == 4) {
+      return ParsedNotepadLine.plot(
+        expression: parts[0].trim(),
+        variable: parts[1].trim(),
+        lo: parts[2].trim(),
+        hi: parts[3].trim(),
+      );
+    }
+    // Wrong arg count — fall through to expression so the engine errors.
+  }
+
   // FlatZinc detection runs BEFORE comment stripping because the
   // body may contain `//` inside string literals or as part of a
   // future spec extension; FlatZinc itself uses `%` for comments,
@@ -192,6 +269,17 @@ ParsedNotepadLine classifyNotepadLine(
       return ParsedNotepadLine.useDirective(names, error: 'emptyImportList');
     }
     return ParsedNotepadLine.useDirective(names);
+  }
+
+  // Aggregate keywords — `total`, `subtotal`, `average`, `count`.
+  // Recognized as bare keywords (the entire post-comment-strip line
+  // is exactly the keyword, case-insensitive).
+  final lowerStripped = stripped.toLowerCase();
+  if (lowerStripped == 'total' ||
+      lowerStripped == 'subtotal' ||
+      lowerStripped == 'average' ||
+      lowerStripped == 'count') {
+    return ParsedNotepadLine.aggregate(lowerStripped);
   }
 
   final asgMatch = _assignmentRegex.firstMatch(stripped);
@@ -357,6 +445,26 @@ final RegExp _identifierWordRegex = RegExp(r'[A-Za-z_][A-Za-z0-9_]*');
 /// immediately following whitespace, including embedded newlines
 /// (the screen's TextField uses `maxLines: null` so a single
 /// NotepadLine.source can carry multi-line FlatZinc).
+final RegExp _plotRegex = RegExp(r'^plot\((.+)\)\s*$');
+
+/// Split a string by top-level commas (depth-0 only).
+List<String> _splitTopLevelCommas(String s) {
+  final parts = <String>[];
+  int depth = 0;
+  int start = 0;
+  for (var i = 0; i < s.length; i++) {
+    final c = s[i];
+    if (c == '(' || c == '[') depth++;
+    if (c == ')' || c == ']') depth--;
+    if (c == ',' && depth == 0) {
+      parts.add(s.substring(start, i));
+      start = i + 1;
+    }
+  }
+  parts.add(s.substring(start));
+  return parts;
+}
+
 final RegExp _flatzincDirectiveRegex = RegExp(
   r'^\s*fzn:\s*([\s\S]*)$',
   caseSensitive: true,
@@ -525,6 +633,10 @@ NotepadDependencyGraph buildDependencyGraph(
       case NotepadLineKind.blank:
       case NotepadLineKind.comment:
       case NotepadLineKind.useDirective:
+      case NotepadLineKind.aggregate:
+      case NotepadLineKind.heading:
+      case NotepadLineKind.divider:
+      case NotepadLineKind.plot:
         break;
     }
   }
@@ -774,7 +886,17 @@ class NotepadEvaluator {
     switch (parsed.kind) {
       case NotepadLineKind.blank:
       case NotepadLineKind.comment:
+      case NotepadLineKind.heading:
+      case NotepadLineKind.divider:
         line.cachedResult = null;
+        line.cachedError = null;
+        line.cachedFreeVars = [];
+        return;
+      case NotepadLineKind.plot:
+        // Store the plot spec in cachedResult as a sentinel the UI
+        // recognizes. Format: `__plot__:expr|var|lo|hi`.
+        line.cachedResult =
+            '__plot__:${parsed.body}|${parsed.name}|${parsed.imports.join('|')}';
         line.cachedError = null;
         line.cachedFreeVars = [];
         return;
@@ -797,6 +919,9 @@ class NotepadEvaluator {
         return;
       case NotepadLineKind.flatzinc:
         await _evaluateFlatZincLine(line, parsed);
+        return;
+      case NotepadLineKind.aggregate:
+        _evaluateAggregate(doc, lineIndex, line, parsed.name!);
         return;
       case NotepadLineKind.assignment:
       case NotepadLineKind.expression:
@@ -866,6 +991,84 @@ class NotepadEvaluator {
       line.cachedError = null;
       line.cachedFreeVars = freeVars;
     }
+  }
+
+  /// Evaluate a `total`/`subtotal`/`average`/`count` aggregate line.
+  ///
+  /// Scans backwards from [lineIndex] collecting numeric results from
+  /// preceding lines. For `subtotal` and `total`, the scan stops at
+  /// the previous aggregate line (or the top of the doc). For
+  /// `average` and `count`, the same range applies. A `total` scans
+  /// from the very top of the doc, ignoring intervening aggregates.
+  void _evaluateAggregate(
+    NotepadDocument doc,
+    int lineIndex,
+    NotepadLine line,
+    String kind,
+  ) {
+    final values = <double>[];
+    final scanFromTop = kind == 'total';
+    final startIndex = scanFromTop ? 0 : _previousAggregateIndex(doc, lineIndex) + 1;
+
+    final firstCode = firstCodeLineIndexOf(doc);
+    for (var i = startIndex; i < lineIndex; i++) {
+      final other = doc.lines[i];
+      // Skip aggregate lines so subtotal results don't double-count
+      // into a later total.
+      final otherParsed = classifyNotepadLine(other.source,
+          lineIndex: i, firstCodeLineIndex: firstCode);
+      if (otherParsed.kind == NotepadLineKind.aggregate) continue;
+      if (other.cachedResult == null) continue;
+      final d = double.tryParse(other.cachedResult!.trim());
+      if (d != null && d.isFinite) values.add(d);
+    }
+
+    String result;
+    switch (kind) {
+      case 'total':
+      case 'subtotal':
+        final sum = values.fold<double>(0, (a, b) => a + b);
+        result = _formatAggregate(sum);
+      case 'average':
+        if (values.isEmpty) {
+          line.cachedResult = null;
+          line.cachedError = 'Error: no numeric values to average';
+          line.cachedFreeVars = [];
+          return;
+        }
+        final avg = values.fold<double>(0, (a, b) => a + b) / values.length;
+        result = _formatAggregate(avg);
+      case 'count':
+        result = values.length.toString();
+      default:
+        result = 'Error: unknown aggregate $kind';
+    }
+
+    line.cachedResult = result;
+    line.cachedError = null;
+    line.cachedFreeVars = [];
+  }
+
+  /// Find the index of the nearest aggregate line above [lineIndex].
+  /// Returns -1 if no prior aggregate exists.
+  int _previousAggregateIndex(NotepadDocument doc, int lineIndex) {
+    final firstCode = firstCodeLineIndexOf(doc);
+    for (var i = lineIndex - 1; i >= 0; i--) {
+      final parsed = classifyNotepadLine(doc.lines[i].source,
+          lineIndex: i, firstCodeLineIndex: firstCode);
+      if (parsed.kind == NotepadLineKind.aggregate) return i;
+    }
+    return -1;
+  }
+
+  static String _formatAggregate(double v) {
+    if ((v - v.roundToDouble()).abs() < 1e-9 && v.abs() < 1e15) {
+      return v.toInt().toString();
+    }
+    final s = v.toStringAsPrecision(10);
+    return s.contains('.')
+        ? s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')
+        : s;
   }
 
   /// Dispatch a `fzn:` line to the FlatZinc backend. On success the

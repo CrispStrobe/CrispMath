@@ -14,6 +14,7 @@ import 'numerical.dart';
 import 'polynomial.dart';
 import 'polynomial_mod.dart';
 import 'step_engine.dart';
+import 'symbolic_limit.dart';
 import 'symbolic_web.dart';
 import 'unit_expression.dart';
 
@@ -1074,17 +1075,30 @@ class CalculatorEngine {
 
   String lcm(String a, String b) => _bridgeCall('lcm', (br) => br.lcm(a, b));
 
-  /// Numerical limit. SymEngine's C wrapper doesn't expose `limit` directly
-  /// yet, so we approximate by evaluating the expression at points
-  /// approaching `point` from both sides via the bridge. Returns the
-  /// converged value, or a descriptive error if the one-sided limits
-  /// disagree. Pass `oo` / `inf` / `\\infty` for +∞; `-oo` / `-inf` for −∞.
+  /// Symbolic + numerical limit.
+  ///
+  /// Tier 1 (symbolic): direct substitution via the bridge.
+  /// Tier 2 (symbolic): L'Hôpital's rule for 0/0 indeterminate forms.
+  /// Tier 3 (numerical): sampling fallback from [oneSidedLimit] /
+  ///   [limitAtInfinity].
+  ///
+  /// Pass `oo` / `inf` / `\infty` for +∞; `-oo` / `-inf` for −∞.
   String limit(String expression, String variable, String point) {
     final bridge = _liveBridge;
     if (bridge == null) {
       return 'Error: limit requires native library';
     }
 
+    // Tier 1+2: try the symbolic limit engine.
+    final symbolic = SymbolicLimit.compute(
+      engine: this,
+      expression: expression,
+      variable: variable,
+      point: point,
+    );
+    if (symbolic != null) return symbolic.value;
+
+    // Tier 3: numerical fallback.
     double evalAt(double x) {
       try {
         final substituted =
