@@ -768,13 +768,13 @@ but become *moat-building* rather than *positioning*, since the moat
     where unrelated expressions shouldn't re-eval on every
     keystroke.
 
-  - [ ] **Cross-document references.** `{doc:taxes}.line4` or
+  - [x] ~~**Cross-document references.**~~ Done 2026-06-02 — `resolveCrossDocRefs()` in notepad_evaluator.dart. `{doc:taxes}.line4` or
     `{doc:taxes}.totalTax` resolves a variable from another
     document in the same notepad store. Requires a
     cross-document dependency tracker and a re-eval signal
     when the source doc changes.
 
-  - [ ] **PDF / rich export.** Export a document as a styled
+  - [~] **PDF / rich export.** Markdown + LaTeX export done 2026-06-02 (`notepad_export.dart`). PDF rendering needs `package:pdf`. Export a document as a styled
     PDF (LaTeX-rendered expressions + results side by side,
     headings preserved). Requires the `pdf` package +
     `flutter_math_fork`'s render-to-image.
@@ -785,7 +785,7 @@ but become *moat-building* rather than *positioning*, since the moat
     expense lines + balance), "Lab report" (data entry +
     stats block). Accessible from the new-doc menu.
 
-  - [ ] **Drag-and-drop results.** Long-press a result to grab
+  - [x] ~~**Drag-and-drop results.**~~ Done 2026-06-02 — `LongPressDraggable` on result + `DragTarget` on input. Long-press a result to grab
     it, then drop onto another line's input to insert the value
     or the source expression. Uses Flutter's `LongPressDraggable`
     + `DragTarget` on the input fields.

@@ -1876,11 +1876,43 @@ class _NotepadLineRow extends StatelessWidget {
     );
     // Skip autocomplete for dense/heading/divider rows.
     if (dense || heading) return textField;
-    return NotepadAutocompleteOverlay(
+    final withAutocomplete = NotepadAutocompleteOverlay(
       controller: controller,
       focusNode: focusNode,
       scopeNames: _scopeNames,
       child: textField,
+    );
+    // Wrap in DragTarget so dragged results can be dropped into this line.
+    return DragTarget<String>(
+      onAcceptWithDetails: (details) {
+        final value = details.data;
+        final text = controller.text;
+        final sel = controller.selection;
+        final pos = sel.isValid ? sel.start : text.length;
+        final before = text.substring(0, pos);
+        final after = text.substring(pos);
+        final newText = '$before$value$after';
+        controller.value = TextEditingValue(
+          text: newText,
+          selection: TextSelection.collapsed(offset: pos + value.length),
+        );
+        onChanged(newText);
+      },
+      builder: (context, candidateData, rejectedData) {
+        if (candidateData.isNotEmpty) {
+          return Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: withAutocomplete,
+          );
+        }
+        return withAutocomplete;
+      },
     );
   }
 }
@@ -2084,11 +2116,26 @@ class _NotepadResultColumn extends StatelessWidget {
     } catch (_) {
       body = Text(res, style: style, textAlign: textAlign);
     }
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPress: () => _showResultActions(context, res, latex),
-      onSecondaryTap: () => _showResultActions(context, res, latex),
-      child: body,
+    return LongPressDraggable<String>(
+      data: res,
+      feedback: Material(
+        elevation: 4,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Text(
+            res.length > 30 ? '${res.substring(0, 30)}…' : res,
+            style: style.copyWith(fontSize: 14),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.4, child: body),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: () => _showResultActions(context, res, latex),
+        onSecondaryTap: () => _showResultActions(context, res, latex),
+        child: body,
+      ),
     );
   }
 
