@@ -723,6 +723,13 @@ class StepEngine {
       if (trigResult != null) return trigResult;
     }
 
+    // V5: trig substitution for integrands of the form √(a²−x²),
+    // √(a²+x²), or √(x²−a²). These are whole-integrand patterns
+    // (not 1/something) that reduce to standard results.
+    final trigSubResult = _trigSubstitutionStep(
+        s, variable, engine, steps);
+    if (trigSubResult != null) return trigSubResult;
+
     // V4: partial fractions for ∫ P(x) / Q(x) dx when Q has distinct
     // small-integer roots. We don't try to factor general polynomials —
     // the cover-up method works as long as the roots are simple, and a
@@ -982,63 +989,242 @@ class StepEngine {
       final value = engine.evaluate(_substitute(denStripped, variable, '$r'));
       if (_looksLikeZero(value)) roots.add(r);
     }
-    // Need at least two distinct roots to be worth the decomposition.
-    if (roots.length < 2) return null;
-    // For each root r, compute A = P(r) / Q'(r) (residue formula).
-    // Each A_i must be finite (Q'(r) ≠ 0 — confirms simple root).
-    final coefs = <int, String>{};
+    if (roots.isEmpty) return null;
+
+    // V5: determine the multiplicity of each root by repeatedly
+    // dividing Q by (x - r) and testing if the quotient still has r
+    // as a root. Uses synthetic evaluation: Q(r)=0 means (x-r)|Q,
+    // and we deflate via the engine's polynomial division.
+    final rootMultiplicity = <int, int>{};
     for (final r in roots) {
-      final dDenAtR = engine.evaluate(_substitute(dDen, variable, '$r'));
-      if (_looksLikeZero(dDenAtR)) return null; // repeated root
-      final numAtR = engine.evaluate(_substitute(numStripped, variable, '$r'));
-      if (numAtR.startsWith('Error') || dDenAtR.startsWith('Error')) {
-        return null;
+      var q = denStripped;
+      var mult = 0;
+      for (var k = 0; k < 5; k++) {
+        final val = engine.evaluate(_substitute(q, variable, '$r'));
+        if (!_looksLikeZero(val)) break;
+        mult++;
+        // Deflate: Q = Q / (x - r).
+        final factor = r == 0 ? variable : '($variable - $r)';
+        final quotient = engine.simplify('($q) / ($factor)');
+        if (quotient.startsWith('Error')) break;
+        q = quotient;
       }
-      final a = engine.simplify('($numAtR) / ($dDenAtR)');
-      if (a.startsWith('Error')) return null;
-      coefs[r] = a;
+      if (mult > 0) rootMultiplicity[r] = mult;
     }
 
-    // Build the decomposition + result strings.
+    // Need at least one root with a definite multiplicity.
+    if (rootMultiplicity.isEmpty) return null;
+
+    // Determine coefficients. For simple roots (m=1): A = P(r)/Q'(r).
+    // For repeated roots (m>1): we compute the coefficients by
+    // successively evaluating the "reduced" numerator.
     final decompositionParts = <String>[];
     final resultParts = <String>[];
-    for (final r in roots) {
-      final a = coefs[r]!;
+    var hasRepeated = false;
+
+    for (final entry in rootMultiplicity.entries) {
+      final r = entry.key;
+      final m = entry.value;
       final sign = r >= 0 ? '-' : '+';
       final absR = r.abs();
-      decompositionParts.add('($a)/($variable $sign $absR)');
-      if (a == '1') {
-        resultParts.add('ln|$variable $sign $absR|');
-      } else if (a == '-1') {
-        resultParts.add('-ln|$variable $sign $absR|');
+      final factorStr = '$variable $sign $absR';
+
+      if (m == 1) {
+        // Simple root: cover-up method.
+        final dDenAtR = engine.evaluate(_substitute(dDen, variable, '$r'));
+        if (_looksLikeZero(dDenAtR)) continue;
+        final numAtR =
+            engine.evaluate(_substitute(numStripped, variable, '$r'));
+        if (numAtR.startsWith('Error') || dDenAtR.startsWith('Error')) {
+          return null;
+        }
+        final a = engine.simplify('($numAtR) / ($dDenAtR)');
+        if (a.startsWith('Error')) return null;
+
+        decompositionParts.add('($a)/($factorStr)');
+        if (a == '1') {
+          resultParts.add('ln|$factorStr|');
+        } else if (a == '-1') {
+          resultParts.add('-ln|$factorStr|');
+        } else {
+          resultParts.add('($a)·ln|$factorStr|');
+        }
       } else {
-        resultParts.add('($a)·ln|$variable $sign $absR|');
+        hasRepeated = true;
+        // Repeated root: for each power k = 1..m, compute the
+        // coefficient A_k via the k-th derivative of the reduced
+        // numerator at r, divided by k!.
+        // Reduced numerator = P(x) · (x-r)^m / Q(x), evaluated
+        // via the engine's simplify.
+        final reduced =
+            engine.simplify('($numStripped) * ($factorStr)^$m / ($denStripped)');
+        if (reduced.startsWith('Error')) return null;
+
+        var deriv = reduced;
+        for (var k = 0; k < m; k++) {
+          final aRaw = engine.evaluate(_substitute(deriv, variable, '$r'));
+          if (aRaw.startsWith('Error')) return null;
+
+          // A_k = deriv^(k)(r) / k!
+          var factorial = 1;
+          for (var j = 2; j <= k; j++) {
+            factorial *= j;
+          }
+          final a = engine.simplify('($aRaw) / $factorial');
+          if (a.startsWith('Error')) return null;
+
+          final power = m - k;
+          if (!_looksLikeZero(a)) {
+            if (power == 1) {
+              decompositionParts.add('($a)/($factorStr)');
+              if (a == '1') {
+                resultParts.add('ln|$factorStr|');
+              } else if (a == '-1') {
+                resultParts.add('-ln|$factorStr|');
+              } else {
+                resultParts.add('($a)·ln|$factorStr|');
+              }
+            } else {
+              decompositionParts.add('($a)/($factorStr)^$power');
+              // ∫ A/(x-r)^n dx = A · (x-r)^(1-n) / (1-n)
+              final exp = 1 - power;
+              resultParts.add('($a)·($factorStr)^($exp)/($exp)');
+            }
+          }
+
+          // Differentiate for the next coefficient.
+          if (k < m - 1) {
+            deriv = engine.differentiate(deriv, variable);
+            if (deriv.startsWith('Error')) return null;
+          }
+        }
       }
     }
+
+    if (decompositionParts.isEmpty) return null;
+
     final decomposition = decompositionParts.join(' + ');
     final result = resultParts.join(' + ');
+    final rootList = rootMultiplicity.entries
+        .map((e) => e.value > 1 ? '${e.key} (×${e.value})' : '${e.key}')
+        .toList()
+      ..sort();
 
     steps.add(MathStep(
-      rule: 'Partial-fraction decomposition',
-      formula: r"\frac{P(x)}{(x-r_1)\dots(x-r_n)} = \sum \frac{A_i}{x-r_i}",
+      rule: hasRepeated
+          ? 'Partial-fraction decomposition (repeated roots)'
+          : 'Partial-fraction decomposition',
+      formula: hasRepeated
+          ? r"\frac{P(x)}{(x-r)^m \dots} = \sum_{k=1}^{m} \frac{A_k}{(x-r)^k} + \dots"
+          : r"\frac{P(x)}{(x-r_1)\dots(x-r_n)} = \sum \frac{A_i}{x-r_i}",
       before: '∫ $originalIntegrand d$variable',
       after: '∫ ($decomposition) d$variable',
-      note: 'The denominator has distinct integer roots '
-          '${roots.toList()..sort()}. Cover-up gives '
-          'A_i = P(r_i) / Q\'(r_i) for each root.',
+      note: 'The denominator has integer roots $rootList. '
+          '${hasRepeated ? "Repeated roots produce higher-power terms." : "Cover-up gives A_i = P(r_i) / Q\'(r_i) for each root."}',
       noteI18n: StepNote('partialFractions', {
-        'roots': (roots.toList()..sort()).join(', '),
+        'roots': rootList.join(', '),
       }),
     ));
     steps.add(MathStep(
       rule: 'Integrate each term',
-      formula: r"\int \frac{A}{x-r} \, dx = A \ln|x-r|",
+      formula: hasRepeated
+          ? r"\int \frac{A}{(x-r)^n} \, dx = \frac{A \cdot (x-r)^{1-n}}{1-n} \quad (n \geq 2)"
+          : r"\int \frac{A}{x-r} \, dx = A \ln|x-r|",
       before: '∫ ($decomposition) d$variable',
       after: result,
-      note: 'Each `A/(x-r)` piece integrates to A·ln|x-r|.',
+      note: hasRepeated
+          ? 'Simple-root terms give ln; repeated-root terms use the power rule.'
+          : 'Each `A/(x-r)` piece integrates to A·ln|x-r|.',
       noteI18n: const StepNote('partialFractionsIntegrate'),
     ));
     return result;
+  }
+
+  /// V5: trig substitution for integrands that are `sqrt(a² − x²)`,
+  /// `sqrt(a² + x²)`, or `sqrt(x² − a²)`.
+  static String? _trigSubstitutionStep(
+    String integrand,
+    String variable,
+    CalculatorEngine engine,
+    List<MathStep> steps,
+  ) {
+    final fc = _matchFunctionCall(integrand.trim());
+    if (fc == null || fc.name != 'sqrt') return null;
+    final inner = _stripOuterParens(fc.arg.trim());
+    final terms = _splitTopLevelSum(inner);
+    if (terms == null || terms.length != 2) return null;
+
+    int? idxX2;
+    int? idxConst;
+    for (var i = 0; i < 2; i++) {
+      final body = _stripOuterParens(terms[i].body).trim();
+      if (body == '$variable^2') {
+        idxX2 = i;
+      } else if (!_containsVar(body, variable)) {
+        idxConst = i;
+      }
+    }
+    if (idxX2 == null || idxConst == null) return null;
+
+    final aSq = _stripOuterParens(terms[idxConst].body).trim();
+    final a = engine.simplify('sqrt($aSq)');
+    if (a.startsWith('Error')) return null;
+
+    final x2Sign = terms[idxX2].sign;
+    final constSign = terms[idxConst].sign;
+
+    // √(a² − x²): const is +, x² is −.
+    if (constSign == '+' && x2Sign == '-') {
+      final result =
+          '($variable/2)*sqrt($aSq - $variable^2) + ($aSq/2)*asin($variable/($a))';
+      steps.add(MathStep(
+        rule: 'Trig substitution: sqrt(a^2 - x^2)',
+        formula:
+            r'\int \sqrt{a^2 - x^2} \, dx = \frac{x}{2}\sqrt{a^2-x^2} + \frac{a^2}{2}\arcsin\!\frac{x}{a}',
+        before: '\u222b $integrand d$variable',
+        after: result,
+        note: 'Substitute x = a sin(t). With a^2 = $aSq (a = $a), the '
+            'standard result follows.',
+        noteI18n: StepNote('trigSubSqrtAMinusX', {'aSq': aSq, 'a': a}),
+      ));
+      return result;
+    }
+
+    // √(a² + x²): both +.
+    if (constSign == '+' && x2Sign == '+') {
+      final result =
+          '($variable/2)*sqrt($aSq + $variable^2) + ($aSq/2)*ln(abs($variable + sqrt($aSq + $variable^2)))';
+      steps.add(MathStep(
+        rule: 'Trig substitution: sqrt(a^2 + x^2)',
+        formula:
+            r'\int \sqrt{a^2 + x^2} \, dx = \frac{x}{2}\sqrt{a^2+x^2} + \frac{a^2}{2}\ln\!\left|x+\sqrt{a^2+x^2}\right|',
+        before: '\u222b $integrand d$variable',
+        after: result,
+        note: 'Substitute x = a tan(t). With a^2 = $aSq (a = $a), the '
+            'standard result follows.',
+        noteI18n: StepNote('trigSubSqrtAPlusX', {'aSq': aSq, 'a': a}),
+      ));
+      return result;
+    }
+
+    // √(x² − a²): x² is +, const is −.
+    if (x2Sign == '+' && constSign == '-') {
+      final result =
+          '($variable/2)*sqrt($variable^2 - $aSq) - ($aSq/2)*ln(abs($variable + sqrt($variable^2 - $aSq)))';
+      steps.add(MathStep(
+        rule: 'Trig substitution: sqrt(x^2 - a^2)',
+        formula:
+            r'\int \sqrt{x^2 - a^2} \, dx = \frac{x}{2}\sqrt{x^2-a^2} - \frac{a^2}{2}\ln\!\left|x+\sqrt{x^2-a^2}\right|',
+        before: '\u222b $integrand d$variable',
+        after: result,
+        note: 'Substitute x = a sec(t). With a^2 = $aSq (a = $a), the '
+            'standard result follows.',
+        noteI18n: StepNote('trigSubSqrtXMinusA', {'aSq': aSq, 'a': a}),
+      ));
+      return result;
+    }
+
+    return null;
   }
 
   static int? _smallIntegerPowerOfVar(String expr, String variable) {

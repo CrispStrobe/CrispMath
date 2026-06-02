@@ -83,6 +83,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
   String _busyMessage = '';
 
   bool _historySearchOpen = false;
+  String _debouncedSearchQuery = '';
+  Timer? _historySearchDebounce;
   final TextEditingController _historySearchController =
       TextEditingController();
   // Dedicated focus node for the history search field. Without this the
@@ -96,7 +98,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
     _latexController.addListener(_onInputChanged);
-    _historySearchController.addListener(() => setState(() {}));
+    _historySearchController.addListener(_onHistorySearchChanged);
     // Worked-examples V2: pull in any pre-filled expression that
     // arrived via AppState.requestInsertExpression (the dialog signals
     // here, MainScreen routes us, and we drain the slot on the next
@@ -140,6 +142,16 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _calculatorFocusNode.requestFocus();
   }
 
+  void _onHistorySearchChanged() {
+    _historySearchDebounce?.cancel();
+    _historySearchDebounce = Timer(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      setState(() {
+        _debouncedSearchQuery = _historySearchController.text;
+      });
+    });
+  }
+
   void _consumePendingInsert() {
     final expr = _appState.consumePendingInsert();
     if (expr == null || !mounted) return;
@@ -157,6 +169,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _latexController.removeListener(_onInputChanged);
     _latexController.dispose();
     _calculatorFocusNode.dispose();
+    _historySearchDebounce?.cancel();
     _historySearchController.dispose();
     _historySearchFocusNode.dispose();
     super.dispose();
@@ -2370,7 +2383,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                             );
                           }
 
-                          final q = _historySearchController.text
+                          final q = _debouncedSearchQuery
                               .trim()
                               .toLowerCase();
                           final entries = q.isEmpty
