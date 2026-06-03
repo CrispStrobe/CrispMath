@@ -2,6 +2,36 @@
 
 Completed work, newest first.
 
+## 2026-06-02/03 — Notepad V2 + OCR + Step V5 (mega-session)
+
+**288+ new tests, all green. 15 commits to CrispCalc main.**
+
+### Notepad V2 (14 features)
+Percentages (4 languages), subtotals/running sums, section headings
++ dividers, syntax highlighting, per-line result format (auto/
+decimal/fraction/hex/binary/scientific), autocomplete, date/time
+arithmetic, inline mini-plots, collapsible sections, multi-level
+undo/redo (Cmd+Z), search within document (Cmd+F), left-rail doc
+list at 1200px, document templates (5 presets), currency conversion
+(44 currencies offline), cross-doc references, drag-drop results,
+Markdown + LaTeX export, line pinning.
+
+### Math OCR (end-to-end, on-device)
+DeiT encoder (12L ViT, ggml graph) + TrOCR decoder (6L, post-LN).
+GGUF converter with weight transpose for ggml convention. 4 quant
+levels: F32 (112MB), F16 (56MB, 3.3s), Q8_0 (31MB), Q4_K (17MB).
+All verified correct: x²+1, sin(x), 2x+3=0. Models uploaded to
+HuggingFace `cstr/pix2tex-mfr-gguf`. Camera button + image_picker +
+OcrCaptureDialog + OcrSettingsDialog + OcrModelManager wired.
+
+### Other
+- Symbolic limit engine (L'Hôpital + infinity)
+- Step engine V5 (repeated-root partial fractions + trig substitution)
+- P6 Round 105 (Analysis Hub help mode)
+- P7 Round 114 (logic FunctionRef + keypad wiring)
+- Calculator history search debounce (200ms)
+- Function reference test fixes (catalog cap 90, enum 10 categories)
+
 ## 2026-05-31 — Multivariate factor (FLINT mpoly) + real simplify
 
 Closed the last two PLAN gaps in one C++ wrapper change + one rebuild cycle.
