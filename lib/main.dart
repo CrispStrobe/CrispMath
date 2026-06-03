@@ -37,6 +37,7 @@ import 'widgets/user_functions_dialog.dart';
 import 'widgets/function_reference_dialog.dart';
 import 'widgets/worked_examples_dialog.dart';
 import 'widgets/web_unsupported_banner.dart';
+import 'engine/ocr_providers_init.dart';
 
 /// Round 71: a single app-wide [RouteObserver] so screens / dialogs
 /// pushed onto the root navigator can subscribe via [RouteAware] and
@@ -75,6 +76,9 @@ void main() async {
   // Register native (SymEngine / GMP / MPFR / MPC / FLINT) license texts so
   // they appear in `showLicensePage` alongside the pub deps.
   await registerNativeLicenses();
+
+  // Initialize OCR providers (checks for downloaded models + native libs).
+  await initOcrProviders();
 
   // Headless self-test for CI / manual verification. Invoke with the
   // `CRISPCALC_DIAGNOSTIC=matrix|steps` environment variable set (desktop
