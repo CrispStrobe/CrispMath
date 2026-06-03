@@ -1063,8 +1063,12 @@ but become *moat-building* rather than *positioning*, since the moat
   - CrispCalc: camera button on Calculator + Notepad, OCR capture
     dialog, model download manager with HF catalog
   - Branch: `feature/math-ocr-inference` in CrispEmbed
-  - **Remaining**: `image_picker` pubspec + wire camera flow,
-    ggml graph decoder for further speedup, real photo testing
+  - `image_picker` wired — full camera/gallery → OCR → confirm flow
+  - Settings → "Math OCR Models" dialog with download/delete/progress
+  - Q4_K (17MB) verified: x²+1, sin(x), 2x+3=0 all correct
+  - **Remaining**: ggml graph decoder for further speedup,
+    register CrispEmbed FFI provider at runtime (needs native lib
+    in the app bundle per platform)
 
   Four tiers, each independently shippable, all using NC-free
   licenses (Apache 2.0 / MIT) compatible with CrispCalc's AGPL-3.

@@ -140,7 +140,8 @@ On-device math equation recognition via CrispEmbed's ggml inference:
 - Matrix entry via the dedicated editor works; running operations like `det`
   and `inv` depends on SymEngine being able to parse the `Matrix([...])`
   syntax we emit.
-- OCR camera flow requires `image_picker` package (pending pubspec addition).
+- OCR requires the CrispEmbed native library bundled per platform
+  (currently built on `feature/math-ocr-inference` branch).
 
 See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
 recently.
