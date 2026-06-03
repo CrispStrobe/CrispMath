@@ -56,6 +56,13 @@ dependencies:
   # OCR: camera/gallery image picker for math equation recognition
   image_picker: ^1.0.0
 
+  # CrispEmbed: on-device embedding + math OCR inference via ggml.
+  # Provides the CrispEmbedOcr class for DeiT+TrOCR equation recognition.
+  crispembed:
+    git:
+      url: https://github.com/CrispStrobe/CrispEmbed.git
+      path: flutter/crispembed
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

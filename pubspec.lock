@@ -49,6 +49,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  crispembed:
+    dependency: "direct main"
+    description:
+      path: "flutter/crispembed"
+      ref: HEAD
+      resolved-ref: "8b849bc600a7ad386b73b37f2c9d0dc8c80b782d"
+      url: "https://github.com/CrispStrobe/CrispEmbed.git"
+    source: git
+    version: "0.3.0"
   cross_file:
     dependency: transitive
     description:

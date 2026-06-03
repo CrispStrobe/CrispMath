@@ -6,13 +6,15 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crispembed/crispembed.dart' show CrispEmbedOcr;
+
 import 'ocr_provider.dart';
 import 'ocr_model_manager.dart';
 
 /// CrispEmbed-backed OCR provider. Wraps the native library.
 class _CrispEmbedProvider implements OcrProvider {
   final String _modelPath;
-  dynamic _ocr; // CrispEmbedOcr from the plugin (loaded lazily)
+  CrispEmbedOcr? _ocr;
 
   _CrispEmbedProvider(this._modelPath);
 
@@ -51,8 +53,8 @@ class _CrispEmbedProvider implements OcrProvider {
         }
       }
 
-      // Call the native OCR (this blocks — should be on an isolate for production)
-      final latex = _ocr.recognizeGray(gray, width, height) as String?;
+      // Call the native OCR
+      final latex = _ocr!.recognizeGray(gray, width, height);
       if (latex == null || latex.isEmpty) return null;
 
       // Clean BPE space tokens and convert to engine syntax
@@ -69,14 +71,11 @@ class _CrispEmbedProvider implements OcrProvider {
     }
   }
 
-  dynamic _initOcr() {
+  CrispEmbedOcr? _initOcr() {
     try {
-      // Import CrispEmbedOcr dynamically — if the native lib isn't
-      // present, this throws and we return null.
-      // Using the crispembed package's CrispEmbedOcr class.
-      // For now, return null until the package is in pubspec.
-      return null;
-    } catch (_) {
+      return CrispEmbedOcr(_modelPath, nThreads: 4);
+    } catch (e) {
+      // Native lib not available on this platform — graceful fallback
       return null;
     }
   }

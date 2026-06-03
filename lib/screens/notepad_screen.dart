@@ -1448,6 +1448,14 @@ class _NotepadScreenState extends State<NotepadScreen> {
               child: Text(t.notepadCopyAsMarkdown),
             ));
             items.add(PopupMenuItem(
+              value: 'toggle-latex',
+              child: Row(children: [
+                Icon(doc!.useLatexInput ? Icons.check_box : Icons.check_box_outline_blank, size: 18),
+                const SizedBox(width: 8),
+                const Text('LaTeX input'),
+              ]),
+            ));
+            items.add(PopupMenuItem(
               value: 'delete',
               child: Text(t.notepadDeleteDocument),
             ));
@@ -1486,6 +1494,12 @@ class _NotepadScreenState extends State<NotepadScreen> {
       _duplicateCurrent();
     } else if (value == 'copy-markdown') {
       _copyAsMarkdown();
+    } else if (value == 'toggle-latex') {
+      final doc = _currentDoc;
+      if (doc != null) {
+        setState(() => doc.useLatexInput = !doc.useLatexInput);
+        _persistDoc(doc);
+      }
     } else if (value == 'delete') {
       _deleteCurrent();
     }

@@ -21,51 +21,46 @@ with a 2026 input surface."
 
 ---
 
-## Open work items
+## Open work items (priority order)
 
-### P1 — Native limit (in progress)
-
-- [~] Pure-Dart symbolic limit engine (`symbolic_limit.dart`) ships
-  tiers 1+2 (direct substitution + L'Hôpital for 0/0). Numerical
-  fallback remains as tier 3. Gruntz algorithm (tier 4) deferred.
-
-### P4 — Production-readiness
+### Tier 1 — Ship blockers
 
 - [ ] **Distribution pipeline.** Apple Developer enrollment +
-  notarization + TestFlight/App Store. Android via Play. Load-bearing
-  prerequisite for reach.
-- [ ] **Crash reporting (opt-in).** Sentry self-hosted or email-based.
+  notarization + TestFlight/App Store. Android via Play. **Load-bearing
+  prerequisite** for everything below to reach users.
+- [~] **Bundle CrispEmbed native lib per platform.** Plugin pubspec
+  declares ffiPlugin for 5 platforms. CI builds the artifacts.
+  Remaining: place them in platform directories + test on each OS.
 - [ ] **iOS smoke test.** Not run since recent changes.
+
+### Tier 2 — High-value features
+
+- [ ] **AI copilot (verifier-frontend, never solver).** LLM translates
+  input → engine syntax, narrates step traces, explains results.
+  Hard guardrail: LLM never asked "what's the answer." Pluggable
+  provider (Claude/OpenAI/on-device); user supplies API key.
+- [~] **Inline LaTeX input.** Toggle wired in notepad overflow menu.
+  Flag persisted per-doc. Needs interactive testing with
+  ReorderableListView (LatexController changes line heights).
+- [ ] **Handwritten math OCR.** Apple VisionKit (iOS), or pix2tex
+  fine-tune on CROHME dataset. Printed math OCR already working.
+
+### Tier 3 — Polish + completeness
+
+- [ ] **Function Reference i18n.** FR+ES translations (DE done).
+- [ ] **Accessibility V2.** Keyboard navigation, contrast, VoiceOver.
+- [ ] **PDF export.** Needs `package:pdf`. Export model done.
+- [ ] **Crash reporting (opt-in).** Sentry or email-based.
 - [ ] **Perf instrumentation.** Frame-timing overlay, jank detection.
+- [~] **Symbolic limit.** Tiers 1+2 done. Gruntz (tier 4) deferred.
 
-### P5 — Notepad V2/V3
+### Tier 4 — Future / speculative
 
-Notepad V1 (8 phases) is complete. V2 features shipped in June 2026:
-percentages, subtotals, headings, syntax highlighting, per-line
-format, autocomplete, date/time, inline plots, collapsible sections,
-undo/redo, search, left-rail, templates, currency, cross-doc refs,
-drag-drop, Markdown/LaTeX export, line pinning.
-
-**Still open:**
-
-- [~] **Inline LaTeX input.** `useLatexInput` flag on NotepadDocument
-  persisted. Actual LatexController integration needs interactive
-  testing with ReorderableListView.
-- [ ] **PDF export.** Needs `package:pdf`. Structured export model
-  (`notepad_export.dart`) is done.
-- [ ] **Collaborative editing.** Server infrastructure (Firebase/
-  Supabase). V3+ scope.
-
-### P5 — AI copilot
-
-- [ ] **Verifier-frontend, never solver.** LLM translates input and
-  narrates output; SymEngine + step engine remain the only sources of
-  arithmetic. Three jobs:
-  - Job 1 — Translate: natural language → engine syntax
-  - Job 2 — Narrate: step trace → prose explanation
-  - Job 3 — Explain: "what does this result mean?"
-  - Hard guardrail: LLM never asked "what's the answer"
-  - Pluggable provider (Claude/OpenAI/on-device); user supplies key
+- [ ] **Pen / handwriting input.** Apple Pencil (PKCanvasView). iPad-only.
+- [ ] **Shareable state links.** URL-encode calculator state for web.
+- [ ] **Collaborative editing.** Server infra (Firebase). V3+ scope.
+- [ ] **ggml graph decoder.** Replace scalar decoder loops (~5× for long outputs).
+- [ ] **Round E.5 — dart_csp_fzn MiniZinc solver.** Needs distribution pipeline.
 
 ### OCR — Math equation recognition
 
@@ -102,26 +97,23 @@ download/delete, OcrModelManager with HF catalog.
 **Remaining**:
 - [ ] ggml graph decoder (replaces scalar loops, ~5× speedup for
   long outputs)
-- [ ] Bundle CrispEmbed native lib per platform (macOS/Linux/
-  Windows/Android/iOS) — needed for the FFI provider to load
-- [ ] Register CrispEmbed OCR provider at app startup once native
-  lib is bundled
+- [~] Bundle CrispEmbed native lib per platform — plugin pubspec
+  declares ffiPlugin for all 5 platforms. CI builds the .so/.dylib/
+  .dll. Remaining: place CI artifacts into the plugin's platform
+  directories (linux/Libraries, macos/Frameworks, etc.)
+- [x] ~~Register CrispEmbed OCR provider at startup~~ — done.
+  `initOcrProviders()` auto-registers when a GGUF model is found.
+  Uses `package:crispembed`'s `CrispEmbedOcr` class via FFI.
 - [ ] Handwritten math: Apple VisionKit (iOS), pix2tex fine-tune
   on CROHME dataset
 
-### Other open items
+### Completed (moved to HISTORY.md)
 
-- [ ] **Pen / handwriting input.** Apple Pencil via PKCanvasView +
-  MLHandwritingRecognizer. iPad/Mac-only.
-- [ ] **CBJ-aware "explain failure" mode.** Surface MUS from
-  dart_csp's conflict-directed backjumping on unsat CSP results.
-- [ ] **Round E.5 — Bundle dart_csp_fzn as MiniZinc solver.**
-  Needs distribution pipeline (notarization) first.
-- [ ] **Shareable state links.** URL-encode calculator state for
-  the web build.
-- [ ] **Accessibility V2.** Keyboard navigation audit, contrast
-  verification, VoiceOver/TalkBack pass.
-- [ ] **Function Reference i18n.** FR+ES translations (DE done).
+- CBJ-aware "explain failure" (Round E.2)
+- Notepad V1 (8 phases) + V2 (14 features)
+- Math OCR end-to-end (4 quantizations, 3.3-5.5s)
+- Step engine V5 (repeated roots + trig sub)
+- P6/P7 help system + logic function reference
 
 ---
 
