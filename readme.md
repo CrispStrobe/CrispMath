@@ -124,14 +124,23 @@ Releases ship platform binaries via GitHub Actions; see GH Releases
 for `crisp_calc-vX.Y.Z-{macos.zip,ios-unsigned.zip,linux-x64.tar.gz,
 windows-x64.zip,android.apk}`.
 
+## Math OCR (June 2026)
+
+On-device math equation recognition via CrispEmbed's ggml inference:
+- **DeiT encoder + TrOCR decoder** — image → LaTeX in 3.3 seconds (FP16)
+- 4 quantization levels: F32 (112MB), F16 (56MB), Q8_0 (31MB), Q4_K (17MB)
+- Models on HuggingFace: [`cstr/pix2tex-mfr-gguf`](https://huggingface.co/cstr/pix2tex-mfr-gguf)
+- Tap 📷 on Calculator or Notepad → photo → LaTeX → engine syntax
+- No cloud, no Python, no ONNX at runtime — pure C++ via FFI
+
 ## Known limitations
 
-- `integrate()` and `limit()` are not yet implemented in the native bridge —
-  the calculator surfaces an "Error: not yet implemented" message when you
-  try to use them.
+- `limit()` uses a pure-Dart symbolic engine (L'Hôpital + numerical
+  fallback) — no native SymEngine binding yet.
 - Matrix entry via the dedicated editor works; running operations like `det`
   and `inv` depends on SymEngine being able to parse the `Matrix([...])`
   syntax we emit.
+- OCR camera flow requires `image_picker` package (pending pubspec addition).
 
 See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
 recently.
