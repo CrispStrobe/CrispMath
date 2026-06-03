@@ -1181,16 +1181,84 @@ but become *moat-building* rather than *positioning*, since the moat
     low-end phone (Snapdragon 4xx) may take 1-2s per image.
     Acceptable for a tap-to-capture flow.
 
-  **Sequencing**:
-  - Tier 1 (scaffolding): done.
-  - Tier 2 (ML Kit): ship with `image_picker` + `google_mlkit_text_recognition`.
-    ~1 day. Unblocks the camera button on mobile.
-  - Tier 3 (cloud LLM): ship with AI copilot V1. ~1-2 days on top
-    of the API-key infra.
-  - Tier 4 (CrispEmbed): 1-2 weeks in CrispEmbed (model conversion
-    + decoder impl + build), then ~1 day in CrispCalc (FFI binding
-    + provider registration). The real work is the GGUF converter
-    and the decoder forward pass in ggml.
+  **Status (2026-06-03)**:
+  - Tier 1 (scaffolding): **done** — `ocr_provider.dart`, 31 tests.
+  - Tier 4 GGUF conversion: **done** — three models converted:
+    - `pix2tex-mfr-f16.gguf` (printed math, 29M, 56 MB, MIT)
+    - `trocr-small-hw-f16.gguf` (handwriting base, 61M, 117 MB, MIT)
+    - `trocr-math-hw-f16.gguf` (handwritten math, 609M, 1.2 GB, AFL-3.0)
+  - CrispEmbed C API + skeleton: **done** — `math_ocr.h/cpp`.
+  - CrispCalc FFI binding: **done** — `ocr_crispembed.dart`.
+  - **Remaining**: ggml encoder/decoder forward passes (below).
+
+  ##### Tier 4 implementation — ggml forward passes
+
+  The GGUF files contain all weights; the missing piece is the
+  ggml graph construction that chains them into a working
+  encoder → decoder → token pipeline. Seven steps, each
+  independently testable.
+
+  **Step 1 — Tensor mapping** (math_ocr.cpp `math_ocr_init`).
+  Map GGUF tensor names to the struct fields. The ONNX-path
+  tensors are prefixed `enc.`/`dec.`; the PyTorch-path tensors
+  use dot-to-underscore names like
+  `encoder_encoder_layer_0_attention_attention_query_weight`.
+  Write a `_find_tensor(ctx, name)` helper that tries both
+  naming conventions. Wire all encoder layers + decoder layers
+  + embeddings + layernorms + lm_head.
+
+  **Step 2 — DeiT patch embedding** (encoder, first op).
+  Input: grayscale image → resize to 384×384 → unfold into 16×16
+  patches → project via conv weight (384×3×16×16) → add position
+  embeddings (578×384, includes CLS + distillation tokens).
+  ggml ops: `ggml_conv_2d` or manual reshape + `ggml_mul_mat`,
+  then `ggml_add` for positional.
+
+  **Step 3 — DeiT transformer layers** (encoder, 12 iterations).
+  Standard ViT transformer block:
+    LayerNorm → Multi-head self-attention → residual
+    LayerNorm → FFN (Linear → GELU → Linear) → residual
+  Each layer: LN weights (384), QKV projection (384→384×3),
+  output projection (384→384), FFN up (384→1536), FFN down
+  (1536→384). All weights already in the GGUF.
+  ggml ops: `ggml_norm`, `ggml_mul_mat`, `ggml_add`,
+  `ggml_reshape_3d` (for multi-head), `ggml_permute`,
+  `ggml_soft_max`, `ggml_gelu`.
+  Reuse the ViT layer pattern from CrispEmbed's
+  `bidirlm_vision.cpp` and CrispASR's encoder blocks.
+
+  **Step 4 — Encoder output** → cross-attention keys/values.
+  The encoder outputs a (576+2, 384) tensor. The decoder's
+  cross-attention layers project this with learned K/V weights
+  (384→256) — precompute these once per image and cache them
+  for all decoder steps.
+
+  **Step 5 — TrOCR decoder — single-step forward**.
+  Input: one token id → embed (vocab→256) + positional (pos→256)
+  + layernorm. For each of 6 layers:
+    a. Causal self-attention with KV-cache (only last token's Q
+       needs computing; K/V for prior tokens are cached).
+    b. Cross-attention to encoder output (K/V precomputed in step 4,
+       Q from the current decoder hidden state).
+    c. FFN (256→1024→256 with ReLU).
+  Output: final layernorm → lm_head (256→vocab) → logits.
+  Pattern matches CrispASR's `crispasr.cpp` decoder exactly.
+
+  **Step 6 — Greedy / beam-search decoding loop**.
+  Start with decoder_start_token (2). Repeat:
+    Run step 5 → logits → argmax (greedy) or top-k (beam).
+    Append token. Stop on EOS (2) or max_seq_len (512).
+  Return the token ids.
+
+  **Step 7 — Detokenization**.
+  Look up each token id in the vocab array stored in GGUF
+  metadata. Concatenate → LaTeX string. Pass through
+  `latexToEngineSyntax()` in CrispCalc.
+
+  **Testing**: after each step, verify against the ONNX model's
+  intermediate outputs using `onnxruntime` as reference. The
+  converter can dump reference activations for step-by-step
+  comparison.
 - [ ] **Pen / handwriting input**. Apple Pencil + macOS trackpad
   handwriting recognition (`PKCanvasView` + `MLHandwritingRecognizer`)
   for math expressions. iPad specifically — closes the parity gap
