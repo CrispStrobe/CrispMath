@@ -38,6 +38,7 @@ import 'widgets/function_reference_dialog.dart';
 import 'widgets/worked_examples_dialog.dart';
 import 'widgets/web_unsupported_banner.dart';
 import 'engine/ocr_providers_init.dart';
+import 'widgets/ocr_settings_dialog.dart';
 
 /// Round 71: a single app-wide [RouteObserver] so screens / dialogs
 /// pushed onto the root navigator can subscribe via [RouteAware] and
@@ -617,6 +618,20 @@ class SettingsScreen extends StatelessWidget {
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const ImportDataDialog(),
+                  ),
+                ),
+              ),
+              // OCR model management
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.camera_alt_outlined),
+                  title: const Text('Math OCR Models'),
+                  subtitle: const Text('Download models for equation recognition'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => const OcrSettingsDialog(),
                   ),
                 ),
               ),
