@@ -33,8 +33,10 @@ import '../engine/date_time_evaluator.dart';
 import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
 import '../engine/ocr_provider.dart';
+import '../widgets/ocr_capture_dialog.dart';
+import 'package:image_picker/image_picker.dart';
 import '../engine/notepad_templates.dart';
-import '../engine/notepad_undo.dart';
+import '../engine/notepad_undo.dart' as undo;
 import '../engine/unit_expression.dart';
 import '../localization/app_localizations.dart';
 import '../services/engine_service.dart';
@@ -107,9 +109,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
   final Set<String> _collapsedHeadings = {};
 
   /// Notepad V2: per-document undo history, keyed by doc id.
-  final Map<String, UndoHistory> _undoHistories = {};
-  UndoHistory _undoFor(NotepadDocument doc) =>
-      _undoHistories.putIfAbsent(doc.id, () => UndoHistory());
+  final Map<String, undo.UndoHistory> _undoHistories = {};
+  undo.UndoHistory _undoFor(NotepadDocument doc) =>
+      _undoHistories.putIfAbsent(doc.id, () => undo.UndoHistory());
 
   /// Scroll controller for the line list so blocked-by chips can
   /// scroll the upstream line into view on tap.
@@ -312,8 +314,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // Record for undo (debounced — only first edit in a burst matters,
     // but for simplicity we record each keystroke; the undo stack cap
     // keeps memory bounded).
-    _undoFor(doc).record(UndoOp(
-      kind: UndoOpKind.edit,
+    _undoFor(doc).record(undo.UndoOp(
+      kind: undo.UndoOpKind.edit,
       index: doc.lines.indexOf(line),
       lineId: line.id,
       previousValue: prev,
@@ -331,8 +333,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
   void _appendLine(NotepadDocument doc) {
     final line = NotepadLine.fresh(source: '');
     doc.lines.add(line);
-    _undoFor(doc).record(UndoOp(
-      kind: UndoOpKind.insert,
+    _undoFor(doc).record(undo.UndoOp(
+      kind: undo.UndoOpKind.insert,
       index: doc.lines.length - 1,
       lineId: line.id,
     ));
@@ -347,7 +349,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
   void _performUndo(NotepadDocument doc) {
     final op = _undoFor(doc).undo();
     if (op == null) return;
-    final modified = applyUndo(doc, op);
+    final modified = undo.applyUndo(doc, op);
     if (modified) {
       _syncControllersFor(doc);
       _persistDoc(doc);
@@ -359,7 +361,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
   void _performRedo(NotepadDocument doc) {
     final op = _undoFor(doc).redo();
     if (op == null) return;
-    final modified = applyRedo(doc, op);
+    final modified = undo.applyRedo(doc, op);
     if (modified) {
       _syncControllersFor(doc);
       _persistDoc(doc);
@@ -537,8 +539,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
   void _deleteLine(NotepadDocument doc, int index) {
     if (index < 0 || index >= doc.lines.length) return;
     final removed = doc.lines.removeAt(index);
-    _undoFor(doc).record(UndoOp(
-      kind: UndoOpKind.delete,
+    _undoFor(doc).record(undo.UndoOp(
+      kind: undo.UndoOpKind.delete,
       index: index,
       lineId: removed.id,
       previousValue: removed.source,
@@ -573,8 +575,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
     if (oldIndex < newIndex) newIndex -= 1;
     final moved = doc.lines.removeAt(oldIndex);
     doc.lines.insert(newIndex, moved);
-    _undoFor(doc).record(UndoOp(
-      kind: UndoOpKind.reorder,
+    _undoFor(doc).record(undo.UndoOp(
+      kind: undo.UndoOpKind.reorder,
       index: oldIndex,
       newIndex: newIndex,
       lineId: moved.id,
@@ -586,18 +588,62 @@ class _NotepadScreenState extends State<NotepadScreen> {
     _scheduleRecalc(doc, oldIndex < newIndex ? oldIndex : newIndex);
   }
 
-  void _launchNotepadOcr(BuildContext context) {
+  Future<void> _launchNotepadOcr(BuildContext context) async {
     final provider = OcrProviders.active;
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Take photo'),
+            onTap: () => Navigator.pop(ctx, ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Choose from gallery'),
+            onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+          ),
+        ]),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, maxWidth: 1024);
+    if (picked == null || !mounted) return;
+
+    final bytes = await picked.readAsBytes();
+
     if (provider == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No OCR provider configured.')),
       );
       return;
     }
-    // TODO: image_picker → recognize → insert into current doc line
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('OCR ready (${provider.name}). Camera pending.')),
-    );
+
+    final decoded = await decodeImageFromList(bytes);
+    final result = await provider.recognize(bytes, decoded.width, decoded.height);
+    if (result == null || !mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OCR failed.')),
+      );
+      return;
+    }
+
+    final expression = await showOcrCaptureDialog(context, result);
+    if (expression == null || expression.isEmpty || !mounted) return;
+
+    // Insert as a new line in the current doc
+    final doc = _currentDoc;
+    if (doc != null) {
+      final line = NotepadLine.fresh(source: expression);
+      doc.lines.add(line);
+      _persistDoc(doc);
+      _scheduleRecalc(doc, doc.lines.length - 1);
+    }
   }
 
   void _newDocument() {

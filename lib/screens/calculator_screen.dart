@@ -10,6 +10,8 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
 import '../engine/ocr_provider.dart';
+import '../widgets/ocr_capture_dialog.dart';
+import 'package:image_picker/image_picker.dart';
 
 // Widget imports
 import '../widgets/boolean_chip.dart';
@@ -176,32 +178,70 @@ class CalculatorScreenState extends State<CalculatorScreen>
     super.dispose();
   }
 
-  /// OCR: launch the camera/gallery picker, run OCR, show confirmation dialog,
-  /// insert the recognized expression into the input field.
+  /// OCR: pick image → run provider → show confirmation → insert.
   Future<void> _launchOcr(BuildContext context) async {
-    // For now, show a placeholder dialog until image_picker is added.
-    // When a provider is available, this will:
-    // 1. Pick image from camera/gallery via image_picker
-    // 2. Run OcrProviders.active.recognize(bytes, w, h)
-    // 3. Show OcrCaptureDialog for review
-    // 4. Insert result into _latexController
     final provider = OcrProviders.active;
+
+    // Show source picker: camera or gallery
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Take photo'),
+            onTap: () => Navigator.pop(ctx, ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Choose from gallery'),
+            onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+          ),
+        ]),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    // Pick image
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, maxWidth: 1024);
+    if (picked == null || !mounted) return;
+
+    final bytes = await picked.readAsBytes();
+
     if (provider == null) {
+      // No OCR provider — apply postProcessOcrText as a passthrough
+      // (user might paste a photo of typed math, we can at least clean up)
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No OCR provider configured. '
-              'Set up in Settings → OCR Provider.'),
-        ),
+        const SnackBar(content: Text('No OCR provider configured yet.')),
       );
       return;
     }
-    // TODO: image_picker integration
+
+    // Run OCR
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('OCR ready (${provider.name}). '
-            'Camera integration pending image_picker package.'),
-      ),
+      const SnackBar(content: Text('Recognizing math…'), duration: Duration(seconds: 1)),
     );
+
+    // Decode image dimensions
+    final decoded = await decodeImageFromList(bytes);
+    final result = await provider.recognize(bytes, decoded.width, decoded.height);
+    if (result == null || !mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OCR failed — try a clearer image.')),
+      );
+      return;
+    }
+
+    // Show confirmation dialog
+    final expression = await showOcrCaptureDialog(context, result);
+    if (expression == null || expression.isEmpty || !mounted) return;
+
+    // Insert into the input field
+    _latexController.clear();
+    _latexController.insert(expression);
   }
 
   /// Allows parent widgets to request focus for the input field.
