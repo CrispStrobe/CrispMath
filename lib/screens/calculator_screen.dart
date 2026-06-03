@@ -9,6 +9,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 // Engine imports
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
+import '../engine/ocr_provider.dart';
 
 // Widget imports
 import '../widgets/boolean_chip.dart';
@@ -173,6 +174,34 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _historySearchController.dispose();
     _historySearchFocusNode.dispose();
     super.dispose();
+  }
+
+  /// OCR: launch the camera/gallery picker, run OCR, show confirmation dialog,
+  /// insert the recognized expression into the input field.
+  Future<void> _launchOcr(BuildContext context) async {
+    // For now, show a placeholder dialog until image_picker is added.
+    // When a provider is available, this will:
+    // 1. Pick image from camera/gallery via image_picker
+    // 2. Run OcrProviders.active.recognize(bytes, w, h)
+    // 3. Show OcrCaptureDialog for review
+    // 4. Insert result into _latexController
+    final provider = OcrProviders.active;
+    if (provider == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No OCR provider configured. '
+              'Set up in Settings → OCR Provider.'),
+        ),
+      );
+      return;
+    }
+    // TODO: image_picker integration
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('OCR ready (${provider.name}). '
+            'Camera integration pending image_picker package.'),
+      ),
+    );
   }
 
   /// Allows parent widgets to request focus for the input field.
@@ -2240,6 +2269,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
+                        // OCR camera button
+                        IconButton(
+                          icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                          tooltip: 'Scan math',
+                          onPressed: () => _launchOcr(context),
+                        ),
                         IconButton(
                           icon: const Icon(Icons.menu_book_outlined, size: 20),
                           tooltip:

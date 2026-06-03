@@ -32,6 +32,7 @@ import '../engine/currency_evaluator.dart';
 import '../engine/date_time_evaluator.dart';
 import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
+import '../engine/ocr_provider.dart';
 import '../engine/notepad_templates.dart';
 import '../engine/notepad_undo.dart';
 import '../engine/unit_expression.dart';
@@ -583,6 +584,20 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // follow the line. Either way, the safe thing is a full recompute
     // from the lowest affected index.
     _scheduleRecalc(doc, oldIndex < newIndex ? oldIndex : newIndex);
+  }
+
+  void _launchNotepadOcr(BuildContext context) {
+    final provider = OcrProviders.active;
+    if (provider == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No OCR provider configured.')),
+      );
+      return;
+    }
+    // TODO: image_picker → recognize → insert into current doc line
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('OCR ready (${provider.name}). Camera pending.')),
+    );
   }
 
   void _newDocument() {
@@ -1292,6 +1307,12 @@ class _NotepadScreenState extends State<NotepadScreen> {
       // Round 94 scopes the surface to notepad so module-bound
       // categories (constraints / sudoku / statistics / units) are
       // hidden from the filter row.
+      // OCR camera button
+      IconButton(
+        icon: const Icon(Icons.camera_alt_outlined),
+        tooltip: 'Scan math',
+        onPressed: () => _launchNotepadOcr(context),
+      ),
       IconButton(
         icon: const Icon(Icons.menu_book_outlined),
         tooltip: t.workedExamplesTitle,
