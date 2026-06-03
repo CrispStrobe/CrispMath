@@ -1049,6 +1049,17 @@ but become *moat-building* rather than *positioning*, since the moat
 
   ### OCR implementation plan (June 2026)
 
+  **STATUS 2026-06-03: Tier 4 END-TO-END WORKING.**
+  C++ ggml inference produces correct LaTeX from images:
+  - Encoder: cos=0.9999 vs ONNX reference (ALL PASS)
+  - Decoder: logits match ONNX to 3 decimals (argmax identical)
+  - 3 GGUF models converted (printed 56MB, handwritten-small
+    117MB, handwritten-large 1.2GB)
+  - Key fix: TrOCR decoder uses post-LayerNorm (not pre-LN).
+  - Performance: ~2min per image (scalar decoder). Encoder fast
+    via ggml graph. Next: ggml graph decoder for 10-50× speedup.
+  - Branch: `feature/math-ocr-inference` in CrispEmbed.
+
   Four tiers, each independently shippable, all using NC-free
   licenses (Apache 2.0 / MIT) compatible with CrispCalc's AGPL-3.
 
