@@ -30,6 +30,7 @@ import 'screens/function_editor_screen.dart';
 import 'screens/graphing_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/notepad_screen.dart';
+import 'services/crash_reporter.dart';
 import 'services/native_licenses.dart';
 import 'widgets/export_data_dialog.dart';
 import 'widgets/import_data_dialog.dart';
@@ -58,23 +59,10 @@ final RouteObserver<ModalRoute<void>> appRouteObserver =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Silence the "A KeyDownEvent is dispatched, but the state shows that
-  // the physical key is already pressed" assertion. It fires inside
-  // HardwareKeyboard.handleKeyEvent BEFORE event dispatch in debug mode,
-  // which means key events get DROPPED whenever the framework's
-  // _pressedKeys map has stale entries — typically after hot reload, a
-  // brief volume disconnect, or an abrupt app kill while a key was held.
-  // In release mode the assert is removed and the framework just runs
-  // through. We delegate to the default reporter for every other error.
-  final previousOnError = FlutterError.onError;
-  FlutterError.onError = (details) {
-    final msg = details.exception.toString();
-    if (msg.contains('physical key is already pressed') ||
-        msg.contains('physical key is not pressed')) {
-      return; // swallow
-    }
-    previousOnError?.call(details);
-  };
+  // Opt-in crash reporter: collects errors into a ring buffer.
+  // No data leaves the device without explicit user action (email/issue).
+  // Also silences the known HardwareKeyboard false-positive assertion.
+  CrashReporter.instance.install();
 
   await AppState().load();
   // Register native (SymEngine / GMP / MPFR / MPC / FLINT) license texts so
@@ -681,6 +669,21 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _CrispAssistSettingsCard(appState: appState),
               const SizedBox(height: 16),
+              if (CrashReporter.instance.hasReports)
+                Card(
+                  child: ListTile(
+                    leading: Icon(Icons.bug_report,
+                        color: Theme.of(context).colorScheme.error),
+                    title: Text(
+                        'Crash Reports (${CrashReporter.instance.count})'),
+                    subtitle: const Text(
+                        'Review and send — no data leaves without your action'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () => _showCrashReportDialog(context),
+                  ),
+                ),
+              if (CrashReporter.instance.hasReports)
+                const SizedBox(height: 16),
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.info_outline),
@@ -696,6 +699,63 @@ class SettingsScreen extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _showCrashReportDialog(BuildContext context) {
+    final reporter = CrashReporter.instance;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Crash Reports'),
+        content: SizedBox(
+          width: 420,
+          height: 300,
+          child: ListView(
+            children: [
+              for (final r in reporter.reports)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      r.toReportString(),
+                      style: const TextStyle(
+                          fontFamily: 'monospace', fontSize: 11),
+                      maxLines: 8,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              reporter.clear();
+              Navigator.of(ctx).pop();
+              // Poke AppState to trigger ListenableBuilder rebuild,
+              // which hides the crash-report card once cleared.
+              AppState().notifyListeners();
+            },
+            child: const Text('Clear All'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              reporter.launchGitHubIssue();
+            },
+            child: const Text('Report on GitHub'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              reporter.launchEmailReport();
+            },
+            child: const Text('Send Email'),
+          ),
+        ],
       ),
     );
   }
