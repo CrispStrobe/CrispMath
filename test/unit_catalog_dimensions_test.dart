@@ -54,14 +54,15 @@ void main() {
   });
 
   group('Dimensions.toBaseUnitsString', () {
-    test('newton = kg·m/s^2', () {
+    test('newton = m·kg/s^2', () {
       const newton = Dimensions(mass: 1, length: 1, time: -2);
-      expect(newton.toBaseUnitsString(), 'kg·m/s^2');
+      // Order follows addPart sequence: m (length), kg (mass), s (time).
+      expect(newton.toBaseUnitsString(), 'm·kg/s^2');
     });
 
-    test('joule = kg·m^2/s^2', () {
+    test('joule = m^2·kg/s^2', () {
       const joule = Dimensions(mass: 1, length: 2, time: -2);
-      expect(joule.toBaseUnitsString(), 'kg·m^2/s^2');
+      expect(joule.toBaseUnitsString(), 'm^2·kg/s^2');
     });
 
     test('hertz = 1/s', () {
