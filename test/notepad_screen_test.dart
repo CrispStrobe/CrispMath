@@ -242,7 +242,10 @@ void main() {
 
       await tester.tap(find.byTooltip('Document menu'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete document'));
+      final deleteItem = find.text('Delete document');
+      await tester.ensureVisible(deleteItem);
+      await tester.pumpAndSettle();
+      await tester.tap(deleteItem);
       await tester.pumpAndSettle();
 
       expect(state.notepadDocuments.containsKey(victimId), isFalse);
