@@ -68,7 +68,8 @@ with a 2026 input surface."
 - [x] **Crash reporting (opt-in).** CrashReporter ring buffer (20 max),
   email + GitHub issue actions, Settings card shows only when errors
   exist. No data leaves device without explicit user action.
-- [ ] **Perf instrumentation.** Frame-timing overlay, jank detection.
+- [x] **Perf instrumentation.** PerfStats + PerfOverlay — FPS, avg/worst
+  frame time, jank count. Toggle via Ctrl+Shift+P or Settings (debug).
 - [~] **Symbolic limit.** Tiers 1+2 done. Gruntz (tier 4) deferred.
 
 ### Tier 4 — Future / speculative
