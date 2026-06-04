@@ -61,7 +61,8 @@ with a 2026 input surface."
   entries (eq/ne/lt/le/gt/ge/and/or/not/xor/if_cond) added to all 3
   locales. 562 localization tests pass.
 - [ ] **Accessibility V2.** Keyboard navigation, contrast, VoiceOver.
-- [ ] **PDF export.** Needs `package:pdf`. Export model done.
+- [x] **PDF export.** `exportToPdf()` renders notepad as multi-page A4
+  PDF via `package:pdf` + `printing`. Menu item wired in notepad.
 - [ ] **Crash reporting (opt-in).** Sentry or email-based.
 - [ ] **Perf instrumentation.** Frame-timing overlay, jank detection.
 - [~] **Symbolic limit.** Tiers 1+2 done. Gruntz (tier 4) deferred.
