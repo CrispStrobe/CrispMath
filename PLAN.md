@@ -65,7 +65,9 @@ with a 2026 input surface."
   Ctrl+Z/Y undo/redo + Ctrl+F search. Remaining: more icon semanticLabels.
 - [x] **PDF export.** `exportToPdf()` renders notepad as multi-page A4
   PDF via `package:pdf` + `printing`. Menu item wired in notepad.
-- [ ] **Crash reporting (opt-in).** Sentry or email-based.
+- [x] **Crash reporting (opt-in).** CrashReporter ring buffer (20 max),
+  email + GitHub issue actions, Settings card shows only when errors
+  exist. No data leaves device without explicit user action.
 - [ ] **Perf instrumentation.** Frame-timing overlay, jank detection.
 - [~] **Symbolic limit.** Tiers 1+2 done. Gruntz (tier 4) deferred.
 
