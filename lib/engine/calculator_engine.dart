@@ -163,7 +163,15 @@ class CalculatorEngine {
       final numeric = NumericFallbackEvaluator.tryEvaluate(expression);
       if (numeric != null) return numeric;
     }
-    return _bridgeCall('evaluate', (b) => b.evaluate(expression));
+    final result = _bridgeCall('evaluate', (b) => b.evaluate(expression));
+    // If the WASM bridge crashed (RuntimeError / Aborted), try the
+    // pure-Dart fallback before surfacing the error. Common on web
+    // when the WASM module hits an assertion on certain inputs.
+    if (result.startsWith('Error:')) {
+      final numeric = NumericFallbackEvaluator.tryEvaluate(expression);
+      if (numeric != null) return numeric;
+    }
+    return result;
   }
 
   /// Calculator-screen entry point. Tries the inline-unit evaluator on

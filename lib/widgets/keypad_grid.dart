@@ -37,10 +37,14 @@ class KeypadGrid extends StatelessWidget {
     // This LayoutBuilder creates a perfectly responsive grid that fills the available space.
     return LayoutBuilder(
       builder: (context, constraints) {
-        const double crossAxisSpacing = 10;
-        const double mainAxisSpacing = 10;
-        const double horizontalPadding = 24; // 12 left + 12 right from parent
-        const double verticalPadding = 24; // 12 top + 12 bottom from parent
+        // Scale spacing and padding down when the available area is tight
+        // (e.g. graphing screen where the keypad shares space with the plot).
+        final compact = constraints.maxHeight < 280;
+        final double crossAxisSpacing = compact ? 4 : 10;
+        final double mainAxisSpacing = compact ? 4 : 10;
+        final double pad = compact ? 4 : 12;
+        final double horizontalPadding = pad * 2;
+        final double verticalPadding = pad * 2;
 
         final double cellWidth = (constraints.maxWidth -
                 horizontalPadding -
@@ -55,7 +59,7 @@ class KeypadGrid extends StatelessWidget {
             (cellHeight > 0 && cellWidth > 0) ? cellWidth / cellHeight : 1.0;
 
         return GridView.builder(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(pad),
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 4,
