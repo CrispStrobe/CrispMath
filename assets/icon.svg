@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background rounded square — deep indigo -->
+  <rect width="512" height="512" rx="96" ry="96" fill="#1a237e"/>
+  <!-- Integral symbol (stylized) — left side, blue accent -->
+  <path d="M148 120 C128 120, 108 140, 108 170 L108 342 C108 372, 88 392, 68 392"
+        stroke="#42a5f5" stroke-width="28" fill="none" stroke-linecap="round"/>
+  <!-- Sigma symbol (stylized) — center-right, white -->
+  <path d="M220 130 L380 130 L280 256 L380 382 L220 382"
+        stroke="white" stroke-width="26" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Small equals sign — bottom right corner, blue accent -->
+  <line x1="360" y1="340" x2="440" y2="340" stroke="#42a5f5" stroke-width="14" stroke-linecap="round"/>
+  <line x1="360" y1="375" x2="440" y2="375" stroke="#42a5f5" stroke-width="14" stroke-linecap="round"/>
+  <!-- Dot accent — top right -->
+  <circle cx="440" cy="130" r="14" fill="#42a5f5"/>
+</svg>

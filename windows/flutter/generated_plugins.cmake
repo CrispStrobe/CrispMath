@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
+  printing
   symbolic_math_bridge
   url_launcher_windows
 )
