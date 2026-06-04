@@ -34,6 +34,9 @@ import '../engine/date_time_evaluator.dart';
 import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
 import '../engine/notepad_export.dart';
+import '../services/crisp_assist_service_stub.dart'
+    if (dart.library.io) '../services/crisp_assist_service.dart';
+import '../widgets/crisp_assist_dialog.dart';
 import '../engine/ocr_provider.dart';
 import '../widgets/ocr_capture_dialog.dart';
 import 'package:image_picker/image_picker.dart';
@@ -642,6 +645,114 @@ class _NotepadScreenState extends State<NotepadScreen> {
     final doc = _currentDoc;
     if (doc != null) {
       final line = NotepadLine.fresh(source: expression);
+      doc.lines.add(line);
+      _persistDoc(doc);
+      _scheduleRecalc(doc, doc.lines.length - 1);
+    }
+  }
+
+  Future<void> _showTranslateDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        String? translated;
+        String? error;
+        bool loading = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: Row(children: [
+              Icon(Icons.auto_awesome, color: cs.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text('AI Translate'),
+            ]),
+            content: SizedBox(
+              width: 400,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Describe the math in natural language:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: cs.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. "derivative of x cubed minus 4x"',
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) async {
+                      if (controller.text.trim().isEmpty || loading) return;
+                      setDialogState(() { loading = true; error = null; });
+                      try {
+                        final svc = CrispAssistService();
+                        final cfg = CrispAssistConfig(
+                          apiUrl: AppState().crispAssistApiUrl,
+                          apiKey: AppState().crispAssistApiKey,
+                          model: AppState().crispAssistModel,
+                        );
+                        final t = await svc.translate(
+                          userInput: controller.text.trim(),
+                          config: cfg,
+                        );
+                        svc.dispose();
+                        setDialogState(() { translated = t.trim(); loading = false; });
+                      } catch (e) {
+                        setDialogState(() { error = e.toString(); loading = false; });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  if (loading)
+                    const Center(child: CircularProgressIndicator()),
+                  if (error != null)
+                    Text(error!, style: TextStyle(color: cs.error, fontSize: 12)),
+                  if (translated != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: SelectableText(
+                        translated!,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              if (translated != null)
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(translated),
+                  child: const Text('Insert'),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+    if (result == null || result.isEmpty || !mounted) return;
+    final doc = _currentDoc;
+    if (doc != null) {
+      final line = NotepadLine.fresh(source: result);
       doc.lines.add(line);
       _persistDoc(doc);
       _scheduleRecalc(doc, doc.lines.length - 1);
@@ -1366,6 +1477,13 @@ class _NotepadScreenState extends State<NotepadScreen> {
       // Round 94 scopes the surface to notepad so module-bound
       // categories (constraints / sudoku / statistics / units) are
       // hidden from the filter row.
+      // CrispAssist natural-language → engine syntax translation.
+      if (AppState().crispAssistEnabled)
+        IconButton(
+          icon: const Icon(Icons.auto_awesome),
+          tooltip: 'AI Translate',
+          onPressed: () => _showTranslateDialog(context),
+        ),
       // OCR camera button
       IconButton(
         icon: const Icon(Icons.camera_alt_outlined),
@@ -2385,6 +2503,19 @@ class _NotepadResultColumn extends StatelessWidget {
                 }
               },
             ),
+            if (AppState().crispAssistEnabled)
+              ListTile(
+                leading: const Icon(Icons.auto_awesome),
+                title: const Text('Explain with AI'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  showCrispAssistExplainDialog(
+                    context,
+                    expression: line.source,
+                    result: plain,
+                  );
+                },
+              ),
             if (freeVars.isNotEmpty)
               ListTile(
                 leading: const Icon(Icons.functions),
