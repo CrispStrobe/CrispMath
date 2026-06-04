@@ -656,6 +656,8 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 16),
+              _CrispAssistSettingsCard(appState: appState),
+              const SizedBox(height: 16),
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.info_outline),
@@ -751,6 +753,165 @@ class SettingsScreen extends StatelessWidget {
             child: Text(t.cancel),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CrispAssist settings card
+// ---------------------------------------------------------------------------
+
+class _CrispAssistSettingsCard extends StatefulWidget {
+  final AppState appState;
+  const _CrispAssistSettingsCard({required this.appState});
+
+  @override
+  State<_CrispAssistSettingsCard> createState() => _CrispAssistSettingsCardState();
+}
+
+class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
+  late final TextEditingController _urlCtl;
+  late final TextEditingController _keyCtl;
+  late final TextEditingController _modelCtl;
+  bool _expanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _urlCtl = TextEditingController(text: widget.appState.crispAssistApiUrl);
+    _keyCtl = TextEditingController(text: widget.appState.crispAssistApiKey);
+    _modelCtl = TextEditingController(text: widget.appState.crispAssistModel);
+  }
+
+  @override
+  void dispose() {
+    _urlCtl.dispose();
+    _keyCtl.dispose();
+    _modelCtl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    widget.appState.setCrispAssistApiUrl(_urlCtl.text.trim());
+    widget.appState.setCrispAssistApiKey(_keyCtl.text.trim());
+    final model = _modelCtl.text.trim();
+    widget.appState
+        .setCrispAssistModel(model.isEmpty ? 'claude-sonnet-4-20250514' : model);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('CrispAssist settings saved')),
+    );
+  }
+
+  void _clear() {
+    _urlCtl.text = '';
+    _keyCtl.text = '';
+    _modelCtl.text = 'claude-sonnet-4-20250514';
+    widget.appState.setCrispAssistApiUrl('');
+    widget.appState.setCrispAssistApiKey('');
+    widget.appState.setCrispAssistModel('claude-sonnet-4-20250514');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final enabled = widget.appState.crispAssistEnabled;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Row(
+                children: [
+                  Icon(Icons.auto_awesome,
+                      color: enabled ? cs.primary : cs.onSurface),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('CrispAssist',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          enabled
+                              ? 'Connected (${widget.appState.crispAssistModel})'
+                              : 'Not configured',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: enabled
+                                ? cs.primary
+                                : cs.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(_expanded
+                      ? Icons.expand_less
+                      : Icons.expand_more),
+                ],
+              ),
+            ),
+            if (_expanded) ...[
+              const SizedBox(height: 16),
+              Text(
+                'CrispAssist explains results and translates natural language '
+                'to engine syntax. It never computes answers — all math goes '
+                'through SymEngine. You supply your own API key.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: cs.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _urlCtl,
+                decoration: const InputDecoration(
+                  labelText: 'API URL',
+                  hintText: 'https://api.anthropic.com/v1/messages',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _keyCtl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'API Key',
+                  hintText: 'sk-ant-...',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _modelCtl,
+                decoration: const InputDecoration(
+                  labelText: 'Model',
+                  hintText: 'claude-sonnet-4-20250514',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _clear,
+                    child: const Text('Clear'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: _save,
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

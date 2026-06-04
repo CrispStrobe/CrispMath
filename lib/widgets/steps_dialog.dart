@@ -11,9 +11,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
+import '../engine/app_state.dart';
 import '../engine/step_engine.dart';
 import '../localization/app_localizations.dart';
 import '../utils/math_display_utils.dart';
+import 'crisp_assist_dialog.dart';
 
 class StepsDialog extends StatelessWidget {
   final String title;
@@ -77,6 +79,19 @@ class StepsDialog extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(t.dialogClose),
         ),
+        if (AppState().crispAssistEnabled)
+          TextButton.icon(
+            onPressed: () {
+              Navigator.of(context).pop();
+              showCrispAssistNarrateDialog(
+                context,
+                expression: expression,
+                steps: steps,
+              );
+            },
+            icon: const Icon(Icons.auto_awesome, size: 16),
+            label: const Text('Narrate'),
+          ),
       ],
     );
   }

@@ -1597,6 +1597,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
             isCollapsedHeading: isHeading && isCollapsed,
             hiddenLineCount: hiddenCount,
             highlightSearch: _lineMatchesSearch(line),
+            useLatexInput: doc.useLatexInput,
             onToggleCollapse: isHeading
                 ? () => _toggleCollapse(line.id)
                 : null,
@@ -1685,6 +1686,7 @@ class _NotepadLineRow extends StatelessWidget {
   final int hiddenLineCount;
   final VoidCallback? onToggleCollapse;
   final bool highlightSearch;
+  final bool useLatexInput;
 
   const _NotepadLineRow({
     super.key,
@@ -1705,6 +1707,7 @@ class _NotepadLineRow extends StatelessWidget {
     this.hiddenLineCount = 0,
     this.onToggleCollapse,
     this.highlightSearch = false,
+    this.useLatexInput = false,
   });
 
   bool get _isBlank => line.source.trim().isEmpty;
@@ -1964,7 +1967,7 @@ class _NotepadLineRow extends StatelessWidget {
       child: textField,
     );
     // Wrap in DragTarget so dragged results can be dropped into this line.
-    return DragTarget<String>(
+    final dragTarget = DragTarget<String>(
       onAcceptWithDetails: (details) {
         final value = details.data;
         final text = controller.text;
@@ -1994,6 +1997,38 @@ class _NotepadLineRow extends StatelessWidget {
         }
         return withAutocomplete;
       },
+    );
+
+    // When LaTeX input is active, show a live-rendered preview of the
+    // expression below the text field. Only render when the input
+    // contains LaTeX-ish content (backslash commands, braces, carets).
+    if (!useLatexInput) return dragTarget;
+    final src = controller.text.trim();
+    if (src.isEmpty || !RegExp(r'[\\{}\^_]').hasMatch(src)) return dragTarget;
+    final latex = MathDisplayUtils.toHistoryDisplayLatex(src);
+    Widget preview;
+    try {
+      preview = Math.tex(
+        latex,
+        textStyle: TextStyle(
+          fontSize: 16,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+        ),
+        onErrorFallback: (_) => const SizedBox.shrink(),
+      );
+    } catch (_) {
+      return dragTarget;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        dragTarget,
+        Padding(
+          padding: const EdgeInsets.only(left: 8, bottom: 4),
+          child: preview,
+        ),
+      ],
     );
   }
 }

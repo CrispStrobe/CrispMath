@@ -18,6 +18,7 @@ import '../engine/step_engine.dart';
 import '../localization/app_localizations.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/math_display_utils.dart';
+import 'crisp_assist_dialog.dart';
 import 'steps_dialog.dart';
 
 /// Which [StepEngine] entry-point applies to a row, or `none` when the
@@ -357,6 +358,19 @@ class HistoryRowHelpModal extends StatelessWidget {
           TextButton(
             onPressed: onShowSteps,
             child: Text(t.historyHelpShowSteps),
+          ),
+        if (AppState().crispAssistEnabled)
+          TextButton.icon(
+            onPressed: () {
+              Navigator.of(context).pop();
+              showCrispAssistExplainDialog(
+                context,
+                expression: entry.expression,
+                result: entry.result,
+              );
+            },
+            icon: const Icon(Icons.auto_awesome, size: 16),
+            label: const Text('Explain'),
           ),
         if (onLearnMore != null)
           FilledButton.tonal(

@@ -123,6 +123,9 @@ class AppState extends ChangeNotifier {
   static const _kNotepadDocs = 'crisp.notepadDocs';
   static const _kCurrentNotepadDoc = 'crisp.currentNotepadDoc';
   static const _kScene3D = 'crisp.scene3d';
+  static const _kCrispAssistApiUrl = 'crisp.copilot.apiUrl';
+  static const _kCrispAssistApiKey = 'crisp.copilot.apiKey';
+  static const _kCrispAssistModel = 'crisp.copilot.model';
 
   static const int _kGraphSlotCount = 10;
   static const int _kHistoryCap = 200;
@@ -186,6 +189,21 @@ class AppState extends ChangeNotifier {
   bool _helpMode = false;
   bool get helpMode => _helpMode;
 
+  // ---- CrispAssist settings (persisted) ---------------------------------
+
+  String _crispAssistApiUrl = '';
+  String get crispAssistApiUrl => _crispAssistApiUrl;
+
+  String _crispAssistApiKey = '';
+  String get crispAssistApiKey => _crispAssistApiKey;
+
+  String _crispAssistModel = 'claude-sonnet-4-20250514';
+  String get crispAssistModel => _crispAssistModel;
+
+  /// True when the user has configured a working CrispAssist provider.
+  bool get crispAssistEnabled =>
+      _crispAssistApiUrl.isNotEmpty && _crispAssistApiKey.isNotEmpty;
+
   /// Read persisted settings into memory. Must be awaited before runApp.
   /// Pass `force: true` (from tests) to re-read prefs after they've been
   /// mocked with new values — production callers should leave this alone.
@@ -200,6 +218,9 @@ class AppState extends ChangeNotifier {
     _exactIntegerMode = true;
     _onboardingDismissed = false;
     _autoBindSolve = false;
+    _crispAssistApiUrl = '';
+    _crispAssistApiKey = '';
+    _crispAssistModel = 'claude-sonnet-4-20250514';
     _helpMode = false;
     history.clear();
     userVariables.clear();
@@ -246,6 +267,9 @@ class AppState extends ChangeNotifier {
       if (onboarded != null) _onboardingDismissed = onboarded;
       final autoBind = _prefs!.getBool(_kAutoBindSolve);
       if (autoBind != null) _autoBindSolve = autoBind;
+      _crispAssistApiUrl = _prefs!.getString(_kCrispAssistApiUrl) ?? '';
+      _crispAssistApiKey = _prefs!.getString(_kCrispAssistApiKey) ?? '';
+      _crispAssistModel = _prefs!.getString(_kCrispAssistModel) ?? 'claude-sonnet-4-20250514';
       final udfJson = _prefs!.getString(_kUserFunctions);
       if (udfJson != null) {
         try {
@@ -465,6 +489,29 @@ class AppState extends ChangeNotifier {
   }
 
   void toggleHelpMode() => setHelpMode(!_helpMode);
+
+  // ---- CrispAssist setters -----------------------------------------------
+
+  void setCrispAssistApiUrl(String url) {
+    if (_crispAssistApiUrl == url) return;
+    _crispAssistApiUrl = url;
+    _prefs?.setString(_kCrispAssistApiUrl, url);
+    notifyListeners();
+  }
+
+  void setCrispAssistApiKey(String key) {
+    if (_crispAssistApiKey == key) return;
+    _crispAssistApiKey = key;
+    _prefs?.setString(_kCrispAssistApiKey, key);
+    notifyListeners();
+  }
+
+  void setCrispAssistModel(String model) {
+    if (_crispAssistModel == model) return;
+    _crispAssistModel = model;
+    _prefs?.setString(_kCrispAssistModel, model);
+    notifyListeners();
+  }
 
   void setUserFunction(UserFunction fn) {
     userFunctions[fn.name] = fn;

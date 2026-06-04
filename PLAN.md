@@ -15,7 +15,7 @@ solvers, (4) graphing, (5) scientific/power-user.
 with unique CAS+CSP+stats+units+cross-platform breadth. Behind on
 input paradigm (notepad shipped June 2026) and AI (planned).
 
-**The bet**: notepad mode + AI copilot reposition CrispCalc from
+**The bet**: notepad mode + CrispAssist reposition CrispCalc from
 "strongest engine nobody knows about" to "only CAS-grade calculator
 with a 2026 input surface."
 
@@ -30,18 +30,28 @@ with a 2026 input surface."
   prerequisite** for everything below to reach users.
 - [~] **Bundle CrispEmbed native lib per platform.** Plugin pubspec
   declares ffiPlugin for 5 platforms. CI builds the artifacts.
-  Remaining: place them in platform directories + test on each OS.
+  Platform dirs + CMakeLists/podspec/build.gradle done
+  (PR CrispStrobe/CrispEmbed#1). Linux build verified — .so bundled.
+  Remaining: merge PR, test macOS/iOS/Windows/Android builds.
 - [ ] **iOS smoke test.** Not run since recent changes.
 
 ### Tier 2 — High-value features
 
-- [ ] **AI copilot (verifier-frontend, never solver).** LLM translates
+- [~] **CrispAssist (verifier-frontend, never solver).** LLM translates
   input → engine syntax, narrates step traces, explains results.
   Hard guardrail: LLM never asked "what's the answer." Pluggable
   provider (Claude/OpenAI/on-device); user supplies API key.
+  Service layer done: CrispAssistService with OpenAI + Anthropic API
+  support (streaming SSE), CrispAssistConfig, settings in AppState,
+  settings UI card in SettingsScreen, "Explain" button on history
+  help modal, "Narrate" button on steps dialog. Remaining: notepad
+  integration, natural-language-to-engine translation UI, testing
+  with live API key.
 - [~] **Inline LaTeX input.** Toggle wired in notepad overflow menu.
-  Flag persisted per-doc. Needs interactive testing with
-  ReorderableListView (LatexController changes line heights).
+  Flag persisted per-doc. Live LaTeX preview now renders below input
+  lines when flag is on and input contains LaTeX syntax. Needs
+  interactive testing on device (verify preview with ReorderableListView
+  drag-reorder, line height changes).
 - [ ] **Handwritten math OCR.** Apple VisionKit (iOS), or pix2tex
   fine-tune on CROHME dataset. Printed math OCR already working.
 
@@ -73,7 +83,7 @@ post-LayerNorm). Runs on-device via CrispEmbed C++/ggml FFI.
 |---|---|---|
 | 1. Scaffolding | ✅ | OcrProvider abstraction, postProcessOcrText, latexToEngineSyntax |
 | 2. ML Kit | planned | google_mlkit_text_recognition (Android/iOS), Apache 2.0 |
-| 3. Cloud LLM | planned | User-supplied API key, shares AI copilot infra |
+| 3. Cloud LLM | planned | User-supplied API key, shares CrispAssist infra |
 | 4. CrispEmbed | ✅ | DeiT+TrOCR GGUF, F16=3.3s, Q4_K=17MB, all correct |
 
 **Models on HuggingFace**: `cstr/pix2tex-mfr-gguf` (F32/F16/Q8_0/Q4_K)
@@ -97,10 +107,9 @@ download/delete, OcrModelManager with HF catalog.
 **Remaining**:
 - [ ] ggml graph decoder (replaces scalar loops, ~5× speedup for
   long outputs)
-- [~] Bundle CrispEmbed native lib per platform — plugin pubspec
-  declares ffiPlugin for all 5 platforms. CI builds the .so/.dylib/
-  .dll. Remaining: place CI artifacts into the plugin's platform
-  directories (linux/Libraries, macos/Frameworks, etc.)
+- [~] Bundle CrispEmbed native lib per platform — platform dirs
+  created (PR CrispStrobe/CrispEmbed#1). Linux verified. Remaining:
+  merge PR, test macOS/iOS/Windows/Android builds.
 - [x] ~~Register CrispEmbed OCR provider at startup~~ — done.
   `initOcrProviders()` auto-registers when a GGUF model is found.
   Uses `package:crispembed`'s `CrispEmbedOcr` class via FFI.
