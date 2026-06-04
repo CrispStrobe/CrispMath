@@ -37,8 +37,10 @@ import 'widgets/user_functions_dialog.dart';
 import 'widgets/function_reference_dialog.dart';
 import 'widgets/worked_examples_dialog.dart';
 import 'widgets/web_unsupported_banner.dart';
-import 'engine/ocr_providers_init.dart';
-import 'widgets/ocr_settings_dialog.dart';
+import 'engine/ocr_providers_init_stub.dart'
+    if (dart.library.io) 'engine/ocr_providers_init.dart';
+import 'widgets/ocr_settings_dialog_stub.dart'
+    if (dart.library.io) 'widgets/ocr_settings_dialog.dart';
 
 /// Round 71: a single app-wide [RouteObserver] so screens / dialogs
 /// pushed onto the root navigator can subscribe via [RouteAware] and

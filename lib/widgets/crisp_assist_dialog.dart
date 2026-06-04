@@ -9,7 +9,8 @@ import 'package:flutter/material.dart';
 
 import '../engine/app_state.dart';
 import '../engine/step_engine.dart';
-import '../services/crisp_assist_service.dart';
+import '../services/crisp_assist_service_stub.dart'
+    if (dart.library.io) '../services/crisp_assist_service.dart';
 
 /// Shows a dialog that streams an AI explanation of a computation result.
 Future<void> showCrispAssistExplainDialog(
