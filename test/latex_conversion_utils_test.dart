@@ -112,6 +112,176 @@ void main() {
   // |x| -> abs(x). Pipes are now content; the cursor marker lives in the
   // controller's selection state, not in the text itself.
 
+  // =========================================================================
+  // Differentiation (d/dx)
+  // =========================================================================
+
+  group('fromLatex — differentiation', () {
+    test('\\frac{d}{dx} with bare parens', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\frac{d}{dx}(x^2)'),
+        equals('d/dx(x^2)'),
+      );
+    });
+
+    test('\\frac{d}{dy} with braces', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\frac{d}{dy}{y^3}'),
+        equals('d/dy(y^3)'),
+      );
+    });
+  });
+
+  // =========================================================================
+  // Sized delimiters
+  // =========================================================================
+
+  group('fromLatex — sized delimiters', () {
+    test('\\left( and \\right) are stripped', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\left(x+1\right)'),
+        equals('(x+1)'),
+      );
+    });
+
+    test('\\bigg( and \\bigg) are stripped', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\bigg(a+b\bigg)'),
+        equals('(a+b)'),
+      );
+    });
+
+    test('\\left[ and \\right] are stripped', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\left[x\right]'),
+        equals('[x]'),
+      );
+    });
+
+    test('\\left\\{ and \\right\\} are stripped', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\left\{x\right\}'),
+        equals('{x}'),
+      );
+    });
+
+    test('sized delimiter with space before bracket is normalized', () {
+      // \\bigg ( with a space should be collapsed to \\bigg( then stripped.
+      expect(
+        LatexConversionUtils.fromLatex(r'\bigg (x\bigg )'),
+        equals('(x)'),
+      );
+    });
+  });
+
+  // =========================================================================
+  // Greek letters and constants
+  // =========================================================================
+
+  group('fromLatex — Greek letters and constants', () {
+    test('\\e -> E', () {
+      expect(LatexConversionUtils.fromLatex(r'\e'), equals('E'));
+    });
+
+    test('\\gamma -> EulerGamma', () {
+      expect(
+          LatexConversionUtils.fromLatex(r'\gamma'), equals('EulerGamma'));
+    });
+
+    test('\\Gamma -> gamma', () {
+      expect(LatexConversionUtils.fromLatex(r'\Gamma'), equals('gamma'));
+    });
+
+    test('\\alpha -> alpha', () {
+      expect(LatexConversionUtils.fromLatex(r'\alpha'), equals('alpha'));
+    });
+
+    test('\\theta -> theta', () {
+      expect(LatexConversionUtils.fromLatex(r'\theta'), equals('theta'));
+    });
+
+    test('\\lambda -> lambda', () {
+      expect(LatexConversionUtils.fromLatex(r'\lambda'), equals('lambda'));
+    });
+
+    test('\\omega -> omega', () {
+      expect(LatexConversionUtils.fromLatex(r'\omega'), equals('omega'));
+    });
+
+    test('\\infinity -> oo', () {
+      expect(LatexConversionUtils.fromLatex(r'\infinity'), equals('oo'));
+    });
+  });
+
+  // =========================================================================
+  // Operators
+  // =========================================================================
+
+  group('fromLatex — operators', () {
+    test('\\div -> /', () {
+      expect(LatexConversionUtils.fromLatex(r'a \div b'), equals('a/b'));
+    });
+
+    test('\\ast -> *', () {
+      expect(LatexConversionUtils.fromLatex(r'a \ast b'), equals('a*b'));
+    });
+
+    test('\\pm -> +-', () {
+      expect(LatexConversionUtils.fromLatex(r'a \pm b'), equals('a+-b'));
+    });
+
+    test('\\mp -> -+', () {
+      expect(LatexConversionUtils.fromLatex(r'a \mp b'), equals('a-+b'));
+    });
+
+    test('\\bmod -> mod', () {
+      expect(
+          LatexConversionUtils.fromLatex(r'a \bmod b'), equals('a mod b'));
+    });
+  });
+
+  // =========================================================================
+  // Summation and product
+  // =========================================================================
+
+  group('fromLatex — summation and product', () {
+    test('summation', () {
+      final out =
+          LatexConversionUtils.fromLatex(r'\sum_{i=1}^{10} i^2');
+      expect(out, equals('Sum(i^2, (i, 1, 10))'));
+    });
+
+    test('product', () {
+      final out =
+          LatexConversionUtils.fromLatex(r'\prod_{k=1}^{n} k');
+      expect(out, equals('Product(k, (k, 1, n))'));
+    });
+  });
+
+  // =========================================================================
+  // Spacing cleanup
+  // =========================================================================
+
+  group('fromLatex — spacing cleanup', () {
+    test('multiple spaces collapse to single space', () {
+      expect(
+        LatexConversionUtils.fromLatex('a   b'),
+        equals('a b'),
+      );
+    });
+
+    test('spaces around operators are removed', () {
+      expect(
+        LatexConversionUtils.fromLatex('a + b * c'),
+        equals('a+b*c'),
+      );
+    });
+  });
+
+  // =========================================================================
+  // latexToReadable — additional coverage
+  // =========================================================================
+
   group('latexToReadable', () {
     test('\\cdot back to *', () {
       expect(LatexConversionUtils.latexToReadable(r'2\cdot x'), equals('2*x'));
@@ -126,6 +296,32 @@ void main() {
 
     test('strips function backslashes', () {
       expect(LatexConversionUtils.latexToReadable(r'\sin'), equals('sin'));
+    });
+
+    test('\\times back to *', () {
+      expect(
+          LatexConversionUtils.latexToReadable(r'2\times x'), equals('2*x'));
+    });
+
+    test('\\div back to /', () {
+      expect(
+          LatexConversionUtils.latexToReadable(r'a\div b'), equals('a/b'));
+    });
+
+    test('sized delimiters stripped in readable output', () {
+      expect(
+        LatexConversionUtils.latexToReadable(r'\left(x\right)'),
+        equals('(x)'),
+      );
+      expect(
+        LatexConversionUtils.latexToReadable(r'\bigg(a\bigg)'),
+        equals('(a)'),
+      );
+    });
+
+    test('\\ln and \\log stripped', () {
+      expect(LatexConversionUtils.latexToReadable(r'\ln'), equals('ln'));
+      expect(LatexConversionUtils.latexToReadable(r'\log'), equals('log'));
     });
   });
 }

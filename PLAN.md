@@ -43,10 +43,10 @@ with a 2026 input surface."
   provider (Claude/OpenAI/on-device); user supplies API key.
   Service layer done: CrispAssistService with OpenAI + Anthropic API
   support (streaming SSE), CrispAssistConfig, settings in AppState,
-  settings UI card in SettingsScreen, "Explain" button on history
-  help modal, "Narrate" button on steps dialog. Remaining: notepad
-  integration, natural-language-to-engine translation UI, testing
-  with live API key.
+  settings UI card in SettingsScreen. "Explain" on history help modal
+  + notepad result menu. "Narrate" on steps dialog. "AI Translate"
+  toolbar button on notepad (natural language → engine syntax).
+  Remaining: testing with live API key.
 - [~] **Inline LaTeX input.** Toggle wired in notepad overflow menu.
   Flag persisted per-doc. Live LaTeX preview now renders below input
   lines when flag is on and input contains LaTeX syntax. Needs
