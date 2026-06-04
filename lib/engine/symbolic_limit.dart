@@ -339,7 +339,7 @@ class SymbolicLimit {
     var expr = expression;
     for (var d = 0; d <= 20; d++) {
       // Evaluate at a test point to check if it's zero as a polynomial.
-      final atTest = _evalAt(engine, expr, variable, '0');
+      _evalAt(engine, expr, variable, '0');
       final deriv = engine.differentiate(expr, variable);
       if (deriv.startsWith('Error')) return null;
 

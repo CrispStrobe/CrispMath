@@ -679,24 +679,6 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Card(
                   child: ListTile(
-                    leading: const Icon(Icons.speed),
-                    title: const Text('Performance Overlay'),
-                    subtitle: const Text('Ctrl+Shift+P to toggle'),
-                    trailing: const Text('dev'),
-                    onTap: () {
-                      // Find the MainScreen ancestor and toggle.
-                      final mainState =
-                          context.findAncestorStateOfType<_MainScreenState>();
-                      mainState?.setState(() {
-                        mainState._showPerfOverlay =
-                            !mainState._showPerfOverlay;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  child: ListTile(
                     leading: const Icon(Icons.fact_check_outlined),
                     title: Text(t.matrixDiagnosticsTitle),
                     subtitle: Text(t.matrixDiagnosticsSubtitle),
@@ -773,9 +755,8 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () {
               reporter.clear();
               Navigator.of(ctx).pop();
-              // Poke AppState to trigger ListenableBuilder rebuild,
-              // which hides the crash-report card once cleared.
-              AppState().notifyListeners();
+              // Trigger ListenableBuilder rebuild to hide the card.
+              AppState().refresh();
             },
             child: const Text('Clear All'),
           ),

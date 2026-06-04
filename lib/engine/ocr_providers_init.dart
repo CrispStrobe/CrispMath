@@ -3,7 +3,6 @@
 // Registers available OCR providers at app startup.
 // Called from main.dart after platform init.
 
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crispembed/crispembed.dart' show CrispEmbedOcr;

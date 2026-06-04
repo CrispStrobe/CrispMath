@@ -490,6 +490,9 @@ class AppState extends ChangeNotifier {
 
   void toggleHelpMode() => setHelpMode(!_helpMode);
 
+  /// Force a rebuild of all listeners without changing state.
+  void refresh() => notifyListeners();
+
   // ---- CrispAssist setters -----------------------------------------------
 
   void setCrispAssistApiUrl(String url) {
