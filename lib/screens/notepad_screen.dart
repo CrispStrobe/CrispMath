@@ -1541,7 +1541,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
                   children: [
                     const Icon(Icons.description_outlined, size: 16),
                     const SizedBox(width: 8),
-                    Flexible(child: Text(tmpl.name, overflow: TextOverflow.ellipsis)),
+                    Flexible(
+                        child:
+                            Text(tmpl.name, overflow: TextOverflow.ellipsis)),
                   ],
                 ),
               ),
