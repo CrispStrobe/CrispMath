@@ -12,6 +12,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 // Headless diagnostic self-test. Native (dart:io) impl on desktop/mobile;
@@ -273,15 +274,35 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        if (width >= _railBreakpoint) {
-          return _buildRailLayout(t,
-              extended: width >= _extendedRailBreakpoint);
-        }
-        return _buildBottomNavLayout(t);
+    // Ctrl/Cmd + 1-6 switch between tabs (accessibility / power-user).
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.digit1, control: true): () => _select(0),
+        const SingleActivator(LogicalKeyboardKey.digit2, control: true): () => _select(1),
+        const SingleActivator(LogicalKeyboardKey.digit3, control: true): () => _select(2),
+        const SingleActivator(LogicalKeyboardKey.digit4, control: true): () => _select(3),
+        const SingleActivator(LogicalKeyboardKey.digit5, control: true): () => _select(4),
+        const SingleActivator(LogicalKeyboardKey.digit6, control: true): () => _select(5),
+        const SingleActivator(LogicalKeyboardKey.digit1, meta: true): () => _select(0),
+        const SingleActivator(LogicalKeyboardKey.digit2, meta: true): () => _select(1),
+        const SingleActivator(LogicalKeyboardKey.digit3, meta: true): () => _select(2),
+        const SingleActivator(LogicalKeyboardKey.digit4, meta: true): () => _select(3),
+        const SingleActivator(LogicalKeyboardKey.digit5, meta: true): () => _select(4),
+        const SingleActivator(LogicalKeyboardKey.digit6, meta: true): () => _select(5),
       },
+      child: Focus(
+        autofocus: true,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            if (width >= _railBreakpoint) {
+              return _buildRailLayout(t,
+                  extended: width >= _extendedRailBreakpoint);
+            }
+            return _buildBottomNavLayout(t);
+          },
+        ),
+      ),
     );
   }
 
