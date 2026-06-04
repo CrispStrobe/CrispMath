@@ -78,7 +78,7 @@ packages:
     description:
       path: "flutter/crispembed"
       ref: HEAD
-      resolved-ref: "8b849bc600a7ad386b73b37f2c9d0dc8c80b782d"
+      resolved-ref: "5f8fd5b54935d10e07283ef840975e9d2bea7990"
       url: "https://github.com/CrispStrobe/CrispEmbed.git"
     source: git
     version: "0.3.0"
