@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../engine/ocr_provider.dart';
-import '../localization/app_localizations.dart';
 
 /// Shows the OCR result for review. Returns the (possibly edited)
 /// expression string, or null if cancelled.

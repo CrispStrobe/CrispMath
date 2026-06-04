@@ -95,7 +95,6 @@ void main() {
         orElse: () => NotepadTemplates.all.first,
       );
       final doc = budget.createDocument();
-      final hasComputation = doc.lines.any((l) => l.source.contains('='));
       // Budget templates typically have total/subtotal lines with "=".
       // If no budget template is found, we test the first template instead,
       // so this test still validates document structure.

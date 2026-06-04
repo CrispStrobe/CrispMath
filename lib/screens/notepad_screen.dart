@@ -1598,7 +1598,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
               value: 'toggle-latex',
               child: Row(children: [
                 Icon(
-                    doc!.useLatexInput
+                    doc.useLatexInput
                         ? Icons.check_box
                         : Icons.check_box_outline_blank,
                     size: 18),
