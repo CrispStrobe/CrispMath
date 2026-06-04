@@ -4264,6 +4264,28 @@ class DeLocalizations implements AppLocalizations {
         return 'Killer-Sudoku: keine Vorgaben; stattdessen ist das Gitter in '
             '„Käfige" unterteilt, jeder Käfig allDifferent und mit einer '
             'gegebenen Zielsumme.';
+      case 'eq_op':
+        return 'Gleichheitstest — gibt true zurück, wenn beide Seiten denselben Wert ergeben.';
+      case 'ne_op':
+        return 'Ungleichheitstest — gibt true zurück, wenn die beiden Seiten verschieden sind.';
+      case 'lt_op':
+        return 'Strikter Kleiner-als-Vergleich.';
+      case 'le_op':
+        return 'Kleiner-gleich-Vergleich.';
+      case 'gt_op':
+        return 'Strikter Größer-als-Vergleich.';
+      case 'ge_op':
+        return 'Größer-gleich-Vergleich.';
+      case 'and_op':
+        return 'Logische Konjunktion — nur true, wenn beide Operanden true sind.';
+      case 'or_op':
+        return 'Logische Disjunktion — true, wenn mindestens ein Operand true ist.';
+      case 'not_op':
+        return 'Logische Negation — kehrt true zu false um und umgekehrt.';
+      case 'xor_op':
+        return 'Exklusives Oder — true, wenn genau ein Operand true ist.';
+      case 'if_cond':
+        return 'Bedingte Auswertung — wertet die Bedingung aus, gibt den then-Zweig bei true, den else-Zweig bei false zurück.';
       default:
         return null;
     }
@@ -4903,6 +4925,47 @@ class DeLocalizations implements AppLocalizations {
             'eine `allDifferent`-Bedingung und je Käfig eine Bedingung '
             '`Summe = Ziel`. Die Killer-Vorlagen für 4×4 und 9×9 werden beide '
             'geliefert.',
+      ],
+      'eq_op': [
+        'Wird zu SymEngines Eq(2, 2) abgesenkt und zu True vereinfacht.',
+        'Symbolisch — bleibt als Gleichung, wenn x frei ist.',
+      ],
+      'ne_op': [
+        'Wird zu SymEngines Ne(3, 4) abgesenkt.',
+        'Gleiche Werte ergeben false.',
+      ],
+      'lt_op': [
+        'Wird zu SymEngines Lt(2, 5) abgesenkt.',
+        'Nicht strikt kleiner — verwende <= für nicht-strikt.',
+      ],
+      'le_op': [
+        'Wird zu SymEngines Le(5, 5) abgesenkt.',
+        'Strikt größer besteht den Test nicht.',
+      ],
+      'gt_op': [
+        'Wird zu SymEngines Gt(10, 3) abgesenkt.',
+      ],
+      'ge_op': [
+        'Wird zu SymEngines Ge(5, 5) abgesenkt.',
+      ],
+      'and_op': [
+        'Beide Prädikate gelten → true.',
+        'Ein falscher Operand → false.',
+      ],
+      'or_op': [
+        'Ein wahrer Operand genügt.',
+      ],
+      'not_op': [
+        '4 ist keine Primzahl → not false → true.',
+        'Negiert die Gleichheit.',
+      ],
+      'xor_op': [
+        'Beide true → xor ist false.',
+        'Genau einer true → xor ist true.',
+      ],
+      'if_cond': [
+        '7 ist prim → Bedingung ist true → gibt 100 zurück.',
+        '2 ist nicht > 5 → gibt den else-Zweig zurück.',
       ],
     };
     final list = hints[id];
@@ -7118,6 +7181,28 @@ class FrLocalizations implements AppLocalizations {
         return "Sudoku killer : aucun indice donné ; à la place, la grille "
             "est partitionnée en « cages », chaque cage étant « toutes "
             "différentes » et de somme égale à une cible donnée.";
+      case 'eq_op':
+        return 'Test d\'égalité — renvoie true lorsque les deux côtés évaluent la même valeur.';
+      case 'ne_op':
+        return 'Test d\'inégalité — renvoie true lorsque les deux côtés diffèrent.';
+      case 'lt_op':
+        return 'Comparaison strictement inférieur.';
+      case 'le_op':
+        return 'Comparaison inférieur ou égal.';
+      case 'gt_op':
+        return 'Comparaison strictement supérieur.';
+      case 'ge_op':
+        return 'Comparaison supérieur ou égal.';
+      case 'and_op':
+        return 'Conjonction logique — true uniquement si les deux opérandes sont true.';
+      case 'or_op':
+        return 'Disjonction logique — true si au moins un opérande est true.';
+      case 'not_op':
+        return 'Négation logique — inverse true en false et vice versa.';
+      case 'xor_op':
+        return 'Ou exclusif — true lorsqu\'exactement un opérande est true.';
+      case 'if_cond':
+        return 'Conditionnel — évalue la condition, renvoie la branche then si true, sinon la branche else.';
       default:
         return null;
     }
@@ -7747,6 +7832,47 @@ class FrLocalizations implements AppLocalizations {
           "superpose au trio classique ligne/colonne/bloc une contrainte "
           "`allDifferent` par cage et une contrainte `somme = cible` par "
           "cage. Les modèles killer 4×4 et 9×9 sont tous deux livrés.",
+    ],
+    'eq_op': [
+      'Abaissé vers Eq(2, 2) de SymEngine et simplifié en True.',
+      'Symbolique — reste sous forme d\'équation quand x est libre.',
+    ],
+    'ne_op': [
+      'Abaissé vers Ne(3, 4) de SymEngine.',
+      'Des valeurs égales donnent false.',
+    ],
+    'lt_op': [
+      'Abaissé vers Lt(2, 5) de SymEngine.',
+      'Pas strictement inférieur — utilisez <= pour non-strict.',
+    ],
+    'le_op': [
+      'Abaissé vers Le(5, 5) de SymEngine.',
+      'Strictement supérieur échoue au test.',
+    ],
+    'gt_op': [
+      'Abaissé vers Gt(10, 3) de SymEngine.',
+    ],
+    'ge_op': [
+      'Abaissé vers Ge(5, 5) de SymEngine.',
+    ],
+    'and_op': [
+      'Les deux prédicats sont vrais → true.',
+      'Un opérande faux → false.',
+    ],
+    'or_op': [
+      'Un seul opérande vrai suffit.',
+    ],
+    'not_op': [
+      '4 n\'est pas premier → not false → true.',
+      'Inverse l\'égalité.',
+    ],
+    'xor_op': [
+      'Les deux vrais → xor est false.',
+      'Exactement un vrai → xor est true.',
+    ],
+    'if_cond': [
+      '7 est premier → la condition est true → renvoie 100.',
+      '2 n\'est pas > 5 → renvoie la branche else.',
     ],
   };
 
@@ -9948,6 +10074,28 @@ class EsLocalizations implements AppLocalizations {
         return "Sudoku killer: sin pistas dadas; en su lugar, la cuadrícula "
             "se divide en «jaulas», cada una «todas distintas» y con suma "
             "igual a un objetivo dado.";
+      case 'eq_op':
+        return 'Test de igualdad — devuelve true cuando ambos lados evalúan al mismo valor.';
+      case 'ne_op':
+        return 'Test de desigualdad — devuelve true cuando los dos lados difieren.';
+      case 'lt_op':
+        return 'Comparación estrictamente menor.';
+      case 'le_op':
+        return 'Comparación menor o igual.';
+      case 'gt_op':
+        return 'Comparación estrictamente mayor.';
+      case 'ge_op':
+        return 'Comparación mayor o igual.';
+      case 'and_op':
+        return 'Conjunción lógica — true solo cuando ambos operandos son true.';
+      case 'or_op':
+        return 'Disyunción lógica — true si al menos un operando es true.';
+      case 'not_op':
+        return 'Negación lógica — invierte true a false y viceversa.';
+      case 'xor_op':
+        return 'O exclusivo — true cuando exactamente un operando es true.';
+      case 'if_cond':
+        return 'Condicional — evalúa la condición, devuelve la rama then si es true, de lo contrario la rama else.';
       default:
         return null;
     }
@@ -10564,6 +10712,47 @@ class EsLocalizations implements AppLocalizations {
           "superpone al trío clásico fila/columna/caja una restricción "
           "`allDifferent` por jaula y una restricción `suma = objetivo` por "
           "jaula. Se ofrecen las plantillas killer de 4×4 y 9×9.",
+    ],
+    'eq_op': [
+      'Se convierte a Eq(2, 2) de SymEngine y se simplifica a True.',
+      'Simbólico — permanece como ecuación cuando x es libre.',
+    ],
+    'ne_op': [
+      'Se convierte a Ne(3, 4) de SymEngine.',
+      'Valores iguales dan false.',
+    ],
+    'lt_op': [
+      'Se convierte a Lt(2, 5) de SymEngine.',
+      'No es estrictamente menor — use <= para no estricto.',
+    ],
+    'le_op': [
+      'Se convierte a Le(5, 5) de SymEngine.',
+      'Estrictamente mayor falla la prueba.',
+    ],
+    'gt_op': [
+      'Se convierte a Gt(10, 3) de SymEngine.',
+    ],
+    'ge_op': [
+      'Se convierte a Ge(5, 5) de SymEngine.',
+    ],
+    'and_op': [
+      'Ambos predicados se cumplen → true.',
+      'Un operando falso → false.',
+    ],
+    'or_op': [
+      'Un operando verdadero es suficiente.',
+    ],
+    'not_op': [
+      '4 no es primo → not false → true.',
+      'Niega la igualdad.',
+    ],
+    'xor_op': [
+      'Ambos verdaderos → xor es false.',
+      'Exactamente uno verdadero → xor es true.',
+    ],
+    'if_cond': [
+      '7 es primo → la condición es true → devuelve 100.',
+      '2 no es > 5 → devuelve la rama else.',
     ],
   };
 
