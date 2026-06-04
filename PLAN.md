@@ -60,7 +60,9 @@ with a 2026 input surface."
 - [x] **Function Reference i18n.** DE/FR/ES complete — 11 logic-category
   entries (eq/ne/lt/le/gt/ge/and/or/not/xor/if_cond) added to all 3
   locales. 562 localization tests pass.
-- [ ] **Accessibility V2.** Keyboard navigation, contrast, VoiceOver.
+- [~] **Accessibility V2.** Ctrl/Cmd+1-6 tab navigation added. Calculator
+  keypad already has full keyboard input + semantics labels. Notepad has
+  Ctrl+Z/Y undo/redo + Ctrl+F search. Remaining: more icon semanticLabels.
 - [x] **PDF export.** `exportToPdf()` renders notepad as multi-page A4
   PDF via `package:pdf` + `printing`. Menu item wired in notepad.
 - [ ] **Crash reporting (opt-in).** Sentry or email-based.
