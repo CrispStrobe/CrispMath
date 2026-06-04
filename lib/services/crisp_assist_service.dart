@@ -263,7 +263,7 @@ class CrispAssistService {
     } else {
       request.headers.set('Authorization', 'Bearer ${config.apiKey}');
     }
-    request.write(body);
+    request.add(utf8.encode(body));
 
     final response =
         await request.close().timeout(config.timeout);
@@ -299,7 +299,7 @@ class CrispAssistService {
     } else {
       request.headers.set('Authorization', 'Bearer ${config.apiKey}');
     }
-    request.write(body);
+    request.add(utf8.encode(body));
 
     final response =
         await request.close().timeout(config.timeout);
