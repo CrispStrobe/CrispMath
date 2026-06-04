@@ -5,7 +5,7 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
-## Strategic context (May 2026)
+## Strategic context (June 2026)
 
 **Five paradigms** in the 2026 calculator category: (1) OS-bundled
 calculator+notes, (2) notepad/natural-language, (3) AI math
@@ -13,7 +13,7 @@ solvers, (4) graphing, (5) scientific/power-user.
 
 **CrispCalc's position**: competitive-to-ahead on scientific/power-user
 with unique CAS+CSP+stats+units+cross-platform breadth. Behind on
-input paradigm (notepad shipped June 2026) and AI (planned).
+input paradigm (notepad shipped June 2026) and AI (CrispAssist shipped).
 
 **The bet**: notepad mode + CrispAssist reposition CrispCalc from
 "strongest engine nobody knows about" to "only CAS-grade calculator
@@ -28,48 +28,45 @@ with a 2026 input surface."
 - [ ] **Distribution pipeline.** Apple Developer enrollment +
   notarization + TestFlight/App Store. Android via Play. **Load-bearing
   prerequisite** for everything below to reach users.
-- [~] **Bundle CrispEmbed native lib per platform.** Plugin pubspec
-  declares ffiPlugin for 5 platforms. CI builds the artifacts.
-  Platform dirs + CMakeLists/podspec/build.gradle done
-  (PR CrispStrobe/CrispEmbed#1). Linux build verified — .so bundled.
-  Remaining: merge PR, test macOS/iOS/Windows/Android builds.
+- [~] **Bundle CrispEmbed native lib per platform.** PR merged to
+  main. CI bundle-flutter job fixed (artifact v7 + Windows Release/
+  path). Remaining: verify CI goes green, then cross-platform test.
 - [ ] **iOS smoke test.** Not run since recent changes.
 
 ### Tier 2 — High-value features
 
-- [~] **CrispAssist (verifier-frontend, never solver).** LLM translates
-  input → engine syntax, narrates step traces, explains results.
-  Hard guardrail: LLM never asked "what's the answer." Pluggable
-  provider (Claude/OpenAI/on-device); user supplies API key.
-  Service layer done: CrispAssistService with OpenAI + Anthropic API
-  support (streaming SSE), CrispAssistConfig, settings in AppState,
-  settings UI card in SettingsScreen. "Explain" on history help modal
-  + notepad result menu. "Narrate" on steps dialog. "AI Translate"
-  toolbar button on notepad (natural language → engine syntax).
-  Remaining: testing with live API key.
-- [~] **Inline LaTeX input.** Toggle wired in notepad overflow menu.
-  Flag persisted per-doc. Live LaTeX preview now renders below input
-  lines when flag is on and input contains LaTeX syntax. Needs
-  interactive testing on device (verify preview with ReorderableListView
-  drag-reorder, line height changes).
-- [ ] **Handwritten math OCR.** Apple VisionKit (iOS), or pix2tex
-  fine-tune on CROHME dataset. Printed math OCR already working.
+- [~] **CrispAssist (verifier-frontend, never solver).** Service layer
+  complete with streaming SSE, Anthropic + OpenAI support. Settings UI,
+  Explain/Narrate buttons, AI Translate in notepad menu. 29 unit tests
+  + 8 integration tests with mock HTTP server.
+  Remaining: obtain API key and test live end-to-end.
+- [~] **Inline LaTeX input.** Live preview wired. Needs device testing.
+- [~] **Handwritten math OCR (cross-platform).** Printed OCR working
+  via CrispEmbed (DeiT+TrOCR GGUF). Handwritten needs a cross-platform
+  solution. Options evaluated:
+  1. **Tesseract/MLKit** — printed only, no math layout understanding
+  2. **pix2tex fine-tune on CROHME** — train on handwritten dataset,
+     run via CrispEmbed GGUF (same pipeline). Best cross-platform path.
+  3. **Apple VisionKit** — iOS/macOS only, not cross-platform
+  4. **Cloud LLM** — send image to Claude/GPT-4V via CrispAssist
+     infra. Cross-platform, requires API key + network.
+  **Decision: pix2tex CROHME fine-tune (option 2) for on-device,
+  Cloud LLM (option 4) as fallback.**
+- [ ] **ggml graph decoder.** Replace scalar C decoder loops in
+  CrispEmbed's TrOCR with ggml graph ops. ~5× speedup for long
+  outputs. Pure C work in the CrispEmbed repo.
+- [ ] **MiniZinc solver (dart_csp_fzn).** Parse `.fzn` FlatZinc files
+  and solve via dart_csp's constraint engine. Pure Dart, no native deps.
+  Enables textbook constraint-programming examples in the notepad.
 
 ### Tier 3 — Polish + completeness
 
-- [x] **Function Reference i18n.** DE/FR/ES complete — 11 logic-category
-  entries (eq/ne/lt/le/gt/ge/and/or/not/xor/if_cond) added to all 3
-  locales. 562 localization tests pass.
-- [~] **Accessibility V2.** Ctrl/Cmd+1-6 tab navigation added. Calculator
-  keypad already has full keyboard input + semantics labels. Notepad has
-  Ctrl+Z/Y undo/redo + Ctrl+F search. Remaining: more icon semanticLabels.
-- [x] **PDF export.** `exportToPdf()` renders notepad as multi-page A4
-  PDF via `package:pdf` + `printing`. Menu item wired in notepad.
-- [x] **Crash reporting (opt-in).** CrashReporter ring buffer (20 max),
-  email + GitHub issue actions, Settings card shows only when errors
-  exist. No data leaves device without explicit user action.
-- [x] **Perf instrumentation.** PerfStats + PerfOverlay — FPS, avg/worst
-  frame time, jank count. Toggle via Ctrl+Shift+P or Settings (debug).
+- [x] **Function Reference i18n.** DE/FR/ES complete (562 tests pass).
+- [~] **Accessibility V2.** Keyboard nav done. Remaining: icon
+  semanticLabels (~225 unlabelled icons).
+- [x] **PDF export.** Multi-page A4 via `package:pdf` + `printing`.
+- [x] **Crash reporting (opt-in).** Ring buffer + email/GitHub issue.
+- [x] **Perf instrumentation.** PerfOverlay (Ctrl+Shift+P toggle).
 - [~] **Symbolic limit.** Tiers 1+2 done. Gruntz (tier 4) deferred.
 
 ### Tier 4 — Future / speculative
@@ -77,15 +74,14 @@ with a 2026 input surface."
 - [ ] **Pen / handwriting input.** Apple Pencil (PKCanvasView). iPad-only.
 - [ ] **Shareable state links.** URL-encode calculator state for web.
 - [ ] **Collaborative editing.** Server infra (Firebase). V3+ scope.
-- [ ] **ggml graph decoder.** Replace scalar decoder loops (~5× for long outputs).
-- [ ] **Round E.5 — dart_csp_fzn MiniZinc solver.** Needs distribution pipeline.
 
 ### OCR — Math equation recognition
 
 **Architecture**: DeiT encoder (12L ViT) + TrOCR decoder (6L,
 post-LayerNorm). Runs on-device via CrispEmbed C++/ggml FFI.
 
-**Status (June 2026)**: end-to-end working. All quantizations verified.
+**Status (June 2026)**: end-to-end working (printed math). All
+quantizations verified. CI builds all 5 platforms.
 
 | Tier | Status | Description |
 |---|---|---|
@@ -96,33 +92,12 @@ post-LayerNorm). Runs on-device via CrispEmbed C++/ggml FFI.
 
 **Models on HuggingFace**: `cstr/pix2tex-mfr-gguf` (F32/F16/Q8_0/Q4_K)
 
-**CrispCalc integration**: camera button on Calculator+Notepad,
-image_picker, OcrCaptureDialog, OcrSettingsDialog with model
-download/delete, OcrModelManager with HF catalog.
-
-**Key design decisions**:
-- Encoder uses ggml graph (SIMD, multi-thread) for speed
-- Decoder uses scalar C with cached cross-attention K/V
-  (autoregressive KV-cache too complex for V1, fast enough for
-  short expressions)
-- Weight transpose in GGUF converter (ONNX MatMul convention →
-  ggml mul_mat convention)
-- TrOCR uses post-LayerNorm (BART convention), not pre-LN (ViT)
-- FP16/quantized models: `to_f32()` dequant for CPU-side access,
-  `ensure_f32()` ggml cast for graph binary ops, `cached_f32()`
-  for decoder weight cache
-
 **Remaining**:
-- [ ] ggml graph decoder (replaces scalar loops, ~5× speedup for
-  long outputs)
-- [~] Bundle CrispEmbed native lib per platform — platform dirs
-  created (PR CrispStrobe/CrispEmbed#1). Linux verified. Remaining:
-  merge PR, test macOS/iOS/Windows/Android builds.
-- [x] ~~Register CrispEmbed OCR provider at startup~~ — done.
-  `initOcrProviders()` auto-registers when a GGUF model is found.
-  Uses `package:crispembed`'s `CrispEmbedOcr` class via FFI.
-- [ ] Handwritten math: Apple VisionKit (iOS), pix2tex fine-tune
-  on CROHME dataset
+- [ ] ggml graph decoder (replaces scalar loops, ~5× speedup)
+- [x] Bundle CrispEmbed native lib per platform — PR merged, CI fixed.
+- [x] Register CrispEmbed OCR provider at startup.
+- [ ] Handwritten math: pix2tex CROHME fine-tune (on-device) +
+  Cloud LLM fallback (cross-platform via CrispAssist).
 
 ### Completed (moved to HISTORY.md)
 
@@ -131,6 +106,12 @@ download/delete, OcrModelManager with HF catalog.
 - Math OCR end-to-end (4 quantizations, 3.3-5.5s)
 - Step engine V5 (repeated roots + trig sub)
 - P6/P7 help system + logic function reference
+- CrispAssist AI service + settings + UI integration
+- Function Reference i18n (DE/FR/ES, 11 logic entries)
+- PDF export + crash reporting + perf instrumentation
+- Web build fix (conditional imports for dart:ffi/dart:io)
+- App icon (∫Σ on indigo)
+- CI green (3358 tests, format + analyze + test)
 
 ---
 
@@ -151,7 +132,7 @@ CrispEmbed (C++/ggml) → Flutter plugin (flutter/crispembed/) → CrispCalc
 ```
 - `math_ocr.h/cpp`: DeiT encoder (ggml graph) + TrOCR decoder (scalar)
 - `convert-pix2tex-to-gguf.py`: ONNX → GGUF with weight transpose
-- Feature branch: `feature/math-ocr-inference` (merged to main)
+- Platform dirs: linux/ windows/ macos/ ios/ android/ with CI bundling
 
 ### Notepad evaluator pipeline
 ```
