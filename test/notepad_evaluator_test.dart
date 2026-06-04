@@ -76,9 +76,10 @@ void main() {
     });
 
     test('assignment with multi-char identifier LHS', () {
-      final p = classify('subtotal = 142.50');
+      // 'subtotal' is an aggregate keyword, so use a different name.
+      final p = classify('price = 142.50');
       expect(p.kind, NotepadLineKind.assignment);
-      expect(p.name, 'subtotal');
+      expect(p.name, 'price');
       expect(p.body, '142.50');
     });
 

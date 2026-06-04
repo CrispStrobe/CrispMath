@@ -1489,13 +1489,6 @@ class _NotepadScreenState extends State<NotepadScreen> {
       // Round 94 scopes the surface to notepad so module-bound
       // categories (constraints / sudoku / statistics / units) are
       // hidden from the filter row.
-      // CrispAssist natural-language → engine syntax translation.
-      if (AppState().crispAssistEnabled)
-        IconButton(
-          icon: const Icon(Icons.auto_awesome),
-          tooltip: 'AI Translate',
-          onPressed: () => _showTranslateDialog(context),
-        ),
       // OCR camera button
       IconButton(
         icon: const Icon(Icons.camera_alt_outlined),
@@ -1594,6 +1587,11 @@ class _NotepadScreenState extends State<NotepadScreen> {
               value: 'export-pdf',
               child: Text('Export PDF'),
             ));
+            if (AppState().crispAssistEnabled)
+              items.add(const PopupMenuItem(
+                value: 'ai-translate',
+                child: Text('AI Translate'),
+              ));
             items.add(PopupMenuItem(
               value: 'toggle-latex',
               child: Row(children: [
@@ -1647,6 +1645,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
       _copyAsMarkdown();
     } else if (value == 'export-pdf') {
       _exportPdf();
+    } else if (value == 'ai-translate') {
+      _showTranslateDialog(context);
     } else if (value == 'toggle-latex') {
       final doc = _currentDoc;
       if (doc != null) {
