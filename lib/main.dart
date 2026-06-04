@@ -31,6 +31,7 @@ import 'screens/graphing_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/notepad_screen.dart';
 import 'services/crash_reporter.dart';
+import 'widgets/perf_overlay.dart';
 import 'services/native_licenses.dart';
 import 'widgets/export_data_dialog.dart';
 import 'widgets/import_data_dialog.dart';
@@ -183,6 +184,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = _kCalculator;
+  bool _showPerfOverlay = false;
 
   final GlobalKey<CalculatorScreenState> _calculatorKey = GlobalKey();
   final GlobalKey<GraphingScreenState> _graphingKey = GlobalKey();
@@ -277,6 +279,10 @@ class _MainScreenState extends State<MainScreen> {
         const SingleActivator(LogicalKeyboardKey.digit4, meta: true): () => _select(3),
         const SingleActivator(LogicalKeyboardKey.digit5, meta: true): () => _select(4),
         const SingleActivator(LogicalKeyboardKey.digit6, meta: true): () => _select(5),
+        const SingleActivator(LogicalKeyboardKey.keyP, control: true, shift: true): () =>
+            setState(() => _showPerfOverlay = !_showPerfOverlay),
+        const SingleActivator(LogicalKeyboardKey.keyP, meta: true, shift: true): () =>
+            setState(() => _showPerfOverlay = !_showPerfOverlay),
       },
       child: Focus(
         autofocus: true,
@@ -310,6 +316,7 @@ class _MainScreenState extends State<MainScreen> {
   /// pass-through on native.
   Widget _withWebBanner(Widget body) => Column(
         children: [
+          if (_showPerfOverlay) const PerfOverlay(),
           const WebUnsupportedBanner(),
           Expanded(child: body),
         ],
@@ -655,6 +662,24 @@ class SettingsScreen extends StatelessWidget {
               // the CRISPCALC_DIAGNOSTIC=matrix env-var at startup
               // (see main.dart:73-79).
               if (kDebugMode) ...[
+                const SizedBox(height: 16),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.speed),
+                    title: const Text('Performance Overlay'),
+                    subtitle: const Text('Ctrl+Shift+P to toggle'),
+                    trailing: const Text('dev'),
+                    onTap: () {
+                      // Find the MainScreen ancestor and toggle.
+                      final mainState = context
+                          .findAncestorStateOfType<_MainScreenState>();
+                      mainState?.setState(() {
+                        mainState._showPerfOverlay =
+                            !mainState._showPerfOverlay;
+                      });
+                    },
+                  ),
+                ),
                 const SizedBox(height: 16),
                 Card(
                   child: ListTile(
