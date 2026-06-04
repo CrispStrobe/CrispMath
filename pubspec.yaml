@@ -53,6 +53,10 @@ dependencies:
   package_info_plus: ^8.0.0
   url_launcher: ^6.2.0
 
+  # PDF export for notepad documents
+  pdf: ^3.10.0
+  printing: ^5.12.0
+
   # OCR: camera/gallery image picker for math equation recognition
   image_picker: ^1.0.0
 

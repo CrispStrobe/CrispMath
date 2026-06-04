@@ -57,7 +57,9 @@ with a 2026 input surface."
 
 ### Tier 3 — Polish + completeness
 
-- [ ] **Function Reference i18n.** FR+ES translations (DE done).
+- [x] **Function Reference i18n.** DE/FR/ES complete — 11 logic-category
+  entries (eq/ne/lt/le/gt/ge/and/or/not/xor/if_cond) added to all 3
+  locales. 562 localization tests pass.
 - [ ] **Accessibility V2.** Keyboard navigation, contrast, VoiceOver.
 - [ ] **PDF export.** Needs `package:pdf`. Export model done.
 - [ ] **Crash reporting (opt-in).** Sentry or email-based.

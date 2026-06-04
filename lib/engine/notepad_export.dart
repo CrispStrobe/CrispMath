@@ -10,6 +10,9 @@
 //
 // Each line is classified and formatted according to its kind.
 
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+
 import 'notepad.dart';
 import 'notepad_evaluator.dart';
 
@@ -160,4 +163,106 @@ String _latexEscape(String s) {
       .replaceAll('}', r'\}')
       .replaceAll('~', r'\textasciitilde{}')
       .replaceAll('^', r'\textasciicircum{}');
+}
+
+/// Export to PDF. Returns the raw PDF bytes.
+Future<pw.Document> exportToPdf(NotepadDocument doc) async {
+  final exported = exportDocument(doc);
+  final pdf = pw.Document();
+
+  final headingStyle = pw.TextStyle(
+    fontSize: 16,
+    fontWeight: pw.FontWeight.bold,
+  );
+  final exprStyle = pw.TextStyle(
+    fontSize: 11,
+    font: pw.Font.courier(),
+  );
+  final resultStyle = pw.TextStyle(
+    fontSize: 11,
+    font: pw.Font.courier(),
+    fontWeight: pw.FontWeight.bold,
+    color: PdfColors.blue900,
+  );
+  final commentStyle = pw.TextStyle(
+    fontSize: 10,
+    fontStyle: pw.FontStyle.italic,
+    color: PdfColors.grey700,
+  );
+  final aggregateStyle = pw.TextStyle(
+    fontSize: 11,
+    fontWeight: pw.FontWeight.bold,
+  );
+
+  final widgets = <pw.Widget>[];
+
+  // Title
+  widgets.add(pw.Text(exported.name,
+      style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)));
+  widgets.add(pw.SizedBox(height: 8));
+
+  for (final line in exported.lines) {
+    switch (line.kind) {
+      case 'heading':
+        widgets.add(pw.SizedBox(height: 8));
+        widgets.add(pw.Text(
+          line.source.replaceFirst(RegExp(r'^##\s*'), ''),
+          style: headingStyle,
+        ));
+        widgets.add(pw.SizedBox(height: 4));
+      case 'divider':
+        widgets.add(pw.Divider(thickness: 0.5));
+      case 'comment':
+        widgets.add(pw.Text(
+          line.source.replaceFirst(RegExp(r'^[\s]*(?://|#)\s?'), ''),
+          style: commentStyle,
+        ));
+      case 'blank':
+        widgets.add(pw.SizedBox(height: 6));
+      case 'aggregate':
+        final res = line.formattedResult ?? '';
+        widgets.add(pw.Row(children: [
+          pw.Expanded(child: pw.Text(line.source, style: aggregateStyle)),
+          pw.Text(res, style: resultStyle),
+        ]));
+      default:
+        // Expression line — show source and result side-by-side.
+        if (line.formattedResult != null &&
+            line.formattedResult!.isNotEmpty) {
+          widgets.add(pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Expanded(
+                flex: 3,
+                child: pw.Text(line.source, style: exprStyle),
+              ),
+              pw.SizedBox(width: 8),
+              pw.Text('=', style: exprStyle),
+              pw.SizedBox(width: 8),
+              pw.Expanded(
+                flex: 2,
+                child: pw.Text(line.formattedResult!, style: resultStyle),
+              ),
+            ],
+          ));
+        } else if (line.source.trim().isNotEmpty) {
+          widgets.add(pw.Text(line.source, style: exprStyle));
+        }
+    }
+  }
+
+  pdf.addPage(pw.MultiPage(
+    pageFormat: PdfPageFormat.a4,
+    margin: const pw.EdgeInsets.all(40),
+    build: (context) => widgets,
+    footer: (context) => pw.Container(
+      alignment: pw.Alignment.centerRight,
+      child: pw.Text(
+        'CrispCalc — ${exported.name}',
+        style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+      ),
+    ),
+  ));
+
+  return pdf;
 }

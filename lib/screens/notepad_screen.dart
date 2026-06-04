@@ -25,6 +25,7 @@ import 'package:dart_csp/dart_csp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:printing/printing.dart';
 
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
@@ -32,6 +33,7 @@ import '../engine/currency_evaluator.dart';
 import '../engine/date_time_evaluator.dart';
 import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
+import '../engine/notepad_export.dart';
 import '../engine/ocr_provider.dart';
 import '../widgets/ocr_capture_dialog.dart';
 import 'package:image_picker/image_picker.dart';
@@ -737,6 +739,17 @@ class _NotepadScreenState extends State<NotepadScreen> {
         content: Text(AppLocalizations.of(context).notepadCopiedAsMarkdown),
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  Future<void> _exportPdf() async {
+    final doc = _currentDoc;
+    if (doc == null) return;
+    final pdf = await exportToPdf(doc);
+    if (!mounted) return;
+    await Printing.layoutPdf(
+      onLayout: (_) => pdf.save(),
+      name: '${doc.name}.pdf',
     );
   }
 
@@ -1447,6 +1460,10 @@ class _NotepadScreenState extends State<NotepadScreen> {
               value: 'copy-markdown',
               child: Text(t.notepadCopyAsMarkdown),
             ));
+            items.add(const PopupMenuItem(
+              value: 'export-pdf',
+              child: Text('Export PDF'),
+            ));
             items.add(PopupMenuItem(
               value: 'toggle-latex',
               child: Row(children: [
@@ -1494,6 +1511,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
       _duplicateCurrent();
     } else if (value == 'copy-markdown') {
       _copyAsMarkdown();
+    } else if (value == 'export-pdf') {
+      _exportPdf();
     } else if (value == 'toggle-latex') {
       final doc = _currentDoc;
       if (doc != null) {
