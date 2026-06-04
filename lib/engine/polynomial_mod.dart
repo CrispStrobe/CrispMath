@@ -246,6 +246,7 @@ class _Fp {
   List<({List<int> poly, int mult})> squareFree(List<int> f) {
     final result = <({List<int> poly, int mult})>[];
     void recur(List<int> g, int scale) {
+      if (deg(g) <= 0) return; // constant — nothing to factor
       final gp = derivative(g);
       if (gp.isEmpty) {
         recur(pthRoot(g), scale * p); // g is a p-th power

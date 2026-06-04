@@ -49,11 +49,12 @@ void main() {
 
     test('constant polynomial has no factors', () {
       // 5 = [5]. After reducing to monic (dividing by lead=5), we get
-      // a degree-0 poly [1] which is 1 — no factorizable part.
-      // NOTE: this test documents current behavior. The squareFree
-      // algorithm recurses infinitely on degree-0 input — this is a
-      // known bug (stack overflow). Skipping until fixed.
-    }, skip: 'squareFree infinite recursion on degree-0 poly — tracked bug');
+      // a degree-0 poly [1] — no factorizable part.
+      final result = factorModP(_poly([5]), 7);
+      expect(result, isNotNull);
+      expect(result!.factors, isEmpty);
+      expect(result.leadingCoeff, 5);
+    });
 
     test('x^3 - x mod 3 factors into three linear factors', () {
       // x^3 - x = [0, -1, 0, 1]
