@@ -222,12 +222,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // Run OCR
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Recognizing math…'), duration: Duration(seconds: 1)),
+      const SnackBar(
+          content: Text('Recognizing math…'), duration: Duration(seconds: 1)),
     );
 
     // Decode image dimensions
     final decoded = await decodeImageFromList(bytes);
-    final result = await provider.recognize(bytes, decoded.width, decoded.height);
+    final result =
+        await provider.recognize(bytes, decoded.width, decoded.height);
     if (result == null || !mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('OCR failed — try a clearer image.')),
@@ -2458,9 +2460,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                             );
                           }
 
-                          final q = _debouncedSearchQuery
-                              .trim()
-                              .toLowerCase();
+                          final q = _debouncedSearchQuery.trim().toLowerCase();
                           final entries = q.isEmpty
                               ? _appState.history
                               : _appState.history

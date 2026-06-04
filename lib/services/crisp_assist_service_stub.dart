@@ -76,6 +76,5 @@ class CrispAssistService {
     required CrispAssistConfig config,
     CrispAssistCancelToken? cancel,
   }) =>
-      Stream.error(
-          const CrispAssistDisabledException('Not available on web'));
+      Stream.error(const CrispAssistDisabledException('Not available on web'));
 }

@@ -124,49 +124,118 @@ class SyntaxHighlightingController extends TextEditingController {
   // --- Token pattern ---
 
   static final _functionNames = [
-    'solve', 'expand', 'simplify', 'factor', 'diff', 'integrate',
-    'limit', 'subst', 'gcd', 'lcm', 'factorial', 'fibonacci',
-    'sin', 'cos', 'tan', 'asin', 'acos', 'atan',
-    'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh',
-    'exp', 'log', 'ln', 'log10', 'sqrt', 'cbrt', 'abs',
-    'floor', 'ceil', 'round', 'sign', 'gamma', 'zeta', 'erf',
-    'lambertw', 'beta', 'besselj', 'bessely',
-    'isprime', 'nextprime', 'prevprime', 'factorint',
-    'divisors', 'totient', 'modpow', 'modinv', 'jacobi',
-    'cfrac', 'convergent', 'polygcd', 'polyfactor',
-    'evalf', 'cevalf', 'det', 'inv', 'transpose', 'rref',
-    'Matrix', 'dot', 'cross', 'norm', 'unit',
-    'pi', 'Pi', 'min', 'max', 'mod',
+    'solve',
+    'expand',
+    'simplify',
+    'factor',
+    'diff',
+    'integrate',
+    'limit',
+    'subst',
+    'gcd',
+    'lcm',
+    'factorial',
+    'fibonacci',
+    'sin',
+    'cos',
+    'tan',
+    'asin',
+    'acos',
+    'atan',
+    'sinh',
+    'cosh',
+    'tanh',
+    'asinh',
+    'acosh',
+    'atanh',
+    'exp',
+    'log',
+    'ln',
+    'log10',
+    'sqrt',
+    'cbrt',
+    'abs',
+    'floor',
+    'ceil',
+    'round',
+    'sign',
+    'gamma',
+    'zeta',
+    'erf',
+    'lambertw',
+    'beta',
+    'besselj',
+    'bessely',
+    'isprime',
+    'nextprime',
+    'prevprime',
+    'factorint',
+    'divisors',
+    'totient',
+    'modpow',
+    'modinv',
+    'jacobi',
+    'cfrac',
+    'convergent',
+    'polygcd',
+    'polyfactor',
+    'evalf',
+    'cevalf',
+    'det',
+    'inv',
+    'transpose',
+    'rref',
+    'Matrix',
+    'dot',
+    'cross',
+    'norm',
+    'unit',
+    'pi',
+    'Pi',
+    'min',
+    'max',
+    'mod',
   ];
 
   static final _keywords = [
-    'use', 'total', 'subtotal', 'average', 'count',
-    'and', 'or', 'not', 'xor', 'if',
-    'true', 'false', 'Ans', 'fzn',
+    'use',
+    'total',
+    'subtotal',
+    'average',
+    'count',
+    'and',
+    'or',
+    'not',
+    'xor',
+    'if',
+    'true',
+    'false',
+    'Ans',
+    'fzn',
   ];
 
   static final RegExp _tokenPattern = RegExp(
     '('
-    // Group 1: inline comment (// or # to EOL).
-    r'(?://|#).*$'
-    ')|('
-    // Group 2: number literal (integer or decimal, optional leading sign
-    // only when preceded by an operator or start of string).
-    r'(?<![a-zA-Z_])(\d+\.?\d*(?:[eE][+-]?\d+)?)'
-    ')|('
-    // Group 3: known function name (word-bounded).
-    r'(?<![a-zA-Z_])(?:' +
+            // Group 1: inline comment (// or # to EOL).
+            r'(?://|#).*$'
+            ')|('
+            // Group 2: number literal (integer or decimal, optional leading sign
+            // only when preceded by an operator or start of string).
+            r'(?<![a-zA-Z_])(\d+\.?\d*(?:[eE][+-]?\d+)?)'
+            ')|('
+            // Group 3: known function name (word-bounded).
+            r'(?<![a-zA-Z_])(?:' +
         _functionNames.join('|') +
         r')(?![a-zA-Z_0-9])'
-        ')|('
-        // Group 4: keyword.
-        r'(?<![a-zA-Z_])(?:' +
+            ')|('
+            // Group 4: keyword.
+            r'(?<![a-zA-Z_])(?:' +
         _keywords.join('|') +
         r')(?![a-zA-Z_0-9])'
-        ')|('
-        // Group 5: operators.
-        r'[+\-*/^=<>!%≠≤≥]+'
-        ')',
+            ')|('
+            // Group 5: operators.
+            r'[+\-*/^=<>!%≠≤≥]+'
+            ')',
     multiLine: true,
   );
 }

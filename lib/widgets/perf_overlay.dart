@@ -37,16 +37,14 @@ class PerfStats {
 
   double get fps {
     if (_frameTimes.isEmpty) return 0;
-    final total = _frameTimes.fold<int>(
-        0, (sum, d) => sum + d.inMicroseconds);
+    final total = _frameTimes.fold<int>(0, (sum, d) => sum + d.inMicroseconds);
     if (total == 0) return 0;
     return _frameTimes.length * 1e6 / total;
   }
 
   double get avgFrameMs {
     if (_frameTimes.isEmpty) return 0;
-    final total = _frameTimes.fold<int>(
-        0, (sum, d) => sum + d.inMicroseconds);
+    final total = _frameTimes.fold<int>(0, (sum, d) => sum + d.inMicroseconds);
     return total / _frameTimes.length / 1000;
   }
 
@@ -104,7 +102,8 @@ class _PerfOverlayState extends State<PerfOverlay> {
       if (_tickCount % 30 == 0 && mounted) {
         setState(() {});
       }
-    })..start();
+    })
+      ..start();
   }
 
   @override

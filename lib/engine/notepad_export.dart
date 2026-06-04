@@ -59,10 +59,10 @@ ExportedDocument exportDocument(NotepadDocument doc) {
       firstCodeLineIndex: firstCode,
     );
 
-    final formattedResult = line.cachedResult != null &&
-            line.resultFormat != LineResultFormat.auto
-        ? formatLineResult(line.cachedResult!, line.resultFormat)
-        : null;
+    final formattedResult =
+        line.cachedResult != null && line.resultFormat != LineResultFormat.auto
+            ? formatLineResult(line.cachedResult!, line.resultFormat)
+            : null;
 
     exportedLines.add(ExportedLine(
       kind: parsed.kind.name,
@@ -96,7 +96,8 @@ String exportToMarkdown(NotepadDocument doc) {
         buf.writeln('---');
         buf.writeln();
       case 'comment':
-        buf.writeln('> ${line.source.replaceFirst(RegExp(r'^[\s]*(?://|#)\s?'), '')}');
+        buf.writeln(
+            '> ${line.source.replaceFirst(RegExp(r'^[\s]*(?://|#)\s?'), '')}');
       case 'blank':
         buf.writeln();
       case 'aggregate':
@@ -139,8 +140,11 @@ String exportToLatex(NotepadDocument doc) {
         buf.writeln(r'\vspace{0.5em}');
       default:
         if (line.formattedResult != null && line.formattedResult!.isNotEmpty) {
-          buf.writeln(
-              r'\[ \text{' + _latexEscape(line.source) + r'} = ' + _latexEscape(line.formattedResult!) + r' \]');
+          buf.writeln(r'\[ \text{' +
+              _latexEscape(line.source) +
+              r'} = ' +
+              _latexEscape(line.formattedResult!) +
+              r' \]');
         } else {
           buf.writeln(r'\[ ' + _latexEscape(line.source) + r' \]');
         }
@@ -227,8 +231,7 @@ Future<pw.Document> exportToPdf(NotepadDocument doc) async {
         ]));
       default:
         // Expression line — show source and result side-by-side.
-        if (line.formattedResult != null &&
-            line.formattedResult!.isNotEmpty) {
+        if (line.formattedResult != null && line.formattedResult!.isNotEmpty) {
           widgets.add(pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [

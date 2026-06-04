@@ -41,8 +41,8 @@ void main() {
 
   group('DateTimeEvaluator — date arithmetic', () {
     test('date + days', () {
-      expect(DateTimeEvaluator.tryEvaluate('2026-01-01 + 10 days'),
-          '2026-01-11');
+      expect(
+          DateTimeEvaluator.tryEvaluate('2026-01-01 + 10 days'), '2026-01-11');
     });
 
     test('date + weeks', () {
@@ -51,33 +51,33 @@ void main() {
     });
 
     test('date + months', () {
-      expect(DateTimeEvaluator.tryEvaluate('2026-01-15 + 3 months'),
-          '2026-04-15');
+      expect(
+          DateTimeEvaluator.tryEvaluate('2026-01-15 + 3 months'), '2026-04-15');
     });
 
     test('date + years', () {
-      expect(DateTimeEvaluator.tryEvaluate('2026-06-01 + 1 years'),
-          '2027-06-01');
+      expect(
+          DateTimeEvaluator.tryEvaluate('2026-06-01 + 1 years'), '2027-06-01');
     });
 
     test('date - days', () {
-      expect(DateTimeEvaluator.tryEvaluate('2026-01-11 - 10 days'),
-          '2026-01-01');
+      expect(
+          DateTimeEvaluator.tryEvaluate('2026-01-11 - 10 days'), '2026-01-01');
     });
 
     test('date - weeks', () {
-      expect(DateTimeEvaluator.tryEvaluate('2026-01-15 - 2 weeks'),
-          '2026-01-01');
+      expect(
+          DateTimeEvaluator.tryEvaluate('2026-01-15 - 2 weeks'), '2026-01-01');
     });
 
     test('date - months', () {
-      expect(DateTimeEvaluator.tryEvaluate('2026-04-15 - 3 months'),
-          '2026-01-15');
+      expect(
+          DateTimeEvaluator.tryEvaluate('2026-04-15 - 3 months'), '2026-01-15');
     });
 
     test('date - years', () {
-      expect(DateTimeEvaluator.tryEvaluate('2027-06-01 - 1 years'),
-          '2026-06-01');
+      expect(
+          DateTimeEvaluator.tryEvaluate('2027-06-01 - 1 years'), '2026-06-01');
     });
   });
 
@@ -96,8 +96,8 @@ void main() {
     });
 
     test('days between', () {
-      final r =
-          DateTimeEvaluator.tryEvaluate('days between 2026-03-01 and 2026-03-31');
+      final r = DateTimeEvaluator.tryEvaluate(
+          'days between 2026-03-01 and 2026-03-31');
       expect(r, '30 days');
     });
 

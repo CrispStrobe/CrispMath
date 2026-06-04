@@ -129,7 +129,8 @@ class _MiniPlotPainter extends CustomPainter {
     yMax += yPad;
 
     double tx(double x) => (x - xMin) / (xMax - xMin) * size.width;
-    double ty(double y) => size.height - (y - yMin) / (yMax - yMin) * size.height;
+    double ty(double y) =>
+        size.height - (y - yMin) / (yMax - yMin) * size.height;
 
     // Draw x-axis if in range.
     if (yMin <= 0 && yMax >= 0) {
@@ -137,7 +138,9 @@ class _MiniPlotPainter extends CustomPainter {
       canvas.drawLine(
         Offset(0, y0),
         Offset(size.width, y0),
-        Paint()..color = axisColor..strokeWidth = 0.5,
+        Paint()
+          ..color = axisColor
+          ..strokeWidth = 0.5,
       );
     }
 

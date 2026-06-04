@@ -78,7 +78,8 @@ class OcrModelCatalog {
       id: 'trocr-hw-math',
       name: 'Handwritten Math OCR',
       filename: 'trocr-math-hw-f16.gguf',
-      url: 'https://huggingface.co/cstr/trocr-math-handwritten-gguf/resolve/main/trocr-math-hw-f16.gguf',
+      url:
+          'https://huggingface.co/cstr/trocr-math-handwritten-gguf/resolve/main/trocr-math-hw-f16.gguf',
       sizeBytes: 1200 * 1024 * 1024,
       description: 'Handwritten math recognition (TrOCR large). '
           '1.2 GB. Desktop only — too large for mobile.',

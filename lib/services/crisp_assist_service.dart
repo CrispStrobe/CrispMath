@@ -207,8 +207,7 @@ class CrispAssistService {
       {'role': 'system', 'content': _Prompts.narrate},
       {
         'role': 'user',
-        'content':
-            'Original expression: $expression\n\nSteps:\n$stepsText',
+        'content': 'Original expression: $expression\n\nSteps:\n$stepsText',
       },
     ];
     return _chatCompletion(messages: messages, config: config);
@@ -265,8 +264,7 @@ class CrispAssistService {
     }
     request.add(utf8.encode(body));
 
-    final response =
-        await request.close().timeout(config.timeout);
+    final response = await request.close().timeout(config.timeout);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final errorBody = await response.transform(utf8.decoder).join();
@@ -301,8 +299,7 @@ class CrispAssistService {
     }
     request.add(utf8.encode(body));
 
-    final response =
-        await request.close().timeout(config.timeout);
+    final response = await request.close().timeout(config.timeout);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final errorBody = await response.transform(utf8.decoder).join();

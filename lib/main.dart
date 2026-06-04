@@ -267,22 +267,35 @@ class _MainScreenState extends State<MainScreen> {
     // Ctrl/Cmd + 1-6 switch between tabs (accessibility / power-user).
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
-        const SingleActivator(LogicalKeyboardKey.digit1, control: true): () => _select(0),
-        const SingleActivator(LogicalKeyboardKey.digit2, control: true): () => _select(1),
-        const SingleActivator(LogicalKeyboardKey.digit3, control: true): () => _select(2),
-        const SingleActivator(LogicalKeyboardKey.digit4, control: true): () => _select(3),
-        const SingleActivator(LogicalKeyboardKey.digit5, control: true): () => _select(4),
-        const SingleActivator(LogicalKeyboardKey.digit6, control: true): () => _select(5),
-        const SingleActivator(LogicalKeyboardKey.digit1, meta: true): () => _select(0),
-        const SingleActivator(LogicalKeyboardKey.digit2, meta: true): () => _select(1),
-        const SingleActivator(LogicalKeyboardKey.digit3, meta: true): () => _select(2),
-        const SingleActivator(LogicalKeyboardKey.digit4, meta: true): () => _select(3),
-        const SingleActivator(LogicalKeyboardKey.digit5, meta: true): () => _select(4),
-        const SingleActivator(LogicalKeyboardKey.digit6, meta: true): () => _select(5),
-        const SingleActivator(LogicalKeyboardKey.keyP, control: true, shift: true): () =>
-            setState(() => _showPerfOverlay = !_showPerfOverlay),
-        const SingleActivator(LogicalKeyboardKey.keyP, meta: true, shift: true): () =>
-            setState(() => _showPerfOverlay = !_showPerfOverlay),
+        const SingleActivator(LogicalKeyboardKey.digit1, control: true): () =>
+            _select(0),
+        const SingleActivator(LogicalKeyboardKey.digit2, control: true): () =>
+            _select(1),
+        const SingleActivator(LogicalKeyboardKey.digit3, control: true): () =>
+            _select(2),
+        const SingleActivator(LogicalKeyboardKey.digit4, control: true): () =>
+            _select(3),
+        const SingleActivator(LogicalKeyboardKey.digit5, control: true): () =>
+            _select(4),
+        const SingleActivator(LogicalKeyboardKey.digit6, control: true): () =>
+            _select(5),
+        const SingleActivator(LogicalKeyboardKey.digit1, meta: true): () =>
+            _select(0),
+        const SingleActivator(LogicalKeyboardKey.digit2, meta: true): () =>
+            _select(1),
+        const SingleActivator(LogicalKeyboardKey.digit3, meta: true): () =>
+            _select(2),
+        const SingleActivator(LogicalKeyboardKey.digit4, meta: true): () =>
+            _select(3),
+        const SingleActivator(LogicalKeyboardKey.digit5, meta: true): () =>
+            _select(4),
+        const SingleActivator(LogicalKeyboardKey.digit6, meta: true): () =>
+            _select(5),
+        const SingleActivator(LogicalKeyboardKey.keyP,
+                control: true, shift: true):
+            () => setState(() => _showPerfOverlay = !_showPerfOverlay),
+        const SingleActivator(LogicalKeyboardKey.keyP, meta: true, shift: true):
+            () => setState(() => _showPerfOverlay = !_showPerfOverlay),
       },
       child: Focus(
         autofocus: true,
@@ -645,7 +658,8 @@ class SettingsScreen extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(Icons.camera_alt_outlined),
                   title: const Text('Math OCR Models'),
-                  subtitle: const Text('Download models for equation recognition'),
+                  subtitle:
+                      const Text('Download models for equation recognition'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () => showDialog<void>(
                     context: context,
@@ -671,8 +685,8 @@ class SettingsScreen extends StatelessWidget {
                     trailing: const Text('dev'),
                     onTap: () {
                       // Find the MainScreen ancestor and toggle.
-                      final mainState = context
-                          .findAncestorStateOfType<_MainScreenState>();
+                      final mainState =
+                          context.findAncestorStateOfType<_MainScreenState>();
                       mainState?.setState(() {
                         mainState._showPerfOverlay =
                             !mainState._showPerfOverlay;
@@ -699,16 +713,15 @@ class SettingsScreen extends StatelessWidget {
                   child: ListTile(
                     leading: Icon(Icons.bug_report,
                         color: Theme.of(context).colorScheme.error),
-                    title: Text(
-                        'Crash Reports (${CrashReporter.instance.count})'),
+                    title:
+                        Text('Crash Reports (${CrashReporter.instance.count})'),
                     subtitle: const Text(
                         'Review and send — no data leaves without your action'),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () => _showCrashReportDialog(context),
                   ),
                 ),
-              if (CrashReporter.instance.hasReports)
-                const SizedBox(height: 16),
+              if (CrashReporter.instance.hasReports) const SizedBox(height: 16),
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.info_outline),
@@ -875,7 +888,8 @@ class _CrispAssistSettingsCard extends StatefulWidget {
   const _CrispAssistSettingsCard({required this.appState});
 
   @override
-  State<_CrispAssistSettingsCard> createState() => _CrispAssistSettingsCardState();
+  State<_CrispAssistSettingsCard> createState() =>
+      _CrispAssistSettingsCardState();
 }
 
 class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
@@ -904,8 +918,8 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
     widget.appState.setCrispAssistApiUrl(_urlCtl.text.trim());
     widget.appState.setCrispAssistApiKey(_keyCtl.text.trim());
     final model = _modelCtl.text.trim();
-    widget.appState
-        .setCrispAssistModel(model.isEmpty ? 'claude-sonnet-4-20250514' : model);
+    widget.appState.setCrispAssistModel(
+        model.isEmpty ? 'claude-sonnet-4-20250514' : model);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('CrispAssist settings saved')),
     );
@@ -957,9 +971,7 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
                       ],
                     ),
                   ),
-                  Icon(_expanded
-                      ? Icons.expand_less
-                      : Icons.expand_more),
+                  Icon(_expanded ? Icons.expand_less : Icons.expand_more),
                 ],
               ),
             ),

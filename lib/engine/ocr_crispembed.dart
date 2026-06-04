@@ -71,8 +71,8 @@ class CrispEmbedOcrProvider implements OcrProvider {
           'crispembed_math_ocr_init');
       _freeFn = _lib!.lookupFunction<_MathOcrFreeC, _MathOcrFreeDart>(
           'crispembed_math_ocr_free');
-      _recognizeFn =
-          _lib!.lookupFunction<_MathOcrRecognizeC, _MathOcrRecognizeDart>(
+      _recognizeFn = _lib!
+          .lookupFunction<_MathOcrRecognizeC, _MathOcrRecognizeDart>(
               'crispembed_math_ocr_recognize');
 
       final pathPtr = modelPath.toNativeUtf8();

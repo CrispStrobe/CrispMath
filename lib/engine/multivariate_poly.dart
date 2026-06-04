@@ -116,8 +116,8 @@ class MultivariatePolynomial {
       final exp1 = _parseKey(e1.key);
       for (final e2 in other._terms.entries) {
         final exp2 = _parseKey(e2.key);
-        final newExp = List<int>.generate(
-            variables.length, (i) => exp1[i] + exp2[i]);
+        final newExp =
+            List<int>.generate(variables.length, (i) => exp1[i] + exp2[i]);
         final key = _key(newExp);
         final prod = e1.value * e2.value;
         final existing = result[key];
@@ -324,13 +324,13 @@ class MultivariateFactoring {
         commonCoeff == Rational.one && commonExps.every((e) => e == 0);
     if (isTrivial) return (null, p);
 
-    final common = MultivariatePolynomial.monomial(vars, commonExps, commonCoeff);
+    final common =
+        MultivariatePolynomial.monomial(vars, commonExps, commonCoeff);
 
     // Divide each term by the common factor.
     final newTerms = <List<int>, Rational>{};
     for (final (exps, coeff) in p.terms) {
-      final newExps =
-          List<int>.generate(nVars, (i) => exps[i] - commonExps[i]);
+      final newExps = List<int>.generate(nVars, (i) => exps[i] - commonExps[i]);
       newTerms[newExps] = coeff / commonCoeff;
     }
 
@@ -352,8 +352,7 @@ class MultivariateFactoring {
 
   /// Try to factor using common algebraic patterns.
   /// Returns list of factors or null.
-  static List<MultivariatePolynomial>? _tryPatterns(
-      MultivariatePolynomial p) {
+  static List<MultivariatePolynomial>? _tryPatterns(MultivariatePolynomial p) {
     final result = _tryDifferenceOfSquares(p) ??
         _trySumDifferenceCubes(p) ??
         _tryPerfectSquare(p) ??
@@ -498,8 +497,8 @@ class MultivariateFactoring {
 
         // Cross term exponent should be average of i and j exponents.
         final vars = p.variables;
-        final expectedCrossExp = List<int>.generate(
-            vars.length, (v) => (expI[v] + expJ[v]) ~/ 2);
+        final expectedCrossExp =
+            List<int>.generate(vars.length, (v) => (expI[v] + expJ[v]) ~/ 2);
         // Check sum is actually even for each var.
         bool valid = true;
         for (var v = 0; v < vars.length; v++) {
@@ -542,8 +541,7 @@ class MultivariateFactoring {
 
   /// Try factoring by grouping: split terms into two groups, extract common
   /// factor from each, check if the remaining parts are equal.
-  static List<MultivariatePolynomial>? _tryGrouping(
-      MultivariatePolynomial p) {
+  static List<MultivariatePolynomial>? _tryGrouping(MultivariatePolynomial p) {
     if (p.termCount < 4 || p.termCount > 6) return null;
 
     final termList = p.terms.toList();
@@ -557,8 +555,7 @@ class MultivariateFactoring {
     // Generate combinations of indices for the first group.
     final indices = List.generate(n, (i) => i);
     for (final group1Idx in _combinations(indices, halfSize)) {
-      final group2Idx =
-          indices.where((i) => !group1Idx.contains(i)).toList();
+      final group2Idx = indices.where((i) => !group1Idx.contains(i)).toList();
 
       final group1Terms = <List<int>, Rational>{};
       for (final i in group1Idx) {
@@ -621,14 +618,13 @@ class MultivariateFactoring {
       univCoeffs[power] = (univCoeffs[power] ?? Rational.zero) + coeff;
     }
 
-    final maxPower =
-        univCoeffs.keys.fold<int>(0, (a, b) => a > b ? a : b);
+    final maxPower = univCoeffs.keys.fold<int>(0, (a, b) => a > b ? a : b);
 
     // Cap the degree to avoid blowup.
     if (maxPower > 200) return null;
 
-    final coeffList =
-        List<Rational>.generate(maxPower + 1, (i) => univCoeffs[i] ?? Rational.zero);
+    final coeffList = List<Rational>.generate(
+        maxPower + 1, (i) => univCoeffs[i] ?? Rational.zero);
     final univPoly = Polynomial.fromCoeffs(coeffList, 'x');
     if (univPoly.isZero) return null;
 
@@ -687,8 +683,8 @@ class MultivariateFactoring {
 
     for (final r in candidates) {
       while (remaining.degree >= 1 && _evalAt(remaining, r).isZero) {
-        final lin = Polynomial.variable(variable) -
-            Polynomial.constant(r, variable);
+        final lin =
+            Polynomial.variable(variable) - Polynomial.constant(r, variable);
         final qr = remaining.divmod(lin);
         if (!qr.remainder.isZero) break;
         remaining = qr.quotient;
@@ -892,7 +888,6 @@ class MultivariateFactoring {
     }
   }
 }
-
 
 // ---------------------------------------------------------------------------
 // Multivariate polynomial parser

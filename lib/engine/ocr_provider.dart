@@ -190,9 +190,23 @@ String latexToEngineSyntax(String latex) {
 
   // Named functions: \sin → sin, \cos → cos, etc.
   for (final fn in [
-    'sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan',
-    'sinh', 'cosh', 'tanh', 'ln', 'log', 'exp', 'lim',
-    'max', 'min', 'det', 'gcd',
+    'sin',
+    'cos',
+    'tan',
+    'arcsin',
+    'arccos',
+    'arctan',
+    'sinh',
+    'cosh',
+    'tanh',
+    'ln',
+    'log',
+    'exp',
+    'lim',
+    'max',
+    'min',
+    'det',
+    'gcd',
   ]) {
     s = s.replaceAll('\\$fn', fn);
   }

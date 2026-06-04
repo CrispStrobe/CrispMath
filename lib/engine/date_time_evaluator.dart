@@ -127,7 +127,13 @@ class DateTimeEvaluator {
       final y = int.tryParse(isoMatch.group(1)!);
       final m = int.tryParse(isoMatch.group(2)!);
       final d = int.tryParse(isoMatch.group(3)!);
-      if (y != null && m != null && d != null && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      if (y != null &&
+          m != null &&
+          d != null &&
+          m >= 1 &&
+          m <= 12 &&
+          d >= 1 &&
+          d <= 31) {
         return DateTime(y, m, d);
       }
     }
@@ -195,12 +201,27 @@ class DateTimeEvaluator {
 
   static String _formatDateLong(DateTime d) {
     const weekdays = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${weekdays[d.weekday - 1]}, ${d.day} ${months[d.month - 1]} ${d.year}';
   }

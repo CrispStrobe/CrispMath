@@ -96,15 +96,17 @@ void main() {
 
   group('formatModFactorization', () {
     test('leading coefficient shown when not 1', () {
-      final z = ModFactorization(
-          7, 3, 'x', [const ModFactor([1, 1], 1)]);
+      final z = ModFactorization(7, 3, 'x', [
+        const ModFactor([1, 1], 1)
+      ]);
       final s = formatModFactorization(z);
       expect(s, startsWith('3'));
     });
 
     test('multiplicity shown when > 1', () {
-      final z = ModFactorization(
-          2, 1, 'x', [const ModFactor([1, 1], 3)]);
+      final z = ModFactorization(2, 1, 'x', [
+        const ModFactor([1, 1], 3)
+      ]);
       final s = formatModFactorization(z);
       expect(s, contains('^3'));
     });
@@ -119,10 +121,8 @@ void main() {
     });
 
     test('no factors gives leading coeff or 1', () {
-      expect(formatModFactorization(
-          ModFactorization(5, 3, 'x', [])), '3');
-      expect(formatModFactorization(
-          ModFactorization(5, 1, 'x', [])), '1');
+      expect(formatModFactorization(ModFactorization(5, 3, 'x', [])), '3');
+      expect(formatModFactorization(ModFactorization(5, 1, 'x', [])), '1');
     });
   });
 }

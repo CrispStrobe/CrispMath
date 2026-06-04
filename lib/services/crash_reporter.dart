@@ -129,10 +129,9 @@ class CrashReporter {
   /// Open a GitHub issue with the crash report.
   Future<bool> launchGitHubIssue() async {
     final body = Uri.encodeComponent(buildReportText());
-    final title = Uri.encodeComponent(
-        'Crash report (${_reports.length} errors)');
-    final uri = Uri.parse(
-        'https://github.com/CrispStrobe/CrispCalc/issues/new'
+    final title =
+        Uri.encodeComponent('Crash report (${_reports.length} errors)');
+    final uri = Uri.parse('https://github.com/CrispStrobe/CrispCalc/issues/new'
         '?title=$title&body=$body&labels=bug');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);

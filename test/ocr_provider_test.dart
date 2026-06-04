@@ -68,8 +68,8 @@ void main() {
     });
 
     test('\\frac with expressions', () {
-      expect(latexToEngineSyntax(r'\frac{x^2 + 1}{x - 1}'),
-          '(x^2 + 1)/(x - 1)');
+      expect(
+          latexToEngineSyntax(r'\frac{x^2 + 1}{x - 1}'), '(x^2 + 1)/(x - 1)');
     });
 
     test('\\sqrt{x} → sqrt(x)', () {
@@ -119,8 +119,7 @@ void main() {
     });
 
     test('\\left \\right removed', () {
-      expect(latexToEngineSyntax(r'\left(\frac{1}{2}\right)'),
-          '((1)/(2))');
+      expect(latexToEngineSyntax(r'\left(\frac{1}{2}\right)'), '((1)/(2))');
     });
 
     test('braces → parens', () {

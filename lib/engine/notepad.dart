@@ -39,7 +39,8 @@ String? formatLineResult(String result, LineResultFormat format) {
       if (d == d.roundToDouble() && d.abs() < 1e15) {
         return d.toInt().toString();
       }
-      return d.toStringAsFixed(10)
+      return d
+          .toStringAsFixed(10)
           .replaceAll(RegExp(r'0+$'), '')
           .replaceAll(RegExp(r'\.$'), '');
     case LineResultFormat.fraction:
@@ -50,13 +51,17 @@ String? formatLineResult(String result, LineResultFormat format) {
     case LineResultFormat.hex:
       if (d == d.roundToDouble() && d.abs() < 1e15) {
         final i = d.toInt();
-        return i < 0 ? '-0x${(-i).toRadixString(16)}' : '0x${i.toRadixString(16)}';
+        return i < 0
+            ? '-0x${(-i).toRadixString(16)}'
+            : '0x${i.toRadixString(16)}';
       }
       return null; // Can't hex-format non-integers.
     case LineResultFormat.binary:
       if (d == d.roundToDouble() && d.abs() < 1e15) {
         final i = d.toInt();
-        return i < 0 ? '-0b${(-i).toRadixString(2)}' : '0b${i.toRadixString(2)}';
+        return i < 0
+            ? '-0b${(-i).toRadixString(2)}'
+            : '0b${i.toRadixString(2)}';
       }
       return null;
   }
@@ -299,8 +304,7 @@ NotepadDocument buildWelcomeNotepadDocument({String locale = 'en'}) {
           '// Cambia el impuesto de arriba y observa cómo se actualiza el total';
     default:
       name = 'Welcome';
-      comment1 =
-          '// Welcome — edit any line and results update on the right';
+      comment1 = '// Welcome — edit any line and results update on the right';
       comment2 = '// Change tax above and watch the total update';
   }
 

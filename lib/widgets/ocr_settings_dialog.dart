@@ -98,7 +98,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                   Icon(Icons.storage, size: 16, color: scheme.primary),
                   const SizedBox(width: 8),
                   Text('Disk usage: $diskMB MB',
-                      style: TextStyle(fontSize: 13, color: scheme.onSurface.withValues(alpha: 0.7))),
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: scheme.onSurface.withValues(alpha: 0.7))),
                 ],
               ),
               const SizedBox(height: 12),
@@ -112,19 +114,24 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                 )
               else
                 Chip(
-                  avatar: Icon(Icons.info_outline, size: 16, color: scheme.error),
+                  avatar:
+                      Icon(Icons.info_outline, size: 16, color: scheme.error),
                   label: const Text('No model active — download one below'),
                 ),
               const SizedBox(height: 16),
 
               // Printed math models
-              Text('Printed Math', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.primary)),
+              Text('Printed Math',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: scheme.primary)),
               const SizedBox(height: 8),
               for (final model in OcrModelCatalog.printedMath)
                 _buildModelTile(model),
 
               const SizedBox(height: 16),
-              Text('Handwritten Math', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.primary)),
+              Text('Handwritten Math',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: scheme.primary)),
               const SizedBox(height: 8),
               for (final model in OcrModelCatalog.handwrittenMath)
                 _buildModelTile(model),
@@ -160,7 +167,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
             Text(model.description, style: const TextStyle(fontSize: 11)),
             const SizedBox(height: 2),
             Text(model.sizeLabel,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.primary)),
             if (isDownloading)
               Padding(
@@ -170,7 +179,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
           ],
         ),
         trailing: isDownloading
-            ? const SizedBox(width: 24, height: 24,
+            ? const SizedBox(
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2))
             : isDownloaded
                 ? IconButton(

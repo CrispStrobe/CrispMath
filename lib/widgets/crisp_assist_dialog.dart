@@ -56,7 +56,8 @@ class _CrispAssistExplainDialog extends StatefulWidget {
   });
 
   @override
-  State<_CrispAssistExplainDialog> createState() => _CrispAssistExplainDialogState();
+  State<_CrispAssistExplainDialog> createState() =>
+      _CrispAssistExplainDialogState();
 }
 
 class _CrispAssistExplainDialogState extends State<_CrispAssistExplainDialog> {
@@ -83,29 +84,29 @@ class _CrispAssistExplainDialogState extends State<_CrispAssistExplainDialog> {
 
     _sub = _service
         .streamExplain(
-          expression: widget.expression,
-          result: widget.result,
-          config: config,
-          cancel: _cancel,
-        )
+      expression: widget.expression,
+      result: widget.result,
+      config: config,
+      cancel: _cancel,
+    )
         .listen(
-          (chunk) {
-            if (mounted) {
-              setState(() => _buffer.write(chunk));
-            }
-          },
-          onError: (e) {
-            if (mounted) {
-              setState(() {
-                _error = e.toString();
-                _done = true;
-              });
-            }
-          },
-          onDone: () {
-            if (mounted) setState(() => _done = true);
-          },
-        );
+      (chunk) {
+        if (mounted) {
+          setState(() => _buffer.write(chunk));
+        }
+      },
+      onError: (e) {
+        if (mounted) {
+          setState(() {
+            _error = e.toString();
+            _done = true;
+          });
+        }
+      },
+      onDone: () {
+        if (mounted) setState(() => _done = true);
+      },
+    );
   }
 
   @override
@@ -204,7 +205,8 @@ class _CrispAssistNarrateDialog extends StatefulWidget {
   });
 
   @override
-  State<_CrispAssistNarrateDialog> createState() => _CrispAssistNarrateDialogState();
+  State<_CrispAssistNarrateDialog> createState() =>
+      _CrispAssistNarrateDialogState();
 }
 
 class _CrispAssistNarrateDialogState extends State<_CrispAssistNarrateDialog> {
@@ -232,9 +234,17 @@ class _CrispAssistNarrateDialogState extends State<_CrispAssistNarrateDialog> {
         steps: widget.steps,
         config: config,
       );
-      if (mounted) setState(() { _content = result; _done = true; });
+      if (mounted)
+        setState(() {
+          _content = result;
+          _done = true;
+        });
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _done = true; });
+      if (mounted)
+        setState(() {
+          _error = e.toString();
+          _done = true;
+        });
     }
   }
 

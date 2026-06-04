@@ -102,7 +102,9 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: _controller.text));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Copied'), duration: Duration(seconds: 1)),
+                      const SnackBar(
+                          content: Text('Copied'),
+                          duration: Duration(seconds: 1)),
                     );
                   },
                 ),

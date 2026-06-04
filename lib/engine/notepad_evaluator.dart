@@ -376,8 +376,7 @@ Map<String, String> buildNotepadScope(
 /// or `{doc:name}.lineN`. [allDocs] is the full set of notepad
 /// documents keyed by id. Returns the input with all resolvable
 /// cross-refs replaced by their cached values.
-String resolveCrossDocRefs(
-    String input, Map<String, NotepadDocument> allDocs) {
+String resolveCrossDocRefs(String input, Map<String, NotepadDocument> allDocs) {
   return input.replaceAllMapped(_crossDocRefRegex, (match) {
     final docName = match.group(1)!;
     final varName = match.group(2)!;
@@ -1050,7 +1049,8 @@ class NotepadEvaluator {
   ) {
     final values = <double>[];
     final scanFromTop = kind == 'total';
-    final startIndex = scanFromTop ? 0 : _previousAggregateIndex(doc, lineIndex) + 1;
+    final startIndex =
+        scanFromTop ? 0 : _previousAggregateIndex(doc, lineIndex) + 1;
 
     final firstCode = firstCodeLineIndexOf(doc);
     for (var i = startIndex; i < lineIndex; i++) {

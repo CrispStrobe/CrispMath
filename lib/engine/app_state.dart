@@ -269,7 +269,8 @@ class AppState extends ChangeNotifier {
       if (autoBind != null) _autoBindSolve = autoBind;
       _crispAssistApiUrl = _prefs!.getString(_kCrispAssistApiUrl) ?? '';
       _crispAssistApiKey = _prefs!.getString(_kCrispAssistApiKey) ?? '';
-      _crispAssistModel = _prefs!.getString(_kCrispAssistModel) ?? 'claude-sonnet-4-20250514';
+      _crispAssistModel =
+          _prefs!.getString(_kCrispAssistModel) ?? 'claude-sonnet-4-20250514';
       final udfJson = _prefs!.getString(_kUserFunctions);
       if (udfJson != null) {
         try {
@@ -363,8 +364,7 @@ class AppState extends ChangeNotifier {
     // so its content stays in sync across releases.
     if (notepadDocuments.isEmpty) {
       final untitled = NotepadDocument.fresh(name: 'Untitled');
-      final welcome =
-          buildWelcomeNotepadDocument(locale: _locale.languageCode);
+      final welcome = buildWelcomeNotepadDocument(locale: _locale.languageCode);
       notepadDocuments[untitled.id] = untitled;
       notepadDocuments[welcome.id] = welcome;
       _currentNotepadDocId = untitled.id;

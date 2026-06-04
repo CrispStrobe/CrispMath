@@ -152,17 +152,23 @@ void main() {
       server = await _startMockSseServer([
         jsonEncode({
           'choices': [
-            {'delta': {'content': 'The '}}
+            {
+              'delta': {'content': 'The '}
+            }
           ]
         }),
         jsonEncode({
           'choices': [
-            {'delta': {'content': 'power '}}
+            {
+              'delta': {'content': 'power '}
+            }
           ]
         }),
         jsonEncode({
           'choices': [
-            {'delta': {'content': 'rule.'}}
+            {
+              'delta': {'content': 'rule.'}
+            }
           ]
         }),
       ]);

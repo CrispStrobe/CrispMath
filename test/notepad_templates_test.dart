@@ -47,8 +47,7 @@ void main() {
         final doc = t.createDocument();
         for (final line in doc.lines) {
           expect(line.source.contains('\x00'), isFalse,
-              reason:
-                  'Template ${t.id} line "${line.source}" contains null');
+              reason: 'Template ${t.id} line "${line.source}" contains null');
         }
       }
     });
@@ -72,8 +71,7 @@ void main() {
             reason: 'Template ${t.id} line count changed in round-trip');
         for (var i = 0; i < doc.lines.length; i++) {
           expect(restored.lines[i].source, doc.lines[i].source,
-              reason:
-                  'Template ${t.id} line $i source changed in round-trip');
+              reason: 'Template ${t.id} line $i source changed in round-trip');
         }
       }
     });
@@ -97,8 +95,7 @@ void main() {
         orElse: () => NotepadTemplates.all.first,
       );
       final doc = budget.createDocument();
-      final hasComputation =
-          doc.lines.any((l) => l.source.contains('='));
+      final hasComputation = doc.lines.any((l) => l.source.contains('='));
       // Budget templates typically have total/subtotal lines with "=".
       // If no budget template is found, we test the first template instead,
       // so this test still validates document structure.

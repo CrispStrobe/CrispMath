@@ -391,10 +391,7 @@ class SymbolicLimit {
   }
 
   static bool _isPositiveInfinity(String pt) {
-    return pt == 'oo' ||
-        pt == 'inf' ||
-        pt == 'infinity' ||
-        pt == r'\infty';
+    return pt == 'oo' || pt == 'inf' || pt == 'infinity' || pt == r'\infty';
   }
 
   static bool _isNegativeInfinity(String pt) {

@@ -220,8 +220,8 @@ void main() {
 
     test('record + undo returns the op', () {
       final h = UndoHistory();
-      h.record(const UndoOp(kind: UndoOpKind.edit, index: 0, lineId: 'a',
-          previousValue: 'old'));
+      h.record(const UndoOp(
+          kind: UndoOpKind.edit, index: 0, lineId: 'a', previousValue: 'old'));
       expect(h.canUndo, true);
       final op = h.undo();
       expect(op, isNotNull);
@@ -231,7 +231,10 @@ void main() {
 
     test('undo + redo returns the same op', () {
       final h = UndoHistory();
-      h.record(const UndoOp(kind: UndoOpKind.delete, index: 2, lineId: 'b',
+      h.record(const UndoOp(
+          kind: UndoOpKind.delete,
+          index: 2,
+          lineId: 'b',
           previousValue: 'hello'));
       h.undo();
       expect(h.canRedo, true);

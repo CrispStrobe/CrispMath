@@ -91,8 +91,8 @@ void main() {
     });
 
     test('complex nested expression', () {
-      final r = SymbolicLimit.parseRatioForTest(
-          'sin(x^2 + 1) / (log(x) + cos(x/2))');
+      final r =
+          SymbolicLimit.parseRatioForTest('sin(x^2 + 1) / (log(x) + cos(x/2))');
       expect(r, isNotNull);
       expect(r!.numerator, 'sin(x^2 + 1)');
       // The denominator's outer parens should be stripped.

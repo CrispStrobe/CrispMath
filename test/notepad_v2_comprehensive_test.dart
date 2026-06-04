@@ -25,8 +25,7 @@ void main() {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         lines: [
-          NotepadLine(id: 'a', source: 'rate = 0.085')
-            ..cachedResult = '0.085',
+          NotepadLine(id: 'a', source: 'rate = 0.085')..cachedResult = '0.085',
         ],
       );
       final allDocs = {'taxes': taxes};
@@ -131,8 +130,8 @@ void main() {
     });
 
     test('days between two dates', () {
-      final r =
-          DateTimeEvaluator.tryEvaluate('days between 2026-01-01 and 2026-12-31');
+      final r = DateTimeEvaluator.tryEvaluate(
+          'days between 2026-01-01 and 2026-12-31');
       expect(r, isNotNull);
       expect(r, '364 days');
     });
@@ -236,12 +235,12 @@ void main() {
   group('UndoHistory — comprehensive', () {
     test('multiple undo steps', () {
       final h = UndoHistory();
-      h.record(const UndoOp(kind: UndoOpKind.edit, index: 0, lineId: 'a',
-          previousValue: 'v1'));
-      h.record(const UndoOp(kind: UndoOpKind.edit, index: 0, lineId: 'a',
-          previousValue: 'v2'));
-      h.record(const UndoOp(kind: UndoOpKind.edit, index: 0, lineId: 'a',
-          previousValue: 'v3'));
+      h.record(const UndoOp(
+          kind: UndoOpKind.edit, index: 0, lineId: 'a', previousValue: 'v1'));
+      h.record(const UndoOp(
+          kind: UndoOpKind.edit, index: 0, lineId: 'a', previousValue: 'v2'));
+      h.record(const UndoOp(
+          kind: UndoOpKind.edit, index: 0, lineId: 'a', previousValue: 'v3'));
       expect(h.undoCount, 3);
 
       final op3 = h.undo()!;
@@ -382,14 +381,14 @@ void main() {
     });
 
     test('use directive on first code line', () {
-      final p = classifyNotepadLine('use myvar',
-          lineIndex: 0, firstCodeLineIndex: 0);
+      final p =
+          classifyNotepadLine('use myvar', lineIndex: 0, firstCodeLineIndex: 0);
       expect(p.kind, NotepadLineKind.useDirective);
     });
 
     test('use directive NOT on first code line', () {
-      final p = classifyNotepadLine('use myvar',
-          lineIndex: 5, firstCodeLineIndex: 0);
+      final p =
+          classifyNotepadLine('use myvar', lineIndex: 5, firstCodeLineIndex: 0);
       expect(p.kind, NotepadLineKind.expression);
     });
   });

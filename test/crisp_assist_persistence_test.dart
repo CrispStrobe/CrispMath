@@ -29,8 +29,7 @@ void main() {
       });
       final s = AppState();
       await s.load(force: true);
-      expect(s.crispAssistApiUrl,
-          'https://api.anthropic.com/v1/messages');
+      expect(s.crispAssistApiUrl, 'https://api.anthropic.com/v1/messages');
       expect(s.crispAssistApiKey, 'sk-ant-test-key');
       expect(s.crispAssistModel, 'claude-haiku-4-5-20251001');
       expect(s.crispAssistEnabled, isTrue);

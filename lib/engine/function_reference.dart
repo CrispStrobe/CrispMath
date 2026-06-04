@@ -2085,10 +2085,17 @@ class FunctionReferences {
       id: 'eq_op',
       category: FunctionRefCategory.logic,
       signature: 'a == b',
-      shortDescription: 'Equality test — returns true when both sides evaluate to the same value.',
+      shortDescription:
+          'Equality test — returns true when both sides evaluate to the same value.',
       examples: [
-        FunctionRefExample(input: '2 == 2', expected: 'true', hint: 'Lowered to SymEngine\'s Eq(2, 2) and folded to True.'),
-        FunctionRefExample(input: 'x == 5', expected: 'Eq(x, 5)', hint: 'Symbolic — stays as an equation when x is free.'),
+        FunctionRefExample(
+            input: '2 == 2',
+            expected: 'true',
+            hint: 'Lowered to SymEngine\'s Eq(2, 2) and folded to True.'),
+        FunctionRefExample(
+            input: 'x == 5',
+            expected: 'Eq(x, 5)',
+            hint: 'Symbolic — stays as an equation when x is free.'),
       ],
       seeAlso: ['ne_op', 'and_op'],
       workedExampleId: 'booleanEqualityFold',
@@ -2097,10 +2104,17 @@ class FunctionReferences {
       id: 'ne_op',
       category: FunctionRefCategory.logic,
       signature: 'a != b',
-      shortDescription: 'Inequality test — returns true when the two sides differ.',
+      shortDescription:
+          'Inequality test — returns true when the two sides differ.',
       examples: [
-        FunctionRefExample(input: '3 != 4', expected: 'true', hint: 'Lowered to SymEngine\'s Ne(3, 4).'),
-        FunctionRefExample(input: '5 != 5', expected: 'false', hint: 'Equal values yield false.'),
+        FunctionRefExample(
+            input: '3 != 4',
+            expected: 'true',
+            hint: 'Lowered to SymEngine\'s Ne(3, 4).'),
+        FunctionRefExample(
+            input: '5 != 5',
+            expected: 'false',
+            hint: 'Equal values yield false.'),
       ],
       seeAlso: ['eq_op'],
     ),
@@ -2110,8 +2124,14 @@ class FunctionReferences {
       signature: 'a < b',
       shortDescription: 'Strict less-than comparison.',
       examples: [
-        FunctionRefExample(input: '2 < 5', expected: 'true', hint: 'Lowered to SymEngine\'s Lt(2, 5).'),
-        FunctionRefExample(input: '5 < 5', expected: 'false', hint: 'Not strictly less — use <= for non-strict.'),
+        FunctionRefExample(
+            input: '2 < 5',
+            expected: 'true',
+            hint: 'Lowered to SymEngine\'s Lt(2, 5).'),
+        FunctionRefExample(
+            input: '5 < 5',
+            expected: 'false',
+            hint: 'Not strictly less — use <= for non-strict.'),
       ],
       seeAlso: ['le_op', 'gt_op', 'ge_op'],
     ),
@@ -2121,8 +2141,14 @@ class FunctionReferences {
       signature: 'a <= b',
       shortDescription: 'Less-than-or-equal comparison.',
       examples: [
-        FunctionRefExample(input: '5 <= 5', expected: 'true', hint: 'Lowered to SymEngine\'s Le(5, 5).'),
-        FunctionRefExample(input: '6 <= 5', expected: 'false', hint: 'Strictly greater fails the test.'),
+        FunctionRefExample(
+            input: '5 <= 5',
+            expected: 'true',
+            hint: 'Lowered to SymEngine\'s Le(5, 5).'),
+        FunctionRefExample(
+            input: '6 <= 5',
+            expected: 'false',
+            hint: 'Strictly greater fails the test.'),
       ],
       seeAlso: ['lt_op', 'ge_op'],
     ),
@@ -2132,7 +2158,10 @@ class FunctionReferences {
       signature: 'a > b',
       shortDescription: 'Strict greater-than comparison.',
       examples: [
-        FunctionRefExample(input: '10 > 3', expected: 'true', hint: 'Lowered to SymEngine\'s Gt(10, 3).'),
+        FunctionRefExample(
+            input: '10 > 3',
+            expected: 'true',
+            hint: 'Lowered to SymEngine\'s Gt(10, 3).'),
       ],
       seeAlso: ['ge_op', 'lt_op'],
     ),
@@ -2142,7 +2171,10 @@ class FunctionReferences {
       signature: 'a >= b',
       shortDescription: 'Greater-than-or-equal comparison.',
       examples: [
-        FunctionRefExample(input: '5 >= 5', expected: 'true', hint: 'Lowered to SymEngine\'s Ge(5, 5).'),
+        FunctionRefExample(
+            input: '5 >= 5',
+            expected: 'true',
+            hint: 'Lowered to SymEngine\'s Ge(5, 5).'),
       ],
       seeAlso: ['gt_op', 'le_op'],
     ),
@@ -2150,10 +2182,17 @@ class FunctionReferences {
       id: 'and_op',
       category: FunctionRefCategory.logic,
       signature: 'a and b',
-      shortDescription: 'Logical conjunction — true only when both operands are true.',
+      shortDescription:
+          'Logical conjunction — true only when both operands are true.',
       examples: [
-        FunctionRefExample(input: 'isprime(7) and 7 < 10', expected: 'true', hint: 'Both predicates hold → true.'),
-        FunctionRefExample(input: '2 == 2 and 3 == 4', expected: 'false', hint: 'One false operand → false.'),
+        FunctionRefExample(
+            input: 'isprime(7) and 7 < 10',
+            expected: 'true',
+            hint: 'Both predicates hold → true.'),
+        FunctionRefExample(
+            input: '2 == 2 and 3 == 4',
+            expected: 'false',
+            hint: 'One false operand → false.'),
       ],
       seeAlso: ['or_op', 'not_op', 'xor_op'],
       workedExampleId: 'booleanIsprimeAnd',
@@ -2162,9 +2201,13 @@ class FunctionReferences {
       id: 'or_op',
       category: FunctionRefCategory.logic,
       signature: 'a or b',
-      shortDescription: 'Logical disjunction — true when at least one operand is true.',
+      shortDescription:
+          'Logical disjunction — true when at least one operand is true.',
       examples: [
-        FunctionRefExample(input: '1 == 2 or 3 == 3', expected: 'true', hint: 'One true suffices.'),
+        FunctionRefExample(
+            input: '1 == 2 or 3 == 3',
+            expected: 'true',
+            hint: 'One true suffices.'),
       ],
       seeAlso: ['and_op', 'not_op', 'xor_op'],
       workedExampleId: 'booleanOrChain',
@@ -2173,10 +2216,17 @@ class FunctionReferences {
       id: 'not_op',
       category: FunctionRefCategory.logic,
       signature: 'not a',
-      shortDescription: 'Logical negation — flips true to false and vice versa.',
+      shortDescription:
+          'Logical negation — flips true to false and vice versa.',
       examples: [
-        FunctionRefExample(input: 'not isprime(4)', expected: 'true', hint: '4 is not prime → not false → true.'),
-        FunctionRefExample(input: 'not 2 == 2', expected: 'false', hint: 'Negates the equality.'),
+        FunctionRefExample(
+            input: 'not isprime(4)',
+            expected: 'true',
+            hint: '4 is not prime → not false → true.'),
+        FunctionRefExample(
+            input: 'not 2 == 2',
+            expected: 'false',
+            hint: 'Negates the equality.'),
       ],
       seeAlso: ['and_op', 'or_op'],
       workedExampleId: 'booleanNotPrime',
@@ -2187,8 +2237,14 @@ class FunctionReferences {
       signature: 'a xor b',
       shortDescription: 'Exclusive or — true when exactly one operand is true.',
       examples: [
-        FunctionRefExample(input: '2 == 2 xor 3 == 3', expected: 'false', hint: 'Both true → xor is false.'),
-        FunctionRefExample(input: '2 == 2 xor 3 == 4', expected: 'true', hint: 'Exactly one true → xor is true.'),
+        FunctionRefExample(
+            input: '2 == 2 xor 3 == 3',
+            expected: 'false',
+            hint: 'Both true → xor is false.'),
+        FunctionRefExample(
+            input: '2 == 2 xor 3 == 4',
+            expected: 'true',
+            hint: 'Exactly one true → xor is true.'),
       ],
       seeAlso: ['or_op', 'and_op'],
     ),
@@ -2196,10 +2252,17 @@ class FunctionReferences {
       id: 'if_cond',
       category: FunctionRefCategory.logic,
       signature: 'if(condition, then, else)',
-      shortDescription: 'Conditional — evaluates the condition, returns the then-branch if true, else-branch if false.',
+      shortDescription:
+          'Conditional — evaluates the condition, returns the then-branch if true, else-branch if false.',
       examples: [
-        FunctionRefExample(input: 'if(isprime(7), 100, 200)', expected: '100', hint: '7 is prime → condition is true → returns 100.'),
-        FunctionRefExample(input: 'if(2 > 5, 10, 20)', expected: '20', hint: '2 is not > 5 → returns the else-branch.'),
+        FunctionRefExample(
+            input: 'if(isprime(7), 100, 200)',
+            expected: '100',
+            hint: '7 is prime → condition is true → returns 100.'),
+        FunctionRefExample(
+            input: 'if(2 > 5, 10, 20)',
+            expected: '20',
+            hint: '2 is not > 5 → returns the else-branch.'),
       ],
       seeAlso: ['and_op', 'or_op', 'eq_op'],
       workedExampleId: 'booleanIfFold',

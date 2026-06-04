@@ -726,8 +726,7 @@ class StepEngine {
     // V5: trig substitution for integrands of the form √(a²−x²),
     // √(a²+x²), or √(x²−a²). These are whole-integrand patterns
     // (not 1/something) that reduce to standard results.
-    final trigSubResult = _trigSubstitutionStep(
-        s, variable, engine, steps);
+    final trigSubResult = _trigSubstitutionStep(s, variable, engine, steps);
     if (trigSubResult != null) return trigSubResult;
 
     // V4: partial fractions for ∫ P(x) / Q(x) dx when Q has distinct
@@ -1056,8 +1055,8 @@ class StepEngine {
         // numerator at r, divided by k!.
         // Reduced numerator = P(x) · (x-r)^m / Q(x), evaluated
         // via the engine's simplify.
-        final reduced =
-            engine.simplify('($numStripped) * ($factorStr)^$m / ($denStripped)');
+        final reduced = engine
+            .simplify('($numStripped) * ($factorStr)^$m / ($denStripped)');
         if (reduced.startsWith('Error')) return null;
 
         var deriv = reduced;

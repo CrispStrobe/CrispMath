@@ -34,9 +34,7 @@ class AnalysisHubScreen extends StatelessWidget {
             centerTitle: true,
             actions: [
               IconButton(
-                icon: Icon(appState.helpMode
-                    ? Icons.help
-                    : Icons.help_outline),
+                icon: Icon(appState.helpMode ? Icons.help : Icons.help_outline),
                 tooltip: appState.helpMode
                     ? t.helpModeDisableTooltip
                     : t.helpModeEnableTooltip,

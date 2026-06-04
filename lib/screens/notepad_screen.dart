@@ -630,7 +630,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
     }
 
     final decoded = await decodeImageFromList(bytes);
-    final result = await provider.recognize(bytes, decoded.width, decoded.height);
+    final result =
+        await provider.recognize(bytes, decoded.width, decoded.height);
     if (result == null || !mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('OCR failed.')),
@@ -690,7 +691,10 @@ class _NotepadScreenState extends State<NotepadScreen> {
                     ),
                     onSubmitted: (_) async {
                       if (controller.text.trim().isEmpty || loading) return;
-                      setDialogState(() { loading = true; error = null; });
+                      setDialogState(() {
+                        loading = true;
+                        error = null;
+                      });
                       try {
                         final svc = CrispAssistService();
                         final cfg = CrispAssistConfig(
@@ -703,17 +707,23 @@ class _NotepadScreenState extends State<NotepadScreen> {
                           config: cfg,
                         );
                         svc.dispose();
-                        setDialogState(() { translated = t.trim(); loading = false; });
+                        setDialogState(() {
+                          translated = t.trim();
+                          loading = false;
+                        });
                       } catch (e) {
-                        setDialogState(() { error = e.toString(); loading = false; });
+                        setDialogState(() {
+                          error = e.toString();
+                          loading = false;
+                        });
                       }
                     },
                   ),
                   const SizedBox(height: 12),
-                  if (loading)
-                    const Center(child: CircularProgressIndicator()),
+                  if (loading) const Center(child: CircularProgressIndicator()),
                   if (error != null)
-                    Text(error!, style: TextStyle(color: cs.error, fontSize: 12)),
+                    Text(error!,
+                        style: TextStyle(color: cs.error, fontSize: 12)),
                   if (translated != null) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -1388,13 +1398,15 @@ class _NotepadScreenState extends State<NotepadScreen> {
         const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): () {
           if (doc != null) _performUndo(doc);
         },
-        const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true): () {
+        const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true):
+            () {
           if (doc != null) _performRedo(doc);
         },
         const SingleActivator(LogicalKeyboardKey.keyZ, control: true): () {
           if (doc != null) _performUndo(doc);
         },
-        const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true): () {
+        const SingleActivator(LogicalKeyboardKey.keyZ,
+            control: true, shift: true): () {
           if (doc != null) _performRedo(doc);
         },
         // Item 15: Cmd+F / Ctrl+F opens search.
@@ -1585,7 +1597,11 @@ class _NotepadScreenState extends State<NotepadScreen> {
             items.add(PopupMenuItem(
               value: 'toggle-latex',
               child: Row(children: [
-                Icon(doc!.useLatexInput ? Icons.check_box : Icons.check_box_outline_blank, size: 18),
+                Icon(
+                    doc!.useLatexInput
+                        ? Icons.check_box
+                        : Icons.check_box_outline_blank,
+                    size: 18),
                 const SizedBox(width: 8),
                 const Text('LaTeX input'),
               ]),
@@ -1713,9 +1729,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
           final isHeading = line.source.trim().startsWith('## ');
           final isCollapsed = _collapsedHeadings.contains(line.id);
           // Count hidden lines for the collapse chip.
-          final hiddenCount = isHeading && isCollapsed
-              ? _hiddenLinesUnder(doc, realIndex)
-              : 0;
+          final hiddenCount =
+              isHeading && isCollapsed ? _hiddenLinesUnder(doc, realIndex) : 0;
           return _NotepadLineRow(
             key: ValueKey(line.id),
             line: line,
@@ -1735,9 +1750,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
             hiddenLineCount: hiddenCount,
             highlightSearch: _lineMatchesSearch(line),
             useLatexInput: doc.useLatexInput,
-            onToggleCollapse: isHeading
-                ? () => _toggleCollapse(line.id)
-                : null,
+            onToggleCollapse: isHeading ? () => _toggleCollapse(line.id) : null,
           );
         },
       );
@@ -1757,8 +1770,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
               children: [
                 for (final pi in pinnedIndices)
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     child: Row(
                       children: [
                         const Icon(Icons.push_pin, size: 14),
@@ -1901,9 +1914,7 @@ class _NotepadLineRow extends StatelessWidget {
             if (onToggleCollapse != null)
               IconButton(
                 icon: Icon(
-                  isCollapsedHeading
-                      ? Icons.expand_more
-                      : Icons.expand_less,
+                  isCollapsedHeading ? Icons.expand_more : Icons.expand_less,
                   size: 20,
                 ),
                 onPressed: onToggleCollapse,
@@ -1955,71 +1966,76 @@ class _NotepadLineRow extends StatelessWidget {
     }
 
     if (sideBySide) {
-      return _maybeHighlight(Padding(
-        key: ValueKey('row-${line.id}'),
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        child: HelpTarget(
-          onHelpTap: () => _showLineHelp(context),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _DragHandle(index: index),
-              Expanded(
-                flex: 3,
-                child: _buildInputField(context),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: _NotepadResultColumn(
-                  line: line,
-                  isPending: isPending,
-                  onScrollToLineId: onScrollToLineId,
-                  onFormatCycle: onFormatCycle,
-                  engine: engine,
-                ),
-              ),
-              _DeleteButton(onPressed: onDelete),
-            ],
-          ),
-        ),
-      ), context);
-    }
-
-    // Stacked layout for narrow screens.
-    return _maybeHighlight(Padding(
-      key: ValueKey('row-${line.id}'),
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      child: HelpTarget(
-        onHelpTap: () => _showLineHelp(context),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _DragHandle(index: index),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      return _maybeHighlight(
+          Padding(
+            key: ValueKey('row-${line.id}'),
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            child: HelpTarget(
+              onHelpTap: () => _showLineHelp(context),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _buildInputField(context),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, left: 4, bottom: 4),
+                  _DragHandle(index: index),
+                  Expanded(
+                    flex: 3,
+                    child: _buildInputField(context),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
                     child: _NotepadResultColumn(
                       line: line,
                       isPending: isPending,
                       onScrollToLineId: onScrollToLineId,
-                      alignStart: true,
                       onFormatCycle: onFormatCycle,
                       engine: engine,
                     ),
                   ),
+                  _DeleteButton(onPressed: onDelete),
                 ],
               ),
             ),
-            _DeleteButton(onPressed: onDelete),
-          ],
+          ),
+          context);
+    }
+
+    // Stacked layout for narrow screens.
+    return _maybeHighlight(
+        Padding(
+          key: ValueKey('row-${line.id}'),
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: HelpTarget(
+            onHelpTap: () => _showLineHelp(context),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _DragHandle(index: index),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildInputField(context),
+                      Padding(
+                        padding:
+                            const EdgeInsets.only(top: 4, left: 4, bottom: 4),
+                        child: _NotepadResultColumn(
+                          line: line,
+                          isPending: isPending,
+                          onScrollToLineId: onScrollToLineId,
+                          alignStart: true,
+                          onFormatCycle: onFormatCycle,
+                          engine: engine,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _DeleteButton(onPressed: onDelete),
+              ],
+            ),
+          ),
         ),
-      ),
-    ), context);
+        context);
   }
 
   /// Round 104 (P6): help-mode tap on a notepad line opens the shared

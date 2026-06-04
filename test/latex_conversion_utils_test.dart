@@ -184,8 +184,7 @@ void main() {
     });
 
     test('\\gamma -> EulerGamma', () {
-      expect(
-          LatexConversionUtils.fromLatex(r'\gamma'), equals('EulerGamma'));
+      expect(LatexConversionUtils.fromLatex(r'\gamma'), equals('EulerGamma'));
     });
 
     test('\\Gamma -> gamma', () {
@@ -235,8 +234,7 @@ void main() {
     });
 
     test('\\bmod -> mod', () {
-      expect(
-          LatexConversionUtils.fromLatex(r'a \bmod b'), equals('a mod b'));
+      expect(LatexConversionUtils.fromLatex(r'a \bmod b'), equals('a mod b'));
     });
   });
 
@@ -246,14 +244,12 @@ void main() {
 
   group('fromLatex — summation and product', () {
     test('summation', () {
-      final out =
-          LatexConversionUtils.fromLatex(r'\sum_{i=1}^{10} i^2');
+      final out = LatexConversionUtils.fromLatex(r'\sum_{i=1}^{10} i^2');
       expect(out, equals('Sum(i^2, (i, 1, 10))'));
     });
 
     test('product', () {
-      final out =
-          LatexConversionUtils.fromLatex(r'\prod_{k=1}^{n} k');
+      final out = LatexConversionUtils.fromLatex(r'\prod_{k=1}^{n} k');
       expect(out, equals('Product(k, (k, 1, n))'));
     });
   });
@@ -299,13 +295,11 @@ void main() {
     });
 
     test('\\times back to *', () {
-      expect(
-          LatexConversionUtils.latexToReadable(r'2\times x'), equals('2*x'));
+      expect(LatexConversionUtils.latexToReadable(r'2\times x'), equals('2*x'));
     });
 
     test('\\div back to /', () {
-      expect(
-          LatexConversionUtils.latexToReadable(r'a\div b'), equals('a/b'));
+      expect(LatexConversionUtils.latexToReadable(r'a\div b'), equals('a/b'));
     });
 
     test('sized delimiters stripped in readable output', () {

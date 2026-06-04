@@ -19,8 +19,8 @@ void main() {
       expect(CrashReporter.instance.hasReports, isTrue);
       expect(CrashReporter.instance.count, 1);
       expect(CrashReporter.instance.reports.first.source, 'zone');
-      expect(CrashReporter.instance.reports.first.error,
-          contains('test error'));
+      expect(
+          CrashReporter.instance.reports.first.error, contains('test error'));
     });
 
     test('ring buffer caps at 20 reports', () {
@@ -32,10 +32,8 @@ void main() {
       }
       expect(CrashReporter.instance.count, 20);
       // Oldest (0-4) dropped, newest (24) survives.
-      expect(CrashReporter.instance.reports.first.error,
-          contains('error 24'));
-      expect(CrashReporter.instance.reports.last.error,
-          contains('error 5'));
+      expect(CrashReporter.instance.reports.first.error, contains('error 24'));
+      expect(CrashReporter.instance.reports.last.error, contains('error 5'));
     });
 
     test('clear() removes all reports', () {
