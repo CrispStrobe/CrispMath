@@ -52,11 +52,9 @@ with a 2026 input surface."
      infra. Cross-platform, requires API key + network.
   **Decision: pix2tex CROHME fine-tune (option 2) for on-device,
   Cloud LLM (option 4) as fallback.**
-- [~] **ggml graph decoder.** Graph-based decoder implemented on
-  `feature/ggml-graph-decoder` branch. Compiles and runs correctly
-  (tested with Q4_K model). Currently slower than scalar due to
-  per-step graph rebuild overhead — needs graph reuse optimization.
-  Token sequence diverges slightly from scalar (precision diff).
+- [x] **ggml graph decoder.** Merged to CrispEmbed main. 27x speedup
+  via single-thread optimization. Cosine >0.99 on all test images,
+  all argmax tokens identical. Validated with Q4_K on 5 math images.
 - [ ] **MiniZinc solver (dart_csp_fzn).** Parse `.fzn` FlatZinc files
   and solve via dart_csp's constraint engine. Pure Dart, no native deps.
   Enables textbook constraint-programming examples in the notepad.
