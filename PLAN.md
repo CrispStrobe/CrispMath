@@ -62,8 +62,9 @@ with a 2026 input surface."
 ### Tier 3 — Polish + completeness
 
 - [x] **Function Reference i18n.** DE/FR/ES complete (562 tests pass).
-- [~] **Accessibility V2.** Keyboard nav done. Remaining: icon
-  semanticLabels (~225 unlabelled icons).
+- [x] **Accessibility V2.** Keyboard nav (Ctrl+1-6) + ~225 icon
+  semanticLabels across 24 files. Calculator keypad has full keyboard
+  input + semantic labels. Notepad has Ctrl+Z/Y + Ctrl+F.
 - [x] **PDF export.** Multi-page A4 via `package:pdf` + `printing`.
 - [x] **Crash reporting (opt-in).** Ring buffer + email/GitHub issue.
 - [x] **Perf instrumentation.** PerfOverlay (Ctrl+Shift+P toggle).

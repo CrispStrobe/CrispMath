@@ -36,6 +36,7 @@ import '../utils/latex_conversion_utils.dart';
 import '../utils/error_formatter.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/math_display_utils.dart';
+import '../utils/share_link.dart';
 import '../widgets/store_result_dialogs.dart';
 
 // Other imports
@@ -250,6 +251,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
   /// Allows parent widgets to request focus for the input field.
   void requestFocus() {
     _calculatorFocusNode.requestFocus();
+  }
+
+  /// Insert an expression from an external source (shared link, worked
+  /// example, etc.) into the calculator input.
+  void insertExpression(String expr) {
+    _latexController.clear();
+    _latexController.insert(expr);
   }
 
   /// Converts expression to LaTeX for history display.
@@ -2020,6 +2028,16 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   await Clipboard.setData(ClipboardData(text: latex));
                   if (!context.mounted) return;
                   _toast(context, t.historyEntryCopied);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, semanticLabel: 'Share link'),
+                title: const Text('Share link'),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  final url = await copyShareLink(entry.expression);
+                  if (!context.mounted) return;
+                  _toast(context, 'Link copied');
                 },
               ),
               ListTile(

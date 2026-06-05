@@ -31,6 +31,7 @@ import 'screens/graphing_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/notepad_screen.dart';
 import 'services/crash_reporter.dart';
+import 'utils/share_link.dart';
 import 'widgets/perf_overlay.dart';
 import 'services/native_licenses.dart';
 import 'widgets/export_data_dialog.dart';
@@ -227,6 +228,16 @@ class _MainScreenState extends State<MainScreen> {
       // having to tap the "reset focus" recovery action.
       if (_selectedIndex == _kCalculator) {
         _calculatorKey.currentState?.requestFocus();
+      }
+      // Shared link: auto-populate calculator from URL params on web.
+      final share = ShareParams.fromCurrentUrl();
+      if (share != null) {
+        if (share.tab != null && share.tab! >= 0 && share.tab! < 6) {
+          _select(share.tab!);
+        }
+        if (share.expression != null) {
+          _calculatorKey.currentState?.insertExpression(share.expression!);
+        }
       }
     });
     // Worked-examples V2: when a dialog signals "insert this into the
