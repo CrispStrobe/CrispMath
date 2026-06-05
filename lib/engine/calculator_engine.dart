@@ -135,11 +135,12 @@ class CalculatorEngine {
       return fn(bridge);
     } catch (e) {
       _log('$op error: $e');
-      // Surface the actual bridge exception. It tends to be a short
-      // SymEngine parse/eval message (e.g. "ParseError: Unknown symbol"),
-      // which is far more useful for debugging than the old generic
-      // "Error: <op> failed".
       final msg = e.toString().replaceAll(RegExp(r'^Exception:\s*'), '');
+      // WASM RuntimeError: Aborted — give a user-friendly message
+      // instead of the raw JS error.
+      if (msg.contains('RuntimeError') || msg.contains('Aborted')) {
+        return 'Error: expression not supported in web mode';
+      }
       return 'Error: $op failed: $msg';
     }
   }
@@ -170,6 +171,9 @@ class CalculatorEngine {
     if (result.startsWith('Error:')) {
       final numeric = NumericFallbackEvaluator.tryEvaluate(expression);
       if (numeric != null) return numeric;
+      // Try pure-Dart symbolic evaluation for polynomial expressions
+      final symbolic = SymbolicWeb.expand(expression);
+      if (symbolic != null) return symbolic;
     }
     return result;
   }
