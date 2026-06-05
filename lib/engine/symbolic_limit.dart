@@ -1,6 +1,6 @@
 // lib/engine/symbolic_limit.dart
 //
-// Pure-Dart symbolic limit engine (PLAN P1 tiers 1+2).
+// Pure-Dart symbolic limit engine (PLAN P1 tiers 1–4).
 //
 // Uses the CAS bridge's `substitute`, `differentiate`, and `evaluate`
 // to compute limits symbolically:
@@ -14,6 +14,11 @@
 //
 //   Tier 3 — factoring: for polynomial 0/0 forms, try factoring
 //     numerator and denominator to cancel the common (x - a) factor.
+//
+//   Tier 4 — Gruntz-style growth-rate analysis: for limits at
+//     infinity involving exponentials, logarithms, and their
+//     compositions. Compares growth rates (constant < log < polynomial
+//     < exponential < super-exponential) plus L'Hôpital at infinity.
 //
 // Falls back to null when the expression is outside the supported
 // grammar, so the caller can chain to the numerical sampler.
@@ -29,7 +34,7 @@ import 'calculator_engine.dart';
 /// Result of a symbolic limit computation.
 class SymbolicLimitResult {
   final String value;
-  final String? method; // 'direct', 'lhopital', 'factor', 'infinity'
+  final String? method; // 'direct', 'lhopital', 'factor', 'infinity', 'gruntz'
   const SymbolicLimitResult(this.value, {this.method});
 }
 
@@ -267,14 +272,24 @@ class SymbolicLimit {
     // For ratios p(x)/q(x): compare leading degrees.
     final ratio = _parseRatio(expression);
     if (ratio != null) {
-      return _ratioInfinityLimit(
+      final polyResult = _ratioInfinityLimit(
         engine: engine,
         numerator: ratio.numerator,
         denominator: ratio.denominator,
         variable: variable,
         positive: positive,
       );
+      if (polyResult != null) return polyResult;
     }
+
+    // Tier 4: Gruntz-style growth-rate analysis for limits at infinity.
+    final gruntz = _gruntzLimit(
+      engine: engine,
+      expression: expression,
+      variable: variable,
+      positive: positive,
+    );
+    if (gruntz != null) return gruntz;
 
     return null;
   }
@@ -358,6 +373,414 @@ class SymbolicLimit {
       expr = deriv;
     }
     return null; // Not a polynomial or degree > 20.
+  }
+
+  // --- Tier 4: Gruntz-style growth-rate analysis ---
+
+  /// Classify the dominant growth rate of [expr] as x→∞.
+  /// Returns a [_GrowthClass] that can be compared with others.
+  static _GrowthClass? _classifyGrowth(
+    CalculatorEngine engine,
+    String expr,
+    String variable,
+  ) {
+    final e = expr.trim();
+
+    // Check if expr is constant (no variable).
+    if (!_containsVariable(e, variable)) {
+      final val = engine.evaluate(e);
+      if (!val.startsWith('Error')) {
+        final d = double.tryParse(val.trim());
+        if (d != null) {
+          return _GrowthClass(
+            kind: _GrowthKind.constant,
+            power: 0,
+            coefficient: d,
+          );
+        }
+      }
+      return const _GrowthClass(kind: _GrowthKind.constant, power: 0);
+    }
+
+    // Check for exponential: exp(f(x)) or e^(f(x)).
+    final expArg = _matchExp(e, variable);
+    if (expArg != null) {
+      // Classify the exponent to determine the exponential's growth.
+      final innerGrowth = _classifyGrowth(engine, expArg, variable);
+      if (innerGrowth != null) {
+        if (innerGrowth.kind == _GrowthKind.polynomial) {
+          // e^(x^n) — exponential with polynomial exponent.
+          return _GrowthClass(
+            kind: _GrowthKind.exponential,
+            power: innerGrowth.power,
+            coefficient: innerGrowth.coefficient,
+          );
+        }
+        if (innerGrowth.kind == _GrowthKind.exponential) {
+          // e^(e^(...)) — tower exponential.
+          return _GrowthClass(
+            kind: _GrowthKind.superExponential,
+            power: innerGrowth.power,
+          );
+        }
+      }
+      // Fall through: exponential with unknown exponent.
+      return const _GrowthClass(kind: _GrowthKind.exponential, power: 1);
+    }
+
+    // Check for logarithmic: log(f(x)) or ln(f(x)).
+    final logArg = _matchLog(e);
+    if (logArg != null && _containsVariable(logArg, variable)) {
+      return const _GrowthClass(kind: _GrowthKind.logarithmic, power: 1);
+    }
+
+    // Check if it's a polynomial: estimate degree.
+    final deg = _estimateDegree(engine, e, variable);
+    if (deg != null) {
+      // Extract leading coefficient.
+      var expr2 = e;
+      for (var i = 0; i < deg; i++) {
+        expr2 = engine.differentiate(expr2, variable);
+        if (expr2.startsWith('Error')) {
+          return _GrowthClass(
+              kind: _GrowthKind.polynomial, power: deg.toDouble());
+        }
+      }
+      final coefVal = engine.evaluate(expr2);
+      final coefD = double.tryParse(coefVal.trim());
+      if (coefD != null) {
+        // Leading coefficient is coefD / deg!
+        double factorial = 1;
+        for (var i = 2; i <= deg; i++) {
+          factorial *= i;
+        }
+        return _GrowthClass(
+          kind: _GrowthKind.polynomial,
+          power: deg.toDouble(),
+          coefficient: coefD / factorial,
+        );
+      }
+      return _GrowthClass(kind: _GrowthKind.polynomial, power: deg.toDouble());
+    }
+
+    return null;
+  }
+
+  /// Try to extract the argument from exp(...) or e^(...).
+  static String? _matchExp(String expr, String variable) {
+    final e = expr.trim();
+
+    // Match exp(...)
+    final expMatch = RegExp(r'^exp\((.+)\)$').firstMatch(e);
+    if (expMatch != null) return expMatch.group(1);
+
+    // Match E^(...) or e^(...) — SymEngine often uses E.
+    final ePowMatch = RegExp(r'^[eE]\^\((.+)\)$').firstMatch(e);
+    if (ePowMatch != null) return ePowMatch.group(1);
+
+    // Match E^simple (no parens, e.g. E^x)
+    final eSimple = RegExp(r'^[eE]\^(\w+)$').firstMatch(e);
+    if (eSimple != null) return eSimple.group(1);
+
+    return null;
+  }
+
+  /// Try to extract the argument from log(...) or ln(...).
+  static String? _matchLog(String expr) {
+    final e = expr.trim();
+    final m = RegExp(r'^(?:log|ln)\((.+)\)$').firstMatch(e);
+    return m?.group(1);
+  }
+
+  /// The core Gruntz-style limit engine for limits at infinity.
+  ///
+  /// Handles these cases that Tiers 1-3 miss:
+  /// 1. Exponential dominance: e^x / x^n → ∞, x^n / e^x → 0
+  /// 2. Logarithmic: log(x) / x → 0, x / log(x) → ∞
+  /// 3. L'Hôpital at infinity: f/g where both → ∞
+  /// 4. Exponential composition: e^(x^2) / e^(x^3) → 0
+  /// 5. Polynomial at infinity: (3x^2+2x)/(x^2+1) → 3
+  static SymbolicLimitResult? _gruntzLimit({
+    required CalculatorEngine engine,
+    required String expression,
+    required String variable,
+    required bool positive,
+  }) {
+    final ratio = _parseRatio(expression);
+    if (ratio == null) {
+      // Non-ratio expressions: classify growth directly.
+      return _classifySingleExprLimit(
+        engine: engine,
+        expression: expression,
+        variable: variable,
+        positive: positive,
+      );
+    }
+
+    final numExpr = ratio.numerator;
+    final denExpr = ratio.denominator;
+
+    final numGrowth = _classifyGrowth(engine, numExpr, variable);
+    final denGrowth = _classifyGrowth(engine, denExpr, variable);
+
+    if (numGrowth == null || denGrowth == null) {
+      // Can't classify — try L'Hôpital at infinity as last resort.
+      return _lhopitalAtInfinity(
+        engine: engine,
+        numerator: numExpr,
+        denominator: denExpr,
+        variable: variable,
+        positive: positive,
+      );
+    }
+
+    // Case 5: Both polynomial — compare degrees and leading coefficients.
+    if (numGrowth.kind == _GrowthKind.polynomial &&
+        denGrowth.kind == _GrowthKind.polynomial) {
+      if (numGrowth.power < denGrowth.power) {
+        return const SymbolicLimitResult('0', method: 'gruntz');
+      }
+      if (numGrowth.power > denGrowth.power) {
+        // Sign depends on leading coefficients and whether x→+∞ or -∞.
+        return _infinitySignResult(
+            numGrowth, denGrowth, positive, numGrowth.power - denGrowth.power);
+      }
+      // Same degree — ratio of leading coefficients.
+      if (numGrowth.coefficient != null && denGrowth.coefficient != null) {
+        final r = numGrowth.coefficient! / denGrowth.coefficient!;
+        if (r.isFinite) {
+          return SymbolicLimitResult(_formatResult(r), method: 'gruntz');
+        }
+      }
+    }
+
+    // Compare growth kinds using the hierarchy:
+    // constant < logarithmic < polynomial < exponential < superExponential
+    final cmp = numGrowth.kind.index - denGrowth.kind.index;
+
+    if (cmp < 0) {
+      // Numerator grows slower than denominator → 0.
+      return const SymbolicLimitResult('0', method: 'gruntz');
+    }
+    if (cmp > 0) {
+      // Numerator grows faster → ±∞.
+      return _signedInfinity(engine, expression, variable, positive);
+    }
+
+    // Same growth kind — compare within the kind.
+    if (numGrowth.kind == _GrowthKind.exponential) {
+      // Case 4: e^(f(x)) / e^(g(x)) = e^(f(x)-g(x)).
+      // If f grows faster than g, → ∞; if slower, → 0; if same degree,
+      // compare leading coefficients in the exponent.
+      if (numGrowth.power != denGrowth.power) {
+        if (numGrowth.power < denGrowth.power) {
+          return const SymbolicLimitResult('0', method: 'gruntz');
+        }
+        return _signedInfinity(engine, expression, variable, positive);
+      }
+      // Same exponent degree — compare exponent coefficients.
+      if (numGrowth.coefficient != null && denGrowth.coefficient != null) {
+        if (numGrowth.coefficient! < denGrowth.coefficient!) {
+          return const SymbolicLimitResult('0', method: 'gruntz');
+        }
+        if (numGrowth.coefficient! > denGrowth.coefficient!) {
+          return _signedInfinity(engine, expression, variable, positive);
+        }
+        // Equal coefficients in exponent — need deeper analysis.
+        // Try simplifying e^(f-g) via the CAS.
+        final numArg = _matchExp(ratio.numerator, variable) ?? '0';
+        final denArg = _matchExp(ratio.denominator, variable) ?? '0';
+        final diff = '($numArg) - ($denArg)';
+        final simplified = engine.evaluate(diff);
+        if (!simplified.startsWith('Error')) {
+          final innerLimit = _limitAtSymbolicInfinity(
+            engine: engine,
+            expression: 'exp($simplified)',
+            variable: variable,
+            positive: positive,
+          );
+          if (innerLimit != null) return innerLimit;
+        }
+      }
+    }
+
+    if (numGrowth.kind == _GrowthKind.logarithmic) {
+      // log(f) / log(g) — both logarithmic. Use L'Hôpital.
+      return _lhopitalAtInfinity(
+        engine: engine,
+        numerator: numExpr,
+        denominator: denExpr,
+        variable: variable,
+        positive: positive,
+      );
+    }
+
+    // Same kind, couldn't resolve — try L'Hôpital at infinity.
+    return _lhopitalAtInfinity(
+      engine: engine,
+      numerator: numExpr,
+      denominator: denExpr,
+      variable: variable,
+      positive: positive,
+    );
+  }
+
+  /// For a single (non-ratio) expression, determine its limit at infinity.
+  static SymbolicLimitResult? _classifySingleExprLimit({
+    required CalculatorEngine engine,
+    required String expression,
+    required String variable,
+    required bool positive,
+  }) {
+    final g = _classifyGrowth(engine, expression, variable);
+    if (g == null) return null;
+
+    if (g.kind == _GrowthKind.constant) {
+      if (g.coefficient != null) {
+        return SymbolicLimitResult(
+          _formatResult(g.coefficient!),
+          method: 'gruntz',
+        );
+      }
+    }
+
+    // Growing expressions → ±∞.
+    if (g.kind.index > _GrowthKind.constant.index) {
+      return _signedInfinity(engine, expression, variable, positive);
+    }
+
+    return null;
+  }
+
+  /// Determine the sign of a divergent limit by numerical sampling.
+  static SymbolicLimitResult? _signedInfinity(
+    CalculatorEngine engine,
+    String expression,
+    String variable,
+    bool positive,
+  ) {
+    // Sample at a large value to determine sign.
+    final testPoint = positive ? '10000' : '-10000';
+    final val = _evalAt(engine, expression, variable, testPoint);
+    if (val != null) {
+      final d = double.tryParse(val);
+      if (d != null) {
+        if (d > 0) return const SymbolicLimitResult('∞', method: 'gruntz');
+        if (d < 0) return const SymbolicLimitResult('-∞', method: 'gruntz');
+      }
+    }
+    return const SymbolicLimitResult('∞', method: 'gruntz');
+  }
+
+  /// For polynomial ratios where deg(num) > deg(den), determine sign.
+  static SymbolicLimitResult? _infinitySignResult(
+    _GrowthClass numG,
+    _GrowthClass denG,
+    bool positive,
+    double excessDegree,
+  ) {
+    if (numG.coefficient != null && denG.coefficient != null) {
+      final sign = numG.coefficient!.sign * denG.coefficient!.sign;
+      // For x→-∞ with odd excess degree, sign flips.
+      if (!positive && excessDegree.round().isOdd) {
+        if (sign > 0) return const SymbolicLimitResult('-∞', method: 'gruntz');
+        return const SymbolicLimitResult('∞', method: 'gruntz');
+      }
+      if (sign > 0) return const SymbolicLimitResult('∞', method: 'gruntz');
+      return const SymbolicLimitResult('-∞', method: 'gruntz');
+    }
+    return const SymbolicLimitResult('∞', method: 'gruntz');
+  }
+
+  /// L'Hôpital's rule for ∞/∞ forms (as x→∞).
+  static SymbolicLimitResult? _lhopitalAtInfinity({
+    required CalculatorEngine engine,
+    required String numerator,
+    required String denominator,
+    required String variable,
+    required bool positive,
+  }) {
+    var num = numerator;
+    var den = denominator;
+    final infSymbol = positive ? 'oo' : '-oo';
+
+    for (var step = 0; step < _maxLhopitalSteps; step++) {
+      final numPrime = engine.differentiate(num, variable);
+      final denPrime = engine.differentiate(den, variable);
+
+      if (numPrime.startsWith('Error') || denPrime.startsWith('Error')) {
+        return null;
+      }
+
+      // Try substituting infinity into the new ratio.
+      final ratioExpr = '($numPrime)/($denPrime)';
+      try {
+        final substituted = engine.substitute(ratioExpr, variable, infSymbol);
+        if (!substituted.startsWith('Error')) {
+          final evaluated = engine.evaluate(substituted);
+          if (!evaluated.startsWith('Error')) {
+            final lower = evaluated.trim().toLowerCase();
+            if (lower == '0' || lower == '0.0') {
+              return const SymbolicLimitResult('0', method: 'gruntz');
+            }
+            if (lower == 'oo' || lower == 'inf' || lower == 'infinity') {
+              return const SymbolicLimitResult('∞', method: 'gruntz');
+            }
+            if (lower == '-oo' || lower == '-inf') {
+              return const SymbolicLimitResult('-∞', method: 'gruntz');
+            }
+            if (lower != 'nan' &&
+                lower != 'zoo' &&
+                !lower.contains('oo') &&
+                !lower.contains('inf') &&
+                !_containsVariable(evaluated, variable)) {
+              return SymbolicLimitResult(evaluated.trim(), method: 'gruntz');
+            }
+          }
+        }
+      } catch (_) {}
+
+      // Also try numerical evaluation at large value.
+      final testPoint = positive ? '100000' : '-100000';
+      final numVal = _evalAt(engine, numPrime, variable, testPoint);
+      final denVal = _evalAt(engine, denPrime, variable, testPoint);
+
+      if (numVal != null && denVal != null) {
+        final numD = double.tryParse(numVal);
+        final denD = double.tryParse(denVal);
+        if (numD != null && denD != null && denD.abs() > 1e-15) {
+          final r = numD / denD;
+          // Check if the ratio has converged by sampling at two points.
+          final testPoint2 = positive ? '50000' : '-50000';
+          final numVal2 = _evalAt(engine, numPrime, variable, testPoint2);
+          final denVal2 = _evalAt(engine, denPrime, variable, testPoint2);
+          if (numVal2 != null && denVal2 != null) {
+            final numD2 = double.tryParse(numVal2);
+            final denD2 = double.tryParse(denVal2);
+            if (numD2 != null && denD2 != null && denD2.abs() > 1e-15) {
+              final r2 = numD2 / denD2;
+              if ((r - r2).abs() < 1e-6 * (r.abs() + 1)) {
+                // Converged.
+                if (r.abs() < 1e-10) {
+                  return const SymbolicLimitResult('0', method: 'gruntz');
+                }
+                if (r.isFinite) {
+                  return SymbolicLimitResult(
+                    _formatResult(r),
+                    method: 'gruntz',
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+
+      num = numPrime;
+      den = denPrime;
+    }
+
+    return null;
   }
 
   // --- Helpers ---
@@ -465,4 +888,31 @@ class _Ratio {
   final String numerator;
   final String denominator;
   const _Ratio(this.numerator, this.denominator);
+}
+
+/// Growth-rate classification hierarchy (order matters for comparison).
+/// constant < logarithmic < polynomial < exponential < superExponential
+enum _GrowthKind {
+  constant, // O(1)
+  logarithmic, // O(log(x))
+  polynomial, // O(x^n)
+  exponential, // O(e^(x^n))
+  superExponential, // O(e^(e^(...)))
+}
+
+/// Describes the growth rate of an expression as x→∞.
+class _GrowthClass {
+  final _GrowthKind kind;
+
+  /// For polynomial: the degree. For exponential: the degree of the exponent.
+  final double power;
+
+  /// Leading coefficient (if extractable).
+  final double? coefficient;
+
+  const _GrowthClass({
+    required this.kind,
+    required this.power,
+    this.coefficient,
+  });
 }

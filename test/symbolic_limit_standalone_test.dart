@@ -123,7 +123,7 @@ void main() {
 
   group('SymbolicLimitResult — additional model tests', () {
     test('all known method strings', () {
-      for (final m in ['direct', 'lhopital', 'factor', 'infinity']) {
+      for (final m in ['direct', 'lhopital', 'factor', 'infinity', 'gruntz']) {
         final r = SymbolicLimitResult('1', method: m);
         expect(r.method, m);
       }
