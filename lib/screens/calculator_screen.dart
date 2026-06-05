@@ -2036,7 +2036,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 title: const Text('Share link'),
                 onTap: () async {
                   Navigator.of(ctx).pop();
-                  final url = await copyShareLink(entry.expression);
+                  await copyShareLink(entry.expression);
                   if (!context.mounted) return;
                   _toast(context, 'Link copied');
                 },

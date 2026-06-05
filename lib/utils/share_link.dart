@@ -9,8 +9,6 @@
 // On native platforms, share uses the system share sheet (if available)
 // or clipboard. On web, it generates a shareable URL.
 
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 
