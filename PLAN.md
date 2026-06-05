@@ -55,9 +55,9 @@ with a 2026 input surface."
 - [x] **ggml graph decoder.** Merged to CrispEmbed main. 27x speedup
   via single-thread optimization. Cosine >0.99 on all test images,
   all argmax tokens identical. Validated with Q4_K on 5 math images.
-- [ ] **MiniZinc solver (dart_csp_fzn).** Parse `.fzn` FlatZinc files
-  and solve via dart_csp's constraint engine. Pure Dart, no native deps.
-  Enables textbook constraint-programming examples in the notepad.
+- [x] **MiniZinc solver (dart_csp_fzn).** CLI binary + FlatZinc parser
+  + solver all implemented in dart_csp. Notepad `fzn:` prefix works
+  (18 tests pass). CLI tested with boolean + N-queens problems.
 
 ### Tier 3 — Polish + completeness
 
@@ -72,7 +72,9 @@ with a 2026 input surface."
 
 ### Tier 4 — Future / speculative
 
-- [ ] **Pen / handwriting input.** Apple Pencil (PKCanvasView). iPad-only.
+- [ ] **Pen / handwriting input.** Cross-platform drawing canvas via
+  Flutter CustomPainter (all platforms) + Apple Pencil PKCanvasView
+  (iPad). Captured strokes → bitmap → OCR pipeline.
 - [x] **Shareable state links.** URL-encode expressions as shareable
   links (`?expr=...&tab=N`). Auto-load from URL on web. Share button
   in calculator history menu.
@@ -96,7 +98,7 @@ quantizations verified. CI builds all 5 platforms.
 **Models on HuggingFace**: `cstr/pix2tex-mfr-gguf` (F32/F16/Q8_0/Q4_K)
 
 **Remaining**:
-- [ ] ggml graph decoder (replaces scalar loops, ~5× speedup)
+- [x] ggml graph decoder — merged, 27x speedup, 0.99+ cosine parity.
 - [x] Bundle CrispEmbed native lib per platform — PR merged, CI fixed.
 - [x] Register CrispEmbed OCR provider at startup.
 - [ ] Handwritten math: pix2tex CROHME fine-tune (on-device) +
