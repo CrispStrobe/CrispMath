@@ -41,17 +41,14 @@ with a 2026 input surface."
   + 8 integration tests with mock HTTP server.
   Remaining: obtain API key and test live end-to-end.
 - [~] **Inline LaTeX input.** Live preview wired. Needs device testing.
-- [~] **Handwritten math OCR (cross-platform).** Printed OCR working
-  via CrispEmbed (DeiT+TrOCR GGUF). Handwritten needs a cross-platform
-  solution. Options evaluated:
-  1. **Tesseract/MLKit** — printed only, no math layout understanding
-  2. **pix2tex fine-tune on CROHME** — train on handwritten dataset,
-     run via CrispEmbed GGUF (same pipeline). Best cross-platform path.
-  3. **Apple VisionKit** — iOS/macOS only, not cross-platform
-  4. **Cloud LLM** — send image to Claude/GPT-4V via CrispAssist
-     infra. Cross-platform, requires API key + network.
-  **Decision: pix2tex CROHME fine-tune (option 2) for on-device,
-  Cloud LLM (option 4) as fallback.**
+- [~] **Handwritten math OCR (cross-platform).** Two-tier approach:
+  1. **Cloud LLM** (done): CloudLlmOcrProvider sends images to
+     Claude/GPT-4V for handwritten + printed recognition. Cross-
+     platform, auto-registered as Tier 3 provider.
+  2. **On-device CROHME fine-tune** (future): no off-the-shelf
+     handwritten math model fits our DeiT+TrOCR GGUF pipeline.
+     Need to fine-tune pix2tex on CROHME+HME100K dataset (requires
+     GPU training, then export ONNX → GGUF via existing converter).
 - [x] **ggml graph decoder.** Merged to CrispEmbed main. 27x speedup
   via single-thread optimization. Cosine >0.99 on all test images,
   all argmax tokens identical. Validated with Q4_K on 5 math images.
@@ -101,8 +98,8 @@ quantizations verified. CI builds all 5 platforms.
 - [x] ggml graph decoder — merged, 27x speedup, 0.99+ cosine parity.
 - [x] Bundle CrispEmbed native lib per platform — PR merged, CI fixed.
 - [x] Register CrispEmbed OCR provider at startup.
-- [ ] Handwritten math: pix2tex CROHME fine-tune (on-device) +
-  Cloud LLM fallback (cross-platform via CrispAssist).
+- [~] Handwritten math: Cloud LLM provider done. On-device CROHME
+  fine-tune pending (needs GPU for training).
 
 ### Completed (moved to HISTORY.md)
 
