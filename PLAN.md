@@ -47,11 +47,10 @@ with a 2026 input surface."
   1. **Cloud LLM** (done): CloudLlmOcrProvider sends images to
      Claude/GPT-4V for handwritten + printed recognition. Cross-
      platform, auto-registered as Tier 3 provider.
-  2. **On-device handwritten model** (ready to convert):
+  2. **On-device handwritten model** (converted, testing):
      `fhswf/TrOCR_Math_handwritten` (ViT-Large + TrOCR-Large, AFL-3.0)
-     downloaded to /mnt/volume1/trocr-math-hw. Convert via
-     `convert-trocr-to-gguf.py` — needs working PyTorch or a
-     torch-free safetensors→GGUF converter. Q4_K will be ~700MB.
+     converted to 1.2GB FP16 GGUF via torch-free converter. Loads
+     and runs in CrispEmbed — encoder starts, decoder pending test.
      Other candidates: `krplt/trocr-handwritten-mathematical-expressions`,
      `Azu/trocr-handwritten-math`, `hieudt0803/ocr-math-formula-handwrriten`.
   **Future providers**: Poe, Langdock, Requesty (keys available).
