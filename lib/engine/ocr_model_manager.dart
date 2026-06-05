@@ -73,10 +73,40 @@ class OcrModelCatalog {
     ),
   ];
 
+  static const String _hfHmerUrl =
+      'https://huggingface.co/cstr/hmer-handwritten-math-gguf/resolve/main';
+
   static const List<OcrModelVariant> handwrittenMath = [
     OcrModelVariant(
+      id: 'hmer-hw-q4k',
+      name: 'Handwritten Math (tiny)',
+      filename: 'hmer-hw-q4_k.gguf',
+      url: '$_hfHmerUrl/hmer-hw-q4_k.gguf',
+      sizeBytes: 4 * 1024 * 1024,
+      description: 'Handwritten math recognition (DenseNet+GRU). '
+          '4 MB Q4_K. Best for mobile.',
+    ),
+    OcrModelVariant(
+      id: 'hmer-hw-q8',
+      name: 'Handwritten Math (balanced)',
+      filename: 'hmer-hw-q8_0.gguf',
+      url: '$_hfHmerUrl/hmer-hw-q8_0.gguf',
+      sizeBytes: 7 * 1024 * 1024,
+      description: 'Handwritten math recognition (DenseNet+GRU). '
+          '7 MB Q8_0. Good quality/size balance.',
+    ),
+    OcrModelVariant(
+      id: 'hmer-hw-f32',
+      name: 'Handwritten Math (full)',
+      filename: 'hmer-hw-f32.gguf',
+      url: '$_hfHmerUrl/hmer-hw-f32.gguf',
+      sizeBytes: 26 * 1024 * 1024,
+      description: 'Handwritten math recognition (DenseNet+GRU). '
+          '26 MB F32. Full precision.',
+    ),
+    OcrModelVariant(
       id: 'trocr-hw-math',
-      name: 'Handwritten Math OCR',
+      name: 'Handwritten Math (TrOCR)',
       filename: 'trocr-math-hw-f16.gguf',
       url:
           'https://huggingface.co/cstr/trocr-math-handwritten-gguf/resolve/main/trocr-math-hw-f16.gguf',
