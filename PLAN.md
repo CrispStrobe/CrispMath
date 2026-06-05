@@ -70,7 +70,8 @@ with a 2026 input surface."
 - [x] **PDF export.** Multi-page A4 via `package:pdf` + `printing`.
 - [x] **Crash reporting (opt-in).** Ring buffer + email/GitHub issue.
 - [x] **Perf instrumentation.** PerfOverlay (Ctrl+Shift+P toggle).
-- [~] **Symbolic limit.** Tiers 1+2 done. Gruntz (tier 4) deferred.
+- [x] **Symbolic limit.** Tiers 1-4 complete. Gruntz-style growth-rate
+  analysis handles exp/log/poly dominance at infinity (~300 lines).
 
 ### Tier 4 — Future / speculative
 
