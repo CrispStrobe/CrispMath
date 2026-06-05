@@ -74,9 +74,10 @@ with a 2026 input surface."
 
 ### Tier 4 — Future / speculative
 
-- [ ] **Pen / handwriting input.** Cross-platform drawing canvas via
-  Flutter CustomPainter (all platforms) + Apple Pencil PKCanvasView
-  (iPad). Captured strokes → bitmap → OCR pipeline.
+- [x] **Pen / handwriting input.** DrawingCanvas (CustomPainter) +
+  HandwritingInputDialog. Works on all platforms (mouse/touch/stylus).
+  Exports grayscale bitmap → OCR pipeline. Wired into Calculator +
+  Notepad toolbars.
 - [x] **Shareable state links.** URL-encode expressions as shareable
   links (`?expr=...&tab=N`). Auto-load from URL on web. Share button
   in calculator history menu.
