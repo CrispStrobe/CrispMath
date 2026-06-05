@@ -73,7 +73,9 @@ with a 2026 input surface."
 ### Tier 4 — Future / speculative
 
 - [ ] **Pen / handwriting input.** Apple Pencil (PKCanvasView). iPad-only.
-- [ ] **Shareable state links.** URL-encode calculator state for web.
+- [x] **Shareable state links.** URL-encode expressions as shareable
+  links (`?expr=...&tab=N`). Auto-load from URL on web. Share button
+  in calculator history menu.
 - [ ] **Collaborative editing.** Server infra (Firebase). V3+ scope.
 
 ### OCR — Math equation recognition
