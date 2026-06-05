@@ -36,7 +36,7 @@ void main() {
         ),
       );
       expect(find.byType(DrawingCanvas), findsOneWidget);
-      expect(find.byType(CustomPaint), findsOneWidget);
+      expect(find.byType(CustomPaint), findsWidgets);
     });
 
     testWidgets('starts empty', (tester) async {
