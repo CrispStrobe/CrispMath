@@ -39,7 +39,9 @@ with a 2026 input surface."
   complete with streaming SSE, Anthropic + OpenAI support. Settings UI,
   Explain/Narrate buttons, AI Translate in notepad menu. 29 unit tests
   + 8 integration tests with mock HTTP server.
-  Remaining: obtain API key and test live end-to-end.
+  Tested live with Scaleway (llama-3.1-8b) and Mistral (mistral-small)
+  — both produce correct engine syntax. OpenAI-compatible format works
+  out of the box with the existing CrispAssistService.
 - [~] **Inline LaTeX input.** Live preview wired. Needs device testing.
 - [~] **Handwritten math OCR (cross-platform).** Two-tier approach:
   1. **Cloud LLM** (done): CloudLlmOcrProvider sends images to
