@@ -690,9 +690,30 @@ class _NotepadScreenState extends State<NotepadScreen> {
                   TextField(
                     controller: controller,
                     autofocus: true,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'e.g. "derivative of x cubed minus 4x"',
                       isDense: true,
+                      suffixIcon: loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: Padding(
+                                padding: EdgeInsets.all(12),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.send, size: 18),
+                              onPressed: controller.text.trim().isEmpty
+                                  ? null
+                                  : () {
+                                      // Trigger the same onSubmitted logic
+                                      final field =
+                                          FocusScope.of(ctx).focusedChild;
+                                      field?.unfocus();
+                                    },
+                            ),
                     ),
                     onSubmitted: (_) async {
                       if (controller.text.trim().isEmpty || loading) return;
