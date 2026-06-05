@@ -176,7 +176,10 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(_iconFor(step), size: 18, color: _colorFor(step, scheme)),
+                Icon(_iconFor(step),
+                    size: 18,
+                    semanticLabel: _stepLabel(step),
+                    color: _colorFor(step, scheme)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -204,23 +207,26 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
             children: [
               IconButton(
                 tooltip: t.constraintsTraceRestart,
-                icon: const Icon(Icons.restart_alt),
+                icon: const Icon(Icons.restart_alt, semanticLabel: 'Restart'),
                 onPressed: trace.steps.isEmpty ? null : () => _scrub(-1),
               ),
               IconButton(
                 tooltip: t.constraintsTraceStepBack,
-                icon: const Icon(Icons.skip_previous),
+                icon:
+                    const Icon(Icons.skip_previous, semanticLabel: 'Step back'),
                 onPressed: _index <= -1 ? null : () => _scrub(_index - 1),
               ),
               IconButton(
                 tooltip:
                     _playing ? t.constraintsTracePause : t.constraintsTracePlay,
-                icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
+                icon: Icon(_playing ? Icons.pause : Icons.play_arrow,
+                    semanticLabel: _playing ? 'Pause' : 'Play'),
                 onPressed: trace.steps.isEmpty ? null : _togglePlay,
               ),
               IconButton(
                 tooltip: t.constraintsTraceStepForward,
-                icon: const Icon(Icons.skip_next),
+                icon:
+                    const Icon(Icons.skip_next, semanticLabel: 'Step forward'),
                 onPressed:
                     _index >= _lastIndex ? null : () => _scrub(_index + 1),
               ),
@@ -254,6 +260,7 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
                 avatar: Icon(
                   trace.solved ? Icons.check_circle : Icons.block,
                   size: 18,
+                  semanticLabel: trace.solved ? 'Solved' : 'Unsatisfiable',
                   color: trace.solved ? Colors.green : scheme.error,
                 ),
                 label: Text(trace.solved
@@ -285,6 +292,25 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
             step.depth ?? 0, step.targetDepth ?? 0);
       case CspTraceStepKind.solution:
         return t.constraintsTraceSolutionStep;
+    }
+  }
+
+  String _stepLabel(CspTraceStep? step) {
+    switch (step?.kind) {
+      case null:
+        return 'Initial';
+      case CspTraceStepKind.decision:
+        return 'Decision';
+      case CspTraceStepKind.prune:
+        return 'Prune';
+      case CspTraceStepKind.wipeout:
+        return 'Wipeout';
+      case CspTraceStepKind.backtrack:
+        return 'Backtrack';
+      case CspTraceStepKind.backjump:
+        return 'Backjump';
+      case CspTraceStepKind.solution:
+        return 'Solution';
     }
   }
 
@@ -334,7 +360,8 @@ class _Note extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, size: 16, color: scheme.onSurfaceVariant),
+          Icon(Icons.info_outline,
+              size: 16, semanticLabel: 'Note', color: scheme.onSurfaceVariant),
           const SizedBox(width: 6),
           Expanded(
             child: Text(

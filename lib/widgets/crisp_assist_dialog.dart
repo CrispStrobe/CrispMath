@@ -123,7 +123,8 @@ class _CrispAssistExplainDialogState extends State<_CrispAssistExplainDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.auto_awesome, color: cs.primary, size: 20),
+          Icon(Icons.auto_awesome,
+              color: cs.primary, size: 20, semanticLabel: 'CrispAssist'),
           const SizedBox(width: 8),
           const Text('CrispAssist'),
         ],
@@ -260,7 +261,8 @@ class _CrispAssistNarrateDialogState extends State<_CrispAssistNarrateDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.auto_awesome, color: cs.primary, size: 20),
+          Icon(Icons.auto_awesome,
+              color: cs.primary, size: 20, semanticLabel: 'CrispAssist'),
           const SizedBox(width: 8),
           const Text('CrispAssist — Step Narration'),
         ],

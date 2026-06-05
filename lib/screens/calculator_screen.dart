@@ -188,12 +188,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
       builder: (ctx) => SafeArea(
         child: Wrap(children: [
           ListTile(
-            leading: const Icon(Icons.camera_alt),
+            leading: const Icon(Icons.camera_alt, semanticLabel: 'Camera'),
             title: const Text('Take photo'),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
-            leading: const Icon(Icons.photo_library),
+            leading:
+                const Icon(Icons.photo_library, semanticLabel: 'Photo library'),
             title: const Text('Choose from gallery'),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
@@ -1952,7 +1953,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.show_chart),
+                leading: const Icon(Icons.show_chart,
+                    semanticLabel: 'Show on graph'),
                 title: Text(t.funcCtxShowOnGraph),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1960,7 +1962,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.analytics),
+                leading: const Icon(Icons.analytics, semanticLabel: 'Analyze'),
                 title: Text(t.funcCtxAnalyze),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1968,7 +1970,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.trending_up),
+                leading: const Icon(Icons.trending_up,
+                    semanticLabel: 'Differentiate'),
                 title: Text(t.funcCtxDifferentiate),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1976,7 +1979,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.area_chart),
+                leading:
+                    const Icon(Icons.area_chart, semanticLabel: 'Integrate'),
                 title: Text(t.funcCtxIntegrate),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1984,7 +1988,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.lightbulb_outline),
+                leading:
+                    const Icon(Icons.lightbulb_outline, semanticLabel: 'Solve'),
                 title: Text(t.funcCtxSolve),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1993,7 +1998,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
               ),
               const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.copy),
+                leading: const Icon(Icons.copy, semanticLabel: 'Copy'),
                 title: Text(t.historyEntryCopyResult),
                 onTap: () async {
                   Navigator.of(ctx).pop();
@@ -2003,7 +2008,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.functions),
+                leading:
+                    const Icon(Icons.functions, semanticLabel: 'Copy as LaTeX'),
                 title: Text(t.historyEntryCopyLatex),
                 subtitle: Text(t.historyEntryCopyLatexSubtitle,
                     style: Theme.of(ctx).textTheme.bodySmall),
@@ -2017,7 +2023,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.refresh),
+                leading: const Icon(Icons.refresh,
+                    semanticLabel: 'Reuse expression'),
                 title: Text(t.historyEntryReuse),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -2031,7 +2038,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
               // is only meaningful when the expression has at least one
               // free identifier the user could parameterise on.
               ListTile(
-                leading: const Icon(Icons.save_alt),
+                leading: const Icon(Icons.save_alt,
+                    semanticLabel: 'Store as variable'),
                 title: Text(t.storeAsVariable),
                 onTap: () async {
                   Navigator.of(ctx).pop();
@@ -2048,7 +2056,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                       entry.expression)
                   .isNotEmpty)
                 ListTile(
-                  leading: const Icon(Icons.functions),
+                  leading: const Icon(Icons.functions,
+                      semanticLabel: 'Store as function'),
                   title: Text(t.storeAsFunction),
                   onTap: () async {
                     Navigator.of(ctx).pop();
@@ -2313,12 +2322,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
                       children: [
                         // OCR camera button
                         IconButton(
-                          icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                          icon: const Icon(Icons.camera_alt_outlined,
+                              size: 20, semanticLabel: 'Scan math'),
                           tooltip: 'Scan math',
                           onPressed: () => _launchOcr(context),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.menu_book_outlined, size: 20),
+                          icon: const Icon(Icons.menu_book_outlined,
+                              size: 20, semanticLabel: 'Worked examples'),
                           tooltip:
                               AppLocalizations.of(context).workedExamplesTitle,
                           onPressed: () => showDialog<void>(
@@ -2338,6 +2349,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                               icon: Icon(
                                 on ? Icons.help : Icons.help_outline,
                                 size: 20,
+                                semanticLabel:
+                                    on ? 'Disable help mode' : 'Help mode',
                                 color: on
                                     ? Theme.of(context).colorScheme.primary
                                     : null,
@@ -2361,11 +2374,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
                             segments: const [
                               ButtonSegment<bool>(
                                 value: false,
-                                icon: Icon(Icons.text_fields, size: 16),
+                                icon: Icon(Icons.text_fields,
+                                    size: 16, semanticLabel: 'Plain text'),
                               ),
                               ButtonSegment<bool>(
                                 value: true,
-                                icon: Icon(Icons.functions, size: 16),
+                                icon: Icon(Icons.functions,
+                                    size: 16, semanticLabel: 'LaTeX'),
                               ),
                             ],
                             selected: {_showLatexHistory},
@@ -2382,6 +2397,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                   ? Icons.search_off
                                   : Icons.search,
                               size: 20,
+                              semanticLabel: 'Search history',
                             ),
                             tooltip: AppLocalizations.of(context).searchHistory,
                             onPressed: () {
@@ -2411,7 +2427,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_sweep, size: 20),
+                            icon: const Icon(Icons.delete_sweep,
+                                size: 20, semanticLabel: 'Clear history'),
                             tooltip: AppLocalizations.of(context).clearHistory,
                             onPressed: _confirmClearHistory,
                           ),
@@ -2428,14 +2445,16 @@ class CalculatorScreenState extends State<CalculatorScreen>
                         focusNode: _historySearchFocusNode,
                         decoration: InputDecoration(
                           isDense: true,
-                          prefixIcon: const Icon(Icons.search, size: 18),
+                          prefixIcon: const Icon(Icons.search,
+                              size: 18, semanticLabel: 'Search'),
                           hintText:
                               AppLocalizations.of(context).searchHistoryHint,
                           border: const OutlineInputBorder(),
                           suffixIcon: _historySearchController.text.isEmpty
                               ? null
                               : IconButton(
-                                  icon: const Icon(Icons.clear, size: 18),
+                                  icon: const Icon(Icons.clear,
+                                      size: 18, semanticLabel: 'Clear search'),
                                   tooltip: AppLocalizations.of(context)
                                       .clearSearchTooltip,
                                   onPressed: () {
@@ -2610,31 +2629,36 @@ class CalculatorScreenState extends State<CalculatorScreen>
                         // so keeping tools on the left keeps them out of
                         // the way of the live input.
                         IconButton(
-                          icon: const Icon(Icons.refresh),
+                          icon: const Icon(Icons.refresh,
+                              semanticLabel: 'Reset keyboard focus'),
                           tooltip: 'Reset keyboard focus',
                           onPressed: _resetFocus,
                           visualDensity: VisualDensity.compact,
                         ),
                         IconButton(
-                          icon: const Icon(Icons.backspace_outlined),
+                          icon: const Icon(Icons.backspace_outlined,
+                              semanticLabel: 'Backspace'),
                           tooltip: 'Backspace',
                           onPressed: () => _latexController.backspace(),
                           visualDensity: VisualDensity.compact,
                         ),
                         IconButton(
-                          icon: const Icon(Icons.chevron_left),
+                          icon: const Icon(Icons.chevron_left,
+                              semanticLabel: 'Move cursor left'),
                           tooltip: 'Move cursor left',
                           onPressed: () => _latexController.moveCursor(-1),
                           visualDensity: VisualDensity.compact,
                         ),
                         IconButton(
-                          icon: const Icon(Icons.chevron_right),
+                          icon: const Icon(Icons.chevron_right,
+                              semanticLabel: 'Move cursor right'),
                           tooltip: 'Move cursor right',
                           onPressed: () => _latexController.moveCursor(1),
                           visualDensity: VisualDensity.compact,
                         ),
                         FilledButton.icon(
-                          icon: const Icon(Icons.keyboard_return, size: 18),
+                          icon: const Icon(Icons.keyboard_return,
+                              size: 18, semanticLabel: 'Evaluate'),
                           label: const Text('='),
                           onPressed: () => _onButtonPressed('EXE'),
                           style: FilledButton.styleFrom(

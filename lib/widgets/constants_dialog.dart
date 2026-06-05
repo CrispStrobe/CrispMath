@@ -85,7 +85,8 @@ class _ConstantsDialogState extends State<ConstantsDialog> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 isDense: true,
-                prefixIcon: const Icon(Icons.search, size: 18),
+                prefixIcon:
+                    const Icon(Icons.search, size: 18, semanticLabel: 'Search'),
                 hintText: t.constantsSearchHint,
                 border: const OutlineInputBorder(),
               ),
@@ -151,7 +152,7 @@ class _ConstantsDialogState extends State<ConstantsDialog> {
         ],
       ),
       trailing: IconButton(
-        icon: const Icon(Icons.copy, size: 18),
+        icon: const Icon(Icons.copy, size: 18, semanticLabel: 'Copy value'),
         tooltip: t.constantsCopyValue,
         onPressed: () async {
           await Clipboard.setData(ClipboardData(text: c.value.toString()));

@@ -76,7 +76,7 @@ class _ImportDataDialogState extends State<ImportDataDialog> {
           child: Text(t.cancel),
         ),
         FilledButton.icon(
-          icon: const Icon(Icons.upload, size: 16),
+          icon: const Icon(Icons.upload, size: 16, semanticLabel: 'Import'),
           label: Text(t.importDataApply),
           onPressed: _onApply,
         ),

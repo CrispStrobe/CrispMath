@@ -63,7 +63,8 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
             // Provider info
             Row(
               children: [
-                Icon(Icons.camera_alt, size: 16, color: scheme.primary),
+                Icon(Icons.camera_alt,
+                    size: 16, semanticLabel: 'Camera', color: scheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   widget.result.providerName,
@@ -97,7 +98,8 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
                 labelText: 'Expression',
                 helperText: 'Edit if needed before inserting',
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.content_copy, size: 18),
+                  icon: const Icon(Icons.content_copy,
+                      size: 18, semanticLabel: 'Copy'),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: _controller.text));
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -120,6 +122,8 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
                     Icon(
                       _showRaw ? Icons.expand_less : Icons.expand_more,
                       size: 16,
+                      semanticLabel:
+                          _showRaw ? 'Hide raw output' : 'Show raw output',
                     ),
                     const SizedBox(width: 4),
                     Text(

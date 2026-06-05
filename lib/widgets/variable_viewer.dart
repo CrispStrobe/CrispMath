@@ -168,7 +168,8 @@ class VariableViewer extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.storage, size: 48, color: Colors.grey),
+            Icon(Icons.storage,
+                size: 48, color: Colors.grey, semanticLabel: 'Storage'),
             SizedBox(height: 16),
             Text(
               'No variables or functions defined.',
@@ -316,7 +317,10 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+          Icon(icon,
+              size: 20,
+              semanticLabel: title,
+              color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 8),
           Text(
             title,
@@ -328,7 +332,8 @@ class _SectionHeader extends StatelessWidget {
           const Spacer(),
           IconButton(
             onPressed: onClear,
-            icon: const Icon(Icons.clear_all, size: 20),
+            icon: const Icon(Icons.clear_all,
+                size: 20, semanticLabel: 'Clear all'),
             tooltip: 'Clear all $title',
             iconSize: 20,
           ),
@@ -379,10 +384,12 @@ class _VariableTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.keyboard_return, size: 16, color: Colors.grey),
+          const Icon(Icons.keyboard_return,
+              size: 16, color: Colors.grey, semanticLabel: 'Insert'),
           IconButton(
             onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline, size: 18),
+            icon: const Icon(Icons.delete_outline,
+                size: 18, semanticLabel: 'Delete'),
             iconSize: 18,
             tooltip: 'Delete variable',
           ),
@@ -432,7 +439,8 @@ class _FunctionTile extends StatelessWidget {
           PopupMenuItem(
             value: 'graph',
             child: Row(children: [
-              const Icon(Icons.show_chart, size: 18),
+              const Icon(Icons.show_chart,
+                  size: 18, semanticLabel: 'Show on graph'),
               const SizedBox(width: 8),
               Text(t.funcCtxShowOnGraph),
             ]),
@@ -441,7 +449,7 @@ class _FunctionTile extends StatelessWidget {
           PopupMenuItem(
             value: 'analyze',
             child: Row(children: [
-              const Icon(Icons.analytics, size: 18),
+              const Icon(Icons.analytics, size: 18, semanticLabel: 'Analyze'),
               const SizedBox(width: 8),
               Text(t.funcCtxAnalyze),
             ]),
@@ -449,7 +457,8 @@ class _FunctionTile extends StatelessWidget {
         PopupMenuItem(
           value: 'diff',
           child: Row(children: [
-            const Icon(Icons.trending_up, size: 18),
+            const Icon(Icons.trending_up,
+                size: 18, semanticLabel: 'Differentiate'),
             const SizedBox(width: 8),
             Text(t.funcCtxDifferentiate),
           ]),
@@ -457,7 +466,7 @@ class _FunctionTile extends StatelessWidget {
         PopupMenuItem(
           value: 'integrate',
           child: Row(children: [
-            const Icon(Icons.area_chart, size: 18),
+            const Icon(Icons.area_chart, size: 18, semanticLabel: 'Integrate'),
             const SizedBox(width: 8),
             Text(t.funcCtxIntegrate),
           ]),
@@ -465,7 +474,8 @@ class _FunctionTile extends StatelessWidget {
         PopupMenuItem(
           value: 'solve',
           child: Row(children: [
-            const Icon(Icons.lightbulb_outline, size: 18),
+            const Icon(Icons.lightbulb_outline,
+                size: 18, semanticLabel: 'Solve'),
             const SizedBox(width: 8),
             Text(t.funcCtxSolve),
           ]),
@@ -473,7 +483,7 @@ class _FunctionTile extends StatelessWidget {
         PopupMenuItem(
           value: 'copy',
           child: Row(children: [
-            const Icon(Icons.copy, size: 18),
+            const Icon(Icons.copy, size: 18, semanticLabel: 'Copy'),
             const SizedBox(width: 8),
             Text(t.funcCtxCopy),
           ]),
@@ -543,13 +553,15 @@ class _FunctionTile extends StatelessWidget {
             if (onShowOnGraph != null)
               IconButton(
                 onPressed: onShowOnGraph,
-                icon: const Icon(Icons.show_chart, size: 18),
+                icon: const Icon(Icons.show_chart,
+                    size: 18, semanticLabel: 'Show on graph'),
                 iconSize: 18,
                 tooltip: AppLocalizations.of(context).funcCtxShowOnGraph,
               ),
             IconButton(
               onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline, size: 18),
+              icon: const Icon(Icons.delete_outline,
+                  size: 18, semanticLabel: 'Delete'),
               iconSize: 18,
               tooltip: 'Delete function',
             ),
@@ -606,10 +618,12 @@ class _MemoryTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.keyboard_return, size: 16, color: Colors.grey),
+          const Icon(Icons.keyboard_return,
+              size: 16, color: Colors.grey, semanticLabel: 'Insert'),
           IconButton(
             onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline, size: 18),
+            icon: const Icon(Icons.delete_outline,
+                size: 18, semanticLabel: 'Delete'),
             iconSize: 18,
             tooltip: 'Delete memory slot',
           ),
@@ -652,7 +666,7 @@ class _MemoryActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16),
+            Icon(icon, size: 16, semanticLabel: label),
             const SizedBox(width: 4),
             Text(
               label,

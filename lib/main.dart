@@ -349,7 +349,7 @@ class _MainScreenState extends State<MainScreen> {
         onTap: _select,
         items: _destinations(t)
             .map((d) => BottomNavigationBarItem(
-                  icon: Icon(d.icon),
+                  icon: Icon(d.icon, semanticLabel: d.label),
                   label: d.label,
                 ))
             .toList(),
@@ -372,7 +372,7 @@ class _MainScreenState extends State<MainScreen> {
                 : NavigationRailLabelType.all,
             destinations: _destinations(t)
                 .map((d) => NavigationRailDestination(
-                      icon: Icon(d.icon),
+                      icon: Icon(d.icon, semanticLabel: d.label),
                       label: Text(d.label),
                     ))
                 .toList(),
@@ -524,7 +524,8 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: SwitchListTile(
-                  secondary: const Icon(Icons.pin_outlined),
+                  secondary: const Icon(Icons.pin_outlined,
+                      semanticLabel: 'Exact integers'),
                   title: Text(t.settingsExactIntegerMode),
                   subtitle: Text(t.settingsExactIntegerModeSubtitle),
                   value: appState.exactIntegerMode,
@@ -534,7 +535,8 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: SwitchListTile(
-                  secondary: const Icon(Icons.link),
+                  secondary:
+                      const Icon(Icons.link, semanticLabel: 'Auto bind solve'),
                   title: Text(t.settingsAutoBindSolve),
                   subtitle: Text(t.settingsAutoBindSolveSubtitle),
                   value: appState.autoBindSolve,
@@ -544,10 +546,12 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.flag_outlined),
+                  leading:
+                      const Icon(Icons.flag_outlined, semanticLabel: 'Tour'),
                   title: Text(t.settingsReplayTour),
                   subtitle: Text(t.settingsReplayTourSubtitle),
-                  trailing: const Icon(Icons.play_arrow),
+                  trailing:
+                      const Icon(Icons.play_arrow, semanticLabel: 'Start tour'),
                   onTap: () => OnboardingTour.show(context),
                 ),
               ),
@@ -573,10 +577,12 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.functions),
+                  leading: const Icon(Icons.functions,
+                      semanticLabel: 'User functions'),
                   title: Text(t.settingsUserFunctions),
                   subtitle: Text(t.settingsUserFunctionsSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const UserFunctionsDialog(),
@@ -586,10 +592,12 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.menu_book_outlined),
+                  leading: const Icon(Icons.menu_book_outlined,
+                      semanticLabel: 'Worked examples'),
                   title: Text(t.settingsWorkedExamples),
                   subtitle: Text(t.settingsWorkedExamplesSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const WorkedExamplesDialog(),
@@ -602,10 +610,12 @@ class SettingsScreen extends StatelessWidget {
               // surface it inline from Calculator / Notepad.
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.functions),
+                  leading: const Icon(Icons.functions,
+                      semanticLabel: 'Function reference'),
                   title: Text(t.settingsFunctionRef),
                   subtitle: Text(t.settingsFunctionRefSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const FunctionReferenceDialog(),
@@ -615,10 +625,12 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.help_outline),
+                  leading:
+                      const Icon(Icons.help_outline, semanticLabel: 'Help'),
                   title: Text(t.settingsHelp),
                   subtitle: Text(t.settingsHelpSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
                   onTap: () {
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => const HelpScreen(),
@@ -629,10 +641,11 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.ios_share),
+                  leading: const Icon(Icons.ios_share, semanticLabel: 'Export'),
                   title: Text(t.settingsExportData),
                   subtitle: Text(t.settingsExportDataSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const ExportDataDialog(),
@@ -642,10 +655,12 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.file_upload),
+                  leading:
+                      const Icon(Icons.file_upload, semanticLabel: 'Import'),
                   title: Text(t.settingsImportData),
                   subtitle: Text(t.settingsImportDataSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const ImportDataDialog(),
@@ -656,11 +671,13 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.camera_alt_outlined),
+                  leading: const Icon(Icons.camera_alt_outlined,
+                      semanticLabel: 'OCR Models'),
                   title: const Text('Math OCR Models'),
                   subtitle:
                       const Text('Download models for equation recognition'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const OcrSettingsDialog(),
@@ -679,10 +696,12 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Card(
                   child: ListTile(
-                    leading: const Icon(Icons.fact_check_outlined),
+                    leading: const Icon(Icons.fact_check_outlined,
+                        semanticLabel: 'Diagnostics'),
                     title: Text(t.matrixDiagnosticsTitle),
                     subtitle: Text(t.matrixDiagnosticsSubtitle),
-                    trailing: const Icon(Icons.play_arrow),
+                    trailing: const Icon(Icons.play_arrow,
+                        semanticLabel: 'Run diagnostics'),
                     onTap: () => _showMatrixDiagnostics(context, t),
                   ),
                 ),
@@ -694,21 +713,25 @@ class SettingsScreen extends StatelessWidget {
                 Card(
                   child: ListTile(
                     leading: Icon(Icons.bug_report,
+                        semanticLabel: 'Crash reports',
                         color: Theme.of(context).colorScheme.error),
                     title:
                         Text('Crash Reports (${CrashReporter.instance.count})'),
                     subtitle: const Text(
                         'Review and send — no data leaves without your action'),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    trailing: const Icon(Icons.arrow_forward_ios,
+                        size: 16, semanticLabel: 'Open'),
                     onTap: () => _showCrashReportDialog(context),
                   ),
                 ),
               if (CrashReporter.instance.hasReports) const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.info_outline),
+                  leading:
+                      const Icon(Icons.info_outline, semanticLabel: 'About'),
                   title: Text(t.settingsAbout),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
                   onTap: () {
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => const AboutScreen(),
@@ -807,6 +830,7 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       Icon(
                         r.passed ? Icons.check_circle : Icons.cancel,
+                        semanticLabel: r.passed ? 'Passed' : 'Failed',
                         color: r.passed
                             ? Colors.green
                             : Theme.of(context).colorScheme.error,
@@ -930,6 +954,7 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
               child: Row(
                 children: [
                   Icon(Icons.auto_awesome,
+                      semanticLabel: 'CrispAssist',
                       color: enabled ? cs.primary : cs.onSurface),
                   const SizedBox(width: 12),
                   Expanded(
@@ -952,7 +977,8 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
                       ],
                     ),
                   ),
-                  Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                  Icon(_expanded ? Icons.expand_less : Icons.expand_more,
+                      semanticLabel: _expanded ? 'Collapse' : 'Expand'),
                 ],
               ),
             ),

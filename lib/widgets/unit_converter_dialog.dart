@@ -111,7 +111,8 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
                     child: _unitDropdown(
                         _from, (u) => setState(() => _from = u!), units)),
                 IconButton(
-                  icon: const Icon(Icons.swap_horiz),
+                  icon:
+                      const Icon(Icons.swap_horiz, semanticLabel: 'Swap units'),
                   tooltip: 'Swap',
                   onPressed: _swap,
                 ),
@@ -131,6 +132,7 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
               child: Row(
                 children: [
                   Icon(Icons.east,
+                      semanticLabel: 'converts to',
                       color: Theme.of(context).colorScheme.onPrimaryContainer),
                   const SizedBox(width: 8),
                   Expanded(

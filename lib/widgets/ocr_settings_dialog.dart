@@ -95,7 +95,10 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
               // Disk usage
               Row(
                 children: [
-                  Icon(Icons.storage, size: 16, color: scheme.primary),
+                  Icon(Icons.storage,
+                      size: 16,
+                      semanticLabel: 'Disk usage',
+                      color: scheme.primary),
                   const SizedBox(width: 8),
                   Text('Disk usage: $diskMB MB',
                       style: TextStyle(
@@ -108,14 +111,17 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
               // Active provider
               if (OcrProviders.active != null)
                 Chip(
-                  avatar: const Icon(Icons.check_circle, size: 16),
+                  avatar: const Icon(Icons.check_circle,
+                      size: 16, semanticLabel: 'Active'),
                   label: Text('Active: ${OcrProviders.active!.name}'),
                   backgroundColor: scheme.primaryContainer,
                 )
               else
                 Chip(
-                  avatar:
-                      Icon(Icons.info_outline, size: 16, color: scheme.error),
+                  avatar: Icon(Icons.info_outline,
+                      size: 16,
+                      semanticLabel: 'No model active',
+                      color: scheme.error),
                   label: const Text('No model active — download one below'),
                 ),
               const SizedBox(height: 16),
@@ -158,8 +164,10 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       child: ListTile(
         dense: true,
         leading: isDownloaded
-            ? const Icon(Icons.check_circle, color: Colors.green)
-            : const Icon(Icons.cloud_download_outlined),
+            ? const Icon(Icons.check_circle,
+                color: Colors.green, semanticLabel: 'Downloaded')
+            : const Icon(Icons.cloud_download_outlined,
+                semanticLabel: 'Not downloaded'),
         title: Text(model.name),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,11 +193,13 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                 child: CircularProgressIndicator(strokeWidth: 2))
             : isDownloaded
                 ? IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20),
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, semanticLabel: 'Delete model'),
                     onPressed: () => _delete(model),
                   )
                 : IconButton(
-                    icon: const Icon(Icons.download, size: 20),
+                    icon: const Icon(Icons.download,
+                        size: 20, semanticLabel: 'Download model'),
                     onPressed: () => _download(model),
                   ),
       ),

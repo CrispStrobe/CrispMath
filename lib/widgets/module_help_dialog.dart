@@ -48,7 +48,7 @@ class ModuleHelpButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     return IconButton(
-      icon: const Icon(Icons.help_outline),
+      icon: const Icon(Icons.help_outline, semanticLabel: 'Help'),
       tooltip: t.moduleHelpTooltip,
       onPressed: () => showDialog<void>(
         context: context,

@@ -232,7 +232,7 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close, semanticLabel: 'Close'),
                     tooltip: t.cancel,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -260,12 +260,13 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
                 spacing: 8,
                 children: [
                   FilledButton.icon(
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(Icons.add, semanticLabel: 'New document'),
                     label: Text(t.notepadNewDocument),
                     onPressed: _newDocument,
                   ),
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.file_upload),
+                    icon: const Icon(Icons.file_upload,
+                        semanticLabel: 'Import from JSON'),
                     label: Text(t.notepadImportFromJson),
                     onPressed: _importJson,
                   ),
@@ -298,6 +299,7 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
     return ListTile(
       leading: Icon(
         isCurrent ? Icons.description : Icons.description_outlined,
+        semanticLabel: isCurrent ? 'Current document' : 'Document',
         color: isCurrent ? Theme.of(context).colorScheme.primary : null,
       ),
       title: isRenaming
@@ -323,12 +325,13 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.check),
+                  icon:
+                      const Icon(Icons.check, semanticLabel: 'Confirm rename'),
                   tooltip: t.notepadRename,
                   onPressed: () => _commitRename(doc),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Icons.close, semanticLabel: 'Cancel rename'),
                   tooltip: t.cancel,
                   onPressed: () => setState(() => _renamingDocId = null),
                 ),

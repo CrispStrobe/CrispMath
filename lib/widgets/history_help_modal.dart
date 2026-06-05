@@ -369,7 +369,8 @@ class HistoryRowHelpModal extends StatelessWidget {
                 result: entry.result,
               );
             },
-            icon: const Icon(Icons.auto_awesome, size: 16),
+            icon: const Icon(Icons.auto_awesome,
+                size: 16, semanticLabel: 'Explain with AI'),
             label: const Text('Explain'),
           ),
         if (onLearnMore != null)

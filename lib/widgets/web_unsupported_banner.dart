@@ -63,7 +63,10 @@ class WebUnsupportedBanner extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                Icon(icon, size: 18, color: scheme.onSecondaryContainer),
+                Icon(icon,
+                    size: 18,
+                    semanticLabel: message,
+                    color: scheme.onSecondaryContainer),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -77,7 +80,8 @@ class WebUnsupportedBanner extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => launchUrl(_releases,
                         mode: LaunchMode.externalApplication),
-                    icon: const Icon(Icons.download, size: 16),
+                    icon: const Icon(Icons.download,
+                        size: 16, semanticLabel: 'Download app'),
                     label: Text(t.webDownloadApp),
                   ),
                 ],

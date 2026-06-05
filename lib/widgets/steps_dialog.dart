@@ -89,7 +89,8 @@ class StepsDialog extends StatelessWidget {
                 steps: steps,
               );
             },
-            icon: const Icon(Icons.auto_awesome, size: 16),
+            icon: const Icon(Icons.auto_awesome,
+                size: 16, semanticLabel: 'Narrate with AI'),
             label: const Text('Narrate'),
           ),
       ],
@@ -111,6 +112,7 @@ class StepsDialog extends StatelessWidget {
                 Icon(
                   isResult ? Icons.check_circle : Icons.bolt_outlined,
                   size: 18,
+                  semanticLabel: isResult ? 'Result' : 'Step',
                   color: isResult
                       ? Theme.of(context).colorScheme.onPrimaryContainer
                       : Theme.of(context).colorScheme.primary,
@@ -140,7 +142,7 @@ class StepsDialog extends StatelessWidget {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 6),
-                  child: Icon(Icons.east, size: 18),
+                  child: Icon(Icons.east, size: 18, semanticLabel: 'becomes'),
                 ),
                 Expanded(child: _latex(context, _toLatex(s.after))),
               ],

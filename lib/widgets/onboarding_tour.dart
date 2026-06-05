@@ -166,7 +166,7 @@ class _TourCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 56, color: scheme.primary),
+          Icon(icon, size: 56, color: scheme.primary, semanticLabel: title),
           const SizedBox(height: 24),
           Text(
             title,

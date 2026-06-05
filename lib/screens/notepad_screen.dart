@@ -426,7 +426,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
                 ),
                 onTap: () => _openDocument(doc.id),
                 trailing: doc.id == kWelcomeNotepadDocId
-                    ? const Icon(Icons.menu_book, size: 16)
+                    ? const Icon(Icons.menu_book,
+                        size: 16, semanticLabel: 'Welcome sample')
                     : null,
               );
             },
@@ -435,7 +436,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
         Padding(
           padding: const EdgeInsets.all(8),
           child: TextButton.icon(
-            icon: const Icon(Icons.add, size: 18),
+            icon: const Icon(Icons.add, size: 18, semanticLabel: 'Add'),
             label: Text(t.notepadNewDocument),
             onPressed: _newDocument,
           ),
@@ -470,7 +471,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, size: 18),
+            icon: const Icon(Icons.close,
+                size: 18, semanticLabel: 'Close search'),
             onPressed: _toggleSearch,
           ),
         ],
@@ -601,12 +603,13 @@ class _NotepadScreenState extends State<NotepadScreen> {
       builder: (ctx) => SafeArea(
         child: Wrap(children: [
           ListTile(
-            leading: const Icon(Icons.camera_alt),
+            leading: const Icon(Icons.camera_alt, semanticLabel: 'Camera'),
             title: const Text('Take photo'),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
-            leading: const Icon(Icons.photo_library),
+            leading:
+                const Icon(Icons.photo_library, semanticLabel: 'Photo library'),
             title: const Text('Choose from gallery'),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
@@ -664,7 +667,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
         return StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
             title: Row(children: [
-              Icon(Icons.auto_awesome, color: cs.primary, size: 20),
+              Icon(Icons.auto_awesome,
+                  semanticLabel: 'AI', color: cs.primary, size: 20),
               const SizedBox(width: 8),
               const Text('AI Translate'),
             ]),
@@ -1491,12 +1495,13 @@ class _NotepadScreenState extends State<NotepadScreen> {
       // hidden from the filter row.
       // OCR camera button
       IconButton(
-        icon: const Icon(Icons.camera_alt_outlined),
+        icon: const Icon(Icons.camera_alt_outlined, semanticLabel: 'Scan math'),
         tooltip: 'Scan math',
         onPressed: () => _launchNotepadOcr(context),
       ),
       IconButton(
-        icon: const Icon(Icons.menu_book_outlined),
+        icon: const Icon(Icons.menu_book_outlined,
+            semanticLabel: 'Worked examples'),
         tooltip: t.workedExamplesTitle,
         onPressed: () => showDialog<void>(
           context: context,
@@ -1514,6 +1519,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
           return IconButton(
             icon: Icon(
               on ? Icons.help : Icons.help_outline,
+              semanticLabel: on ? 'Disable help mode' : 'Help mode',
               color: on ? Theme.of(context).colorScheme.primary : null,
             ),
             tooltip: on ? t.helpModeDisableTooltip : t.helpModeEnableTooltip,
@@ -1523,7 +1529,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       ),
       if (doc != null)
         IconButton(
-          icon: const Icon(Icons.add),
+          icon: const Icon(Icons.add, semanticLabel: 'Add line'),
           tooltip: t.notepadAddLine,
           onPressed: () => _appendLine(doc),
         ),
@@ -1539,7 +1545,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
                 value: 'template:${tmpl.id}',
                 child: Row(
                   children: [
-                    const Icon(Icons.description_outlined, size: 16),
+                    const Icon(Icons.description_outlined,
+                        size: 16, semanticLabel: 'Template'),
                     const SizedBox(width: 8),
                     Flexible(
                         child:
@@ -1601,7 +1608,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
                     doc.useLatexInput
                         ? Icons.check_box
                         : Icons.check_box_outline_blank,
-                    size: 18),
+                    size: 18,
+                    semanticLabel: doc.useLatexInput ? 'Checked' : 'Unchecked'),
                 const SizedBox(width: 8),
                 const Text('LaTeX input'),
               ]),
@@ -1668,7 +1676,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.notes, size: 64, color: Colors.grey),
+            const Icon(Icons.notes,
+                size: 64, color: Colors.grey, semanticLabel: 'Notes'),
             const SizedBox(height: 16),
             Text(
               t.notepadEmptyTitle,
@@ -1681,12 +1690,13 @@ class _NotepadScreenState extends State<NotepadScreen> {
               spacing: 12,
               children: [
                 FilledButton.icon(
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add, semanticLabel: 'New'),
                   label: Text(t.notepadNewDocument),
                   onPressed: _newDocument,
                 ),
                 OutlinedButton.icon(
-                  icon: const Icon(Icons.menu_book),
+                  icon: const Icon(Icons.menu_book,
+                      semanticLabel: 'Welcome sample'),
                   label: Text(t.notepadOpenWelcomeSample),
                   onPressed: _openWelcomeSample,
                 ),
@@ -1776,7 +1786,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     child: Row(
                       children: [
-                        const Icon(Icons.push_pin, size: 14),
+                        const Icon(Icons.push_pin,
+                            size: 14, semanticLabel: 'Pinned'),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -1918,6 +1929,9 @@ class _NotepadLineRow extends StatelessWidget {
                 icon: Icon(
                   isCollapsedHeading ? Icons.expand_more : Icons.expand_less,
                   size: 20,
+                  semanticLabel: isCollapsedHeading
+                      ? 'Expand section'
+                      : 'Collapse section',
                 ),
                 onPressed: onToggleCollapse,
                 padding: EdgeInsets.zero,
@@ -2205,6 +2219,7 @@ class _DragHandle extends StatelessWidget {
         child: Icon(
           Icons.drag_handle,
           size: 20,
+          semanticLabel: 'Drag to reorder',
           color: Colors.grey[600],
         ),
       ),
@@ -2219,7 +2234,8 @@ class _DeleteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.close, size: 18, color: Colors.grey[600]),
+      icon: Icon(Icons.close,
+          size: 18, semanticLabel: 'Delete line', color: Colors.grey[600]),
       tooltip: AppLocalizations.of(context).notepadDeleteLine,
       visualDensity: VisualDensity.compact,
       onPressed: onPressed,
@@ -2474,7 +2490,7 @@ class _NotepadResultColumn extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.content_copy),
+              leading: const Icon(Icons.content_copy, semanticLabel: 'Copy'),
               title: Text(t.notepadCopyResult),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: plain));
@@ -2488,7 +2504,7 @@ class _NotepadResultColumn extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.code),
+              leading: const Icon(Icons.code, semanticLabel: 'Copy as LaTeX'),
               title: Text(t.notepadCopyAsLatex),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: latex));
@@ -2503,7 +2519,8 @@ class _NotepadResultColumn extends StatelessWidget {
             ),
             const Divider(height: 1),
             ListTile(
-              leading: const Icon(Icons.save_alt),
+              leading: const Icon(Icons.save_alt,
+                  semanticLabel: 'Store as variable'),
               title: Text(t.storeAsVariable),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
@@ -2523,7 +2540,8 @@ class _NotepadResultColumn extends StatelessWidget {
             ),
             if (AppState().crispAssistEnabled)
               ListTile(
-                leading: const Icon(Icons.auto_awesome),
+                leading: const Icon(Icons.auto_awesome,
+                    semanticLabel: 'Explain with AI'),
                 title: const Text('Explain with AI'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -2536,7 +2554,8 @@ class _NotepadResultColumn extends StatelessWidget {
               ),
             if (freeVars.isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.functions),
+                leading: const Icon(Icons.functions,
+                    semanticLabel: 'Store as function'),
                 title: Text(t.storeAsFunction),
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
@@ -2572,7 +2591,8 @@ class _NotepadResultColumn extends StatelessWidget {
       final lineId = sep < 0 ? '' : payload.substring(0, sep);
       final alias = sep < 0 ? payload : payload.substring(sep + 1);
       return ActionChip(
-        avatar: Icon(Icons.block, size: 16, color: cs.error),
+        avatar: Icon(Icons.block,
+            size: 16, semanticLabel: 'Blocked', color: cs.error),
         label: Text(
           t.notepadBlockedBy(alias),
           style: TextStyle(color: cs.error, fontSize: 12),
@@ -2585,7 +2605,8 @@ class _NotepadResultColumn extends StatelessWidget {
       final path =
           rawError.substring(NotepadErrorPrefix.circularReference.length);
       return Chip(
-        avatar: Icon(Icons.sync_problem, size: 16, color: cs.error),
+        avatar: Icon(Icons.sync_problem,
+            size: 16, semanticLabel: 'Circular reference', color: cs.error),
         label: Text(
           t.notepadCycle(path),
           style: TextStyle(color: cs.error, fontSize: 12),

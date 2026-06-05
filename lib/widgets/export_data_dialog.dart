@@ -63,7 +63,7 @@ class ExportDataDialog extends StatelessWidget {
           child: Text(t.dialogClose),
         ),
         ElevatedButton.icon(
-          icon: const Icon(Icons.copy, size: 16),
+          icon: const Icon(Icons.copy, size: 16, semanticLabel: 'Copy'),
           label: Text(t.exportDataCopy),
           onPressed: () async {
             await Clipboard.setData(ClipboardData(text: json));

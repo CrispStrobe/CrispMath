@@ -250,13 +250,16 @@ class _NotepadAutocompleteOverlayState
     final color = Theme.of(context).colorScheme.primary;
     switch (kind) {
       case 'var':
-        return Icon(Icons.abc, size: 16, color: color);
+        return Icon(Icons.abc,
+            size: 16, color: color, semanticLabel: 'Variable');
       case 'fn':
-        return Icon(Icons.functions, size: 16, color: color);
+        return Icon(Icons.functions,
+            size: 16, color: color, semanticLabel: 'Function');
       case 'const':
-        return Icon(Icons.looks_one, size: 16, color: color);
+        return Icon(Icons.looks_one,
+            size: 16, color: color, semanticLabel: 'Constant');
       default:
-        return Icon(Icons.circle, size: 16, color: color);
+        return Icon(Icons.circle, size: 16, color: color, semanticLabel: kind);
     }
   }
 

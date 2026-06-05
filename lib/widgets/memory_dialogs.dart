@@ -181,7 +181,8 @@ class MemoryDialogs {
                         subtitle: Text(memory['M$i'] ?? 'Empty'),
                         trailing: memory['M$i'] != null
                             ? IconButton(
-                                icon: const Icon(Icons.delete),
+                                icon: const Icon(Icons.delete,
+                                    semanticLabel: 'Delete'),
                                 tooltip: AppLocalizations.of(context)
                                     .deleteMemorySlotTooltip,
                                 onPressed: () {
