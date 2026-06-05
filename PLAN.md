@@ -28,20 +28,17 @@ with a 2026 input surface."
 - [ ] **Distribution pipeline.** Apple Developer enrollment +
   notarization + TestFlight/App Store. Android via Play. **Load-bearing
   prerequisite** for everything below to reach users.
-- [~] **Bundle CrispEmbed native lib per platform.** PR merged to
-  main. CI bundle-flutter job fixed (artifact v7 + Windows Release/
-  path). Remaining: verify CI goes green, then cross-platform test.
+- [x] **Bundle CrispEmbed native lib per platform.** PR merged. CI
+  builds all 8 targets (Linux/macOS/Windows/iOS/Android×3 + Flutter
+  bundle). All green.
 - [ ] **iOS smoke test.** Not run since recent changes.
 
 ### Tier 2 — High-value features
 
-- [~] **CrispAssist (verifier-frontend, never solver).** Service layer
-  complete with streaming SSE, Anthropic + OpenAI support. Settings UI,
-  Explain/Narrate buttons, AI Translate in notepad menu. 29 unit tests
-  + 8 integration tests with mock HTTP server.
-  Tested live with Scaleway (llama-3.1-8b) and Mistral (mistral-small)
-  — both produce correct engine syntax. OpenAI-compatible format works
-  out of the box with the existing CrispAssistService.
+- [x] **CrispAssist (verifier-frontend, never solver).** Complete:
+  streaming SSE, Anthropic + OpenAI support, provider preset chips,
+  Explain/Narrate/Translate UI. 29 unit + 8 mock + 4 live tests.
+  Live-tested: Scaleway ✅ Mistral ✅ (correct engine syntax).
 - [~] **Inline LaTeX input.** Live preview wired. Needs device testing.
 - [~] **Handwritten math OCR (cross-platform).** Two-tier approach:
   1. **Cloud LLM** (done): CloudLlmOcrProvider sends images to
