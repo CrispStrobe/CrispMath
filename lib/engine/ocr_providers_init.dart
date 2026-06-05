@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:crispembed/crispembed.dart' show CrispEmbedOcr;
 
+import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
 import 'ocr_model_manager.dart';
 
@@ -83,16 +84,23 @@ class _CrispEmbedProvider implements OcrProvider {
 /// Try to register available OCR providers in priority order.
 /// Called once at app startup.
 Future<void> initOcrProviders() async {
-  // Check if any model is already downloaded
+  // Tier 4: On-device CrispEmbed (printed math)
   for (final model in OcrModelCatalog.printedMath) {
     final path = await OcrModelManager.localPath(model);
     if (path != null) {
-      // Model available — register the CrispEmbed provider
       final provider = _CrispEmbedProvider(path);
       OcrProviders.register(provider);
       OcrProviders.active = provider;
       break;
     }
+  }
+
+  // Tier 3: Cloud LLM (handwritten + printed, requires API key)
+  final cloudProvider = CloudLlmOcrProvider();
+  OcrProviders.register(cloudProvider);
+  // If no on-device model available but cloud is configured, use cloud.
+  if (OcrProviders.active == null && cloudProvider.isAvailable) {
+    OcrProviders.active = cloudProvider;
   }
 }
 
