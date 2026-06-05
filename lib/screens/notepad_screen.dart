@@ -37,6 +37,7 @@ import '../engine/notepad_export.dart';
 import '../services/crisp_assist_service_stub.dart'
     if (dart.library.io) '../services/crisp_assist_service.dart';
 import '../widgets/crisp_assist_dialog.dart';
+import '../widgets/handwriting_input_dialog.dart';
 import '../engine/ocr_provider.dart';
 import '../widgets/ocr_capture_dialog.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1498,6 +1499,22 @@ class _NotepadScreenState extends State<NotepadScreen> {
         icon: const Icon(Icons.camera_alt_outlined, semanticLabel: 'Scan math'),
         tooltip: 'Scan math',
         onPressed: () => _launchNotepadOcr(context),
+      ),
+      // Handwriting input
+      IconButton(
+        icon: const Icon(Icons.draw_outlined, semanticLabel: 'Write math'),
+        tooltip: 'Write math',
+        onPressed: () async {
+          final expr = await showHandwritingInputDialog(context);
+          if (expr == null || expr.isEmpty || !mounted) return;
+          final doc = _currentDoc;
+          if (doc != null) {
+            final line = NotepadLine.fresh(source: expr);
+            doc.lines.add(line);
+            _persistDoc(doc);
+            _scheduleRecalc(doc, doc.lines.length - 1);
+          }
+        },
       ),
       IconButton(
         icon: const Icon(Icons.menu_book_outlined,

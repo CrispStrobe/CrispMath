@@ -37,6 +37,7 @@ import '../utils/error_formatter.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/math_display_utils.dart';
 import '../utils/share_link.dart';
+import '../widgets/handwriting_input_dialog.dart';
 import '../widgets/store_result_dialogs.dart';
 
 // Other imports
@@ -2344,6 +2345,20 @@ class CalculatorScreenState extends State<CalculatorScreen>
                               size: 20, semanticLabel: 'Scan math'),
                           tooltip: 'Scan math',
                           onPressed: () => _launchOcr(context),
+                        ),
+                        // Handwriting input
+                        IconButton(
+                          icon: const Icon(Icons.draw_outlined,
+                              size: 20, semanticLabel: 'Write math'),
+                          tooltip: 'Write math',
+                          onPressed: () async {
+                            final expr =
+                                await showHandwritingInputDialog(context);
+                            if (expr != null && expr.isNotEmpty) {
+                              _latexController.clear();
+                              _latexController.insert(expr);
+                            }
+                          },
                         ),
                         IconButton(
                           icon: const Icon(Icons.menu_book_outlined,
