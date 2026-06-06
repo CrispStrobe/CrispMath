@@ -58,13 +58,12 @@ class _CrispEmbedProvider implements OcrProvider {
       final latex = _ocr!.recognizeGray(gray, width, height);
       if (latex == null || latex.isEmpty) return null;
 
-      // Clean BPE space tokens and convert to engine syntax
-      final cleaned = latex.replaceAll('\u0120', ' ').trim();
-      final engineSyntax = latexToEngineSyntax(cleaned);
+      // Convert to engine syntax (handles BPE markers, spaced braces, etc.)
+      final engineSyntax = latexToEngineSyntax(latex);
 
       return OcrResult(
         text: engineSyntax,
-        rawOutput: cleaned,
+        rawOutput: latex.replaceAll('\u0120', ' ').trim(),
         providerName: name,
       );
     } catch (e) {

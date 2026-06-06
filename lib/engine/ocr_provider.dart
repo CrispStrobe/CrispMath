@@ -140,6 +140,54 @@ String postProcessOcrText(String raw) {
   return s.trim();
 }
 
+/// Extract a brace-balanced group starting at [start] (must point to '{').
+/// Returns the content between the braces and the index after the closing '}'.
+(String, int)? _extractBraceGroup(String s, int start) {
+  if (start >= s.length || s[start] != '{') return null;
+  int depth = 0;
+  for (int i = start; i < s.length; i++) {
+    if (s[i] == '{') depth++;
+    if (s[i] == '}') {
+      depth--;
+      if (depth == 0) return (s.substring(start + 1, i), i + 1);
+    }
+  }
+  return null; // unmatched
+}
+
+/// Replace \frac{a}{b} → (a)/(b), handling nested braces.
+String _replaceFrac(String s) {
+  final buf = StringBuffer();
+  int i = 0;
+  while (i < s.length) {
+    final fracIdx = s.indexOf(r'\frac{', i);
+    if (fracIdx == -1) {
+      buf.write(s.substring(i));
+      break;
+    }
+    buf.write(s.substring(i, fracIdx));
+    final num = _extractBraceGroup(s, fracIdx + 5);
+    if (num == null) {
+      buf.write(s.substring(fracIdx));
+      break;
+    }
+    final den = _extractBraceGroup(s, num.$2);
+    if (den == null) {
+      buf.write(r'\frac{');
+      buf.write(num.$1);
+      buf.write('}');
+      i = num.$2;
+      continue;
+    }
+    // Recursively handle nested \frac in numerator/denominator
+    final numContent = _replaceFrac(num.$1);
+    final denContent = _replaceFrac(den.$1);
+    buf.write('($numContent)/($denContent)');
+    i = den.$2;
+  }
+  return buf.toString();
+}
+
 /// Convert LaTeX (from pix2tex) to CrispCalc engine syntax.
 ///
 /// Handles common LaTeX constructs:
@@ -153,17 +201,26 @@ String postProcessOcrText(String raw) {
 String latexToEngineSyntax(String latex) {
   var s = latex.trim();
 
+  // Strip BPE space markers (pix2tex uses \u0120 / Ġ).
+  s = s.replaceAll('\u0120', ' ');
+
   // Strip LaTeX delimiters.
   s = s.replaceAll(RegExp(r'^\$+|\$+$'), '');
   s = s.replaceAll(RegExp(r'^\\[\[\(]|\\[\]\)]$'), '');
 
-  // \frac{a}{b} → (a)/(b).
-  s = s.replaceAllMapped(
-    RegExp(r'\\frac\{([^}]+)\}\{([^}]+)\}'),
-    (m) => '(${m[1]})/(${m[2]})',
-  );
+  // Normalize spaced braces for LaTeX commands.
+  // BTTR/HMER output "\frac { a } { b }", pix2tex outputs "\frac{a}{b}".
+  // Collapse spaces around braces so parsing works for both formats.
+  s = s.replaceAll(RegExp(r'\s*\{\s*'), '{');
+  s = s.replaceAll(RegExp(r'\s*\}\s*'), '}');
+  // Restore spaces between tokens that aren't brace-adjacent.
+  // "a}+{b" is fine, but "a}b" needs no space (it's inside braces).
+  // The main case: "}{" between frac groups must stay collapsed.
 
-  // \sqrt{x} → sqrt(x); \sqrt[n]{x} → x^(1/n).
+  // \frac{a}{b} → (a)/(b). Use balanced-brace matching for nested fracs.
+  s = _replaceFrac(s);
+
+  // \sqrt[n]{x} → x^(1/n); \sqrt{x} → sqrt(x).
   s = s.replaceAllMapped(
     RegExp(r'\\sqrt\[(\d+)\]\{([^}]+)\}'),
     (m) => '(${m[2]})^(1/${m[1]})',
@@ -175,7 +232,7 @@ String latexToEngineSyntax(String latex) {
 
   // x^{expr} → x^(expr) for multi-char, x^n for single-char.
   s = s.replaceAllMapped(
-    RegExp(r'\^{([^}]+)}'),
+    RegExp(r'\^\{([^}]+)\}'),
     (m) {
       final exp = m[1]!;
       return exp.length == 1 ? '^$exp' : '^($exp)';
