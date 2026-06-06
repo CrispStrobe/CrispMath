@@ -4,7 +4,9 @@ import 'package:crisp_calc/engine/eigen.dart';
 void main() {
   group('eigenvalues', () {
     test('1x1 matrix', () {
-      final r = computeEigenvalues([[5]]);
+      final r = computeEigenvalues([
+        [5]
+      ]);
       expect(r, isNotNull);
       expect(r!.eigenvalues.length, 1);
       expect(r.eigenvalues[0].real, closeTo(5, 1e-10));
@@ -102,12 +104,12 @@ void main() {
 
   group('EigenResult formatting', () {
     test('formatValues real', () {
-      final r = EigenResult([Complex(3), Complex(-1)]);
+      final r = EigenResult([const Complex(3), const Complex(-1)]);
       expect(r.formatValues(), '{3, -1}');
     });
 
     test('formatValues complex', () {
-      final r = EigenResult([Complex(1, 2), Complex(1, -2)]);
+      final r = EigenResult([const Complex(1, 2), const Complex(1, -2)]);
       final s = r.formatValues();
       expect(s, contains('1'));
       expect(s, contains('2i'));
@@ -115,7 +117,7 @@ void main() {
 
     test('formatVectors', () {
       final r = EigenResult(
-        [Complex(1), Complex(2)],
+        [const Complex(1), const Complex(2)],
         [
           [1, 0],
           [0, 1],

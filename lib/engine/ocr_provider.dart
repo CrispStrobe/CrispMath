@@ -77,9 +77,7 @@ class OcrProviders {
       _providers.where((p) => p.isAvailable).toList();
 
   /// The currently selected provider (persisted in AppState).
-  static OcrProvider? _active;
-  static OcrProvider? get active => _active;
-  static set active(OcrProvider? p) => _active = p;
+  static OcrProvider? active;
 }
 
 /// Post-process raw OCR text into engine-ready syntax.
@@ -153,6 +151,23 @@ String postProcessOcrText(String raw) {
     }
   }
   return null; // unmatched
+}
+
+/// Replace \cmd{content} → fn(content) with balanced brace matching.
+String _replaceCmd(String s, String cmd, String Function(String) transform) {
+  final needle = '\\$cmd{';
+  final buf = StringBuffer();
+  int i = 0;
+  while (i < s.length) {
+    final idx = s.indexOf(needle, i);
+    if (idx == -1) { buf.write(s.substring(i)); break; }
+    buf.write(s.substring(i, idx));
+    final group = _extractBraceGroup(s, idx + needle.length - 1);
+    if (group == null) { buf.write(s.substring(idx)); break; }
+    buf.write(transform(group.$1));
+    i = group.$2;
+  }
+  return buf.toString();
 }
 
 /// Replace \frac{a}{b} → (a)/(b), handling nested braces.

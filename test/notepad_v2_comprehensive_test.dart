@@ -284,7 +284,7 @@ void main() {
         NotepadLine(id: 'c', source: 'third'),
       ]);
       // Simulate reorder: moved from index 0 to index 2.
-      final op = UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.reorder,
         index: 0,
         newIndex: 2,

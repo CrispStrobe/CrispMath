@@ -216,26 +216,26 @@ class SyntaxHighlightingController extends TextEditingController {
 
   static final RegExp _tokenPattern = RegExp(
     '('
-            // Group 1: inline comment (// or # to EOL).
-            r'(?://|#).*$'
-            ')|('
-            // Group 2: number literal (integer or decimal, optional leading sign
-            // only when preceded by an operator or start of string).
-            r'(?<![a-zA-Z_])(\d+\.?\d*(?:[eE][+-]?\d+)?)'
-            ')|('
-            // Group 3: known function name (word-bounded).
-            r'(?<![a-zA-Z_])(?:' +
-        _functionNames.join('|') +
-        r')(?![a-zA-Z_0-9])'
-            ')|('
-            // Group 4: keyword.
-            r'(?<![a-zA-Z_])(?:' +
-        _keywords.join('|') +
-        r')(?![a-zA-Z_0-9])'
-            ')|('
-            // Group 5: operators.
-            r'[+\-*/^=<>!%≠≤≥]+'
-            ')',
+    // Group 1: inline comment (// or # to EOL).
+    r'(?://|#).*$'
+    ')|('
+    // Group 2: number literal (integer or decimal, optional leading sign
+    // only when preceded by an operator or start of string).
+    r'(?<![a-zA-Z_])(\d+\.?\d*(?:[eE][+-]?\d+)?)'
+    ')|('
+    // Group 3: known function name (word-bounded).
+    r'(?<![a-zA-Z_])(?:'
+    '${_functionNames.join('|')}'
+    r')(?![a-zA-Z_0-9])'
+    ')|('
+    // Group 4: keyword.
+    r'(?<![a-zA-Z_])(?:'
+    '${_keywords.join('|')}'
+    r')(?![a-zA-Z_0-9])'
+    ')|('
+    // Group 5: operators.
+    r'[+\-*/^=<>!%≠≤≥]+'
+    ')',
     multiLine: true,
   );
 }

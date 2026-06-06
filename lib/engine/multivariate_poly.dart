@@ -962,10 +962,10 @@ class _MultiPolyParser {
         _pos++;
         final divisor = _parsePower();
         // Only allow division by constant.
-        if (divisor.length != 1) throw FormatException('non-constant divisor');
+        if (divisor.length != 1) throw const FormatException('non-constant divisor');
         final entry = divisor.entries.first;
         if (entry.key.values.any((v) => v != 0)) {
-          throw FormatException('non-constant divisor');
+          throw const FormatException('non-constant divisor');
         }
         final inv = Rational.one / entry.value;
         result = _scaleTerms(result, inv);
@@ -999,11 +999,11 @@ class _MultiPolyParser {
   /// Parse atom: number, variable, or (expr).
   Map<Map<String, int>, Rational> _parseAtom() {
     final c = _peek;
-    if (c == null) throw FormatException('unexpected end');
+    if (c == null) throw const FormatException('unexpected end');
     if (c == '(') {
       _pos++;
       final result = _parseExpr();
-      if (_peek != ')') throw FormatException('missing )');
+      if (_peek != ')') throw const FormatException('missing )');
       _pos++;
       return result;
     }
@@ -1018,17 +1018,17 @@ class _MultiPolyParser {
 
   Map<Map<String, int>, Rational> _parseNumber() {
     final start = _pos;
-    while (_pos < src.length && _isDigit(src[_pos])) _pos++;
+    while (_pos < src.length && _isDigit(src[_pos])) { _pos++; }
     if (_pos < src.length && src[_pos] == '.') {
       _pos++;
-      while (_pos < src.length && _isDigit(src[_pos])) _pos++;
+      while (_pos < src.length && _isDigit(src[_pos])) { _pos++; }
     }
     // Check for fraction: digits/digits
     if (_pos < src.length && src[_pos] == '/' && _pos > start) {
       final numStr = src.substring(start, _pos);
       _pos++; // skip /
       final denStart = _pos;
-      while (_pos < src.length && _isDigit(src[_pos])) _pos++;
+      while (_pos < src.length && _isDigit(src[_pos])) { _pos++; }
       if (_pos > denStart) {
         final denStr = src.substring(denStart, _pos);
         final r = Rational(BigInt.parse(numStr), BigInt.parse(denStr));
@@ -1046,7 +1046,7 @@ class _MultiPolyParser {
     final c = src[_pos];
     // Multi-letter identifiers (sin, cos, etc.) are not supported.
     if (_pos + 1 < src.length && _isLetter(src[_pos + 1])) {
-      throw FormatException('multi-letter name');
+      throw const FormatException('multi-letter name');
     }
     _pos++;
     _vars.add(c);
@@ -1059,13 +1059,13 @@ class _MultiPolyParser {
     if (_peek == '(') {
       _pos++;
       final v = _parseInt();
-      if (_peek != ')') throw FormatException('missing )');
+      if (_peek != ')') throw const FormatException('missing )');
       _pos++;
       return v;
     }
     final start = _pos;
-    while (_pos < src.length && _isDigit(src[_pos])) _pos++;
-    if (_pos == start) throw FormatException('expected int');
+    while (_pos < src.length && _isDigit(src[_pos])) { _pos++; }
+    if (_pos == start) throw const FormatException('expected int');
     return int.parse(src.substring(start, _pos));
   }
 

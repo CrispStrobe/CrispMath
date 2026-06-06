@@ -43,7 +43,7 @@ class CloudLlmOcrProvider implements OcrProvider {
 
     try {
       final base64Image = base64Encode(imageBytes);
-      final mimeType = 'image/png';
+      const mimeType = 'image/png';
 
       final String body;
       final Map<String, String> headers;

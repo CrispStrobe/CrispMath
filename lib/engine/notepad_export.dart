@@ -122,20 +122,20 @@ String exportToLatex(NotepadDocument doc) {
   buf.writeln(r'\documentclass{article}');
   buf.writeln(r'\usepackage{amsmath}');
   buf.writeln(r'\begin{document}');
-  buf.writeln(r'\section*{' + _latexEscape(exported.name) + '}');
+  buf.writeln('\\section*{${_latexEscape(exported.name)}}');
   buf.writeln();
 
   for (final line in exported.lines) {
     switch (line.kind) {
       case 'heading':
         final text = line.source.replaceFirst(RegExp(r'^##\s*'), '');
-        buf.writeln(r'\subsection*{' + _latexEscape(text) + '}');
+        buf.writeln('\\subsection*{${_latexEscape(text)}}');
       case 'divider':
         buf.writeln(r'\hrule');
         buf.writeln(r'\vspace{0.5em}');
       case 'comment':
         final text = line.source.replaceFirst(RegExp(r'^[\s]*(?://|#)\s?'), '');
-        buf.writeln(r'\textit{' + _latexEscape(text) + '}');
+        buf.writeln('\\textit{${_latexEscape(text)}}');
       case 'blank':
         buf.writeln(r'\vspace{0.5em}');
       default:
@@ -262,7 +262,7 @@ Future<pw.Document> exportToPdf(NotepadDocument doc) async {
       alignment: pw.Alignment.centerRight,
       child: pw.Text(
         'CrispCalc — ${exported.name}',
-        style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
       ),
     ),
   ));

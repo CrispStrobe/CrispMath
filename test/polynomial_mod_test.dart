@@ -96,33 +96,35 @@ void main() {
 
   group('formatModFactorization', () {
     test('leading coefficient shown when not 1', () {
-      final z = ModFactorization(7, 3, 'x', [
-        const ModFactor([1, 1], 1)
+      const z = ModFactorization(7, 3, 'x', [
+        ModFactor([1, 1], 1)
       ]);
       final s = formatModFactorization(z);
       expect(s, startsWith('3'));
     });
 
     test('multiplicity shown when > 1', () {
-      final z = ModFactorization(2, 1, 'x', [
-        const ModFactor([1, 1], 3)
+      const z = ModFactorization(2, 1, 'x', [
+        ModFactor([1, 1], 3)
       ]);
       final s = formatModFactorization(z);
       expect(s, contains('^3'));
     });
 
     test('multiple factors joined by centered dot', () {
-      final z = ModFactorization(5, 1, 'x', [
-        const ModFactor([1, 1], 1),
-        const ModFactor([2, 1], 1),
+      const z = ModFactorization(5, 1, 'x', [
+        ModFactor([1, 1], 1),
+        ModFactor([2, 1], 1),
       ]);
       final s = formatModFactorization(z);
       expect(s, contains('\u00B7')); // ·
     });
 
     test('no factors gives leading coeff or 1', () {
-      expect(formatModFactorization(ModFactorization(5, 3, 'x', [])), '3');
-      expect(formatModFactorization(ModFactorization(5, 1, 'x', [])), '1');
+      expect(
+          formatModFactorization(const ModFactorization(5, 3, 'x', [])), '3');
+      expect(
+          formatModFactorization(const ModFactorization(5, 1, 'x', [])), '1');
     });
   });
 }

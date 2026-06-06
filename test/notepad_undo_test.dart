@@ -64,7 +64,8 @@ void main() {
       expect(h.redoCount, 1);
 
       // Recording a new op clears redo AND evicts oldest.
-      h.record(UndoOp(kind: UndoOpKind.insert, index: 999, lineId: 'new'));
+      h.record(
+          const UndoOp(kind: UndoOpKind.insert, index: 999, lineId: 'new'));
       expect(h.canRedo, false);
       expect(h.undoCount, UndoHistory.maxEntries);
     });
@@ -101,7 +102,7 @@ void main() {
       // After the move the doc is [b, c, a].
       final doc = makeDoc(['b', 'c', 'a']);
 
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.reorder,
         index: 0,
         newIndex: 2,
@@ -117,7 +118,7 @@ void main() {
       // Original: [a, b, c]. Moved index 1 -> index 2. Now [a, c, b].
       final doc = makeDoc(['a', 'c', 'b']);
 
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.reorder,
         index: 1,
         newIndex: 2,
@@ -130,14 +131,14 @@ void main() {
 
     test('undo reorder returns false when newIndex is null', () {
       final doc = makeDoc(['a', 'b']);
-      final op = const UndoOp(kind: UndoOpKind.reorder, index: 0);
+      const op = UndoOp(kind: UndoOpKind.reorder, index: 0);
       expect(applyUndo(doc, op), false);
     });
 
     test('undo reorder returns false when indices match after clamping', () {
       final doc = makeDoc(['a']);
       // Both indices clamp to 0 in a single-element list.
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.reorder,
         index: 0,
         newIndex: 0,
@@ -161,7 +162,7 @@ void main() {
       // Redo should re-apply the reorder: move index 0 -> newIndex 2.
       final doc = makeDoc(['a', 'b', 'c']);
 
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.reorder,
         index: 0,
         newIndex: 2,
@@ -174,7 +175,7 @@ void main() {
 
     test('redo reorder returns false when newIndex is null', () {
       final doc = makeDoc(['a', 'b']);
-      final op = const UndoOp(kind: UndoOpKind.reorder, index: 0);
+      const op = UndoOp(kind: UndoOpKind.reorder, index: 0);
       expect(applyRedo(doc, op), false);
     });
   });
@@ -197,7 +198,7 @@ void main() {
       expect(doc.lines.map((l) => l.id).toList(), ['b', 'c', 'a']);
 
       final history = UndoHistory();
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.reorder,
         index: 0,
         newIndex: 2,
@@ -277,7 +278,7 @@ void main() {
       doc.lines.add(NotepadLine(id: 'a', source: 'x'));
 
       // lineId 'z' does not exist in doc.
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.insert,
         index: 0,
         lineId: 'z',
@@ -290,7 +291,7 @@ void main() {
       final doc = NotepadDocument.fresh(name: 'T');
       doc.lines.clear();
 
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.delete,
         index: 0,
         lineId: 'b',
@@ -304,7 +305,7 @@ void main() {
       doc.lines.clear();
       doc.lines.add(NotepadLine(id: 'a', source: 'x'));
 
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.edit,
         index: 0,
         lineId: 'missing',
@@ -317,7 +318,7 @@ void main() {
       final doc = NotepadDocument.fresh(name: 'T');
       doc.lines.clear();
       // Empty doc — index 5 should clamp to 0.
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.delete,
         index: 5,
         lineId: 'restored',
@@ -336,7 +337,7 @@ void main() {
       final doc = NotepadDocument.fresh(name: 'T');
       doc.lines.clear();
 
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.insert,
         index: 0,
         // lineId intentionally omitted
@@ -349,7 +350,7 @@ void main() {
       doc.lines.clear();
       doc.lines.add(NotepadLine(id: 'a', source: 'x'));
 
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.delete,
         index: 0,
         lineId: 'nonexistent',
@@ -362,7 +363,7 @@ void main() {
       doc.lines.clear();
       doc.lines.add(NotepadLine(id: 'a', source: 'x'));
 
-      final op = const UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.edit,
         index: 0,
         lineId: 'a',

@@ -235,17 +235,19 @@ class _CrispAssistNarrateDialogState extends State<_CrispAssistNarrateDialog> {
         steps: widget.steps,
         config: config,
       );
-      if (mounted)
+      if (mounted) {
         setState(() {
           _content = result;
           _done = true;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.toString();
           _done = true;
         });
+      }
     }
   }
 

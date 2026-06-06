@@ -1119,7 +1119,7 @@ class StepEngine {
       before: '∫ $originalIntegrand d$variable',
       after: '∫ ($decomposition) d$variable',
       note: 'The denominator has integer roots $rootList. '
-          '${hasRepeated ? "Repeated roots produce higher-power terms." : "Cover-up gives A_i = P(r_i) / Q\'(r_i) for each root."}',
+          '${hasRepeated ? "Repeated roots produce higher-power terms." : "Cover-up gives A_i = P(r_i) / Q'(r_i) for each root."}',
       noteI18n: StepNote('partialFractions', {
         'roots': rootList.join(', '),
       }),

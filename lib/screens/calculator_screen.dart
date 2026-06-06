@@ -215,7 +215,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     if (provider == null) {
       // No OCR provider — apply postProcessOcrText as a passthrough
       // (user might paste a photo of typed math, we can at least clean up)
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No OCR provider configured yet.')),
       );
@@ -223,7 +223,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     }
 
     // Run OCR
-    if (!mounted) return;
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
           content: Text('Recognizing math…'), duration: Duration(seconds: 1)),
@@ -233,7 +233,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final decoded = await decodeImageFromList(bytes);
     final result =
         await provider.recognize(bytes, decoded.width, decoded.height);
-    if (result == null || !mounted) {
+    if (!context.mounted) return;
+    if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('OCR failed — try a clearer image.')),
       );
@@ -242,7 +243,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
     // Show confirmation dialog
     final expression = await showOcrCaptureDialog(context, result);
-    if (expression == null || expression.isEmpty || !mounted) return;
+    if (expression == null || expression.isEmpty || !context.mounted) return;
 
     // Insert into the input field
     _latexController.clear();

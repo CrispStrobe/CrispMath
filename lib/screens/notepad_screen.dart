@@ -536,7 +536,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _cycleLineFormat(NotepadDocument doc, NotepadLine line) {
-    final formats = LineResultFormat.values;
+    const formats = LineResultFormat.values;
     final next = formats[(line.resultFormat.index + 1) % formats.length];
     setState(() {
       line.resultFormat = next;
@@ -625,7 +625,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     final bytes = await picked.readAsBytes();
 
     if (provider == null) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No OCR provider configured.')),
       );
@@ -635,7 +635,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
     final decoded = await decodeImageFromList(bytes);
     final result =
         await provider.recognize(bytes, decoded.width, decoded.height);
-    if (result == null || !mounted) {
+    if (!context.mounted) return;
+    if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('OCR failed.')),
       );
@@ -643,7 +644,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     }
 
     final expression = await showOcrCaptureDialog(context, result);
-    if (expression == null || expression.isEmpty || !mounted) return;
+    if (expression == null || expression.isEmpty || !context.mounted) return;
 
     // Insert as a new line in the current doc
     final doc = _currentDoc;
@@ -1633,11 +1634,12 @@ class _NotepadScreenState extends State<NotepadScreen> {
               value: 'export-pdf',
               child: Text('Export PDF'),
             ));
-            if (AppState().crispAssistEnabled)
+            if (AppState().crispAssistEnabled) {
               items.add(const PopupMenuItem(
                 value: 'ai-translate',
                 child: Text('AI Translate'),
               ));
+            }
             items.add(PopupMenuItem(
               value: 'toggle-latex',
               child: Row(children: [

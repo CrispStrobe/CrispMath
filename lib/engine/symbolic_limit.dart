@@ -252,13 +252,13 @@ class SymbolicLimit {
         if (!evaluated.startsWith('Error')) {
           final lower = evaluated.trim().toLowerCase();
           if (lower == '0' || lower == '0.0') {
-            return SymbolicLimitResult('0', method: 'infinity');
+            return const SymbolicLimitResult('0', method: 'infinity');
           }
           if (lower == 'oo' || lower == 'inf' || lower == 'infinity') {
-            return SymbolicLimitResult('∞', method: 'infinity');
+            return const SymbolicLimitResult('∞', method: 'infinity');
           }
           if (lower == '-oo' || lower == '-inf') {
-            return SymbolicLimitResult('-∞', method: 'infinity');
+            return const SymbolicLimitResult('-∞', method: 'infinity');
           }
           if (lower != 'nan' &&
               lower != 'zoo' &&

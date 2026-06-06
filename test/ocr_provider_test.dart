@@ -127,7 +127,7 @@ void main() {
     });
 
     test('complex expression', () {
-      final input = r'\frac{d}{dx}\left[\sin^{2}(x)\right]';
+      const input = r'\frac{d}{dx}\left[\sin^{2}(x)\right]';
       final result = latexToEngineSyntax(input);
       // Should be parseable, not necessarily canonical.
       expect(result, isNotEmpty);

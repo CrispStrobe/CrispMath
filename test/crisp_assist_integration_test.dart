@@ -2,7 +2,6 @@
 // to simulate both OpenAI and Anthropic API responses without needing
 // a real API key.
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -242,10 +241,10 @@ void main() {
     });
 
     test('connection refused throws SocketException', () async {
-      final config = CrispAssistConfig(
+      const config = CrispAssistConfig(
         apiUrl: 'http://localhost:1/v1/chat/completions',
         apiKey: 'test-key',
-        timeout: const Duration(seconds: 2),
+        timeout: Duration(seconds: 2),
       );
 
       expect(

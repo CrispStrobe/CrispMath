@@ -268,7 +268,7 @@ void main() {
       doc.lines.add(NotepadLine(id: 'a', source: 'first'));
       doc.lines.add(NotepadLine(id: 'c', source: 'third'));
 
-      final op = UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.delete,
         index: 1,
         lineId: 'b',
@@ -286,7 +286,7 @@ void main() {
       doc.lines.add(NotepadLine(id: 'a', source: 'x'));
       doc.lines.add(NotepadLine(id: 'b', source: ''));
 
-      final op = UndoOp(kind: UndoOpKind.insert, index: 1, lineId: 'b');
+      const op = UndoOp(kind: UndoOpKind.insert, index: 1, lineId: 'b');
       final ok = applyUndo(doc, op);
       expect(ok, true);
       expect(doc.lines.length, 1);
@@ -297,7 +297,7 @@ void main() {
       doc.lines.clear();
       doc.lines.add(NotepadLine(id: 'a', source: 'new'));
 
-      final op = UndoOp(
+      const op = UndoOp(
         kind: UndoOpKind.edit,
         index: 0,
         lineId: 'a',
