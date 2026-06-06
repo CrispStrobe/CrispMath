@@ -5,8 +5,7 @@
 
 import 'dart:typed_data';
 
-import 'package:crispembed/crispembed.dart'
-    show CrispEmbedOcr, CrispEmbedHmerOcr, CrispEmbedBttrOcr;
+import 'package:crispembed/crispembed.dart' show CrispEmbedOcr;
 
 import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
@@ -47,20 +46,11 @@ class _Pix2TexBackend implements _OcrBackend {
   void dispose() => _ocr.dispose();
 }
 
-/// Wraps CrispEmbedHmerOcr (handwritten math — DenseNet+GRU).
-class _HmerBackend implements _OcrBackend {
-  late final CrispEmbedHmerOcr _ocr;
-  _HmerBackend(String path) { _ocr = CrispEmbedHmerOcr(path, nThreads: 4); }
-  @override
-  String? recognizeGray(Float32List p, int w, int h) => _ocr.recognizeGray(p, w, h);
-  @override
-  void dispose() => _ocr.dispose();
-}
-
-/// Wraps CrispEmbedBttrOcr (handwritten math — DenseNet+Transformer).
-class _BttrBackend implements _OcrBackend {
-  late final CrispEmbedBttrOcr _ocr;
-  _BttrBackend(String path) { _ocr = CrispEmbedBttrOcr(path, nThreads: 4); }
+/// Wraps CrispEmbedOcr for handwritten math models (HMER/BTTR).
+/// The C++ layer auto-detects model architecture from the GGUF file.
+class _HandwrittenBackend implements _OcrBackend {
+  late final CrispEmbedOcr _ocr;
+  _HandwrittenBackend(String path) { _ocr = CrispEmbedOcr(path, nThreads: 4); }
   @override
   String? recognizeGray(Float32List p, int w, int h) => _ocr.recognizeGray(p, w, h);
   @override
@@ -134,10 +124,10 @@ Future<void> initOcrProviders() async {
       final _OcrBackend Function(String) factory;
       if (model.id.startsWith('bttr-')) {
         label = 'BTTR (handwritten, 53%)';
-        factory = (p) => _BttrBackend(p);
+        factory = (p) => _HandwrittenBackend(p);
       } else if (model.id.startsWith('hmer-')) {
         label = 'HMER (handwritten, 39%)';
-        factory = (p) => _HmerBackend(p);
+        factory = (p) => _HandwrittenBackend(p);
       } else {
         continue;
       }

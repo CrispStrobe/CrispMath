@@ -36,7 +36,7 @@ void main() {
     test('size labels format correctly', () {
       expect(OcrModelCatalog.printedMath[0].sizeLabel, '17 MB');
       expect(OcrModelCatalog.printedMath[1].sizeLabel, '31 MB');
-      expect(OcrModelCatalog.handwrittenMath[0].sizeLabel, '1.2 GB');
+      expect(OcrModelCatalog.handwrittenMath[0].sizeLabel, '13 MB');
     });
 
     test('Q4_K is the smallest', () {

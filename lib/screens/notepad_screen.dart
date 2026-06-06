@@ -580,7 +580,6 @@ class _NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _reorderLines(NotepadDocument doc, int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) newIndex -= 1;
     final moved = doc.lines.removeAt(oldIndex);
     doc.lines.insert(newIndex, moved);
     _undoFor(doc).record(undo.UndoOp(
@@ -1765,9 +1764,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         buildDefaultDragHandles: false,
         itemCount: visibleIndices.length,
-        onReorder: (oldVisIdx, newVisIdx) {
+        onReorderItem: (oldVisIdx, newVisIdx) {
           final oldReal = visibleIndices[oldVisIdx];
-          // Adjust new index for the real list.
           final newReal = newVisIdx < visibleIndices.length
               ? visibleIndices[newVisIdx]
               : doc.lines.length;

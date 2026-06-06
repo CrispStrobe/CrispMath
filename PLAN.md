@@ -39,17 +39,19 @@ with a 2026 input surface."
   streaming SSE, Anthropic + OpenAI support, provider preset chips,
   Explain/Narrate/Translate UI. 29 unit + 8 mock + 4 live tests.
   Live-tested: Scaleway ✅ Mistral ✅ (correct engine syntax).
-- [~] **Inline LaTeX input.** Live preview wired. Needs device testing.
-- [~] **Handwritten math OCR (cross-platform).** Two-tier approach:
+- [~] **Inline LaTeX input.** Feature-complete: controller (105 lines),
+  live-preview widget (127 lines), 12-stage LaTeX→engine converter
+  (331 lines), 59+ unit tests. Wired into Calculator, Graphing,
+  Curve Analysis, Function Editor screens. Needs device testing.
+- [~] **Handwritten math OCR (cross-platform).** Three-tier approach:
   1. **Cloud LLM** (done): CloudLlmOcrProvider sends images to
      Claude/GPT-4V for handwritten + printed recognition. Cross-
      platform, auto-registered as Tier 3 provider.
-  2. **On-device handwritten model** (working end-to-end):
-     `fhswf/TrOCR_Math_handwritten` (ViT-Large + TrOCR-Large, AFL-3.0)
-     converted to GGUF (1.2GB FP16, 355MB Q4_K). Torch-free converter
-     with sinusoidal pos-embed generation, 3D squeeze, conv reshape.
-     Produces correct output (recognized "+" from test cross image).
-     Needs real CROHME test images for accuracy benchmarking.
+  2. **On-device HMER** (DenseNet+GRU, 13 MB Q4_K): registered.
+  3. **On-device BTTR** (DenseNet+Transformer, 4–25 MB): registered.
+  All on-device models use CrispEmbedOcr (same FFI, model-type
+  auto-detected from GGUF). Needs real CROHME test images for
+  accuracy benchmarking.
   **Future providers**: Poe, Langdock, Requesty (keys available).
 - [x] **ggml graph decoder.** Merged to CrispEmbed main. 27x speedup
   via single-thread optimization. Cosine >0.99 on all test images,
@@ -117,7 +119,7 @@ quantizations verified. CI builds all 5 platforms.
 - PDF export + crash reporting + perf instrumentation
 - Web build fix (conditional imports for dart:ffi/dart:io)
 - App icon (∫Σ on indigo)
-- CI green (3358 tests, format + analyze + test)
+- CI green (3389+ tests, format + analyze + test)
 
 ---
 

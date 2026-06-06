@@ -376,7 +376,7 @@ class _Scene3DScreenState extends State<Scene3DScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: objects.length,
       buildDefaultDragHandles: false,
-      onReorder: (oldIndex, newIndex) {
+      onReorderItem: (oldIndex, newIndex) {
         _appState.reorderSceneObjects(oldIndex, newIndex);
       },
       itemBuilder: (ctx, i) {

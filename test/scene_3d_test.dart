@@ -402,9 +402,9 @@ void main() {
       const c =
           PlaneObject(id: 'c', label: 'C', color: 0, a: 0, b: 0, c: 1, d: 3);
       final s = Scene3D.empty().withObject(a).withObject(b).withObject(c);
-      // Move A (index 0) to end. ReorderableListView semantics:
-      // newIndex = objects.length (insert after the removed slot).
-      final moved = s.withReorderedObjects(0, 3);
+      // Move A (index 0) to end. onReorderItem semantics:
+      // remove A → [B,C], insert at index 2 → [B,C,A].
+      final moved = s.withReorderedObjects(0, 2);
       expect(moved.objects.map((o) => o.id).toList(), ['b', 'c', 'a']);
       // Move C back to the front (oldIndex=2, newIndex=0).
       final moved2 = moved.withReorderedObjects(2, 0);
