@@ -11,26 +11,46 @@ from Flutter to C++ and how to interact with Flutter's irksome TextField.
 ## Core Features
 
 - **LaTeX display:** Textbook-style rendering of expressions and history via
-  `flutter_math_fork`.
+  `flutter_math_fork`. Inline LaTeX input with live preview, 12-stage
+  LaTeX→engine converter.
 - **Symbolic CAS engine:** Algebra and calculus operations, not just numerical
   calculations.
   - Solver: `solve(x^2 - 4, x)` returns `x = {-2, 2}`.
-  - Calculus: symbolic differentiation (`d/dx`). Integration and limits are
-    UI-staged but not yet wired through to the native bridge — see Known
-    Limitations.
-  - Algebraic: `factor`, `expand`, `simplify`, `gcd`, `lcm`.
+  - Calculus: symbolic differentiation (`d/dx`), symbolic limits (Gruntz-style
+    growth-rate analysis at infinity).
+  - Algebraic: `factor` (univariate + multivariate via FLINT), `expand`,
+    `simplify` (rational cancellation), `gcd`, `lcm`.
   - Numerics: `factorial`, `fibonacci`, constants `π`, `e`, `γ`.
+  - Matrix: `det`, `inv`, `transpose`, `rref`, `eigenvalues`, `eigenvectors`
+    (pure-Dart QR algorithm with Hessenberg reduction).
 - **Interactive graphing:** Y1..Y10 function slots, pan + pinch-to-zoom, axis
-  labelling, curve sketching (Kurvendiskussion).
+  labelling, curve sketching (Kurvendiskussion), root & extrema annotations,
+  parameter sliders.
+- **Notepad:** Multi-line evaluator with variables, cross-references,
+  subtotals, date/time arithmetic, currency conversion (44 currencies),
+  inline mini-plots, collapsible sections, templates, Markdown/LaTeX export.
+- **Statistics:** Descriptive stats, linear/polynomial/exponential regression,
+  normal/binomial distributions, 9 hypothesis tests (t-test, ANOVA,
+  chi-square, Fisher's exact, sign test, Wilcoxon). Clipboard paste for data.
+- **Unit conversion:** 6 base dimensions + 5 derived SI units (N, J, W, Pa, Hz),
+  composite-dimension arithmetic (`100 m / 10 s → 10 m/s`), SI prefix system.
+- **Constraint solver:** FlatZinc parser + solver (Sudoku, N-queens, boolean
+  SAT). Notepad `fzn:` prefix for inline constraint problems.
+- **CrispAssist:** AI verifier (never solver) via streaming SSE. Anthropic +
+  OpenAI compatible. Explain/Narrate/Translate actions.
+- **Math OCR:** On-device DeiT+TrOCR (printed) + HMER/BTTR (handwritten) via
+  CrispEmbed ggml FFI. Cloud LLM fallback (Claude/GPT-4V). Camera + pen input.
 - **Adaptive layout:**
   - `< 720 px` — bottom navigation bar (mobile).
   - `720–1199 px` — side rail (tablets / narrow desktop windows).
   - `≥ 1200 px` — side rail plus a secondary pane so calculator + graph (or
-    calculator + analysis) can be shown at the same time. Pick the right-pane
-    content from the lower half of the rail.
-- **Localization scaffolding:** English and German strings via a custom
-  `AppLocalizations` (Flutter's i18n delegates are wired up but most strings
-  are still in `EnLocalizations`).
+    calculator + analysis) can be shown at the same time.
+- **Accessibility:** High-contrast theme, configurable text scale (80%–150%),
+  keyboard navigation (Ctrl+1-6), ~225 semantic labels, full keyboard input.
+- **Localization:** English, German, French, Spanish (EN/DE/FR/ES) with
+  complete function reference translations.
+- **Export/Import:** PDF, Markdown, LaTeX, JSON (full state), CSV (history).
+  Shareable URL links (`?expr=...&tab=N`).
 
 ## Architecture
 
@@ -64,9 +84,15 @@ CrispCalc/
 │   ├── engine/
 │   │   ├── app_state.dart              # Singleton: history, variables, fns
 │   │   ├── calculator_engine.dart      # Bridge facade
-│   │   └── analysis_engine.dart        # Curve sketching pipeline
+│   │   ├── analysis_engine.dart        # Curve sketching pipeline
+│   │   ├── eigen.dart                  # Eigenvalue/eigenvector (QR algorithm)
+│   │   ├── matrix_evaluator.dart       # Matrix ops (det/inv/rref/eigen)
+│   │   ├── statistics.dart             # Descriptive stats + regression
+│   │   ├── unit_expression.dart        # Unit arithmetic + SI derived
+│   │   ├── notepad_evaluator.dart      # Multi-line notepad pipeline
+│   │   └── symbolic_limit.dart         # Gruntz-style limit engine
 │   ├── localization/
-│   │   └── app_localizations.dart      # i18n strings (en/de)
+│   │   └── app_localizations.dart      # i18n strings (en/de/fr/es)
 │   ├── screens/
 │   │   ├── calculator_screen.dart      # Calc keypad + display
 │   │   ├── graphing_screen.dart        # Plotter
@@ -100,7 +126,7 @@ CrispCalc/
 
 ```bash
 flutter pub get
-flutter test            # ~2723 unit tests run without the native bridge
+flutter test            # ~3405 unit tests run without the native bridge
 flutter run             # Runs the app; SymEngine bridge required for math
 ```
 
@@ -127,21 +153,27 @@ windows-x64.zip,android.apk}`.
 ## Math OCR (June 2026)
 
 On-device math equation recognition via CrispEmbed's ggml inference:
-- **DeiT encoder + TrOCR decoder** — image → LaTeX in 3.3 seconds (FP16)
-- 4 quantization levels: F32 (112MB), F16 (56MB), Q8_0 (31MB), Q4_K (17MB)
-- Models on HuggingFace: [`cstr/pix2tex-mfr-gguf`](https://huggingface.co/cstr/pix2tex-mfr-gguf)
-- Tap 📷 on Calculator or Notepad → photo → LaTeX → engine syntax
-- No cloud, no Python, no ONNX at runtime — pure C++ via FFI
+- **Printed math:** DeiT encoder + TrOCR decoder — image → LaTeX in 3.3s (FP16)
+  - 4 quantization levels: F32 (112MB), F16 (56MB), Q8_0 (31MB), Q4_K (17MB)
+  - Models on HuggingFace: [`cstr/pix2tex-mfr-gguf`](https://huggingface.co/cstr/pix2tex-mfr-gguf)
+- **Handwritten math:** HMER (DenseNet+GRU, 13MB) and BTTR (DenseNet+Transformer, 4–25MB)
+  - Model type auto-detected from GGUF by unified `CrispEmbedOcr` FFI
+- **Cloud fallback:** CloudLlmOcrProvider (Claude/GPT-4V) for cross-platform coverage
+- **Pen input:** DrawingCanvas on all platforms (mouse/touch/stylus) → OCR pipeline
+- Camera or pen tap on Calculator/Notepad → photo/drawing → LaTeX → engine syntax
+- No cloud required, no Python, no ONNX at runtime — pure C++ via FFI
 
 ## Known limitations
 
-- `limit()` uses a pure-Dart symbolic engine (L'Hôpital + numerical
-  fallback) — no native SymEngine binding yet.
-- Matrix entry via the dedicated editor works; running operations like `det`
-  and `inv` depends on SymEngine being able to parse the `Matrix([...])`
-  syntax we emit.
-- OCR requires the CrispEmbed native library bundled per platform
-  (currently built on `feature/math-ocr-inference` branch).
+- `limit()` uses a pure-Dart symbolic engine (L'Hôpital + Gruntz growth-rate
+  analysis) — no native SymEngine binding yet.
+- Matrix eigenvalues/eigenvectors use a pure-Dart QR algorithm — works well
+  for small matrices (tested up to 4x4), but not optimized for large ones.
+- `simplify()` has no trig identities (sin^2 + cos^2 stays as-is) — this is
+  an upstream SymEngine limitation.
+- OCR requires the CrispEmbed native library bundled per platform.
+- Multivariate `factor()` uses FLINT and is not available in the web build
+  (WASM `fmpz_mpoly_factor` traps).
 
 See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
 recently.

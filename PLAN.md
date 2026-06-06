@@ -105,8 +105,9 @@ quantizations verified. CI builds all 5 platforms.
 |---|---|---|
 | 1. Scaffolding | ✅ | OcrProvider abstraction, postProcessOcrText, latexToEngineSyntax |
 | 2. ML Kit | planned | google_mlkit_text_recognition (Android/iOS), Apache 2.0 |
-| 3. Cloud LLM | planned | User-supplied API key, shares CrispAssist infra |
-| 4. CrispEmbed | ✅ | DeiT+TrOCR GGUF, F16=3.3s, Q4_K=17MB, all correct |
+| 3. Cloud LLM | ✅ | CloudLlmOcrProvider, user-supplied API key, shares CrispAssist infra |
+| 4. CrispEmbed (printed) | ✅ | DeiT+TrOCR GGUF, F16=3.3s, Q4_K=17MB, all correct |
+| 5. CrispEmbed (handwritten) | ✅ | HMER (13MB) + BTTR (4–25MB), auto-detected from GGUF |
 
 **Models on HuggingFace**: `cstr/pix2tex-mfr-gguf` (F32/F16/Q8_0/Q4_K)
 
@@ -129,7 +130,10 @@ quantizations verified. CI builds all 5 platforms.
 - PDF export + crash reporting + perf instrumentation
 - Web build fix (conditional imports for dart:ffi/dart:io)
 - App icon (∫Σ on indigo)
-- CI green (3389+ tests, format + analyze + test)
+- CSV history export + statistics clipboard paste
+- High-contrast theme + configurable text scale
+- Matrix eigenvalues/eigenvectors (pure-Dart QR)
+- CI green (3405+ tests, format + analyze + test)
 
 ---
 
