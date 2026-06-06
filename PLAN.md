@@ -66,7 +66,17 @@ with a 2026 input surface."
 - [x] **Accessibility V2.** Keyboard nav (Ctrl+1-6) + ~225 icon
   semanticLabels across 24 files. Calculator keypad has full keyboard
   input + semantic labels. Notepad has Ctrl+Z/Y + Ctrl+F.
+- [x] **Accessibility V3.** High-contrast theme (thick card borders,
+  ColorScheme.highContrastDark/Light). Configurable text scale
+  (80%–150%) via MediaQuery.textScaler. Both in Settings, persisted.
 - [x] **PDF export.** Multi-page A4 via `package:pdf` + `printing`.
+- [x] **CSV history export.** JSON/CSV format toggle in export dialog.
+- [x] **Statistics clipboard paste.** Paste buttons on Descriptive
+  and Regression data TextFields for quick CSV/clipboard import.
+- [x] **Matrix eigenvalues/eigenvectors.** Pure-Dart QR algorithm
+  with Hessenberg reduction, closed-form 2x2, complex eigenvalue
+  support. Buttons in matrix editor (eigenvalues + eigenvectors).
+  11 tests.
 - [x] **Crash reporting (opt-in).** Ring buffer + email/GitHub issue.
 - [x] **Perf instrumentation.** PerfOverlay (Ctrl+Shift+P toggle).
 - [x] **Symbolic limit.** Tiers 1-4 complete. Gruntz-style growth-rate
