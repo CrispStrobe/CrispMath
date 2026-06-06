@@ -12,6 +12,8 @@
 
 import 'dart:typed_data';
 
+import '../utils/latex_conversion_utils.dart';
+
 /// Result of an OCR operation.
 class OcrResult {
   /// The recognized text / math expression in engine-ready syntax.
@@ -206,16 +208,14 @@ String _replaceFrac(String s) {
   return buf.toString();
 }
 
-/// Convert LaTeX (from pix2tex) to CrispCalc engine syntax.
+/// Normalize OCR LaTeX output into compact form suitable for
+/// [LatexConversionUtils.fromLatex].
 ///
-/// Handles common LaTeX constructs:
-///   \frac{a}{b} → (a)/(b)
-///   x^{n}       → x^n  (or x^(n) for multi-char)
-///   \sqrt{x}    → sqrt(x)
-///   \sin, \cos  → sin, cos
-///   \pi         → pi
-///   \int        → integrate
-///   \lim        → limit
+/// OCR models produce various formats:
+///   - pix2tex: BPE tokens with \u0120 markers
+///   - BTTR/HMER: space-separated (\frac { a } { b })
+/// This normalizes to compact LaTeX (\frac{a}{b}) then applies
+/// additional fixes for tokens that fromLatex doesn't handle.
 String latexToEngineSyntax(String latex) {
   var s = latex.trim();
 
@@ -235,178 +235,106 @@ String latexToEngineSyntax(String latex) {
   // "a}+{b" is fine, but "a}b" needs no space (it's inside braces).
   // The main case: "}{" between frac groups must stay collapsed.
 
-  // --- Structural commands (brace-balanced matching for nesting) ---
+  // --- OCR-specific preprocessing (not needed for keypad input) ---
 
-  // \frac{a}{b} → (a)/(b)
-  s = _replaceFrac(s);
-
-  // \sqrt{x} → sqrt(x), handles nested braces
-  s = _replaceCmd(s, 'sqrt', (c) => 'sqrt($c)');
-
-  // \mathbf{X} → X, \mathrm{X} → X, etc. (formatting → strip)
+  // Strip formatting wrappers (brace-balanced for nesting)
   for (final cmd in [
     'mathbf', 'mathrm', 'mathcal', 'mathbb', 'mathit', 'mathsf',
     'boldsymbol', 'text', 'textbf', 'textit', 'textrm',
-    'operatorname', 'hat', 'bar', 'tilde', 'vec', 'dot', 'ddot',
-    'overline', 'underline', 'overbrace', 'underbrace', 'fbox',
+    'operatorname', 'fbox',
   ]) {
     s = _replaceCmd(s, cmd, (c) => c);
   }
 
-  // \sqrt[n]{x} → x^(1/n) — regex ok here since [n] is simple
-  s = s.replaceAllMapped(
-    RegExp(r'\\sqrt\[(\d+)\]'),
-    (m) => '^(1/${m[1]}) * ',  // approximate: nth root
-  );
-
-  // x^{expr} → x^(expr) for multi-char, x^n for single-char.
-  s = s.replaceAllMapped(
-    RegExp(r'\^\{([^}]+)\}'),
-    (m) {
-      final exp = m[1]!;
-      return exp.length == 1 ? '^$exp' : '^($exp)';
-    },
-  );
-
-  // _{expr} → _expr (subscripts, used as variable names).
-  s = s.replaceAllMapped(
-    RegExp(r'_\{([^}]+)\}'),
-    (m) => '_${m[1]}',
-  );
-
-  // --- Strip environments (array, matrix, etc. — not evaluable) ---
+  // Strip environments (array, matrix — not evaluable as 1D expressions)
   s = s.replaceAll(RegExp(r'\\begin\{[^}]*\}'), '');
   s = s.replaceAll(RegExp(r'\\end\{[^}]*\}'), '');
-  // LaTeX newlines (\\) inside arrays — must use actual double-backslash
-  s = s.replaceAll('\\\\', ' ');
-
-  // --- Named functions ---
-  for (final fn in [
-    'sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan',
-    'sinh', 'cosh', 'tanh', 'ln', 'log', 'exp',
-    'lim', 'max', 'min', 'det', 'gcd', 'mod',
-  ]) {
-    s = s.replaceAll('\\$fn', fn);
-  }
-
-  // --- Symbols ---
-  // Greek lowercase
-  for (final g in [
-    'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'varepsilon',
-    'zeta', 'eta', 'theta', 'vartheta', 'iota', 'kappa',
-    'lambda', 'mu', 'nu', 'xi', 'pi', 'varpi',
-    'rho', 'varrho', 'sigma', 'varsigma', 'tau', 'upsilon',
-    'phi', 'varphi', 'chi', 'psi', 'omega',
-  ]) {
-    s = s.replaceAll('\\$g', g);
-  }
-  // Greek uppercase
-  for (final g in [
-    'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi',
-    'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega',
-  ]) {
-    s = s.replaceAll('\\$g', g);
-  }
-
-  // Operators and relations
-  s = s.replaceAll(r'\cdot', '*');
-  s = s.replaceAll(r'\times', '*');
-  s = s.replaceAll(r'\div', '/');
-  s = s.replaceAll(r'\pm', '+/-');
-  s = s.replaceAll(r'\mp', '-/+');
-  s = s.replaceAll(r'\leq', '<=');
-  s = s.replaceAll(r'\geq', '>=');
-  s = s.replaceAll(r'\neq', '!=');
-  s = s.replaceAll(r'\approx', '~=');
-  s = s.replaceAll(r'\equiv', '==');
-  s = s.replaceAll(r'\infty', 'oo');
-  s = s.replaceAll(r'\int', 'integrate');
-  s = s.replaceAll(r'\sum', 'sum');
-  s = s.replaceAll(r'\prod', 'product');
-  s = s.replaceAll(r'\partial', 'd');
-  s = s.replaceAll(r'\nabla', 'nabla');
-
-  // Delimiters
-  s = s.replaceAll(r'\left', '');
-  s = s.replaceAll(r'\right', '');
-  s = s.replaceAll(r'\lfloor', 'floor(');
-  s = s.replaceAll(r'\rfloor', ')');
-  s = s.replaceAll(r'\lceil', 'ceil(');
-  s = s.replaceAll(r'\rceil', ')');
-  s = s.replaceAll(r'\langle', '(');
-  s = s.replaceAll(r'\rangle', ')');
-  s = s.replaceAll(r'\lvert', 'abs(');
-  s = s.replaceAll(r'\rvert', ')');
-  s = s.replaceAll(r'\mid', '|');
-  s = s.replaceAll(r'\|', '||');
-
-  // Arrows → strip (not evaluable)
-  for (final a in [
-    'rightarrow', 'leftarrow', 'Rightarrow', 'Leftarrow',
-    'leftrightarrow', 'Leftrightarrow', 'longrightarrow',
-    'mapsto', 'to', 'gets', 'uparrow', 'downarrow',
-    'tharpoondown', 'rightharpoonup',
-  ]) {
-    s = s.replaceAll('\\$a', '->');
-  }
-
-  // Dots
-  s = s.replaceAll(r'\ldots', '...');
-  s = s.replaceAll(r'\cdots', '...');
-  s = s.replaceAll(r'\vdots', '...');
-  s = s.replaceAll(r'\ddots', '...');
-  s = s.replaceAll(r'\dots', '...');
-
-  // Misc symbols
-  s = s.replaceAll(r'\prime', "'");
-  s = s.replaceAll(r'\forall', '');
-  s = s.replaceAll(r'\exists', '');
-  s = s.replaceAll(r'\in', ' in ');
-  s = s.replaceAll(r'\notin', ' not in ');
-  s = s.replaceAll(r'\subset', ' subset ');
-  s = s.replaceAll(r'\cup', ' union ');
-  s = s.replaceAll(r'\cap', ' intersect ');
-  s = s.replaceAll(r'\emptyset', '{}');
-  s = s.replaceAll(r'\perp', '_perp');
-  s = s.replaceAll(r'\parallel', '_parallel');
-  s = s.replaceAll(r'\circ', '*');
-  s = s.replaceAll(r'\star', '*');
-  s = s.replaceAll(r'\dagger', '');
-  s = s.replaceAll(r'\ell', 'l');
-  s = s.replaceAll(r'\hbar', 'hbar');
-  s = s.replaceAll(r'\imath', 'i');
-  s = s.replaceAll(r'\jmath', 'j');
+  s = s.replaceAll('\\\\', ' '); // LaTeX newlines
 
   // Formatting/spacing → strip
   for (final cmd in [
     'qquad', 'quad', 'hspace', 'vspace', 'hfill',
     'displaystyle', 'textstyle', 'scriptstyle', 'scriptscriptstyle',
-    'limits', 'nolimits', 'hline', 'phantom', 'hphantom', 'vphantom',
+    'nolimits', 'hline', 'phantom', 'hphantom', 'vphantom',
     'color', 'textcolor', 'boxed', 'cancel', 'bcancel', 'xcancel',
-    'sp', // superscript alias
+    'sp',
   ]) {
     s = s.replaceAll('\\$cmd', '');
   }
 
   // Decoration → strip
   for (final cmd in [
-    'bullet', 'bigstar', 'star', 'diamond', 'clubsuit',
-    'heartsuit', 'spadesuit', 'diamondsuit', 'triangle',
-    'square', 'blacksquare', 'checkmark',
+    'bullet', 'bigstar', 'diamond', 'clubsuit', 'heartsuit',
+    'spadesuit', 'diamondsuit', 'triangle', 'square',
+    'blacksquare', 'checkmark', 'dagger',
   ]) {
     s = s.replaceAll('\\$cmd', '');
   }
 
-  // Catch-all: strip any remaining \command that we missed
-  // (better to lose formatting than to crash the engine)
+  // Dots (OCR-specific variants)
+  s = s.replaceAll(r'\vdots', '...');
+  s = s.replaceAll(r'\ddots', '...');
+
+  // Arrows → strip
+  for (final a in [
+    'rightarrow', 'leftarrow', 'Rightarrow', 'Leftarrow',
+    'leftrightarrow', 'Leftrightarrow', 'longrightarrow',
+    'mapsto', 'gets', 'uparrow', 'downarrow',
+    'tharpoondown', 'rightharpoonup',
+  ]) {
+    s = s.replaceAll('\\$a', ' -> ');
+  }
+
+  // Extra delimiters not in fromLatex
+  s = s.replaceAll(r'\lfloor', '(');
+  s = s.replaceAll(r'\rfloor', ')');
+  s = s.replaceAll(r'\lceil', '(');
+  s = s.replaceAll(r'\rceil', ')');
+  s = s.replaceAll(r'\langle', '(');
+  s = s.replaceAll(r'\rangle', ')');
+  s = s.replaceAll(r'\mid', '|');
+
+  // Extra symbols not in fromLatex
+  s = s.replaceAll(r'\prime', "'");
+  s = s.replaceAll(r'\forall', '');
+  s = s.replaceAll(r'\exists', '');
+  s = s.replaceAll(r'\notin', ' not in ');
+  s = s.replaceAll(r'\subset', ' subset ');
+  s = s.replaceAll(r'\cup', ' union ');
+  s = s.replaceAll(r'\cap', ' intersect ');
+  s = s.replaceAll(r'\perp', '_perp');
+  s = s.replaceAll(r'\parallel', '_parallel');
+  s = s.replaceAll(r'\ell', 'l');
+  s = s.replaceAll(r'\hbar', 'hbar');
+  s = s.replaceAll(r'\imath', 'i');
+  s = s.replaceAll(r'\jmath', 'j');
+  s = s.replaceAll(r'\partial', 'd');
+
+  // Extra Greek not in fromLatex
+  for (final g in [
+    'epsilon', 'varepsilon', 'zeta', 'eta', 'vartheta',
+    'iota', 'kappa', 'nu', 'xi', 'varpi', 'varrho',
+    'varsigma', 'tau', 'upsilon', 'varphi', 'chi', 'psi',
+    'Xi',
+  ]) {
+    s = s.replaceAll('\\$g', g);
+  }
+
+  // Whitespace cleanup before passing to fromLatex
+  s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+  // --- Delegate to the comprehensive keypad converter ---
+  // fromLatex handles: \frac, \sqrt, \int, \sum, \prod, \lim,
+  // derivatives, trig/hyp/log, Greek, operators, |abs|, etc.
+  s = LatexConversionUtils.fromLatex(s);
+
+  // --- Catch-all: strip any remaining \commands ---
   s = s.replaceAll(RegExp(r'\\[a-zA-Z]+'), '');
 
-  // Braces → parens.
+  // Braces → parens (any remaining after fromLatex)
   s = s.replaceAll('{', '(');
   s = s.replaceAll('}', ')');
 
-  // Whitespace cleanup.
   s = s.replaceAll(RegExp(r'\s+'), ' ');
-
   return s.trim();
 }
