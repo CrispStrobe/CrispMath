@@ -32,8 +32,8 @@
 // so they're deferred. Round 98 fills the matrix category:
 // `Matrix(...)` literal syntax, `det`, `inv`, `transpose`,
 // `rref`, plus a combined matrix-arithmetic entry. Eigenvalues
-// are NOT shipped (PLAN's "if shipped" carve-out) and are
-// deferred until a bridge binding exists. Round 99 fills the
+// and eigenvectors added June 2026 (pure-Dart QR algorithm,
+// no bridge binding needed). Round 99 fills the
 // statistics / constraints / sudoku categories with 19 module-
 // surface entries — these aren't directly callable from the
 // calculator (the stats tests live in the Statistics module
@@ -1243,7 +1243,7 @@ class FunctionReferences {
               'will fail for `det` / `inv`, which require square input.',
         ),
       ],
-      seeAlso: ['det', 'inv', 'transpose', 'rref'],
+      seeAlso: ['det', 'inv', 'transpose', 'rref', 'eigenvalues'],
     ),
     FunctionRef(
       id: 'det',
@@ -1404,6 +1404,56 @@ class FunctionReferences {
         ),
       ],
       seeAlso: ['det', 'inv', 'matrix_literal'],
+    ),
+    FunctionRef(
+      id: 'eigenvalues',
+      category: FunctionRefCategory.matrix,
+      signature: 'eigenvalues(Matrix(...))',
+      shortDescription:
+          'Eigenvalues of a square numeric matrix via pure-Dart QR '
+          'algorithm. Returns the set of eigenvalues, including complex '
+          'conjugate pairs for non-symmetric matrices.',
+      examples: [
+        FunctionRefExample(
+          input: 'eigenvalues(Matrix([[2, 1], [1, 2]]))',
+          expected: '{3, 1}',
+          hint: 'Symmetric 2×2 — closed-form via the characteristic '
+              'polynomial. Eigenvalues are always real for symmetric '
+              'matrices.',
+        ),
+        FunctionRefExample(
+          input: 'eigenvalues(Matrix([[1, 0], [0, 1]]))',
+          expected: '{1, 1}',
+          hint: 'The identity matrix has all eigenvalues equal to 1.',
+        ),
+        FunctionRefExample(
+          input: 'eigenvalues(Matrix([[0, -1], [1, 0]]))',
+          expected: '{0 + 1i, 0 - 1i}',
+          hint: 'Rotation matrix — eigenvalues are complex conjugates '
+              '±i. The QR algorithm handles real Schur form 2×2 blocks.',
+        ),
+      ],
+      seeAlso: ['eigenvectors', 'det', 'inv', 'matrix_literal'],
+    ),
+    FunctionRef(
+      id: 'eigenvectors',
+      category: FunctionRefCategory.matrix,
+      signature: 'eigenvectors(Matrix(...))',
+      shortDescription:
+          'Eigenvalues and eigenvectors of a square numeric matrix. '
+          'Returns both eigenvalues and their corresponding eigenvectors '
+          '(normalised). Available for 2×2 matrices with real eigenvalues.',
+      examples: [
+        FunctionRefExample(
+          input: 'eigenvectors(Matrix([[2, 1], [1, 2]]))',
+          expected: 'Eigenvalues: {3, 1}\nEigenvectors: ...',
+          hint: 'For 2×2 matrices with real eigenvalues, eigenvectors '
+              'are computed via null-space of (A − λI). For larger '
+              'matrices or complex eigenvalues, only eigenvalues are '
+              'returned.',
+        ),
+      ],
+      seeAlso: ['eigenvalues', 'det', 'inv', 'matrix_literal'],
     ),
     // === Statistics ==========================================================
     // All stats entries are module-surface (runnable: false). The

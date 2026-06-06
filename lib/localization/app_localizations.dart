@@ -4192,6 +4192,12 @@ class DeLocalizations implements AppLocalizations {
       case 'matrix_arithmetic':
         return 'Elementweise Addition/Subtraktion und Matrizenmultiplikation '
             'auf `Matrix(...)`-Literalen.';
+      case 'eigenvalues':
+        return 'Eigenwerte einer quadratischen numerischen Matrix über den '
+            'QR-Algorithmus. Gibt auch komplexe Eigenwerte zurück.';
+      case 'eigenvectors':
+        return 'Eigenwerte und Eigenvektoren einer quadratischen numerischen '
+            'Matrix. Eigenvektoren für 2×2-Matrizen mit reellen Eigenwerten.';
       // --- Statistik ---
       case 'mean':
         return 'Arithmetisches Mittel einer Stichprobe als Zahlenliste. Im '
@@ -4730,6 +4736,19 @@ class DeLocalizations implements AppLocalizations {
             'der Einheitsmatrix ist eine Funktionsprobe.',
         'Die Subtraktion ist elementweise; eine Dimensionsabweichung führt '
             'sauber zum Fehler `Error: matrix - failed: …`.',
+      ],
+      'eigenvalues': [
+        'Symmetrische 2×2-Matrix — geschlossene Lösung über das '
+            'charakteristische Polynom. Eigenwerte sind für symmetrische '
+            'Matrizen stets reell.',
+        'Die Einheitsmatrix hat alle Eigenwerte gleich 1.',
+        'Rotationsmatrix — die Eigenwerte sind konjugiert-komplexe Paare '
+            '±i. Der QR-Algorithmus behandelt reelle 2×2-Schur-Blöcke.',
+      ],
+      'eigenvectors': [
+        'Für 2×2-Matrizen mit reellen Eigenwerten werden Eigenvektoren '
+            'über den Nullraum von (A − λI) berechnet. Für größere Matrizen '
+            'oder komplexe Eigenwerte werden nur Eigenwerte zurückgegeben.',
       ],
       // --- Statistik ---
       'mean': [
@@ -7120,6 +7139,13 @@ class FrLocalizations implements AppLocalizations {
       case 'matrix_arithmetic':
         return "Addition/soustraction terme à terme et multiplication "
             "matricielle sur des littéraux `Matrix(...)`.";
+      case 'eigenvalues':
+        return "Valeurs propres d'une matrice carrée numérique via "
+            "l'algorithme QR. Renvoie aussi les valeurs propres complexes.";
+      case 'eigenvectors':
+        return "Valeurs propres et vecteurs propres d'une matrice carrée "
+            "numérique. Vecteurs propres pour les matrices 2×2 à valeurs "
+            "propres réelles.";
       case 'mean':
         return "Moyenne arithmétique d'un échantillon sous forme de liste de "
             "nombres. Proposée dans l'onglet « Statistiques descriptives » du "
@@ -7650,6 +7676,20 @@ class FrLocalizations implements AppLocalizations {
           "l'identité est un test de bon fonctionnement.",
       "La soustraction est terme à terme ; une discordance de dimensions "
           "échoue proprement avec `Error: matrix - failed: …`.",
+    ],
+    'eigenvalues': [
+      "Matrice 2×2 symétrique — solution en forme close via le polynôme "
+          "caractéristique. Les valeurs propres sont toujours réelles pour "
+          "les matrices symétriques.",
+      "La matrice identité a toutes ses valeurs propres égales à 1.",
+      "Matrice de rotation — les valeurs propres sont des paires conjuguées "
+          "complexes ±i. L'algorithme QR traite les blocs 2×2 de Schur réels.",
+    ],
+    'eigenvectors': [
+      "Pour les matrices 2×2 à valeurs propres réelles, les vecteurs propres "
+          "sont calculés via le noyau de (A − λI). Pour les matrices plus "
+          "grandes ou les valeurs propres complexes, seules les valeurs propres "
+          "sont renvoyées.",
     ],
     'mean': [
       "Dans CrispCalc, `mean` est calculée par `DescriptiveStats.mean` (voir "
@@ -10022,6 +10062,12 @@ class EsLocalizations implements AppLocalizations {
       case 'matrix_arithmetic':
         return "Suma/resta elemento a elemento y multiplicación de matrices "
             "sobre literales `Matrix(...)`.";
+      case 'eigenvalues':
+        return "Valores propios de una matriz cuadrada numérica mediante el "
+            "algoritmo QR. Devuelve también valores propios complejos.";
+      case 'eigenvectors':
+        return "Valores y vectores propios de una matriz cuadrada numérica. "
+            "Vectores propios para matrices 2×2 con valores propios reales.";
       case 'mean':
         return "Media aritmética de una muestra como lista de números. "
             "Disponible en la pestaña «Estadística descriptiva» del módulo de "
@@ -10545,6 +10591,20 @@ class EsLocalizations implements AppLocalizations {
           "derecha por la identidad es una comprobación de funcionamiento.",
       "La resta es elemento a elemento; una discrepancia de dimensiones falla "
           "limpiamente con `Error: matrix - failed: …`.",
+    ],
+    'eigenvalues': [
+      "Matriz 2×2 simétrica — solución en forma cerrada por el polinomio "
+          "característico. Los valores propios siempre son reales para "
+          "matrices simétricas.",
+      "La matriz identidad tiene todos los valores propios iguales a 1.",
+      "Matriz de rotación — los valores propios son pares conjugados "
+          "complejos ±i. El algoritmo QR maneja bloques 2×2 de Schur reales.",
+    ],
+    'eigenvectors': [
+      "Para matrices 2×2 con valores propios reales, los vectores propios "
+          "se calculan mediante el espacio nulo de (A − λI). Para matrices "
+          "mayores o valores propios complejos, solo se devuelven los valores "
+          "propios.",
     ],
     'mean': [
       "En CrispCalc, `mean` la calcula `DescriptiveStats.mean` (véase "
