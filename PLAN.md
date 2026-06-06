@@ -133,7 +133,9 @@ quantizations verified. CI builds all 5 platforms.
 - CSV history export + statistics clipboard paste
 - High-contrast theme + configurable text scale
 - Matrix eigenvalues/eigenvectors (pure-Dart QR)
-- CI green (3405+ tests, format + analyze + test)
+- Unit catalog + derived unit tests (20 tests)
+- Eigenvalues/eigenvectors in function reference (4 locales)
+- CI green (3441+ tests, format + analyze + test)
 
 ---
 
