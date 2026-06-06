@@ -2,6 +2,39 @@
 
 Completed work, newest first.
 
+## 2026-06-06 — Code quality + 5 new features + zero-lint
+
+**9 commits, 16 new tests, analyzer: zero issues.**
+
+### Code quality
+- Fixed 6 analyzer errors: OCR providers referenced non-existent
+  `CrispEmbedHmerOcr`/`CrispEmbedBttrOcr` → unified to `CrispEmbedOcr`
+  (C++ auto-detects model type from GGUF).
+- Migrated deprecated `onReorder` → `onReorderItem` (Flutter 3.41+) in
+  notepad + scene_3d, removed old newIndex-1 adjustment.
+- Fixed 75 info-level lints across 20 files: const constructors,
+  curly braces, context.mounted, string interpolation, etc.
+- `dart analyze` now reports: **No issues found!**
+
+### 5 new features (750 lines)
+1. **CSV history export** — JSON/CSV toggle in export dialog with proper
+   escaping, copy to clipboard.
+2. **Statistics clipboard paste** — paste-from-clipboard buttons on
+   Descriptive and Regression data TextFields.
+3. **Text size scaling** — user-configurable 80%–150% via
+   MediaQuery.textScaler, slider in Settings, persisted.
+4. **High-contrast accessibility theme** — ColorScheme.highContrastDark/
+   Light with thick card borders, toggle in Settings.
+5. **Matrix eigenvalues/eigenvectors** — pure-Dart QR algorithm (287 lines)
+   with Hessenberg reduction, closed-form 2x2, complex eigenvalue support.
+   Buttons in matrix editor UI. 11 tests.
+
+### Documentation
+- README rewritten: Core Features expanded from 6 to 17 modules, project
+  layout updated, Math OCR section updated (printed + handwritten + cloud),
+  Known Limitations refreshed, test count 3405+.
+- PLAN.md: OCR tier table updated, completed items list expanded.
+
 ## 2026-06-02/03 — Notepad V2 + OCR + Step V5 (mega-session)
 
 **288+ new tests, all green. 15 commits to CrispCalc main.**
