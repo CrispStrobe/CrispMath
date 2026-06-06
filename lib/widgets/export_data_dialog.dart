@@ -1,12 +1,7 @@
 // lib/widgets/export_data_dialog.dart
 //
 // Settings → Export data. Shows the full AppState as pretty-printed
-// JSON in a scrollable read-only text area with a single Copy
-// button. Cross-platform without any new dependency — every Flutter
-// platform supports the built-in Clipboard.setData. The user can
-// then paste into any file / Notes app / cloud doc they like.
-//
-// Re-importing this blob is V2; for V1 the export is the backup.
+// JSON or calculation history as CSV, with a Copy button.
 
 import 'dart:convert';
 
@@ -16,14 +11,36 @@ import 'package:flutter/services.dart';
 import '../engine/app_state.dart';
 import '../localization/app_localizations.dart';
 
-class ExportDataDialog extends StatelessWidget {
+enum _ExportFormat { json, csv }
+
+class ExportDataDialog extends StatefulWidget {
   const ExportDataDialog({super.key});
+
+  @override
+  State<ExportDataDialog> createState() => _ExportDataDialogState();
+}
+
+class _ExportDataDialogState extends State<ExportDataDialog> {
+  _ExportFormat _format = _ExportFormat.json;
+
+  String _buildJson() =>
+      const JsonEncoder.withIndent('  ').convert(AppState().exportToJson());
+
+  String _buildCsv() {
+    final buf = StringBuffer('Expression,Result,Type\n');
+    for (final e in AppState().history) {
+      buf.writeln(
+          '${_csvEscape(e.expression)},${_csvEscape(e.result)},${e.type.name}');
+    }
+    return buf.toString();
+  }
+
+  static String _csvEscape(String s) => '"${s.replaceAll('"', '""')}"';
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final json =
-        const JsonEncoder.withIndent('  ').convert(AppState().exportToJson());
+    final content = _format == _ExportFormat.json ? _buildJson() : _buildCsv();
 
     return AlertDialog(
       title: Text(t.exportDataTitle),
@@ -36,6 +53,17 @@ class ExportDataDialog extends StatelessWidget {
             Text(t.exportDataSubtitle,
                 style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 8),
+            SegmentedButton<_ExportFormat>(
+              segments: const [
+                ButtonSegment(
+                    value: _ExportFormat.json, label: Text('JSON')),
+                ButtonSegment(
+                    value: _ExportFormat.csv, label: Text('CSV')),
+              ],
+              selected: {_format},
+              onSelectionChanged: (s) => setState(() => _format = s.first),
+            ),
+            const SizedBox(height: 8),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.all(8),
@@ -45,7 +73,7 @@ class ExportDataDialog extends StatelessWidget {
                 ),
                 child: SingleChildScrollView(
                   child: SelectableText(
-                    json,
+                    content,
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 11,
@@ -66,7 +94,7 @@ class ExportDataDialog extends StatelessWidget {
           icon: const Icon(Icons.copy, size: 16, semanticLabel: 'Copy'),
           label: Text(t.exportDataCopy),
           onPressed: () async {
-            await Clipboard.setData(ClipboardData(text: json));
+            await Clipboard.setData(ClipboardData(text: content));
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

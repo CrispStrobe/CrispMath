@@ -425,6 +425,11 @@ abstract class AppLocalizations {
   String get settingsHelp;
   String get settingsHelpSubtitle;
 
+  // -- High contrast + text scale --
+  String get settingsHighContrast;
+  String get settingsHighContrastSubtitle;
+  String get settingsTextScale;
+
   // -- Exact integer mode (arbitrary-precision results) --
   String get settingsExactIntegerMode;
   String get settingsExactIntegerModeSubtitle;
@@ -1559,6 +1564,14 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get settingsHelpSubtitle =>
       'Supported functions, matrix syntax, and step-by-step triggers.';
+
+  @override
+  String get settingsHighContrast => 'High contrast';
+  @override
+  String get settingsHighContrastSubtitle =>
+      'Stronger colors and borders for accessibility.';
+  @override
+  String get settingsTextScale => 'Text size';
 
   @override
   String get settingsExactIntegerMode => 'Exact integer mode';
@@ -3238,6 +3251,14 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get settingsHelpSubtitle =>
       'Unterstützte Funktionen, Matrix-Syntax und Schritt-für-Schritt-Auslöser.';
+
+  @override
+  String get settingsHighContrast => 'Hoher Kontrast';
+  @override
+  String get settingsHighContrastSubtitle =>
+      'Stärkere Farben und Rahmen für bessere Lesbarkeit.';
+  @override
+  String get settingsTextScale => 'Textgröße';
 
   @override
   String get settingsExactIntegerMode => 'Exakter Ganzzahl-Modus';
@@ -6151,6 +6172,14 @@ class FrLocalizations implements AppLocalizations {
       'Fonctions prises en charge, syntaxe matricielle et déclencheurs pas-à-pas.';
 
   @override
+  String get settingsHighContrast => 'Contraste élevé';
+  @override
+  String get settingsHighContrastSubtitle =>
+      'Couleurs et bordures plus fortes pour l\'accessibilité.';
+  @override
+  String get settingsTextScale => 'Taille du texte';
+
+  @override
   String get settingsExactIntegerMode => 'Mode entier exact';
   @override
   String get settingsExactIntegerModeSubtitle =>
@@ -9050,6 +9079,14 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get settingsHelpSubtitle =>
       'Funciones soportadas, sintaxis de matrices y disparadores paso a paso.';
+
+  @override
+  String get settingsHighContrast => 'Alto contraste';
+  @override
+  String get settingsHighContrastSubtitle =>
+      'Colores y bordes más fuertes para accesibilidad.';
+  @override
+  String get settingsTextScale => 'Tamaño del texto';
 
   @override
   String get settingsExactIntegerMode => 'Modo entero exacto';

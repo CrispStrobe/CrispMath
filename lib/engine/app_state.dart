@@ -121,6 +121,8 @@ class AppState extends ChangeNotifier {
   static const _kAutoBindSolve = 'crisp.autoBindSolve';
   static const _kUserFunctions = 'crisp.userFunctions';
   static const _kNotepadDocs = 'crisp.notepadDocs';
+  static const _kTextScale = 'crisp.textScale';
+  static const _kHighContrast = 'crisp.highContrast';
   static const _kCurrentNotepadDoc = 'crisp.currentNotepadDoc';
   static const _kScene3D = 'crisp.scene3d';
   static const _kCrispAssistApiUrl = 'crisp.copilot.apiUrl';
@@ -154,6 +156,12 @@ class AppState extends ChangeNotifier {
 
   ThemeMode _themeMode = ThemeMode.dark;
   ThemeMode get themeMode => _themeMode;
+
+  double _textScale = 1.0;
+  double get textScale => _textScale;
+
+  bool _highContrast = false;
+  bool get highContrast => _highContrast;
 
   /// When true (default), integer-shaped engine results like `100!` are
   /// kept verbatim — full digit string preserved through the display
@@ -261,6 +269,10 @@ class AppState extends ChangeNotifier {
           orElse: () => ThemeMode.dark,
         );
       }
+      final textScale = _prefs!.getDouble(_kTextScale);
+      if (textScale != null) _textScale = textScale.clamp(0.8, 1.5);
+      final hc = _prefs!.getBool(_kHighContrast);
+      if (hc != null) _highContrast = hc;
       final exactMode = _prefs!.getBool(_kExactIntegerMode);
       if (exactMode != null) _exactIntegerMode = exactMode;
       final onboarded = _prefs!.getBool(_kOnboardingDismissed);
@@ -458,6 +470,21 @@ class AppState extends ChangeNotifier {
     if (_themeMode == mode) return;
     _themeMode = mode;
     _prefs?.setString(_kThemeMode, mode.name);
+    notifyListeners();
+  }
+
+  void setTextScale(double scale) {
+    scale = scale.clamp(0.8, 1.5);
+    if (_textScale == scale) return;
+    _textScale = scale;
+    _prefs?.setDouble(_kTextScale, scale);
+    notifyListeners();
+  }
+
+  void setHighContrast(bool enabled) {
+    if (_highContrast == enabled) return;
+    _highContrast = enabled;
+    _prefs?.setBool(_kHighContrast, enabled);
     notifyListeners();
   }
 
@@ -1029,6 +1056,14 @@ class AppState extends ChangeNotifier {
         imported.add('theme');
       }
     }
+    if (json['textScale'] is num) {
+      setTextScale((json['textScale'] as num).toDouble());
+      imported.add('text scale');
+    }
+    if (json['highContrast'] is bool) {
+      setHighContrast(json['highContrast'] as bool);
+      imported.add('high contrast');
+    }
     if (json['exactIntegerMode'] is bool) {
       setExactIntegerMode(json['exactIntegerMode'] as bool);
       imported.add('exact integer mode');
@@ -1133,6 +1168,8 @@ class AppState extends ChangeNotifier {
       'locale': _locale.languageCode,
       'numberFormat': _numberFormat.name,
       'themeMode': _themeMode.name,
+      'textScale': _textScale,
+      'highContrast': _highContrast,
       'exactIntegerMode': _exactIntegerMode,
       'userFunctions':
           userFunctions.values.map((f) => f.toJson()).toList(growable: false),

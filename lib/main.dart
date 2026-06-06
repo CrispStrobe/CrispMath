@@ -118,8 +118,22 @@ class CrispCalcApp extends StatelessWidget {
             Locale('es', ''),
           ],
           themeMode: appState.themeMode,
-          theme: _buildLightTheme(),
-          darkTheme: _buildDarkTheme(),
+          theme: appState.highContrast
+              ? _buildHighContrastLightTheme()
+              : _buildLightTheme(),
+          darkTheme: appState.highContrast
+              ? _buildHighContrastDarkTheme()
+              : _buildDarkTheme(),
+          builder: (context, child) {
+            final scale = appState.textScale;
+            if (scale == 1.0) return child!;
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(scale),
+              ),
+              child: child!,
+            );
+          },
           navigatorObservers: [appRouteObserver],
           home: const MainScreen(),
         );
@@ -155,6 +169,44 @@ ThemeData _buildLightTheme() {
     colorScheme: const ColorScheme.light().copyWith(
       primary: Colors.blue,
       secondary: Colors.cyan,
+    ),
+  );
+}
+
+ThemeData _buildHighContrastDarkTheme() {
+  return ThemeData.dark().copyWith(
+    scaffoldBackgroundColor: Colors.black,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      elevation: 0,
+    ),
+    colorScheme: const ColorScheme.highContrastDark(),
+    dividerColor: Colors.white54,
+    cardTheme: CardThemeData(
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: Colors.white70, width: 2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+  );
+}
+
+ThemeData _buildHighContrastLightTheme() {
+  return ThemeData.light().copyWith(
+    scaffoldBackgroundColor: Colors.white,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+      elevation: 0,
+    ),
+    colorScheme: const ColorScheme.highContrastLight(),
+    dividerColor: Colors.black54,
+    cardTheme: CardThemeData(
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: Colors.black87, width: 2),
+        borderRadius: BorderRadius.circular(8),
+      ),
     ),
   );
 }
@@ -529,6 +581,33 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: SwitchListTile(
+                  secondary: const Icon(Icons.contrast,
+                      semanticLabel: 'High contrast'),
+                  title: Text(t.settingsHighContrast),
+                  subtitle: Text(t.settingsHighContrastSubtitle),
+                  value: appState.highContrast,
+                  onChanged: appState.setHighContrast,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.text_fields,
+                      semanticLabel: 'Text scale'),
+                  title: Text(t.settingsTextScale),
+                  subtitle: Slider(
+                    value: appState.textScale,
+                    min: 0.8,
+                    max: 1.5,
+                    divisions: 7,
+                    label: '${(appState.textScale * 100).round()}%',
+                    onChanged: appState.setTextScale,
                   ),
                 ),
               ),

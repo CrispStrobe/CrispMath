@@ -206,6 +206,15 @@ class _MatrixEditorScreenState extends State<MatrixEditorScreen> {
         ElevatedButton(
             onPressed: () => performOperationAndReturn('transpose'),
             child: const Text('transpose(A)')),
+        ElevatedButton(
+            onPressed: () => performOperationAndReturn('rref'),
+            child: const Text('rref(A)')),
+        ElevatedButton(
+            onPressed: () => performOperationAndReturn('eigenvalues'),
+            child: const Text('eigenvalues(A)')),
+        ElevatedButton(
+            onPressed: () => performOperationAndReturn('eigenvectors'),
+            child: const Text('eigenvectors(A)')),
       ],
     );
   }

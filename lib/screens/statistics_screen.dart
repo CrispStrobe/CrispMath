@@ -9,6 +9,7 @@
 // lib/engine/distributions.dart — this file is just the chrome.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../engine/app_state.dart';
 import '../engine/distributions.dart';
@@ -179,10 +180,21 @@ class _DescriptiveTabState extends State<_DescriptiveTab> {
             controller: _input,
             maxLines: 4,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Data (comma, space, or newline-separated)',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               hintText: '1, 2, 3, 4, 5',
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.paste, semanticLabel: 'Paste'),
+                tooltip: 'Paste from clipboard',
+                onPressed: () async {
+                  final data = await Clipboard.getData('text/plain');
+                  if (data?.text != null) {
+                    _input.text = data!.text!;
+                    setState(() {});
+                  }
+                },
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -442,18 +454,40 @@ class _RegressionTabState extends State<_RegressionTab> {
           TextField(
             controller: _xs,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'x values',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.paste, semanticLabel: 'Paste'),
+                tooltip: 'Paste from clipboard',
+                onPressed: () async {
+                  final data = await Clipboard.getData('text/plain');
+                  if (data?.text != null) {
+                    _xs.text = data!.text!;
+                    setState(() {});
+                  }
+                },
+              ),
             ),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _ys,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'y values',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.paste, semanticLabel: 'Paste'),
+                tooltip: 'Paste from clipboard',
+                onPressed: () async {
+                  final data = await Clipboard.getData('text/plain');
+                  if (data?.text != null) {
+                    _ys.text = data!.text!;
+                    setState(() {});
+                  }
+                },
+              ),
             ),
           ),
           const SizedBox(height: 16),

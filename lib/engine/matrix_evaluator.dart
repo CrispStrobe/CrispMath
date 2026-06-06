@@ -17,6 +17,7 @@
 import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'calculator_engine.dart';
+import 'eigen.dart';
 
 class MatrixEvaluator {
   /// Try to evaluate [expression] as a matrix operation. Returns the
@@ -28,7 +29,7 @@ class MatrixEvaluator {
     if (!s.contains('Matrix(')) return null;
 
     // 1. Unary calls: det / inv / transpose / rref of Matrix(...)
-    for (final op in const ['det', 'inv', 'transpose', 'rref']) {
+    for (final op in const ['det', 'inv', 'transpose', 'rref', 'eigenvalues', 'eigenvectors']) {
       if (s.startsWith('$op(') && s.endsWith(')')) {
         final inner = s.substring(op.length + 1, s.length - 1).trim();
         if (_looksLikeMatrix(inner)) {
@@ -170,6 +171,9 @@ class MatrixEvaluator {
           return _format(_transpose(m, engine));
         case 'rref':
           return _format(_rref(m, engine));
+        case 'eigenvalues':
+        case 'eigenvectors':
+          return _eigenOp(op, m, engine);
       }
     } catch (e) {
       return 'Error: $op failed: $e';
@@ -345,6 +349,41 @@ class MatrixEvaluator {
     if (s == '1' || s == '1.0') return true;
     final n = double.tryParse(s);
     return n != null && n == 1.0;
+  }
+
+  static String _eigenOp(
+      String op, SymEngineMatrix m, CalculatorEngine engine) {
+    final rows = m.rows;
+    final cols = m.cols;
+    if (rows != cols) return 'Error: eigenvalues require a square matrix';
+
+    final data = <List<double>>[];
+    for (var r = 0; r < rows; r++) {
+      final row = <double>[];
+      for (var c = 0; c < cols; c++) {
+        final cell = m.get(r, c);
+        final v = double.tryParse(engine.evaluate(cell));
+        if (v == null) {
+          return 'Error: $op requires numeric entries (got "$cell")';
+        }
+        row.add(v);
+      }
+      data.add(row);
+    }
+
+    final result = computeEigenvalues(data);
+    if (result == null) return 'Error: invalid matrix for $op';
+
+    if (op == 'eigenvalues') {
+      return result.formatValues();
+    } else {
+      if (result.eigenvectors == null) {
+        return 'Eigenvalues: ${result.formatValues()}\n'
+            'Eigenvectors not available for complex eigenvalues';
+      }
+      return 'Eigenvalues: ${result.formatValues()}\n'
+          'Eigenvectors: ${result.formatVectors()}';
+    }
   }
 }
 
