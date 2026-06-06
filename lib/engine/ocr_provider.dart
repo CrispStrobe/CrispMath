@@ -154,6 +154,7 @@ String postProcessOcrText(String raw) {
 }
 
 /// Replace \cmd{content} → fn(content) with balanced brace matching.
+/// Recurses into extracted content to handle nesting.
 String _replaceCmd(String s, String cmd, String Function(String) transform) {
   final needle = '\\$cmd{';
   final buf = StringBuffer();
@@ -164,7 +165,9 @@ String _replaceCmd(String s, String cmd, String Function(String) transform) {
     buf.write(s.substring(i, idx));
     final group = _extractBraceGroup(s, idx + needle.length - 1);
     if (group == null) { buf.write(s.substring(idx)); break; }
-    buf.write(transform(group.$1));
+    // Recursively process inner content for nested \cmd
+    final inner = _replaceCmd(group.$1, cmd, transform);
+    buf.write(transform(inner));
     i = group.$2;
   }
   return buf.toString();
@@ -232,17 +235,28 @@ String latexToEngineSyntax(String latex) {
   // "a}+{b" is fine, but "a}b" needs no space (it's inside braces).
   // The main case: "}{" between frac groups must stay collapsed.
 
-  // \frac{a}{b} → (a)/(b). Use balanced-brace matching for nested fracs.
+  // --- Structural commands (brace-balanced matching for nesting) ---
+
+  // \frac{a}{b} → (a)/(b)
   s = _replaceFrac(s);
 
-  // \sqrt[n]{x} → x^(1/n); \sqrt{x} → sqrt(x).
+  // \sqrt{x} → sqrt(x), handles nested braces
+  s = _replaceCmd(s, 'sqrt', (c) => 'sqrt($c)');
+
+  // \mathbf{X} → X, \mathrm{X} → X, etc. (formatting → strip)
+  for (final cmd in [
+    'mathbf', 'mathrm', 'mathcal', 'mathbb', 'mathit', 'mathsf',
+    'boldsymbol', 'text', 'textbf', 'textit', 'textrm',
+    'operatorname', 'hat', 'bar', 'tilde', 'vec', 'dot', 'ddot',
+    'overline', 'underline', 'overbrace', 'underbrace', 'fbox',
+  ]) {
+    s = _replaceCmd(s, cmd, (c) => c);
+  }
+
+  // \sqrt[n]{x} → x^(1/n) — regex ok here since [n] is simple
   s = s.replaceAllMapped(
-    RegExp(r'\\sqrt\[(\d+)\]\{([^}]+)\}'),
-    (m) => '(${m[2]})^(1/${m[1]})',
-  );
-  s = s.replaceAllMapped(
-    RegExp(r'\\sqrt\{([^}]+)\}'),
-    (m) => 'sqrt(${m[1]})',
+    RegExp(r'\\sqrt\[(\d+)\]'),
+    (m) => '^(1/${m[1]}) * ',  // approximate: nth root
   );
 
   // x^{expr} → x^(expr) for multi-char, x^n for single-char.
@@ -260,43 +274,132 @@ String latexToEngineSyntax(String latex) {
     (m) => '_${m[1]}',
   );
 
-  // Named functions: \sin → sin, \cos → cos, etc.
+  // --- Strip environments (array, matrix, etc. — not evaluable) ---
+  s = s.replaceAll(RegExp(r'\\begin\{[^}]*\}'), '');
+  s = s.replaceAll(RegExp(r'\\end\{[^}]*\}'), '');
+  // LaTeX newlines (\\) inside arrays — must use actual double-backslash
+  s = s.replaceAll('\\\\', ' ');
+
+  // --- Named functions ---
   for (final fn in [
-    'sin',
-    'cos',
-    'tan',
-    'arcsin',
-    'arccos',
-    'arctan',
-    'sinh',
-    'cosh',
-    'tanh',
-    'ln',
-    'log',
-    'exp',
-    'lim',
-    'max',
-    'min',
-    'det',
-    'gcd',
+    'sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan',
+    'sinh', 'cosh', 'tanh', 'ln', 'log', 'exp',
+    'lim', 'max', 'min', 'det', 'gcd', 'mod',
   ]) {
     s = s.replaceAll('\\$fn', fn);
   }
 
-  // Special symbols.
-  s = s.replaceAll(r'\pi', 'pi');
-  s = s.replaceAll(r'\infty', 'oo');
-  s = s.replaceAll(r'\int', 'integrate');
-  s = s.replaceAll(r'\sum', 'sum');
+  // --- Symbols ---
+  // Greek lowercase
+  for (final g in [
+    'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'varepsilon',
+    'zeta', 'eta', 'theta', 'vartheta', 'iota', 'kappa',
+    'lambda', 'mu', 'nu', 'xi', 'pi', 'varpi',
+    'rho', 'varrho', 'sigma', 'varsigma', 'tau', 'upsilon',
+    'phi', 'varphi', 'chi', 'psi', 'omega',
+  ]) {
+    s = s.replaceAll('\\$g', g);
+  }
+  // Greek uppercase
+  for (final g in [
+    'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi',
+    'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega',
+  ]) {
+    s = s.replaceAll('\\$g', g);
+  }
+
+  // Operators and relations
   s = s.replaceAll(r'\cdot', '*');
   s = s.replaceAll(r'\times', '*');
   s = s.replaceAll(r'\div', '/');
   s = s.replaceAll(r'\pm', '+/-');
+  s = s.replaceAll(r'\mp', '-/+');
   s = s.replaceAll(r'\leq', '<=');
   s = s.replaceAll(r'\geq', '>=');
   s = s.replaceAll(r'\neq', '!=');
+  s = s.replaceAll(r'\approx', '~=');
+  s = s.replaceAll(r'\equiv', '==');
+  s = s.replaceAll(r'\infty', 'oo');
+  s = s.replaceAll(r'\int', 'integrate');
+  s = s.replaceAll(r'\sum', 'sum');
+  s = s.replaceAll(r'\prod', 'product');
+  s = s.replaceAll(r'\partial', 'd');
+  s = s.replaceAll(r'\nabla', 'nabla');
+
+  // Delimiters
   s = s.replaceAll(r'\left', '');
   s = s.replaceAll(r'\right', '');
+  s = s.replaceAll(r'\lfloor', 'floor(');
+  s = s.replaceAll(r'\rfloor', ')');
+  s = s.replaceAll(r'\lceil', 'ceil(');
+  s = s.replaceAll(r'\rceil', ')');
+  s = s.replaceAll(r'\langle', '(');
+  s = s.replaceAll(r'\rangle', ')');
+  s = s.replaceAll(r'\lvert', 'abs(');
+  s = s.replaceAll(r'\rvert', ')');
+  s = s.replaceAll(r'\mid', '|');
+  s = s.replaceAll(r'\|', '||');
+
+  // Arrows → strip (not evaluable)
+  for (final a in [
+    'rightarrow', 'leftarrow', 'Rightarrow', 'Leftarrow',
+    'leftrightarrow', 'Leftrightarrow', 'longrightarrow',
+    'mapsto', 'to', 'gets', 'uparrow', 'downarrow',
+    'tharpoondown', 'rightharpoonup',
+  ]) {
+    s = s.replaceAll('\\$a', '->');
+  }
+
+  // Dots
+  s = s.replaceAll(r'\ldots', '...');
+  s = s.replaceAll(r'\cdots', '...');
+  s = s.replaceAll(r'\vdots', '...');
+  s = s.replaceAll(r'\ddots', '...');
+  s = s.replaceAll(r'\dots', '...');
+
+  // Misc symbols
+  s = s.replaceAll(r'\prime', "'");
+  s = s.replaceAll(r'\forall', '');
+  s = s.replaceAll(r'\exists', '');
+  s = s.replaceAll(r'\in', ' in ');
+  s = s.replaceAll(r'\notin', ' not in ');
+  s = s.replaceAll(r'\subset', ' subset ');
+  s = s.replaceAll(r'\cup', ' union ');
+  s = s.replaceAll(r'\cap', ' intersect ');
+  s = s.replaceAll(r'\emptyset', '{}');
+  s = s.replaceAll(r'\perp', '_perp');
+  s = s.replaceAll(r'\parallel', '_parallel');
+  s = s.replaceAll(r'\circ', '*');
+  s = s.replaceAll(r'\star', '*');
+  s = s.replaceAll(r'\dagger', '');
+  s = s.replaceAll(r'\ell', 'l');
+  s = s.replaceAll(r'\hbar', 'hbar');
+  s = s.replaceAll(r'\imath', 'i');
+  s = s.replaceAll(r'\jmath', 'j');
+
+  // Formatting/spacing → strip
+  for (final cmd in [
+    'qquad', 'quad', 'hspace', 'vspace', 'hfill',
+    'displaystyle', 'textstyle', 'scriptstyle', 'scriptscriptstyle',
+    'limits', 'nolimits', 'hline', 'phantom', 'hphantom', 'vphantom',
+    'color', 'textcolor', 'boxed', 'cancel', 'bcancel', 'xcancel',
+    'sp', // superscript alias
+  ]) {
+    s = s.replaceAll('\\$cmd', '');
+  }
+
+  // Decoration → strip
+  for (final cmd in [
+    'bullet', 'bigstar', 'star', 'diamond', 'clubsuit',
+    'heartsuit', 'spadesuit', 'diamondsuit', 'triangle',
+    'square', 'blacksquare', 'checkmark',
+  ]) {
+    s = s.replaceAll('\\$cmd', '');
+  }
+
+  // Catch-all: strip any remaining \command that we missed
+  // (better to lose formatting than to crash the engine)
+  s = s.replaceAll(RegExp(r'\\[a-zA-Z]+'), '');
 
   // Braces → parens.
   s = s.replaceAll('{', '(');
