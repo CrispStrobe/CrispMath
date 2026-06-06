@@ -5,7 +5,8 @@
 
 import 'dart:typed_data';
 
-import 'package:crispembed/crispembed.dart' show CrispEmbedOcr, CrispEmbedHmerOcr;
+import 'package:crispembed/crispembed.dart'
+    show CrispEmbedOcr, CrispEmbedHmerOcr, CrispEmbedBttrOcr;
 
 import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
@@ -146,18 +147,86 @@ class _CrispEmbedHmerProvider implements OcrProvider {
   }
 }
 
+/// CrispEmbed BTTR provider for handwritten math (better accuracy).
+class _CrispEmbedBttrProvider implements OcrProvider {
+  final String _modelPath;
+  CrispEmbedBttrOcr? _ocr;
+
+  _CrispEmbedBttrProvider(this._modelPath);
+
+  @override
+  String get name => 'CrispEmbed BTTR (handwritten)';
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  bool get requiresNetwork => false;
+
+  @override
+  bool get requiresApiKey => false;
+
+  @override
+  Future<OcrResult?> recognize(
+      Uint8List imageBytes, int width, int height) async {
+    try {
+      _ocr ??= _initOcr();
+      if (_ocr == null) return null;
+
+      final channels = imageBytes.length ~/ (width * height);
+      final gray = Float32List(width * height);
+      for (var i = 0; i < width * height; i++) {
+        if (channels == 1) {
+          gray[i] = imageBytes[i] / 255.0;
+        } else if (channels >= 3) {
+          final base = i * channels;
+          gray[i] = (0.299 * imageBytes[base] +
+                  0.587 * imageBytes[base + 1] +
+                  0.114 * imageBytes[base + 2]) /
+              255.0;
+        }
+      }
+
+      final latex = _ocr!.recognizeGray(gray, width, height);
+      if (latex == null || latex.isEmpty) return null;
+
+      final engineSyntax = latexToEngineSyntax(latex.trim());
+      return OcrResult(
+        text: engineSyntax,
+        rawOutput: latex.trim(),
+        providerName: name,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  CrispEmbedBttrOcr? _initOcr() {
+    try {
+      return CrispEmbedBttrOcr(_modelPath, nThreads: 4);
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
 /// Try to register available OCR providers in priority order.
 /// Called once at app startup.
 Future<void> initOcrProviders() async {
-  // Tier 5: On-device HMER (handwritten math, small model)
+  // Tier 5: On-device handwritten math (BTTR preferred, HMER fallback)
   for (final model in OcrModelCatalog.handwrittenMath) {
-    if (model.id.startsWith('hmer-')) {
-      final path = await OcrModelManager.localPath(model);
-      if (path != null) {
-        final provider = _CrispEmbedHmerProvider(path);
-        OcrProviders.register(provider);
-        break;
+    final path = await OcrModelManager.localPath(model);
+    if (path != null) {
+      OcrProvider provider;
+      if (model.id.startsWith('bttr-')) {
+        provider = _CrispEmbedBttrProvider(path);
+      } else if (model.id.startsWith('hmer-')) {
+        provider = _CrispEmbedHmerProvider(path);
+      } else {
+        continue;
       }
+      OcrProviders.register(provider);
+      break; // use first available handwritten model
     }
   }
 
