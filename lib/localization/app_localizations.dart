@@ -4085,6 +4085,9 @@ class DeLocalizations implements AppLocalizations {
       case 'polygcd':
         return 'Normierter größter gemeinsamer Teiler zweier univariater '
             'Polynome über ℚ.';
+      case 'polydiv':
+        return 'Polynomdivision von `p ÷ q` über ℚ. Gibt Quotient und '
+            'Rest zurück.';
       case 'polyresultant':
         return 'Resultante Res(p, q) — genau dann null, wenn `p` und `q` '
             'einen nichtkonstanten gemeinsamen Faktor haben.';
@@ -4435,6 +4438,11 @@ class DeLocalizations implements AppLocalizations {
             'exakten rationalen Koeffizienten aus (reines Dart). Beide '
             'Polynome teilen den Faktor `x - 1`; das Ergebnis wird normiert.',
         'Teilerfremde Polynome ergeben die normierte Konstante 1.',
+      ],
+      'polydiv': [
+        'Exakte Division — der Rest ist null. '
+            '`x² - 1 = (x + 1)(x - 1)`.',
+        'Nicht-exakt: `x² + 3x + 5 = (x + 2)(x + 1) + 3`.',
       ],
       'polyresultant': [
         'Berechnet als Determinante der Sylvester-Matrix. Sie verschwindet '
@@ -7031,6 +7039,9 @@ class FrLocalizations implements AppLocalizations {
       case 'polygcd':
         return "Plus grand commun diviseur unitaire de deux polynômes à une "
             "variable sur ℚ.";
+      case 'polydiv':
+        return "Division polynomiale de `p ÷ q` sur ℚ. Renvoie le quotient "
+            "et le reste.";
       case 'polyresultant':
         return "Résultant Res(p, q) — nul exactement lorsque `p` et `q` "
             "partagent un facteur non constant.";
@@ -7385,6 +7396,11 @@ class FrLocalizations implements AppLocalizations {
           "coefficients rationnels exacts (Dart pur). Les deux polynômes "
           "partagent le facteur `x - 1` ; le résultat est rendu unitaire.",
       "Des polynômes premiers entre eux donnent la constante unitaire 1.",
+    ],
+    'polydiv': [
+      "Division exacte — le reste est nul. "
+          "`x² - 1 = (x + 1)(x - 1)`.",
+      "Non-exacte : `x² + 3x + 5 = (x + 2)(x + 1) + 3`.",
     ],
     'polyresultant': [
       "Calculé comme le déterminant de la matrice de Sylvester. Il s'annule "
@@ -9955,6 +9971,9 @@ class EsLocalizations implements AppLocalizations {
       case 'polygcd':
         return "Máximo común divisor mónico de dos polinomios de una variable "
             "sobre ℚ.";
+      case 'polydiv':
+        return "División polinómica de `p ÷ q` sobre ℚ. Devuelve el cociente "
+            "y el resto.";
       case 'polyresultant':
         return "Resultante Res(p, q) — cero exactamente cuando `p` y `q` "
             "comparten un factor no constante.";
@@ -10303,6 +10322,11 @@ class EsLocalizations implements AppLocalizations {
           "coeficientes racionales exactos (Dart puro). Ambos polinomios "
           "comparten el factor `x - 1`; el resultado se normaliza a mónico.",
       "Polinomios coprimos dan la constante mónica 1.",
+    ],
+    'polydiv': [
+      "División exacta — el resto es cero. "
+          "`x² - 1 = (x + 1)(x - 1)`.",
+      "No exacta: `x² + 3x + 5 = (x + 2)(x + 1) + 3`.",
     ],
     'polyresultant': [
       "Se calcula como el determinante de la matriz de Sylvester. Se anula "
