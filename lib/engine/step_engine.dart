@@ -19,6 +19,7 @@
 // solving get their own engines (PLAN P5 "Recommended next").
 
 import 'calculator_engine.dart';
+import 'polynomial.dart';
 
 /// A single step in a derivation. Each piece is plain text that the
 /// renderer wraps in LaTeX as needed.
@@ -1705,6 +1706,151 @@ class StepEngine {
       chainAfter: (arg, v) => '(1/(2·sqrt($arg)))·d/d$v[$arg]',
     ),
   };
+
+  // === Polynomial long division =============================================
+
+  /// Step-by-step polynomial long division: `dividend ÷ divisor`.
+  /// Both are given as expression strings in a single variable.
+  /// Returns steps showing each round of the division algorithm.
+  static List<MathStep> polyDivide(
+      String dividendStr, String divisorStr, String variable,
+      CalculatorEngine engine) {
+    final steps = <MathStep>[];
+
+    final dividend = _parsePoly(dividendStr, variable, engine);
+    final divisor = _parsePoly(divisorStr, variable, engine);
+
+    if (dividend == null || divisor == null) {
+      steps.add(MathStep(
+        rule: 'Polynomial long division',
+        formula: '',
+        before: '($dividendStr) ÷ ($divisorStr)',
+        after: 'Error: could not parse polynomials',
+        note: 'Both dividend and divisor must be polynomials in $variable.',
+      ));
+      return steps;
+    }
+
+    if (divisor.isZero) {
+      steps.add(MathStep(
+        rule: 'Division by zero',
+        formula: '',
+        before: '($dividendStr) ÷ ($divisorStr)',
+        after: 'Error: division by zero polynomial',
+      ));
+      return steps;
+    }
+
+    steps.add(MathStep(
+      rule: 'Set up polynomial long division',
+      formula: r"\frac{P(x)}{D(x)} = Q(x) + \frac{R(x)}{D(x)}",
+      before: '($dividend) ÷ ($divisor)',
+      after: 'Divide leading terms at each step',
+      note: 'Divide the leading term of the remainder by the leading '
+          'term of the divisor, multiply back, and subtract.',
+      noteI18n: const StepNote('polyDivSetup'),
+    ));
+
+    if (dividend.degree < divisor.degree) {
+      steps.add(MathStep(
+        rule: 'Degree too low',
+        formula: '',
+        before: 'deg($dividend) = ${dividend.degree} < deg($divisor) = ${divisor.degree}',
+        after: 'Quotient = 0, Remainder = $dividend',
+        note: 'The dividend has lower degree than the divisor, so the '
+            'quotient is 0 and the remainder is the dividend itself.',
+        noteI18n: const StepNote('polyDivDegreeTooLow'),
+      ));
+      steps.add(MathStep(
+        rule: 'Result',
+        formula: '',
+        before: '($dividend) ÷ ($divisor)',
+        after: '0 remainder $dividend',
+      ));
+      return steps;
+    }
+
+    // Perform long division step by step
+    final a = List<Rational>.from(dividend.coeffs);
+    final m = divisor.degree;
+    final bLead = divisor.leading;
+    final qCoeffs = List<Rational>.filled(dividend.degree - m + 1, Rational.zero);
+
+    for (var k = dividend.degree; k >= m; k--) {
+      final c = a[k];
+      if (c.isZero) continue;
+
+      final factor = c / bLead;
+      qCoeffs[k - m] = factor;
+
+      // Build the term string
+      final termStr = _polyTermString(factor, k - m, variable);
+      final remainder = Polynomial.fromCoeffs(List<Rational>.from(a), variable);
+
+      steps.add(MathStep(
+        rule: 'Divide leading terms',
+        formula: r"\frac{\text{leading of remainder}}{\text{leading of divisor}}",
+        before: 'Leading: ${_polyTermString(c, k, variable)} ÷ ${_polyTermString(bLead, m, variable)}',
+        after: 'Quotient term: $termStr',
+        note: 'Dividing ${_polyTermString(c, k, variable)} by '
+            '${_polyTermString(bLead, m, variable)} gives $termStr.',
+      ));
+
+      // Subtract
+      for (var i = 0; i <= m; i++) {
+        a[k - m + i] = a[k - m + i] - factor * divisor.coeffs[i];
+      }
+
+      final newRemainder = Polynomial.fromCoeffs(List<Rational>.from(a), variable);
+
+      steps.add(MathStep(
+        rule: 'Multiply and subtract',
+        formula: '',
+        before: '($remainder) − ($termStr)·($divisor)',
+        after: 'New remainder: ${newRemainder.isZero ? "0" : newRemainder.toString()}',
+        note: 'Multiply $termStr by the divisor and subtract from the '
+            'current remainder.',
+      ));
+    }
+
+    final quotient = Polynomial.fromCoeffs(qCoeffs, variable);
+    final remainder = Polynomial.fromCoeffs(a, variable);
+
+    final resultStr = remainder.isZero
+        ? '$quotient'
+        : '$quotient remainder $remainder';
+
+    steps.add(MathStep(
+      rule: 'Result',
+      formula: r"\frac{P(x)}{D(x)} = Q(x) + \frac{R(x)}{D(x)}",
+      before: '($dividend) ÷ ($divisor)',
+      after: resultStr,
+      note: remainder.isZero
+          ? 'The division is exact: $dividend = ($quotient)·($divisor).'
+          : '$dividend = ($quotient)·($divisor) + ($remainder).',
+    ));
+
+    return steps;
+  }
+
+  static String _polyTermString(Rational coeff, int deg, String variable) {
+    if (deg == 0) return coeff.toString();
+    final cStr = coeff == Rational.one ? '' : (coeff == -Rational.one ? '-' : coeff.toString());
+    if (deg == 1) return '$cStr$variable';
+    return '$cStr$variable^$deg';
+  }
+
+  static Polynomial? _parsePoly(
+      String expr, String variable, CalculatorEngine engine) {
+    try {
+      // Try to expand the expression first
+      final expanded = engine.expand(expr);
+      final src = expanded.startsWith('Error') ? expr : expanded;
+      return Polynomial.tryParse(src);
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 class _SignedTerm {
