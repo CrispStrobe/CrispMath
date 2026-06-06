@@ -56,6 +56,7 @@ const Map<String, String> _kAdvKeyHelpRefId = {
   'cfrac': 'cfrac',
   'convergent': 'convergent',
   'polygcd': 'polygcd',
+  'polydiv': 'polydiv',
   'polyresultant': 'polyresultant',
   'polydiscriminant': 'polydiscriminant',
   'polyfactor': 'polyfactor',
@@ -266,6 +267,7 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
     'convergent',
     // Group B (precision arc): polynomial arithmetic over ℚ.
     'polygcd',
+    'polydiv',
     'polyresultant',
     'polydiscriminant',
     'polyfactor',

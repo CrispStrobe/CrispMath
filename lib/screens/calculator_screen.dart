@@ -857,6 +857,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _latexController.insert('polyresultant()', cursorOffsetFromEnd: -1);
         break;
 
+      case 'polydiv':
+        _latexController.insert('polydiv()', cursorOffsetFromEnd: -1);
+        break;
+
       case 'polydiscriminant':
         _latexController.insert('polydiscriminant()', cursorOffsetFromEnd: -1);
         break;

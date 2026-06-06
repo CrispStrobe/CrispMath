@@ -178,6 +178,7 @@ class SyntaxHighlightingController extends TextEditingController {
     'cfrac',
     'convergent',
     'polygcd',
+    'polydiv',
     'polyfactor',
     'evalf',
     'cevalf',

@@ -468,7 +468,29 @@ class FunctionReferences {
           hint: 'Coprime polynomials give the monic constant 1.',
         ),
       ],
-      seeAlso: ['polyresultant', 'polydiscriminant', 'factor'],
+      seeAlso: ['polydiv', 'polyresultant', 'polydiscriminant', 'factor'],
+    ),
+    FunctionRef(
+      id: 'polydiv',
+      category: FunctionRefCategory.cas,
+      signature: 'polydiv(p, q)',
+      shortDescription:
+          'Polynomial long division of `p ÷ q` over ℚ. Returns the '
+          'quotient and remainder.',
+      examples: [
+        FunctionRefExample(
+          input: 'polydiv(x^2-1, x-1)',
+          expected: 'x + 1',
+          hint: 'Exact division — the remainder is zero. '
+              '`x² - 1 = (x + 1)(x - 1)`.',
+        ),
+        FunctionRefExample(
+          input: 'polydiv(x^2+3x+5, x+1)',
+          expected: 'x + 2 remainder 3',
+          hint: 'Non-exact: `x² + 3x + 5 = (x + 2)(x + 1) + 3`.',
+        ),
+      ],
+      seeAlso: ['polygcd', 'polyresultant', 'polydiscriminant'],
     ),
     FunctionRef(
       id: 'polyresultant',

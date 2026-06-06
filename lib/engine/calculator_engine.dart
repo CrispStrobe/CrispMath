@@ -680,6 +680,25 @@ class CalculatorEngine {
     return Polynomial.gcd(a, b).toString();
   }
 
+  /// Polynomial long division: returns "quotient remainder remainder"
+  /// or just "quotient" when exact.
+  String polydiv(String p, String q) {
+    final a = Polynomial.tryParse(p);
+    final b = Polynomial.tryParse(q);
+    if (a == null || b == null) {
+      return 'Error: polydiv needs two univariate polynomials';
+    }
+    if (b.isZero) return 'Error: division by zero polynomial';
+    if (a.degree >= 1 && b.degree >= 1 && a.variable != b.variable) {
+      return 'Error: polydiv arguments use different variables';
+    }
+    final result = a.divmod(b);
+    if (result.remainder.isZero) {
+      return result.quotient.toString();
+    }
+    return '${result.quotient} remainder ${result.remainder}';
+  }
+
   /// Group B: the resultant Res(p, q) — zero iff `p` and `q` share a
   /// non-constant common factor.
   String polyresultant(String p, String q) {
@@ -963,13 +982,14 @@ class CalculatorEngine {
       return convergent(m.group(1)!, k);
     }
 
-    // Group B: polygcd(p, q) / polyresultant(p, q) — two polynomials.
-    m = RegExp(r'^(polygcd|polyresultant)\s*\(\s*(.+?)\s*,\s*(.+?)\s*\)$')
+    // Group B: polygcd/polyresultant/polydiv(p, q) — two polynomials.
+    m = RegExp(r'^(polygcd|polyresultant|polydiv)\s*\(\s*(.+?)\s*,\s*(.+?)\s*\)$')
         .firstMatch(trimmed);
     if (m != null) {
-      return m.group(1)! == 'polygcd'
-          ? polygcd(m.group(2)!, m.group(3)!)
-          : polyresultant(m.group(2)!, m.group(3)!);
+      final op = m.group(1)!;
+      if (op == 'polygcd') return polygcd(m.group(2)!, m.group(3)!);
+      if (op == 'polydiv') return polydiv(m.group(2)!, m.group(3)!);
+      return polyresultant(m.group(2)!, m.group(3)!);
     }
 
     // Group B: polydiscriminant(p) — one polynomial.
