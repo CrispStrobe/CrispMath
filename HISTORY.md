@@ -2,9 +2,9 @@
 
 Completed work, newest first.
 
-## 2026-06-06 — Code quality + 5 new features + zero-lint
+## 2026-06-06 — Code quality + 7 features + polydiv + zero-lint
 
-**9 commits, 16 new tests, analyzer: zero issues.**
+**17 commits, 55+ new tests, analyzer: zero issues.**
 
 ### Code quality
 - Fixed 6 analyzer errors: OCR providers referenced non-existent
@@ -32,8 +32,21 @@ Completed work, newest first.
 ### Documentation
 - README rewritten: Core Features expanded from 6 to 17 modules, project
   layout updated, Math OCR section updated (printed + handwritten + cloud),
-  Known Limitations refreshed, test count 3405+.
+  Known Limitations refreshed.
 - PLAN.md: OCR tier table updated, completed items list expanded.
+
+### Engine + test coverage
+- **polydiv(p, q)**: polynomial long division in calculator, with
+  step-by-step trace (StepEngine.polyDivide). Full stack: engine dispatch,
+  keypad button, syntax highlighting, reserved name, function reference
+  with 2 examples. 4-locale i18n. 8 tests.
+- **Eigenvalues in function reference**: catalog entries with 3+1 examples,
+  seeAlso cross-links, 4-locale descriptions + example hints.
+- **Unit catalog tests**: 20 tests covering Dimensions arithmetic,
+  toBaseUnitsString, SI base scales, prefix synthesis, all 5 derived units.
+- **Matrix evaluator tests**: 11 bridge-agnostic tests covering pattern
+  recognition, eigenvalue routing, binary ops.
+- Test count: 3460+.
 
 ## 2026-06-02/03 — Notepad V2 + OCR + Step V5 (mega-session)
 
