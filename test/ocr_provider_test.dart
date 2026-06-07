@@ -68,8 +68,7 @@ void main() {
     });
 
     test('\\frac with expressions', () {
-      expect(
-          latexToEngineSyntax(r'\frac{x^2 + 1}{x - 1}'), '(x^2+1)/(x-1)');
+      expect(latexToEngineSyntax(r'\frac{x^2 + 1}{x - 1}'), '(x^2+1)/(x-1)');
     });
 
     test('\\sqrt{x} → sqrt(x)', () {
