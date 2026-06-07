@@ -27,18 +27,28 @@ Analyzing 620 CROHME evaluation failures found 4 parser gaps affecting
 
 5 new tests, full suite green.
 
-### CROHME benchmark (986 images × 3 models)
+### CROHME benchmark (all 986 test images × 3 models)
 Full evaluation pipeline: CrispEmbed C++ inference → `latexToEngineSyntax`
-parser → compare against CROHME ground truth. Results saved per-image
-to `/mnt/storage/crohme_eval/results.jsonl`.
+parser → compare against CROHME ground truth. Per-image results saved to
+`/mnt/storage/crohme_eval/results_v2.jsonl`, CSV at `summary_v2.csv`.
 
-| Model | Raw match | Parsed match | Size (Q8_0) |
-|-------|-----------|--------------|-------------|
-| BTTR (DenseNet+Transformer) | 51.1% | 51.6% | 13 MB |
-| HMER (DenseNet+GRU) | 36.0% | 36.6% | 7 MB |
-| pix2tex (DeiT+TrOCR) | 28.2% | 32.1% | 31 MB |
+| Model | Raw match | Parsed match | Parser uplift | Size (Q8_0) |
+|-------|-----------|--------------|---------------|-------------|
+| BTTR (DenseNet+Transformer) | 49.2% | 49.8% | +0.6pp | 13 MB |
+| HMER (DenseNet+GRU) | 36.1% | 36.3% | +0.2pp | 7 MB |
+| pix2tex (DeiT+TrOCR) | 28.8% | 34.3% | **+5.5pp** | 31 MB |
 
-Parser adds +4pp for pix2tex (BPE normalization), +0.5pp for HMER/BTTR.
+Parser improvements from iterative CROHME failure analysis (7 commits):
+- `\in` word-boundary fix (was clobbering `\int`/`\infty`)
+- `\rightarrow` → `\to` for limit parsing
+- Space-tolerant subscripts (`\lim _{x}`, `\sum _{i}`, `\int _{a}`)
+- Greek differentials (`d \theta`, `d \phi`)
+- Bare-argument functions (`\sin x`, `\log x`)
+- Non-greedy sum/product/integral expression capture
+- `\ldots`/`\cdots` → `...`, tilde normalization, `\sin^{n}` powers
+- `\limits` stripping, `=` spacing normalization
+
+Structure parsing rates on GT: `\sum` 100%, `\int` 87%, `\lim` 82%.
 
 ### Infrastructure
 - Built `test-hmer-image` binary (external image input for HMER).
