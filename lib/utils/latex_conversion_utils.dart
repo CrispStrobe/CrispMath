@@ -114,6 +114,19 @@ class LatexConversionUtils {
 
     // === STEP 2: Handle function notation with braces ===
 
+    // Trig power with parens: \sin^{n}(expr) -> sin(expr)^n
+    result = result.replaceAllMapped(
+        RegExp(r'\\(sin|cos|tan|csc|sec|cot)\s*\^\{([^}]+)\}\s*\(([^)]+)\)'),
+        (m) {
+      return '${m.group(1)}(${m.group(3)})^(${m.group(2)})';
+    });
+
+    // Trig power with braces: \sin^{n}{expr} -> sin(expr)^n
+    result = result.replaceAllMapped(
+        RegExp(r'\\(sin|cos|tan|csc|sec|cot)\s*\^\{([^}]+)\}\{([^}]+)\}'), (m) {
+      return '${m.group(1)}(${m.group(3)})^(${m.group(2)})';
+    });
+
     // Trigonometric functions: \sin{expr} -> sin(expr)
     result = result.replaceAllMapped(
         RegExp(r'\\(sin|cos|tan|csc|sec|cot)\{([^}]+)\}'), (m) {
@@ -423,6 +436,9 @@ class LatexConversionUtils {
     result = result.replaceAll(r'\}', '}');
 
     // === STEP 12: Clean up spacing ===
+
+    // LaTeX non-breaking space (tilde) → regular space
+    result = result.replaceAll('~', ' ');
 
     // Remove extra spaces around operators
     result = result.replaceAll(RegExp(r'\s*\*\s*'), '*');

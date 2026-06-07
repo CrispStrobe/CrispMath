@@ -246,6 +246,7 @@ String latexToEngineSyntax(String latex) {
     'scriptstyle',
     'scriptscriptstyle',
     'nolimits',
+    'limits',
     'hline',
     'phantom',
     'hphantom',
