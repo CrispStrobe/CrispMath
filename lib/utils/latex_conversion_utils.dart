@@ -206,10 +206,10 @@ class LatexConversionUtils {
     //              that the power/subscript rules would consume.
 
     // Definite integral: \int_{a}^{b} expr dx -> integrate(expr, (x, a, b))
-    // Allows 'd x' (space-separated) as CROHME/OCR produce.
+    // Allows 'd x' (space-separated) and 'd \theta' (Greek differential).
     result = result.replaceAllMapped(
         RegExp(
-            r'\\int\s*_\{([^}]+)\}\s*\^\{([^}]+)\}\s*(.+?)\s*\\?,?\s*d\s*([a-zA-Z])'),
+            r'\\int\s*_\{([^}]+)\}\s*\^\{([^}]+)\}\s*(.+?)\s*\\?,?\s*d\s*\\?([a-zA-Z]+)'),
         (m) {
       final lower = m.group(1)!;
       final upper = m.group(2)!;
@@ -218,10 +218,11 @@ class LatexConversionUtils {
       return 'integrate($expr, ($variable, $lower, $upper))';
     });
 
-    // Indefinite integral: \int expr dx -> integrate(expr, x)
+    // Indefinite integral: \int expr d x -> integrate(expr, x)
     // Uses lazy (.+?) to avoid consuming the 'd x' differential.
+    // Accepts 'd \theta' (Greek differential with backslash).
     result = result.replaceAllMapped(
-        RegExp(r'\\int\s*(.+?)\s*\\?,?\s*d\s+([a-zA-Z])\b'), (m) {
+        RegExp(r'\\int\s*(.+?)\s*\\?,?\s*d\s+\\?([a-zA-Z]+)\b'), (m) {
       final expr = m.group(1)!.trim();
       final variable = m.group(2)!;
       return 'integrate($expr, $variable)';
@@ -442,12 +443,13 @@ class LatexConversionUtils {
     // LaTeX non-breaking space (tilde) → regular space
     result = result.replaceAll('~', ' ');
 
-    // Remove extra spaces around operators
+    // Normalize spaces around operators
     result = result.replaceAll(RegExp(r'\s*\*\s*'), '*');
     result = result.replaceAll(RegExp(r'\s*\+\s*'), '+');
     result = result.replaceAll(RegExp(r'\s*-\s*'), '-');
     result = result.replaceAll(RegExp(r'\s*/\s*'), '/');
     result = result.replaceAll(RegExp(r'\s*\^\s*'), '^');
+    result = result.replaceAll(RegExp(r'\s*=\s*'), '= ');
 
     // Remove multiple spaces
     result = result.replaceAll(RegExp(r'\s+'), ' ').trim();
