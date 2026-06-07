@@ -4,6 +4,21 @@
 // SymEngine wants plain operator syntax. Pure-Dart, no IO.
 
 class LatexConversionUtils {
+  /// Extract balanced {content} starting at position [start] (which should
+  /// point to the opening '{'). Returns (content, endIndex) or null.
+  static (String, int)? _braceGroup(String s, int start) {
+    if (start >= s.length || s[start] != '{') return null;
+    var depth = 1;
+    var i = start + 1;
+    while (i < s.length && depth > 0) {
+      if (s[i] == '{') depth++;
+      if (s[i] == '}') depth--;
+      i++;
+    }
+    if (depth != 0) return null;
+    return (s.substring(start + 1, i - 1), i);
+  }
+
   /// Converts the LaTeX string from the input field to SymEngine-compatible syntax.
   static String fromLatex(String latex) {
     String result = latex;
@@ -11,17 +26,26 @@ class LatexConversionUtils {
     // === STEP 1: Handle complex structures first (order matters!) ===
 
     // Handle nth roots: \sqrt[n]{expr} -> (expr)^(1/n)
-    result =
-        result.replaceAllMapped(RegExp(r'\\sqrt\[([^\]]+)\]\{([^}]+)\}'), (m) {
-      final n = m.group(1)!;
-      final expr = m.group(2)!;
-      return '($expr)^(1/$n)';
-    });
+    // Uses brace-balanced extraction for nested content.
+    while (result.contains(r'\sqrt[')) {
+      final idx = result.indexOf(r'\sqrt[');
+      final bracketEnd = result.indexOf(']', idx + 6);
+      if (bracketEnd < 0) break;
+      final n = result.substring(idx + 6, bracketEnd);
+      final grp = _braceGroup(result, bracketEnd + 1);
+      if (grp == null) break;
+      result =
+          '${result.substring(0, idx)}(${grp.$1})^(1/$n)${result.substring(grp.$2)}';
+    }
 
     // Handle square roots: \sqrt{expr} -> sqrt(expr)
-    result = result.replaceAllMapped(RegExp(r'\\sqrt\{([^}]+)\}'), (m) {
-      return 'sqrt(${m.group(1)})';
-    });
+    while (result.contains(r'\sqrt{')) {
+      final idx = result.indexOf(r'\sqrt{');
+      final grp = _braceGroup(result, idx + 5);
+      if (grp == null) break;
+      result =
+          '${result.substring(0, idx)}sqrt(${grp.$1})${result.substring(grp.$2)}';
+    }
 
     // Sized-delimiter normalization — LaTeX accepts `\bigg (` or
     // `\bigg(` interchangeably (command + optional whitespace +
@@ -83,10 +107,18 @@ class LatexConversionUtils {
 
     // NOW the generic fraction rewrite — any remaining `\frac{a}{b}`
     // wasn't a derivative pattern, so safe to fold into `(a)/(b)`.
-    result =
-        result.replaceAllMapped(RegExp(r'\\frac\{([^}]+)\}\{([^}]+)\}'), (m) {
-      return '(${m.group(1)})/(${m.group(2)})';
-    });
+    // Uses brace-balanced extraction to handle nested braces like
+    // \frac{x^{2}}{y^{3}} correctly.
+    while (result.contains(r'\frac{')) {
+      final idx = result.indexOf(r'\frac{');
+      final num = _braceGroup(result, idx + 5);
+      if (num == null) break;
+      final den = _braceGroup(result, num.$2);
+      if (den == null) break;
+      result = '${result.substring(0, idx)}'
+          '(${num.$1})/(${den.$1})'
+          '${result.substring(den.$2)}';
+    }
 
     // Generic sized-delimiter strip — keep just the underlying
     // bracket character. Covers anything pasted in or future
