@@ -181,39 +181,6 @@ String _replaceCmd(String s, String cmd, String Function(String) transform) {
   return buf.toString();
 }
 
-/// Replace \frac{a}{b} → (a)/(b), handling nested braces.
-String _replaceFrac(String s) {
-  final buf = StringBuffer();
-  int i = 0;
-  while (i < s.length) {
-    final fracIdx = s.indexOf(r'\frac{', i);
-    if (fracIdx == -1) {
-      buf.write(s.substring(i));
-      break;
-    }
-    buf.write(s.substring(i, fracIdx));
-    final num = _extractBraceGroup(s, fracIdx + 5);
-    if (num == null) {
-      buf.write(s.substring(fracIdx));
-      break;
-    }
-    final den = _extractBraceGroup(s, num.$2);
-    if (den == null) {
-      buf.write(r'\frac{');
-      buf.write(num.$1);
-      buf.write('}');
-      i = num.$2;
-      continue;
-    }
-    // Recursively handle nested \frac in numerator/denominator
-    final numContent = _replaceFrac(num.$1);
-    final denContent = _replaceFrac(den.$1);
-    buf.write('($numContent)/($denContent)');
-    i = den.$2;
-  }
-  return buf.toString();
-}
-
 /// Normalize OCR LaTeX output into compact form suitable for
 /// [LatexConversionUtils.fromLatex].
 ///
