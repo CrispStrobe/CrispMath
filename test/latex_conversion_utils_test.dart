@@ -99,11 +99,40 @@ void main() {
       final out = LatexConversionUtils.fromLatex(r'\lim_{x \to 0} sin(x)/x');
       expect(out, equals('limit(sin(x)/x, x, 0)'));
     });
+
+    test('limit to +infinity', () {
+      final out = LatexConversionUtils.fromLatex(r'\lim_{x \to +\infty} f(x)');
+      expect(out, contains('oo'));
+      expect(out, contains('limit'));
+    });
+
+    test('limit to -infinity', () {
+      final out = LatexConversionUtils.fromLatex(r'\lim_{x \to -\infty} f(x)');
+      expect(out, equals('limit(f(x), x,-oo)'));
+    });
+
+    test('directional limit from right', () {
+      final out = LatexConversionUtils.fromLatex(r'\lim_{x \to 0^+} f(x)');
+      expect(out, equals("limit(f(x), x, 0, '+')"));
+    });
+
+    test('directional limit from left', () {
+      final out = LatexConversionUtils.fromLatex(r'\lim_{x \to 0^-} f(x)');
+      expect(out, equals("limit(f(x), x, 0, '-')"));
+    });
   });
 
-  group('fromLatex — absolute value', () {
+  group('fromLatex — absolute value and norms', () {
     test('|x| -> abs(x)', () {
       expect(LatexConversionUtils.fromLatex(r'|x+1|'), equals('abs(x+1)'));
+    });
+
+    test('||x|| double-pipe norm -> abs(x)', () {
+      expect(LatexConversionUtils.fromLatex('||x||'), equals('abs(x)'));
+    });
+
+    test('\\|x\\| LaTeX norm -> abs(x)', () {
+      expect(LatexConversionUtils.fromLatex(r'\|x\|'), equals('abs(x)'));
     });
   });
 
@@ -128,6 +157,27 @@ void main() {
       expect(
         LatexConversionUtils.fromLatex(r'\frac{d}{dy}{y^3}'),
         equals('d/dy(y^3)'),
+      );
+    });
+
+    test('second-order derivative d²y/dx²', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\frac{d^2 y}{dx^2}'),
+        equals('diff(diff(y, x), x)'),
+      );
+    });
+
+    test('second-order derivative with trailing expr', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\frac{d^2}{dx^2} f(x)'),
+        equals('diff(diff(f(x), x), x)'),
+      );
+    });
+
+    test('third-order derivative', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\frac{d^3 y}{dx^3}'),
+        equals('diff(diff(diff(y, x), x), x)'),
       );
     });
   });
@@ -236,6 +286,27 @@ void main() {
     test('\\bmod -> mod', () {
       expect(LatexConversionUtils.fromLatex(r'a \bmod b'), equals('a mod b'));
     });
+
+    test('\\leq -> <=', () {
+      expect(LatexConversionUtils.fromLatex(r'x \leq 5'), equals('x <= 5'));
+    });
+
+    test('\\geq -> >=', () {
+      expect(LatexConversionUtils.fromLatex(r'x \geq 0'), equals('x >= 0'));
+    });
+
+    test('\\neq -> !=', () {
+      expect(LatexConversionUtils.fromLatex(r'x \neq 1'), equals('x != 1'));
+    });
+
+    test('\\le and \\ge short forms', () {
+      expect(LatexConversionUtils.fromLatex(r'x \le 5'), equals('x <= 5'));
+      expect(LatexConversionUtils.fromLatex(r'x \ge 0'), equals('x >= 0'));
+    });
+
+    test('\\approx -> ≈', () {
+      expect(LatexConversionUtils.fromLatex(r'x \approx 3'), equals('x ≈ 3'));
+    });
   });
 
   // =========================================================================
@@ -251,6 +322,21 @@ void main() {
     test('product', () {
       final out = LatexConversionUtils.fromLatex(r'\prod_{k=1}^{n} k');
       expect(out, equals('Product(k, (k, 1, n))'));
+    });
+
+    test('sum without upper limit defaults to oo', () {
+      final out = LatexConversionUtils.fromLatex(r'\sum_{i=1} a_i');
+      expect(out, equals('Sum(a_i, (i, 1, oo))'));
+    });
+
+    test('sum with variable only', () {
+      final out = LatexConversionUtils.fromLatex(r'\sum_{i} x_i');
+      expect(out, equals('Sum(x_i, i)'));
+    });
+
+    test('product without upper limit defaults to oo', () {
+      final out = LatexConversionUtils.fromLatex(r'\prod_{k=1} a_k');
+      expect(out, equals('Product(a_k, (k, 1, oo))'));
     });
   });
 

@@ -47,6 +47,29 @@ class LatexConversionUtils {
         (m) => 'd/d${m.group(1)}(${m.group(2)})',
       );
     }
+    // Higher-order derivatives: \frac{d^n f}{dx^n} → diff(diff(...f, x), x)
+    // Must run before first-order and generic fraction rules.
+    result = result.replaceAllMapped(
+        RegExp(
+            r'\\frac\{d\^(\d+)\s*([a-zA-Z]?)\}\{d([a-zA-Z])\^(\d+)\}\s*(.*)'),
+        (m) {
+      final order = int.tryParse(m.group(1)!) ?? 2;
+      final funcInNum = m.group(2)!; // e.g. "y" from d^2y
+      final variable = m.group(3)!;
+      final trailing = m.group(5)!.trim();
+      // The function is either in the numerator (d^2y) or trailing (d^2/dx^2 f(x))
+      final func = funcInNum.isNotEmpty ? funcInNum : trailing;
+      var expr = func;
+      for (var i = 0; i < order; i++) {
+        expr = 'diff($expr, $variable)';
+      }
+      // If func came from trailing, consume it; otherwise keep trailing
+      if (funcInNum.isNotEmpty && trailing.isNotEmpty) {
+        return '$expr $trailing';
+      }
+      return expr;
+    });
+
     // Bare-paren and braced forms (manually typed or older keypad
     // emissions).
     result = result.replaceAllMapped(
@@ -171,11 +194,33 @@ class LatexConversionUtils {
     });
 
     // Basic limit: \lim_{x \to a} expr -> limit(expr, x, a)
+    // Handles directional limits (a^+, a^-) and +\infty/-\infty.
     result = result.replaceAllMapped(
         RegExp(r'\\lim_\{([a-zA-Z])\s*\\to\s*([^}]+)\}\s*(.+)'), (m) {
       final variable = m.group(1)!;
-      final approaches = m.group(2)!;
+      var approaches = m.group(2)!.trim();
       final expr = m.group(3)!;
+
+      // Detect directional limit (a^+ or a^-)
+      String? direction;
+      if (approaches.endsWith('^+')) {
+        direction = '+';
+        approaches = approaches.substring(0, approaches.length - 2).trim();
+      } else if (approaches.endsWith('^-')) {
+        direction = '-';
+        approaches = approaches.substring(0, approaches.length - 2).trim();
+      }
+
+      // Normalize infinity variants
+      approaches = approaches
+          .replaceAll(r'+\infty', r'\infty')
+          .replaceAll(r'-\infty', '-oo')
+          .replaceAll(r'\infty', 'oo')
+          .replaceAll(r'\infinity', 'oo');
+
+      if (direction != null) {
+        return "limit($expr, $variable, $approaches, '$direction')";
+      }
       return 'limit($expr, $variable, $approaches)';
     });
 
@@ -197,6 +242,40 @@ class LatexConversionUtils {
       final end = m.group(3)!;
       final expr = m.group(4)!;
       return 'Product($expr, ($variable, $start, $end))';
+    });
+
+    // Partial-limit sum: \sum_{i=a} expr (no upper) → Sum(expr, (i, a, oo))
+    result = result
+        .replaceAllMapped(RegExp(r'\\sum_\{([a-zA-Z])=([^}]+)\}\s*(.+)'), (m) {
+      final variable = m.group(1)!;
+      final start = m.group(2)!;
+      final expr = m.group(3)!;
+      return 'Sum($expr, ($variable, $start, oo))';
+    });
+
+    // Variable-only sum: \sum_{i} expr → Sum(expr, i)
+    result =
+        result.replaceAllMapped(RegExp(r'\\sum_\{([a-zA-Z])\}\s*(.+)'), (m) {
+      final variable = m.group(1)!;
+      final expr = m.group(2)!;
+      return 'Sum($expr, $variable)';
+    });
+
+    // Partial-limit product: \prod_{i=a} expr (no upper) → Product(expr, (i, a, oo))
+    result = result
+        .replaceAllMapped(RegExp(r'\\prod_\{([a-zA-Z])=([^}]+)\}\s*(.+)'), (m) {
+      final variable = m.group(1)!;
+      final start = m.group(2)!;
+      final expr = m.group(3)!;
+      return 'Product($expr, ($variable, $start, oo))';
+    });
+
+    // Variable-only product: \prod_{i} expr → Product(expr, i)
+    result =
+        result.replaceAllMapped(RegExp(r'\\prod_\{([a-zA-Z])\}\s*(.+)'), (m) {
+      final variable = m.group(1)!;
+      final expr = m.group(2)!;
+      return 'Product($expr, $variable)';
     });
 
     // === STEP 5: Handle power and subscript notation ===
@@ -254,6 +333,15 @@ class LatexConversionUtils {
     // Division symbols (though we prefer \frac)
     result = result.replaceAll(r'\div', '/');
 
+    // Comparison operators
+    result = result.replaceAll(r'\leq', '<=');
+    result = result.replaceAll(r'\le', '<=');
+    result = result.replaceAll(r'\geq', '>=');
+    result = result.replaceAll(r'\ge', '>=');
+    result = result.replaceAll(r'\neq', '!=');
+    result = result.replaceAll(r'\ne', '!=');
+    result = result.replaceAll(r'\approx', '≈');
+
     // Plus/minus
     result = result.replaceAll(r'\pm', '+-');
     result = result.replaceAll(r'\mp', '-+');
@@ -263,6 +351,15 @@ class LatexConversionUtils {
     result = result.replaceAll(r'\\bmod', ' mod ');
 
     // === STEP 7: Handle absolute values and norms ===
+
+    // Normalize \| (LaTeX double-pipe) → || before matching norms
+    result = result.replaceAll(r'\|', '||');
+
+    // Double-pipe norms: ||expr|| → abs(expr)
+    // (SymEngine has no separate norm — use abs as approximation)
+    result = result.replaceAllMapped(RegExp(r'\|\|([^|]+)\|\|'), (m) {
+      return 'abs(${m.group(1)})';
+    });
 
     // Absolute values: |expr| -> abs(expr)
     // This is tricky because we need to match paired pipes

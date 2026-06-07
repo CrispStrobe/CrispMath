@@ -316,6 +316,7 @@ String latexToEngineSyntax(String latex) {
   s = s.replaceAll(r'\forall', '');
   s = s.replaceAll(r'\exists', '');
   s = s.replaceAll(r'\notin', ' not in ');
+  s = s.replaceAll(r'\in', ' in ');
   s = s.replaceAll(r'\subset', ' subset ');
   s = s.replaceAll(r'\cup', ' union ');
   s = s.replaceAll(r'\cap', ' intersect ');
@@ -349,6 +350,16 @@ String latexToEngineSyntax(String latex) {
     'Xi',
   ]) {
     s = s.replaceAll('\\$g', g);
+  }
+
+  // \binom{n}{k} → binomial(n, k)
+  while (s.contains(r'\binom{')) {
+    final idx = s.indexOf(r'\binom{');
+    final n = _extractBraceGroup(s, idx + 6); // after \binom
+    if (n == null) break;
+    final k = _extractBraceGroup(s, n.$2);
+    if (k == null) break;
+    s = '${s.substring(0, idx)}binomial(${n.$1}, ${k.$1})${s.substring(k.$2)}';
   }
 
   // Whitespace cleanup before passing to fromLatex

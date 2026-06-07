@@ -104,11 +104,18 @@ void main() {
     });
 
     test('\\leq, \\geq, \\neq', () {
-      // fromLatex may not handle comparison operators — they get stripped
-      // by the catch-all \command remover. Test the output is non-empty.
-      final leq = latexToEngineSyntax(r'x \leq 5');
-      expect(leq, contains('x'));
-      expect(leq, contains('5'));
+      expect(latexToEngineSyntax(r'x \leq 5'), 'x <= 5');
+      expect(latexToEngineSyntax(r'x \geq 0'), 'x >= 0');
+      expect(latexToEngineSyntax(r'x \neq 1'), 'x != 1');
+    });
+
+    test('\\binom{n}{k} → binomial(n, k)', () {
+      expect(latexToEngineSyntax(r'\binom{5}{2}'), 'binomial(5, 2)');
+      expect(latexToEngineSyntax(r'\binom{n}{k}'), 'binomial(n, k)');
+    });
+
+    test('\\in → in', () {
+      expect(latexToEngineSyntax(r'x \in S'), 'x in S');
     });
 
     test('strip dollar delimiters', () {
