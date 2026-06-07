@@ -146,24 +146,38 @@ class LatexConversionUtils {
 
     // === STEP 2: Handle function notation with braces ===
 
-    // Trig power with parens: \sin^{n}(expr) -> sin(expr)^n
+    // Trig power with parens: \sin^{n}(expr) -> sin(expr)^(n)
     result = result.replaceAllMapped(
         RegExp(r'\\(sin|cos|tan|csc|sec|cot)\s*\^\{([^}]+)\}\s*\(([^)]+)\)'),
         (m) {
       return '${m.group(1)}(${m.group(3)})^(${m.group(2)})';
     });
 
-    // Trig power with braces: \sin^{n}{expr} -> sin(expr)^n
+    // Trig power with braces: \sin^{n}{expr} -> sin(expr)^(n)
     result = result.replaceAllMapped(
         RegExp(r'\\(sin|cos|tan|csc|sec|cot)\s*\^\{([^}]+)\}\{([^}]+)\}'), (m) {
       return '${m.group(1)}(${m.group(3)})^(${m.group(2)})';
     });
 
-    // Trigonometric functions: \sin{expr} -> sin(expr)
+    // Trig power with bare arg: \sin^{n} expr -> sin(expr)^(n)
+    // Captures a single token (word or Greek letter) after the power.
     result = result.replaceAllMapped(
-        RegExp(r'\\(sin|cos|tan|csc|sec|cot)\{([^}]+)\}'), (m) {
-      return '${m.group(1)}(${m.group(2)})';
+        RegExp(r'\\(sin|cos|tan|csc|sec|cot)\s*\^\{([^}]+)\}\s*\\?([a-zA-Z]+)'),
+        (m) {
+      return '${m.group(1)}(${m.group(3)})^(${m.group(2)})';
     });
+
+    // Trigonometric functions: \sin{expr} -> sin(expr)
+    // Uses brace-balanced extraction for nested content.
+    for (final fn in ['sin', 'cos', 'tan', 'csc', 'sec', 'cot']) {
+      while (result.contains('\\$fn{')) {
+        final idx = result.indexOf('\\$fn{');
+        final grp = _braceGroup(result, idx + fn.length + 1);
+        if (grp == null) break;
+        result =
+            '${result.substring(0, idx)}$fn(${grp.$1})${result.substring(grp.$2)}';
+      }
+    }
 
     // Inverse trigonometric functions: \arcsin{expr} -> asin(expr)
     result = result.replaceAllMapped(
@@ -300,6 +314,12 @@ class LatexConversionUtils {
         return "limit($expr, $variable, $approaches, '$direction')";
       }
       return 'limit($expr, $variable, $approaches)';
+    });
+
+    // Bare limit (no subscript): \lim expr -> limit(expr)
+    // Common in CROHME for expressions like \lim \frac{...}{...}
+    result = result.replaceAllMapped(RegExp(r'\\lim\s+(.+)'), (m) {
+      return 'limit(${m.group(1)!.trim()})';
     });
 
     // Expression capture for sum/product: stop at '=' or next
