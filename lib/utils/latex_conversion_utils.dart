@@ -153,6 +153,15 @@ class LatexConversionUtils {
       return 'log($expr)/log($base)';
     });
 
+    // Logarithm with base, bare arg: \log_{base} expr -> log(expr)/log(base)
+    // (OCR/CROHME: \log_{a} x — no braces around argument)
+    result = result
+        .replaceAllMapped(RegExp(r'\\log_\{([^}]+)\}\s+([a-zA-Z0-9]+)'), (m) {
+      final base = m.group(1)!;
+      final expr = m.group(2)!;
+      return 'log($expr)/log($base)';
+    });
+
     // === STEP 3: Handle function notation with parentheses (already correct) ===
 
     // These are already in correct format: \sin(expr) -> sin(expr)
@@ -167,6 +176,16 @@ class LatexConversionUtils {
     result = result
         .replaceAllMapped(RegExp(r'\\arc(sin|cos|tan|csc|sec|cot)\('), (m) {
       return 'a${m.group(1)}(';
+    });
+
+    // Bare-argument functions (OCR output): \sin x -> sin(x), \log x -> log(x)
+    // Must come after brace/paren forms. Captures a single token (letter,
+    // digit, or Greek-letter identifier) that follows the command.
+    result = result.replaceAllMapped(
+        RegExp(
+            r'\\(sin|cos|tan|csc|sec|cot|sinh|cosh|tanh|csch|sech|coth|ln|log)\s+([a-zA-Z0-9]+)'),
+        (m) {
+      return '${m.group(1)}(${m.group(2)})';
     });
 
     // === STEP 4: Handle integrals, limits, sums/products BEFORE power/subscript
@@ -192,6 +211,9 @@ class LatexConversionUtils {
       final variable = m.group(2)!;
       return 'integrate($expr, $variable)';
     });
+
+    // Normalize \rightarrow → \to (OCR models often emit \rightarrow)
+    result = result.replaceAll(r'\rightarrow', r'\to');
 
     // Basic limit: \lim_{x \to a} expr -> limit(expr, x, a)
     // Handles directional limits (a^+, a^-) and +\infty/-\infty.

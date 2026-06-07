@@ -2,6 +2,49 @@
 
 Completed work, newest first.
 
+## 2026-06-07 — OCR parsing gaps fixed + CROHME benchmark (986 images)
+
+### OCR LaTeX→engine parsing gaps (all 7 fixed)
+1. **Comparison operators**: `\leq`→`<=`, `\geq`→`>=`, `\neq`→`!=`, `\approx`→`≈`
+2. **Binomial coefficients**: `\binom{n}{k}`→`binomial(n, k)` via `_extractBraceGroup`
+3. **Higher-order derivatives**: `\frac{d^2 y}{dx^2}`→`diff(diff(y, x), x)`
+4. **Limit variants**: `+\infty`, `-\infty`, directional limits `0^+`/`0^-`
+5. **Partial sums/products**: `\sum_{i=1}` (no upper) defaults to `oo`
+6. **Norms**: `\|x\|` and `||x||`→`abs(x)`
+7. **Set notation**: `\in`→`in`
+
+25 new tests, all 3538 tests green.
+
+### Parser improvements from CROHME failure analysis
+Analyzing 620 CROHME evaluation failures found 4 parser gaps affecting
+93+ images (34 `\int`, 29 `\sum`, 21 `\lim`, 9 `\log`):
+- **Bare-argument functions**: `\sin x`→`sin(x)`, `\log x`→`log(x)` (OCR
+  models often omit braces)
+- **`\rightarrow` normalization**: `\lim_{x \rightarrow a}` now matches
+  (CROHME/OCR use `\rightarrow`, parser expected `\to`)
+- **`\log_{base}` bare arg**: `\log_{a} x`→`log(x)/log(a)` (no braces
+  around argument)
+
+5 new tests, full suite green.
+
+### CROHME benchmark (986 images × 3 models)
+Full evaluation pipeline: CrispEmbed C++ inference → `latexToEngineSyntax`
+parser → compare against CROHME ground truth. Results saved per-image
+to `/mnt/storage/crohme_eval/results.jsonl`.
+
+| Model | Raw match | Parsed match | Size (Q8_0) |
+|-------|-----------|--------------|-------------|
+| BTTR (DenseNet+Transformer) | 51.1% | 51.6% | 13 MB |
+| HMER (DenseNet+GRU) | 36.0% | 36.6% | 7 MB |
+| pix2tex (DeiT+TrOCR) | 28.2% | 32.1% | 31 MB |
+
+Parser adds +4pp for pix2tex (BPE normalization), +0.5pp for HMER/BTTR.
+
+### Infrastructure
+- Built `test-hmer-image` binary (external image input for HMER).
+- Compiled `parse_latex` native AOT binary for fast batch evaluation.
+- Extracted 986 CROHME test images from RAR archive.
+
 ## 2026-06-06/07 — Code quality + 8 features + 100+ new tests + zero-lint
 
 **20+ commits, 100+ new tests, analyzer: zero issues.**

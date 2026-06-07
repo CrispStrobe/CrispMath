@@ -37,6 +37,11 @@ void main() {
     test('function-paren forms strip the backslash', () {
       expect(LatexConversionUtils.fromLatex(r'\sin(x)'), equals('sin(x)'));
     });
+
+    test('bare-argument \\sin x (CROHME style)', () {
+      expect(LatexConversionUtils.fromLatex(r'\sin x'), equals('sin(x)'));
+      expect(LatexConversionUtils.fromLatex(r'\cos x'), equals('cos(x)'));
+    });
   });
 
   group('fromLatex — logs', () {
@@ -49,6 +54,18 @@ void main() {
       expect(
         LatexConversionUtils.fromLatex(r'\log_{2}{8}'),
         equals('log(8)/log(2)'),
+      );
+    });
+
+    test('bare-argument \\log x and \\ln x', () {
+      expect(LatexConversionUtils.fromLatex(r'\log x'), equals('log(x)'));
+      expect(LatexConversionUtils.fromLatex(r'\ln x'), equals('ln(x)'));
+    });
+
+    test('\\log_{base} bare arg (CROHME style)', () {
+      expect(
+        LatexConversionUtils.fromLatex(r'\log_{a} x'),
+        equals('log(x)/log(a)'),
       );
     });
   });
@@ -98,6 +115,12 @@ void main() {
     test('basic limit', () {
       final out = LatexConversionUtils.fromLatex(r'\lim_{x \to 0} sin(x)/x');
       expect(out, equals('limit(sin(x)/x, x, 0)'));
+    });
+
+    test('limit with \\rightarrow (CROHME style)', () {
+      final out =
+          LatexConversionUtils.fromLatex(r'\lim_{x \rightarrow 0} f(x)');
+      expect(out, equals('limit(f(x), x, 0)'));
     });
 
     test('limit to +infinity', () {

@@ -51,8 +51,18 @@ with a 2026 input surface."
   2. **On-device HMER** (DenseNet+GRU, 13 MB Q4_K): registered.
   3. **On-device BTTR** (DenseNet+Transformer, 4–25 MB): registered.
   All on-device models use CrispEmbedOcr (same FFI, model-type
-  auto-detected from GGUF). Needs real CROHME test images for
-  accuracy benchmarking.
+  auto-detected from GGUF). CROHME benchmarked (986 images, 620
+  evaluated so far):
+
+  | Model | Raw match | Parsed match | Size (Q8_0) |
+  |-------|-----------|--------------|-------------|
+  | BTTR | 51.1% | 51.6% | 13 MB |
+  | HMER | 36.0% | 36.6% | 7 MB |
+  | pix2tex | 28.2% | 32.1% | 31 MB |
+
+  "Parsed match" = after CrispCalc's `latexToEngineSyntax` normalizes
+  both prediction and ground truth. The parser adds +4pp for pix2tex
+  by stripping BPE tokens, `\boldsymbol`/`\mathrm` wrappers, etc.
   **Future providers**: Poe, Langdock, Requesty (keys available).
 - [x] **ggml graph decoder.** Merged to CrispEmbed main. 27x speedup
   via single-thread optimization. Cosine >0.99 on all test images,
