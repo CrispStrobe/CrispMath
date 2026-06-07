@@ -983,7 +983,8 @@ class CalculatorEngine {
     }
 
     // Group B: polygcd/polyresultant/polydiv(p, q) — two polynomials.
-    m = RegExp(r'^(polygcd|polyresultant|polydiv)\s*\(\s*(.+?)\s*,\s*(.+?)\s*\)$')
+    m = RegExp(
+            r'^(polygcd|polyresultant|polydiv)\s*\(\s*(.+?)\s*,\s*(.+?)\s*\)$')
         .firstMatch(trimmed);
     if (m != null) {
       final op = m.group(1)!;

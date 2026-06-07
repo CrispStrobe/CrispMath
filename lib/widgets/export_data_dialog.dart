@@ -55,10 +55,8 @@ class _ExportDataDialogState extends State<ExportDataDialog> {
             const SizedBox(height: 8),
             SegmentedButton<_ExportFormat>(
               segments: const [
-                ButtonSegment(
-                    value: _ExportFormat.json, label: Text('JSON')),
-                ButtonSegment(
-                    value: _ExportFormat.csv, label: Text('CSV')),
+                ButtonSegment(value: _ExportFormat.json, label: Text('JSON')),
+                ButtonSegment(value: _ExportFormat.csv, label: Text('CSV')),
               ],
               selected: {_format},
               onSelectionChanged: (s) => setState(() => _format = s.first),

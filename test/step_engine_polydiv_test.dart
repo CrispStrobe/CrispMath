@@ -25,8 +25,7 @@ void main() {
     });
 
     test('x^2 + 3x + 5 divided by x + 1 has remainder 3', () {
-      final steps =
-          StepEngine.polyDivide('x^2 + 3x + 5', 'x + 1', 'x', engine);
+      final steps = StepEngine.polyDivide('x^2 + 3x + 5', 'x + 1', 'x', engine);
       expect(steps, isNotEmpty);
       final result = steps.last;
       expect(result.rule, 'Result');
@@ -64,8 +63,7 @@ void main() {
     });
 
     test('unparseable input returns error', () {
-      final steps =
-          StepEngine.polyDivide('sin(x)', 'x + 1', 'x', engine);
+      final steps = StepEngine.polyDivide('sin(x)', 'x + 1', 'x', engine);
       expect(steps, isNotEmpty);
       expect(steps.last.after, contains('Error'));
     });

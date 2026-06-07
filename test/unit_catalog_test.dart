@@ -10,8 +10,7 @@ void main() {
     test('all dimensions have at least one unit', () {
       for (final dim in UnitDimension.values) {
         final units = UnitCatalog.unitsFor(dim);
-        expect(units.isNotEmpty, true,
-            reason: '${dim.name} should have units');
+        expect(units.isNotEmpty, true, reason: '${dim.name} should have units');
       }
     });
   });
@@ -37,8 +36,7 @@ void main() {
     });
 
     test('of() maps each UnitDimension', () {
-      expect(Dimensions.of(UnitDimension.length),
-          const Dimensions(length: 1));
+      expect(Dimensions.of(UnitDimension.length), const Dimensions(length: 1));
       expect(Dimensions.of(UnitDimension.mass), const Dimensions(mass: 1));
       expect(Dimensions.of(UnitDimension.time), const Dimensions(time: 1));
       expect(Dimensions.of(UnitDimension.temperature),

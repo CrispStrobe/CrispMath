@@ -39,9 +39,12 @@ abstract class _OcrBackend {
 /// Wraps CrispEmbedOcr (printed math — pix2tex / TrOCR).
 class _Pix2TexBackend implements _OcrBackend {
   late final CrispEmbedOcr _ocr;
-  _Pix2TexBackend(String path) { _ocr = CrispEmbedOcr(path, nThreads: 4); }
+  _Pix2TexBackend(String path) {
+    _ocr = CrispEmbedOcr(path, nThreads: 4);
+  }
   @override
-  String? recognizeGray(Float32List p, int w, int h) => _ocr.recognizeGray(p, w, h);
+  String? recognizeGray(Float32List p, int w, int h) =>
+      _ocr.recognizeGray(p, w, h);
   @override
   void dispose() => _ocr.dispose();
 }
@@ -50,9 +53,12 @@ class _Pix2TexBackend implements _OcrBackend {
 /// The C++ layer auto-detects model architecture from the GGUF file.
 class _HandwrittenBackend implements _OcrBackend {
   late final CrispEmbedOcr _ocr;
-  _HandwrittenBackend(String path) { _ocr = CrispEmbedOcr(path, nThreads: 4); }
+  _HandwrittenBackend(String path) {
+    _ocr = CrispEmbedOcr(path, nThreads: 4);
+  }
   @override
-  String? recognizeGray(Float32List p, int w, int h) => _ocr.recognizeGray(p, w, h);
+  String? recognizeGray(Float32List p, int w, int h) =>
+      _ocr.recognizeGray(p, w, h);
   @override
   void dispose() => _ocr.dispose();
 }

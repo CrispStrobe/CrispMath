@@ -102,7 +102,9 @@ class Polynomial {
   factory Polynomial.fromCoeffs(List<Rational> coeffs,
       [String variable = 'x']) {
     var n = coeffs.length;
-    while (n > 0 && coeffs[n - 1].isZero) { n--; }
+    while (n > 0 && coeffs[n - 1].isZero) {
+      n--;
+    }
     if (n == 0) return Polynomial.zero(variable);
     return Polynomial._(List.unmodifiable(coeffs.sublist(0, n)), variable);
   }

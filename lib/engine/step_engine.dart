@@ -1712,9 +1712,8 @@ class StepEngine {
   /// Step-by-step partial fraction decomposition of `numerator / denominator`.
   /// Finds integer roots of the denominator, computes coefficients via
   /// the cover-up method, and shows each step.
-  static List<MathStep> partialFractions(
-      String numerator, String denominator, String variable,
-      CalculatorEngine engine) {
+  static List<MathStep> partialFractions(String numerator, String denominator,
+      String variable, CalculatorEngine engine) {
     final steps = <MathStep>[];
 
     steps.add(MathStep(
@@ -1728,8 +1727,8 @@ class StepEngine {
 
     // Re-use the internal partial fractions machinery. It appends steps
     // for each root found and returns the decomposition string.
-    final result = _partialFractionsStep(
-        numerator, denominator, variable, engine, steps, '$numerator/$denominator');
+    final result = _partialFractionsStep(numerator, denominator, variable,
+        engine, steps, '$numerator/$denominator');
 
     if (result == null) {
       steps.add(MathStep(
@@ -1765,9 +1764,8 @@ class StepEngine {
   /// Step-by-step polynomial long division: `dividend ÷ divisor`.
   /// Both are given as expression strings in a single variable.
   /// Returns steps showing each round of the division algorithm.
-  static List<MathStep> polyDivide(
-      String dividendStr, String divisorStr, String variable,
-      CalculatorEngine engine) {
+  static List<MathStep> polyDivide(String dividendStr, String divisorStr,
+      String variable, CalculatorEngine engine) {
     final steps = <MathStep>[];
 
     final dividend = _parsePoly(dividendStr, variable, engine);
@@ -1808,7 +1806,8 @@ class StepEngine {
       steps.add(MathStep(
         rule: 'Degree too low',
         formula: '',
-        before: 'deg($dividend) = ${dividend.degree} < deg($divisor) = ${divisor.degree}',
+        before:
+            'deg($dividend) = ${dividend.degree} < deg($divisor) = ${divisor.degree}',
         after: 'Quotient = 0, Remainder = $dividend',
         note: 'The dividend has lower degree than the divisor, so the '
             'quotient is 0 and the remainder is the dividend itself.',
@@ -1827,7 +1826,8 @@ class StepEngine {
     final a = List<Rational>.from(dividend.coeffs);
     final m = divisor.degree;
     final bLead = divisor.leading;
-    final qCoeffs = List<Rational>.filled(dividend.degree - m + 1, Rational.zero);
+    final qCoeffs =
+        List<Rational>.filled(dividend.degree - m + 1, Rational.zero);
 
     for (var k = dividend.degree; k >= m; k--) {
       final c = a[k];
@@ -1842,8 +1842,10 @@ class StepEngine {
 
       steps.add(MathStep(
         rule: 'Divide leading terms',
-        formula: r"\frac{\text{leading of remainder}}{\text{leading of divisor}}",
-        before: 'Leading: ${_polyTermString(c, k, variable)} ÷ ${_polyTermString(bLead, m, variable)}',
+        formula:
+            r"\frac{\text{leading of remainder}}{\text{leading of divisor}}",
+        before:
+            'Leading: ${_polyTermString(c, k, variable)} ÷ ${_polyTermString(bLead, m, variable)}',
         after: 'Quotient term: $termStr',
         note: 'Dividing ${_polyTermString(c, k, variable)} by '
             '${_polyTermString(bLead, m, variable)} gives $termStr.',
@@ -1854,13 +1856,15 @@ class StepEngine {
         a[k - m + i] = a[k - m + i] - factor * divisor.coeffs[i];
       }
 
-      final newRemainder = Polynomial.fromCoeffs(List<Rational>.from(a), variable);
+      final newRemainder =
+          Polynomial.fromCoeffs(List<Rational>.from(a), variable);
 
       steps.add(MathStep(
         rule: 'Multiply and subtract',
         formula: '',
         before: '($remainder) − ($termStr)·($divisor)',
-        after: 'New remainder: ${newRemainder.isZero ? "0" : newRemainder.toString()}',
+        after:
+            'New remainder: ${newRemainder.isZero ? "0" : newRemainder.toString()}',
         note: 'Multiply $termStr by the divisor and subtract from the '
             'current remainder.',
       ));
@@ -1869,9 +1873,8 @@ class StepEngine {
     final quotient = Polynomial.fromCoeffs(qCoeffs, variable);
     final remainder = Polynomial.fromCoeffs(a, variable);
 
-    final resultStr = remainder.isZero
-        ? '$quotient'
-        : '$quotient remainder $remainder';
+    final resultStr =
+        remainder.isZero ? '$quotient' : '$quotient remainder $remainder';
 
     steps.add(MathStep(
       rule: 'Result',
@@ -1888,7 +1891,9 @@ class StepEngine {
 
   static String _polyTermString(Rational coeff, int deg, String variable) {
     if (deg == 0) return coeff.toString();
-    final cStr = coeff == Rational.one ? '' : (coeff == -Rational.one ? '-' : coeff.toString());
+    final cStr = coeff == Rational.one
+        ? ''
+        : (coeff == -Rational.one ? '-' : coeff.toString());
     if (deg == 1) return '$cStr$variable';
     return '$cStr$variable^$deg';
   }

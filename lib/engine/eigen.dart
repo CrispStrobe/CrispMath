@@ -54,8 +54,7 @@ class Complex {
   double get magnitude => math.sqrt(real * real + imag * imag);
 
   @override
-  String toString() =>
-      imag.abs() < 1e-10 ? '$real' : '$real + ${imag}i';
+  String toString() => imag.abs() < 1e-10 ? '$real' : '$real + ${imag}i';
 }
 
 /// Compute eigenvalues of a square matrix [m] (row-major 2D list).
@@ -147,7 +146,8 @@ EigenResult _eigenQR(List<List<double>> m) {
     // Check convergence of last subdiagonal
     var converged = true;
     for (var i = 1; i < n; i++) {
-      if (h[i][i - 1].abs() > 1e-12 * (h[i][i].abs() + h[i - 1][i - 1].abs() + 1e-30)) {
+      if (h[i][i - 1].abs() >
+          1e-12 * (h[i][i].abs() + h[i - 1][i - 1].abs() + 1e-30)) {
         converged = false;
         break;
       }
@@ -232,7 +232,8 @@ EigenResult _eigenQR(List<List<double>> m) {
 List<List<double>> _hessenberg(List<List<double>> m) {
   final n = m.length;
   final h = List<List<double>>.generate(
-    n, (i) => List<double>.from(m[i]),
+    n,
+    (i) => List<double>.from(m[i]),
   );
 
   for (var k = 0; k < n - 2; k++) {

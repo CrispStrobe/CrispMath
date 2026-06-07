@@ -163,10 +163,16 @@ String _replaceCmd(String s, String cmd, String Function(String) transform) {
   int i = 0;
   while (i < s.length) {
     final idx = s.indexOf(needle, i);
-    if (idx == -1) { buf.write(s.substring(i)); break; }
+    if (idx == -1) {
+      buf.write(s.substring(i));
+      break;
+    }
     buf.write(s.substring(i, idx));
     final group = _extractBraceGroup(s, idx + needle.length - 1);
-    if (group == null) { buf.write(s.substring(idx)); break; }
+    if (group == null) {
+      buf.write(s.substring(idx));
+      break;
+    }
     // Recursively process inner content for nested \cmd
     final inner = _replaceCmd(group.$1, cmd, transform);
     buf.write(transform(inner));
@@ -239,9 +245,19 @@ String latexToEngineSyntax(String latex) {
 
   // Strip formatting wrappers (brace-balanced for nesting)
   for (final cmd in [
-    'mathbf', 'mathrm', 'mathcal', 'mathbb', 'mathit', 'mathsf',
-    'boldsymbol', 'text', 'textbf', 'textit', 'textrm',
-    'operatorname', 'fbox',
+    'mathbf',
+    'mathrm',
+    'mathcal',
+    'mathbb',
+    'mathit',
+    'mathsf',
+    'boldsymbol',
+    'text',
+    'textbf',
+    'textit',
+    'textrm',
+    'operatorname',
+    'fbox',
   ]) {
     s = _replaceCmd(s, cmd, (c) => c);
   }
@@ -253,10 +269,26 @@ String latexToEngineSyntax(String latex) {
 
   // Formatting/spacing → strip
   for (final cmd in [
-    'qquad', 'quad', 'hspace', 'vspace', 'hfill',
-    'displaystyle', 'textstyle', 'scriptstyle', 'scriptscriptstyle',
-    'nolimits', 'hline', 'phantom', 'hphantom', 'vphantom',
-    'color', 'textcolor', 'boxed', 'cancel', 'bcancel', 'xcancel',
+    'qquad',
+    'quad',
+    'hspace',
+    'vspace',
+    'hfill',
+    'displaystyle',
+    'textstyle',
+    'scriptstyle',
+    'scriptscriptstyle',
+    'nolimits',
+    'hline',
+    'phantom',
+    'hphantom',
+    'vphantom',
+    'color',
+    'textcolor',
+    'boxed',
+    'cancel',
+    'bcancel',
+    'xcancel',
     'sp',
   ]) {
     s = s.replaceAll('\\$cmd', '');
@@ -264,9 +296,18 @@ String latexToEngineSyntax(String latex) {
 
   // Decoration → strip
   for (final cmd in [
-    'bullet', 'bigstar', 'diamond', 'clubsuit', 'heartsuit',
-    'spadesuit', 'diamondsuit', 'triangle', 'square',
-    'blacksquare', 'checkmark', 'dagger',
+    'bullet',
+    'bigstar',
+    'diamond',
+    'clubsuit',
+    'heartsuit',
+    'spadesuit',
+    'diamondsuit',
+    'triangle',
+    'square',
+    'blacksquare',
+    'checkmark',
+    'dagger',
   ]) {
     s = s.replaceAll('\\$cmd', '');
   }
@@ -277,10 +318,19 @@ String latexToEngineSyntax(String latex) {
 
   // Arrows → strip
   for (final a in [
-    'rightarrow', 'leftarrow', 'Rightarrow', 'Leftarrow',
-    'leftrightarrow', 'Leftrightarrow', 'longrightarrow',
-    'mapsto', 'gets', 'uparrow', 'downarrow',
-    'tharpoondown', 'rightharpoonup',
+    'rightarrow',
+    'leftarrow',
+    'Rightarrow',
+    'Leftarrow',
+    'leftrightarrow',
+    'Leftrightarrow',
+    'longrightarrow',
+    'mapsto',
+    'gets',
+    'uparrow',
+    'downarrow',
+    'tharpoondown',
+    'rightharpoonup',
   ]) {
     s = s.replaceAll('\\$a', ' -> ');
   }
@@ -312,9 +362,23 @@ String latexToEngineSyntax(String latex) {
 
   // Extra Greek not in fromLatex
   for (final g in [
-    'epsilon', 'varepsilon', 'zeta', 'eta', 'vartheta',
-    'iota', 'kappa', 'nu', 'xi', 'varpi', 'varrho',
-    'varsigma', 'tau', 'upsilon', 'varphi', 'chi', 'psi',
+    'epsilon',
+    'varepsilon',
+    'zeta',
+    'eta',
+    'vartheta',
+    'iota',
+    'kappa',
+    'nu',
+    'xi',
+    'varpi',
+    'varrho',
+    'varsigma',
+    'tau',
+    'upsilon',
+    'varphi',
+    'chi',
+    'psi',
     'Xi',
   ]) {
     s = s.replaceAll('\\$g', g);

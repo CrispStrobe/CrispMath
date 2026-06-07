@@ -13,8 +13,7 @@ void main() {
     });
 
     test('bare matrix literal is recognized or gracefully null', () {
-      final r = MatrixEvaluator.tryEvaluate(
-          'Matrix([[1, 2], [3, 4]])', engine);
+      final r = MatrixEvaluator.tryEvaluate('Matrix([[1, 2], [3, 4]])', engine);
       // With native bridge: canonical Matrix(...) form
       // Without: null (can't allocate native matrix)
       // Both are acceptable — pattern recognition happens, but building
@@ -25,8 +24,8 @@ void main() {
     });
 
     test('det is recognized as unary op', () {
-      final r = MatrixEvaluator.tryEvaluate(
-          'det(Matrix([[1, 0], [0, 1]]))', engine);
+      final r =
+          MatrixEvaluator.tryEvaluate('det(Matrix([[1, 0], [0, 1]]))', engine);
       expect(r, isNotNull);
       // May succeed (native bridge) or return error (no bridge)
     });

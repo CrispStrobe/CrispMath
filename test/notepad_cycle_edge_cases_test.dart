@@ -133,8 +133,10 @@ void main() {
     test('FlatZinc lines are independent of assignment scope', () {
       final g = buildDependencyGraph(docOf([
         (source: 'a = 5', cached: null),
-        (source: 'fzn: var 1..10: x; constraint x > 3; solve satisfy;',
-            cached: null),
+        (
+          source: 'fzn: var 1..10: x; constraint x > 3; solve satisfy;',
+          cached: null
+        ),
         (source: 'b = a + 1', cached: null),
       ]));
       expect(findCycleParticipants(g), isEmpty);

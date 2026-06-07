@@ -29,7 +29,14 @@ class MatrixEvaluator {
     if (!s.contains('Matrix(')) return null;
 
     // 1. Unary calls: det / inv / transpose / rref of Matrix(...)
-    for (final op in const ['det', 'inv', 'transpose', 'rref', 'eigenvalues', 'eigenvectors']) {
+    for (final op in const [
+      'det',
+      'inv',
+      'transpose',
+      'rref',
+      'eigenvalues',
+      'eigenvectors'
+    ]) {
       if (s.startsWith('$op(') && s.endsWith(')')) {
         final inner = s.substring(op.length + 1, s.length - 1).trim();
         if (_looksLikeMatrix(inner)) {

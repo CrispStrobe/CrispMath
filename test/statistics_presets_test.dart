@@ -87,10 +87,8 @@ void main() {
     test('specific presets route to correct tabs', () {
       expect(StatisticsPresets.all['statsDescriptive']!.tab, 'descriptive');
       expect(StatisticsPresets.all['statsLinearRegression']!.tab, 'regression');
-      expect(
-          StatisticsPresets.all['statsNormalDist']!.tab, 'distributions');
-      expect(
-          StatisticsPresets.all['statsWelchTwoSample']!.tab, 'tests');
+      expect(StatisticsPresets.all['statsNormalDist']!.tab, 'distributions');
+      expect(StatisticsPresets.all['statsWelchTwoSample']!.tab, 'tests');
     });
 
     test('alpha field is present on all tests-tab presets', () {
