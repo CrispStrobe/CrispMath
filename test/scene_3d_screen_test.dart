@@ -109,9 +109,9 @@ void main() {
     expect(find.text('First'), findsOneWidget);
     expect(find.text('Second'), findsOneWidget);
 
-    // Move 'First' (index 0) to end. onReorderItem semantics:
-    // remove First → [Second], insert at index 1 → [Second, First].
-    AppState().reorderSceneObjects(0, 1);
+    // Move 'First' (index 0) to end. onReorder semantics:
+    // newIndex = 2 (length), method adjusts to insert at 1.
+    AppState().reorderSceneObjects(0, 2);
     await tester.pumpAndSettle();
     expect(AppState().scene3D.objects.map((o) => o.label).toList(),
         ['Second', 'First']);

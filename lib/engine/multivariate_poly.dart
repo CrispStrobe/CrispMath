@@ -962,7 +962,9 @@ class _MultiPolyParser {
         _pos++;
         final divisor = _parsePower();
         // Only allow division by constant.
-        if (divisor.length != 1) throw const FormatException('non-constant divisor');
+        if (divisor.length != 1) {
+          throw const FormatException('non-constant divisor');
+        }
         final entry = divisor.entries.first;
         if (entry.key.values.any((v) => v != 0)) {
           throw const FormatException('non-constant divisor');
@@ -1018,17 +1020,23 @@ class _MultiPolyParser {
 
   Map<Map<String, int>, Rational> _parseNumber() {
     final start = _pos;
-    while (_pos < src.length && _isDigit(src[_pos])) { _pos++; }
+    while (_pos < src.length && _isDigit(src[_pos])) {
+      _pos++;
+    }
     if (_pos < src.length && src[_pos] == '.') {
       _pos++;
-      while (_pos < src.length && _isDigit(src[_pos])) { _pos++; }
+      while (_pos < src.length && _isDigit(src[_pos])) {
+        _pos++;
+      }
     }
     // Check for fraction: digits/digits
     if (_pos < src.length && src[_pos] == '/' && _pos > start) {
       final numStr = src.substring(start, _pos);
       _pos++; // skip /
       final denStart = _pos;
-      while (_pos < src.length && _isDigit(src[_pos])) { _pos++; }
+      while (_pos < src.length && _isDigit(src[_pos])) {
+        _pos++;
+      }
       if (_pos > denStart) {
         final denStr = src.substring(denStart, _pos);
         final r = Rational(BigInt.parse(numStr), BigInt.parse(denStr));
@@ -1064,7 +1072,9 @@ class _MultiPolyParser {
       return v;
     }
     final start = _pos;
-    while (_pos < src.length && _isDigit(src[_pos])) { _pos++; }
+    while (_pos < src.length && _isDigit(src[_pos])) {
+      _pos++;
+    }
     if (_pos == start) throw const FormatException('expected int');
     return int.parse(src.substring(start, _pos));
   }
