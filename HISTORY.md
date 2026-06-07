@@ -40,7 +40,7 @@ Fixes applied:
 9. `\sin^{n}(x)` → `sin(x)^(n)` (trig power notation)
 10. `\limits` stripping, tilde normalization, `=` spacing
 
-Structure parsing rates on GT: `\sum` 100%, `\int` 87%, `\lim` 82%.
+Structure parsing rates on GT: `\sum` 100%, `\lim` 100%, `\int` 94%.
 
 ### CROHME benchmark (all 986 test images × 3 models)
 Full evaluation pipeline: CrispEmbed C++ inference → `latexToEngineSyntax`
