@@ -159,8 +159,8 @@ class LatexConversionUtils {
     });
 
     // Logarithm with base: \log_{base}{expr} -> log(expr)/log(base)
-    result =
-        result.replaceAllMapped(RegExp(r'\\log_\{([^}]+)\}\{([^}]+)\}'), (m) {
+    result = result.replaceAllMapped(RegExp(r'\\log\s*_\{([^}]+)\}\{([^}]+)\}'),
+        (m) {
       final base = m.group(1)!;
       final expr = m.group(2)!;
       return 'log($expr)/log($base)';
@@ -168,8 +168,8 @@ class LatexConversionUtils {
 
     // Logarithm with base, bare arg: \log_{base} expr -> log(expr)/log(base)
     // (OCR/CROHME: \log_{a} x or \log_{a}x — no braces around argument)
-    result = result
-        .replaceAllMapped(RegExp(r'\\log_\{([^}]+)\}\s*([a-zA-Z0-9]+)'), (m) {
+    result = result.replaceAllMapped(
+        RegExp(r'\\log\s*_\{([^}]+)\}\s*([a-zA-Z0-9]+)'), (m) {
       final base = m.group(1)!;
       final expr = m.group(2)!;
       return 'log($expr)/log($base)';
@@ -209,7 +209,7 @@ class LatexConversionUtils {
     // Allows 'd x' (space-separated) as CROHME/OCR produce.
     result = result.replaceAllMapped(
         RegExp(
-            r'\\int_\{([^}]+)\}\^\{([^}]+)\}\s*(.+?)\s*\\?,?\s*d\s*([a-zA-Z])'),
+            r'\\int\s*_\{([^}]+)\}\s*\^\{([^}]+)\}\s*(.+?)\s*\\?,?\s*d\s*([a-zA-Z])'),
         (m) {
       final lower = m.group(1)!;
       final upper = m.group(2)!;
@@ -241,7 +241,7 @@ class LatexConversionUtils {
     // Basic limit: \lim_{x \to a} expr -> limit(expr, x, a)
     // Handles directional limits (a^+, a^-) and +\infty/-\infty.
     result = result.replaceAllMapped(
-        RegExp(r'\\lim_\{([a-zA-Z])\s*\\to\s*([^}]+)\}\s*(.+)'), (m) {
+        RegExp(r'\\lim\s*_\{([a-zA-Z])\s*\\to\s*([^}]+)\}\s*(.+)'), (m) {
       final variable = m.group(1)!;
       var approaches = m.group(2)!.trim();
       final expr = m.group(3)!;
@@ -275,7 +275,8 @@ class LatexConversionUtils {
 
     // Summation: \sum_{i=1}^{n} expr -> Sum(expr, (i, 1, n))
     result = result.replaceAllMapped(
-        RegExp('\\\\sum_\\{([a-zA-Z])=([^}]+)\\}\\^\\{([^}]+)\\}\\s*$spExpr'),
+        RegExp(
+            '\\\\sum\\s*_\\{([a-zA-Z])=([^}]+)\\}\\^\\{([^}]+)\\}\\s*$spExpr'),
         (m) {
       final variable = m.group(1)!;
       final start = m.group(2)!;
@@ -286,7 +287,8 @@ class LatexConversionUtils {
 
     // Product: \prod_{i=1}^{n} expr -> Product(expr, (i, 1, n))
     result = result.replaceAllMapped(
-        RegExp('\\\\prod_\\{([a-zA-Z])=([^}]+)\\}\\^\\{([^}]+)\\}\\s*$spExpr'),
+        RegExp(
+            '\\\\prod\\s*_\\{([a-zA-Z])=([^}]+)\\}\\^\\{([^}]+)\\}\\s*$spExpr'),
         (m) {
       final variable = m.group(1)!;
       final start = m.group(2)!;
@@ -297,7 +299,7 @@ class LatexConversionUtils {
 
     // Partial-limit sum: \sum_{i=a} expr (no upper) → Sum(expr, (i, a, oo))
     result = result.replaceAllMapped(
-        RegExp('\\\\sum_\\{([a-zA-Z])=([^}]+)\\}\\s*$spExpr'), (m) {
+        RegExp('\\\\sum\\s*_\\{([a-zA-Z])=([^}]+)\\}\\s*$spExpr'), (m) {
       final variable = m.group(1)!;
       final start = m.group(2)!;
       final expr = m.group(3)!.trim();
@@ -305,8 +307,8 @@ class LatexConversionUtils {
     });
 
     // Variable-only sum: \sum_{i} expr → Sum(expr, i)
-    result = result
-        .replaceAllMapped(RegExp('\\\\sum_\\{([a-zA-Z])\\}\\s*$spExpr'), (m) {
+    result = result.replaceAllMapped(
+        RegExp('\\\\sum\\s*_\\{([a-zA-Z])\\}\\s*$spExpr'), (m) {
       final variable = m.group(1)!;
       final expr = m.group(2)!.trim();
       return 'Sum($expr, $variable)';
@@ -320,7 +322,7 @@ class LatexConversionUtils {
 
     // Partial-limit product: \prod_{i=a} expr (no upper) → Product(expr, (i, a, oo))
     result = result.replaceAllMapped(
-        RegExp('\\\\prod_\\{([a-zA-Z])=([^}]+)\\}\\s*$spExpr'), (m) {
+        RegExp('\\\\prod\\s*_\\{([a-zA-Z])=([^}]+)\\}\\s*$spExpr'), (m) {
       final variable = m.group(1)!;
       final start = m.group(2)!;
       final expr = m.group(3)!.trim();
@@ -328,8 +330,8 @@ class LatexConversionUtils {
     });
 
     // Variable-only product: \prod_{i} expr → Product(expr, i)
-    result = result
-        .replaceAllMapped(RegExp('\\\\prod_\\{([a-zA-Z])\\}\\s*$spExpr'), (m) {
+    result = result.replaceAllMapped(
+        RegExp('\\\\prod\\s*_\\{([a-zA-Z])\\}\\s*$spExpr'), (m) {
       final variable = m.group(1)!;
       final expr = m.group(2)!.trim();
       return 'Product($expr, $variable)';
