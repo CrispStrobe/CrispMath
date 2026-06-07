@@ -31,7 +31,8 @@ with a 2026 input surface."
 - [x] **Bundle CrispEmbed native lib per platform.** PR merged. CI
   builds all 8 targets (Linux/macOS/Windows/iOS/Android×3 + Flutter
   bundle). All green.
-- [ ] **iOS smoke test.** Not run since recent changes.
+- [x] **iOS smoke test.** CI build passes (deployment target bumped
+  to 15.0 for CrispEmbed). All 7 CI workflows green.
 
 ### Tier 2 — High-value features
 
@@ -135,7 +136,13 @@ quantizations verified. CI builds all 5 platforms.
 - Matrix eigenvalues/eigenvectors (pure-Dart QR)
 - Unit catalog + derived unit tests (20 tests)
 - Eigenvalues/eigenvectors in function reference (4 locales)
-- CI green (3441+ tests, format + analyze + test)
+- polydiv(p, q) polynomial long division + step-by-step trace
+- Partial fractions standalone step-by-step
+- Statistics presets tests (11) + step diagnostics tests (12)
+- Intersection edge case tests (14) + notepad cycle tests (14)
+- iOS deployment target 13→15 (CrispEmbed requires 15.0+)
+- CI Flutter 3.38→3.44 (formatter parity with local dev)
+- CI green: all 7 workflows pass (3513+ tests, format + analyze)
 
 ---
 

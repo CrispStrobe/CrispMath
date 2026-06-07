@@ -58,7 +58,16 @@ Completed work, newest first.
 - **Notepad cycle edge cases**: 14 tests for 3/4/5-node cycles,
   diamond DAG, diamond+back-edge, aggregate independence,
   FlatZinc isolation, self-loops, cycle-in-middle.
-- Test count: 3490+.
+
+### CI fixes
+- Flutter 3.38→3.44 in ci.yml + build-web.yml (formatter parity).
+- iOS deployment target 13.0→15.0 (Podfile, AppFrameworkInfo.plist,
+  project.pbxproj) — CrispEmbed requires iOS 15+.
+- Removed dead `_replaceFrac` (moved to LatexConversionUtils).
+- Updated `latexToEngineSyntax` test expectations for `fromLatex`
+  delegation (spacing, Exp capitalization).
+- **All 7 CI workflows green** (CI, Web, iOS, Android, macOS,
+  Linux, Windows). Test count: 3513+.
 
 ## 2026-06-02/03 — Notepad V2 + OCR + Step V5 (mega-session)
 
