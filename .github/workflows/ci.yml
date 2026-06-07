@@ -24,7 +24,7 @@ jobs:
           # Pinned: format-rule drift between Dart versions made
           # "stable" CI flake on every push. Bump in lockstep with
           # local dev. Bridge plugin works on any Flutter 3.10+.
-          flutter-version: '3.38.5'
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
 

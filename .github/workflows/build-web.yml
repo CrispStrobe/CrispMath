@@ -46,7 +46,7 @@ jobs:
         with:
           # Pinned in lockstep with ci.yml — format/build-rule drift
           # between Dart versions otherwise flakes CI on every push.
-          flutter-version: '3.38.5'
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
 
