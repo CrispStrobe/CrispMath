@@ -2,9 +2,9 @@
 
 Completed work, newest first.
 
-## 2026-06-06 — Code quality + 7 features + polydiv + zero-lint
+## 2026-06-06/07 — Code quality + 8 features + 100+ new tests + zero-lint
 
-**17 commits, 55+ new tests, analyzer: zero issues.**
+**20+ commits, 100+ new tests, analyzer: zero issues.**
 
 ### Code quality
 - Fixed 6 analyzer errors: OCR providers referenced non-existent
@@ -46,7 +46,19 @@ Completed work, newest first.
   toBaseUnitsString, SI base scales, prefix synthesis, all 5 derived units.
 - **Matrix evaluator tests**: 11 bridge-agnostic tests covering pattern
   recognition, eigenvalue routing, binary ops.
-- Test count: 3460+.
+- **Partial fractions step-by-step**: standalone `partialFractions()`
+  method wrapping the internal decomposition machinery.
+- **Statistics presets tests**: 11 tests covering catalog structure,
+  tab routing, testId mapping, field validation, numeric data.
+- **Step diagnostics tests**: 12 tests covering normalize/matching,
+  result struct, headless execution, spec ordering/uniqueness.
+- **Intersection edge cases**: 14 tests for scaled normals,
+  anti-parallel lines, internal tangent, concentric spheres,
+  great circle, diameter intersection.
+- **Notepad cycle edge cases**: 14 tests for 3/4/5-node cycles,
+  diamond DAG, diamond+back-edge, aggregate independence,
+  FlatZinc isolation, self-loops, cycle-in-middle.
+- Test count: 3490+.
 
 ## 2026-06-02/03 — Notepad V2 + OCR + Step V5 (mega-session)
 
