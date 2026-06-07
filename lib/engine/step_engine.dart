@@ -1707,6 +1707,59 @@ class StepEngine {
     ),
   };
 
+  // === Partial fractions (standalone) ========================================
+
+  /// Step-by-step partial fraction decomposition of `numerator / denominator`.
+  /// Finds integer roots of the denominator, computes coefficients via
+  /// the cover-up method, and shows each step.
+  static List<MathStep> partialFractions(
+      String numerator, String denominator, String variable,
+      CalculatorEngine engine) {
+    final steps = <MathStep>[];
+
+    steps.add(MathStep(
+      rule: 'Partial fraction decomposition',
+      formula: r"\frac{P(x)}{Q(x)} = \sum \frac{A_i}{(x - r_i)^{k_i}}",
+      before: '($numerator) / ($denominator)',
+      after: 'Find roots of the denominator, then compute coefficients',
+      note: 'Decompose into simpler fractions whose denominators are '
+          'linear factors of Q($variable).',
+    ));
+
+    // Re-use the internal partial fractions machinery. It appends steps
+    // for each root found and returns the decomposition string.
+    final result = _partialFractionsStep(
+        numerator, denominator, variable, engine, steps, '$numerator/$denominator');
+
+    if (result == null) {
+      steps.add(MathStep(
+        rule: 'Cannot decompose',
+        formula: '',
+        before: '($numerator) / ($denominator)',
+        after: 'No integer roots found in the denominator, or degree too low.',
+        note: 'Partial fractions requires the denominator to have at '
+            'least degree 2 with integer roots in [-20..20].',
+      ));
+    } else {
+      // The internal method added integration steps — replace the last
+      // step with just the decomposition result (no integral).
+      // Find the decomposition from the steps that were added.
+      final decomposition = steps
+          .where((s) => s.rule.contains('Partial-fraction'))
+          .map((s) => s.after)
+          .lastOrNull;
+
+      steps.add(MathStep(
+        rule: 'Result',
+        formula: '',
+        before: '($numerator) / ($denominator)',
+        after: decomposition ?? result,
+      ));
+    }
+
+    return steps;
+  }
+
   // === Polynomial long division =============================================
 
   /// Step-by-step polynomial long division: `dividend ÷ divisor`.
