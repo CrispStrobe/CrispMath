@@ -193,9 +193,10 @@ class LatexConversionUtils {
     //              that the power/subscript rules would consume.
 
     // Definite integral: \int_{a}^{b} expr dx -> integrate(expr, (x, a, b))
+    // Allows 'd x' (space-separated) as CROHME/OCR produce.
     result = result.replaceAllMapped(
         RegExp(
-            r'\\int_\{([^}]+)\}\^\{([^}]+)\}\s*([^d]+)\s*\\?,?\s*d([a-zA-Z])'),
+            r'\\int_\{([^}]+)\}\^\{([^}]+)\}\s*(.+?)\s*\\?,?\s*d\s*([a-zA-Z])'),
         (m) {
       final lower = m.group(1)!;
       final upper = m.group(2)!;
@@ -205,8 +206,17 @@ class LatexConversionUtils {
     });
 
     // Indefinite integral: \int expr dx -> integrate(expr, x)
+    // Uses lazy (.+?) to avoid consuming the 'd x' differential.
     result = result.replaceAllMapped(
-        RegExp(r'\\int\s*([^d]+)\s*\\?,?\s*d([a-zA-Z])'), (m) {
+        RegExp(r'\\int\s*(.+?)\s*\\?,?\s*d\s+([a-zA-Z])\b'), (m) {
+      final expr = m.group(1)!.trim();
+      final variable = m.group(2)!;
+      return 'integrate($expr, $variable)';
+    });
+
+    // Indefinite integral (no space): \int expr dx -> integrate(expr, x)
+    result = result.replaceAllMapped(
+        RegExp(r'\\int\s*(.+?)\s*\\?,?\s*d([a-zA-Z])\b'), (m) {
       final expr = m.group(1)!.trim();
       final variable = m.group(2)!;
       return 'integrate($expr, $variable)';
@@ -246,57 +256,69 @@ class LatexConversionUtils {
       return 'limit($expr, $variable, $approaches)';
     });
 
+    // Expression capture for sum/product: stop at '=' or next
+    // top-level \sum/\prod/\int/\lim to handle multiple in one line.
+    const spExpr = r'(.+?)(?=\s*(?:=|\\sum|\\prod|\\int|\\lim)|$)';
+
     // Summation: \sum_{i=1}^{n} expr -> Sum(expr, (i, 1, n))
     result = result.replaceAllMapped(
-        RegExp(r'\\sum_\{([a-zA-Z])=([^}]+)\}\^\{([^}]+)\}\s*(.+)'), (m) {
+        RegExp('\\\\sum_\\{([a-zA-Z])=([^}]+)\\}\\^\\{([^}]+)\\}\\s*$spExpr'),
+        (m) {
       final variable = m.group(1)!;
       final start = m.group(2)!;
       final end = m.group(3)!;
-      final expr = m.group(4)!;
+      final expr = m.group(4)!.trim();
       return 'Sum($expr, ($variable, $start, $end))';
     });
 
     // Product: \prod_{i=1}^{n} expr -> Product(expr, (i, 1, n))
     result = result.replaceAllMapped(
-        RegExp(r'\\prod_\{([a-zA-Z])=([^}]+)\}\^\{([^}]+)\}\s*(.+)'), (m) {
+        RegExp('\\\\prod_\\{([a-zA-Z])=([^}]+)\\}\\^\\{([^}]+)\\}\\s*$spExpr'),
+        (m) {
       final variable = m.group(1)!;
       final start = m.group(2)!;
       final end = m.group(3)!;
-      final expr = m.group(4)!;
+      final expr = m.group(4)!.trim();
       return 'Product($expr, ($variable, $start, $end))';
     });
 
     // Partial-limit sum: \sum_{i=a} expr (no upper) → Sum(expr, (i, a, oo))
-    result = result
-        .replaceAllMapped(RegExp(r'\\sum_\{([a-zA-Z])=([^}]+)\}\s*(.+)'), (m) {
+    result = result.replaceAllMapped(
+        RegExp('\\\\sum_\\{([a-zA-Z])=([^}]+)\\}\\s*$spExpr'), (m) {
       final variable = m.group(1)!;
       final start = m.group(2)!;
-      final expr = m.group(3)!;
+      final expr = m.group(3)!.trim();
       return 'Sum($expr, ($variable, $start, oo))';
     });
 
     // Variable-only sum: \sum_{i} expr → Sum(expr, i)
-    result =
-        result.replaceAllMapped(RegExp(r'\\sum_\{([a-zA-Z])\}\s*(.+)'), (m) {
+    result = result
+        .replaceAllMapped(RegExp('\\\\sum_\\{([a-zA-Z])\\}\\s*$spExpr'), (m) {
       final variable = m.group(1)!;
-      final expr = m.group(2)!;
+      final expr = m.group(2)!.trim();
       return 'Sum($expr, $variable)';
     });
 
+    // Bare sum: \sum expr → Sum(expr)
+    result = result.replaceAllMapped(RegExp('\\\\sum\\s+$spExpr'), (m) {
+      final expr = m.group(1)!.trim();
+      return 'Sum($expr)';
+    });
+
     // Partial-limit product: \prod_{i=a} expr (no upper) → Product(expr, (i, a, oo))
-    result = result
-        .replaceAllMapped(RegExp(r'\\prod_\{([a-zA-Z])=([^}]+)\}\s*(.+)'), (m) {
+    result = result.replaceAllMapped(
+        RegExp('\\\\prod_\\{([a-zA-Z])=([^}]+)\\}\\s*$spExpr'), (m) {
       final variable = m.group(1)!;
       final start = m.group(2)!;
-      final expr = m.group(3)!;
+      final expr = m.group(3)!.trim();
       return 'Product($expr, ($variable, $start, oo))';
     });
 
     // Variable-only product: \prod_{i} expr → Product(expr, i)
-    result =
-        result.replaceAllMapped(RegExp(r'\\prod_\{([a-zA-Z])\}\s*(.+)'), (m) {
+    result = result
+        .replaceAllMapped(RegExp('\\\\prod_\\{([a-zA-Z])\\}\\s*$spExpr'), (m) {
       final variable = m.group(1)!;
-      final expr = m.group(2)!;
+      final expr = m.group(2)!.trim();
       return 'Product($expr, $variable)';
     });
 
@@ -340,6 +362,11 @@ class LatexConversionUtils {
     result = result.replaceAll(r'\Phi', 'Phi');
     result = result.replaceAll(r'\omega', 'omega');
     result = result.replaceAll(r'\Omega', 'Omega');
+
+    // Ellipsis
+    result = result.replaceAll(r'\ldots', '...');
+    result = result.replaceAll(r'\cdots', '...');
+    result = result.replaceAll(r'\dots', '...');
 
     // Special constants
     result = result.replaceAll(r'\infty', 'oo');
