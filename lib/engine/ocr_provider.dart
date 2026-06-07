@@ -283,15 +283,16 @@ String latexToEngineSyntax(String latex) {
   s = s.replaceAll(r'\vdots', '...');
   s = s.replaceAll(r'\ddots', '...');
 
-  // Arrows → strip
+  // Arrows — \rightarrow → \to (so fromLatex can parse limits),
+  // all others → ' -> ' display form.
+  s = s.replaceAll(r'\rightarrow', r'\to');
+  s = s.replaceAll(r'\longrightarrow', r'\to');
   for (final a in [
-    'rightarrow',
     'leftarrow',
     'Rightarrow',
     'Leftarrow',
     'leftrightarrow',
     'Leftrightarrow',
-    'longrightarrow',
     'mapsto',
     'gets',
     'uparrow',
@@ -316,7 +317,7 @@ String latexToEngineSyntax(String latex) {
   s = s.replaceAll(r'\forall', '');
   s = s.replaceAll(r'\exists', '');
   s = s.replaceAll(r'\notin', ' not in ');
-  s = s.replaceAll(r'\in', ' in ');
+  s = s.replaceAll(RegExp(r'\\in(?![a-zA-Z])'), ' in ');
   s = s.replaceAll(r'\subset', ' subset ');
   s = s.replaceAll(r'\cup', ' union ');
   s = s.replaceAll(r'\cap', ' intersect ');

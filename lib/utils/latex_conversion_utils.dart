@@ -154,9 +154,9 @@ class LatexConversionUtils {
     });
 
     // Logarithm with base, bare arg: \log_{base} expr -> log(expr)/log(base)
-    // (OCR/CROHME: \log_{a} x — no braces around argument)
+    // (OCR/CROHME: \log_{a} x or \log_{a}x — no braces around argument)
     result = result
-        .replaceAllMapped(RegExp(r'\\log_\{([^}]+)\}\s+([a-zA-Z0-9]+)'), (m) {
+        .replaceAllMapped(RegExp(r'\\log_\{([^}]+)\}\s*([a-zA-Z0-9]+)'), (m) {
       final base = m.group(1)!;
       final expr = m.group(2)!;
       return 'log($expr)/log($base)';
@@ -206,7 +206,7 @@ class LatexConversionUtils {
 
     // Indefinite integral: \int expr dx -> integrate(expr, x)
     result = result.replaceAllMapped(
-        RegExp(r'\\int\s+([^d]+)\s*\\?,?\s*d([a-zA-Z])'), (m) {
+        RegExp(r'\\int\s*([^d]+)\s*\\?,?\s*d([a-zA-Z])'), (m) {
       final expr = m.group(1)!.trim();
       final variable = m.group(2)!;
       return 'integrate($expr, $variable)';
