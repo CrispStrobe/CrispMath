@@ -15,40 +15,43 @@ Completed work, newest first.
 
 25 new tests, all 3538 tests green.
 
-### Parser improvements from CROHME failure analysis
-Analyzing 620 CROHME evaluation failures found 4 parser gaps affecting
-93+ images (34 `\int`, 29 `\sum`, 21 `\lim`, 9 `\log`):
-- **Bare-argument functions**: `\sin x`→`sin(x)`, `\log x`→`log(x)` (OCR
-  models often omit braces)
-- **`\rightarrow` normalization**: `\lim_{x \rightarrow a}` now matches
-  (CROHME/OCR use `\rightarrow`, parser expected `\to`)
-- **`\log_{base}` bare arg**: `\log_{a} x`→`log(x)/log(a)` (no braces
-  around argument)
+### Parser improvements from iterative CROHME failure analysis (10 commits)
+Each round: analyze failures → fix parser → reparse → verify. **87 new
+correct matches** across all 3 models, zero regressions (BTTR/pix2tex).
 
-5 new tests, full suite green.
+| Model | v1 parsed | v8 parsed | Gained | Raw→parsed uplift |
+|-------|-----------|-----------|--------|-------------------|
+| BTTR | 462 (46.9%) | **491 (49.8%)** | **+29** | +0.6pp |
+| HMER | 333 (33.8%) | **358 (36.3%)** | **+25** | +0.2pp |
+| pix2tex | 305 (30.9%) | **338 (34.3%)** | **+33** | +5.5pp |
+
+Fixes applied:
+1. `\in` word-boundary (was clobbering `\int`/`\infty` — 34+ images)
+2. `\rightarrow` → `\to` for limit parsing
+3. **Space-tolerant subscripts** — `\lim _{x}`, `\sum _{i}`, `\int _{a}`,
+   `\log _{b}`, `\prod _{k}` (biggest single fix: `\lim` 0%→82%)
+4. **Brace-balanced `\frac` and `\sqrt`** — replaced `[^}]+` regex with
+   recursive brace extraction for nested content like `\frac{x^{2}}{y^{3}}`
+   (46 images fixed)
+5. Greek differentials (`d \theta`, `d \phi`, `d \alpha`)
+6. Bare-argument functions (`\sin x`, `\log x`, `\log_{a} x`)
+7. Non-greedy sum/product/integral expression capture (multi-expression lines)
+8. `\ldots`/`\cdots`/`\dots` → `...` (21 images)
+9. `\sin^{n}(x)` → `sin(x)^(n)` (trig power notation)
+10. `\limits` stripping, tilde normalization, `=` spacing
+
+Structure parsing rates on GT: `\sum` 100%, `\int` 87%, `\lim` 82%.
 
 ### CROHME benchmark (all 986 test images × 3 models)
 Full evaluation pipeline: CrispEmbed C++ inference → `latexToEngineSyntax`
 parser → compare against CROHME ground truth. Per-image results saved to
 `/mnt/storage/crohme_eval/results_v2.jsonl`, CSV at `summary_v2.csv`.
 
-| Model | Raw match | Parsed match | Parser uplift | Size (Q8_0) |
-|-------|-----------|--------------|---------------|-------------|
-| BTTR (DenseNet+Transformer) | 49.2% | 49.8% | +0.6pp | 13 MB |
-| HMER (DenseNet+GRU) | 36.1% | 36.3% | +0.2pp | 7 MB |
-| pix2tex (DeiT+TrOCR) | 28.8% | 34.3% | **+5.5pp** | 31 MB |
-
-Parser improvements from iterative CROHME failure analysis (7 commits):
-- `\in` word-boundary fix (was clobbering `\int`/`\infty`)
-- `\rightarrow` → `\to` for limit parsing
-- Space-tolerant subscripts (`\lim _{x}`, `\sum _{i}`, `\int _{a}`)
-- Greek differentials (`d \theta`, `d \phi`)
-- Bare-argument functions (`\sin x`, `\log x`)
-- Non-greedy sum/product/integral expression capture
-- `\ldots`/`\cdots` → `...`, tilde normalization, `\sin^{n}` powers
-- `\limits` stripping, `=` spacing normalization
-
-Structure parsing rates on GT: `\sum` 100%, `\int` 87%, `\lim` 82%.
+| Model | Raw match | Parsed match | Size (Q8_0) |
+|-------|-----------|--------------|-------------|
+| BTTR (DenseNet+Transformer) | 485 (49.2%) | **491 (49.8%)** | 13 MB |
+| HMER (DenseNet+GRU) | 356 (36.1%) | **358 (36.3%)** | 7 MB |
+| pix2tex (DeiT+TrOCR) | 284 (28.8%) | **338 (34.3%)** | 31 MB |
 
 ### Infrastructure
 - Built `test-hmer-image` binary (external image input for HMER).

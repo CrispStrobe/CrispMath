@@ -55,13 +55,15 @@ with a 2026 input surface."
 
   | Model | Raw match | Parsed match | Size (Q8_0) |
   |-------|-----------|--------------|-------------|
-  | BTTR | 49.2% | 49.8% | 13 MB |
-  | HMER | 36.1% | 36.3% | 7 MB |
-  | pix2tex | 28.8% | 34.3% | 31 MB |
+  | BTTR | 49.2% | **49.8%** | 13 MB |
+  | HMER | 36.1% | **36.3%** | 7 MB |
+  | pix2tex | 28.8% | **34.3%** | 31 MB |
 
-  "Parsed match" = after CrispCalc's `latexToEngineSyntax` normalizes
-  both prediction and ground truth. Parser adds +5.5pp for pix2tex
-  (BPE/formatting normalization), +0.6pp for BTTR.
+  "Parsed match" = after `latexToEngineSyntax` normalizes both sides.
+  10-round iterative failure analysis gained **87 new matches** (+29
+  BTTR, +25 HMER, +33 pix2tex) via brace-balanced `\frac`/`\sqrt`,
+  space-tolerant subscripts, Greek differentials, bare-arg functions,
+  non-greedy captures, `\ldots`, trig powers, BPE normalization.
   Results: `/mnt/storage/crohme_eval/results_v2.jsonl`.
   **Future providers**: Poe, Langdock, Requesty (keys available).
 - [x] **ggml graph decoder.** Merged to CrispEmbed main. 27x speedup
