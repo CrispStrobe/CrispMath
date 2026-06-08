@@ -51,3 +51,4 @@ HANDOFF_PRECISION.md
 .claude/
 .vercel
 .env*.local
+handover-prompts/
