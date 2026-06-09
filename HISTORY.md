@@ -2,6 +2,16 @@
 
 Completed work, newest first.
 
+## 2026-06-09 — Texo-Distill printed math OCR model added
+
+### New SOTA printed-math OCR model (Texo-Distill, 20M params)
+- HGNetv2 CNN encoder + MBart Transformer decoder, 22 MB Q8_0
+- BLEU 0.90 on UniMER SPE — significantly better than pix2tex
+- Added to model catalog with AGPL-3.0 license gate
+- Registered as Tier 4a provider (higher priority than pix2tex)
+- Auto-detected via GGUF `general.architecture = "ppformulanet"`
+- Published at huggingface.co/cstr/texo-distill-gguf (F16, Q8_0, Q4_K)
+
 ## 2026-06-07 — OCR parsing gaps fixed + CROHME benchmark (986 images)
 
 ### OCR LaTeX→engine parsing gaps (all 7 fixed)

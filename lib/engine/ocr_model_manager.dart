@@ -85,6 +85,32 @@ class OcrModelCatalog {
     ),
   ];
 
+  static const String _hfTexoUrl =
+      'https://huggingface.co/cstr/texo-distill-gguf/resolve/main';
+
+  static const List<OcrModelVariant> printedMathTexo = [
+    OcrModelVariant(
+      id: 'texo-distill-q8',
+      name: 'Texo Distill (best printed)',
+      filename: 'texo-distill-q8_0.gguf',
+      url: '$_hfTexoUrl/texo-distill-q8_0.gguf',
+      sizeBytes: 22 * 1024 * 1024,
+      description: 'SOTA printed math (HGNetv2+MBart, 20M params). '
+          '22 MB Q8_0. BLEU 0.90 on UniMER SPE.',
+      license: 'AGPL-3.0',
+    ),
+    OcrModelVariant(
+      id: 'texo-distill-f16',
+      name: 'Texo Distill (full)',
+      filename: 'texo-distill-f16.gguf',
+      url: '$_hfTexoUrl/texo-distill-f16.gguf',
+      sizeBytes: 39 * 1024 * 1024,
+      description: 'SOTA printed math (HGNetv2+MBart, 20M params). '
+          '39 MB FP16. Full precision.',
+      license: 'AGPL-3.0',
+    ),
+  ];
+
   static const String _hfHmerUrl =
       'https://huggingface.co/cstr/hmer-handwritten-math-gguf/resolve/main';
 
@@ -170,7 +196,7 @@ class OcrModelCatalog {
     ),
   ];
 
-  static List<OcrModelVariant> get all => [...printedMath, ...handwrittenMath];
+  static List<OcrModelVariant> get all => [...printedMathTexo, ...printedMath, ...handwrittenMath];
 }
 
 /// Manages model download + local storage.

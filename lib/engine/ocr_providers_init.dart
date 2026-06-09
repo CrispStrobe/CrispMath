@@ -149,18 +149,35 @@ Future<void> initOcrProviders() async {
     }
   }
 
-  // Tier 4: On-device printed math (pix2tex / TrOCR)
-  for (final model in OcrModelCatalog.printedMath) {
+  // Tier 4a: On-device printed math — Texo-distill (SOTA, AGPL)
+  for (final model in OcrModelCatalog.printedMathTexo) {
     final path = await OcrModelManager.localPath(model);
     if (path != null) {
       final provider = _CrispEmbedProvider(
         path,
-        'pix2tex (printed)',
-        (p) => _Pix2TexBackend(p),
+        'Texo (printed, BLEU 0.90)',
+        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
       );
       OcrProviders.register(provider);
       OcrProviders.active = provider;
       break;
+    }
+  }
+
+  // Tier 4b: On-device printed math — pix2tex / TrOCR (fallback)
+  if (OcrProviders.active == null) {
+    for (final model in OcrModelCatalog.printedMath) {
+      final path = await OcrModelManager.localPath(model);
+      if (path != null) {
+        final provider = _CrispEmbedProvider(
+          path,
+          'pix2tex (printed)',
+          (p) => _Pix2TexBackend(p),
+        );
+        OcrProviders.register(provider);
+        OcrProviders.active = provider;
+        break;
+      }
     }
   }
 
