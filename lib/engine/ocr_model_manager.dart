@@ -111,6 +111,42 @@ class OcrModelCatalog {
     ),
   ];
 
+  static const String _hfPpfnlUrl =
+      'https://huggingface.co/cstr/ppformulanet-l-gguf/resolve/main';
+
+  static const List<OcrModelVariant> printedMathPpfnl = [
+    OcrModelVariant(
+      id: 'ppformulanet-l-q8',
+      name: 'PP-FormulaNet-L (best quality)',
+      filename: 'ppformulanet-l-q8_0.gguf',
+      url: '$_hfPpfnlUrl/ppformulanet-l-q8_0.gguf',
+      sizeBytes: 180 * 1024 * 1024,
+      description: 'Printed math (SAM-ViT+MBart, 181M params). '
+          '180 MB Q8_0. SOTA printed formula recognition.',
+      license: 'Apache-2.0',
+    ),
+    OcrModelVariant(
+      id: 'ppformulanet-l-q4k',
+      name: 'PP-FormulaNet-L (balanced)',
+      filename: 'ppformulanet-l-q4_k.gguf',
+      url: '$_hfPpfnlUrl/ppformulanet-l-q4_k.gguf',
+      sizeBytes: 100 * 1024 * 1024,
+      description: 'Printed math (SAM-ViT+MBart, 181M params). '
+          '100 MB Q4_K. Good quality/size trade-off.',
+      license: 'Apache-2.0',
+    ),
+    OcrModelVariant(
+      id: 'ppformulanet-l-f16',
+      name: 'PP-FormulaNet-L (full)',
+      filename: 'ppformulanet-l-f16.gguf',
+      url: '$_hfPpfnlUrl/ppformulanet-l-f16.gguf',
+      sizeBytes: 346 * 1024 * 1024,
+      description: 'Printed math (SAM-ViT+MBart, 181M params). '
+          '346 MB FP16. Full precision.',
+      license: 'Apache-2.0',
+    ),
+  ];
+
   static const String _hfHmerUrl =
       'https://huggingface.co/cstr/hmer-handwritten-math-gguf/resolve/main';
 
@@ -196,7 +232,7 @@ class OcrModelCatalog {
     ),
   ];
 
-  static List<OcrModelVariant> get all => [...printedMathTexo, ...printedMath, ...handwrittenMath];
+  static List<OcrModelVariant> get all => [...printedMathPpfnl, ...printedMathTexo, ...printedMath, ...handwrittenMath];
 }
 
 /// Manages model download + local storage.

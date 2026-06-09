@@ -149,7 +149,22 @@ Future<void> initOcrProviders() async {
     }
   }
 
-  // Tier 4a: On-device printed math — Texo-distill (SOTA, AGPL)
+  // Tier 4a: On-device printed math — PP-FormulaNet-L (SOTA, Apache-2.0)
+  for (final model in OcrModelCatalog.printedMathPpfnl) {
+    final path = await OcrModelManager.localPath(model);
+    if (path != null) {
+      final provider = _CrispEmbedProvider(
+        path,
+        'PP-FormulaNet-L (printed, 181M)',
+        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
+      );
+      OcrProviders.register(provider);
+      OcrProviders.active = provider;
+      break;
+    }
+  }
+
+  // Tier 4b: On-device printed math — Texo-distill (AGPL)
   for (final model in OcrModelCatalog.printedMathTexo) {
     final path = await OcrModelManager.localPath(model);
     if (path != null) {
@@ -164,7 +179,7 @@ Future<void> initOcrProviders() async {
     }
   }
 
-  // Tier 4b: On-device printed math — pix2tex / TrOCR (fallback)
+  // Tier 4c: On-device printed math — pix2tex / TrOCR (fallback)
   if (OcrProviders.active == null) {
     for (final model in OcrModelCatalog.printedMath) {
       final path = await OcrModelManager.localPath(model);
