@@ -20,7 +20,8 @@ Float32List _toGrayscale(Uint8List imageBytes, int width, int height) {
       gray[i] = imageBytes[i] / 255.0;
     } else if (channels >= 3) {
       final base = i * channels;
-      gray[i] = (0.299 * imageBytes[base] +
+      gray[i] =
+          (0.299 * imageBytes[base] +
               0.587 * imageBytes[base + 1] +
               0.114 * imageBytes[base + 2]) /
           255.0;
@@ -87,7 +88,10 @@ class _CrispEmbedProvider implements OcrProvider {
 
   @override
   Future<OcrResult?> recognize(
-      Uint8List imageBytes, int width, int height) async {
+    Uint8List imageBytes,
+    int width,
+    int height,
+  ) async {
     try {
       _backend ??= _tryInit();
       if (_backend == null) return null;
@@ -128,8 +132,11 @@ Future<void> initOcrProviders() async {
     if (path != null) {
       final String label;
       final _OcrBackend Function(String) factory;
-      if (model.id.startsWith('bttr-')) {
-        label = 'BTTR (handwritten, 53%)';
+      if (model.id.startsWith('posformer-')) {
+        label = 'PosFormer (handwritten, 57%)';
+        factory = (p) => _HandwrittenBackend(p);
+      } else if (model.id.startsWith('bttr-')) {
+        label = 'BTTR (handwritten, 49%)';
         factory = (p) => _HandwrittenBackend(p);
       } else if (model.id.startsWith('hmer-')) {
         label = 'HMER (handwritten, 39%)';
@@ -147,7 +154,10 @@ Future<void> initOcrProviders() async {
     final path = await OcrModelManager.localPath(model);
     if (path != null) {
       final provider = _CrispEmbedProvider(
-          path, 'pix2tex (printed)', (p) => _Pix2TexBackend(p));
+        path,
+        'pix2tex (printed)',
+        (p) => _Pix2TexBackend(p),
+      );
       OcrProviders.register(provider);
       OcrProviders.active = provider;
       break;

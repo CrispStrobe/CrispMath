@@ -21,6 +21,10 @@ class OcrModelVariant {
   final int sizeBytes;
   final String description;
 
+  /// License string (e.g. 'MIT', 'CC BY-NC-SA 3.0'). If non-null and
+  /// contains 'NC', the download UI should show an acceptance gate.
+  final String? license;
+
   const OcrModelVariant({
     required this.id,
     required this.name,
@@ -28,7 +32,12 @@ class OcrModelVariant {
     required this.url,
     required this.sizeBytes,
     required this.description,
+    this.license,
   });
+
+  /// Whether the model requires the user to accept NC license terms.
+  bool get requiresLicenseAcceptance =>
+      license != null && license!.contains('NC');
 
   String get sizeLabel {
     if (sizeBytes >= 1024 * 1024 * 1024) {
@@ -50,7 +59,8 @@ class OcrModelCatalog {
       filename: 'pix2tex-mfr-q4_k.gguf',
       url: '$_hfBaseUrl/pix2tex-mfr-q4_k.gguf',
       sizeBytes: 17 * 1024 * 1024,
-      description: 'Printed math recognition. Smallest model, '
+      description:
+          'Printed math recognition. Smallest model, '
           'good for mobile. 17 MB, Q4_K quantization.',
     ),
     OcrModelVariant(
@@ -59,7 +69,8 @@ class OcrModelCatalog {
       filename: 'pix2tex-mfr-q8_0.gguf',
       url: '$_hfBaseUrl/pix2tex-mfr-q8_0.gguf',
       sizeBytes: 31 * 1024 * 1024,
-      description: 'Printed math recognition. Best quality/size '
+      description:
+          'Printed math recognition. Best quality/size '
           'balance for desktop. 31 MB, Q8_0 quantization.',
     ),
     OcrModelVariant(
@@ -68,7 +79,8 @@ class OcrModelCatalog {
       filename: 'pix2tex-mfr-f16.gguf',
       url: '$_hfBaseUrl/pix2tex-mfr-f16.gguf',
       sizeBytes: 56 * 1024 * 1024,
-      description: 'Printed math recognition. Full FP16 precision. '
+      description:
+          'Printed math recognition. Full FP16 precision. '
           '56 MB. Use when accuracy matters more than size.',
     ),
   ];
@@ -79,16 +91,44 @@ class OcrModelCatalog {
   static const String _hfBttrUrl =
       'https://huggingface.co/cstr/bttr-handwritten-math-gguf/resolve/main';
 
+  static const String _hfPosformerUrl =
+      'https://huggingface.co/cstr/posformer-crohme-GGUF/resolve/main';
+
   static const List<OcrModelVariant> handwrittenMath = [
-    // BTTR (recommended — 53% exact match, transformer decoder)
+    // PosFormer (best — ~57% exact match, DenseNet+Transformer+ARM)
+    OcrModelVariant(
+      id: 'posformer-crohme-q8',
+      name: 'PosFormer (best handwritten)',
+      filename: 'posformer-crohme-q8_0.gguf',
+      url: '$_hfPosformerUrl/posformer-crohme-q8_0.gguf',
+      sizeBytes: 12 * 1024 * 1024,
+      description:
+          'Best handwritten math (DenseNet+Transformer+ARM). '
+          '12 MB Q8_0. ~57% on CROHME 2014.',
+      license: 'CC BY-NC-SA 3.0',
+    ),
+    OcrModelVariant(
+      id: 'posformer-crohme-q4k',
+      name: 'PosFormer (mobile)',
+      filename: 'posformer-crohme-q4_k.gguf',
+      url: '$_hfPosformerUrl/posformer-crohme-q4_k.gguf',
+      sizeBytes: 10 * 1024 * 1024,
+      description:
+          'Handwritten math (DenseNet+Transformer+ARM). '
+          '10 MB Q4_K. Smallest high-accuracy model.',
+      license: 'CC BY-NC-SA 3.0',
+    ),
+    // BTTR (MIT licensed — 49% exact match, transformer decoder)
     OcrModelVariant(
       id: 'bttr-hw-q8',
-      name: 'Handwritten Math BTTR (recommended)',
+      name: 'Handwritten Math BTTR',
       filename: 'bttr-hw-q8_0.gguf',
       url: '$_hfBttrUrl/bttr-hw-q8_0.gguf',
       sizeBytes: 13 * 1024 * 1024,
-      description: 'Best handwritten math (DenseNet+Transformer). '
-          '13 MB Q8_0. 53% exact match on CROHME.',
+      description:
+          'Handwritten math (DenseNet+Transformer). '
+          '13 MB Q8_0. 49% on CROHME. MIT license.',
+      license: 'MIT',
     ),
     OcrModelVariant(
       id: 'bttr-hw-q4k',
@@ -96,7 +136,8 @@ class OcrModelCatalog {
       filename: 'bttr-hw-q4_k.gguf',
       url: '$_hfBttrUrl/bttr-hw-q4_k.gguf',
       sizeBytes: 11 * 1024 * 1024,
-      description: 'Handwritten math (DenseNet+Transformer). '
+      description:
+          'Handwritten math (DenseNet+Transformer). '
           '11 MB Q4_K. Smaller for mobile.',
     ),
     OcrModelVariant(
@@ -105,7 +146,8 @@ class OcrModelCatalog {
       filename: 'bttr-hw-f32.gguf',
       url: '$_hfBttrUrl/bttr-hw-f32.gguf',
       sizeBytes: 25 * 1024 * 1024,
-      description: 'Handwritten math (DenseNet+Transformer). '
+      description:
+          'Handwritten math (DenseNet+Transformer). '
           '25 MB F32. Full precision.',
     ),
     // HMER (lighter alternative — 39% exact match, GRU decoder)
@@ -115,7 +157,8 @@ class OcrModelCatalog {
       filename: 'hmer-hw-q4_k.gguf',
       url: '$_hfHmerUrl/hmer-hw-q4_k.gguf',
       sizeBytes: 4 * 1024 * 1024,
-      description: 'Handwritten math (DenseNet+GRU). '
+      description:
+          'Handwritten math (DenseNet+GRU). '
           '4 MB Q4_K. Smallest model.',
     ),
     OcrModelVariant(
@@ -124,7 +167,8 @@ class OcrModelCatalog {
       filename: 'hmer-hw-q8_0.gguf',
       url: '$_hfHmerUrl/hmer-hw-q8_0.gguf',
       sizeBytes: 7 * 1024 * 1024,
-      description: 'Handwritten math (DenseNet+GRU). '
+      description:
+          'Handwritten math (DenseNet+GRU). '
           '7 MB Q8_0.',
     ),
   ];
