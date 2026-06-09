@@ -59,9 +59,9 @@ class OcrModelCatalog {
       filename: 'pix2tex-mfr-q4_k.gguf',
       url: '$_hfBaseUrl/pix2tex-mfr-q4_k.gguf',
       sizeBytes: 17 * 1024 * 1024,
-      description:
-          'Printed math recognition. Smallest model, '
+      description: 'Printed math recognition. Smallest model, '
           'good for mobile. 17 MB, Q4_K quantization.',
+      license: 'MIT',
     ),
     OcrModelVariant(
       id: 'pix2tex-mfr-q8',
@@ -69,9 +69,9 @@ class OcrModelCatalog {
       filename: 'pix2tex-mfr-q8_0.gguf',
       url: '$_hfBaseUrl/pix2tex-mfr-q8_0.gguf',
       sizeBytes: 31 * 1024 * 1024,
-      description:
-          'Printed math recognition. Best quality/size '
+      description: 'Printed math recognition. Best quality/size '
           'balance for desktop. 31 MB, Q8_0 quantization.',
+      license: 'MIT',
     ),
     OcrModelVariant(
       id: 'pix2tex-mfr-f16',
@@ -79,9 +79,9 @@ class OcrModelCatalog {
       filename: 'pix2tex-mfr-f16.gguf',
       url: '$_hfBaseUrl/pix2tex-mfr-f16.gguf',
       sizeBytes: 56 * 1024 * 1024,
-      description:
-          'Printed math recognition. Full FP16 precision. '
+      description: 'Printed math recognition. Full FP16 precision. '
           '56 MB. Use when accuracy matters more than size.',
+      license: 'MIT',
     ),
   ];
 
@@ -102,8 +102,7 @@ class OcrModelCatalog {
       filename: 'posformer-crohme-q8_0.gguf',
       url: '$_hfPosformerUrl/posformer-crohme-q8_0.gguf',
       sizeBytes: 12 * 1024 * 1024,
-      description:
-          'Best handwritten math (DenseNet+Transformer+ARM). '
+      description: 'Best handwritten math (DenseNet+Transformer+ARM). '
           '12 MB Q8_0. ~57% on CROHME 2014.',
       license: 'CC BY-NC-SA 3.0',
     ),
@@ -113,22 +112,20 @@ class OcrModelCatalog {
       filename: 'posformer-crohme-q4_k.gguf',
       url: '$_hfPosformerUrl/posformer-crohme-q4_k.gguf',
       sizeBytes: 10 * 1024 * 1024,
-      description:
-          'Handwritten math (DenseNet+Transformer+ARM). '
+      description: 'Handwritten math (DenseNet+Transformer+ARM). '
           '10 MB Q4_K. Smallest high-accuracy model.',
       license: 'CC BY-NC-SA 3.0',
     ),
-    // BTTR (MIT licensed — 49% exact match, transformer decoder)
+    // BTTR (code: MIT, weights: NC from CROHME training data)
     OcrModelVariant(
       id: 'bttr-hw-q8',
       name: 'Handwritten Math BTTR',
       filename: 'bttr-hw-q8_0.gguf',
       url: '$_hfBttrUrl/bttr-hw-q8_0.gguf',
       sizeBytes: 13 * 1024 * 1024,
-      description:
-          'Handwritten math (DenseNet+Transformer). '
-          '13 MB Q8_0. 49% on CROHME. MIT license.',
-      license: 'MIT',
+      description: 'Handwritten math (DenseNet+Transformer). '
+          '13 MB Q8_0. 49% on CROHME.',
+      license: 'CC BY-NC-SA 3.0',
     ),
     OcrModelVariant(
       id: 'bttr-hw-q4k',
@@ -136,9 +133,9 @@ class OcrModelCatalog {
       filename: 'bttr-hw-q4_k.gguf',
       url: '$_hfBttrUrl/bttr-hw-q4_k.gguf',
       sizeBytes: 11 * 1024 * 1024,
-      description:
-          'Handwritten math (DenseNet+Transformer). '
+      description: 'Handwritten math (DenseNet+Transformer). '
           '11 MB Q4_K. Smaller for mobile.',
+      license: 'CC BY-NC-SA 3.0',
     ),
     OcrModelVariant(
       id: 'bttr-hw-f32',
@@ -146,20 +143,20 @@ class OcrModelCatalog {
       filename: 'bttr-hw-f32.gguf',
       url: '$_hfBttrUrl/bttr-hw-f32.gguf',
       sizeBytes: 25 * 1024 * 1024,
-      description:
-          'Handwritten math (DenseNet+Transformer). '
+      description: 'Handwritten math (DenseNet+Transformer). '
           '25 MB F32. Full precision.',
+      license: 'CC BY-NC-SA 3.0',
     ),
-    // HMER (lighter alternative — 39% exact match, GRU decoder)
+    // HMER (code: MIT, weights: NC from CROHME training data)
     OcrModelVariant(
       id: 'hmer-hw-q4k',
       name: 'Handwritten Math HMER (tiny)',
       filename: 'hmer-hw-q4_k.gguf',
       url: '$_hfHmerUrl/hmer-hw-q4_k.gguf',
       sizeBytes: 4 * 1024 * 1024,
-      description:
-          'Handwritten math (DenseNet+GRU). '
+      description: 'Handwritten math (DenseNet+GRU). '
           '4 MB Q4_K. Smallest model.',
+      license: 'CC BY-NC-SA 3.0',
     ),
     OcrModelVariant(
       id: 'hmer-hw-q8',
@@ -167,9 +164,9 @@ class OcrModelCatalog {
       filename: 'hmer-hw-q8_0.gguf',
       url: '$_hfHmerUrl/hmer-hw-q8_0.gguf',
       sizeBytes: 7 * 1024 * 1024,
-      description:
-          'Handwritten math (DenseNet+GRU). '
+      description: 'Handwritten math (DenseNet+GRU). '
           '7 MB Q8_0.',
+      license: 'CC BY-NC-SA 3.0',
     ),
   ];
 
