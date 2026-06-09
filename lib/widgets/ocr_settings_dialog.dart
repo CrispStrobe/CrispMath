@@ -37,6 +37,34 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   }
 
   Future<void> _download(OcrModelVariant model) async {
+    // NC license gate: require explicit user confirmation
+    if (model.requiresLicenseAcceptance) {
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('License Terms'),
+          content: Text(
+            'This model is licensed under ${model.license}.\n\n'
+            'By downloading, you confirm that you will use these '
+            'model weights for non-commercial purposes only.\n\n'
+            'The app itself is not restricted — this applies only '
+            'to the model weights.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('I accept — download'),
+            ),
+          ],
+        ),
+      );
+      if (accepted != true) return;
+    }
+
     setState(() {
       _downloading.add(model.id);
       _downloadProgress[model.id] = 0;
@@ -174,11 +202,34 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
           children: [
             Text(model.description, style: const TextStyle(fontSize: 11)),
             const SizedBox(height: 2),
-            Text(model.sizeLabel,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary)),
+            Row(
+              children: [
+                Text(model.sizeLabel,
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary)),
+                if (model.license != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: model.requiresLicenseAcceptance
+                          ? Colors.orange.withValues(alpha: 0.15)
+                          : Colors.green.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(model.license!,
+                        style: TextStyle(
+                            fontSize: 9,
+                            color: model.requiresLicenseAcceptance
+                                ? Colors.orange.shade700
+                                : Colors.green.shade700)),
+                  ),
+                ],
+              ],
+            ),
             if (isDownloading)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
