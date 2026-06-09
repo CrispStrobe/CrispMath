@@ -51,6 +51,11 @@
       console.warn('SymEngine WASM failed to load:', err);
     });
   </script>
+  <!-- CrispEmbed OCR WASM: loaded on-demand by Dart code via the
+       CrispEmbedOCR() factory (MODULARIZE=1). Unlike SymEngine, this is
+       NOT auto-initialized — the module is instantiated when the user
+       first triggers OCR (avoids blocking page load with unused WASM). -->
+  <script src="crispembed_ocr.js"></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

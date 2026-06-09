@@ -42,7 +42,8 @@ import 'widgets/function_reference_dialog.dart';
 import 'widgets/worked_examples_dialog.dart';
 import 'widgets/web_unsupported_banner.dart';
 import 'engine/ocr_providers_init_stub.dart'
-    if (dart.library.io) 'engine/ocr_providers_init.dart';
+    if (dart.library.io) 'engine/ocr_providers_init.dart'
+    if (dart.library.js_interop) 'engine/ocr_providers_init_web.dart';
 import 'widgets/ocr_settings_dialog_stub.dart'
     if (dart.library.io) 'widgets/ocr_settings_dialog.dart';
 
