@@ -221,6 +221,32 @@ class OcrModelCatalog {
     ),
   ];
 
+  static const String _hfLayoutUrl =
+      'https://huggingface.co/cstr/layout-heron-gguf/resolve/main';
+
+  static const List<OcrModelVariant> layoutDetection = [
+    OcrModelVariant(
+      id: 'layout-heron-q8',
+      name: 'Layout Detection (RT-DETRv2)',
+      filename: 'layout-heron-q8_0.gguf',
+      url: '$_hfLayoutUrl/layout-heron-q8_0.gguf',
+      sizeBytes: 43 * 1024 * 1024,
+      description: 'Document layout detection (17 classes). '
+          '43 MB Q8_0. Detects text, table, figure, formula regions.',
+      license: 'Apache-2.0',
+    ),
+    OcrModelVariant(
+      id: 'layout-heron-f32',
+      name: 'Layout Detection (full)',
+      filename: 'layout-heron-f32.gguf',
+      url: '$_hfLayoutUrl/layout-heron-f32.gguf',
+      sizeBytes: 161 * 1024 * 1024,
+      description: 'Document layout detection (17 classes). '
+          '161 MB F32. Full precision.',
+      license: 'Apache-2.0',
+    ),
+  ];
+
   static List<OcrModelVariant> get all =>
-      [...printedMathPpfnl, ...printedMathTexo, ...printedMath, ...handwrittenMath];
+      [...printedMathPpfnl, ...printedMathTexo, ...printedMath, ...handwrittenMath, ...layoutDetection];
 }
