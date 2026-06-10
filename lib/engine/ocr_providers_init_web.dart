@@ -6,8 +6,7 @@
 
 import 'dart:typed_data';
 
-// Note: ocr_cloud_llm.dart imports dart:io so we can't use it on web.
-// Cloud LLM OCR for web would need a dart:js_interop-based HTTP client.
+import 'ocr_cloud_llm_web.dart';
 import 'ocr_model_catalog.dart';
 import 'ocr_model_manager_web.dart';
 import 'ocr_provider.dart';
@@ -135,8 +134,12 @@ Future<void> initOcrProviders() async {
     }
   }
 
-  // Cloud LLM OCR is not available on web yet (dart:io dependency).
-  // TODO: port CloudLlmOcrProvider to use dart:js_interop fetch.
+  // Cloud LLM fallback (web-compatible, uses browser fetch API).
+  final cloudProvider = CloudLlmOcrProviderWeb();
+  OcrProviders.register(cloudProvider);
+  if (OcrProviders.active == null && cloudProvider.isAvailable) {
+    OcrProviders.active = cloudProvider;
+  }
 }
 
 /// Check if OCR is ready to use on web.
