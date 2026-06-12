@@ -182,9 +182,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   /// OCR: pick image → run provider → show confirmation → insert.
   Future<void> _launchOcr(BuildContext context) async {
-    final provider = OcrProviders.active;
+    var provider = OcrProviders.active;
 
-    // Show source picker: camera or gallery
+    // Check if layout-aware OCR is available.
+    final layoutProvider = OcrProviders.available
+        .where((p) => p.name.contains('Layout'))
+        .firstOrNull;
+
+    // Show source picker: camera, gallery, or full document
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -192,6 +197,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           ListTile(
             leading: const Icon(Icons.camera_alt, semanticLabel: 'Camera'),
             title: const Text('Take photo'),
+            subtitle: const Text('Single formula'),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
@@ -200,6 +206,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
             title: const Text('Choose from gallery'),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
+          if (layoutProvider != null)
+            ListTile(
+              leading: const Icon(Icons.article_outlined,
+                  semanticLabel: 'Document page'),
+              title: const Text('Document page'),
+              subtitle: const Text('Detect layout, OCR formula regions'),
+              onTap: () {
+                provider = layoutProvider;
+                Navigator.pop(ctx, ImageSource.gallery);
+              },
+            ),
         ]),
       ),
     );
@@ -212,9 +229,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
     final bytes = await picked.readAsBytes();
 
-    if (provider == null) {
-      // No OCR provider — apply postProcessOcrText as a passthrough
-      // (user might paste a photo of typed math, we can at least clean up)
+    final activeProvider = provider;
+    if (activeProvider == null) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No OCR provider configured yet.')),
@@ -232,7 +248,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // Decode image dimensions
     final decoded = await decodeImageFromList(bytes);
     final result =
-        await provider.recognize(bytes, decoded.width, decoded.height);
+        await activeProvider.recognize(bytes, decoded.width, decoded.height);
     if (!context.mounted) return;
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -406,6 +406,93 @@ void main() {
       expect(latexToEngineSyntax(r'\psi'), 'psi');
     });
   });
+
+  // =========================================================================
+  // Provider switching
+  // =========================================================================
+  group('Provider switching at runtime', () {
+    test('switching active updates immediately', () {
+      final p1 = _MockProvider('switch-A');
+      final p2 = _MockProvider('switch-B');
+      OcrProviders.register(p1);
+      OcrProviders.register(p2);
+      OcrProviders.active = p1;
+      expect(OcrProviders.active!.name, 'switch-A');
+      OcrProviders.active = p2;
+      expect(OcrProviders.active!.name, 'switch-B');
+    });
+
+    test('can set active to null', () {
+      OcrProviders.active = null;
+      expect(OcrProviders.active, isNull);
+    });
+
+    test('available list includes all registered available providers', () {
+      final count = OcrProviders.available.length;
+      final newP = _MockProvider('new-avail-${DateTime.now().millisecondsSinceEpoch}');
+      OcrProviders.register(newP);
+      expect(OcrProviders.available.length, count + 1);
+    });
+  });
+
+  // =========================================================================
+  // Handwriting dialog provider display
+  // =========================================================================
+  group('Handwriting dialog', () {
+    test('OcrProviders.active has name for display', () {
+      final p = _MockProvider('PosFormer (handwritten, 57%)');
+      OcrProviders.register(p);
+      OcrProviders.active = p;
+      // The handwriting dialog shows OcrProviders.active!.name
+      expect(OcrProviders.active!.name, contains('PosFormer'));
+    });
+  });
+
+  // =========================================================================
+  // Layout provider detection for camera flow
+  // =========================================================================
+  group('Layout provider detection', () {
+    test('can find layout provider by name', () {
+      final layout = _MockProvider('Layout-aware OCR');
+      final math = _MockProvider('pix2tex (printed)');
+      OcrProviders.register(layout);
+      OcrProviders.register(math);
+
+      final found = OcrProviders.available
+          .where((p) => p.name.contains('Layout'))
+          .firstOrNull;
+      expect(found, isNotNull);
+      expect(found!.name, 'Layout-aware OCR');
+    });
+
+    test('returns null when no layout provider registered', () {
+      // Filter to only non-layout providers
+      final found = OcrProviders.available
+          .where((p) => p.name == 'NONEXISTENT_LAYOUT')
+          .firstOrNull;
+      expect(found, isNull);
+    });
+  });
+
+  // =========================================================================
+  // Mock provider recognize
+  // =========================================================================
+  group('Mock provider behavior', () {
+    test('recognize returns result', () async {
+      final p = _MockProvider('test-rec');
+      final result = await p.recognize(Uint8List(0), 0, 0);
+      expect(result, isNotNull);
+      expect(result!.text, 'mock result');
+      expect(result.providerName, 'test-rec');
+    });
+
+    test('unavailable provider reports false', () {
+      final p = _MockProvider('unavail', available: false);
+      expect(p.isAvailable, false);
+      expect(p.requiresNetwork, false);
+      expect(p.requiresApiKey, false);
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

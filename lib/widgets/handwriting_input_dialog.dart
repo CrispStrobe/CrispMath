@@ -108,6 +108,16 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
               ),
             ),
             const SizedBox(height: 8),
+            if (OcrProviders.active != null && !_recognizing)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'Model: ${OcrProviders.active!.name}',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: cs.onSurface.withValues(alpha: 0.5)),
+                ),
+              ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),

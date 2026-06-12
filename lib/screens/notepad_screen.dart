@@ -597,7 +597,11 @@ class _NotepadScreenState extends State<NotepadScreen> {
   }
 
   Future<void> _launchNotepadOcr(BuildContext context) async {
-    final provider = OcrProviders.active;
+    var provider = OcrProviders.active;
+
+    final layoutProvider = OcrProviders.available
+        .where((p) => p.name.contains('Layout'))
+        .firstOrNull;
 
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -606,6 +610,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
           ListTile(
             leading: const Icon(Icons.camera_alt, semanticLabel: 'Camera'),
             title: const Text('Take photo'),
+            subtitle: const Text('Single formula'),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
@@ -614,6 +619,17 @@ class _NotepadScreenState extends State<NotepadScreen> {
             title: const Text('Choose from gallery'),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
+          if (layoutProvider != null)
+            ListTile(
+              leading: const Icon(Icons.article_outlined,
+                  semanticLabel: 'Document page'),
+              title: const Text('Document page'),
+              subtitle: const Text('Detect layout, OCR formula regions'),
+              onTap: () {
+                provider = layoutProvider;
+                Navigator.pop(ctx, ImageSource.gallery);
+              },
+            ),
         ]),
       ),
     );
@@ -625,7 +641,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
     final bytes = await picked.readAsBytes();
 
-    if (provider == null) {
+    final activeProvider = provider;
+    if (activeProvider == null) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No OCR provider configured.')),
@@ -635,7 +652,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
     final decoded = await decodeImageFromList(bytes);
     final result =
-        await provider.recognize(bytes, decoded.width, decoded.height);
+        await activeProvider.recognize(bytes, decoded.width, decoded.height);
     if (!context.mounted) return;
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(

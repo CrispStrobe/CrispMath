@@ -135,11 +135,23 @@ Four features from CrispEmbed to integrate into CrispCalc, in order:
   active math provider. Non-formula regions annotated with type.
   Registered when layout model is downloaded.
 
-- [x] **7. Tests.** 46 new tests in `ocr_integration_test.dart`:
+- [x] **7. Tests.** 54 tests in `ocr_integration_test.dart`:
   catalog integrity (MixTex, DBNet, Surya, TrOCR, layout),
   provider registry (register, switch, available filter),
   OcrModelVariant helpers (sizeLabel, license gates),
-  latexToEngineSyntax for new model output patterns.
+  latexToEngineSyntax, provider switching, layout detection
+  in camera flow, mock provider behavior.
+
+- [x] **8. Provider name in handwriting dialog.** Shows active
+  model name below the drawing canvas before recognition.
+
+- [x] **9. Web OCR settings dialog.** Replaced stub with functional
+  dialog: IndexedDB model browser, download/delete, provider
+  selector, license gates. Works without dart:io.
+
+- [x] **10. Document page OCR in camera flow.** Added "Document page"
+  option to source picker in calculator + notepad screens.
+  Auto-switches to layout provider for full-page analysis.
 
 ### Tier 4 — Future / speculative
 
