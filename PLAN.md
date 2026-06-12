@@ -153,6 +153,12 @@ Four features from CrispEmbed to integrate into CrispCalc, in order:
   option to source picker in calculator + notepad screens.
   Auto-switches to layout provider for full-page analysis.
 
+- [x] **11. Qwen2.5-VL catalog + dep update.** Added vision-language
+  model (3B params, Q4_K=2.6 GB, Q8_0=3.9 GB) to catalog and
+  settings dialog. Desktop-only. Updated CrispEmbed dep to 9811275
+  (Qwen2.5-VL engine + WASM pthread fix + perf). Rebuilt WASM.
+  8 new tests for VL catalog integrity.
+
 ### Tier 4 — Future / speculative
 
 - [x] **Pen / handwriting input.** DrawingCanvas (CustomPainter) +

@@ -408,6 +408,62 @@ void main() {
   });
 
   // =========================================================================
+  // Qwen2.5-VL catalog
+  // =========================================================================
+  group('Qwen2.5-VL vision-language catalog', () {
+    test('has at least 2 variants (Q4K, Q8)', () {
+      expect(OcrModelCatalog.visionLanguage.length, greaterThanOrEqualTo(2));
+    });
+
+    test('models have correct HF URL', () {
+      for (final m in OcrModelCatalog.visionLanguage) {
+        expect(m.url, contains('qwen2.5-vl-3b-crispembed-GGUF'));
+        expect(m.url, startsWith('https://huggingface.co/cstr/'));
+        expect(m.url, endsWith('.gguf'));
+      }
+    });
+
+    test('Q4K is ~2.6 GB', () {
+      final q4k = OcrModelCatalog.visionLanguage
+          .firstWhere((m) => m.id.contains('q4k'));
+      expect(q4k.sizeBytes, 2670 * 1024 * 1024);
+      expect(q4k.sizeLabel, '2.6 GB');
+    });
+
+    test('Q8 is ~3.9 GB', () {
+      final q8 = OcrModelCatalog.visionLanguage
+          .firstWhere((m) => m.id.contains('q8'));
+      expect(q8.sizeBytes, 3930 * 1024 * 1024);
+      expect(q8.sizeLabel, '3.8 GB');
+    });
+
+    test('license is Apache-2.0', () {
+      for (final m in OcrModelCatalog.visionLanguage) {
+        expect(m.license, 'Apache-2.0');
+        expect(m.requiresLicenseAcceptance, false);
+      }
+    });
+
+    test('IDs are unique', () {
+      final ids = OcrModelCatalog.visionLanguage.map((m) => m.id).toSet();
+      expect(ids.length, OcrModelCatalog.visionLanguage.length);
+    });
+
+    test('included in all models', () {
+      final allIds = OcrModelCatalog.all.map((m) => m.id).toSet();
+      for (final m in OcrModelCatalog.visionLanguage) {
+        expect(allIds, contains(m.id));
+      }
+    });
+
+    test('descriptions mention desktop-only', () {
+      for (final m in OcrModelCatalog.visionLanguage) {
+        expect(m.description.toLowerCase(), contains('desktop'));
+      }
+    });
+  });
+
+  // =========================================================================
   // Provider switching
   // =========================================================================
   group('Provider switching at runtime', () {

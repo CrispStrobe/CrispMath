@@ -461,6 +461,19 @@ Future<void> initOcrProviders() async {
     }
   }
 
+  // Tier 2: Qwen2.5-VL vision-language (desktop only, 2.6+ GB)
+  for (final model in OcrModelCatalog.visionLanguage) {
+    final path = await OcrModelManager.localPath(model);
+    if (path != null) {
+      OcrProviders.register(_CrispEmbedProvider(
+        path,
+        'Qwen2.5-VL (document OCR, 3B)',
+        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
+      ));
+      break;
+    }
+  }
+
   // Tier 3: Cloud LLM (handwritten + printed, requires API key)
   final cloudProvider = CloudLlmOcrProvider();
   OcrProviders.register(cloudProvider);

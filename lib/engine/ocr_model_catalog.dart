@@ -363,6 +363,35 @@ class OcrModelCatalog {
     ),
   ];
 
+  // -- Vision-language OCR (Qwen2.5-VL) -----------------------------------
+
+  static const String _hfQwen2vlUrl =
+      'https://huggingface.co/cstr/qwen2.5-vl-3b-crispembed-GGUF/resolve/main';
+
+  static const List<OcrModelVariant> visionLanguage = [
+    OcrModelVariant(
+      id: 'qwen2vl-3b-q4k',
+      name: 'Qwen2.5-VL (document OCR)',
+      filename: 'qwen2.5-vl-3b-q4_k.gguf',
+      url: '$_hfQwen2vlUrl/qwen2.5-vl-3b-q4_k.gguf',
+      sizeBytes: 2670 * 1024 * 1024, // 2.6 GB
+      description: 'Vision-language model (3B params). '
+          '2.6 GB Q4_K. Full document OCR with custom prompts. '
+          'Desktop only — too large for mobile/web.',
+      license: 'Apache-2.0',
+    ),
+    OcrModelVariant(
+      id: 'qwen2vl-3b-q8',
+      name: 'Qwen2.5-VL (high quality)',
+      filename: 'qwen2.5-vl-3b-q8_0.gguf',
+      url: '$_hfQwen2vlUrl/qwen2.5-vl-3b-q8_0.gguf',
+      sizeBytes: 3930 * 1024 * 1024, // 3.9 GB
+      description: 'Vision-language model (3B params). '
+          '3.9 GB Q8_0. Best quality document OCR. Desktop only.',
+      license: 'Apache-2.0',
+    ),
+  ];
+
   static List<OcrModelVariant> get all =>
-      [...printedMathPpfnl, ...printedMathTexo, ...printedMathMixtex, ...printedMath, ...handwrittenMath, ...layoutDetection, ...textDetection, ...textDetectionSurya, ...textRecognition];
+      [...printedMathPpfnl, ...printedMathTexo, ...printedMathMixtex, ...printedMath, ...handwrittenMath, ...layoutDetection, ...textDetection, ...textDetectionSurya, ...textRecognition, ...visionLanguage];
 }

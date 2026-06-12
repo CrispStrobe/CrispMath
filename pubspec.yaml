@@ -67,7 +67,7 @@ dependencies:
     git:
       url: https://github.com/CrispStrobe/CrispEmbed.git
       path: flutter/crispembed
-      ref: 82eecb6  # MixTex + Surya-det + TextDetect + Layout export
+      ref: "9811275"  # Qwen2.5-VL engine + WASM pthread fix + perf
 
 dev_dependencies:
   flutter_test:
