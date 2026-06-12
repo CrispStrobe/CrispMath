@@ -95,6 +95,33 @@ with a 2026 input surface."
 - [x] **Symbolic limit.** Tiers 1-4 complete. Gruntz-style growth-rate
   analysis handles exp/log/poly dominance at infinity (~300 lines).
 
+### CrispEmbed integration — June 2026 batch
+
+Four features from CrispEmbed to integrate into CrispCalc, in order:
+
+- [x] **1. MixTex model catalog.** Added MixTex (Swin-Tiny + RoBERTa,
+  Chinese+English LaTeX OCR) to `ocr_model_catalog.dart`. Quantized
+  F16→Q8_0 (89 MB) + Q4_K (57 MB). Published to HuggingFace
+  `cstr/mixtex-zhen-gguf`. Registered in native + web provider init.
+  Same `crispembed_math_ocr_init` API — auto-detected from GGUF arch.
+
+- [x] **2. Rebuild CrispEmbed dep.** Merged feat/posformer-port→main
+  (78 commits). Pinned pubspec ref to d0631bc. Rebuilt WASM binary
+  (1.2 MB, includes MixTex). Picks up GGML graph optimizations,
+  Q8_0 layout, BLAS-accelerated decoder matmuls.
+
+- [x] **3. General OCR pipeline.** Wired `CrispOcrPipeline` (DBNet +
+  TrOCR) into CrispCalc. Added `_GeneralOcrProvider` in
+  `ocr_providers_init.dart` with temp-file PPM bridge. Added DBNet
+  (7/12 MB) and TrOCR-small-printed (42/63 MB) to model catalog.
+  Published to HuggingFace `cstr/dbnet-ic15-gguf` + `cstr/trocr-small-printed-gguf`.
+
+- [x] **4. Surya text detector.** Created `CrispTextDetect` Dart FFI
+  wrapper in CrispEmbed worktree (feat/surya-dart → main, 125c804).
+  Added Surya-det models (41/23 MB) to catalog. Wired as preferred
+  text detection backend (falls back to DBNet if Surya not downloaded).
+  Published to `cstr/surya-det-gguf`.
+
 ### Tier 4 — Future / speculative
 
 - [x] **Pen / handwriting input.** DrawingCanvas (CustomPainter) +
@@ -119,8 +146,9 @@ quantizations verified. CI builds all 5 platforms.
 | 1. Scaffolding | ✅ | OcrProvider abstraction, postProcessOcrText, latexToEngineSyntax |
 | 2. ML Kit | planned | google_mlkit_text_recognition (Android/iOS), Apache 2.0 |
 | 3. Cloud LLM | ✅ | CloudLlmOcrProvider, user-supplied API key, shares CrispAssist infra |
-| 4. CrispEmbed (printed) | ✅ | DeiT+TrOCR GGUF, F16=3.3s, Q4_K=17MB, all correct |
-| 5. CrispEmbed (handwritten) | ✅ | HMER (13MB) + BTTR (4–25MB), auto-detected from GGUF |
+| 3b. General OCR | ✅ | DBNet/Surya text det + TrOCR recognition (7–63 MB) |
+| 4a. Printed math | ✅ | PP-FormulaNet-L (181M), Texo-Distill, pix2tex, MixTex (CJK) |
+| 4b. Handwritten math | ✅ | PosFormer (57%), BTTR (49%), HMER (36%), auto-detected from GGUF |
 
 **Models on HuggingFace**: `cstr/pix2tex-mfr-gguf` (F32/F16/Q8_0/Q4_K)
 

@@ -125,6 +125,14 @@ Future<void> initOcrProviders() async {
       OcrProviders.register(_WasmOcrProvider(model));
     }
 
+    // Register MixTex (Chinese+English) models.
+    final mixtexModels = OcrModelCatalog.printedMathMixtex
+        .where((m) => m.sizeBytes <= 100 * 1024 * 1024)
+        .toList();
+    for (final model in mixtexModels) {
+      OcrProviders.register(_WasmOcrProvider(model));
+    }
+
     // Register handwritten models too.
     final hwModels = OcrModelCatalog.handwrittenMath
         .where((m) => m.sizeBytes <= 15 * 1024 * 1024)

@@ -61,11 +61,13 @@ dependencies:
   image_picker: ^1.0.0
 
   # CrispEmbed: on-device embedding + math OCR inference via ggml.
-  # Provides the CrispEmbedOcr class for DeiT+TrOCR equation recognition.
+  # Provides CrispEmbedOcr (math OCR), CrispOcrPipeline (general OCR),
+  # CrispLayout (document layout), CrispTextDetect (text detection).
   crispembed:
     git:
       url: https://github.com/CrispStrobe/CrispEmbed.git
       path: flutter/crispembed
+      ref: 125c804  # MixTex + Surya-det + CrispTextDetect Dart FFI
 
 dev_dependencies:
   flutter_test:

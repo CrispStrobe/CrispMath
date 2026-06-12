@@ -3,9 +3,10 @@
 // Registers available OCR providers at app startup.
 // Called from main.dart after platform init.
 
+import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:crispembed/crispembed.dart' show CrispEmbedOcr;
+import 'package:crispembed/crispembed.dart' show CrispEmbedOcr, CrispOcrPipeline;
 
 import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
@@ -123,6 +124,96 @@ class _CrispEmbedProvider implements OcrProvider {
   }
 }
 
+/// On-device general OCR provider backed by CrispEmbed (DBNet + TrOCR).
+/// Detects text regions in the image, then recognizes each region.
+/// Returns all recognized text concatenated with newlines.
+class _GeneralOcrProvider implements OcrProvider {
+  final String _detPath;
+  final String _recPath;
+  CrispOcrPipeline? _pipeline;
+
+  _GeneralOcrProvider(this._detPath, this._recPath);
+
+  @override
+  String get name => 'General OCR (DBNet+TrOCR)';
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  bool get requiresNetwork => false;
+
+  @override
+  bool get requiresApiKey => false;
+
+  @override
+  Future<OcrResult?> recognize(
+    Uint8List imageBytes,
+    int width,
+    int height,
+  ) async {
+    try {
+      _pipeline ??= _tryInit();
+      if (_pipeline == null) return null;
+
+      // CrispOcrPipeline.run() takes a file path — write to temp file.
+      final tmpDir = await Directory.systemTemp.createTemp('ocr_');
+      final tmpFile = File('${tmpDir.path}/input.png');
+      // Write raw pixels as PPM (simplest uncompressed format).
+      final channels = imageBytes.length ~/ (width * height);
+      final ppm = _toPpm(imageBytes, width, height, channels);
+      await tmpFile.writeAsBytes(ppm);
+
+      final results = _pipeline!.run(tmpFile.path);
+
+      // Cleanup temp file.
+      try {
+        await tmpDir.delete(recursive: true);
+      } catch (_) {}
+
+      if (results.isEmpty) return null;
+
+      final text = results.map((r) => r.text).join(' ');
+      return OcrResult(
+        text: text,
+        rawOutput: text,
+        providerName: name,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  CrispOcrPipeline? _tryInit() {
+    try {
+      return CrispOcrPipeline(_detPath, _recPath, nThreads: 4);
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+/// Encode raw RGBA/RGB/Gray pixels as PPM (P6) for CrispEmbed file-based API.
+Uint8List _toPpm(Uint8List pixels, int w, int h, int channels) {
+  final header = 'P6\n$w $h\n255\n';
+  final headerBytes = header.codeUnits;
+  final rgb = Uint8List(w * h * 3);
+  for (var i = 0; i < w * h; i++) {
+    if (channels == 1) {
+      rgb[i * 3] = rgb[i * 3 + 1] = rgb[i * 3 + 2] = pixels[i];
+    } else if (channels >= 3) {
+      final base = i * channels;
+      rgb[i * 3] = pixels[base];
+      rgb[i * 3 + 1] = pixels[base + 1];
+      rgb[i * 3 + 2] = pixels[base + 2];
+    }
+  }
+  final result = Uint8List(headerBytes.length + rgb.length);
+  result.setRange(0, headerBytes.length, headerBytes);
+  result.setRange(headerBytes.length, result.length, rgb);
+  return result;
+}
+
 /// Try to register available OCR providers in priority order.
 /// Called once at app startup.
 Future<void> initOcrProviders() async {
@@ -164,7 +255,21 @@ Future<void> initOcrProviders() async {
     }
   }
 
-  // Tier 4b: On-device printed math — Texo-distill (AGPL)
+  // Tier 4b: On-device printed math — MixTex (Chinese+English, Apache-2.0)
+  for (final model in OcrModelCatalog.printedMathMixtex) {
+    final path = await OcrModelManager.localPath(model);
+    if (path != null) {
+      final provider = _CrispEmbedProvider(
+        path,
+        'MixTex (Chinese+English)',
+        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
+      );
+      OcrProviders.register(provider);
+      break;
+    }
+  }
+
+  // Tier 4d: On-device printed math — Texo-distill (AGPL)
   for (final model in OcrModelCatalog.printedMathTexo) {
     final path = await OcrModelManager.localPath(model);
     if (path != null) {
@@ -179,7 +284,7 @@ Future<void> initOcrProviders() async {
     }
   }
 
-  // Tier 4c: On-device printed math — pix2tex / TrOCR (fallback)
+  // Tier 4e: On-device printed math — pix2tex / TrOCR (fallback)
   if (OcrProviders.active == null) {
     for (final model in OcrModelCatalog.printedMath) {
       final path = await OcrModelManager.localPath(model);
@@ -194,6 +299,28 @@ Future<void> initOcrProviders() async {
         break;
       }
     }
+  }
+
+  // Tier 3b: General OCR (text detection + TrOCR recognition)
+  // Prefer Surya (91 languages, better accuracy) over DBNet.
+  String? detPath;
+  String? recPath;
+  for (final model in OcrModelCatalog.textDetectionSurya) {
+    detPath = await OcrModelManager.localPath(model);
+    if (detPath != null) break;
+  }
+  if (detPath == null) {
+    for (final model in OcrModelCatalog.textDetection) {
+      detPath = await OcrModelManager.localPath(model);
+      if (detPath != null) break;
+    }
+  }
+  for (final model in OcrModelCatalog.textRecognition) {
+    recPath = await OcrModelManager.localPath(model);
+    if (recPath != null) break;
+  }
+  if (detPath != null && recPath != null) {
+    OcrProviders.register(_GeneralOcrProvider(detPath, recPath));
   }
 
   // Tier 3: Cloud LLM (handwritten + printed, requires API key)
