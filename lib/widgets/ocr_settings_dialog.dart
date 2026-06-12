@@ -1,7 +1,7 @@
 // lib/widgets/ocr_settings_dialog.dart
 //
 // Settings dialog for OCR model management: browse available models,
-// download/delete, see disk usage, select active model.
+// download/delete, see disk usage, select active provider.
 
 import 'package:flutter/material.dart';
 
@@ -106,13 +106,17 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
     }
   }
 
+  void _setActiveProvider(OcrProvider provider) {
+    setState(() => OcrProviders.active = provider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final diskMB = (_totalDiskUsage / (1024 * 1024)).toStringAsFixed(1);
 
     return AlertDialog(
-      title: const Text('Math OCR Models'),
+      title: const Text('OCR Models'),
       content: SizedBox(
         width: 480,
         child: SingleChildScrollView(
@@ -136,15 +140,38 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
               ),
               const SizedBox(height: 12),
 
-              // Active provider
-              if (OcrProviders.active != null)
-                Chip(
-                  avatar: const Icon(Icons.check_circle,
-                      size: 16, semanticLabel: 'Active'),
-                  label: Text('Active: ${OcrProviders.active!.name}'),
-                  backgroundColor: scheme.primaryContainer,
-                )
-              else
+              // Provider selector
+              if (OcrProviders.available.isNotEmpty) ...[
+                Text('Active Provider',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: scheme.primary)),
+                const SizedBox(height: 4),
+                ...OcrProviders.available.map((p) {
+                  final isActive = OcrProviders.active == p;
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(
+                      isActive
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      size: 20,
+                      color: isActive ? scheme.primary : null,
+                      semanticLabel: isActive ? 'Active' : 'Inactive',
+                    ),
+                    title: Text(p.name, style: const TextStyle(fontSize: 13)),
+                    subtitle: Text(
+                      [
+                        if (p.requiresNetwork) 'cloud',
+                        if (p.requiresApiKey) 'API key',
+                        if (!p.requiresNetwork) 'on-device',
+                      ].join(' · '),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    onTap: () => _setActiveProvider(p),
+                  );
+                }),
+                const Divider(height: 24),
+              ] else ...[
                 Chip(
                   avatar: Icon(Icons.info_outline,
                       size: 16,
@@ -152,23 +179,29 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                       color: scheme.error),
                   label: const Text('No model active — download one below'),
                 ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
-              // Printed math models
-              Text('Printed Math',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: scheme.primary)),
-              const SizedBox(height: 8),
-              for (final model in OcrModelCatalog.printedMath)
-                _buildModelTile(model),
-
-              const SizedBox(height: 16),
-              Text('Handwritten Math',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: scheme.primary)),
-              const SizedBox(height: 8),
-              for (final model in OcrModelCatalog.handwrittenMath)
-                _buildModelTile(model),
+              // Model catalog sections
+              _buildSection('Printed Math — Best Quality',
+                  OcrModelCatalog.printedMathPpfnl),
+              _buildSection(
+                  'Printed Math — Texo', OcrModelCatalog.printedMathTexo),
+              _buildSection('Printed Math — MixTex (Chinese+English)',
+                  OcrModelCatalog.printedMathMixtex),
+              _buildSection(
+                  'Printed Math — pix2tex', OcrModelCatalog.printedMath),
+              _buildSection(
+                  'Handwritten Math', OcrModelCatalog.handwrittenMath),
+              _buildSection(
+                  'Text Detection — Surya (91 langs)',
+                  OcrModelCatalog.textDetectionSurya),
+              _buildSection(
+                  'Text Detection — DBNet', OcrModelCatalog.textDetection),
+              _buildSection(
+                  'Text Recognition — TrOCR', OcrModelCatalog.textRecognition),
+              _buildSection(
+                  'Layout Detection', OcrModelCatalog.layoutDetection),
             ],
           ),
         ),
@@ -178,6 +211,23 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Close'),
         ),
+      ],
+    );
+  }
+
+  Widget _buildSection(String title, List<OcrModelVariant> models) {
+    if (models.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Text(title,
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.primary)),
+        const SizedBox(height: 4),
+        for (final model in models) _buildModelTile(model),
       ],
     );
   }

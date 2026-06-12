@@ -6,7 +6,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:crispembed/crispembed.dart' show CrispEmbedOcr, CrispOcrPipeline;
+import 'package:crispembed/crispembed.dart'
+    show CrispEmbedOcr, CrispLayout, CrispOcrPipeline, LayoutRegion;
 
 import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
@@ -193,6 +194,132 @@ class _GeneralOcrProvider implements OcrProvider {
   }
 }
 
+/// Layout-aware OCR provider. Runs RT-DETRv2 layout detection on the image,
+/// then dispatches math OCR for formula regions and returns region annotations
+/// for text/table/figure regions.
+class _LayoutOcrProvider implements OcrProvider {
+  final String _layoutPath;
+  final OcrProvider? _mathProvider;
+  CrispLayout? _layout;
+
+  _LayoutOcrProvider(this._layoutPath, this._mathProvider);
+
+  @override
+  String get name => 'Layout-aware OCR';
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  bool get requiresNetwork => false;
+
+  @override
+  bool get requiresApiKey => false;
+
+  @override
+  Future<OcrResult?> recognize(
+    Uint8List imageBytes,
+    int width,
+    int height,
+  ) async {
+    try {
+      _layout ??= _tryInit();
+      if (_layout == null) return null;
+
+      // Write image to temp file for CrispLayout (file-based API).
+      final channels = imageBytes.length ~/ (width * height);
+      final tmpDir = await Directory.systemTemp.createTemp('layout_');
+      final tmpFile = File('${tmpDir.path}/input.ppm');
+      await tmpFile.writeAsBytes(_toPpm(imageBytes, width, height, channels));
+
+      final regions = _layout!.detect(tmpFile.path, threshold: 0.3);
+
+      // Cleanup temp file.
+      try {
+        await tmpDir.delete(recursive: true);
+      } catch (_) {}
+
+      if (regions.isEmpty) return null;
+
+      final parts = <String>[];
+
+      for (final region in regions) {
+        if (_isFormulaRegion(region) && _mathProvider != null) {
+          // Crop the formula region and run math OCR on it.
+          final cropped = _cropRegion(imageBytes, width, height, channels,
+              region.x1.round(), region.y1.round(),
+              region.x2.round(), region.y2.round());
+          if (cropped != null) {
+            final cropW = region.x2.round() - region.x1.round();
+            final cropH = region.y2.round() - region.y1.round();
+            final mathResult =
+                await _mathProvider.recognize(cropped, cropW, cropH);
+            if (mathResult != null) {
+              parts.add(mathResult.text);
+              continue;
+            }
+          }
+        }
+        // For non-formula regions, annotate with region type.
+        parts.add('[${region.labelName}]');
+      }
+
+      if (parts.isEmpty) return null;
+      final text = parts.join(' ');
+      return OcrResult(
+        text: text,
+        rawOutput: regions
+            .map((r) =>
+                '${r.labelName}(${r.x1.toInt()},${r.y1.toInt()}-'
+                '${r.x2.toInt()},${r.y2.toInt()} '
+                'score=${r.score.toStringAsFixed(2)})')
+            .join('; '),
+        providerName: name,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  CrispLayout? _tryInit() {
+    try {
+      return CrispLayout(_layoutPath, nThreads: 4);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static bool _isFormulaRegion(LayoutRegion r) {
+    final name = r.labelName.toLowerCase();
+    return name.contains('formula') ||
+        name.contains('equation') ||
+        name.contains('math');
+  }
+
+  /// Crop raw pixel data to a bounding box region.
+  static Uint8List? _cropRegion(Uint8List pixels, int srcW, int srcH,
+      int channels, int x1, int y1, int x2, int y2) {
+    // Clamp to image bounds.
+    final cx1 = x1.clamp(0, srcW);
+    final cy1 = y1.clamp(0, srcH);
+    final cx2 = x2.clamp(0, srcW);
+    final cy2 = y2.clamp(0, srcH);
+    final cropW = cx2 - cx1;
+    final cropH = cy2 - cy1;
+    if (cropW <= 0 || cropH <= 0) return null;
+
+    final cropped = Uint8List(cropW * cropH * channels);
+    for (var row = 0; row < cropH; row++) {
+      final srcOffset = ((cy1 + row) * srcW + cx1) * channels;
+      final dstOffset = row * cropW * channels;
+      cropped.setRange(
+          dstOffset, dstOffset + cropW * channels,
+          pixels.sublist(srcOffset, srcOffset + cropW * channels));
+    }
+    return cropped;
+  }
+}
+
 /// Encode raw RGBA/RGB/Gray pixels as PPM (P6) for CrispEmbed file-based API.
 Uint8List _toPpm(Uint8List pixels, int w, int h, int channels) {
   final header = 'P6\n$w $h\n255\n';
@@ -321,6 +448,17 @@ Future<void> initOcrProviders() async {
   }
   if (detPath != null && recPath != null) {
     OcrProviders.register(_GeneralOcrProvider(detPath, recPath));
+  }
+
+  // Tier 3a: Layout-aware OCR (RT-DETRv2 + math OCR for formula regions)
+  for (final model in OcrModelCatalog.layoutDetection) {
+    final layoutPath = await OcrModelManager.localPath(model);
+    if (layoutPath != null) {
+      // Use the current active math provider for formula region OCR.
+      OcrProviders.register(
+          _LayoutOcrProvider(layoutPath, OcrProviders.active));
+      break;
+    }
   }
 
   // Tier 3: Cloud LLM (handwritten + printed, requires API key)

@@ -67,7 +67,7 @@ dependencies:
     git:
       url: https://github.com/CrispStrobe/CrispEmbed.git
       path: flutter/crispembed
-      ref: 125c804  # MixTex + Surya-det + CrispTextDetect Dart FFI
+      ref: 82eecb6  # MixTex + Surya-det + TextDetect + Layout export
 
 dev_dependencies:
   flutter_test:

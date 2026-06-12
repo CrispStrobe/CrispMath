@@ -122,6 +122,25 @@ Four features from CrispEmbed to integrate into CrispCalc, in order:
   text detection backend (falls back to DBNet if Surya not downloaded).
   Published to `cstr/surya-det-gguf`.
 
+### CrispCalc UI + wiring — June 2026
+
+- [x] **5. Provider selector UI.** Rewrote OcrSettingsDialog with
+  runtime provider switcher (radio-style ListTiles). Shows all 9
+  catalog sections (PP-FormulaNet, Texo, MixTex, pix2tex,
+  handwritten, Surya, DBNet, TrOCR, layout). No deprecated APIs.
+
+- [x] **6. Layout-aware OCR pipeline.** Added `_LayoutOcrProvider`
+  that chains RT-DETRv2 layout detection → math OCR for formula
+  regions. Crops formula bounding boxes and dispatches to the
+  active math provider. Non-formula regions annotated with type.
+  Registered when layout model is downloaded.
+
+- [x] **7. Tests.** 46 new tests in `ocr_integration_test.dart`:
+  catalog integrity (MixTex, DBNet, Surya, TrOCR, layout),
+  provider registry (register, switch, available filter),
+  OcrModelVariant helpers (sizeLabel, license gates),
+  latexToEngineSyntax for new model output patterns.
+
 ### Tier 4 — Future / speculative
 
 - [x] **Pen / handwriting input.** DrawingCanvas (CustomPainter) +
