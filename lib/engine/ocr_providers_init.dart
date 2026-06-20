@@ -461,13 +461,45 @@ Future<void> initOcrProviders() async {
     }
   }
 
-  // Tier 2: Qwen2.5-VL vision-language (desktop only, 2.6+ GB)
-  for (final model in OcrModelCatalog.visionLanguage) {
+  // Tier 2a: Qwen3-VL vision-language (desktop only, 1.5–2.2 GB)
+  // Preferred over Qwen2.5-VL: smaller (2B vs 3B), faster (fused attn,
+  // backend KV cache), and better (DeepStack vision fusion).
+  bool hasQwen3vl = false;
+  for (final model in OcrModelCatalog.visionLanguageQwen3) {
     final path = await OcrModelManager.localPath(model);
     if (path != null) {
       OcrProviders.register(_CrispEmbedProvider(
         path,
-        'Qwen2.5-VL (document OCR, 3B)',
+        'Qwen3-VL (document OCR, 2B)',
+        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
+      ));
+      hasQwen3vl = true;
+      break;
+    }
+  }
+
+  // Tier 2b: Qwen2.5-VL vision-language (fallback, 2.6–3.9 GB)
+  if (!hasQwen3vl) {
+    for (final model in OcrModelCatalog.visionLanguage) {
+      final path = await OcrModelManager.localPath(model);
+      if (path != null) {
+        OcrProviders.register(_CrispEmbedProvider(
+          path,
+          'Qwen2.5-VL (document OCR, 3B)',
+          (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
+        ));
+        break;
+      }
+    }
+  }
+
+  // Tier 2c: DeepSeek-OCR2 (desktop only, 6.4 GB F16)
+  for (final model in OcrModelCatalog.deepseekOcr2) {
+    final path = await OcrModelManager.localPath(model);
+    if (path != null) {
+      OcrProviders.register(_CrispEmbedProvider(
+        path,
+        'DeepSeek-OCR2 (MoE, 3B)',
         (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
       ));
       break;

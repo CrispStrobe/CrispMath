@@ -363,7 +363,37 @@ class OcrModelCatalog {
     ),
   ];
 
-  // -- Vision-language OCR (Qwen2.5-VL) -----------------------------------
+  // -- Vision-language OCR -------------------------------------------------
+
+  static const String _hfQwen3vlUrl =
+      'https://huggingface.co/cstr/qwen3-vl-2b-crispembed-GGUF/resolve/main';
+
+  /// Qwen3-VL-2B: smaller and faster than Qwen2.5-VL-3B with DeepStack
+  /// vision injection, fused flash attention, and backend KV cache.
+  static const List<OcrModelVariant> visionLanguageQwen3 = [
+    OcrModelVariant(
+      id: 'qwen3vl-2b-q4k',
+      name: 'Qwen3-VL (document OCR)',
+      filename: 'qwen3-vl-2b-q4_k.gguf',
+      url: '$_hfQwen3vlUrl/qwen3-vl-2b-q4_k.gguf',
+      sizeBytes: 1536 * 1024 * 1024, // 1.5 GB
+      description: 'Vision-language model (2B params, Qwen3-VL). '
+          '1.5 GB Q4_K. Faster than Qwen2.5-VL with DeepStack '
+          'vision fusion. Desktop only.',
+      license: 'Apache-2.0',
+    ),
+    OcrModelVariant(
+      id: 'qwen3vl-2b-q8',
+      name: 'Qwen3-VL (high quality)',
+      filename: 'qwen3-vl-2b-q8_0.gguf',
+      url: '$_hfQwen3vlUrl/qwen3-vl-2b-q8_0.gguf',
+      sizeBytes: 2253 * 1024 * 1024, // 2.2 GB
+      description: 'Vision-language model (2B params, Qwen3-VL). '
+          '2.2 GB Q8_0. Best quality with DeepStack vision fusion. '
+          'Desktop only.',
+      license: 'Apache-2.0',
+    ),
+  ];
 
   static const String _hfQwen2vlUrl =
       'https://huggingface.co/cstr/qwen2.5-vl-3b-crispembed-GGUF/resolve/main';
@@ -392,6 +422,26 @@ class OcrModelCatalog {
     ),
   ];
 
+  // -- DeepSeek-OCR2 (SAM-ViT + Qwen2 encoder + DeepSeek-V2 MoE) ---------
+  // TODO: upload quantized variants to cstr/deepseek-ocr2-crispembed-GGUF
+
+  static const String _hfDeepseekOcr2Url =
+      'https://huggingface.co/cstr/deepseek-ocr2-crispembed-GGUF/resolve/main';
+
+  static const List<OcrModelVariant> deepseekOcr2 = [
+    OcrModelVariant(
+      id: 'deepseek-ocr2-f16',
+      name: 'DeepSeek-OCR2 (MoE, full)',
+      filename: 'deepseek-ocr2-f16.gguf',
+      url: '$_hfDeepseekOcr2Url/deepseek-ocr2-f16.gguf',
+      sizeBytes: 6554 * 1024 * 1024, // 6.4 GB
+      description: 'DeepSeek-OCR2 (SAM-ViT + Qwen2 + MoE decoder, 3B). '
+          '6.4 GB FP16. High-accuracy document OCR. Desktop only. '
+          'Quantized variants pending.',
+      license: 'Apache-2.0',
+    ),
+  ];
+
   static List<OcrModelVariant> get all =>
-      [...printedMathPpfnl, ...printedMathTexo, ...printedMathMixtex, ...printedMath, ...handwrittenMath, ...layoutDetection, ...textDetection, ...textDetectionSurya, ...textRecognition, ...visionLanguage];
+      [...printedMathPpfnl, ...printedMathTexo, ...printedMathMixtex, ...printedMath, ...handwrittenMath, ...layoutDetection, ...textDetection, ...textDetectionSurya, ...textRecognition, ...visionLanguageQwen3, ...visionLanguage, ...deepseekOcr2];
 }

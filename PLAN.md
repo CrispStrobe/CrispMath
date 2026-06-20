@@ -159,6 +159,21 @@ Four features from CrispEmbed to integrate into CrispCalc, in order:
   (Qwen2.5-VL engine + WASM pthread fix + perf). Rebuilt WASM.
   8 new tests for VL catalog integrity.
 
+- [x] **12. Qwen3-VL-2B + DeepSeek-OCR2 + CrispEmbed perf update.**
+  Bumped CrispEmbed dep to d020054 (latest). New models:
+  - **Qwen3-VL-2B** (Q4_K=1.5 GB, Q8_0=2.2 GB): smaller and faster
+    than Qwen2.5-VL with DeepStack vision fusion, fused flash
+    attention, backend KV cache. Registered as preferred VLM.
+  - **DeepSeek-OCR2** (F16=6.4 GB): SAM-ViT + Qwen2 + DeepSeek-V2
+    MoE decoder. Apache-2.0. Quantized variants pending.
+  Automatic perf gains from dep bump: madvise prefetch on model load,
+  fused `flash_attn_ext` in all VLM paths, per-row embedding dequant
+  (saves ~655 MB in DeepSeek-OCR2), backend KV cache (no CPU-GPU
+  transfer per token). Settings dialog updated with 3 new sections.
+  14 new tests for Qwen3-VL + DeepSeek-OCR2 catalog integrity.
+  TODO: upload GGUF files to HuggingFace `cstr/` repos, quantize
+  DeepSeek-OCR2 (Q4_K, Q8_0).
+
 ### Tier 4 — Future / speculative
 
 - [x] **Pen / handwriting input.** DrawingCanvas (CustomPainter) +
@@ -186,6 +201,8 @@ quantizations verified. CI builds all 5 platforms.
 | 3b. General OCR | ✅ | DBNet/Surya text det + TrOCR recognition (7–63 MB) |
 | 4a. Printed math | ✅ | PP-FormulaNet-L (181M), Texo-Distill, pix2tex, MixTex (CJK) |
 | 4b. Handwritten math | ✅ | PosFormer (57%), BTTR (49%), HMER (36%), auto-detected from GGUF |
+| 5a. Vision-language | ✅ | Qwen3-VL-2B (preferred), Qwen2.5-VL-3B (fallback), desktop-only |
+| 5b. MoE document OCR | ✅ | DeepSeek-OCR2 (3B MoE, Apache-2.0), desktop-only, F16 only |
 
 **Models on HuggingFace**: `cstr/pix2tex-mfr-gguf` (F32/F16/Q8_0/Q4_K)
 
@@ -239,6 +256,8 @@ math-stack-ios-builder → symbolic_math_bridge → CrispCalc
 CrispEmbed (C++/ggml) → Flutter plugin (flutter/crispembed/) → CrispCalc
 ```
 - `math_ocr.h/cpp`: DeiT encoder (ggml graph) + TrOCR decoder (scalar)
+- `qwen2vl_ocr.h/cpp`: Qwen2.5-VL + Qwen3-VL (auto-detected from GGUF arch)
+- `deepseek_ocr2.h/cpp`: DeepSeek-OCR2 (SAM-ViT + Qwen2 + MoE decoder)
 - `convert-pix2tex-to-gguf.py`: ONNX → GGUF with weight transpose
 - Platform dirs: linux/ windows/ macos/ ios/ android/ with CI bundling
 

@@ -202,8 +202,12 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                   'Text Recognition — TrOCR', OcrModelCatalog.textRecognition),
               _buildSection(
                   'Layout Detection', OcrModelCatalog.layoutDetection),
-              _buildSection('Vision-Language (desktop only)',
+              _buildSection('Vision-Language — Qwen3-VL (recommended)',
+                  OcrModelCatalog.visionLanguageQwen3),
+              _buildSection('Vision-Language — Qwen2.5-VL',
                   OcrModelCatalog.visionLanguage),
+              _buildSection('Vision-Language — DeepSeek-OCR2',
+                  OcrModelCatalog.deepseekOcr2),
             ],
           ),
         ),

@@ -371,6 +371,9 @@ void main() {
       expect(OcrModelCatalog.textDetectionSurya, isNotEmpty);
       expect(OcrModelCatalog.textRecognition, isNotEmpty);
       expect(OcrModelCatalog.layoutDetection, isNotEmpty);
+      expect(OcrModelCatalog.visionLanguageQwen3, isNotEmpty);
+      expect(OcrModelCatalog.visionLanguage, isNotEmpty);
+      expect(OcrModelCatalog.deepseekOcr2, isNotEmpty);
     });
   });
 
@@ -458,6 +461,114 @@ void main() {
 
     test('descriptions mention desktop-only', () {
       for (final m in OcrModelCatalog.visionLanguage) {
+        expect(m.description.toLowerCase(), contains('desktop'));
+      }
+    });
+  });
+
+  // =========================================================================
+  // Qwen3-VL-2B catalog
+  // =========================================================================
+  group('Qwen3-VL-2B vision-language catalog', () {
+    test('has at least 2 variants (Q4K, Q8)', () {
+      expect(OcrModelCatalog.visionLanguageQwen3.length,
+          greaterThanOrEqualTo(2));
+    });
+
+    test('models have correct HF URL', () {
+      for (final m in OcrModelCatalog.visionLanguageQwen3) {
+        expect(m.url, contains('qwen3-vl-2b-crispembed-GGUF'));
+        expect(m.url, startsWith('https://huggingface.co/cstr/'));
+        expect(m.url, endsWith('.gguf'));
+      }
+    });
+
+    test('Q4K is ~1.5 GB (smaller than Qwen2.5-VL)', () {
+      final q4k = OcrModelCatalog.visionLanguageQwen3
+          .firstWhere((m) => m.id.contains('q4k'));
+      expect(q4k.sizeBytes, 1536 * 1024 * 1024);
+      expect(q4k.sizeLabel, '1.5 GB');
+      // Verify it's smaller than Qwen2.5-VL Q4K
+      final qwen25q4k = OcrModelCatalog.visionLanguage
+          .firstWhere((m) => m.id.contains('q4k'));
+      expect(q4k.sizeBytes, lessThan(qwen25q4k.sizeBytes));
+    });
+
+    test('Q8 is ~2.2 GB', () {
+      final q8 = OcrModelCatalog.visionLanguageQwen3
+          .firstWhere((m) => m.id.contains('q8'));
+      expect(q8.sizeBytes, 2253 * 1024 * 1024);
+      expect(q8.sizeLabel, '2.2 GB');
+    });
+
+    test('license is Apache-2.0', () {
+      for (final m in OcrModelCatalog.visionLanguageQwen3) {
+        expect(m.license, 'Apache-2.0');
+        expect(m.requiresLicenseAcceptance, false);
+      }
+    });
+
+    test('IDs are unique and distinct from Qwen2.5-VL', () {
+      final ids = OcrModelCatalog.visionLanguageQwen3.map((m) => m.id).toSet();
+      expect(ids.length, OcrModelCatalog.visionLanguageQwen3.length);
+      final qwen25ids =
+          OcrModelCatalog.visionLanguage.map((m) => m.id).toSet();
+      expect(ids.intersection(qwen25ids), isEmpty);
+    });
+
+    test('included in all models', () {
+      final allIds = OcrModelCatalog.all.map((m) => m.id).toSet();
+      for (final m in OcrModelCatalog.visionLanguageQwen3) {
+        expect(allIds, contains(m.id));
+      }
+    });
+
+    test('descriptions mention desktop-only', () {
+      for (final m in OcrModelCatalog.visionLanguageQwen3) {
+        expect(m.description.toLowerCase(), contains('desktop'));
+      }
+    });
+  });
+
+  // =========================================================================
+  // DeepSeek-OCR2 catalog
+  // =========================================================================
+  group('DeepSeek-OCR2 catalog', () {
+    test('has at least 1 variant', () {
+      expect(OcrModelCatalog.deepseekOcr2.length, greaterThanOrEqualTo(1));
+    });
+
+    test('models have correct HF URL', () {
+      for (final m in OcrModelCatalog.deepseekOcr2) {
+        expect(m.url, contains('deepseek-ocr2-crispembed-GGUF'));
+        expect(m.url, startsWith('https://huggingface.co/cstr/'));
+        expect(m.url, endsWith('.gguf'));
+      }
+    });
+
+    test('F16 is ~6.4 GB', () {
+      final f16 = OcrModelCatalog.deepseekOcr2
+          .firstWhere((m) => m.id.contains('f16'));
+      expect(f16.sizeBytes, 6554 * 1024 * 1024);
+      expect(f16.sizeLabel, '6.4 GB');
+    });
+
+    test('license is Apache-2.0', () {
+      for (final m in OcrModelCatalog.deepseekOcr2) {
+        expect(m.license, 'Apache-2.0');
+        expect(m.requiresLicenseAcceptance, false);
+      }
+    });
+
+    test('included in all models', () {
+      final allIds = OcrModelCatalog.all.map((m) => m.id).toSet();
+      for (final m in OcrModelCatalog.deepseekOcr2) {
+        expect(allIds, contains(m.id));
+      }
+    });
+
+    test('descriptions mention desktop-only', () {
+      for (final m in OcrModelCatalog.deepseekOcr2) {
         expect(m.description.toLowerCase(), contains('desktop'));
       }
     });
