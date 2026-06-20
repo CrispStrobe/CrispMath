@@ -11,6 +11,13 @@
 
 import 'notepad.dart';
 
+/// Cached word-boundary RegExp patterns for scope name substitution.
+final _wordBoundaryCache = <String, RegExp>{};
+RegExp _wordBoundaryPattern(String name) =>
+    _wordBoundaryCache.putIfAbsent(name, () =>
+        RegExp(r'(?<![A-Za-z0-9_])' + RegExp.escape(name) + r'(?![A-Za-z0-9_])'));
+final _ansPattern = RegExp(r'(?<![A-Za-z0-9_])Ans(?![A-Za-z0-9_])');
+
 /// Kind of a single notepad line, surfaced to Phase 3 so the
 /// dependency walker knows how to treat it.
 enum NotepadLineKind {
@@ -425,10 +432,7 @@ String? preprocessNotepadLine(
   if (out.contains('Ans')) {
     final ansValue = _resolveAns(doc, lineIndex);
     if (ansValue != null) {
-      out = out.replaceAll(
-        RegExp(r'(?<![A-Za-z0-9_])Ans(?![A-Za-z0-9_])'),
-        '($ansValue)',
-      );
+      out = out.replaceAll(_ansPattern, '($ansValue)');
     }
   }
 
@@ -436,9 +440,7 @@ String? preprocessNotepadLine(
     ..sort((a, b) => b.length.compareTo(a.length));
   for (final name in names) {
     if (!out.contains(name)) continue;
-    final pattern = RegExp(
-      r'(?<![A-Za-z0-9_])' + RegExp.escape(name) + r'(?![A-Za-z0-9_])',
-    );
+    final pattern = _wordBoundaryPattern(name);
     out = out.replaceAll(pattern, '(${scope[name]!})');
   }
   return out;

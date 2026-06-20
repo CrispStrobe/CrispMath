@@ -584,10 +584,21 @@ class AppState extends ChangeNotifier {
   /// Insert or update a notepad document. The `updatedAt` timestamp
   /// is the caller's responsibility — bump it on the doc before
   /// passing it in if you want the doc list to re-sort.
-  void setNotepadDocument(NotepadDocument doc) {
+  /// Insert or update a notepad document in memory and persist to disk.
+  /// When [notify] is false, skips `notifyListeners` and disk I/O —
+  /// use this for high-frequency updates (per-keystroke) where the
+  /// caller will persist later via [persistNotepadNow].
+  void setNotepadDocument(NotepadDocument doc, {bool notify = true}) {
     notepadDocuments[doc.id] = doc;
+    if (notify) {
+      _persistNotepadDocs();
+      notifyListeners();
+    }
+  }
+
+  /// Flush notepad documents to disk. Call after a debounce window.
+  void persistNotepadNow() {
     _persistNotepadDocs();
-    notifyListeners();
   }
 
   /// Remove a notepad document. If [id] was the current doc, the

@@ -313,16 +313,22 @@ class _NotepadScreenState extends State<NotepadScreen> {
     _appState.setNotepadDocument(doc);
   }
 
-  void _onLineEdited(NotepadDocument doc, NotepadLine line, String value) {
+  /// Lightweight in-memory update without disk I/O or global rebuild.
+  /// Persistence is deferred to the debounced recalc timer.
+  void _persistDocLazy(NotepadDocument doc) {
+    doc.updatedAt = DateTime.now().toUtc();
+    _appState.setNotepadDocument(doc, notify: false);
+  }
+
+  void _onLineEdited(NotepadDocument doc, NotepadLine line, String value,
+      [int? knownIndex]) {
     if (line.source == value) return;
     final prev = line.source;
     line.source = value;
-    // Record for undo (debounced — only first edit in a burst matters,
-    // but for simplicity we record each keystroke; the undo stack cap
-    // keeps memory bounded).
+    final index = knownIndex ?? doc.lines.indexOf(line);
     _undoFor(doc).record(undo.UndoOp(
       kind: undo.UndoOpKind.edit,
-      index: doc.lines.indexOf(line),
+      index: index,
       lineId: line.id,
       previousValue: prev,
     ));
@@ -332,8 +338,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
     line.cachedResult = null;
     line.cachedError = null;
     line.cachedFreeVars = [];
-    _persistDoc(doc);
-    _scheduleRecalc(doc, doc.lines.indexOf(line));
+    // In-memory only — disk persist deferred to recalc timer.
+    _persistDocLazy(doc);
+    _scheduleRecalc(doc, index);
   }
 
   void _appendLine(NotepadDocument doc) {
@@ -531,8 +538,20 @@ class _NotepadScreenState extends State<NotepadScreen> {
     return count;
   }
 
+  String? _scopeNamesCacheDocId;
+  Set<String>? _cachedScopeNames;
+
   Set<String> _docScopeNames(NotepadDocument doc) {
-    return buildNotepadScope(doc).keys.toSet();
+    if (_scopeNamesCacheDocId == doc.id && _cachedScopeNames != null) {
+      return _cachedScopeNames!;
+    }
+    _scopeNamesCacheDocId = doc.id;
+    _cachedScopeNames = buildNotepadScope(doc).keys.toSet();
+    return _cachedScopeNames!;
+  }
+
+  void _invalidateScopeCache() {
+    _cachedScopeNames = null;
   }
 
   void _cycleLineFormat(NotepadDocument doc, NotepadLine line) {
@@ -1228,6 +1247,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
     if (startIndex < 0) return;
     _recalcTimer?.cancel();
     _recalcTimer = Timer(const Duration(milliseconds: 300), () {
+      // Flush deferred persistence before recalc.
+      _appState.persistNotepadNow();
       _runRecalc(doc, startIndex: startIndex);
     });
   }
@@ -1334,6 +1355,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
     if (!mounted) return;
 
+    _invalidateScopeCache();
     setState(() {
       _pendingLineIds.clear();
     });
@@ -1807,7 +1829,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
             isPending: _pendingLineIds.contains(line.id),
             controller: _controllers[line.id]!,
             focusNode: _focusNodes[line.id]!,
-            onChanged: (v) => _onLineEdited(doc, line, v),
+            onChanged: (v) => _onLineEdited(doc, line, v, realIndex),
             onDelete: () => _deleteLine(doc, realIndex),
             onScrollToLineId: _scrollToLineId,
             engine: _engine,

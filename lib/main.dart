@@ -70,10 +70,12 @@ void main() async {
   await AppState().load();
   // Register native (SymEngine / GMP / MPFR / MPC / FLINT) license texts so
   // they appear in `showLicensePage` alongside the pub deps.
-  await registerNativeLicenses();
-
-  // Initialize OCR providers (checks for downloaded models + native libs).
-  await initOcrProviders();
+  // Fire license registration and OCR provider init in the background —
+  // neither blocks the first frame. Licenses are only needed when the user
+  // opens showLicensePage; OCR providers register asynchronously and any
+  // OCR attempt before completion simply sees no active provider.
+  unawaited(registerNativeLicenses());
+  unawaited(initOcrProviders());
 
   // Headless self-test for CI / manual verification. Invoke with the
   // `CRISPCALC_DIAGNOSTIC=matrix|steps` environment variable set (desktop

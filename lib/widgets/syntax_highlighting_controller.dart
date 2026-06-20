@@ -24,6 +24,40 @@ import 'package:flutter/material.dart';
 class SyntaxHighlightingController extends TextEditingController {
   SyntaxHighlightingController({super.text});
 
+  // Cached styles — rebuilt only when theme brightness changes.
+  Brightness? _cachedBrightness;
+  TextStyle? _cachedBase;
+  late TextStyle _commentStyle;
+  late TextStyle _numberStyle;
+  late TextStyle _functionStyle;
+  late TextStyle _keywordStyle;
+  late TextStyle _operatorStyle;
+  late TextStyle _headingStyle;
+
+  void _rebuildStyles(BuildContext context, TextStyle? style) {
+    final scheme = Theme.of(context).colorScheme;
+    final brightness = Theme.of(context).brightness;
+    if (_cachedBrightness == brightness && _cachedBase == style) return;
+    _cachedBrightness = brightness;
+    _cachedBase = style;
+    final isDark = brightness == Brightness.dark;
+    final base = style ?? const TextStyle();
+    _commentStyle = base.copyWith(
+        color: Colors.grey, fontStyle: FontStyle.italic);
+    _numberStyle = base.copyWith(
+        color: isDark ? Colors.lightBlue[200] : Colors.blue[700]);
+    _functionStyle = base.copyWith(
+        color: isDark ? Colors.purple[200] : Colors.purple[700],
+        fontWeight: FontWeight.w600);
+    _keywordStyle = base.copyWith(
+        color: isDark ? Colors.orange[200] : Colors.orange[800],
+        fontWeight: FontWeight.w600);
+    _operatorStyle = base.copyWith(
+        color: isDark ? Colors.teal[200] : Colors.teal[700]);
+    _headingStyle = base.copyWith(
+        color: scheme.primary, fontWeight: FontWeight.bold, fontSize: 18);
+  }
+
   @override
   TextSpan buildTextSpan({
     required BuildContext context,
@@ -35,32 +69,13 @@ class SyntaxHighlightingController extends TextEditingController {
       return TextSpan(text: '', style: style);
     }
 
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final commentStyle = (style ?? const TextStyle()).copyWith(
-      color: Colors.grey,
-      fontStyle: FontStyle.italic,
-    );
-    final numberStyle = (style ?? const TextStyle()).copyWith(
-      color: isDark ? Colors.lightBlue[200] : Colors.blue[700],
-    );
-    final functionStyle = (style ?? const TextStyle()).copyWith(
-      color: isDark ? Colors.purple[200] : Colors.purple[700],
-      fontWeight: FontWeight.w600,
-    );
-    final keywordStyle = (style ?? const TextStyle()).copyWith(
-      color: isDark ? Colors.orange[200] : Colors.orange[800],
-      fontWeight: FontWeight.w600,
-    );
-    final operatorStyle = (style ?? const TextStyle()).copyWith(
-      color: isDark ? Colors.teal[200] : Colors.teal[700],
-    );
-    final headingStyle = (style ?? const TextStyle()).copyWith(
-      color: scheme.primary,
-      fontWeight: FontWeight.bold,
-      fontSize: 18,
-    );
+    _rebuildStyles(context, style);
+    final commentStyle = _commentStyle;
+    final numberStyle = _numberStyle;
+    final functionStyle = _functionStyle;
+    final keywordStyle = _keywordStyle;
+    final operatorStyle = _operatorStyle;
+    final headingStyle = _headingStyle;
 
     // Check for heading prefix.
     if (text.trimLeft().startsWith('## ')) {

@@ -31,31 +31,40 @@
 
   <title>crisp_calc</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Preload WASM binaries so the browser fetches them in parallel with
+       HTML parsing, before the JS loaders request them. -->
+  <link rel="preload" href="symengine.wasm" as="fetch" crossorigin>
+  <link rel="preload" href="crispembed_ocr.wasm" as="fetch" crossorigin>
 </head>
 <body>
-  <!-- SymEngine WASM: load before Flutter so the module is ready by the
-       time Dart code tries SymbolicMathBridge(). The factory returns a
-       promise; once resolved, Dart's @JS('symEngineInstance') finds it. -->
+  <!-- SymEngine WASM: defer so it doesn't block HTML parsing. The factory
+       returns a promise; Dart's pollForNativeBridge handles the async
+       handshake once it resolves. -->
   <script>
     var symEngineReady = false;
     var symEngineInstance = null;
   </script>
-  <script src="symengine.js"></script>
+  <script src="symengine.js" defer></script>
   <script>
-    SymEngineModule().then(function(instance) {
-      symEngineInstance = instance;
-      symEngineReady = true;
-      console.log('SymEngine WASM loaded (' +
-        instance.ccall('flutter_symengine_version', 'string', [], []) + ')');
-    }).catch(function(err) {
-      console.warn('SymEngine WASM failed to load:', err);
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof SymEngineModule === 'function') {
+        SymEngineModule().then(function(instance) {
+          symEngineInstance = instance;
+          symEngineReady = true;
+          console.log('SymEngine WASM loaded (' +
+            instance.ccall('flutter_symengine_version', 'string', [], []) + ')');
+        }).catch(function(err) {
+          console.warn('SymEngine WASM failed to load:', err);
+        });
+      }
     });
   </script>
   <!-- CrispEmbed OCR WASM: loaded on-demand by Dart code via the
        CrispEmbedOCR() factory (MODULARIZE=1). Unlike SymEngine, this is
        NOT auto-initialized — the module is instantiated when the user
        first triggers OCR (avoids blocking page load with unused WASM). -->
-  <script src="crispembed_ocr.js"></script>
+  <script src="crispembed_ocr.js" defer></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
