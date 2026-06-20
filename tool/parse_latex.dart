@@ -8,13 +8,13 @@ import 'package:crisp_calc/engine/ocr_provider.dart';
 void main(List<String> args) {
   if (args.isNotEmpty) {
     for (final arg in args) {
-      print(latexToEngineSyntax(arg));
+      stdout.writeln(latexToEngineSyntax(arg));
     }
   } else {
     // Read from stdin, one LaTeX per line
     String? line;
     while ((line = stdin.readLineSync()) != null) {
-      print(latexToEngineSyntax(line!));
+      stdout.writeln(latexToEngineSyntax(line!));
     }
   }
 }

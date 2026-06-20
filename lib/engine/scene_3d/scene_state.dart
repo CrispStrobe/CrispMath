@@ -117,15 +117,14 @@ class Scene3D {
   }
 
   /// Move the object at [oldIndex] to [newIndex]. Uses
-  /// [ReorderableListView.onReorder] semantics: when moving down,
-  /// `newIndex` is one past the target (caller adjusts).
+  /// [ReorderableListView.onReorderItem] semantics: newIndex is the
+  /// final insertion index after the item at oldIndex has been removed.
   Scene3D withReorderedObjects(int oldIndex, int newIndex) {
     if (oldIndex < 0 || oldIndex >= objects.length) return this;
     if (newIndex < 0 || newIndex > objects.length) return this;
     final next = List<SceneObject>.from(objects);
     final item = next.removeAt(oldIndex);
-    final insertAt = newIndex > oldIndex ? newIndex - 1 : newIndex;
-    next.insert(insertAt, item);
+    next.insert(newIndex, item);
     return Scene3D(
       id: id,
       name: name,

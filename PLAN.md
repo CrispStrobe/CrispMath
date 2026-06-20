@@ -281,6 +281,14 @@ quantizations verified. CI builds all 5 platforms.
 - [~] Handwritten math: Cloud LLM provider done. On-device CROHME
   fine-tune pending (needs GPU for training).
 
+### Code quality — June 2026
+
+- [x] **Q1. Zero `flutter analyze` issues.** Migrated deprecated
+  `onReorder` → `onReorderItem` in notepad_screen.dart and
+  scene_3d_screen.dart. Removed old-style newIndex adjustment in
+  `withReorderedObjects`. Replaced `print` with `stdout.writeln`
+  in tool/parse_latex.dart. Result: 0 errors, 0 warnings, 0 infos.
+
 ### Completed (moved to HISTORY.md)
 
 - CBJ-aware "explain failure" (Round E.2)
