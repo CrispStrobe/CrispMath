@@ -910,6 +910,7 @@ class NotepadEvaluator {
     }
 
     // Process the Kahn-acyclic part in dependency order.
+    _scopeKeysCache = null; // force rebuild on first blocked line
     for (final i in order) {
       if (indices != null && !indices.contains(i)) continue;
       await _evaluateLine(doc, i, graph, firstCode);
