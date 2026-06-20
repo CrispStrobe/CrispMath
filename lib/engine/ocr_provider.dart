@@ -206,6 +206,9 @@ String latexToEngineSyntax(String latex) {
   // Strip BPE space markers (pix2tex uses \u0120 / Ġ).
   s = s.replaceAll('\u0120', ' ');
 
+  // Handle Unicode math symbols that some models emit alongside LaTeX.
+  s = postProcessOcrText(s);
+
   // Strip LaTeX delimiters.
   s = s.replaceAll(_reDollarDelim, '');
   s = s.replaceAll(_reLatexDelim, '');

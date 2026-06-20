@@ -46,18 +46,15 @@
     var symEngineInstance = null;
   </script>
   <script src="symengine.js" defer></script>
-  <script>
-    window.addEventListener('DOMContentLoaded', function() {
-      if (typeof SymEngineModule === 'function') {
-        SymEngineModule().then(function(instance) {
-          symEngineInstance = instance;
-          symEngineReady = true;
-          console.log('SymEngine WASM loaded (' +
-            instance.ccall('flutter_symengine_version', 'string', [], []) + ')');
-        }).catch(function(err) {
-          console.warn('SymEngine WASM failed to load:', err);
-        });
-      }
+  <script defer>
+    // defer scripts execute in order after HTML parsing
+    SymEngineModule().then(function(instance) {
+      symEngineInstance = instance;
+      symEngineReady = true;
+      console.log('SymEngine WASM loaded (' +
+        instance.ccall('flutter_symengine_version', 'string', [], []) + ')');
+    }).catch(function(err) {
+      console.warn('SymEngine WASM failed to load:', err);
     });
   </script>
   <!-- CrispEmbed OCR WASM: loaded on-demand by Dart code via the

@@ -190,6 +190,7 @@ class _GeneralOcrProvider implements OcrProvider {
   final String _detPath;
   final String _recPath;
   CrispOcrPipeline? _pipeline;
+  Directory? _tmpDir;
 
   _GeneralOcrProvider(this._detPath, this._recPath);
 
@@ -215,20 +216,15 @@ class _GeneralOcrProvider implements OcrProvider {
       _pipeline ??= _tryInit();
       if (_pipeline == null) return null;
 
-      // CrispOcrPipeline.run() takes a file path — write to temp file.
-      final tmpDir = await Directory.systemTemp.createTemp('ocr_');
-      final tmpFile = File('${tmpDir.path}/input.png');
+      // CrispOcrPipeline.run() takes a file path — reuse a single temp dir.
+      _tmpDir ??= await Directory.systemTemp.createTemp('ocr_');
+      final tmpFile = File('${_tmpDir!.path}/input.ppm');
       // Write raw pixels as PPM (simplest uncompressed format).
       final channels = imageBytes.length ~/ (width * height);
       final ppm = _toPpm(imageBytes, width, height, channels);
       await tmpFile.writeAsBytes(ppm);
 
       final results = _pipeline!.run(tmpFile.path);
-
-      // Cleanup temp file.
-      try {
-        await tmpDir.delete(recursive: true);
-      } catch (_) {}
 
       if (results.isEmpty) return null;
 
@@ -259,6 +255,7 @@ class _LayoutOcrProvider implements OcrProvider {
   final String _layoutPath;
   final OcrProvider? _mathProvider;
   CrispLayout? _layout;
+  Directory? _tmpDir;
 
   _LayoutOcrProvider(this._layoutPath, this._mathProvider);
 
@@ -284,18 +281,13 @@ class _LayoutOcrProvider implements OcrProvider {
       _layout ??= _tryInit();
       if (_layout == null) return null;
 
-      // Write image to temp file for CrispLayout (file-based API).
+      // Write image to temp file for CrispLayout (file-based API) — reuse dir.
       final channels = imageBytes.length ~/ (width * height);
-      final tmpDir = await Directory.systemTemp.createTemp('layout_');
-      final tmpFile = File('${tmpDir.path}/input.ppm');
+      _tmpDir ??= await Directory.systemTemp.createTemp('layout_');
+      final tmpFile = File('${_tmpDir!.path}/input.ppm');
       await tmpFile.writeAsBytes(_toPpm(imageBytes, width, height, channels));
 
       final regions = _layout!.detect(tmpFile.path, threshold: 0.3);
-
-      // Cleanup temp file.
-      try {
-        await tmpDir.delete(recursive: true);
-      } catch (_) {}
 
       if (regions.isEmpty) return null;
 
