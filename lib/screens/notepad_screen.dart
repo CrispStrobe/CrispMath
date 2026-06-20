@@ -20,6 +20,7 @@
 // non-emptiness test as the guardrail.
 
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:dart_csp/dart_csp.dart';
 import 'package:flutter/material.dart';
@@ -669,9 +670,15 @@ class _NotepadScreenState extends State<NotepadScreen> {
       return;
     }
 
-    final decoded = await decodeImageFromList(bytes);
+    // Decode image dimensions (header-only, no full pixel decode)
+    final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+    final descriptor = await ui.ImageDescriptor.encoded(buffer);
+    final imgWidth = descriptor.width;
+    final imgHeight = descriptor.height;
+    descriptor.dispose();
+    buffer.dispose();
     final result =
-        await activeProvider.recognize(bytes, decoded.width, decoded.height);
+        await activeProvider.recognize(bytes, imgWidth, imgHeight);
     if (!context.mounted) return;
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(

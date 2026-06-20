@@ -1,5 +1,6 @@
 // lib/screens/graphing_screen.dart - with LaTeX Input & Keypad
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../controllers/latex_controller.dart';
@@ -656,6 +657,10 @@ class GraphingScreenState extends State<GraphingScreen>
   }
 }
 
+// Pre-compiled RegExps for implicit multiplication (hoisted out of hot loop).
+final _reDigitAlpha = RegExp(r'(\d)([a-zA-Z(])');
+final _reParenAlpha = RegExp(r'(\))([a-zA-Z\d(])');
+
 class GraphPainter extends CustomPainter {
   final List<String> functions;
   final List<int> functionIndices;
@@ -854,9 +859,14 @@ class GraphPainter extends CustomPainter {
     final double startX = (-size.width / 2 - offset.dx) / unit;
     final double endX = (size.width / 2 - offset.dx) / unit;
 
+    // Pre-process implicit multiplication once per function, not per sample point.
+    final preprocessed = func
+        .replaceAllMapped(_reDigitAlpha, (m) => '${m[1]}*${m[2]}')
+        .replaceAllMapped(_reParenAlpha, (m) => '${m[1]}*${m[2]}');
+
     for (double mathX = startX; mathX <= endX; mathX += stepSize) {
       try {
-        double mathY = _evaluateFunction(func, mathX);
+        double mathY = _evaluatePrepared(preprocessed, mathX);
 
         if (!mathY.isFinite) {
           hasStarted = false;
@@ -897,14 +907,16 @@ class GraphPainter extends CustomPainter {
   }
 
   double _evaluateFunction(String func, double x) {
-    String processedFunc = func;
+    // Apply implicit multiplication (used by annotation code paths).
+    final processedFunc = func
+        .replaceAllMapped(_reDigitAlpha, (m) => '${m[1]}*${m[2]}')
+        .replaceAllMapped(_reParenAlpha, (m) => '${m[1]}*${m[2]}');
+    return _evaluatePrepared(processedFunc, x);
+  }
 
-    // Add implicit multiplication
-    processedFunc = processedFunc.replaceAllMapped(
-        RegExp(r'(\d)([a-zA-Z(])'), (m) => '${m[1]}*${m[2]}');
-    processedFunc = processedFunc.replaceAllMapped(
-        RegExp(r'(\))([a-zA-Z\d(])'), (m) => '${m[1]}*${m[2]}');
-
+  /// Evaluate a pre-processed function string (implicit multiplication
+  /// already applied) at the given x value.
+  double _evaluatePrepared(String processedFunc, double x) {
     // Replace x with actual value, handling negative numbers
     String valueStr = x.toString();
     if (x < 0 || valueStr.contains('e')) {
@@ -1143,13 +1155,24 @@ class GraphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant GraphPainter oldDelegate) {
-    return oldDelegate.functions.length != functions.length ||
-        oldDelegate.functions.toString() != functions.toString() ||
-        oldDelegate.functionIndices.toString() != functionIndices.toString() ||
-        oldDelegate.scale != scale ||
+    return oldDelegate.scale != scale ||
         oldDelegate.offset != offset ||
         oldDelegate.showAnnotations != showAnnotations ||
-        oldDelegate.parameters.toString() != parameters.toString();
+        !listEquals(oldDelegate.functions, functions) ||
+        !listEquals(oldDelegate.functionIndices, functionIndices) ||
+        !_parametersEqual(oldDelegate.parameters, parameters);
+  }
+
+  static bool _parametersEqual(
+      Map<int, Map<String, double>> a, Map<int, Map<String, double>> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      final va = a[key];
+      final vb = b[key];
+      if (vb == null || !mapEquals(va, vb)) return false;
+    }
+    return true;
   }
 }
 

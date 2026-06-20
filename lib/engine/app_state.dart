@@ -13,6 +13,7 @@
 // JSON-encoded for the collection fields so they stay readable in a prefs
 // dump and don't need a separate format-version field today.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -645,9 +646,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Live viewport update for rotate / zoom gestures. Persists on
-  /// every commit — cheap because the JSON is small and SharedPrefs
-  /// debounces under the hood.
+  Timer? _scene3DPersistTimer;
+
+  /// Live viewport update for rotate / zoom gestures. Visual updates
+  /// are immediate (notifyListeners); disk persistence is debounced
+  /// to avoid thrashing SharedPreferences at 60 Hz during gestures.
   void updateSceneViewport({
     double? azimuth,
     double? elevation,
@@ -658,7 +661,9 @@ class AppState extends ChangeNotifier {
     if (elevation != null) _scene3D.elevation = elevation;
     if (zoom != null) _scene3D.zoom = zoom;
     if (range != null) _scene3D.range = range;
-    _persistScene3D();
+    _scene3DPersistTimer?.cancel();
+    _scene3DPersistTimer =
+        Timer(const Duration(milliseconds: 500), _persistScene3D);
     notifyListeners();
   }
 
@@ -909,7 +914,7 @@ class AppState extends ChangeNotifier {
     while (history.length > _kHistoryCap) {
       history.removeLast();
     }
-    _persistHistory();
+    Future.microtask(_persistHistory);
     notifyListeners();
   }
 
