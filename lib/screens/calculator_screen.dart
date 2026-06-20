@@ -1,6 +1,7 @@
 // lib/screens/calculator_screen.dart
 
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -245,10 +246,15 @@ class CalculatorScreenState extends State<CalculatorScreen>
           content: Text('Recognizing math…'), duration: Duration(seconds: 1)),
     );
 
-    // Decode image dimensions
-    final decoded = await decodeImageFromList(bytes);
+    // Decode image dimensions (header-only, no full pixel decode)
+    final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+    final descriptor = await ui.ImageDescriptor.encoded(buffer);
+    final imgWidth = descriptor.width;
+    final imgHeight = descriptor.height;
+    descriptor.dispose();
+    buffer.dispose();
     final result =
-        await activeProvider.recognize(bytes, decoded.width, decoded.height);
+        await activeProvider.recognize(bytes, imgWidth, imgHeight);
     if (!context.mounted) return;
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -366,11 +372,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() => _justCalculated = false);
     }
 
-    _updateLivePreview();
-    setState(() {}); // Rebuild to show updated text
+    final preview = _computeLivePreview();
+    setState(() {
+      _resultPreview = preview;
+    });
   }
 
-  void _updateLivePreview() {
+  /// Compute the live preview string without calling setState.
+  String _computeLivePreview() {
     String currentText = _latexController.text.trim();
 
     if (currentText.isEmpty ||
@@ -378,17 +387,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
         currentText.contains('=') ||
         currentText.length < 2 ||
         RegExp(r'^[a-zA-Z]+$').hasMatch(currentText)) {
-      setState(() {
-        _resultPreview = '';
-      });
-      return;
+      return '';
     }
 
     if (!RegExp(r'[\d\+\-\*/\^\(\)\.\,\\]').hasMatch(currentText)) {
-      setState(() {
-        _resultPreview = '';
-      });
-      return;
+      return '';
     }
 
     try {
@@ -409,27 +412,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
           normalizedResult != preprocessed) {
         final numericResult = double.tryParse(normalizedResult);
         if (numericResult != null) {
-          setState(() {
-            _resultPreview = normalizedResult;
-          });
+          return normalizedResult;
         } else if (!normalizedResult.contains('Error')) {
-          setState(() {
-            _resultPreview = normalizedResult;
-          });
+          return normalizedResult;
         } else {
-          setState(() {
-            _resultPreview = '';
-          });
+          return '';
         }
       } else {
-        setState(() {
-          _resultPreview = '';
-        });
+        return '';
       }
     } catch (e) {
-      setState(() {
-        _resultPreview = '';
-      });
+      return '';
     }
   }
 
