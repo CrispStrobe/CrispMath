@@ -151,23 +151,7 @@ class CrispEmbedOcrWasm {
     try {
       _injectHelpers();
 
-      // Call the factory function (returns a Promise).
-      final promise = _jsModuleFactory!.callAsFunction(null) as JSPromise;
-      final instance = await promise.toDart;
-      _jsEval('''
-        window._crispEmbedOcrInstance = arguments[0];
-        window._crispEmbedOcrReady = true;
-      '''
-          .toJS);
-      // The eval above doesn't get arguments. Use a different approach:
-      // Store the instance via a global assignment from the promise result.
-      // Actually, we need to pass the instance. Let's use a different method.
-    } catch (_) {
-      // Fall through to the polling approach below.
-    }
-
-    // Polling approach: start the factory and wait for it to resolve.
-    try {
+      // Start the factory and wait for the Promise to resolve.
       _jsEval('''
         CrispEmbedOCR().then(function(instance) {
           window._crispEmbedOcrInstance = instance;
@@ -235,12 +219,10 @@ class CrispEmbedOcrWasm {
     if (ptr == 0) return null;
 
     try {
-      // Copy Float32List into WASM HEAPF32.
-      final heapF32 = _jsOcrHeapF32();
+      // Bulk copy Float32List into WASM HEAPF32.
+      final heap = _jsOcrHeapF32().toDart;
       final offset = ptr ~/ 4; // HEAPF32 index = byte offset / 4
-      for (int i = 0; i < pixels.length; i++) {
-        heapF32.toDart[offset + i] = pixels[i];
-      }
+      heap.setRange(offset, offset + pixels.length, pixels);
 
       final result =
           _jsOcrRecognizeGray((_ctx).toJS, ptr.toJS, width.toJS, height.toJS);
@@ -260,11 +242,9 @@ class CrispEmbedOcrWasm {
     if (ptr == 0) return null;
 
     try {
-      // Copy bytes into WASM HEAPU8.
-      final heapU8 = _jsOcrHeapU8();
-      for (int i = 0; i < bytes.length; i++) {
-        heapU8.toDart[ptr + i] = bytes[i];
-      }
+      // Bulk copy bytes into WASM HEAPU8.
+      final heap = _jsOcrHeapU8().toDart;
+      heap.setRange(ptr, ptr + bytes.length, bytes);
 
       final result = _jsOcrRecognize(
           _ctx.toJS, ptr.toJS, width.toJS, height.toJS, channels.toJS);

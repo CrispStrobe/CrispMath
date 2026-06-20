@@ -43,17 +43,31 @@ class OcrModelManager {
 
     try {
       final client = HttpClient();
+      final tmpFile = File(tmpPath);
+
+      // Resume interrupted downloads if the .tmp file exists.
+      final existingSize =
+          tmpFile.existsSync() ? tmpFile.lengthSync() : 0;
+
       final request = await client.getUrl(Uri.parse(model.url));
+      if (existingSize > 0) {
+        request.headers.set('Range', 'bytes=$existingSize-');
+      }
       final response = await request.close();
 
-      if (response.statusCode != 200) {
+      // 206 = partial content (resume), 200 = full download.
+      if (response.statusCode != 200 && response.statusCode != 206) {
+        client.close();
         return null;
       }
 
-      final total = response.contentLength;
-      final file = File(tmpPath);
-      final sink = file.openWrite();
-      int received = 0;
+      final isResume = response.statusCode == 206;
+      final total = isResume
+          ? (response.contentLength + existingSize)
+          : response.contentLength;
+      final sink = tmpFile.openWrite(
+          mode: isResume ? FileMode.append : FileMode.write);
+      int received = isResume ? existingSize : 0;
 
       await for (final chunk in response) {
         sink.add(chunk);
@@ -66,10 +80,7 @@ class OcrModelManager {
       client.close();
       return targetPath;
     } catch (e) {
-      // Clean up partial download
-      try {
-        await File(tmpPath).delete();
-      } catch (_) {}
+      // Keep partial .tmp for resume on next attempt.
       return null;
     }
   }
@@ -95,8 +106,10 @@ class OcrModelManager {
     return total;
   }
 
-  static Future<Directory> _modelsDir() async {
-    // Use app documents directory + 'ocr_models' subdirectory
+  static Future<Directory>? _cachedDir;
+  static Future<Directory> _modelsDir() => _cachedDir ??= _resolveModelsDir();
+
+  static Future<Directory> _resolveModelsDir() async {
     final home = Platform.environment['HOME'] ?? '/tmp';
     final dir = Directory('$home/.crispcalc/ocr_models');
     if (!await dir.exists()) {

@@ -13,6 +13,9 @@ import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
 import 'ocr_model_manager.dart';
 
+/// Adaptive thread count based on available cores.
+final int _ocrThreads = (Platform.numberOfProcessors ~/ 2).clamp(1, 8);
+
 /// Shared grayscale conversion for all on-device OCR providers.
 Float32List _toGrayscale(Uint8List imageBytes, int width, int height) {
   final channels = imageBytes.length ~/ (width * height);
@@ -43,7 +46,7 @@ abstract class _OcrBackend {
 class _Pix2TexBackend implements _OcrBackend {
   late final CrispEmbedOcr _ocr;
   _Pix2TexBackend(String path) {
-    _ocr = CrispEmbedOcr(path, nThreads: 4);
+    _ocr = CrispEmbedOcr(path, nThreads: _ocrThreads);
   }
   @override
   String? recognizeGray(Float32List p, int w, int h) =>
@@ -57,7 +60,7 @@ class _Pix2TexBackend implements _OcrBackend {
 class _HandwrittenBackend implements _OcrBackend {
   late final CrispEmbedOcr _ocr;
   _HandwrittenBackend(String path) {
-    _ocr = CrispEmbedOcr(path, nThreads: 4);
+    _ocr = CrispEmbedOcr(path, nThreads: _ocrThreads);
   }
   @override
   String? recognizeGray(Float32List p, int w, int h) =>
@@ -119,6 +122,61 @@ class _CrispEmbedProvider implements OcrProvider {
   _OcrBackend? _tryInit() {
     try {
       return _factory(_modelPath);
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+/// On-device VLM provider that sends color images directly (no grayscale
+/// conversion). VLMs benefit from color cues in diagrams, tables, etc.
+class _CrispEmbedVlmProvider implements OcrProvider {
+  final String _modelPath;
+  final String _name;
+  CrispEmbedOcr? _ocr;
+
+  _CrispEmbedVlmProvider(this._modelPath, this._name);
+
+  @override
+  String get name => _name;
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  bool get requiresNetwork => false;
+
+  @override
+  bool get requiresApiKey => false;
+
+  @override
+  Future<OcrResult?> recognize(
+    Uint8List imageBytes,
+    int width,
+    int height,
+  ) async {
+    try {
+      _ocr ??= _tryInit();
+      if (_ocr == null) return null;
+
+      final channels = imageBytes.length ~/ (width * height);
+      final latex = _ocr!.recognizeRaw(imageBytes, width, height, channels);
+      if (latex == null || latex.isEmpty) return null;
+
+      final engineSyntax = latexToEngineSyntax(latex);
+      return OcrResult(
+        text: engineSyntax,
+        rawOutput: latex.replaceAll('\u0120', ' ').trim(),
+        providerName: name,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  CrispEmbedOcr? _tryInit() {
+    try {
+      return CrispEmbedOcr(_modelPath, nThreads: _ocrThreads);
     } catch (e) {
       return null;
     }
@@ -187,7 +245,7 @@ class _GeneralOcrProvider implements OcrProvider {
 
   CrispOcrPipeline? _tryInit() {
     try {
-      return CrispOcrPipeline(_detPath, _recPath, nThreads: 4);
+      return CrispOcrPipeline(_detPath, _recPath, nThreads: _ocrThreads);
     } catch (e) {
       return null;
     }
@@ -283,7 +341,7 @@ class _LayoutOcrProvider implements OcrProvider {
 
   CrispLayout? _tryInit() {
     try {
-      return CrispLayout(_layoutPath, nThreads: 4);
+      return CrispLayout(_layoutPath, nThreads: _ocrThreads);
     } catch (e) {
       return null;
     }
@@ -313,8 +371,7 @@ class _LayoutOcrProvider implements OcrProvider {
       final srcOffset = ((cy1 + row) * srcW + cx1) * channels;
       final dstOffset = row * cropW * channels;
       cropped.setRange(
-          dstOffset, dstOffset + cropW * channels,
-          pixels.sublist(srcOffset, srcOffset + cropW * channels));
+          dstOffset, dstOffset + cropW * channels, pixels, srcOffset);
     }
     return cropped;
   }
@@ -344,9 +401,18 @@ Uint8List _toPpm(Uint8List pixels, int w, int h, int channels) {
 /// Try to register available OCR providers in priority order.
 /// Called once at app startup.
 Future<void> initOcrProviders() async {
+  // Pre-resolve all model paths in parallel (avoids serial File.exists calls).
+  final allModels = OcrModelCatalog.all;
+  final allPaths = await Future.wait(
+      allModels.map((m) => OcrModelManager.localPath(m)));
+  final pathMap = <String, String>{};
+  for (var i = 0; i < allModels.length; i++) {
+    if (allPaths[i] != null) pathMap[allModels[i].id] = allPaths[i]!;
+  }
+
   // Tier 5: On-device handwritten math (BTTR preferred, then HMER)
   for (final model in OcrModelCatalog.handwrittenMath) {
-    final path = await OcrModelManager.localPath(model);
+    final path = pathMap[model.id];
     if (path != null) {
       final String label;
       final _OcrBackend Function(String) factory;
@@ -369,7 +435,7 @@ Future<void> initOcrProviders() async {
 
   // Tier 4a: On-device printed math — PP-FormulaNet-L (SOTA, Apache-2.0)
   for (final model in OcrModelCatalog.printedMathPpfnl) {
-    final path = await OcrModelManager.localPath(model);
+    final path = pathMap[model.id];
     if (path != null) {
       final provider = _CrispEmbedProvider(
         path,
@@ -384,7 +450,7 @@ Future<void> initOcrProviders() async {
 
   // Tier 4b: On-device printed math — MixTex (Chinese+English, Apache-2.0)
   for (final model in OcrModelCatalog.printedMathMixtex) {
-    final path = await OcrModelManager.localPath(model);
+    final path = pathMap[model.id];
     if (path != null) {
       final provider = _CrispEmbedProvider(
         path,
@@ -398,7 +464,7 @@ Future<void> initOcrProviders() async {
 
   // Tier 4d: On-device printed math — Texo-distill (AGPL)
   for (final model in OcrModelCatalog.printedMathTexo) {
-    final path = await OcrModelManager.localPath(model);
+    final path = pathMap[model.id];
     if (path != null) {
       final provider = _CrispEmbedProvider(
         path,
@@ -414,7 +480,7 @@ Future<void> initOcrProviders() async {
   // Tier 4e: On-device printed math — pix2tex / TrOCR (fallback)
   if (OcrProviders.active == null) {
     for (final model in OcrModelCatalog.printedMath) {
-      final path = await OcrModelManager.localPath(model);
+      final path = pathMap[model.id];
       if (path != null) {
         final provider = _CrispEmbedProvider(
           path,
@@ -433,17 +499,17 @@ Future<void> initOcrProviders() async {
   String? detPath;
   String? recPath;
   for (final model in OcrModelCatalog.textDetectionSurya) {
-    detPath = await OcrModelManager.localPath(model);
+    detPath = pathMap[model.id];
     if (detPath != null) break;
   }
   if (detPath == null) {
     for (final model in OcrModelCatalog.textDetection) {
-      detPath = await OcrModelManager.localPath(model);
+      detPath = pathMap[model.id];
       if (detPath != null) break;
     }
   }
   for (final model in OcrModelCatalog.textRecognition) {
-    recPath = await OcrModelManager.localPath(model);
+    recPath = pathMap[model.id];
     if (recPath != null) break;
   }
   if (detPath != null && recPath != null) {
@@ -452,7 +518,7 @@ Future<void> initOcrProviders() async {
 
   // Tier 3a: Layout-aware OCR (RT-DETRv2 + math OCR for formula regions)
   for (final model in OcrModelCatalog.layoutDetection) {
-    final layoutPath = await OcrModelManager.localPath(model);
+    final layoutPath = pathMap[model.id];
     if (layoutPath != null) {
       // Use the current active math provider for formula region OCR.
       OcrProviders.register(
@@ -466,13 +532,10 @@ Future<void> initOcrProviders() async {
   // backend KV cache), and better (DeepStack vision fusion).
   bool hasQwen3vl = false;
   for (final model in OcrModelCatalog.visionLanguageQwen3) {
-    final path = await OcrModelManager.localPath(model);
+    final path = pathMap[model.id];
     if (path != null) {
-      OcrProviders.register(_CrispEmbedProvider(
-        path,
-        'Qwen3-VL (document OCR, 2B)',
-        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
-      ));
+      OcrProviders.register(
+          _CrispEmbedVlmProvider(path, 'Qwen3-VL (document OCR, 2B)'));
       hasQwen3vl = true;
       break;
     }
@@ -481,27 +544,21 @@ Future<void> initOcrProviders() async {
   // Tier 2b: Qwen2.5-VL vision-language (fallback, 2.6–3.9 GB)
   if (!hasQwen3vl) {
     for (final model in OcrModelCatalog.visionLanguage) {
-      final path = await OcrModelManager.localPath(model);
+      final path = pathMap[model.id];
       if (path != null) {
-        OcrProviders.register(_CrispEmbedProvider(
-          path,
-          'Qwen2.5-VL (document OCR, 3B)',
-          (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
-        ));
+        OcrProviders.register(
+            _CrispEmbedVlmProvider(path, 'Qwen2.5-VL (document OCR, 3B)'));
         break;
       }
     }
   }
 
-  // Tier 2c: DeepSeek-OCR2 (desktop only, 6.4 GB F16)
+  // Tier 2c: DeepSeek-OCR2 (desktop only, 2.1–6.3 GB)
   for (final model in OcrModelCatalog.deepseekOcr2) {
-    final path = await OcrModelManager.localPath(model);
+    final path = pathMap[model.id];
     if (path != null) {
-      OcrProviders.register(_CrispEmbedProvider(
-        path,
-        'DeepSeek-OCR2 (MoE, 3B)',
-        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
-      ));
+      OcrProviders.register(
+          _CrispEmbedVlmProvider(path, 'DeepSeek-OCR2 (MoE, 3B)'));
       break;
     }
   }

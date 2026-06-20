@@ -82,6 +82,20 @@ class OcrProviders {
   static OcrProvider? active;
 }
 
+// Pre-compiled RegExp patterns (avoid recompilation per OCR call).
+final _reSqrtParen = RegExp(r'√\(([^)]+)\)');
+final _reSqrtDigit = RegExp(r'√(\d+)');
+final _reDigitODigit = RegExp(r'(?<=\d)O(?=\d)');
+final _reWhitespace = RegExp(r'\s+');
+final _reDollarDelim = RegExp(r'^\$+|\$+$');
+final _reLatexDelim = RegExp(r'^\\[\[\(]|\\[\]\)]$');
+final _reSpacedOpen = RegExp(r'\s*\{\s*');
+final _reSpacedClose = RegExp(r'\s*\}\s*');
+final _reBeginEnv = RegExp(r'\\begin\{[^}]*\}');
+final _reEndEnv = RegExp(r'\\end\{[^}]*\}');
+final _reInWord = RegExp(r'\\in(?![a-zA-Z])');
+final _reBackslashCmd = RegExp(r'\\[a-zA-Z]+');
+
 /// Post-process raw OCR text into engine-ready syntax.
 ///
 /// Handles common OCR artifacts:
@@ -113,8 +127,8 @@ String postProcessOcrText(String raw) {
   s = s.replaceAll('±', '+/-'); // best effort
 
   // Square root symbol.
-  s = s.replaceAllMapped(RegExp(r'√\(([^)]+)\)'), (m) => 'sqrt(${m[1]})');
-  s = s.replaceAllMapped(RegExp(r'√(\d+)'), (m) => 'sqrt(${m[1]})');
+  s = s.replaceAllMapped(_reSqrtParen, (m) => 'sqrt(${m[1]})');
+  s = s.replaceAllMapped(_reSqrtDigit, (m) => 'sqrt(${m[1]})');
   s = s.replaceAll('√', 'sqrt');
 
   // Greek letters commonly found in math.
@@ -129,13 +143,10 @@ String postProcessOcrText(String raw) {
 
   // Common OCR misreads in math context.
   // Only apply when surrounded by digits/operators (heuristic).
-  s = s.replaceAllMapped(
-    RegExp(r'(?<=\d)O(?=\d)'),
-    (m) => '0',
-  );
+  s = s.replaceAllMapped(_reDigitODigit, (m) => '0');
 
   // Whitespace cleanup.
-  s = s.replaceAll(RegExp(r'\s+'), ' ');
+  s = s.replaceAll(_reWhitespace, ' ');
 
   return s.trim();
 }
@@ -196,14 +207,14 @@ String latexToEngineSyntax(String latex) {
   s = s.replaceAll('\u0120', ' ');
 
   // Strip LaTeX delimiters.
-  s = s.replaceAll(RegExp(r'^\$+|\$+$'), '');
-  s = s.replaceAll(RegExp(r'^\\[\[\(]|\\[\]\)]$'), '');
+  s = s.replaceAll(_reDollarDelim, '');
+  s = s.replaceAll(_reLatexDelim, '');
 
   // Normalize spaced braces for LaTeX commands.
   // BTTR/HMER output "\frac { a } { b }", pix2tex outputs "\frac{a}{b}".
   // Collapse spaces around braces so parsing works for both formats.
-  s = s.replaceAll(RegExp(r'\s*\{\s*'), '{');
-  s = s.replaceAll(RegExp(r'\s*\}\s*'), '}');
+  s = s.replaceAll(_reSpacedOpen, '{');
+  s = s.replaceAll(_reSpacedClose, '}');
   // Restore spaces between tokens that aren't brace-adjacent.
   // "a}+{b" is fine, but "a}b" needs no space (it's inside braces).
   // The main case: "}{" between frac groups must stay collapsed.
@@ -230,8 +241,8 @@ String latexToEngineSyntax(String latex) {
   }
 
   // Strip environments (array, matrix — not evaluable as 1D expressions)
-  s = s.replaceAll(RegExp(r'\\begin\{[^}]*\}'), '');
-  s = s.replaceAll(RegExp(r'\\end\{[^}]*\}'), '');
+  s = s.replaceAll(_reBeginEnv, '');
+  s = s.replaceAll(_reEndEnv, '');
   s = s.replaceAll('\\\\', ' '); // LaTeX newlines
 
   // Formatting/spacing → strip
@@ -318,7 +329,7 @@ String latexToEngineSyntax(String latex) {
   s = s.replaceAll(r'\forall', '');
   s = s.replaceAll(r'\exists', '');
   s = s.replaceAll(r'\notin', ' not in ');
-  s = s.replaceAll(RegExp(r'\\in(?![a-zA-Z])'), ' in ');
+  s = s.replaceAll(_reInWord, ' in ');
   s = s.replaceAll(r'\subset', ' subset ');
   s = s.replaceAll(r'\cup', ' union ');
   s = s.replaceAll(r'\cap', ' intersect ');
@@ -355,8 +366,9 @@ String latexToEngineSyntax(String latex) {
   }
 
   // \binom{n}{k} → binomial(n, k)
-  while (s.contains(r'\binom{')) {
+  for (;;) {
     final idx = s.indexOf(r'\binom{');
+    if (idx == -1) break;
     final n = _extractBraceGroup(s, idx + 6); // after \binom
     if (n == null) break;
     final k = _extractBraceGroup(s, n.$2);
@@ -365,7 +377,7 @@ String latexToEngineSyntax(String latex) {
   }
 
   // Whitespace cleanup before passing to fromLatex
-  s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  s = s.replaceAll(_reWhitespace, ' ').trim();
 
   // --- Delegate to the comprehensive keypad converter ---
   // fromLatex handles: \frac, \sqrt, \int, \sum, \prod, \lim,
@@ -373,12 +385,12 @@ String latexToEngineSyntax(String latex) {
   s = LatexConversionUtils.fromLatex(s);
 
   // --- Catch-all: strip any remaining \commands ---
-  s = s.replaceAll(RegExp(r'\\[a-zA-Z]+'), '');
+  s = s.replaceAll(_reBackslashCmd, '');
 
   // Braces → parens (any remaining after fromLatex)
   s = s.replaceAll('{', '(');
   s = s.replaceAll('}', ')');
 
-  s = s.replaceAll(RegExp(r'\s+'), ' ');
+  s = s.replaceAll(_reWhitespace, ' ');
   return s.trim();
 }

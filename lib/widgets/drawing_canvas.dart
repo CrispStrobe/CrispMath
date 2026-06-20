@@ -72,9 +72,8 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     }
   }
 
-  /// Export the canvas as a grayscale image suitable for OCR.
-  /// Returns raw pixel bytes (width × height, 1 channel, 0-255).
-  Future<Uint8List?> toGrayscaleBytes(int targetWidth, int targetHeight) async {
+  /// Render strokes to a raw RGBA image at the given size.
+  Future<Uint8List?> _renderRgba(int targetWidth, int targetHeight) async {
     if (isEmpty) return null;
 
     final recorder = ui.PictureRecorder();
@@ -101,17 +100,30 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     final image = await picture.toImage(targetWidth, targetHeight);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     if (byteData == null) return null;
+    return byteData.buffer.asUint8List();
+  }
 
-    // Convert RGBA to grayscale
-    final rgba = byteData.buffer.asUint8List();
-    final gray = Uint8List(targetWidth * targetHeight);
-    for (int i = 0; i < gray.length; i++) {
+  /// Export the canvas as a grayscale image suitable for OCR.
+  /// Returns raw pixel bytes (width × height, 1 channel, 0-255).
+  Future<Uint8List?> toGrayscaleBytes(int targetWidth, int targetHeight) async {
+    final rgba = await _renderRgba(targetWidth, targetHeight);
+    if (rgba == null) return null;
+
+    final nPixels = targetWidth * targetHeight;
+    final gray = Uint8List(nPixels);
+    for (int i = 0; i < nPixels; i++) {
       final r = rgba[i * 4];
       final g = rgba[i * 4 + 1];
       final b = rgba[i * 4 + 2];
       gray[i] = (0.299 * r + 0.587 * g + 0.114 * b).round();
     }
     return gray;
+  }
+
+  /// Export the canvas as an RGBA image (width × height × 4 channels).
+  /// Useful for VLM providers that benefit from color input.
+  Future<Uint8List?> toRgbaBytes(int targetWidth, int targetHeight) async {
+    return _renderRgba(targetWidth, targetHeight);
   }
 
   void _drawStroke(Canvas canvas, Stroke stroke, double sx, double sy) {
@@ -219,5 +231,8 @@ class _CanvasPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_CanvasPainter old) => true;
+  bool shouldRepaint(_CanvasPainter old) =>
+      !identical(old.strokes, strokes) ||
+      old.current != current ||
+      old.backgroundColor != backgroundColor;
 }
