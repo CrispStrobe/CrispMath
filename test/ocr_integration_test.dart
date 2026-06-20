@@ -182,6 +182,136 @@ void main() {
   });
 
   // =========================================================================
+  // Printed math catalog (pix2tex)
+  // =========================================================================
+  group('pix2tex printed math catalog', () {
+    test('has 3 variants', () {
+      expect(OcrModelCatalog.printedMath.length, 3);
+    });
+
+    test('URLs contain pix2tex-mfr-gguf', () {
+      for (final m in OcrModelCatalog.printedMath) {
+        expect(m.url, contains('pix2tex-mfr-gguf'));
+      }
+    });
+
+    test('license is MIT', () {
+      for (final m in OcrModelCatalog.printedMath) {
+        expect(m.license, 'MIT');
+        expect(m.requiresLicenseAcceptance, false);
+      }
+    });
+
+    test('IDs are unique', () {
+      final ids = OcrModelCatalog.printedMath.map((m) => m.id).toSet();
+      expect(ids.length, OcrModelCatalog.printedMath.length);
+    });
+  });
+
+  // =========================================================================
+  // Printed math Texo catalog
+  // =========================================================================
+  group('Texo printed math catalog', () {
+    test('has 2 variants', () {
+      expect(OcrModelCatalog.printedMathTexo.length, 2);
+    });
+
+    test('URLs contain texo-distill-gguf', () {
+      for (final m in OcrModelCatalog.printedMathTexo) {
+        expect(m.url, contains('texo-distill-gguf'));
+      }
+    });
+
+    test('license is AGPL-3.0', () {
+      for (final m in OcrModelCatalog.printedMathTexo) {
+        expect(m.license, 'AGPL-3.0');
+        expect(m.requiresLicenseAcceptance, false);
+      }
+    });
+
+    test('IDs are unique', () {
+      final ids = OcrModelCatalog.printedMathTexo.map((m) => m.id).toSet();
+      expect(ids.length, OcrModelCatalog.printedMathTexo.length);
+    });
+  });
+
+  // =========================================================================
+  // Printed math PP-FormulaNet-L catalog
+  // =========================================================================
+  group('PP-FormulaNet-L printed math catalog', () {
+    test('has 3 variants', () {
+      expect(OcrModelCatalog.printedMathPpfnl.length, 3);
+    });
+
+    test('URLs contain ppformulanet-l-gguf', () {
+      for (final m in OcrModelCatalog.printedMathPpfnl) {
+        expect(m.url, contains('ppformulanet-l-gguf'));
+      }
+    });
+
+    test('license is Apache-2.0', () {
+      for (final m in OcrModelCatalog.printedMathPpfnl) {
+        expect(m.license, 'Apache-2.0');
+        expect(m.requiresLicenseAcceptance, false);
+      }
+    });
+
+    test('IDs are unique', () {
+      final ids = OcrModelCatalog.printedMathPpfnl.map((m) => m.id).toSet();
+      expect(ids.length, OcrModelCatalog.printedMathPpfnl.length);
+    });
+  });
+
+  // =========================================================================
+  // Handwritten math catalog
+  // =========================================================================
+  group('Handwritten math catalog', () {
+    test('has at least 7 variants (PosFormer + BTTR + HMER)', () {
+      expect(OcrModelCatalog.handwrittenMath.length, greaterThanOrEqualTo(7));
+    });
+
+    test('NC license models require acceptance', () {
+      for (final m in OcrModelCatalog.handwrittenMath) {
+        if (m.license != null && m.license!.contains('NC')) {
+          expect(m.requiresLicenseAcceptance, true,
+              reason: '${m.id} has NC license but no acceptance gate');
+        }
+      }
+    });
+
+    test('non-NC models do not require acceptance', () {
+      for (final m in OcrModelCatalog.handwrittenMath) {
+        if (m.license != null && !m.license!.contains('NC')) {
+          expect(m.requiresLicenseAcceptance, false,
+              reason: '${m.id} incorrectly requires license acceptance');
+        }
+      }
+    });
+
+    test('IDs are unique across all handwritten models', () {
+      final ids = OcrModelCatalog.handwrittenMath.map((m) => m.id).toSet();
+      expect(ids.length, OcrModelCatalog.handwrittenMath.length);
+    });
+  });
+
+  // =========================================================================
+  // sizeLabel boundary at 1 GB
+  // =========================================================================
+  group('sizeLabel boundary', () {
+    test('exactly 1 GB formats as GB not MB', () {
+      const m = OcrModelVariant(
+        id: 'boundary-1gb',
+        name: 'Boundary',
+        filename: 'boundary.gguf',
+        url: 'https://example.com/boundary.gguf',
+        sizeBytes: 1024 * 1024 * 1024,
+        description: 'Test',
+      );
+      expect(m.sizeLabel, '1.0 GB');
+    });
+  });
+
+  // =========================================================================
   // Full catalog integrity
   // =========================================================================
   group('Full catalog integrity', () {

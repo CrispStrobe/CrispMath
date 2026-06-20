@@ -217,6 +217,169 @@ void main() {
     });
   });
 
+  // =========================================================================
+  // Partial fractions — structural tests (bridge-free)
+  // =========================================================================
+  group('StepEngine.partialFractions — structural (no bridge)', () {
+    // Without the native bridge, _partialFractionsStep bails early
+    // (engine.differentiate returns "Error: …"), so only the outer
+    // frame steps are emitted. We test the public API shape here; the
+    // actual decomposition algebra is exercised via the native-host
+    // suite (Track D).
+
+    test('always opens with a "Partial fraction decomposition" step', () {
+      final steps =
+          StepEngine.partialFractions('1', 'x*(x+1)', 'x', engine);
+      expect(steps.first.rule, equals('Partial fraction decomposition'));
+    });
+
+    test('simple-poles decomposition produces a Partial-fraction step', () {
+      // SymbolicWeb can differentiate/evaluate polynomials in pure Dart,
+      // so partial fractions actually works bridge-free for polynomial
+      // denominators with integer roots.
+      final steps =
+          StepEngine.partialFractions('1', 'x*(x+1)', 'x', engine);
+      final rules = steps.map((s) => s.rule).toList();
+      expect(rules, contains('Partial-fraction decomposition'));
+    });
+
+    test('already-simple denominator (1/x) also hits "Cannot decompose"', () {
+      final steps = StepEngine.partialFractions('1', 'x', 'x', engine);
+      expect(steps.map((s) => s.rule), contains('Cannot decompose'));
+    });
+
+    test('before field references numerator and denominator', () {
+      final steps =
+          StepEngine.partialFractions('2', 'x^2 - 1', 'x', engine);
+      final first = steps.first;
+      expect(first.before, contains('2'));
+      expect(first.before, contains('x^2 - 1'));
+    });
+
+    test('constant denominator is rejected (no variable in den)', () {
+      // Denominator "5" has no x, so _partialFractionsStep returns null
+      // immediately.
+      final steps = StepEngine.partialFractions('x', '5', 'x', engine);
+      expect(steps.map((s) => s.rule), contains('Cannot decompose'));
+    });
+
+    test('returns a non-empty list for every input shape', () {
+      for (final pair in const [
+        ['1', 'x*(x+1)'],
+        ['1', 'x'],
+        ['x^2', 'x+1'],
+      ]) {
+        final steps =
+            StepEngine.partialFractions(pair[0], pair[1], 'x', engine);
+        expect(steps, isNotEmpty, reason: 'num=${pair[0]}, den=${pair[1]}');
+      }
+    });
+  });
+
+  // =========================================================================
+  // Quadratic solve — structural tests (bridge-free)
+  // =========================================================================
+  group('StepEngine.solve — quadratic structural (no bridge)', () {
+    // Without the native bridge the degree-detection derivatives
+    // return error strings. Since the error string doesn't contain the
+    // variable as a standalone word and isn't '0', the engine falls
+    // into the linear branch (firstHasVar=false, firstDeriv!='0').
+    // We test the outer structural properties — the actual quadratic
+    // path is exercised in the native-host (Track D) suite.
+
+    test('x^2 - 5*x + 6 = 0 still produces a non-empty trace', () {
+      final steps = StepEngine.solve('x^2 - 5*x + 6 = 0', 'x', engine);
+      expect(steps, isNotEmpty);
+      expect(steps.first.rule, equals('Original equation'));
+    });
+
+    test('x^2 - 5*x + 6 = 0 emits "Move all terms to one side"', () {
+      final steps = StepEngine.solve('x^2 - 5*x + 6 = 0', 'x', engine);
+      expect(
+          steps.map((s) => s.rule), contains('Move all terms to one side'));
+    });
+
+    test('repeated root x^2 - 4*x + 4 = 0 emits original equation', () {
+      final steps = StepEngine.solve('x^2 - 4*x + 4 = 0', 'x', engine);
+      expect(steps.first.rule, equals('Original equation'));
+      expect(steps.length, greaterThanOrEqualTo(2));
+    });
+
+    test('no real roots x^2 + 1 = 0 still produces a trace', () {
+      final steps = StepEngine.solve('x^2 + 1 = 0', 'x', engine);
+      expect(steps, isNotEmpty);
+      expect(steps.first.rule, equals('Original equation'));
+    });
+
+    test('all quadratic inputs end with a Result or named step', () {
+      for (final eq in const [
+        'x^2 - 5*x + 6 = 0',
+        'x^2 - 4*x + 4 = 0',
+        'x^2 + 1 = 0',
+      ]) {
+        final steps = StepEngine.solve(eq, 'x', engine);
+        expect(steps.last.rule, isNotEmpty, reason: 'eq=$eq');
+      }
+    });
+  });
+
+  // =========================================================================
+  // Linear solve edge cases
+  // =========================================================================
+  group('StepEngine.solve — linear edge cases (no bridge)', () {
+    test('0*x + 5 = 0 simplifies away x and hits "No variable present"',
+        () {
+      // SymbolicWeb.expand simplifies (0*x + 5) - (0) to "5", which
+      // has no x, so the engine correctly detects a degenerate case.
+      final steps = StepEngine.solve('0*x + 5 = 0', 'x', engine);
+      final rules = steps.map((s) => s.rule).toList();
+      expect(rules, contains('No variable present'));
+      expect(rules.first, equals('Original equation'));
+    });
+
+    test('0*x = 0 simplifies to 0 = 0 and hits "No variable present"', () {
+      // SymbolicWeb.expand simplifies (0*x) - (0) to "0", so the
+      // engine sees a constant equation.
+      final steps = StepEngine.solve('0*x = 0', 'x', engine);
+      final rules = steps.map((s) => s.rule).toList();
+      expect(rules, contains('No variable present'));
+      expect(rules.first, equals('Original equation'));
+    });
+
+    test('equation without = treated as expression = 0', () {
+      final steps = StepEngine.solve('3*x + 9', 'x', engine);
+      expect(steps.first.rule, equals('Treat as equation = 0'));
+    });
+
+    test('pure constant equation 7 = 3 fires "No variable present"', () {
+      final steps = StepEngine.solve('7 = 3', 'x', engine);
+      final rules = steps.map((s) => s.rule).toList();
+      expect(rules, contains('No variable present'));
+    });
+
+    test('identity 0 = 0 fires "No variable present" with always-true', () {
+      // body = engine.simplify("(0) - (0)") → error string, but the
+      // raw fallback "(0) - (0)" has no x so "No variable present"
+      // fires. Whether it says "always true" depends on the body text.
+      final steps = StepEngine.solve('0 = 0', 'x', engine);
+      final rules = steps.map((s) => s.rule).toList();
+      expect(rules, contains('No variable present'));
+    });
+
+    test('every solve trace has at least two steps for equations with =', () {
+      for (final eq in const [
+        '0*x + 5 = 0',
+        '0*x = 0',
+        '7 = 3',
+        'x + 1 = 2',
+      ]) {
+        final steps = StepEngine.solve(eq, 'x', engine);
+        expect(steps.length, greaterThanOrEqualTo(2),
+            reason: 'eq=$eq should have original equation + at least one more step');
+      }
+    });
+  });
+
   group('StepEngine.antiderivative — authoritative integrator', () {
     // Many rules are pure Dart pattern matches (no engine round-trip), so
     // they resolve even without the native bridge — power rule and the

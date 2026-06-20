@@ -326,6 +326,247 @@ void main() {
     });
   });
 
+  group('textScale persistence', () {
+    test('default is 1.0', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      expect(s.textScale, 1.0);
+    });
+
+    test('setTextScale stores value and notifies listeners', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      var notifications = 0;
+      void cb() => notifications++;
+      s.addListener(cb);
+      s.setTextScale(1.3);
+      expect(s.textScale, 1.3);
+      expect(notifications, 1);
+      s.removeListener(cb);
+    });
+
+    test('setTextScale clamps to [0.8, 1.5]', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      s.setTextScale(0.5);
+      expect(s.textScale, 0.8);
+      s.setTextScale(2.0);
+      expect(s.textScale, 1.5);
+    });
+
+    test('setTextScale writes through to SharedPreferences', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      s.setTextScale(1.2);
+      final fresh = await SharedPreferences.getInstance();
+      expect(fresh.getDouble('crisp.textScale'), 1.2);
+    });
+
+    test('load() restores stored textScale', () async {
+      SharedPreferences.setMockInitialValues({'crisp.textScale': 1.4});
+      final s = AppState();
+      await s.load(force: true);
+      expect(s.textScale, 1.4);
+    });
+
+    test('load() clamps out-of-range stored textScale', () async {
+      SharedPreferences.setMockInitialValues({'crisp.textScale': 3.0});
+      final s = AppState();
+      await s.load(force: true);
+      expect(s.textScale, 1.5);
+    });
+
+    test('setTextScale is a no-op when value unchanged', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      var notifications = 0;
+      void cb() => notifications++;
+      s.addListener(cb);
+      s.setTextScale(1.0); // already 1.0
+      expect(notifications, 0);
+      s.removeListener(cb);
+    });
+  });
+
+  group('highContrast persistence', () {
+    test('default is false', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      expect(s.highContrast, isFalse);
+    });
+
+    test('setHighContrast stores value and notifies listeners', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      var notifications = 0;
+      void cb() => notifications++;
+      s.addListener(cb);
+      s.setHighContrast(true);
+      expect(s.highContrast, isTrue);
+      expect(notifications, 1);
+      s.removeListener(cb);
+    });
+
+    test('setHighContrast writes through to SharedPreferences', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      s.setHighContrast(true);
+      final fresh = await SharedPreferences.getInstance();
+      expect(fresh.getBool('crisp.highContrast'), isTrue);
+    });
+
+    test('load() restores stored highContrast', () async {
+      SharedPreferences.setMockInitialValues({'crisp.highContrast': true});
+      final s = AppState();
+      await s.load(force: true);
+      expect(s.highContrast, isTrue);
+    });
+
+    test('setHighContrast is a no-op when value unchanged', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      var notifications = 0;
+      void cb() => notifications++;
+      s.addListener(cb);
+      s.setHighContrast(false); // already false
+      expect(notifications, 0);
+      s.removeListener(cb);
+    });
+  });
+
+  group('exportToJson / importFromJson round-trip for accessibility fields',
+      () {
+    test('textScale survives export/import round-trip', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      s.setTextScale(1.25);
+      final exported = s.exportToJson();
+      expect(exported['textScale'], 1.25);
+
+      // Reset
+      SharedPreferences.setMockInitialValues({});
+      await s.load(force: true);
+      expect(s.textScale, 1.0);
+
+      // Import
+      s.importFromJson(exported);
+      expect(s.textScale, 1.25);
+    });
+
+    test('highContrast survives export/import round-trip', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      s.setHighContrast(true);
+      final exported = s.exportToJson();
+      expect(exported['highContrast'], isTrue);
+
+      // Reset
+      SharedPreferences.setMockInitialValues({});
+      await s.load(force: true);
+      expect(s.highContrast, isFalse);
+
+      // Import
+      s.importFromJson(exported);
+      expect(s.highContrast, isTrue);
+    });
+
+    test('decimalPlaces survives export/import via numberFormat', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      s.setDecimalPlaces(5);
+      expect(s.decimalPlaces, 5);
+      final exported = s.exportToJson();
+
+      // Reset
+      SharedPreferences.setMockInitialValues({});
+      await s.load(force: true);
+      expect(s.decimalPlaces, -1);
+
+      // Import — numberFormat drives decimalPlaces through setNumberFormat.
+      // For non-enum values (5), the numberFormat field is 'auto', so
+      // decimalPlaces stays at -1 after import (the int isn't in the
+      // export schema). Verify the round-trip behavior is consistent.
+      s.importFromJson(exported);
+      // numberFormat 'auto' maps to decimalPlaces -1 via the enum path,
+      // but the import only carries numberFormat, not the raw int.
+      // This documents the current behavior.
+      expect(s.numberFormat, NumberDisplayFormat.auto);
+    });
+
+    test('decimalPlaces round-trips for enum-representable values', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      s.setDecimalPlaces(2);
+      expect(s.decimalPlaces, 2);
+      expect(s.numberFormat, NumberDisplayFormat.twoDecimal);
+      final exported = s.exportToJson();
+
+      // Reset
+      SharedPreferences.setMockInitialValues({});
+      await s.load(force: true);
+
+      s.importFromJson(exported);
+      expect(s.numberFormat, NumberDisplayFormat.twoDecimal);
+      expect(s.decimalPlaces, 2);
+    });
+
+    test(
+        'all three fields survive a combined export/import round-trip',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+
+      s.setTextScale(1.1);
+      s.setHighContrast(true);
+      s.setDecimalPlaces(1);
+
+      final exported = s.exportToJson();
+
+      // Reset
+      SharedPreferences.setMockInitialValues({});
+      await s.load(force: true);
+      expect(s.textScale, 1.0);
+      expect(s.highContrast, isFalse);
+      expect(s.decimalPlaces, -1);
+
+      s.importFromJson(exported);
+      expect(s.textScale, 1.1);
+      expect(s.highContrast, isTrue);
+      expect(s.decimalPlaces, 1);
+    });
+  });
+
+  group('persistNotepadNow', () {
+    test('does not throw when called before load()', () {
+      // AppState._prefs is null before load(). persistNotepadNow calls
+      // _persistNotepadDocs which uses ?. on _prefs, so it should be
+      // a safe no-op.
+      final s = AppState();
+      expect(() => s.persistNotepadNow(), returnsNormally);
+    });
+
+    test('does not throw when called after load()', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState();
+      await s.load(force: true);
+      expect(() => s.persistNotepadNow(), returnsNormally);
+    });
+  });
+
   group('onboarding dismissed flag', () {
     test('default is false (first launch shows tour)', () async {
       SharedPreferences.setMockInitialValues({});

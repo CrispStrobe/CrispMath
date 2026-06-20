@@ -66,6 +66,29 @@ void main() {
       final v = oneSidedLimit(f, 0);
       expect(v, isNull);
     });
+
+    test('1/x at 0 — left and right disagree in sign → null', () {
+      final v = oneSidedLimit((x) => 1 / x, 0);
+      expect(v, isNull);
+    });
+
+    test('sin(1/x) at 0 — oscillatory essential singularity → null', () {
+      final v = oneSidedLimit((x) => math.sin(1 / x), 0);
+      expect(v, isNull);
+    });
+
+    test('1/x² at 0 — both sides agree (even pole), returns large value', () {
+      final v = oneSidedLimit((x) => 1 / (x * x), 0);
+      // f(±1e-7) = 1e14, both sides agree since x² is even.
+      expect(v, isNotNull);
+      expect(v!, greaterThan(1e12));
+    });
+
+    test('x² at regular point x=3 → 9.0', () {
+      final v = oneSidedLimit((x) => x * x, 3);
+      expect(v, isNotNull);
+      expect(v!, closeTo(9.0, 1e-6));
+    });
   });
 
   group('limitAtInfinity', () {
@@ -84,6 +107,28 @@ void main() {
       final v = limitAtInfinity((x) => 7.0);
       expect(v, isNotNull);
       expect(v!, closeTo(7.0, 1e-9));
+    });
+
+    test('sin(x) at ∞ — oscillatory → null', () {
+      final v = limitAtInfinity((x) => math.sin(x));
+      expect(v, isNull);
+    });
+
+    test('1/x² at ∞ → 0', () {
+      final v = limitAtInfinity((x) => 1 / (x * x));
+      expect(v, isNotNull);
+      expect(v!.abs(), lessThan(1e-6));
+    });
+
+    test('x² at ∞ — diverges → null', () {
+      final v = limitAtInfinity((x) => x * x);
+      expect(v, isNull);
+    });
+
+    test('exp(-x) at ∞ → 0', () {
+      final v = limitAtInfinity((x) => math.exp(-x));
+      expect(v, isNotNull);
+      expect(v!, closeTo(0.0, 1e-9));
     });
   });
 }

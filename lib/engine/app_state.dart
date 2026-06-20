@@ -226,6 +226,8 @@ class AppState extends ChangeNotifier {
     _themeMode = ThemeMode.dark;
     _exactIntegerMode = true;
     _onboardingDismissed = false;
+    _textScale = 1.0;
+    _highContrast = false;
     _autoBindSolve = false;
     _crispAssistApiUrl = '';
     _crispAssistApiKey = '';

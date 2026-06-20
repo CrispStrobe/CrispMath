@@ -175,6 +175,73 @@ Four features from CrispEmbed to integrate into CrispCalc, in order:
   (Q4_K, Q8_0) and `cstr/deepseek-ocr2-crispembed-GGUF` (Q4_K, Q8_0, F16).
   DeepSeek-OCR2 quantized via Kaggle P100 (VPS OOM at 7.6 GB RAM).
 
+### Performance — June 2026 batch
+
+- [x] **P1. OCR pipeline optimization.** VLM providers now receive
+  color images via `recognizeRaw` (was losing info from grayscale).
+  WASM bulk copy via `setRange` (was per-pixel loop, 36K–590K
+  iterations). Parallel `Future.wait` for model path resolution.
+  Adaptive thread count from `Platform.numberOfProcessors`. Download
+  resume via `Range` header. Temp dir reuse per provider instance.
+  12 RegExp patterns hoisted to top-level. Dead WASM init code removed.
+  Canvas `toRgbaBytes` for VLM-ready input.
+
+- [x] **P2. Notepad keystroke path.** Deferred JSON persistence to
+  debounce timer (was serializing entire doc map + `notifyListeners`
+  on every character typed). Cached `_docScopeNames`. Passed line
+  index from `itemBuilder` (eliminated two O(N) `indexOf` scans).
+  Cached RegExp patterns for scope substitution. Cached syntax
+  highlighting TextStyle objects. Scope keys cache invalidation.
+
+- [x] **P3. Startup + web loading.** `registerNativeLicenses` and
+  `initOcrProviders` fired as `unawaited` background tasks (no longer
+  block first frame). WASM preloaded with `<link rel="preload">`.
+  JS loaders deferred. Fixed WASM init race condition.
+
+- [x] **P4. Calculator + graphing + app-wide.** Calculator: single
+  `setState` per keystroke (was double). Graphing: hoisted hot-loop
+  RegExp (20K→1 compilations per frame), moved implicit-mul outside
+  sample loop, `shouldRepaint` uses `listEquals`/`mapEquals` (was
+  `.toString()`). 3D scene: debounced `_persistScene3D` (was 60 Hz
+  disk writes). History: microtask-deferred serialization. OCR image
+  decode: header-only `ImageDescriptor` (was full JPEG decode for
+  width/height).
+
+- [x] **P5. CrispEmbed Flutter bindings.** Fixed truncated
+  `CrispembedTbsrnSrProcessDart` typedef, duplicate TBSRN/Punct
+  typedefs, mangled SwinIR/SCUNet interleaved classes, SCUNet
+  process signature, duplicate `TbsrnSrResult` class. Resolved
+  all 4 pre-existing test failures (3621 → 3621+0).
+
+### Test coverage — June 2026 batch
+
+- [x] **T1. OCR utils tests.** 81 tests for `postProcessOcrText`
+  and `latexToEngineSyntax` (Unicode superscripts, operators, Greek,
+  sqrt, BPE markers, LaTeX commands, fractions, binomial, arrows,
+  set notation, environments, real-world OCR outputs).
+
+- [x] **T2. Analysis engine tests.** 27 new tests: input validation,
+  result structure, error propagation, edge cases, polynomial
+  analysis via pure-Dart fallback, AnalysisResult data class.
+
+- [x] **T3. Numerical limits tests.** 9 new tests: `oneSidedLimit`
+  for infinite/oscillatory/regular points, `limitAtInfinity` for
+  oscillatory/decay/divergent/exponential functions.
+
+- [x] **T4. Step engine tests.** 20 new tests: `partialFractions`
+  steps, quadratic solve structural tests, linear solve edge cases
+  (degenerate coefficient=0, no-variable, identity).
+
+- [x] **T5. AppState persistence tests.** 51 tests (new file):
+  `setTextScale` (7), `setHighContrast` (5), `exportToJson`/
+  `importFromJson` round-trips (4), `persistNotepadNow` safety (2),
+  plus onboarding flag tests. Fixed bug: `_textScale`/`_highContrast`
+  not reset on `force: true` reload.
+
+- [x] **T6. OCR model catalog completeness.** 14 new tests: pix2tex
+  (3 variants, MIT), Texo (2, AGPL), PP-FormulaNet-L (3, Apache),
+  handwritten math (7+, NC gates), sizeLabel GB boundary.
+
 ### Tier 4 — Future / speculative
 
 - [x] **Pen / handwriting input.** DrawingCanvas (CustomPainter) +
