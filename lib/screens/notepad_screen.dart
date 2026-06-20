@@ -1902,6 +1902,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
 // Row
 // ---------------------------------------------------------------------------
 
+final _dividerPattern = RegExp(r'^-{3,}\s*$');
+
 class _NotepadLineRow extends StatelessWidget {
   final NotepadLine line;
   final int index;
@@ -1960,7 +1962,7 @@ class _NotepadLineRow extends StatelessWidget {
     // which we don't carry here).
     final t = line.source.trim();
     if (t.startsWith('## ')) return NotepadLineKind.heading;
-    if (RegExp(r'^-{3,}\s*$').hasMatch(t)) return NotepadLineKind.divider;
+    if (_dividerPattern.hasMatch(t)) return NotepadLineKind.divider;
     return NotepadLineKind.expression; // generic fallback
   }
 

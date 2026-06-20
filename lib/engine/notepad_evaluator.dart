@@ -17,6 +17,9 @@ RegExp _wordBoundaryPattern(String name) =>
     _wordBoundaryCache.putIfAbsent(name, () =>
         RegExp(r'(?<![A-Za-z0-9_])' + RegExp.escape(name) + r'(?![A-Za-z0-9_])'));
 final _ansPattern = RegExp(r'(?<![A-Za-z0-9_])Ans(?![A-Za-z0-9_])');
+final _dividerRegex = RegExp(r'^-{3,}\s*$');
+final _trailingZeros = RegExp(r'0+$');
+final _trailingDot = RegExp(r'\.$');
 
 /// Kind of a single notepad line, surfaced to Phase 3 so the
 /// dependency walker knows how to treat it.
@@ -209,7 +212,7 @@ ParsedNotepadLine classifyNotepadLine(
   if (trimmed.startsWith('## ')) {
     return ParsedNotepadLine.heading(trimmed.substring(3).trim());
   }
-  if (RegExp(r'^-{3,}\s*$').hasMatch(trimmed)) {
+  if (_dividerRegex.hasMatch(trimmed)) {
     return ParsedNotepadLine.divider();
   }
 
@@ -859,7 +862,7 @@ class NotepadEvaluator {
   /// dispatched.
   final Map<String, String> externalScope;
 
-  const NotepadEvaluator({
+  NotepadEvaluator({
     required this.dispatcher,
     this.flatzincDispatcher,
     this.externalScope = const {},
@@ -1111,7 +1114,7 @@ class NotepadEvaluator {
     }
     final s = v.toStringAsPrecision(10);
     return s.contains('.')
-        ? s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')
+        ? s.replaceAll(_trailingZeros, '').replaceAll(_trailingDot, '')
         : s;
   }
 
@@ -1209,8 +1212,13 @@ class NotepadEvaluator {
     return 'line${index + 1}';
   }
 
+  /// Scope keys (variable names) are stable across a single eval pass —
+  /// they depend on line source text, not cached results. Cache them to
+  /// avoid O(N) buildNotepadScope per blocked line.
+  Set<String>? _scopeKeysCache;
+
   Set<String> _scopeKeysFor(NotepadDocument doc, int firstCode) {
-    final scope = buildNotepadScope(doc, externalScope: externalScope);
-    return scope.keys.toSet();
+    return _scopeKeysCache ??=
+        buildNotepadScope(doc, externalScope: externalScope).keys.toSet();
   }
 }
