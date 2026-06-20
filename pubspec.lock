@@ -77,8 +77,8 @@ packages:
     dependency: "direct main"
     description:
       path: "flutter/crispembed"
-      ref: d020054
-      resolved-ref: d02005493a3c04bc7fcf53d5892865e62f3d99c5
+      ref: d81116a
+      resolved-ref: d81116ada1a1d51ac95aaa38615b75184904fbd9
       url: "https://github.com/CrispStrobe/CrispEmbed.git"
     source: git
     version: "0.3.0"

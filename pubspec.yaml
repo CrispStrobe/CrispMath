@@ -67,7 +67,7 @@ dependencies:
     git:
       url: https://github.com/CrispStrobe/CrispEmbed.git
       path: flutter/crispembed
-      ref: "d020054"  # Qwen3-VL-2B + DeepSeek-OCR2 + fused attn + madvise prefetch + per-row dequant
+      ref: "d81116a"  # Qwen3-VL-2B + DeepSeek-OCR2 + fused attn + fix bindings typedefs
 
 dev_dependencies:
   flutter_test:
