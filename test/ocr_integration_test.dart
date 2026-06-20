@@ -534,8 +534,8 @@ void main() {
   // DeepSeek-OCR2 catalog
   // =========================================================================
   group('DeepSeek-OCR2 catalog', () {
-    test('has at least 1 variant', () {
-      expect(OcrModelCatalog.deepseekOcr2.length, greaterThanOrEqualTo(1));
+    test('has 3 variants (Q4K, Q8, F16)', () {
+      expect(OcrModelCatalog.deepseekOcr2.length, 3);
     });
 
     test('models have correct HF URL', () {
@@ -546,11 +546,25 @@ void main() {
       }
     });
 
-    test('F16 is ~6.4 GB', () {
+    test('Q4K is ~2.1 GB (smallest)', () {
+      final q4k = OcrModelCatalog.deepseekOcr2
+          .firstWhere((m) => m.id.contains('q4k'));
+      expect(q4k.sizeBytes, 2120 * 1024 * 1024);
+      expect(q4k.sizeLabel, '2.1 GB');
+    });
+
+    test('Q8 is ~3.4 GB', () {
+      final q8 = OcrModelCatalog.deepseekOcr2
+          .firstWhere((m) => m.id.contains('q8'));
+      expect(q8.sizeBytes, 3441 * 1024 * 1024);
+      expect(q8.sizeLabel, '3.4 GB');
+    });
+
+    test('F16 is ~6.3 GB', () {
       final f16 = OcrModelCatalog.deepseekOcr2
           .firstWhere((m) => m.id.contains('f16'));
-      expect(f16.sizeBytes, 6554 * 1024 * 1024);
-      expect(f16.sizeLabel, '6.4 GB');
+      expect(f16.sizeBytes, 6472 * 1024 * 1024);
+      expect(f16.sizeLabel, '6.3 GB');
     });
 
     test('license is Apache-2.0', () {
@@ -558,6 +572,11 @@ void main() {
         expect(m.license, 'Apache-2.0');
         expect(m.requiresLicenseAcceptance, false);
       }
+    });
+
+    test('IDs are unique', () {
+      final ids = OcrModelCatalog.deepseekOcr2.map((m) => m.id).toSet();
+      expect(ids.length, OcrModelCatalog.deepseekOcr2.length);
     });
 
     test('included in all models', () {

@@ -423,21 +423,39 @@ class OcrModelCatalog {
   ];
 
   // -- DeepSeek-OCR2 (SAM-ViT + Qwen2 encoder + DeepSeek-V2 MoE) ---------
-  // TODO: upload quantized variants to cstr/deepseek-ocr2-crispembed-GGUF
 
   static const String _hfDeepseekOcr2Url =
       'https://huggingface.co/cstr/deepseek-ocr2-crispembed-GGUF/resolve/main';
 
   static const List<OcrModelVariant> deepseekOcr2 = [
     OcrModelVariant(
+      id: 'deepseek-ocr2-q4k',
+      name: 'DeepSeek-OCR2 (MoE, balanced)',
+      filename: 'deepseek-ocr2-q4_k.gguf',
+      url: '$_hfDeepseekOcr2Url/deepseek-ocr2-q4_k.gguf',
+      sizeBytes: 2120 * 1024 * 1024, // 2.1 GB
+      description: 'DeepSeek-OCR2 (SAM-ViT + Qwen2 + MoE decoder, 3B). '
+          '2.1 GB Q4_K. Good quality/size balance. Desktop only.',
+      license: 'Apache-2.0',
+    ),
+    OcrModelVariant(
+      id: 'deepseek-ocr2-q8',
+      name: 'DeepSeek-OCR2 (MoE, high quality)',
+      filename: 'deepseek-ocr2-q8_0.gguf',
+      url: '$_hfDeepseekOcr2Url/deepseek-ocr2-q8_0.gguf',
+      sizeBytes: 3441 * 1024 * 1024, // 3.4 GB
+      description: 'DeepSeek-OCR2 (SAM-ViT + Qwen2 + MoE decoder, 3B). '
+          '3.4 GB Q8_0. Best quality. Desktop only.',
+      license: 'Apache-2.0',
+    ),
+    OcrModelVariant(
       id: 'deepseek-ocr2-f16',
       name: 'DeepSeek-OCR2 (MoE, full)',
       filename: 'deepseek-ocr2-f16.gguf',
       url: '$_hfDeepseekOcr2Url/deepseek-ocr2-f16.gguf',
-      sizeBytes: 6554 * 1024 * 1024, // 6.4 GB
+      sizeBytes: 6472 * 1024 * 1024, // 6.3 GB
       description: 'DeepSeek-OCR2 (SAM-ViT + Qwen2 + MoE decoder, 3B). '
-          '6.4 GB FP16. High-accuracy document OCR. Desktop only. '
-          'Quantized variants pending.',
+          '6.3 GB FP16. Full precision document OCR. Desktop only.',
       license: 'Apache-2.0',
     ),
   ];

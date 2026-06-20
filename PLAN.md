@@ -171,8 +171,9 @@ Four features from CrispEmbed to integrate into CrispCalc, in order:
   (saves ~655 MB in DeepSeek-OCR2), backend KV cache (no CPU-GPU
   transfer per token). Settings dialog updated with 3 new sections.
   14 new tests for Qwen3-VL + DeepSeek-OCR2 catalog integrity.
-  TODO: upload GGUF files to HuggingFace `cstr/` repos, quantize
-  DeepSeek-OCR2 (Q4_K, Q8_0).
+  All GGUF files uploaded to HuggingFace: `cstr/qwen3-vl-2b-crispembed-GGUF`
+  (Q4_K, Q8_0) and `cstr/deepseek-ocr2-crispembed-GGUF` (Q4_K, Q8_0, F16).
+  DeepSeek-OCR2 quantized via Kaggle P100 (VPS OOM at 7.6 GB RAM).
 
 ### Tier 4 — Future / speculative
 
@@ -202,7 +203,7 @@ quantizations verified. CI builds all 5 platforms.
 | 4a. Printed math | ✅ | PP-FormulaNet-L (181M), Texo-Distill, pix2tex, MixTex (CJK) |
 | 4b. Handwritten math | ✅ | PosFormer (57%), BTTR (49%), HMER (36%), auto-detected from GGUF |
 | 5a. Vision-language | ✅ | Qwen3-VL-2B (preferred), Qwen2.5-VL-3B (fallback), desktop-only |
-| 5b. MoE document OCR | ✅ | DeepSeek-OCR2 (3B MoE, Apache-2.0), desktop-only, F16 only |
+| 5b. MoE document OCR | ✅ | DeepSeek-OCR2 (3B MoE, Apache-2.0), desktop-only, Q4K/Q8/F16 |
 
 **Models on HuggingFace**: `cstr/pix2tex-mfr-gguf` (F32/F16/Q8_0/Q4_K)
 
