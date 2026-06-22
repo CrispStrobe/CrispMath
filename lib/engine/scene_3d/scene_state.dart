@@ -122,9 +122,13 @@ class Scene3D {
   Scene3D withReorderedObjects(int oldIndex, int newIndex) {
     if (oldIndex < 0 || oldIndex >= objects.length) return this;
     if (newIndex < 0 || newIndex > objects.length) return this;
+    // ReorderableListView.onReorder semantics: newIndex is the position
+    // in the original list. Adjust for the removal before inserting.
+    var adjustedNew = newIndex;
+    if (oldIndex < adjustedNew) adjustedNew--;
     final next = List<SceneObject>.from(objects);
     final item = next.removeAt(oldIndex);
-    next.insert(newIndex, item);
+    next.insert(adjustedNew, item);
     return Scene3D(
       id: id,
       name: name,
