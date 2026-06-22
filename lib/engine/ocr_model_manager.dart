@@ -46,8 +46,7 @@ class OcrModelManager {
       final tmpFile = File(tmpPath);
 
       // Resume interrupted downloads if the .tmp file exists.
-      final existingSize =
-          tmpFile.existsSync() ? tmpFile.lengthSync() : 0;
+      final existingSize = tmpFile.existsSync() ? tmpFile.lengthSync() : 0;
 
       final request = await client.getUrl(Uri.parse(model.url));
       if (existingSize > 0) {
@@ -65,8 +64,8 @@ class OcrModelManager {
       final total = isResume
           ? (response.contentLength + existingSize)
           : response.contentLength;
-      final sink = tmpFile.openWrite(
-          mode: isResume ? FileMode.append : FileMode.write);
+      final sink =
+          tmpFile.openWrite(mode: isResume ? FileMode.append : FileMode.write);
       int received = isResume ? existingSize : 0;
 
       await for (final chunk in response) {

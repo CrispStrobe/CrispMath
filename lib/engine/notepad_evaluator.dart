@@ -13,9 +13,10 @@ import 'notepad.dart';
 
 /// Cached word-boundary RegExp patterns for scope name substitution.
 final _wordBoundaryCache = <String, RegExp>{};
-RegExp _wordBoundaryPattern(String name) =>
-    _wordBoundaryCache.putIfAbsent(name, () =>
-        RegExp(r'(?<![A-Za-z0-9_])' + RegExp.escape(name) + r'(?![A-Za-z0-9_])'));
+RegExp _wordBoundaryPattern(String name) => _wordBoundaryCache.putIfAbsent(
+    name,
+    () => RegExp(
+        r'(?<![A-Za-z0-9_])' + RegExp.escape(name) + r'(?![A-Za-z0-9_])'));
 final _ansPattern = RegExp(r'(?<![A-Za-z0-9_])Ans(?![A-Za-z0-9_])');
 final _dividerRegex = RegExp(r'^-{3,}\s*$');
 final _trailingZeros = RegExp(r'0+$');

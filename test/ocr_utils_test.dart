@@ -17,8 +17,7 @@ void main() {
     });
 
     test('all superscript digits ⁰-⁹', () {
-      expect(postProcessOcrText('a⁰b⁴c⁵d⁶e⁷f⁸g⁹'),
-          'a^0b^4c^5d^6e^7f^8g^9');
+      expect(postProcessOcrText('a⁰b⁴c⁵d⁶e⁷f⁸g⁹'), 'a^0b^4c^5d^6e^7f^8g^9');
     });
 
     test('superscript n', () {
@@ -384,15 +383,15 @@ void main() {
   // ===========================================================================
   group('latexToEngineSyntax — environments', () {
     test(r'\begin{array}...\end{array} stripped', () {
-      final result = latexToEngineSyntax(r'\begin{array}{l} x \\ y \end{array}');
+      final result =
+          latexToEngineSyntax(r'\begin{array}{l} x \\ y \end{array}');
       expect(result, isNot(contains('begin')));
       expect(result, isNot(contains('end')));
       expect(result, isNot(contains(r'\\')));
     });
 
     test(r'\begin{matrix}...\end{matrix} stripped', () {
-      final result =
-          latexToEngineSyntax(r'\begin{matrix} a & b \end{matrix}');
+      final result = latexToEngineSyntax(r'\begin{matrix} a & b \end{matrix}');
       expect(result, isNot(contains('matrix')));
     });
   });
@@ -438,8 +437,8 @@ void main() {
   // ===========================================================================
   group('latexToEngineSyntax — real-world OCR outputs', () {
     test('quadratic formula', () {
-      final result = latexToEngineSyntax(
-          r'\frac{-b \pm \sqrt{b^{2} - 4ac}}{2a}');
+      final result =
+          latexToEngineSyntax(r'\frac{-b \pm \sqrt{b^{2} - 4ac}}{2a}');
       expect(result, isNotEmpty);
       expect(result, isNot(contains(r'\')));
       expect(result, contains('sqrt'));
@@ -465,8 +464,7 @@ void main() {
     });
 
     test('trig identity', () {
-      final result =
-          latexToEngineSyntax(r'\sin^{2}(x) + \cos^{2}(x) = 1');
+      final result = latexToEngineSyntax(r'\sin^{2}(x) + \cos^{2}(x) = 1');
       expect(result, isNotEmpty);
       expect(result, contains('sin'));
       expect(result, contains('cos'));

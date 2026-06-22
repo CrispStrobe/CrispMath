@@ -12,8 +12,8 @@ import '../engine/app_state.dart';
 
 // JS interop for fetch
 @JS('_ccocrFetchJson')
-external JSPromise _jsFetchJson(JSString url, JSString method,
-    JSString headers, JSString body);
+external JSPromise _jsFetchJson(
+    JSString url, JSString method, JSString headers, JSString body);
 
 @JS('eval')
 external void _jsEval(JSString code);
@@ -37,7 +37,8 @@ void _injectFetchHelpers() {
         return JSON.stringify({status: 0, body: err.toString()});
       });
     };
-  '''.toJS);
+  '''
+      .toJS);
   _fetchHelpersInjected = true;
 }
 
@@ -176,8 +177,7 @@ class CloudLlmOcrProviderWeb implements OcrProvider {
     }
   }
 
-  static const _prompt =
-      '''Recognize the mathematical expression in this image.
+  static const _prompt = '''Recognize the mathematical expression in this image.
 Return ONLY the LaTeX representation — no explanation, no markdown fences.
 If it's handwritten, do your best to interpret the symbols.
 If you cannot recognize any math, return "ERROR".

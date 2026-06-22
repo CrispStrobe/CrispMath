@@ -23,8 +23,7 @@ void main() {
   // =========================================================================
   group('MixTex catalog', () {
     test('has at least 3 variants (Q8, Q4K, F16)', () {
-      expect(
-          OcrModelCatalog.printedMathMixtex.length, greaterThanOrEqualTo(3));
+      expect(OcrModelCatalog.printedMathMixtex.length, greaterThanOrEqualTo(3));
     });
 
     test('all MixTex models have correct HF URL', () {
@@ -36,8 +35,7 @@ void main() {
     });
 
     test('MixTex IDs are unique', () {
-      final ids =
-          OcrModelCatalog.printedMathMixtex.map((m) => m.id).toSet();
+      final ids = OcrModelCatalog.printedMathMixtex.map((m) => m.id).toSet();
       expect(ids.length, OcrModelCatalog.printedMathMixtex.length);
     });
 
@@ -96,8 +94,8 @@ void main() {
   // =========================================================================
   group('Surya text detection catalog', () {
     test('has at least 2 variants', () {
-      expect(OcrModelCatalog.textDetectionSurya.length,
-          greaterThanOrEqualTo(2));
+      expect(
+          OcrModelCatalog.textDetectionSurya.length, greaterThanOrEqualTo(2));
     });
 
     test('Surya models have correct HF URL', () {
@@ -130,8 +128,7 @@ void main() {
   // =========================================================================
   group('TrOCR text recognition catalog', () {
     test('has at least 2 variants', () {
-      expect(
-          OcrModelCatalog.textRecognition.length, greaterThanOrEqualTo(2));
+      expect(OcrModelCatalog.textRecognition.length, greaterThanOrEqualTo(2));
     });
 
     test('TrOCR models have correct HF URL', () {
@@ -158,8 +155,7 @@ void main() {
   // =========================================================================
   group('Layout detection catalog', () {
     test('has at least 2 variants', () {
-      expect(
-          OcrModelCatalog.layoutDetection.length, greaterThanOrEqualTo(2));
+      expect(OcrModelCatalog.layoutDetection.length, greaterThanOrEqualTo(2));
     });
 
     test('layout models have correct HF URL', () {
@@ -517,8 +513,7 @@ void main() {
     });
 
     test('formatting commands stripped', () {
-      expect(
-          latexToEngineSyntax(r'\mathbf{x} + \mathrm{y}'), 'x+y');
+      expect(latexToEngineSyntax(r'\mathbf{x} + \mathrm{y}'), 'x+y');
     });
 
     test('rightarrow mapped to \\to then simplified', () {
@@ -564,8 +559,8 @@ void main() {
     });
 
     test('Q8 is ~3.9 GB', () {
-      final q8 = OcrModelCatalog.visionLanguage
-          .firstWhere((m) => m.id.contains('q8'));
+      final q8 =
+          OcrModelCatalog.visionLanguage.firstWhere((m) => m.id.contains('q8'));
       expect(q8.sizeBytes, 3930 * 1024 * 1024);
       expect(q8.sizeLabel, '3.8 GB');
     });
@@ -601,8 +596,8 @@ void main() {
   // =========================================================================
   group('Qwen3-VL-2B vision-language catalog', () {
     test('has at least 2 variants (Q4K, Q8)', () {
-      expect(OcrModelCatalog.visionLanguageQwen3.length,
-          greaterThanOrEqualTo(2));
+      expect(
+          OcrModelCatalog.visionLanguageQwen3.length, greaterThanOrEqualTo(2));
     });
 
     test('models have correct HF URL', () {
@@ -641,8 +636,7 @@ void main() {
     test('IDs are unique and distinct from Qwen2.5-VL', () {
       final ids = OcrModelCatalog.visionLanguageQwen3.map((m) => m.id).toSet();
       expect(ids.length, OcrModelCatalog.visionLanguageQwen3.length);
-      final qwen25ids =
-          OcrModelCatalog.visionLanguage.map((m) => m.id).toSet();
+      final qwen25ids = OcrModelCatalog.visionLanguage.map((m) => m.id).toSet();
       expect(ids.intersection(qwen25ids), isEmpty);
     });
 
@@ -677,22 +671,22 @@ void main() {
     });
 
     test('Q4K is ~2.1 GB (smallest)', () {
-      final q4k = OcrModelCatalog.deepseekOcr2
-          .firstWhere((m) => m.id.contains('q4k'));
+      final q4k =
+          OcrModelCatalog.deepseekOcr2.firstWhere((m) => m.id.contains('q4k'));
       expect(q4k.sizeBytes, 2120 * 1024 * 1024);
       expect(q4k.sizeLabel, '2.1 GB');
     });
 
     test('Q8 is ~3.4 GB', () {
-      final q8 = OcrModelCatalog.deepseekOcr2
-          .firstWhere((m) => m.id.contains('q8'));
+      final q8 =
+          OcrModelCatalog.deepseekOcr2.firstWhere((m) => m.id.contains('q8'));
       expect(q8.sizeBytes, 3441 * 1024 * 1024);
       expect(q8.sizeLabel, '3.4 GB');
     });
 
     test('F16 is ~6.3 GB', () {
-      final f16 = OcrModelCatalog.deepseekOcr2
-          .firstWhere((m) => m.id.contains('f16'));
+      final f16 =
+          OcrModelCatalog.deepseekOcr2.firstWhere((m) => m.id.contains('f16'));
       expect(f16.sizeBytes, 6472 * 1024 * 1024);
       expect(f16.sizeLabel, '6.3 GB');
     });
@@ -745,7 +739,8 @@ void main() {
 
     test('available list includes all registered available providers', () {
       final count = OcrProviders.available.length;
-      final newP = _MockProvider('new-avail-${DateTime.now().millisecondsSinceEpoch}');
+      final newP =
+          _MockProvider('new-avail-${DateTime.now().millisecondsSinceEpoch}');
       OcrProviders.register(newP);
       expect(OcrProviders.available.length, count + 1);
     });

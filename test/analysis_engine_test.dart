@@ -142,7 +142,7 @@ void main() {
         '!!!',
         'Error',
         '42',
-        'sin(x',   // unbalanced paren
+        'sin(x', // unbalanced paren
         '(((x)))', // deeply nested
       ];
       for (final input in inputs) {
@@ -238,7 +238,8 @@ void main() {
       final result = await analysis.performCurveAnalysis('x');
       // extrema should mention no critical points
       expect(result.extrema.any((e) => e.contains('No critical points')), true,
-          reason: 'Expected no-critical-points message, got: ${result.extrema}');
+          reason:
+              'Expected no-critical-points message, got: ${result.extrema}');
     });
 
     test('roots for x^2 - 1 include root values', () async {

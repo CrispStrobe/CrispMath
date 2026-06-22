@@ -21,8 +21,7 @@ Float32List _toGrayscale(Uint8List imageBytes, int width, int height) {
       gray[i] = imageBytes[i] / 255.0;
     } else if (channels >= 3) {
       final base = i * channels;
-      gray[i] =
-          (0.299 * imageBytes[base] +
+      gray[i] = (0.299 * imageBytes[base] +
               0.587 * imageBytes[base + 1] +
               0.114 * imageBytes[base + 2]) /
           255.0;

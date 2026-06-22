@@ -7,7 +7,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crispembed/crispembed.dart'
-    show CrispEmbedOcr, CrispLayout, CrispOcrPipeline, LayoutRegion;
+    show
+        CrispEmbedOcr,
+        CrispGraniteVision,
+        CrispLayout,
+        CrispLightOnOcr,
+        CrispOcrPipeline,
+        LayoutRegion;
 
 import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
@@ -25,8 +31,7 @@ Float32List _toGrayscale(Uint8List imageBytes, int width, int height) {
       gray[i] = imageBytes[i] / 255.0;
     } else if (channels >= 3) {
       final base = i * channels;
-      gray[i] =
-          (0.299 * imageBytes[base] +
+      gray[i] = (0.299 * imageBytes[base] +
               0.587 * imageBytes[base + 1] +
               0.114 * imageBytes[base + 2]) /
           255.0;
@@ -183,6 +188,112 @@ class _CrispEmbedVlmProvider implements OcrProvider {
   }
 }
 
+/// On-device Granite Vision provider (SigLIP ViT + Granite-3.1-2B).
+/// Color images, no grayscale conversion.
+class _GraniteVisionProvider implements OcrProvider {
+  final String _modelPath;
+  final String _name;
+  CrispGraniteVision? _model;
+
+  _GraniteVisionProvider(this._modelPath, this._name);
+
+  @override
+  String get name => _name;
+  @override
+  bool get isAvailable => true;
+  @override
+  bool get requiresNetwork => false;
+  @override
+  bool get requiresApiKey => false;
+
+  @override
+  Future<OcrResult?> recognize(
+    Uint8List imageBytes,
+    int width,
+    int height,
+  ) async {
+    try {
+      _model ??= _tryInit();
+      if (_model == null) return null;
+
+      final channels = imageBytes.length ~/ (width * height);
+      final text =
+          _model!.recognize(imageBytes, width, height, channels: channels);
+      if (text.isEmpty) return null;
+
+      final engineSyntax = latexToEngineSyntax(text);
+      return OcrResult(
+        text: engineSyntax,
+        rawOutput: text.trim(),
+        providerName: name,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  CrispGraniteVision? _tryInit() {
+    try {
+      return CrispGraniteVision(_modelPath, nThreads: _ocrThreads);
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+/// On-device LightOnOCR provider (Pixtral ViT + Qwen3 decoder).
+/// Color images, no grayscale conversion.
+class _LightOnOcrProvider implements OcrProvider {
+  final String _modelPath;
+  final String _name;
+  CrispLightOnOcr? _model;
+
+  _LightOnOcrProvider(this._modelPath, this._name);
+
+  @override
+  String get name => _name;
+  @override
+  bool get isAvailable => true;
+  @override
+  bool get requiresNetwork => false;
+  @override
+  bool get requiresApiKey => false;
+
+  @override
+  Future<OcrResult?> recognize(
+    Uint8List imageBytes,
+    int width,
+    int height,
+  ) async {
+    try {
+      _model ??= _tryInit();
+      if (_model == null) return null;
+
+      final channels = imageBytes.length ~/ (width * height);
+      final text =
+          _model!.recognize(imageBytes, width, height, channels: channels);
+      if (text.isEmpty) return null;
+
+      final engineSyntax = latexToEngineSyntax(text);
+      return OcrResult(
+        text: engineSyntax,
+        rawOutput: text.trim(),
+        providerName: name,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  CrispLightOnOcr? _tryInit() {
+    try {
+      return CrispLightOnOcr(_modelPath, nThreads: _ocrThreads);
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
 /// On-device general OCR provider backed by CrispEmbed (DBNet + TrOCR).
 /// Detects text regions in the image, then recognizes each region.
 /// Returns all recognized text concatenated with newlines.
@@ -296,9 +407,15 @@ class _LayoutOcrProvider implements OcrProvider {
       for (final region in regions) {
         if (_isFormulaRegion(region) && _mathProvider != null) {
           // Crop the formula region and run math OCR on it.
-          final cropped = _cropRegion(imageBytes, width, height, channels,
-              region.x1.round(), region.y1.round(),
-              region.x2.round(), region.y2.round());
+          final cropped = _cropRegion(
+              imageBytes,
+              width,
+              height,
+              channels,
+              region.x1.round(),
+              region.y1.round(),
+              region.x2.round(),
+              region.y2.round());
           if (cropped != null) {
             final cropW = region.x2.round() - region.x1.round();
             final cropH = region.y2.round() - region.y1.round();
@@ -319,8 +436,7 @@ class _LayoutOcrProvider implements OcrProvider {
       return OcrResult(
         text: text,
         rawOutput: regions
-            .map((r) =>
-                '${r.labelName}(${r.x1.toInt()},${r.y1.toInt()}-'
+            .map((r) => '${r.labelName}(${r.x1.toInt()},${r.y1.toInt()}-'
                 '${r.x2.toInt()},${r.y2.toInt()} '
                 'score=${r.score.toStringAsFixed(2)})')
             .join('; '),
@@ -395,8 +511,8 @@ Uint8List _toPpm(Uint8List pixels, int w, int h, int channels) {
 Future<void> initOcrProviders() async {
   // Pre-resolve all model paths in parallel (avoids serial File.exists calls).
   final allModels = OcrModelCatalog.all;
-  final allPaths = await Future.wait(
-      allModels.map((m) => OcrModelManager.localPath(m)));
+  final allPaths =
+      await Future.wait(allModels.map((m) => OcrModelManager.localPath(m)));
   final pathMap = <String, String>{};
   for (var i = 0; i < allModels.length; i++) {
     if (allPaths[i] != null) pathMap[allModels[i].id] = allPaths[i]!;
@@ -551,6 +667,25 @@ Future<void> initOcrProviders() async {
     if (path != null) {
       OcrProviders.register(
           _CrispEmbedVlmProvider(path, 'DeepSeek-OCR2 (MoE, 3B)'));
+      break;
+    }
+  }
+
+  // Tier 2d: Granite Vision (desktop only, 1.9–3.1 GB, OCRBench 852)
+  for (final model in OcrModelCatalog.graniteVision) {
+    final path = pathMap[model.id];
+    if (path != null) {
+      OcrProviders.register(
+          _GraniteVisionProvider(path, 'Granite Vision (2B, OCRBench 852)'));
+      break;
+    }
+  }
+
+  // Tier 2e: LightOnOCR (desktop only, 622 MB, fast 1B model)
+  for (final model in OcrModelCatalog.lightOnOcr) {
+    final path = pathMap[model.id];
+    if (path != null) {
+      OcrProviders.register(_LightOnOcrProvider(path, 'LightOnOCR (1B, fast)'));
       break;
     }
   }

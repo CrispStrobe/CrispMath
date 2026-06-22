@@ -228,8 +228,7 @@ void main() {
     // suite (Track D).
 
     test('always opens with a "Partial fraction decomposition" step', () {
-      final steps =
-          StepEngine.partialFractions('1', 'x*(x+1)', 'x', engine);
+      final steps = StepEngine.partialFractions('1', 'x*(x+1)', 'x', engine);
       expect(steps.first.rule, equals('Partial fraction decomposition'));
     });
 
@@ -237,8 +236,7 @@ void main() {
       // SymbolicWeb can differentiate/evaluate polynomials in pure Dart,
       // so partial fractions actually works bridge-free for polynomial
       // denominators with integer roots.
-      final steps =
-          StepEngine.partialFractions('1', 'x*(x+1)', 'x', engine);
+      final steps = StepEngine.partialFractions('1', 'x*(x+1)', 'x', engine);
       final rules = steps.map((s) => s.rule).toList();
       expect(rules, contains('Partial-fraction decomposition'));
     });
@@ -249,8 +247,7 @@ void main() {
     });
 
     test('before field references numerator and denominator', () {
-      final steps =
-          StepEngine.partialFractions('2', 'x^2 - 1', 'x', engine);
+      final steps = StepEngine.partialFractions('2', 'x^2 - 1', 'x', engine);
       final first = steps.first;
       expect(first.before, contains('2'));
       expect(first.before, contains('x^2 - 1'));
@@ -295,8 +292,7 @@ void main() {
 
     test('x^2 - 5*x + 6 = 0 emits "Move all terms to one side"', () {
       final steps = StepEngine.solve('x^2 - 5*x + 6 = 0', 'x', engine);
-      expect(
-          steps.map((s) => s.rule), contains('Move all terms to one side'));
+      expect(steps.map((s) => s.rule), contains('Move all terms to one side'));
     });
 
     test('repeated root x^2 - 4*x + 4 = 0 emits original equation', () {
@@ -327,8 +323,7 @@ void main() {
   // Linear solve edge cases
   // =========================================================================
   group('StepEngine.solve — linear edge cases (no bridge)', () {
-    test('0*x + 5 = 0 simplifies away x and hits "No variable present"',
-        () {
+    test('0*x + 5 = 0 simplifies away x and hits "No variable present"', () {
       // SymbolicWeb.expand simplifies (0*x + 5) - (0) to "5", which
       // has no x, so the engine correctly detects a degenerate case.
       final steps = StepEngine.solve('0*x + 5 = 0', 'x', engine);
@@ -375,7 +370,8 @@ void main() {
       ]) {
         final steps = StepEngine.solve(eq, 'x', engine);
         expect(steps.length, greaterThanOrEqualTo(2),
-            reason: 'eq=$eq should have original equation + at least one more step');
+            reason:
+                'eq=$eq should have original equation + at least one more step');
       }
     });
   });

@@ -40,6 +40,7 @@ import '../services/crisp_assist_service_stub.dart'
 import '../widgets/crisp_assist_dialog.dart';
 import '../widgets/handwriting_input_dialog.dart';
 import '../engine/ocr_provider.dart';
+import '../engine/scan_cleanup.dart';
 import '../widgets/ocr_capture_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import '../engine/notepad_templates.dart';
@@ -670,15 +671,26 @@ class _NotepadScreenState extends State<NotepadScreen> {
       return;
     }
 
-    // Decode image dimensions (header-only, no full pixel decode)
-    final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-    final descriptor = await ui.ImageDescriptor.encoded(buffer);
-    final imgWidth = descriptor.width;
-    final imgHeight = descriptor.height;
-    descriptor.dispose();
-    buffer.dispose();
+    // Try scan cleanup (deskew, crop, whiten) for camera photos.
+    final cleaned = await decodeAndCleanup(bytes);
+    final Uint8List ocrBytes;
+    final int imgWidth;
+    final int imgHeight;
+    if (cleaned != null) {
+      ocrBytes = cleaned.pixels;
+      imgWidth = cleaned.width;
+      imgHeight = cleaned.height;
+    } else {
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      imgWidth = descriptor.width;
+      imgHeight = descriptor.height;
+      descriptor.dispose();
+      buffer.dispose();
+      ocrBytes = bytes;
+    }
     final result =
-        await activeProvider.recognize(bytes, imgWidth, imgHeight);
+        await activeProvider.recognize(ocrBytes, imgWidth, imgHeight);
     if (!context.mounted) return;
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -114,8 +114,7 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
                 child: Text(
                   'Model: ${OcrProviders.active!.name}',
                   style: TextStyle(
-                      fontSize: 11,
-                      color: cs.onSurface.withValues(alpha: 0.5)),
+                      fontSize: 11, color: cs.onSurface.withValues(alpha: 0.5)),
                 ),
               ),
             if (_error != null)

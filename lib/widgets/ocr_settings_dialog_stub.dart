@@ -125,8 +125,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                       size: 20,
                       color: isActive ? scheme.primary : null,
                     ),
-                    title:
-                        Text(p.name, style: const TextStyle(fontSize: 13)),
+                    title: Text(p.name, style: const TextStyle(fontSize: 13)),
                     subtitle: Text(
                       [
                         if (p.requiresNetwork) 'cloud',
@@ -135,8 +134,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                       ].join(' · '),
                       style: const TextStyle(fontSize: 11),
                     ),
-                    onTap: () =>
-                        setState(() => OcrProviders.active = p),
+                    onTap: () => setState(() => OcrProviders.active = p),
                   );
                 }),
                 const Divider(height: 24),
@@ -189,8 +187,8 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
               if (model.license != null) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 3, vertical: 1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                   decoration: BoxDecoration(
                     color: model.requiresLicenseAcceptance
                         ? Colors.orange.withValues(alpha: 0.15)

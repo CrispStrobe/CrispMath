@@ -193,8 +193,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                   'Printed Math — pix2tex', OcrModelCatalog.printedMath),
               _buildSection(
                   'Handwritten Math', OcrModelCatalog.handwrittenMath),
-              _buildSection(
-                  'Text Detection — Surya (91 langs)',
+              _buildSection('Text Detection — Surya (91 langs)',
                   OcrModelCatalog.textDetectionSurya),
               _buildSection(
                   'Text Detection — DBNet', OcrModelCatalog.textDetection),
@@ -208,6 +207,10 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                   OcrModelCatalog.visionLanguage),
               _buildSection('Vision-Language — DeepSeek-OCR2',
                   OcrModelCatalog.deepseekOcr2),
+              _buildSection('Vision-Language — Granite Vision (OCRBench 852)',
+                  OcrModelCatalog.graniteVision),
+              _buildSection('Vision-Language — LightOnOCR (fast, 1B)',
+                  OcrModelCatalog.lightOnOcr),
             ],
           ),
         ),

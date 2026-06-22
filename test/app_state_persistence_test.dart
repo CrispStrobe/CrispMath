@@ -523,8 +523,7 @@ void main() {
       expect(s.decimalPlaces, 2);
     });
 
-    test(
-        'all three fields survive a combined export/import round-trip',
+    test('all three fields survive a combined export/import round-trip',
         () async {
       SharedPreferences.setMockInitialValues({});
       final s = AppState();

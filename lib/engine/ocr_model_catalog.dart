@@ -460,6 +460,66 @@ class OcrModelCatalog {
     ),
   ];
 
-  static List<OcrModelVariant> get all =>
-      [...printedMathPpfnl, ...printedMathTexo, ...printedMathMixtex, ...printedMath, ...handwrittenMath, ...layoutDetection, ...textDetection, ...textDetectionSurya, ...textRecognition, ...visionLanguageQwen3, ...visionLanguage, ...deepseekOcr2];
+  // -- Granite Vision (SigLIP ViT + Granite-3.1-2B, OCRBench 852) ----------
+
+  static const String _hfGraniteVisionUrl =
+      'https://huggingface.co/cstr/granite-vision-crispembed-GGUF/resolve/main';
+
+  static const List<OcrModelVariant> graniteVision = [
+    OcrModelVariant(
+      id: 'granite-vision-q4k',
+      name: 'Granite Vision (balanced)',
+      filename: 'granite-vision-3.3-2b-q4_k.gguf',
+      url: '$_hfGraniteVisionUrl/granite-vision-3.3-2b-q4_k.gguf',
+      sizeBytes: 1913 * 1024 * 1024, // 1.9 GB
+      description: 'Granite Vision 3.3-2B (SigLIP+Granite LLM). '
+          '1.9 GB Q4_K. OCRBench 852. Desktop only.',
+      license: 'Apache-2.0',
+    ),
+    OcrModelVariant(
+      id: 'granite-vision-q8',
+      name: 'Granite Vision (high quality)',
+      filename: 'granite-vision-3.3-2b-q8_0.gguf',
+      url: '$_hfGraniteVisionUrl/granite-vision-3.3-2b-q8_0.gguf',
+      sizeBytes: 3212 * 1024 * 1024, // 3.1 GB
+      description: 'Granite Vision 3.3-2B (SigLIP+Granite LLM). '
+          '3.1 GB Q8_0. Best quality. Desktop only.',
+      license: 'Apache-2.0',
+    ),
+  ];
+
+  // -- LightOnOCR (Pixtral ViT + Qwen3 decoder, 1B) ----------------------
+
+  static const String _hfLightOnOcrUrl =
+      'https://huggingface.co/cstr/lightonocr-GGUF/resolve/main';
+
+  static const List<OcrModelVariant> lightOnOcr = [
+    OcrModelVariant(
+      id: 'lightonocr-1b-q4k',
+      name: 'LightOnOCR (fast, 1B)',
+      filename: 'lightonocr-1b-q4_k.gguf',
+      url: '$_hfLightOnOcrUrl/lightonocr-1b-q4_k.gguf',
+      sizeBytes: 622 * 1024 * 1024, // 622 MB
+      description: 'LightOnOCR-2-1B (Pixtral+Qwen3 decoder). '
+          '622 MB Q4_K. Fast and lightweight. Desktop only.',
+      license: 'Apache-2.0',
+    ),
+  ];
+
+  static List<OcrModelVariant> get all => [
+        ...printedMathPpfnl,
+        ...printedMathTexo,
+        ...printedMathMixtex,
+        ...printedMath,
+        ...handwrittenMath,
+        ...layoutDetection,
+        ...textDetection,
+        ...textDetectionSurya,
+        ...textRecognition,
+        ...visionLanguageQwen3,
+        ...visionLanguage,
+        ...deepseekOcr2,
+        ...graniteVision,
+        ...lightOnOcr,
+      ];
 }

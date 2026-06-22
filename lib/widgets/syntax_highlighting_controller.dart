@@ -42,18 +42,18 @@ class SyntaxHighlightingController extends TextEditingController {
     _cachedBase = style;
     final isDark = brightness == Brightness.dark;
     final base = style ?? const TextStyle();
-    _commentStyle = base.copyWith(
-        color: Colors.grey, fontStyle: FontStyle.italic);
-    _numberStyle = base.copyWith(
-        color: isDark ? Colors.lightBlue[200] : Colors.blue[700]);
+    _commentStyle =
+        base.copyWith(color: Colors.grey, fontStyle: FontStyle.italic);
+    _numberStyle =
+        base.copyWith(color: isDark ? Colors.lightBlue[200] : Colors.blue[700]);
     _functionStyle = base.copyWith(
         color: isDark ? Colors.purple[200] : Colors.purple[700],
         fontWeight: FontWeight.w600);
     _keywordStyle = base.copyWith(
         color: isDark ? Colors.orange[200] : Colors.orange[800],
         fontWeight: FontWeight.w600);
-    _operatorStyle = base.copyWith(
-        color: isDark ? Colors.teal[200] : Colors.teal[700]);
+    _operatorStyle =
+        base.copyWith(color: isDark ? Colors.teal[200] : Colors.teal[700]);
     _headingStyle = base.copyWith(
         color: scheme.primary, fontWeight: FontWeight.bold, fontSize: 18);
   }

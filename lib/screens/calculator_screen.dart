@@ -11,6 +11,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
 import '../engine/ocr_provider.dart';
+import '../engine/scan_cleanup.dart';
 import '../widgets/ocr_capture_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -246,15 +247,28 @@ class CalculatorScreenState extends State<CalculatorScreen>
           content: Text('Recognizing math…'), duration: Duration(seconds: 1)),
     );
 
-    // Decode image dimensions (header-only, no full pixel decode)
-    final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-    final descriptor = await ui.ImageDescriptor.encoded(buffer);
-    final imgWidth = descriptor.width;
-    final imgHeight = descriptor.height;
-    descriptor.dispose();
-    buffer.dispose();
+    // Try scan cleanup (deskew, crop, whiten) for camera photos.
+    // Falls through to raw JPEG if cleanup fails or isn't available.
+    final cleaned = await decodeAndCleanup(bytes);
+    final Uint8List ocrBytes;
+    final int imgWidth;
+    final int imgHeight;
+    if (cleaned != null) {
+      ocrBytes = cleaned.pixels;
+      imgWidth = cleaned.width;
+      imgHeight = cleaned.height;
+    } else {
+      // Fallback: decode dimensions from header only.
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      imgWidth = descriptor.width;
+      imgHeight = descriptor.height;
+      descriptor.dispose();
+      buffer.dispose();
+      ocrBytes = bytes;
+    }
     final result =
-        await activeProvider.recognize(bytes, imgWidth, imgHeight);
+        await activeProvider.recognize(ocrBytes, imgWidth, imgHeight);
     if (!context.mounted) return;
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
