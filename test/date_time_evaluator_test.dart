@@ -106,6 +106,15 @@ void main() {
           DateTimeEvaluator.tryEvaluate('days from 2026-06-01 to 2026-06-15');
       expect(r, '14 days');
     });
+
+    test('date + days across a DST switch stays on the calendar day', () {
+      // March 2026 crosses spring-forward in European timezones; local
+      // DateTime math would land on 2026-03-30 23:00 → "2026-03-30".
+      expect(
+        DateTimeEvaluator.tryEvaluate('2026-03-01 + 30 days'),
+        '2026-03-31',
+      );
+    });
   });
 
   group('DateTimeEvaluator — non-date fallthrough', () {

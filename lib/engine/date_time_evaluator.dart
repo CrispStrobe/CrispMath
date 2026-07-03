@@ -52,7 +52,7 @@ class DateTimeEvaluator {
         final monthYear = _parseMonthYearOffset(durStr);
         if (monthYear != null) {
           final sign = op == '+' ? 1 : -1;
-          final result = DateTime(
+          final result = DateTime.utc(
             date.year + sign * monthYear.years,
             date.month + sign * monthYear.months,
             date.day,
@@ -91,9 +91,14 @@ class DateTimeEvaluator {
   static DateTime? _parseDate(String s) {
     final lower = s.toLowerCase();
 
-    // Relative dates.
+    // Relative dates. All dates in this evaluator are built as UTC
+    // midnights (local y/m/d, UTC construction): calendar-day math on
+    // local DateTimes breaks across DST switches — a spring-forward
+    // month is 23 hours short, so `days between 2026-03-01 and
+    // 2026-03-31` truncated to 29 and `date + 30 days` could land on
+    // the previous calendar day.
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final today = DateTime.utc(now.year, now.month, now.day);
     if (lower == 'today') return today;
     if (lower == 'tomorrow') return today.add(const Duration(days: 1));
     if (lower == 'yesterday') return today.subtract(const Duration(days: 1));
@@ -134,7 +139,7 @@ class DateTimeEvaluator {
           m <= 12 &&
           d >= 1 &&
           d <= 31) {
-        return DateTime(y, m, d);
+        return DateTime.utc(y, m, d);
       }
     }
 
@@ -145,10 +150,10 @@ class DateTimeEvaluator {
     if (unit.startsWith('day')) return base.add(Duration(days: n));
     if (unit.startsWith('week')) return base.add(Duration(days: n * 7));
     if (unit.startsWith('month')) {
-      return DateTime(base.year, base.month + n, base.day);
+      return DateTime.utc(base.year, base.month + n, base.day);
     }
     if (unit.startsWith('year')) {
-      return DateTime(base.year + n, base.month, base.day);
+      return DateTime.utc(base.year + n, base.month, base.day);
     }
     return base.add(Duration(days: n)); // fallback
   }
