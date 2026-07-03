@@ -927,9 +927,7 @@ class AppState extends ChangeNotifier {
   /// dot-less strings untouched.
   static String _trimTrailingZeros(String s) {
     if (s.contains('e') || s.contains('E') || !s.contains('.')) return s;
-    return s
-        .replaceAll(RegExp(r'0+$'), '')
-        .replaceAll(RegExp(r'\.$'), '');
+    return s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
   }
 
   void addHistoryEntry(String expression, String result,

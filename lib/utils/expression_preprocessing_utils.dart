@@ -532,9 +532,8 @@ class ExpressionPreprocessingUtils {
       // Use the unrounded engine result (ansValue) rather than the
       // display string, so `8/3` (shown `2.66666666667`) followed by
       // `Ans*3` computes from the full-precision value and lands on 8.
-      final lastResult = appState.history.isNotEmpty
-          ? appState.history.first.ansValue
-          : '0';
+      final lastResult =
+          appState.history.isNotEmpty ? appState.history.first.ansValue : '0';
       final cleanResult = extractNumericFromSolveResult(lastResult);
       result = result.replaceAll('Ans', cleanResult);
     }
