@@ -49,6 +49,12 @@ void main() {
       expect(s.history.first.ansValue, equals('2'));
     });
 
+    test('auto mode trims sci-notation mantissa zeros', () {
+      final s = AppState();
+      expect(s.formatNumber('1.5e-10'), equals('1.5e-10'));
+      expect(s.formatNumber('0.00000000000015'), equals('1.5e-13'));
+    });
+
     test('rawResult survives a toJson/fromJson round-trip', () {
       final entry = CalculationEntry(
         expression: '8/3',

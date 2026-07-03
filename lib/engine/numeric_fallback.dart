@@ -61,7 +61,15 @@ class NumericFallbackEvaluator {
     // full string, so `8/3` followed by `Ans*3` lands close enough to 8
     // that the display rounding collapses it (see AppState.formatNumber).
     var s = v.toStringAsPrecision(15);
-    if (s.contains('e') || s.contains('E')) return s; // keep sci-notation
+    var eIdx = s.indexOf('e');
+    if (eIdx < 0) eIdx = s.indexOf('E');
+    if (eIdx >= 0) {
+      // Sci-notation: trim mantissa zeros ("1.50000000000000e-10" → "1.5e-10").
+      var mant = s.substring(0, eIdx);
+      if (!mant.contains('.')) return s;
+      mant = mant.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+      return '$mant${s.substring(eIdx)}';
+    }
     if (s.contains('.')) {
       s = s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
     }

@@ -811,6 +811,17 @@ class ExpressionPreprocessingUtils {
     // negative results). The bounded-context replace keeps `x - 1`
     // and `1 - 2` formatted with spaces while leaving the leading
     // unary `-` glued to its operand.
+    // Protect scientific-notation exponents from the operator-spacing
+    // rules below: `1.5e-14` must stay glued, not become `1.5e - 14`
+    // (which is unparseable downstream — it bypassed
+    // `AppState.formatNumber`'s display rounding and, substituted for
+    // `Ans`, would misread `e` as Euler's constant). The sign is
+    // swapped for a sentinel and restored after spacing.
+    const ePlus = '\u0001', eMinus = '\u0002';
+    normalized = normalized
+        .replaceAllMapped(RegExp(r'(\d[eE])\+(?=\d)'), (m) => '${m[1]}$ePlus')
+        .replaceAllMapped(RegExp(r'(\d[eE])-(?=\d)'), (m) => '${m[1]}$eMinus');
+
     normalized = normalized
         .replaceAll(RegExp(r'\s+'), ' ')
         .replaceAll(RegExp(r'\s*\+\s*'), ' + ');
@@ -826,6 +837,9 @@ class ExpressionPreprocessingUtils {
         )
         .replaceAll(RegExp(r'\s*\*\s*'), '*')
         .trim();
+
+    // Restore the exponent signs protected above.
+    normalized = normalized.replaceAll(ePlus, '+').replaceAll(eMinus, '-');
 
     normalized = normalized.replaceAll(
         RegExp(r'^([+-]?\d+(?:\.\d+)?)\s*\+\s*0\.0\s*\*\s*I$'), r'\1');

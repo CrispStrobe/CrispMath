@@ -41,6 +41,30 @@ an SDK upgrade run `flutter clean` before `flutter test` — stale compiled
 
 Full suite: **3796 tests passing** (6 skipped), 0 analyze issues.
 
+### Live verification + two follow-up fixes (same day)
+Drove the real apps end-to-end (not just unit tests):
+- **Web (deployed crisp-calc.vercel.app)** via headless-Chrome
+  Playwright: typed `8/3` → screen shows `= 2.66666666667`, typed
+  `Ans*3` → screen shows `= 8`. Screenshot-verified.
+- **macOS native (release build)** via System Events keystrokes,
+  evidence read back from the app's persisted SharedPreferences
+  history: `8/3` stored `{r: "2.66666666667", raw: "2.66666666666667"}`,
+  `Ans*3` stored `{r: "8", raw: "8.00000000000001"}`. `expand((x+1)2)`
+  returning symbolic `2 + 2*x` proves native SymEngine (not the Dart
+  fallback) served the session.
+
+Probing the running app surfaced two display bugs, both fixed:
+- **Sci-notation mantissa zeros**: Auto-mode rounding produced
+  `1.50000000000e-10`-style output because `_trimTrailingZeros`
+  skipped e-notation. Mantissa now trimmed (`1.5e-10`); same trim in
+  the numeric fallback's formatter.
+- **Exponent minus/plus mangled by operator spacing** (pre-existing):
+  `normalizeComplexResult` turned `1.06581410364015e-14` into
+  `1.06581410364015e - 14` — unparseable downstream, so it bypassed
+  display rounding, and substituted into `Ans` the bare `e` could be
+  misread as Euler's constant. Exponent signs are now
+  sentinel-protected through the spacing rules.
+
 ## 2026-06-09 — Texo-Distill printed math OCR model added
 
 ### New SOTA printed-math OCR model (Texo-Distill, 20M params)

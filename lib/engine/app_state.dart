@@ -922,11 +922,19 @@ class AppState extends ChangeNotifier {
     return number.toStringAsFixed(n);
   }
 
-  /// Strips trailing fraction zeros from a fixed-notation `toStringAsPrecision`
-  /// result (`"8.00000000000"` → `"8"`), leaving scientific notation and
-  /// dot-less strings untouched.
+  /// Strips trailing fraction zeros from a `toStringAsPrecision` result:
+  /// `"8.00000000000"` → `"8"`, and in scientific notation the mantissa
+  /// is trimmed (`"1.50000000000e-10"` → `"1.5e-10"`).
   static String _trimTrailingZeros(String s) {
-    if (s.contains('e') || s.contains('E') || !s.contains('.')) return s;
+    var eIdx = s.indexOf('e');
+    if (eIdx < 0) eIdx = s.indexOf('E');
+    if (eIdx >= 0) {
+      var mant = s.substring(0, eIdx);
+      if (!mant.contains('.')) return s;
+      mant = mant.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+      return '$mant${s.substring(eIdx)}';
+    }
+    if (!s.contains('.')) return s;
     return s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
   }
 

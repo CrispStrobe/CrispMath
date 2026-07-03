@@ -32,6 +32,12 @@ void main() {
       'x-1': 'x - 1',
       'a-b-c': 'a - b - c',
       '-x': '-x',
+      // Scientific-notation exponents must stay glued — `1.5e-14`
+      // becoming `1.5e - 14` is unparseable downstream (breaks
+      // formatNumber rounding and Ans substitution).
+      '1.06581410364015e-14': '1.06581410364015e-14',
+      '9.33262154439442e+157': '9.33262154439442e+157',
+      '2.5e-3 - 1': '2.5e-3 - 1',
       // leading + - operator alone should drop, per existing rule
     };
     cases.forEach((input, want) {
