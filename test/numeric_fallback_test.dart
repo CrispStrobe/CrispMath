@@ -34,7 +34,9 @@ void main() {
 
     test('functions (radians)', () {
       expect(ev('sqrt(16)'), '4');
-      expect(ev('sqrt(2)'), '1.41421356237');
+      // 15 significant digits — matches native SymEngine's printer, so
+      // Ans/variable chaining keeps guard digits beyond the 12 shown.
+      expect(ev('sqrt(2)'), '1.4142135623731');
       expect(ev('abs(-7)'), '7');
       expect(ev('floor(3.7)'), '3');
       expect(ev('ceil(3.2)'), '4');

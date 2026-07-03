@@ -32,6 +32,35 @@ void main() {
       s.clearHistory();
       expect(s.history, isEmpty);
     });
+
+    test('keeps the raw result when display formatting rounds it', () {
+      final s = AppState();
+      s.addHistoryEntry('8/3', '2.66666666666667');
+      final entry = s.history.first;
+      expect(entry.result, equals('2.66666666667')); // 12 sig digits shown
+      expect(entry.rawResult, equals('2.66666666666667'));
+      expect(entry.ansValue, equals('2.66666666666667'));
+    });
+
+    test('rawResult stays null when formatting is a no-op', () {
+      final s = AppState();
+      s.addHistoryEntry('1+1', '2');
+      expect(s.history.first.rawResult, isNull);
+      expect(s.history.first.ansValue, equals('2'));
+    });
+
+    test('rawResult survives a toJson/fromJson round-trip', () {
+      final entry = CalculationEntry(
+        expression: '8/3',
+        result: '2.66666666667',
+        rawResult: '2.66666666666667',
+      );
+      final revived = CalculationEntry.fromJson(entry.toJson());
+      expect(revived.rawResult, equals('2.66666666666667'));
+      // Legacy entries without the field load with a null raw.
+      final legacy = CalculationEntry.fromJson({'e': '1+1', 'r': '2'});
+      expect(legacy.rawResult, isNull);
+    });
   });
 
   group('variables', () {

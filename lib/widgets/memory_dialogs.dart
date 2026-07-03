@@ -18,7 +18,9 @@ class MemoryDialogs {
       return;
     }
 
-    final lastResult = appState.history.first.result;
+    // Store the unrounded engine value, not the display string, so a
+    // saved variable chains at full precision like `Ans` does.
+    final lastResult = appState.history.first.ansValue;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

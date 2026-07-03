@@ -36,23 +36,36 @@ enum NumberDisplayFormat {
 class CalculationEntry {
   final String expression;
   final String result;
+
+  /// The engine's unrounded result string, kept only when display
+  /// formatting changed it. `Ans` substitutes this instead of the
+  /// rounded [result] so chained calculations don't inherit display
+  /// rounding error (`8/3` shown as `2.66666666667`, then `Ans*3`
+  /// yielding `8.00000000001` instead of `8`).
+  final String? rawResult;
   final HistoryEntryType type;
 
   CalculationEntry({
     required this.expression,
     required this.result,
+    this.rawResult,
     this.type = HistoryEntryType.calculation,
   });
+
+  /// What `Ans` should resolve to: full precision when available.
+  String get ansValue => rawResult ?? result;
 
   Map<String, dynamic> toJson() => {
         'e': expression,
         'r': result,
+        if (rawResult != null) 'raw': rawResult,
         't': type.name,
       };
 
   static CalculationEntry fromJson(Map<String, dynamic> j) => CalculationEntry(
         expression: j['e'] as String? ?? '',
         result: j['r'] as String? ?? '',
+        rawResult: j['raw'] as String?,
         type: HistoryEntryType.values.firstWhere(
           (v) => v.name == j['t'],
           orElse: () => HistoryEntryType.calculation,
@@ -428,7 +441,7 @@ class AppState extends ChangeNotifier {
 
   /// Canonical API for "render numeric results with N decimal places".
   /// `-1` = auto (integer-shaped values stay integers; non-integer
-  /// doubles render with Dart's `toString`). `0` ≤ N ≤ 15 renders
+  /// doubles render at 12 significant digits). `0` ≤ N ≤ 15 renders
   /// via `toStringAsFixed(N)`. Values are clamped on the caller side
   /// (the Settings slider goes 0–10).
   void setDecimalPlaces(int n) {
@@ -895,15 +908,28 @@ class AppState extends ChangeNotifier {
     if (number == null) return numberString;
 
     if (_decimalPlaces < 0) {
-      // Auto: integer-shaped doubles stay integers; non-integer
-      // values fall through to Dart's `toString`.
+      // Auto: integer-shaped doubles stay integers; everything else is
+      // rounded to 12 significant digits. The engine carries ~15
+      // digits, so the 3 hidden guard digits absorb float noise the
+      // way hardware calculators do: `2.66666666666667 * 3` computes
+      // to `8.00000000000001` but displays as `8`.
       return number == number.roundToDouble()
           ? number.round().toString()
-          : number.toString();
+          : _trimTrailingZeros(number.toStringAsPrecision(12));
     }
     final n = _decimalPlaces.clamp(0, 15);
     if (n == 0) return number.round().toString();
     return number.toStringAsFixed(n);
+  }
+
+  /// Strips trailing fraction zeros from a fixed-notation `toStringAsPrecision`
+  /// result (`"8.00000000000"` → `"8"`), leaving scientific notation and
+  /// dot-less strings untouched.
+  static String _trimTrailingZeros(String s) {
+    if (s.contains('e') || s.contains('E') || !s.contains('.')) return s;
+    return s
+        .replaceAll(RegExp(r'0+$'), '')
+        .replaceAll(RegExp(r'\.$'), '');
   }
 
   void addHistoryEntry(String expression, String result,
@@ -912,7 +938,12 @@ class AppState extends ChangeNotifier {
     history.insert(
         0,
         CalculationEntry(
-            expression: expression, result: formatted, type: type));
+            expression: expression,
+            result: formatted,
+            // Keep the engine's unrounded string when formatting changed
+            // it, so `Ans` can chain at full precision.
+            rawResult: formatted == result ? null : result,
+            type: type));
     while (history.length > _kHistoryCap) {
       history.removeLast();
     }

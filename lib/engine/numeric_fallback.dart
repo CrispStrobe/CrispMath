@@ -15,7 +15,7 @@
 // input).
 //
 // Results are decimal (double) — exact rationals / symbolic simplification
-// (`1/3`, `sqrt(2)`) remain native-only; here `1/3` → `0.333333333333`.
+// (`1/3`, `sqrt(2)`) remain native-only; here `1/3` → `0.333333333333333`.
 //
 // Input is the already-preprocessed, SymEngine-flavoured string
 // (`^` for power, `*`/`/`, `pi`, `E`, `sqrt(...)`, …) produced by
@@ -55,7 +55,12 @@ class NumericFallbackEvaluator {
     if (v == v.roundToDouble() && v.abs() < 1e16) {
       return v.toStringAsFixed(0);
     }
-    var s = v.toStringAsPrecision(12);
+    // 15 significant digits — the same width native SymEngine's printer
+    // emits for a RealDouble. The extra digits beyond the 12 shown in
+    // Auto display mode act as guard digits: `Ans` substitutes this
+    // full string, so `8/3` followed by `Ans*3` lands close enough to 8
+    // that the display rounding collapses it (see AppState.formatNumber).
+    var s = v.toStringAsPrecision(15);
     if (s.contains('e') || s.contains('E')) return s; // keep sci-notation
     if (s.contains('.')) {
       s = s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');

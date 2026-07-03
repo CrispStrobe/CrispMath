@@ -424,14 +424,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
       if (normalizedResult != "Error" &&
           normalizedResult != currentText &&
           normalizedResult != preprocessed) {
-        final numericResult = double.tryParse(normalizedResult);
-        if (numericResult != null) {
-          return normalizedResult;
-        } else if (!normalizedResult.contains('Error')) {
-          return normalizedResult;
-        } else {
-          return '';
-        }
+        if (normalizedResult.contains('Error')) return '';
+        // Same display rounding the history entry will get, so the
+        // preview never flashes 15-digit float noise.
+        return _appState.formatNumber(normalizedResult);
       } else {
         return '';
       }

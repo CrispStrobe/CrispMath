@@ -11,6 +11,7 @@
 // All pure-Dart, no engine bridge required.
 
 import 'package:crisp_calc/engine/app_state.dart';
+import 'package:crisp_calc/engine/numeric_fallback.dart';
 import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -149,6 +150,40 @@ void main() {
       final out =
           ExpressionPreprocessingUtils.substituteVariables('Ans+2', AppState());
       expect(out, '3+2');
+    });
+
+    test('Ans substitutes the unrounded raw result, not the display string',
+        () {
+      // The `8/3` → `Ans*3` regression: the engine emits 15 significant
+      // digits, Auto display shows 12. Ans must chain from the 15-digit
+      // raw value so the follow-up lands back on exactly 8 on screen.
+      final engineResult = NumericFallbackEvaluator.tryEvaluate('8/3')!;
+      expect(engineResult, '2.66666666666667');
+
+      AppState().addHistoryEntry('8/3', engineResult);
+      expect(AppState().history.first.result, '2.66666666667');
+      expect(AppState().history.first.rawResult, '2.66666666666667');
+
+      final out =
+          ExpressionPreprocessingUtils.substituteVariables('Ans*3', AppState());
+      expect(out, '2.66666666666667*3');
+
+      final chained = NumericFallbackEvaluator.tryEvaluate(out)!;
+      AppState().addHistoryEntry('Ans*3', chained);
+      expect(AppState().history.first.result, '8');
+    });
+
+    test('Ans uses raw value under fixed decimal-places display', () {
+      // With 2 decimal places, `8/3` displays as 2.67 — Ans*3 must not
+      // become 2.67*3 = 8.01.
+      AppState().setDecimalPlaces(2);
+      AppState().addHistoryEntry('8/3', '2.66666666666667');
+      expect(AppState().history.first.result, '2.67');
+
+      final out =
+          ExpressionPreprocessingUtils.substituteVariables('Ans*3', AppState());
+      expect(out, '2.66666666666667*3');
+      AppState().setDecimalPlaces(-1);
     });
   });
 
