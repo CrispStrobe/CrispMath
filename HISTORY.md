@@ -2,6 +2,45 @@
 
 Completed work, newest first.
 
+## 2026-07-03 — Ans full-precision chaining, DST-safe dates, Flutter 3.44.4
+
+### Ans display-rounding bug (`8/3` → `Ans*3` gave `8.00000000001`)
+`Ans` — and the memory "Store Result" dialog — substituted the *displayed*
+history string, so `8/3` shown as `2.66666666667` made `Ans*3` compute
+literally `2.66666666667*3`. With fixed decimal places it was worse:
+`2.67*3` = `8.01`. Fixed with the hardware-calculator approach — compute
+wide, display narrow:
+- `CalculationEntry` keeps the engine's unrounded string in a new
+  `rawResult` field (persisted as `'raw'`; legacy history loads fine).
+  `Ans` and variable-store substitute it via the `ansValue` getter.
+- The pure-Dart numeric fallback emits **15 significant digits**
+  (was 12), matching native SymEngine's `RealDouble` printer — web and
+  native now produce identical result strings.
+- Auto display mode rounds non-integers to **12 significant digits**
+  (was raw `toString`). The 3 hidden guard digits absorb float noise:
+  `2.66666666666667*3` = `8.00000000000001` displays as `8`. The live
+  result preview shares the same formatting path.
+- Regression tests: the exact `8/3` → `Ans*3` → `8` chain, the
+  fixed-decimals variant, raw-result storage + JSON round-trip.
+
+### DST bug in date arithmetic (`days between` short by one)
+`DateTimeEvaluator` built local `DateTime`s; calendar-day math across a
+DST spring-forward truncated (`days between 2026-03-01 and 2026-03-31` →
+"29 days") and `date + 30 days` could land on the previous calendar day.
+All dates are now constructed as UTC midnights (local y/m/d, UTC
+construction). Regression test added for the date-plus-duration case.
+
+### Toolchain: local Flutter 3.38.5 → 3.44.4
+The `onReorder` → `onReorderItem` migration (2026-06-20) targets an API
+newer than the local Homebrew Flutter 3.38.5, so notepad/scene-3d screens
+plus 5 test files failed to compile locally. `flutter upgrade` → 3.44.4
+stable; `flutter analyze` back to 0 issues. Gotcha for next time: after
+an SDK upgrade run `flutter clean` before `flutter test` — stale compiled
+`ink_sparkle.frag` shaders from the old engine fail ~17 widget tests with
+"Unsupported runtime stages format version. Expected 2, got 0".
+
+Full suite: **3796 tests passing** (6 skipped), 0 analyze issues.
+
 ## 2026-06-09 — Texo-Distill printed math OCR model added
 
 ### New SOTA printed-math OCR model (Texo-Distill, 20M params)

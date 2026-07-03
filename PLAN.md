@@ -289,6 +289,21 @@ quantizations verified. CI builds all 5 platforms.
   `withReorderedObjects`. Replaced `print` with `stdout.writeln`
   in tool/parse_latex.dart. Result: 0 errors, 0 warnings, 0 infos.
 
+### Code quality — July 2026
+
+- [x] **Ans full-precision chaining.** `8/3` → `Ans*3` returned
+  `8.00000000001` because `Ans` substituted the rounded display
+  string. Now: `CalculationEntry.rawResult` keeps the unrounded
+  engine string (Ans + memory-store use it), fallback emits 15
+  significant digits (parity with native SymEngine), Auto display
+  rounds to 12. Details in HISTORY.md 2026-07-03.
+- [x] **DST-safe date arithmetic.** DateTimeEvaluator dates are UTC
+  midnights; `days between` across spring-forward no longer loses a
+  day.
+- [x] **Local Flutter 3.38.5 → 3.44.4.** Required by the
+  `onReorderItem` migration (Q1 above). Post-upgrade: `flutter clean`
+  before `flutter test` (stale shader artifacts fail widget tests).
+
 ### Completed (moved to HISTORY.md)
 
 - CBJ-aware "explain failure" (Round E.2)
