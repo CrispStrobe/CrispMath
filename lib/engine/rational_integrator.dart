@@ -105,7 +105,15 @@ class RationalIntegrator {
   static bool _logPart(
       CalculatorEngine engine, _Sum out, Polynomial r, Polynomial d) {
     final factors = _irreducibleFactors(engine, d);
-    if (factors == null) return false;
+    // Degree-≥3 irreducible factors (or an unfactorable denominator) are
+    // Rothstein–Trager territory: the per-factor log/atan approach only
+    // covers linear + quadratic. Try RT first for the rational-root case
+    // (e.g. ∫D'/D = log D over an irreducible cubic); the fully-algebraic
+    // case (RootSum output) is a documented non-goal → false / fall-through.
+    if (factors == null || factors.any((f) => f.degree >= 3)) {
+      if (_rothsteinTrager(out, r, d)) return true;
+      if (factors == null) return false;
+    }
     for (final f in factors) {
       final rest = _divideExact(d, f);
       Polynomial rj;
@@ -184,6 +192,119 @@ class RationalIntegrator {
     final dm = a.divmod(b);
     assert(dm.remainder.isZero, 'non-exact polynomial division');
     return dm.quotient;
+  }
+
+  /// Rothstein–Trager for ∫ A/D with D squarefree monic (deg A < deg D):
+  ///   ∫ A/D = Σ_{c : R(c)=0} c · log gcd_x(D, A − c·D'),
+  /// where R(t) = res_x(A − t·D', D). We handle the RATIONAL-root case
+  /// (clean, derivative-verifiable — e.g. ∫D'/D = log D over an
+  /// irreducible cubic). Non-rational roots (genuine algebraic /
+  /// RootSum output) → return false so the caller falls through.
+  static bool _rothsteinTrager(_Sum out, Polynomial a, Polynomial d) {
+    final dp = d.derivative();
+    final n = d.degree;
+    if (n < 1) return false;
+
+    // R(t) = res_x(A − t·D', D), a polynomial in t of degree ≤ n. Recover
+    // it by sampling at n+1 rational t values and Lagrange-interpolating.
+    final pts = <(Rational, Rational)>[];
+    for (var k = 0; k <= n; k++) {
+      final tk = Rational.fromInt(k);
+      final ak = a - dp.scale(tk); // A − t_k·D'
+      pts.add((tk, Polynomial.resultant(ak, d)));
+    }
+    final rPoly = _lagrange(pts, 't');
+    if (rPoly.isZero || rPoly.degree < 1) return false;
+
+    final roots = _rationalRoots(rPoly);
+    if (roots.isEmpty) return false;
+
+    // Accumulate the log terms, checking the gcds reconstruct all of D
+    // (otherwise part of the answer is algebraic → bail).
+    final terms = <(Rational, Polynomial)>[];
+    var product = Polynomial.constant(Rational.one, d.variable);
+    for (final c in roots) {
+      final g = Polynomial.gcd(d, a - dp.scale(c)).monic();
+      if (g.degree < 1) continue;
+      terms.add((c, g));
+      product = product * g;
+    }
+    if (terms.isEmpty) return false;
+    if (_renderPoly(product) != _renderPoly(d)) return false; // incomplete
+
+    for (final (c, g) in terms) {
+      out.addLog(c, g);
+    }
+    return true;
+  }
+
+  /// Lagrange interpolation of the points into a Polynomial in [variable].
+  static Polynomial _lagrange(List<(Rational, Rational)> pts,
+      [String variable = 't']) {
+    var result = Polynomial.zero(variable);
+    for (var i = 0; i < pts.length; i++) {
+      var term = Polynomial.constant(pts[i].$2, variable); // y_i
+      for (var j = 0; j < pts.length; j++) {
+        if (j == i) continue;
+        // (x − x_j) / (x_i − x_j)
+        final denom = pts[i].$1 - pts[j].$1;
+        final linear = Polynomial.fromCoeffs(
+            [-pts[j].$1, Rational.one], variable); // x − x_j
+        term = term * linear.scale(Rational.one / denom);
+      }
+      result = result + term;
+    }
+    return result;
+  }
+
+  /// Rational roots of [poly] (distinct) via the rational-root theorem.
+  static List<Rational> _rationalRoots(Polynomial poly) {
+    // Clear denominators → integer coefficients.
+    var lcm = BigInt.one;
+    for (final c in poly.coeffs) {
+      lcm = lcm * (c.denominator ~/ lcm.gcd(c.denominator));
+    }
+    final ints = poly.coeffs
+        .map((c) => (c * Rational(lcm, BigInt.one)).numerator)
+        .toList();
+    // Strip trailing (high-degree) zeros already handled by Polynomial.
+    var lead = ints.last.abs();
+    // 0 is handled separately below; keep _divisors off zero.
+    var constant = ints.first.abs();
+    if (constant == BigInt.zero) {
+      constant = BigInt.one;
+    }
+    final roots = <Rational>{};
+    if (ints.first == BigInt.zero) roots.add(Rational.zero);
+
+    final ps = _divisors(constant);
+    final qs = _divisors(lead);
+    for (final pp in ps) {
+      for (final q in qs) {
+        for (final sign in [BigInt.one, -BigInt.one]) {
+          final cand = Rational(sign * pp, q);
+          if (_evalPoly(poly, cand).isZero) roots.add(cand);
+        }
+      }
+    }
+    return roots.toList();
+  }
+
+  static List<BigInt> _divisors(BigInt n) {
+    final v = n.abs();
+    final out = <BigInt>[];
+    for (var i = BigInt.one; i <= v; i += BigInt.one) {
+      if (v % i == BigInt.zero) out.add(i);
+    }
+    return out.isEmpty ? [BigInt.one] : out;
+  }
+
+  static Rational _evalPoly(Polynomial p, Rational x) {
+    var acc = Rational.zero;
+    for (var i = p.degree; i >= 0; i--) {
+      acc = acc * x + p.coeffs[i];
+    }
+    return acc;
   }
 
   /// Split d (squarefree monic) into ℚ-irreducible monic factors.

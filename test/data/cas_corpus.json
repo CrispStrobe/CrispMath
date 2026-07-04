@@ -1290,6 +1290,30 @@
         "native"
       ],
       "check": "exact"
+    },
+    {
+      "id": "int_rt_cubic",
+      "op": "integrate",
+      "input": "(3*x^2 + 1)/(x^3 + x + 1)",
+      "var": "x",
+      "expected": "log(x^3 + x + 1)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
+    },
+    {
+      "id": "int_rt_quartic",
+      "op": "integrate",
+      "input": "(4*x^3 + 1)/(x^4 + x + 5)",
+      "var": "x",
+      "expected": "log(x^4 + x + 5)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
     }
   ]
 }
