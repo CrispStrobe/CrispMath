@@ -132,8 +132,10 @@ system solver, no inequality solver.
   simultaneous positional substitution + arity checks. Legacy
   single-param definitions load unchanged (`paramVar` compat getter,
   legacy `v` JSON key). Still open: piecewise bodies.
-- [ ] **Plot types.** Parametric + polar + implicit 2D; contour lines
-  and hidden-surface handling in the 3D surface view.
+- [~] **Plot types.** Parametric (x(t), y(t)), polar r(θ), and
+  implicit F(x,y)=0 (marching squares) 2D modes landed 2026-07-04
+  (`lib/engine/plot_types.dart` + graphing-screen mode selector).
+  Still open: contour lines / hidden-surface in the 3D surface view.
 
 **Non-goals** (documented so nobody starts them casually): a complete
 decision-procedure integrator (Risch), Gröbner-basis general
@@ -151,9 +153,10 @@ tests → full suite → merge → CI green) from `~/code/CrispCalc-local`.
    ∂M/∂y = ∂N/∂x → implicit potential `F(x,y) = C1`, all on a bivariate
    term map (exact ℚ arithmetic, no engine round-trips). Corpus verifier
    generalized to a total-derivative check for implicit solutions.
-2. [ ] **Plot types.** Parametric `(x(t), y(t))`, polar `r(θ)`, and
-   implicit `F(x,y) = 0` (marching squares) in the graphing screen —
-   mode selector + painters. Biggest user-visible win.
+2. [x] **Plot types.** Landed 2026-07-04. Parametric / polar / implicit
+   modes via a segmented selector; pure-Dart samplers in
+   `plot_types.dart` (implicit = marching squares), drawn in the same
+   transform as the cartesian functions. Verified in-app (web).
 3. [ ] **LRT.** Lazard–Rioboo–Trager for irreducible rational-integrand
    factors of degree ≥ 3 (resultant-based log part) — makes rational
    integration total. Hard; RootSum-style output.

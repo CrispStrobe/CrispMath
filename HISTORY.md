@@ -2,6 +2,27 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 12) — Plot types: parametric, polar, implicit (C5.2)
+
+The graphing screen gains a plot-mode selector (y=f(x) / Parametric /
+Polar / Implicit) with per-mode expression inputs:
+
+- Parametric (x(t), y(t)) — e.g. (cos t, sin t) → unit circle
+- Polar r(θ)             — e.g. 1 + cos(θ) → cardioid
+- Implicit F(x, y) = 0   — e.g. x^2 + y^2 - 4 → circle, via marching squares
+
+`lib/engine/plot_types.dart` is a pure-Dart sampler on
+NumericFallbackEvaluator (fast, headless-testable): parametric/polar
+return polylines with break markers; implicit runs marching squares on
+a 110×110 lattice over the *current* view window (sampled inside the
+painter so it tracks pan/zoom). GraphPainter draws all three in the same
+math→screen transform as the cartesian curves. 10 sampler unit tests
+(circle stays on radius 1, spiral grows with angle, ellipse extent) + 6
+widget smoke tests (mode switching, inputs, no runtime exceptions). Also
+fixed a latent 6px overflow in the function-legend chip row (56px height)
+that the first-ever GraphingScreen widget test exposed. Verified in the
+built web app: all three modes render correctly.
+
 ## 2026-07-04 (cont. 11) — Exact ODEs (C5.1)
 
 `dsolve` handles the exact first-order form M(x,y) + N(x,y)·y' = 0
