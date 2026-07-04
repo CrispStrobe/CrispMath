@@ -12,6 +12,7 @@ import 'matrix_evaluator.dart';
 import 'inequality_solver.dart';
 import 'rational_integrator.dart';
 import 'numeric_fallback.dart';
+import 'ode_solver.dart';
 import 'numerical.dart';
 import 'polynomial.dart';
 import 'polynomial_mod.dart';
@@ -1107,6 +1108,12 @@ class CalculatorEngine {
     if (n < 0) return 'Error: fibonacci requires non-negative integer';
     return _bridgeCall('fibonacci', (b) => b.fibonacci(n));
   }
+
+  /// Linear constant-coefficient ODE solving (roadmap C3):
+  /// `solveOde("y'' + 3*y' + 2*y = 0")` -> `y = C1*exp(-x) + C2*exp(-2*x)`.
+  /// Pure Dart, exact; polynomial/exp/trig right-hand sides via
+  /// undetermined coefficients.
+  String solveOde(String equation) => OdeSolver.solve(this, equation);
 
   /// Polynomial inequality solving (roadmap C3):
   /// `solveInequality('x^2 - 4 > 0', 'x')` -> `x < -2 ∨ x > 2`.

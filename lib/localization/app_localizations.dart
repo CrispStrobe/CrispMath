@@ -4131,6 +4131,11 @@ class DeLocalizations implements AppLocalizations {
         return 'Löst ein lineares Gleichungssystem symbolisch (exakte '
             'Brüche/Symbole). Gleichungen durch ";" getrennt, danach die '
             'Unbekannten. Nativ und im Web verfügbar.';
+      case 'dsolve':
+        return 'Löst eine lineare DGL mit konstanten Koeffizienten exakt. '
+            'Rechte Seiten: Polynome, k*exp(m*x), k*sin(w*x)/k*cos(w*x) '
+            '(Ansatz vom Typ der rechten Seite, mit Resonanz für '
+            'exp/Polynome).';
       // --- Zahlentheorie ---
       case 'isprime':
         return 'Probabilistischer Primzahltest für ganze Zahlen.';
@@ -4525,6 +4530,14 @@ class DeLocalizations implements AppLocalizations {
             'IEEE-754 würde hier auf 1,0 × 10^157 runden.',
         'Konvention des leeren Produkts: 0! = 1. Notwendig, damit die '
             'Rekursion n! = n · (n-1)! bei 1 endet.',
+      ],
+      'dsolve': [
+        'Charakteristische Gleichung r^2 + 3r + 2 = 0 mit den Wurzeln -1 '
+            'und -2; jede Wurzel liefert einen Exponentialmodus. Komplexe '
+            'Paare ergeben exp*(cos + sin), Doppelwurzeln (C1 + C2*x)*exp.',
+        'Homogene Lösung plus partikuläre Polynomlösung über den Ansatz '
+            'vom Typ der rechten Seite — alles in exakter rationaler '
+            'Arithmetik, ohne Gleitkomma-Drift in den Koeffizienten.',
       ],
       'taylor': [
         'Nur ungerade Potenzen — der Sinus ist eine ungerade Funktion. Die '
@@ -7109,6 +7122,11 @@ class FrLocalizations implements AppLocalizations {
         return "Résout un système d'équations linéaires symboliquement "
             "(fractions exactes/symboles). Équations séparées par « ; », "
             "puis les inconnues. Disponible en natif et sur le web.";
+      case 'dsolve':
+        return "Résout exactement une EDO linéaire à coefficients "
+            "constants. Seconds membres : polynômes, k*exp(m*x), "
+            "k*sin(w*x)/k*cos(w*x) (coefficients indéterminés, avec "
+            "résonance exp/polynôme).";
       case 'isprime':
         return "Test de primalité probabiliste sur les entiers.";
       case 'nextprime':
@@ -7503,6 +7521,15 @@ class FrLocalizations implements AppLocalizations {
           "IEEE-754 arrondirait ici à 1,0 × 10^157.",
       "Convention du produit vide : 0! = 1. Nécessaire pour que la récurrence "
           "n! = n · (n-1)! se termine à 1.",
+    ],
+    'dsolve': [
+      "Équation caractéristique r^2 + 3r + 2 = 0 de racines -1 et -2 ; "
+          "chaque racine fournit un mode exponentiel. Les paires "
+          "complexes donnent exp*(cos + sin), les racines doubles "
+          "(C1 + C2*x)*exp.",
+      "Solution homogène plus une solution particulière polynomiale par "
+          "coefficients indéterminés — le tout en arithmétique "
+          "rationnelle exacte, sans dérive flottante des coefficients.",
     ],
     'taylor': [
       "Seulement des puissances impaires — le sinus est une fonction "
@@ -10064,6 +10091,11 @@ class EsLocalizations implements AppLocalizations {
         return "Resuelve un sistema de ecuaciones lineales simbólicamente "
             "(fracciones exactas/símbolos). Ecuaciones separadas por \";\", "
             "después las incógnitas. En nativo y en la web.";
+      case 'dsolve':
+        return "Resuelve exactamente una EDO lineal de coeficientes "
+            "constantes. Lados derechos: polinomios, k*exp(m*x), "
+            "k*sin(w*x)/k*cos(w*x) (coeficientes indeterminados, con "
+            "resonancia exp/polinomio).";
       case 'isprime':
         return "Test de primalidad probabilístico sobre enteros.";
       case 'nextprime':
@@ -10452,6 +10484,14 @@ class EsLocalizations implements AppLocalizations {
           "IEEE-754 redondearía aquí a 1,0 × 10^157.",
       "Convención del producto vacío: 0! = 1. Necesaria para que la "
           "recurrencia n! = n · (n-1)! termine en 1.",
+    ],
+    'dsolve': [
+      "Ecuación característica r^2 + 3r + 2 = 0 con raíces -1 y -2; cada "
+          "raíz aporta un modo exponencial. Los pares complejos dan "
+          "exp*(cos + sin); las raíces dobles, (C1 + C2*x)*exp.",
+      "Solución homogénea más una particular polinómica por coeficientes "
+          "indeterminados — todo en aritmética racional exacta, sin "
+          "deriva de coma flotante en los coeficientes.",
     ],
     'taylor': [
       "Solo potencias impares: el seno es una función impar. El desarrollo "

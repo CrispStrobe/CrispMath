@@ -118,6 +118,29 @@ def verify(case: dict) -> str | None:
                 return f"linsolve: {name.strip()} = {got[sp.Symbol(name.strip())]}, corpus says {val.strip()}"
         return None
 
+    if op == "dsolve":
+        # Residual check: substitute the claimed general solution into the
+        # original equation; it must vanish identically in x, C1, C2.
+        x = sp.Symbol("x")
+        assert exp_raw.startswith("y = "), "dsolve expected must start 'y = '"
+        sol = to_sympy(exp_raw[4:])
+        if "y''" in case["input"] and sp.Symbol("C2") not in sol.free_symbols:
+            return "dsolve: 2nd-order solution lacks C2"
+        if sp.Symbol("C1") not in sol.free_symbols:
+            return "dsolve: solution lacks C1"
+        eq_s = case["input"].replace("y''", "(DDY2)").replace("y'", "(DDY1)")
+        eq_s = __import__("re").sub(r"(?<![A-Za-z])y(?![A-Za-z])", "(DDY0)", eq_s)
+        lhs_s, _, rhs_s = eq_s.partition("=")
+        subs = {
+            sp.Symbol("DDY0"): sol,
+            sp.Symbol("DDY1"): sp.diff(sol, x),
+            sp.Symbol("DDY2"): sp.diff(sol, x, 2),
+        }
+        residual = (to_sympy(lhs_s) - to_sympy(rhs_s or "0")).subs(subs)
+        if sp.simplify(residual) != 0:
+            return f"dsolve: residual {sp.simplify(residual)} != 0"
+        return None
+
     if op == "solve_ineq":
         x = sp.Symbol(case["var"])
         lhs, opstr, rhs = None, None, None

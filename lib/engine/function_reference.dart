@@ -842,6 +842,34 @@ class FunctionReferences {
       ],
       seeAlso: ['solve', 'expand'],
     ),
+    FunctionRef(
+      id: 'dsolve',
+      category: FunctionRefCategory.cas,
+      signature: "dsolve(a*y'' + b*y' + c*y = q(x))",
+      shortDescription:
+          'Solve a linear constant-coefficient ODE exactly. Right-hand '
+          'sides: polynomials, k*exp(m*x), k*sin(w*x)/k*cos(w*x) '
+          '(undetermined coefficients, with exp/poly resonance).',
+      examples: [
+        FunctionRefExample(
+          input: "dsolve(y'' + 3*y' + 2*y = 0)",
+          expected: 'y = C1*exp(-x) + C2*exp(-2*x)',
+          hint: 'Characteristic equation r^2 + 3r + 2 = 0 with roots '
+              '-1 and -2; each root contributes one exponential mode. '
+              'Complex pairs give exp*(cos + sin), double roots '
+              '(C1 + C2*x)*exp.',
+        ),
+        FunctionRefExample(
+          input: "dsolve(y' + y = x^2)",
+          expected: 'y = C1*exp(-x) + x^2 - 2*x + 2',
+          hint: 'Homogeneous solution plus a particular polynomial found '
+              'by undetermined coefficients — all in exact rational '
+              'arithmetic, so no floating-point drift in the '
+              'coefficients.',
+        ),
+      ],
+      seeAlso: ['solve', 'integrate', 'diff'],
+    ),
     // === Number theory =======================================================
     FunctionRef(
       id: 'isprime',
