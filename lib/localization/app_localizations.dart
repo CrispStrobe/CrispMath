@@ -3777,6 +3777,20 @@ class DeLocalizations implements AppLocalizations {
   @override
   String? workedExampleTitle(String id) {
     switch (id) {
+      case 'dsolveSecondOrder':
+        return 'Lineare DGL zweiter Ordnung';
+      case 'dsolveSeparable':
+        return 'Trennbare DGL erster Ordnung';
+      case 'taylorSine':
+        return 'Taylor-Reihe des Sinus';
+      case 'rationalLogIntegral':
+        return 'Logarithmisches Integral (Rothstein–Trager)';
+      case 'quadraticInequality':
+        return 'Quadratische Ungleichung';
+      case 'piecewiseSelect':
+        return 'Abschnittsweise Auswahl';
+      case 'linsolveSystem':
+        return 'Lineares Gleichungssystem lösen';
       case 'killerSudoku':
         return 'Killer-Sudoku (9×9)';
       case 'constraintEditor':
@@ -3906,6 +3920,20 @@ class DeLocalizations implements AppLocalizations {
   @override
   String? workedExampleDescription(String id) {
     switch (id) {
+      case 'dsolveSecondOrder':
+        return 'y\'\' + 3y\' + 2y = 0 über die charakteristischen Wurzeln −1, −2.';
+      case 'dsolveSeparable':
+        return 'y\' = x·y trennt sich zu ∫dy/y = ∫x dx → C·e^(x²/2).';
+      case 'taylorSine':
+        return 'sin(x) um 0 bis 7 Terme — ungerade Potenzen, (−1)^k/(2k+1)!.';
+      case 'rationalLogIntegral':
+        return '∫ (3x² + 1)/(x³ + x + 1) dx = log(x³ + x + 1) — der Zähler ist die Ableitung des Nenners.';
+      case 'quadraticInequality':
+        return 'x² − 4 > 0 lösen → x < −2 ∨ x > 2 (Vorzeichenanalyse zwischen den Nullstellen).';
+      case 'piecewiseSelect':
+        return 'piecewise(Bedingung, Wert, …) wählt den ersten wahren Zweig — Grundlage abschnittsweiser benutzerdefinierter Funktionen.';
+      case 'linsolveSystem':
+        return 'x + y = 3, x − y = 1 → x = 2, y = 1 (exaktes symbolisches linsolve).';
       case 'killerSudoku':
         return 'Öffnet das Sudoku-Modul mit dem 9×9-Killer-Voreinstellung.';
       case 'constraintEditor':
@@ -4132,10 +4160,11 @@ class DeLocalizations implements AppLocalizations {
             'Brüche/Symbole). Gleichungen durch ";" getrennt, danach die '
             'Unbekannten. Nativ und im Web verfügbar.';
       case 'dsolve':
-        return 'Löst eine lineare DGL mit konstanten Koeffizienten exakt. '
-            'Rechte Seiten: Polynome, k*exp(m*x), k*sin(w*x)/k*cos(w*x) '
-            '(Ansatz vom Typ der rechten Seite, mit Resonanz für '
-            'exp/Polynome).';
+        return 'Löst eine DGL exakt. Zweiter Ordnung: linear mit konstanten '
+            'Koeffizienten (homogen + Ansatz vom Typ der rechten Seite). '
+            'Erster Ordnung: trennbar, linear (integrierender Faktor), '
+            'Bernoulli und exakt (M dx + N dy = 0 mit dem impliziten '
+            'Potenzial F(x, y) = C1).';
       // --- Zahlentheorie ---
       case 'isprime':
         return 'Probabilistischer Primzahltest für ganze Zahlen.';
@@ -4349,6 +4378,7 @@ class DeLocalizations implements AppLocalizations {
         'Komplexe Nullstellen kommen als SymEngines Literal `I` zurück. '
             'Verwendet man sie in weiteren Aufrufen (z. B. `expand((-I)*(I))`), '
             'hält die Bridge sie symbolisch.',
+        'Auch polynomiale UNGLEICHUNGEN werden gelöst: Die Nullstellen teilen die Zahlengerade in Intervalle, das Vorzeichen je Intervall entscheidet. Auch ≤/≥, exakte Wurzel-Grenzen und die Fälle ≠ / Einzelpunkt / ℝ / ∅.',
       ],
       'expand': [
         'In CrispCalc liefert `expand((x + 1)^2)` die binomische Entwicklung. '
@@ -6766,6 +6796,20 @@ class FrLocalizations implements AppLocalizations {
   @override
   String? workedExampleTitle(String id) {
     switch (id) {
+      case 'dsolveSecondOrder':
+        return 'EDO linéaire du second ordre';
+      case 'dsolveSeparable':
+        return 'EDO séparable du premier ordre';
+      case 'taylorSine':
+        return 'Série de Taylor du sinus';
+      case 'rationalLogIntegral':
+        return 'Intégrale logarithmique (Rothstein–Trager)';
+      case 'quadraticInequality':
+        return 'Inéquation du second degré';
+      case 'piecewiseSelect':
+        return 'Sélection par morceaux';
+      case 'linsolveSystem':
+        return 'Résoudre un système linéaire';
       case 'killerSudoku':
         return 'Killer Sudoku (9×9)';
       case 'constraintEditor':
@@ -6895,6 +6939,20 @@ class FrLocalizations implements AppLocalizations {
   @override
   String? workedExampleDescription(String id) {
     switch (id) {
+      case 'dsolveSecondOrder':
+        return 'y\'\' + 3y\' + 2y = 0 via les racines caractéristiques −1, −2.';
+      case 'dsolveSeparable':
+        return 'y\' = x·y se sépare en ∫dy/y = ∫x dx → C·e^(x²/2).';
+      case 'taylorSine':
+        return 'sin(x) autour de 0 à 7 termes — puissances impaires, (−1)^k/(2k+1)!.';
+      case 'rationalLogIntegral':
+        return '∫ (3x² + 1)/(x³ + x + 1) dx = log(x³ + x + 1) — le numérateur est la dérivée du dénominateur.';
+      case 'quadraticInequality':
+        return 'résoudre x² − 4 > 0 → x < −2 ∨ x > 2 (analyse de signe entre les racines).';
+      case 'piecewiseSelect':
+        return 'piecewise(cond, val, …) choisit la première branche vraie — base des fonctions définies par morceaux.';
+      case 'linsolveSystem':
+        return 'x + y = 3, x − y = 1 → x = 2, y = 1 (linsolve symbolique exact).';
       case 'killerSudoku':
         return 'Ouvre le module Sudoku préchargé avec la grille 9×9 Killer.';
       case 'constraintEditor':
@@ -7123,10 +7181,11 @@ class FrLocalizations implements AppLocalizations {
             "(fractions exactes/symboles). Équations séparées par « ; », "
             "puis les inconnues. Disponible en natif et sur le web.";
       case 'dsolve':
-        return "Résout exactement une EDO linéaire à coefficients "
-            "constants. Seconds membres : polynômes, k*exp(m*x), "
-            "k*sin(w*x)/k*cos(w*x) (coefficients indéterminés, avec "
-            "résonance exp/polynôme).";
+        return "Résout une EDO exactement. Second ordre : linéaire à "
+            "coefficients constants (homogène + coefficients indéterminés). "
+            "Premier ordre : séparable, linéaire (facteur intégrant), "
+            "Bernoulli et exacte (M dx + N dy = 0 avec le potentiel "
+            "implicite F(x, y) = C1).";
       case 'isprime':
         return "Test de primalité probabiliste sur les entiers.";
       case 'nextprime':
@@ -7343,6 +7402,7 @@ class FrLocalizations implements AppLocalizations {
       "Les racines complexes reviennent sous le littéral `I` de SymEngine. "
           "Réutilisées dans d'autres appels (par ex. `expand((-I)*(I))`), le "
           "pont les conserve sous forme symbolique.",
+      "Les INÉQUATIONS polynomiales sont aussi résolues : les racines découpent la droite en intervalles et le signe de chaque intervalle décide. Gère aussi ≤/≥, les bornes en radicaux exacts et les cas ≠ / point / ℝ / ∅.",
     ],
     'expand': [
       "Dans CrispCalc, `expand((x + 1)^2)` renvoie le développement du "
@@ -9738,6 +9798,20 @@ class EsLocalizations implements AppLocalizations {
   @override
   String? workedExampleTitle(String id) {
     switch (id) {
+      case 'dsolveSecondOrder':
+        return 'EDO lineal de segundo orden';
+      case 'dsolveSeparable':
+        return 'EDO separable de primer orden';
+      case 'taylorSine':
+        return 'Serie de Taylor del seno';
+      case 'rationalLogIntegral':
+        return 'Integral logarítmica (Rothstein–Trager)';
+      case 'quadraticInequality':
+        return 'Inecuación cuadrática';
+      case 'piecewiseSelect':
+        return 'Selección por tramos';
+      case 'linsolveSystem':
+        return 'Resolver un sistema lineal';
       case 'killerSudoku':
         return 'Killer Sudoku (9×9)';
       case 'constraintEditor':
@@ -9867,6 +9941,20 @@ class EsLocalizations implements AppLocalizations {
   @override
   String? workedExampleDescription(String id) {
     switch (id) {
+      case 'dsolveSecondOrder':
+        return 'y\'\' + 3y\' + 2y = 0 mediante las raíces características −1, −2.';
+      case 'dsolveSeparable':
+        return 'y\' = x·y se separa en ∫dy/y = ∫x dx → C·e^(x²/2).';
+      case 'taylorSine':
+        return 'sin(x) alrededor de 0 hasta 7 términos — potencias impares, (−1)^k/(2k+1)!.';
+      case 'rationalLogIntegral':
+        return '∫ (3x² + 1)/(x³ + x + 1) dx = log(x³ + x + 1) — el numerador es la derivada del denominador.';
+      case 'quadraticInequality':
+        return 'resolver x² − 4 > 0 → x < −2 ∨ x > 2 (análisis de signo entre las raíces).';
+      case 'piecewiseSelect':
+        return 'piecewise(cond, val, …) elige la primera rama verdadera — base de las funciones définies par morceaux.';
+      case 'linsolveSystem':
+        return 'x + y = 3, x − y = 1 → x = 2, y = 1 (linsolve simbólico exacto).';
       case 'killerSudoku':
         return 'Abre el módulo Sudoku precargado con la cuadrícula 9×9 Killer.';
       case 'constraintEditor':
@@ -10092,10 +10180,11 @@ class EsLocalizations implements AppLocalizations {
             "(fracciones exactas/símbolos). Ecuaciones separadas por \";\", "
             "después las incógnitas. En nativo y en la web.";
       case 'dsolve':
-        return "Resuelve exactamente una EDO lineal de coeficientes "
-            "constantes. Lados derechos: polinomios, k*exp(m*x), "
-            "k*sin(w*x)/k*cos(w*x) (coeficientes indeterminados, con "
-            "resonancia exp/polinomio).";
+        return "Resuelve una EDO exactamente. Segundo orden: lineal de "
+            "coeficientes constantes (homogénea + coeficientes indeterminados). "
+            "Primer orden: separable, lineal (factor integrante), Bernoulli "
+            "y exacta (M dx + N dy = 0 con el potencial implícito "
+            "F(x, y) = C1).";
       case 'isprime':
         return "Test de primalidad probabilístico sobre enteros.";
       case 'nextprime':
@@ -10309,6 +10398,7 @@ class EsLocalizations implements AppLocalizations {
       "Las raíces complejas vuelven como el literal `I` de SymEngine. Si las "
           "reutilizas en otras llamadas (p. ej. `expand((-I)*(I))`), el "
           "puente las mantiene simbólicas.",
+      "También se resuelven las DESIGUALDADES polinómicas: las raíces dividen la recta en intervalos y el signo de cada intervalo decide. También ≤/≥, extremos con radicales exactos y los casos ≠ / punto / ℝ / ∅.",
     ],
     'expand': [
       "En CrispCalc, `expand((x + 1)^2)` devuelve el desarrollo del binomio. "
