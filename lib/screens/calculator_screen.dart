@@ -1175,6 +1175,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
         result = await _handleIntegrateFunction(converted);
       } else if (_isFunctionCall(converted, 'limit')) {
         result = await _handleLimitFunction(converted);
+      } else if (_isFunctionCall(converted, 'taylor') ||
+          _isFunctionCall(converted, 'series')) {
+        result = await _handleSeriesFunction(converted);
+      } else if (_isFunctionCall(converted, 'linsolve') ||
+          _isFunctionCall(converted, 'solvesys')) {
+        result = await _handleLinsolveFunction(converted);
       } else if (_looksLikeBareEquation(converted)) {
         // `2x + 3 = 0`, `x^2 - 4 = 0`, etc. — anything with a `=` that
         // didn't match the assignment or function-def patterns above. Wrap
@@ -1719,6 +1725,76 @@ class CalculatorScreenState extends State<CalculatorScreen>
           fallback: () => _engine.limit(preprocessedExpr, parts[1], parts[2]));
     } catch (e) {
       return 'Error: Invalid limit() syntax';
+    }
+  }
+
+  /// series(expr, var, order?) — Maclaurin; taylor(expr, var, x0?, order?)
+  /// — expansion about x0. Defaults: x0 = 0, order = 6.
+  Future<String> _handleSeriesFunction(String expression) async {
+    try {
+      final open = expression.indexOf('(');
+      final content =
+          expression.substring(open + 1, expression.length - 1).trim();
+      final parts = content.split(',').map((s) => s.trim()).toList();
+      if (parts.length < 2 || parts.length > 4) {
+        return 'Error: taylor(expr, var, point, order) expected';
+      }
+      final isTaylor = expression.startsWith('taylor');
+      String point = '0';
+      var order = 6;
+      if (parts.length == 4) {
+        point = parts[2];
+        order = int.tryParse(parts[3]) ?? -1;
+      } else if (parts.length == 3) {
+        // taylor's 3rd arg is the expansion point; series' is the order.
+        if (isTaylor) {
+          point = parts[2];
+        } else {
+          order = int.tryParse(parts[2]) ?? -1;
+        }
+      }
+      if (order < 1 || order > 64) return 'Error: order must be in 1..64';
+      final preprocessedExpr =
+          ExpressionPreprocessingUtils.preprocessNativeExpression(
+        ExpressionPreprocessingUtils.preprocessExpression(parts[0], _appState),
+      );
+      return _runEngineOpMaybeAsync('series', preprocessedExpr,
+          arg2: parts[1],
+          arg3: point,
+          arg4: order.toString(),
+          fallback: () => _engine.series(preprocessedExpr, parts[1],
+              point: point, order: order));
+    } catch (e) {
+      return 'Error: Invalid taylor()/series() syntax';
+    }
+  }
+
+  /// linsolve(eq1; eq2; ..., x, y, ...) — symbolic linear-system solve.
+  /// Equations are ';'-separated (so "," can separate the unknowns);
+  /// each equation may be "lhs = rhs" or an expression implicitly = 0.
+  Future<String> _handleLinsolveFunction(String expression) async {
+    try {
+      final open = expression.indexOf('(');
+      final content =
+          expression.substring(open + 1, expression.length - 1).trim();
+      final parts = content.split(',').map((s) => s.trim()).toList();
+      if (parts.length < 2) {
+        return 'Error: linsolve(eq1; eq2, x, y) expected';
+      }
+      final equations = parts[0]
+          .split(';')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      final symbols = parts.sublist(1);
+      if (equations.isEmpty) {
+        return 'Error: linsolve(eq1; eq2, x, y) expected';
+      }
+      return _runEngineOpMaybeAsync('linsolve', equations.join('; '),
+          arg2: symbols.join(', '),
+          fallback: () => _engine.solveLinearSystem(equations, symbols));
+    } catch (e) {
+      return 'Error: Invalid linsolve() syntax';
     }
   }
 

@@ -29,6 +29,9 @@ class CorpusCase {
   final String? lo;
   final String? hi;
   final List<String>? args;
+  final int? order;
+  final List<String>? equations;
+  final List<String>? symbols;
   final dynamic expected; // String, or List<String> for roots
   final List<String> runners;
   final String check;
@@ -50,6 +53,9 @@ class CorpusCase {
         lo = m['lo'] as String?,
         hi = m['hi'] as String?,
         args = (m['args'] as List?)?.cast<String>(),
+        order = m['order'] as int?,
+        equations = (m['equations'] as List?)?.cast<String>(),
+        symbols = (m['symbols'] as List?)?.cast<String>(),
         expected = m['expected'],
         runners = (m['runners'] as List).cast<String>(),
         check = m['check'] as String,
@@ -101,6 +107,11 @@ String runOp(CalculatorEngine engine, CorpusCase c) {
       return engine.integrate(c.input!, c.variable!, c.lo!, c.hi!);
     case 'limit':
       return engine.limit(c.input!, c.variable!, c.point!);
+    case 'series':
+      return engine.series(c.input!, c.variable!,
+          point: c.point ?? '0', order: c.order ?? 6);
+    case 'linsolve':
+      return engine.solveLinearSystem(c.equations!, c.symbols!);
     default:
       throw ArgumentError('unknown corpus op ${c.op}');
   }

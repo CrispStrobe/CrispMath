@@ -93,6 +93,31 @@ def verify(case: dict) -> str | None:
             return f"limit = {got}, corpus says {exp_raw}"
         return None
 
+    if op == "series":
+        x = sp.Symbol(case["var"])
+        ref = sp.series(
+            to_sympy(case["input"]), x, to_sympy(case["point"]), case["order"]
+        ).removeO()
+        if not equal(ref, to_sympy(exp_raw)):
+            return f"series: SymPy gives {ref}, corpus says {exp_raw}"
+        return None
+
+    if op == "linsolve":
+        syms = [sp.Symbol(s) for s in case["symbols"]]
+        eqs = []
+        for e in case["equations"]:
+            lhs, _, rhs = e.partition("=")
+            eqs.append(sp.Eq(to_sympy(lhs), to_sympy(rhs)) if rhs else to_sympy(e))
+        sol = sp.linsolve(eqs, syms)
+        assert len(sol) == 1, f"linsolve: expected unique solution, got {sol}"
+        got = dict(zip(syms, next(iter(sol))))
+        # expected format: "x = v, y = w"
+        for part in exp_raw.split(","):
+            name, _, val = part.partition("=")
+            if not equal(got[sp.Symbol(name.strip())], to_sympy(val)):
+                return f"linsolve: {name.strip()} = {got[sp.Symbol(name.strip())]}, corpus says {val.strip()}"
+        return None
+
     if op == "solve":
         x = sp.Symbol(case["var"])
         roots = sp.solveset(to_sympy(case["input"]), x, domain=sp.S.Complexes)

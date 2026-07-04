@@ -262,6 +262,14 @@ String _runOp(CalculatorEngine engine, EngineOp op) {
         return engine.integrate(op.arg1, op.arg2!, op.arg3, op.arg4);
       case 'limit':
         return engine.limit(op.arg1, op.arg2!, op.arg3!);
+      case 'series':
+        return engine.series(op.arg1, op.arg2!,
+            point: op.arg3 ?? '0', order: int.tryParse(op.arg4 ?? '6') ?? 6);
+      case 'linsolve':
+        // arg1: ';'-joined equations, arg2: ','-joined symbols.
+        return engine.solveLinearSystem(
+            op.arg1.split(';').map((e) => e.trim()).toList(),
+            op.arg2!.split(',').map((e) => e.trim()).toList());
       case 'gcd':
         return engine.gcd(op.arg1, op.arg2!);
       case 'lcm':

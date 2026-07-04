@@ -792,6 +792,56 @@ class FunctionReferences {
       seeAlso: ['factorial', 'gcd', 'isprime'],
       workedExampleId: 'fibonacci50',
     ),
+    FunctionRef(
+      id: 'taylor',
+      category: FunctionRefCategory.cas,
+      signature: 'taylor(f, x, x0, n)   or   series(f, x, n)',
+      shortDescription:
+          'Taylor/Maclaurin polynomial of f about x0 (default 0), truncated '
+          'after n terms (default 6). Native builds only (SymEngine series, '
+          'FLINT-backed).',
+      examples: [
+        FunctionRefExample(
+          input: 'taylor(sin(x), x, 0, 8)',
+          expected: 'x - 1/6*x^3 + 1/120*x^5 - 1/5040*x^7',
+          hint: 'Odd powers only — sine is an odd function. The expansion '
+              'stops before x^8 (remainder O(x^8)); the coefficients are '
+              '(-1)^k/(2k+1)!.',
+        ),
+        FunctionRefExample(
+          input: 'series(exp(x), x, 4)',
+          expected: '1 + x + 1/2*x^2 + 1/6*x^3',
+          hint: '`series(f, x, n)` is the Maclaurin shorthand — expansion '
+              'about 0. The exponential series coefficients are 1/k!.',
+        ),
+      ],
+      seeAlso: ['diff', 'limit', 'simplify'],
+    ),
+    FunctionRef(
+      id: 'linsolve',
+      category: FunctionRefCategory.cas,
+      signature: 'linsolve(eq1; eq2; …, x, y, …)   or   solvesys(…)',
+      shortDescription:
+          'Solve a system of linear equations symbolically (exact '
+          'rationals/symbols). Equations are ";"-separated, the unknowns '
+          'follow. Native builds only.',
+      examples: [
+        FunctionRefExample(
+          input: 'linsolve(x + y = 3; x - y = 1, x, y)',
+          expected: 'x = 2, y = 1',
+          hint: 'Each equation may be "lhs = rhs" or an expression '
+              '(implicitly = 0). Solved exactly via SymEngine\'s '
+              'linsolve().',
+        ),
+        FunctionRefExample(
+          input: 'linsolve(2x = 3, x)',
+          expected: 'x = 3/2',
+          hint: 'Results stay exact rationals — no float rounding. '
+              'Non-linear or under-determined systems return an error.',
+        ),
+      ],
+      seeAlso: ['solve', 'expand'],
+    ),
     // === Number theory =======================================================
     FunctionRef(
       id: 'isprime',
