@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import '../controllers/latex_controller.dart';
 import '../engine/calculator_engine.dart';
 import '../engine/app_state.dart';
+import '../engine/plot_types.dart';
 import '../localization/app_localizations.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/keyboard_input_handler.dart';
@@ -13,6 +14,9 @@ import '../utils/latex_conversion_utils.dart';
 import '../screens/curve_analysis_input_screen.dart';
 import '../widgets/calculator_keypad.dart';
 import '../widgets/latex_input_field.dart';
+
+/// 2D plot modes (roadmap C5.2).
+enum PlotMode { cartesian, parametric, polar, implicit }
 
 class GraphingScreen extends StatefulWidget {
   const GraphingScreen({super.key});
@@ -45,6 +49,14 @@ class GraphingScreenState extends State<GraphingScreen>
   // When true, the painter overlays root and extremum markers on each curve.
   bool _showAnnotations = false;
 
+  // Plot mode (roadmap C5.2) + its expressions. Sensible defaults so
+  // switching modes immediately shows a recognizable curve.
+  PlotMode _plotMode = PlotMode.cartesian;
+  final _paramXCtrl = TextEditingController(text: 'cos(t)');
+  final _paramYCtrl = TextEditingController(text: 'sin(t)');
+  final _polarCtrl = TextEditingController(text: '1 + cos(theta)');
+  final _implicitCtrl = TextEditingController(text: 'x^2 + y^2 - 4');
+
   @override
   void initState() {
     super.initState();
@@ -62,11 +74,82 @@ class GraphingScreenState extends State<GraphingScreen>
     }
   }
 
+  /// Plot-mode selector (roadmap C5.2) + expression inputs for the
+  /// active non-cartesian mode. Cartesian keeps the classic Y1..Y10 UI.
+  Widget _buildPlotModeBar() {
+    InputDecoration dec(String label) => InputDecoration(
+          labelText: label,
+          isDense: true,
+          border: const OutlineInputBorder(),
+        );
+    Widget field(TextEditingController c, String label) => Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: TextField(
+              controller: c,
+              decoration: dec(label),
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+        );
+
+    final inputs = switch (_plotMode) {
+      PlotMode.cartesian => const SizedBox.shrink(),
+      PlotMode.parametric => Row(children: [
+          field(_paramXCtrl, 'x(t)'),
+          field(_paramYCtrl, 'y(t)'),
+        ]),
+      PlotMode.polar => Row(children: [field(_polarCtrl, 'r(θ)')]),
+      PlotMode.implicit => Row(children: [field(_implicitCtrl, 'F(x, y) = 0')]),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SegmentedButton<PlotMode>(
+              showSelectedIcon: false,
+              style: const ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              segments: const [
+                ButtonSegment(
+                    value: PlotMode.cartesian, label: Text('y = f(x)')),
+                ButtonSegment(
+                    value: PlotMode.parametric, label: Text('Parametric')),
+                ButtonSegment(value: PlotMode.polar, label: Text('Polar')),
+                ButtonSegment(
+                    value: PlotMode.implicit, label: Text('Implicit')),
+              ],
+              selected: {_plotMode},
+              onSelectionChanged: (sel) =>
+                  setState(() => _plotMode = sel.first),
+            ),
+          ),
+          if (_plotMode != PlotMode.cartesian)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: inputs,
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     debugPrint("DEBUG: GraphingScreen disposing.");
     _latexController.dispose();
     _screenFocusNode.dispose();
+    _paramXCtrl.dispose();
+    _paramYCtrl.dispose();
+    _polarCtrl.dispose();
+    _implicitCtrl.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -437,6 +520,7 @@ class GraphingScreenState extends State<GraphingScreen>
             body: SafeArea(
               child: Column(
                 children: [
+                  _buildPlotModeBar(),
                   // --- Graph display area ---
                   Expanded(
                     flex: 3,
@@ -469,8 +553,17 @@ class GraphingScreenState extends State<GraphingScreen>
                           ),
                           child: CustomPaint(
                             painter: GraphPainter(
-                              functions: activeFunctions,
-                              functionIndices: activeFunctionIndices,
+                              functions: _plotMode == PlotMode.cartesian
+                                  ? activeFunctions
+                                  : const [],
+                              functionIndices: _plotMode == PlotMode.cartesian
+                                  ? activeFunctionIndices
+                                  : const [],
+                              plotMode: _plotMode,
+                              parametricX: _paramXCtrl.text,
+                              parametricY: _paramYCtrl.text,
+                              polarR: _polarCtrl.text,
+                              implicitF: _implicitCtrl.text,
                               scale: _scale,
                               offset: _offset,
                               engine: _engine,
@@ -597,7 +690,7 @@ class GraphingScreenState extends State<GraphingScreen>
     }
 
     final anyParams = paramsPerSlot.values.any((p) => p.isNotEmpty);
-    final maxHeight = anyParams ? 130.0 : 50.0;
+    final maxHeight = anyParams ? 130.0 : 56.0; // 56 avoids a 6px chip overflow
 
     return SizedBox(
       height: maxHeight,
@@ -676,6 +769,20 @@ class GraphPainter extends CustomPainter {
   /// before `x` when evaluating, so `a*sin(b*x)` plots correctly.
   final Map<int, Map<String, double>> parameters;
 
+  /// Non-cartesian plot mode (roadmap C5.2) and its expressions. In
+  /// [PlotMode.cartesian] these are ignored and the Y1..Y10 [functions]
+  /// are plotted as before. The curves are sampled inside paint() so the
+  /// implicit window tracks the current pan/zoom.
+  final PlotMode plotMode;
+  final String parametricX;
+  final String parametricY;
+  final double tMin;
+  final double tMax;
+  final String polarR;
+  final double thetaMax;
+  final String implicitF;
+  final Color specialColor;
+
   GraphPainter({
     required this.functions,
     required this.functionIndices,
@@ -685,6 +792,15 @@ class GraphPainter extends CustomPainter {
     required this.getColorForFunction,
     this.showAnnotations = false,
     this.parameters = const {},
+    this.plotMode = PlotMode.cartesian,
+    this.parametricX = '',
+    this.parametricY = '',
+    this.tMin = 0,
+    this.tMax = 6.283185307179586,
+    this.polarR = '',
+    this.thetaMax = 6.283185307179586,
+    this.implicitF = '',
+    this.specialColor = const Color(0xFF26A69A),
   });
 
   @override
@@ -697,6 +813,7 @@ class GraphPainter extends CustomPainter {
     _drawGrid(canvas, size, centerX, centerY, unit);
     _drawAxes(canvas, size, centerX, centerY);
     _drawAxisLabels(canvas, size, centerX, centerY, unit);
+    _drawSpecialPlots(canvas, size, centerX, centerY, unit);
 
     // Draw functions
     for (int i = 0; i < functions.length; i++) {
@@ -1153,6 +1270,65 @@ class GraphPainter extends CustomPainter {
     return v.toStringAsFixed(abs >= 10 ? 1 : (abs >= 1 ? 2 : 3));
   }
 
+  /// Sample and draw the active non-cartesian plot. Math point (mx, my)
+  /// maps to screen (centerX + mx*unit, centerY - my*unit).
+  void _drawSpecialPlots(
+      Canvas canvas, Size size, double centerX, double centerY, double unit) {
+    if (plotMode == PlotMode.cartesian) return;
+    final paint = Paint()
+      ..color = specialColor
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    Offset toScreen(double mx, double my) =>
+        Offset(centerX + mx * unit, centerY - my * unit);
+
+    void drawPolyline(List<PlotPt> poly) {
+      final path = Path();
+      var pen = false;
+      for (final pt in poly) {
+        if (!pt.ok) {
+          pen = false;
+          continue;
+        }
+        final o = toScreen(pt.x, pt.y);
+        if (!pen) {
+          path.moveTo(o.dx, o.dy);
+          pen = true;
+        } else {
+          path.lineTo(o.dx, o.dy);
+        }
+      }
+      canvas.drawPath(path, paint);
+    }
+
+    switch (plotMode) {
+      case PlotMode.parametric:
+        if (parametricX.isEmpty || parametricY.isEmpty) return;
+        drawPolyline(PlotTypes.parametric(parametricX, parametricY,
+            tMin: tMin, tMax: tMax));
+      case PlotMode.polar:
+        if (polarR.isEmpty) return;
+        drawPolyline(PlotTypes.polar(polarR, thMax: thetaMax));
+      case PlotMode.implicit:
+        if (implicitF.isEmpty) return;
+        // Visible math window from the current transform.
+        final xMin = (-centerX) / unit;
+        final xMax = (size.width - centerX) / unit;
+        // Screen y grows downward; math y is flipped.
+        final yMin = (centerY - size.height) / unit;
+        final yMax = centerY / unit;
+        final segs = PlotTypes.implicit(implicitF,
+            xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax, grid: 110);
+        for (final seg in segs) {
+          canvas.drawLine(
+              toScreen(seg.x1, seg.y1), toScreen(seg.x2, seg.y2), paint);
+        }
+      case PlotMode.cartesian:
+        break;
+    }
+  }
+
   @override
   bool shouldRepaint(covariant GraphPainter oldDelegate) {
     return oldDelegate.scale != scale ||
@@ -1160,6 +1336,14 @@ class GraphPainter extends CustomPainter {
         oldDelegate.showAnnotations != showAnnotations ||
         !listEquals(oldDelegate.functions, functions) ||
         !listEquals(oldDelegate.functionIndices, functionIndices) ||
+        oldDelegate.plotMode != plotMode ||
+        oldDelegate.parametricX != parametricX ||
+        oldDelegate.parametricY != parametricY ||
+        oldDelegate.polarR != polarR ||
+        oldDelegate.thetaMax != thetaMax ||
+        oldDelegate.tMin != tMin ||
+        oldDelegate.tMax != tMax ||
+        oldDelegate.implicitF != implicitF ||
         !_parametersEqual(oldDelegate.parameters, parameters);
   }
 
