@@ -1229,6 +1229,39 @@ const String kCasCorpusJson = '''
         "native"
       ],
       "check": "exact"
+    },
+    {
+      "id": "dsolve_bernoulli_logistic",
+      "op": "dsolve",
+      "input": "y' + y = y^2",
+      "expected": "y = 1/(C1*exp(x) + 1)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_bernoulli_decay",
+      "op": "dsolve",
+      "input": "y' - y = y^2",
+      "expected": "y = 1/(C1*exp(-x) - 1)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_bernoulli_cubic",
+      "op": "dsolve",
+      "input": "y' + 2*y = y^3",
+      "expected": "y = 1/sqrt(C1*exp(4*x) + 1/2)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
     }
   ]
 }

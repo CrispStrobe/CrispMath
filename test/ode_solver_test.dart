@@ -122,6 +122,32 @@ void main() {
     });
   });
 
+  group('OdeSolver — Bernoulli (reduction to linear)', () {
+    test('logistic-type n=2 gives explicit closed form', () {
+      expect(solve("y' + y = y^2"), 'y = 1/(C1*exp(x) + 1)');
+      expect(solve("y' - y = y^2"), 'y = 1/(C1*exp(-x) - 1)');
+    });
+
+    test('n=2 with scaled coefficients', () {
+      expect(solve("y' - 3*y = 3*y^2"), 'y = 1/(C1*exp(-3*x) - 1)');
+    });
+
+    test('n=3 yields a square-root form', () {
+      expect(solve("y' + 2*y = y^3"), 'y = 1/sqrt(C1*exp(4*x) + 1/2)');
+    });
+
+    test('variable coefficient Bernoulli', () {
+      // y' + y/x = y^2 — not separable; solved via v = 1/y then linear.
+      expect(solve("y' + y/x = y^2"), 'y = 1/((-log(x))*x + C1*x)');
+    });
+
+    test('n=1 is linear, not Bernoulli (no y^n term)', () {
+      // y' + y = y  ==  y' = 0 ... actually y'=0 -> constant; just ensure
+      // no crash and a sensible homogeneous result.
+      expect(solve("y' + 2*y = 0"), 'y = C1*exp(-2*x)');
+    });
+  });
+
   group('OdeSolver — rejections', () {
     test('non-constant coefficient', () {
       expect(solve("x*y' + y = 0"), startsWith('Error'));
