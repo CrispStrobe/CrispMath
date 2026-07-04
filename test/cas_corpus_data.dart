@@ -1152,6 +1152,50 @@ const String kCasCorpusJson = '''
         "native"
       ],
       "check": "exact"
+    },
+    {
+      "id": "dsolve_sep_linear_var",
+      "op": "dsolve",
+      "input": "y' = x*y",
+      "expected": "y = C1*exp(1/2*x^2)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_power_law",
+      "op": "dsolve",
+      "input": "y' = 2*y/x",
+      "expected": "y = C1*x^2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_sep_reciprocal_sq",
+      "op": "dsolve",
+      "input": "y' = -y^2",
+      "expected": "y = -1/(-x + C1)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_sep_implicit",
+      "op": "dsolve",
+      "input": "y' = x/y",
+      "expected": "y^2 = x^2 + C1",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
     }
   ]
 }
