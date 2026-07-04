@@ -99,6 +99,29 @@ void main() {
     });
   });
 
+  group('OdeSolver — linear first order (integrating factor)', () {
+    test('classic p = k/x with polynomial forcing', () {
+      expect(solve("y' + 2*y/x = x"), 'y = 1/4*x^2 + C1/x^2');
+      expect(solve("y' + y/x = 1"), 'y = 1/2*x + C1/x');
+      expect(solve("y' - y/x = x"), 'y = x^2 + C1*x');
+    });
+
+    test('homogeneous variable-coefficient linear', () {
+      expect(solve("y' + 2*y/x = 0"), 'y = C1/x^2');
+    });
+
+    test('rhs on the right side moves over correctly', () {
+      // y' = x - 2*y/x  ==  y' + 2*y/x = x
+      expect(solve("y' = x - 2*y/x"), 'y = 1/4*x^2 + C1/x^2');
+    });
+
+    test('non-integrable integrating factor falls through', () {
+      // p = x -> mu = exp(x^2/2); mu*q not elementary -> error (not linear
+      // here, and not separable with q != 0).
+      expect(solve("y' + x*y = 1"), startsWith('Error'));
+    });
+  });
+
   group('OdeSolver — rejections', () {
     test('non-constant coefficient', () {
       expect(solve("x*y' + y = 0"), startsWith('Error'));

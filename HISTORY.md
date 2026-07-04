@@ -2,6 +2,32 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 9) — Linear first-order ODEs (integrating factor)
+
+`dsolve` completes the first-order family with the linear
+integrating-factor method, y' + p(x)·y = q(x):
+
+- y' + 2*y/x = x  → y = 1/4*x^2 + C1/x^2
+- y' + y/x = 1    → y = 1/2*x + C1/x
+- y' - y/x = x    → y = x^2 + C1*x
+- y' + 2*y/x = 0  → y = C1/x^2   (homogeneous)
+
+μ = exp(∫p dx) with the k·log(x) → x^k collapse; y = (∫μ·q dx + C1)/μ,
+divided cleanly per-term when μ is a monomial. Both integrals go through
+engine.integrate (hence the rational integrator), so the classic
+p = k/x education case works and anything non-elementary (e.g. p = x,
+μ = exp(x²/2)) returns null and falls through. Constant p is still
+handled by the constant-coefficient path upstream, so this fires only
+for genuinely variable p. Routed before separable at the
+non-constant-coefficient site.
+
+Debugging notes (all caught by the probe before tests): outer parens
+around a coefficient hid the top-level '/' from the rational integrator
+('-(1/x)' vs '-1/x'); μ = x^-1 needed division not a negative exponent
+('x^-1*(x)' unparseable → '(x)/x'); the engine renders bare '-log(x)'
+(no explicit -1). Corpus: **100 SymPy-certified cases** (3 linear-ODE,
+residual-checked); 24 ODE unit tests.
+
 ## 2026-07-04 (cont. 8) — User-defined functions V2 (multi-arg)
 
 UDFs go from single-letter/single-parameter to multi-letter names with
