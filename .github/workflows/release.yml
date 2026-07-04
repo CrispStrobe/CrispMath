@@ -171,27 +171,6 @@ jobs:
             artifacts/linux-release/*.tar.gz
             artifacts/windows-release/*.zip
             artifacts/android-release/*.apk
-          body: |
-            CrispCalc ${{ github.ref_name }}
-
-            **macOS** (`crisp_calc-…-macos.zip`) — full symbolic + numeric
-            features. Right-click → Open the first time (unsigned).
-
-            **iOS** (`crisp_calc-…-ios-unsigned.zip`) — full features.
-            Inspection only; sideloading needs a paid Apple Developer cert.
-
-            **Linux** (`crisp_calc-…-linux-x64.tar.gz`) — full symbolic +
-            numeric features. SymEngine bridge ships as a bundled
-            `libsymbolic_math_bridge.so` (GLIBC 2.35 baseline; built on
-            Ubuntu 22.04).
-
-            **Windows** (`crisp_calc-…-windows-x64.zip`) — full symbolic +
-            numeric features via the bundled `libsymbolic_math_bridge.dll`.
-
-            **Android** (`crisp_calc-…-android.apk`) — full features on
-            arm64-v8a. APK is unsigned; install with
-            `adb install crisp_calc-….apk`.
-
-            All five native platforms now ship the SymEngine CAS. Build +
-            link + symbol export are CI-verified on each; full real-device
-            runtime confirmation is still in progress.
+          # Curated notes live in the tag-matched file; the auto-generated
+          # commit list is appended below it (generate_release_notes).
+          body_path: .release-notes-${{ github.ref_name }}.md
