@@ -2,6 +2,25 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 13) — Rothstein–Trager rational-root integration (C5.3)
+
+The rational integrator gains the clean, verifiable subset of
+Lazard–Rioboo–Trager: for squarefree D the log part is
+Σ_{c : R(c)=0} c·log gcd_x(D, A − c·D'), R(t) = res_x(A − t·D', D).
+Implemented for RATIONAL roots c — covering the case the per-factor
+(linear/quadratic) code missed: irreducible denominators of degree ≥ 3
+where the numerator is c·D':
+
+- ∫ (3x² + 1)/(x³ + x + 1) = log(x³ + x + 1)   (irreducible cubic!)
+- ∫ (4x³ + 1)/(x⁴ + x + 5) = log(x⁴ + x + 5)
+
+R(t) is recovered by sampling res_x at deg(D)+1 rational t-values and
+Lagrange-interpolating (reuses Polynomial.resultant + gcd); rational
+roots via the rational-root theorem. The genuinely-algebraic case
+(1/(x³+x+1) — RootSum output) correctly returns null and falls through,
+now a documented non-goal. Corpus: **108 SymPy-certified cases**
+(2 RT, antiderivative-checked).
+
 ## 2026-07-04 (cont. 12) — Plot types: parametric, polar, implicit (C5.2)
 
 The graphing screen gains a plot-mode selector (y=f(x) / Parametric /

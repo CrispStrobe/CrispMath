@@ -84,9 +84,11 @@ system solver, no inequality solver.
   squarefree decomposition + Bézout power reduction (Hermite) + exact
   log/atan/log-quotient terms over linear and quadratic ℚ-irreducible
   factors (FLINT factoring natively, RRT fallback headless/web). Exact
-  ℚ arithmetic throughout; 8 SymPy-certified corpus cases. Still open:
-  Lazard–Rioboo–Trager for irreducible factors of degree ≥ 3
-  (currently falls through to the rule walker / numeric path).
+  ℚ arithmetic throughout. Rothstein–Trager (rational-root case) added
+  2026-07-04: ∫D'/D = log D and c·log terms over irreducible
+  denominators of ANY degree (∫(3x²+1)/(x³+x+1) = log(x³+x+1)), via
+  res_x(A−t·D', D) + rational roots. 10 SymPy-certified corpus cases.
+  Non-goal (documented): the fully-algebraic RootSum tail.
 - [~] **ODE solving, education subset.** Constant-coefficient core
   landed 2026-07-04 (`lib/engine/ode_solver.dart`): `dsolve(a*y'' +
   b*y' + c*y = q)` — characteristic roots (distinct/double/complex,
@@ -139,7 +141,9 @@ system solver, no inequality solver.
 
 **Non-goals** (documented so nobody starts them casually): a complete
 decision-procedure integrator (Risch), Gröbner-basis general
-polynomial-system solving, and a full assumptions facility. These are
+polynomial-system solving, a full assumptions facility, and the
+algebraic-RootSum tail of rational integration (irreducible deg≥3
+denominators with non-rational log coefficients). These are
 multi-year CAS-team projects; for queries beyond the local engine,
 CrispAssist remains the escape hatch (as verifier/frontend).
 
@@ -157,9 +161,11 @@ tests → full suite → merge → CI green) from `~/code/CrispCalc-local`.
    modes via a segmented selector; pure-Dart samplers in
    `plot_types.dart` (implicit = marching squares), drawn in the same
    transform as the cartesian functions. Verified in-app (web).
-3. [ ] **LRT.** Lazard–Rioboo–Trager for irreducible rational-integrand
-   factors of degree ≥ 3 (resultant-based log part) — makes rational
-   integration total. Hard; RootSum-style output.
+3. [x] **LRT — clean subset.** Rothstein–Trager rational-root case
+   landed 2026-07-04: ∫D'/D = log D and rational c·log terms over
+   irreducible denominators of any degree. The algebraic RootSum tail
+   is reclassified a NON-GOAL (unverifiable, education-inappropriate;
+   numeric definite integration covers the practical need).
 4. [ ] **Piecewise UDF bodies.** `piecewise(cond, val, …)` evaluated at
    call time — needs evaluation-time conditionals (the current
    preprocessor-inline model doesn't fit), so this one carries the most

@@ -90,6 +90,25 @@ void main() {
           points: [0.5, 1.5, 2.5]); // x(x+1)^2
     });
 
+    test('Rothstein-Trager: log of an irreducible cubic denominator', () {
+      // numerator = D' → ∫ D'/D = log D, even though D is irreducible.
+      expect(integrate('(3*x^2 + 1)/(x^3 + x + 1)'), 'log(x^3 + x + 1)');
+      expectAntiderivative('(3*x^2 + 1)/(x^3 + x + 1)',
+          points: [0.4, 1.2, 2.3]);
+    });
+
+    test('Rothstein-Trager: quartic denominator', () {
+      expect(integrate('(4*x^3 + 1)/(x^4 + x + 5)'), 'log(x^4 + x + 5)');
+      expectAntiderivative('(4*x^3 + 1)/(x^4 + x + 5)',
+          points: [0.5, 1.5, 2.5]);
+    });
+
+    test('genuinely algebraic (RootSum) case falls through to null', () {
+      // 1/(x^3 + x + 1): irreducible cubic, numerator ≠ c·D' → the log
+      // coefficients are algebraic (RootSum), a documented non-goal.
+      expect(integrate('1/(x^3 + x + 1)'), isNull);
+    });
+
     test('non-rational input returns null (falls through)', () {
       expect(integrate('sin(x)/x'), isNull);
       expect(integrate('x^2'), isNull); // pure poly — poly path owns it
