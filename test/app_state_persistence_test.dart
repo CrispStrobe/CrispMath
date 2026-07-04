@@ -270,8 +270,7 @@ void main() {
       s.addHistoryEntry('2+3', '5');
       s.setVariable('a', '42');
       s.updateFunction(0, 'sin(x)');
-      s.setUserFunction(
-          UserFunction(name: 'f', paramVar: 'x', body: 'x^2'));
+      s.setUserFunction(UserFunction(name: 'f', paramVar: 'x', body: 'x^2'));
 
       final exported = s.exportToJson();
 
