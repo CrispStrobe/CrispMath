@@ -123,17 +123,25 @@ def verify(case: dict) -> str | None:
         # original equation; it must vanish identically in x, C1, C2.
         x = sp.Symbol("x")
         if not exp_raw.startswith("y = "):
-            # Implicit solution "F(y) = G(x) + C1": verify by implicit
-            # differentiation — dG/dx must equal dF/dy * rhs(x, y).
+            # Implicit solution S(x, y) = C1 (exact-ODE potential, or a
+            # separable relation). Verify by TOTAL differentiation along
+            # the solution: with y' = φ(x, y) from the ODE, the identity
+            #   d/dx[S] = S_x + S_y·φ = 0
+            # must hold. φ is recovered by solving the input for y'.
             y = sp.Symbol("y")
-            lhs_i, _, rhs_i = exp_raw.partition("=")
-            assert case["input"].replace(" ", "").startswith("y'="), \
-                "implicit dsolve corpus case needs y' = g(x, y) input"
-            g = to_sympy(case["input"].split("=", 1)[1])
-            residual = sp.diff(to_sympy(rhs_i), x) - \
-                sp.diff(to_sympy(lhs_i), y) * g
-            if sp.simplify(residual) != 0:
-                return f"dsolve implicit: residual {sp.simplify(residual)}"
+            yp = sp.Symbol("Dyp")
+            sl, _, sr = exp_raw.partition("=")
+            sexpr = to_sympy(sl) - to_sympy(sr)  # C1 drops under d/dx
+            inp = case["input"].replace("y'", "Dyp")
+            il, _, ir = inp.partition("=")
+            eq = sp.Eq(to_sympy(il), to_sympy(ir) if ir.strip() else sp.Integer(0))
+            phis = sp.solve(eq, yp)
+            if not phis:
+                return "dsolve implicit: could not solve input for y'"
+            phi = phis[0]
+            total = sp.diff(sexpr, x) + sp.diff(sexpr, y) * phi
+            if sp.simplify(total) != 0:
+                return f"dsolve implicit: d/dx[S] = {sp.simplify(total)} != 0"
             return None
         sol = to_sympy(exp_raw[4:])
         if "y''" in case["input"] and sp.Symbol("C2") not in sol.free_symbols:

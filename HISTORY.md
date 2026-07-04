@@ -2,6 +2,30 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 11) — Exact ODEs (C5.1)
+
+`dsolve` handles the exact first-order form M(x,y) + N(x,y)·y' = 0
+(∂M/∂y = ∂N/∂x), completing the first-order named methods:
+
+- (2x + y) + (x + 2y)y' = 0      → x^2 + x*y + y^2 = C1
+- (2xy + 3) + (x^2 − 1)y' = 0    → x^2*y + 3*x − y = C1
+- (3x^2 + 2y) + (2x + 4y)y' = 0  → x^3 + 2*x*y + 2*y^2 = C1
+- y + x*y' = 0                   → x*y = C1
+
+Runs on a bivariate term map {(i,j): coeff for x^i·y^j}: parse M and N,
+verify exactness, F = ∫M dx + ∫(N − ∂(∫M dx)/∂y) dy, render the implicit
+relation — all exact rational arithmetic, no SymEngine round-trips.
+Non-exact equations return null and fall through (separable etc.).
+
+Two beneficial side-effects: the `_parseRationalToken` fix (accept the
+zero polynomial, whose degree is −1) makes `y' = -y^2` route through
+Bernoulli to the cleaner `y = 1/(C1 + x)`, and `x*y' + y = 0` (which is
+exact) now solves instead of erroring. The corpus verifier's implicit
+branch was generalized from the separable-only F(y)=G(x) shape to a
+TOTAL-derivative check S_x + S_y·φ = 0 (φ from solving the input for
+y'), which covers exact and separable-implicit uniformly. Corpus: **106
+SymPy-certified cases** (3 exact); 34 ODE unit tests.
+
 ## 2026-07-04 (cont. 10) — Bernoulli ODEs (reduction to linear)
 
 `dsolve` handles y' + p(x)·y = q(x)·y^n (n ≥ 2) by the substitution

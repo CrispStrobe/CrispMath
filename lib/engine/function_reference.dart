@@ -847,9 +847,10 @@ class FunctionReferences {
       category: FunctionRefCategory.cas,
       signature: "dsolve(a*y'' + b*y' + c*y = q(x))",
       shortDescription:
-          'Solve a linear constant-coefficient ODE exactly. Right-hand '
-          'sides: polynomials, k*exp(m*x), k*sin(w*x)/k*cos(w*x) '
-          '(undetermined coefficients, with exp/poly resonance).',
+          'Solve an ODE exactly. Second order: linear constant-coefficient '
+          '(homogeneous + undetermined coefficients). First order: '
+          'separable, linear (integrating factor), Bernoulli, and exact '
+          '(M dx + N dy = 0 with the implicit potential F(x, y) = C1).',
       examples: [
         FunctionRefExample(
           input: "dsolve(y'' + 3*y' + 2*y = 0)",
