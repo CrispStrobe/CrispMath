@@ -177,6 +177,19 @@ tests → full suite → merge → CI green) from `~/code/CrispCalc-local`.
    was resolved by reusing the if-fold machinery rather than a new
    piecewise lowering.
 
+### C6 — Reachability + pedagogy (post-C5)
+
+- [x] **Discoverability.** Worked-examples gallery + function-reference
+  examples for the new features; stale dsolve locales fixed (2026-07-04).
+- [~] **Step-by-step traces.** `dsolve` constant-coefficient trace
+  landed 2026-07-04 (`ode_steps.dart`): characteristic equation → roots
+  (distinct/double/complex classification) → homogeneous solution →
+  (particular) → general solution, surfaced via the history-row steps
+  affordance (StepsDialog), final line taken verbatim from OdeSolver so
+  it can't disagree. Still open: rational-integrator steps
+  (quadratic/atan + Rothstein–Trager), and first-order-form traces
+  (separable / integrating-factor / Bernoulli / exact).
+
 ---
 
 ## Open work items (priority order)
