@@ -46,17 +46,10 @@
     var symEngineInstance = null;
   </script>
   <script src="symengine.js" defer></script>
-  <script defer>
-    // defer scripts execute in order after HTML parsing
-    SymEngineModule().then(function(instance) {
-      symEngineInstance = instance;
-      symEngineReady = true;
-      console.log('SymEngine WASM loaded (' +
-        instance.ccall('flutter_symengine_version', 'string', [], []) + ')');
-    }).catch(function(err) {
-      console.warn('SymEngine WASM failed to load:', err);
-    });
-  </script>
+  <!-- Handshake must be a FILE script: `defer` is ignored on inline
+       scripts, so an inline handshake races symengine.js and loses
+       (SymEngineModule not defined -> web CAS silently dead). -->
+  <script src="symengine_boot.js" defer></script>
   <!-- CrispEmbed OCR WASM: loaded on-demand by Dart code via the
        CrispEmbedOCR() factory (MODULARIZE=1). Unlike SymEngine, this is
        NOT auto-initialized — the module is instantiated when the user

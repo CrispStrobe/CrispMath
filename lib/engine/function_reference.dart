@@ -798,8 +798,8 @@ class FunctionReferences {
       signature: 'taylor(f, x, x0, n)   or   series(f, x, n)',
       shortDescription:
           'Taylor/Maclaurin polynomial of f about x0 (default 0), truncated '
-          'after n terms (default 6). Native builds only (SymEngine series, '
-          'FLINT-backed).',
+          'after n terms (default 6). SymEngine series (FLINT-backed); '
+          'works natively and on the web.',
       examples: [
         FunctionRefExample(
           input: 'taylor(sin(x), x, 0, 8)',
@@ -824,7 +824,7 @@ class FunctionReferences {
       shortDescription:
           'Solve a system of linear equations symbolically (exact '
           'rationals/symbols). Equations are ";"-separated, the unknowns '
-          'follow. Native builds only.',
+          'follow. Works natively and on the web.',
       examples: [
         FunctionRefExample(
           input: 'linsolve(x + y = 3; x - y = 1, x, y)',

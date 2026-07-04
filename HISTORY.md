@@ -2,6 +2,36 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 2) — Web CAS parity + the silent production outage
+
+### Production web CAS was silently dead — found and fixed
+While verifying the new WASM build, discovered that crisp-calc.vercel.app
+had `SymEngineModule is not defined` and `symEngineReady = false`: the
+June startup-perf change (P3) put `defer` on the loader scripts, but
+**`defer` is ignored on inline scripts** — the inline handshake ran
+during HTML parsing, before the deferred `symengine.js` defined the
+module, so the whole web CAS silently fell back to the pure-Dart subset.
+Fix: handshake moved to `web/symengine_boot.js` (file scripts honor
+defer and run in document order). Verified headless-Chrome:
+"SymEngine WASM loaded (0.11.2)", banner clears.
+
+### series/linsolve/trig-simplify now work in the browser
+- math-stack: `wasm_exports.json` + series/linsolve; WASM build now
+  compiles/links with `-sNO_DISABLE_EXCEPTION_CATCHING` — SymEngine's
+  series machinery throws internally as part of normal operation, and
+  with catching disabled (emscripten default) ANY C++ throw aborted the
+  entire module (parse errors included). Error paths are now catchable
+  and the module survives them.
+- bridge 1.5.0: web `series()`/`linsolve()`; `hasSeries`/`hasLinsolve`
+  probe the loaded module (`_symHasExport`), so older cached binaries
+  degrade gracefully.
+- CrispCalc: new `web/symengine.{js,wasm}` (6.1 MB), bridge repin,
+  function-reference wording EN/DE/FR/ES updated from "native only" to
+  native + web.
+- Verified in headless Chrome against the built app:
+  `taylor(sin(x),x,0,8)`, `linsolve(x+y=3;x-y=1,x,y)` → `x = 2, y = 1`,
+  `simplify(sin(x)*sin(x)+cos(x)*cos(x))` → `1`, `series(exp(x),x,4)`.
+
 ## 2026-07-04 (cont.) — C2: taylor/series + linsolve land natively
 
 First slice of roadmap C2 ("bind what SymEngine already has") across

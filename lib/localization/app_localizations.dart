@@ -4125,12 +4125,12 @@ class DeLocalizations implements AppLocalizations {
         return 'n-te Fibonacci-Zahl. `fib(n)` ist der Kurzname.';
       case 'taylor':
         return 'Taylor-/Maclaurin-Polynom von f am Entwicklungspunkt x0 '
-            '(Standard 0), abgeschnitten nach n Termen (Standard 6). Nur '
-            'native Builds (SymEngine-Reihe, FLINT-gestützt).';
+            '(Standard 0), abgeschnitten nach n Termen (Standard 6). '
+            'SymEngine-Reihe (FLINT-gestützt); nativ und im Web verfügbar.';
       case 'linsolve':
         return 'Löst ein lineares Gleichungssystem symbolisch (exakte '
             'Brüche/Symbole). Gleichungen durch ";" getrennt, danach die '
-            'Unbekannten. Nur native Builds.';
+            'Unbekannten. Nativ und im Web verfügbar.';
       // --- Zahlentheorie ---
       case 'isprime':
         return 'Probabilistischer Primzahltest für ganze Zahlen.';
@@ -7104,11 +7104,11 @@ class FrLocalizations implements AppLocalizations {
       case 'taylor':
         return "Polynôme de Taylor/Maclaurin de f au point de développement "
             "x0 (0 par défaut), tronqué après n termes (6 par défaut). "
-            "Builds natifs uniquement (séries SymEngine sur FLINT).";
+            "Séries SymEngine sur FLINT ; disponible en natif et sur le web.";
       case 'linsolve':
         return "Résout un système d'équations linéaires symboliquement "
             "(fractions exactes/symboles). Équations séparées par « ; », "
-            "puis les inconnues. Builds natifs uniquement.";
+            "puis les inconnues. Disponible en natif et sur le web.";
       case 'isprime':
         return "Test de primalité probabiliste sur les entiers.";
       case 'nextprime':
@@ -10059,11 +10059,11 @@ class EsLocalizations implements AppLocalizations {
       case 'taylor':
         return "Polinomio de Taylor/Maclaurin de f en el punto de "
             "desarrollo x0 (0 por defecto), truncado tras n términos (6 por "
-            "defecto). Solo builds nativos (series de SymEngine con FLINT).";
+            "defecto). Series de SymEngine con FLINT; en nativo y en la web.";
       case 'linsolve':
         return "Resuelve un sistema de ecuaciones lineales simbólicamente "
             "(fracciones exactas/símbolos). Ecuaciones separadas por \";\", "
-            "después las incógnitas. Solo builds nativos.";
+            "después las incógnitas. En nativo y en la web.";
       case 'isprime':
         return "Test de primalidad probabilístico sobre enteros.";
       case 'nextprime':

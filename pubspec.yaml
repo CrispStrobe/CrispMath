@@ -28,7 +28,7 @@ dependencies:
   symbolic_math_bridge:
     git:
       url: https://github.com/CrispStrobe/symbolic_math_bridge.git
-      ref: "d58e11c"   # bridge main v1.4.2: series + linsolve + trig simplify (pair fix)
+      ref: "a03850a"   # bridge v1.5.0: web series/linsolve via WASM export probing
 
   # Constraint Satisfaction Problem solver — pure Dart, no native
   # deps. Powers the Analysis-hub "Constraints" module (Diophantine
