@@ -126,8 +126,13 @@ CrispCalc/
 
 ```bash
 flutter pub get
-flutter test            # ~3441 unit tests run without the native bridge
+flutter test            # ~3820 unit tests run without the native bridge
 flutter run             # Runs the app; SymEngine bridge required for math
+
+# CAS regression corpus (SymPy-certified expected values):
+python3 tool/cas_corpus_verify.py                        # certify + regenerate
+flutter test test/cas_corpus_test.dart                   # pure-Dart fallbacks
+flutter test integration_test/cas_corpus_native_test.dart -d macos  # native
 ```
 
 The native side lives in the `symbolic_math_bridge` plugin (separate
