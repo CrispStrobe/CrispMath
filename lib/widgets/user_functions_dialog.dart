@@ -194,7 +194,7 @@ class _UserFunctionsDialogState extends State<UserFunctionsDialog> {
                     controller: bodyCtrl,
                     decoration: InputDecoration(
                       labelText: t.userFunctionsBody,
-                      hintText: 'x^2 + 1',
+                      hintText: 'x^2 + 1   ·   piecewise(x<0, -x, x)',
                     ),
                     validator: (s) => (s?.trim().isEmpty ?? true)
                         ? t.userFunctionsBodyRequired

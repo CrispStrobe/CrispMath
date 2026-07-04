@@ -133,7 +133,10 @@ system solver, no inequality solver.
   directly or via the dialog, inlined by the preprocessor with
   simultaneous positional substitution + arity checks. Legacy
   single-param definitions load unchanged (`paramVar` compat getter,
-  legacy `v` JSON key). Still open: piecewise bodies.
+  legacy `v` JSON key). Piecewise bodies landed 2026-07-04:
+  `f(x) = piecewise(x<0, -x, x)`, folded at call time
+  (`tryFoldPiecewise`) — the N-branch generalization of the existing
+  `if(...)` fold.
 - [~] **Plot types.** Parametric (x(t), y(t)), polar r(θ), and
   implicit F(x,y)=0 (marching squares) 2D modes landed 2026-07-04
   (`lib/engine/plot_types.dart` + graphing-screen mode selector).
@@ -166,10 +169,13 @@ tests → full suite → merge → CI green) from `~/code/CrispCalc-local`.
    irreducible denominators of any degree. The algebraic RootSum tail
    is reclassified a NON-GOAL (unverifiable, education-inappropriate;
    numeric definite integration covers the practical need).
-4. [ ] **Piecewise UDF bodies.** `piecewise(cond, val, …)` evaluated at
-   call time — needs evaluation-time conditionals (the current
-   preprocessor-inline model doesn't fit), so this one carries the most
-   design risk.
+4. [x] **Piecewise UDF bodies.** Landed 2026-07-04. `piecewise(cond1,
+   val1, …[, else])` folded at call time by `tryFoldPiecewise` (the
+   N-branch generalization of the existing `if(...)` fold): after UDF
+   inlining, conditions evaluate through the engine and the first true
+   branch is selected. The design risk (evaluation-time conditionals)
+   was resolved by reusing the if-fold machinery rather than a new
+   piecewise lowering.
 
 ---
 

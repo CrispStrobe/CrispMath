@@ -478,6 +478,77 @@ class ExpressionPreprocessingUtils {
     return null;
   }
 
+  /// Fold a `piecewise(cond1, val1, cond2, val2, …[, default])` call — the
+  /// N-branch generalization of [tryFoldIfConditional], and the mechanism
+  /// behind piecewise user-defined functions (roadmap C5.4). After UDF
+  /// inlining, `f(-3)` with body `piecewise(x<0, -x, x)` becomes
+  /// `(piecewise((-3)<0, -3, -3))`; each condition is evaluated in order
+  /// and the first true branch's value is returned. An odd argument count
+  /// means the last argument is the `else` value. Returns null when the
+  /// input isn't a piecewise call or a condition stays symbolic (so the
+  /// caller leaves it in place and downstream surfaces the error).
+  static Future<String?> tryFoldPiecewise(
+    String input,
+    Future<String> Function(String) evaluator,
+  ) async {
+    var trimmed = input.trim();
+    // UDF inlining wraps the body in parens — strip a single matched wrap.
+    while (trimmed.startsWith('(') &&
+        trimmed.endsWith(')') &&
+        _parensWrapWhole(trimmed)) {
+      trimmed = trimmed.substring(1, trimmed.length - 1).trim();
+    }
+    if (!trimmed.startsWith('piecewise(') || !trimmed.endsWith(')')) {
+      return null;
+    }
+    var depth = 0, matchedEnd = -1;
+    const open = 'piecewise(';
+    for (var i = open.length - 1; i < trimmed.length; i++) {
+      final c = trimmed[i];
+      if (c == '(') {
+        depth++;
+      } else if (c == ')') {
+        depth--;
+        if (depth == 0) {
+          matchedEnd = i;
+          break;
+        }
+      }
+    }
+    if (matchedEnd != trimmed.length - 1) return null;
+
+    final args =
+        _splitTopLevelByComma(trimmed.substring(open.length, matchedEnd));
+    if (args.length < 2) return null;
+    final hasElse = args.length.isOdd;
+    final pairCount = hasElse ? (args.length - 1) ~/ 2 : args.length ~/ 2;
+
+    for (var k = 0; k < pairCount; k++) {
+      final condRaw = args[2 * k].trim();
+      final value = args[2 * k + 1].trim();
+      // The condition comes straight from the UDF body, so its relational
+      // operators are still raw — lower them before evaluating.
+      final cond =
+          preprocessNativeExpression(preprocessLogicalOperators(condRaw));
+      final raw = await evaluator(cond);
+      final verdict = normalizeBooleanResult(raw).trim();
+      if (verdict == 'true') return value;
+      if (verdict != 'false') return null; // condition stayed symbolic
+    }
+    return hasElse ? args.last.trim() : null;
+  }
+
+  /// True when the outermost `(` … `)` of [t] wraps the whole string.
+  static bool _parensWrapWhole(String t) {
+    var depth = 0;
+    for (var i = 0; i < t.length; i++) {
+      if (t[i] == '(') depth++;
+      if (t[i] == ')') depth--;
+      if (depth == 0 && i < t.length - 1) return false;
+    }
+    return true;
+  }
+
   /// Normalize SymEngine's capitalized boolean literals (`True` /
   /// `False`) down to the rest of the codebase's `true` / `false`
   /// convention. Applied to result strings, not inputs.
