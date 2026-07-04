@@ -63,11 +63,11 @@ system solver, no inequality solver.
   `flutter_symengine_series` (math-stack feat/series-linsolve), bridge
   1.4.0 `series()` + `hasSeries`, engine + calculator dispatch
   (`taylor(f,x,x0,n)` / `series(f,x,n)`), function reference (4
-  locales), 5 SymPy-certified corpus cases. Native only; WASM exports
-  still pending (web gated off via hasSeries=false).
+  locales), 5 SymPy-certified corpus cases. Web parity landed later
+  the same day (WASM exports + export-probing bridge 1.5.0).
 - [x] **`linsolve`.** Landed 2026-07-04 alongside series:
   `linsolve(eq1; eq2, x, y)` (alias `solvesys`), exact symbolic
-  solutions in symbol order, 3 corpus cases. Same WASM caveat.
+  solutions in symbol order, 3 corpus cases. Web parity same day.
 - [ ] **Fill the empty binary-function FFI table** in the bridge
   (`symbolic_math_bridge_io.dart` — "none implemented in your C
   wrapper"): atan2, log-base, nroot, …
