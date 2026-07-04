@@ -17,9 +17,11 @@ from Flutter to C++ and how to interact with Flutter's irksome TextField.
   calculations.
   - Solver: `solve(x^2 - 4, x)` returns `x = {-2, 2}`.
   - Calculus: symbolic differentiation (`d/dx`), symbolic limits (Gruntz-style
-    growth-rate analysis at infinity).
+    growth-rate analysis at infinity), Taylor/Maclaurin series
+    (`taylor(f, x, x0, n)` / `series(f, x, n)`).
   - Algebraic: `factor` (univariate + multivariate via FLINT), `expand`,
-    `simplify` (rational cancellation), `gcd`, `lcm`.
+    `simplify` (rational cancellation + trig identities), `gcd`, `lcm`,
+    linear-system solve (`linsolve(eq1; eq2, x, y)`).
   - Numerics: `factorial`, `fibonacci`, constants `π`, `e`, `γ`.
   - Matrix: `det`, `inv`, `transpose`, `rref`, `eigenvalues`, `eigenvectors`
     (pure-Dart QR algorithm with Hessenberg reduction).
