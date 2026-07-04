@@ -2,6 +2,73 @@
 
 Completed work, newest first.
 
+## 2026-07-04 — CAS roadmap C1: SymPy-certified corpus + two real bugs found
+
+### CAS depth roadmap written into PLAN.md
+New "CAS depth roadmap (July 2026)" section, stages C1–C4: C1
+truthfulness + verified regression corpus (this session), C2 bind
+what SymEngine already has (series/taylor, linsolve, binary-function
+FFI table, LLVM/ARB backends), C3 pure-Dart mathematics (rational-
+function integration, education-subset ODEs, polynomial inequalities,
+identity simplification pass), C4 platform/surface parity (web
+arbitrary precision, UDF V2, plot types). Explicit non-goals recorded
+(Risch, Gröbner systems, full assumptions facility).
+
+### SymPy-certified CAS regression corpus (C1)
+Until now nothing validated a real CAS result end-to-end (bridge tests
+only covered `getPlatformVersion`; CI checks error strings). Now:
+- `test/data/cas_corpus.json` — 58 cases across evaluate / expand /
+  factor / simplify / solve / differentiate / substitute / gcd / lcm /
+  integrate (indefinite + definite) / limit.
+- `tool/cas_corpus_verify.py` certifies every expected value against
+  SymPy (independent open-source CAS) and regenerates the embedded
+  `test/cas_corpus_data.dart`. All 58 certified.
+- Two runners share `test/cas_corpus_shared.dart`: the headless runner
+  (`test/cas_corpus_test.dart`, 20 dart-tagged cases) exercises the
+  pure-Dart fallback paths; the native runner
+  (`integration_test/cas_corpus_native_test.dart`,
+  `flutter test integration_test/... -d macos`) runs all 58 against
+  real SymEngine/FLINT. Comparison is by numeric sampling
+  (NumericFallbackEvaluator), so printer-format differences can't
+  cause false failures — only wrong mathematics does.
+- `knownGap` cases are enforced expected-failures: the runner asserts
+  the bug still reproduces, so a fix flips the test and forces the
+  flag's removal. One case is flagged: `limit((1-cos x)/x^2, x->0)`
+  returns ~0.4996 via the numeric fallback (cancellation noise);
+  symbolic tiers don't resolve it yet (roadmap C3).
+
+### Bug 1 (found by the corpus): near-integer results truncated off by one
+`_formatReal`-style helpers checked "is v within 1e-9 of an integer?"
+against `v.roundToDouble()` but then formatted with `v.toInt()`, which
+TRUNCATES: 0.999999999999998 passed the check and displayed as "0".
+`limit(sin(x)/x, x->0)` literally returned 0. Fixed `toInt()` →
+`round()` at the 7 epsilon-guarded sites (calculator_engine,
+symbolic_limit, notepad_evaluator, plane/conic/scene-3d screens,
+scene-3d intersections panel). The 3 exact-equality-guarded sites
+(notepad, unit_expression, eigen) were already correct.
+
+### Bug 2 (found by the corpus): SymbolicLimit blind to complex-formatted output
+The native bridge's `evaluate` returns "1.0 + 0.0*I" even for real
+values (the app's display layer strips this; internal consumers must
+too). SymbolicLimit compared raw strings, so `_isZero("0.0 + 0.0*I")`
+was false, every 0/0 detection failed, all finite-point tiers bailed,
+and infinity limits could return the raw complex string as the final
+answer (`limit(exp(-x), x->oo)` → "0.0 + 0.0*I"). New `_cleanEval`
+strips a zero imaginary part at all 10 `engine.evaluate` call sites.
+Headless tests never caught either bug because the pure-Dart fallback
+returns plain doubles — exactly the native/Dart divergence the corpus
+exists to expose.
+
+### Stale-claim sweep (C1)
+`calculator_engine.dart` and `symbolic_web.dart` comments still
+described `simplify`/`factor` as expand-aliases; both are real since
+bridge `59ba08c` (SymEngine simplify + univariate rational
+cancellation; FLINT univariate + multivariate factor). Comments now
+match, with roadmap pointers.
+
+Verified: `flutter analyze` clean, headless corpus 20/20, native
+corpus 58/58 (57 pass + 1 enforced known-gap), full suite green.
+
 ## 2026-07-03 — Ans full-precision chaining, DST-safe dates, Flutter 3.44.4
 
 ### Ans display-rounding bug (`8/3` → `Ans*3` gave `8.00000000001`)

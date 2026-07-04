@@ -126,7 +126,7 @@ String _describe(Intersection result, AppLocalizations t) {
 String _pt(Vector3 v) => '(${_fmt(v.x)}, ${_fmt(v.y)}, ${_fmt(v.z)})';
 
 String _fmt(double v) {
-  if ((v - v.roundToDouble()).abs() < 1e-9) return v.toInt().toString();
+  if ((v - v.roundToDouble()).abs() < 1e-9) return v.round().toString();
   return v
       .toStringAsPrecision(6)
       .replaceAll(RegExp(r'0+$'), '')

@@ -171,9 +171,10 @@ class SymbolicWeb {
   /// for anything outside the polynomial grammar (multivariate,
   /// transcendental, rational functions), so the caller can fall through.
   ///
-  /// This exists because the native C wrapper aliases `factor` to `expand`
-  /// (a known correctness bug); doing real factoring in Dart fixes the
-  /// common cases on every platform, web included.
+  /// The native wrapper has done real FLINT factoring since bridge
+  /// 59ba08c; this Dart path remains the fallback for builds where the
+  /// bridge is unavailable or not yet loaded (and for the multivariate
+  /// case on web, where the FLINT multivariate factorizer is gated off).
   static String? factor(String input) {
     final p = _parsePolynomial(input);
     if (p == null) {

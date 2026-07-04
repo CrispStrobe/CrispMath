@@ -117,6 +117,17 @@ class SymbolicLimit {
     return null;
   }
 
+  /// The native bridge's `evaluate` returns complex-formatted strings even
+  /// for real values ("1.0 + 0.0*I"). Strip a zero imaginary part so the
+  /// tier logic (zero checks, double parsing, result strings) sees the
+  /// plain real value; genuinely complex results pass through untouched.
+  static String _cleanEval(String s) {
+    return s
+        .trim()
+        .replaceFirst(RegExp(r'\s*\+\s*-?0(\.0*)?\s*\*?\s*I\$'), '')
+        .trim();
+  }
+
   // --- Tier 1: direct substitution ---
 
   static SymbolicLimitResult? _tryDirectSubstitution({
@@ -128,7 +139,7 @@ class SymbolicLimit {
     try {
       final substituted = engine.substitute(expression, variable, point);
       if (substituted.startsWith('Error')) return null;
-      final evaluated = engine.evaluate(substituted);
+      final evaluated = _cleanEval(engine.evaluate(substituted));
       if (evaluated.startsWith('Error')) return null;
       // Check for indeterminate forms: nan, zoo, oo, etc.
       final lower = evaluated.trim().toLowerCase();
@@ -198,10 +209,7 @@ class SymbolicLimit {
       if (numD != null && denD != null && denD != 0) {
         final result = numD / denD;
         if (result.isFinite) {
-          return SymbolicLimitResult(
-            _formatResult(result),
-            method: 'lhopital',
-          );
+          return SymbolicLimitResult(_formatResult(result), method: 'lhopital');
         }
         return null;
       }
@@ -210,7 +218,7 @@ class SymbolicLimit {
       final ratioExpr = '($numPrime)/($denPrime)';
       final subst = engine.substitute(ratioExpr, variable, point);
       if (!subst.startsWith('Error')) {
-        final eval = engine.evaluate(subst);
+        final eval = _cleanEval(engine.evaluate(subst));
         if (!eval.startsWith('Error')) {
           final lower = eval.trim().toLowerCase();
           if (lower != 'nan' &&
@@ -248,7 +256,7 @@ class SymbolicLimit {
     try {
       final substituted = engine.substitute(expression, variable, infSymbol);
       if (!substituted.startsWith('Error')) {
-        final evaluated = engine.evaluate(substituted);
+        final evaluated = _cleanEval(engine.evaluate(substituted));
         if (!evaluated.startsWith('Error')) {
           final lower = evaluated.trim().toLowerCase();
           if (lower == '0' || lower == '0.0') {
@@ -328,8 +336,8 @@ class SymbolicLimit {
       if (num.startsWith('Error') || den.startsWith('Error')) return null;
     }
     // Now num and den should be constants.
-    final numEval = engine.evaluate(num);
-    final denEval = engine.evaluate(den);
+    final numEval = _cleanEval(engine.evaluate(num));
+    final denEval = _cleanEval(engine.evaluate(den));
     if (numEval.startsWith('Error') || denEval.startsWith('Error')) {
       return null;
     }
@@ -388,7 +396,7 @@ class SymbolicLimit {
 
     // Check if expr is constant (no variable).
     if (!_containsVariable(e, variable)) {
-      final val = engine.evaluate(e);
+      final val = _cleanEval(engine.evaluate(e));
       if (!val.startsWith('Error')) {
         final d = double.tryParse(val.trim());
         if (d != null) {
@@ -443,10 +451,12 @@ class SymbolicLimit {
         expr2 = engine.differentiate(expr2, variable);
         if (expr2.startsWith('Error')) {
           return _GrowthClass(
-              kind: _GrowthKind.polynomial, power: deg.toDouble());
+            kind: _GrowthKind.polynomial,
+            power: deg.toDouble(),
+          );
         }
       }
-      final coefVal = engine.evaluate(expr2);
+      final coefVal = _cleanEval(engine.evaluate(expr2));
       final coefD = double.tryParse(coefVal.trim());
       if (coefD != null) {
         // Leading coefficient is coefD / deg!
@@ -543,7 +553,11 @@ class SymbolicLimit {
       if (numGrowth.power > denGrowth.power) {
         // Sign depends on leading coefficients and whether x→+∞ or -∞.
         return _infinitySignResult(
-            numGrowth, denGrowth, positive, numGrowth.power - denGrowth.power);
+          numGrowth,
+          denGrowth,
+          positive,
+          numGrowth.power - denGrowth.power,
+        );
       }
       // Same degree — ratio of leading coefficients.
       if (numGrowth.coefficient != null && denGrowth.coefficient != null) {
@@ -591,7 +605,7 @@ class SymbolicLimit {
         final numArg = _matchExp(ratio.numerator, variable) ?? '0';
         final denArg = _matchExp(ratio.denominator, variable) ?? '0';
         final diff = '($numArg) - ($denArg)';
-        final simplified = engine.evaluate(diff);
+        final simplified = _cleanEval(engine.evaluate(diff));
         if (!simplified.startsWith('Error')) {
           final innerLimit = _limitAtSymbolicInfinity(
             engine: engine,
@@ -717,7 +731,7 @@ class SymbolicLimit {
       try {
         final substituted = engine.substitute(ratioExpr, variable, infSymbol);
         if (!substituted.startsWith('Error')) {
-          final evaluated = engine.evaluate(substituted);
+          final evaluated = _cleanEval(engine.evaluate(substituted));
           if (!evaluated.startsWith('Error')) {
             final lower = evaluated.trim().toLowerCase();
             if (lower == '0' || lower == '0.0') {
@@ -794,7 +808,7 @@ class SymbolicLimit {
     try {
       final substituted = engine.substitute(expression, variable, point);
       if (substituted.startsWith('Error')) return null;
-      final result = engine.evaluate(substituted);
+      final result = _cleanEval(engine.evaluate(substituted));
       if (result.startsWith('Error')) return null;
       return result.trim();
     } catch (_) {
@@ -823,7 +837,7 @@ class SymbolicLimit {
 
   static String _formatResult(double v) {
     if ((v - v.roundToDouble()).abs() < 1e-9 && v.abs() < 1e15) {
-      return v.toInt().toString();
+      return v.round().toString();
     }
     final s = v.toStringAsPrecision(10);
     return s.contains('.')
@@ -834,7 +848,8 @@ class SymbolicLimit {
   /// Test-visible ratio parser. Production code calls [_parseRatio].
   @visibleForTesting
   static ({String numerator, String denominator})? parseRatioForTest(
-      String expression) {
+    String expression,
+  ) {
     final r = _parseRatio(expression);
     if (r == null) return null;
     return (numerator: r.numerator, denominator: r.denominator);

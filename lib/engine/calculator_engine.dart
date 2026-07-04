@@ -282,9 +282,11 @@ class CalculatorEngine {
   }
 
   String simplify(String expression) {
-    // The wrapper aliases simplify() to expand(); mirror that in the web
-    // fallback (expand the polynomial subset in Dart) so the browser build
-    // doesn't error where native would have expanded.
+    // Native simplify is real since bridge 59ba08c: SymEngine simplify()
+    // plus univariate rational cancellation ((x^2-1)/(x-1) -> x+1). It
+    // still has no trig/log identity rewriting — that stays visible to the
+    // user (roadmap C3). Before the WASM bridge loads, the web fallback
+    // can only expand the polynomial subset in Dart.
     if (!isNativeAvailable) {
       final web = SymbolicWeb.expand(expression);
       if (web != null) return web;
@@ -1298,7 +1300,7 @@ class CalculatorEngine {
   static String _formatReal(double v) {
     // Integer if very close to one; otherwise compact decimal.
     if ((v - v.roundToDouble()).abs() < 1e-9 && v.abs() < 1e15) {
-      return v.toInt().toString();
+      return v.round().toString();
     }
     final s = v.toStringAsPrecision(10);
     // Trim trailing zeros after the decimal point.
