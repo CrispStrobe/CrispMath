@@ -867,6 +867,102 @@
         "native"
       ],
       "check": "equiv"
+    },
+    {
+      "id": "ineq_quadratic_gt",
+      "op": "solve_ineq",
+      "input": "x^2 - 4 > 0",
+      "var": "x",
+      "expected": "x < -2 ∨ x > 2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "ineq_quadratic_le",
+      "op": "solve_ineq",
+      "input": "x^2 - 4 <= 0",
+      "var": "x",
+      "expected": "-2 ≤ x ≤ 2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "ineq_linear_lt",
+      "op": "solve_ineq",
+      "input": "2*x + 3 < 0",
+      "var": "x",
+      "expected": "x < -3/2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "ineq_double_root_gt",
+      "op": "solve_ineq",
+      "input": "x^2 - 2*x + 1 > 0",
+      "var": "x",
+      "expected": "x ≠ 1",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "ineq_double_root_le",
+      "op": "solve_ineq",
+      "input": "x^2 - 2*x + 1 <= 0",
+      "var": "x",
+      "expected": "x = 1",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "ineq_always_true",
+      "op": "solve_ineq",
+      "input": "x^2 + 1 > 0",
+      "var": "x",
+      "expected": "x ∈ ℝ",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "ineq_never_true",
+      "op": "solve_ineq",
+      "input": "x^2 + 1 < 0",
+      "var": "x",
+      "expected": "x ∈ ∅",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "ineq_surd_ge",
+      "op": "solve_ineq",
+      "input": "x^2 - 2 >= 0",
+      "var": "x",
+      "expected": "x ≤ -sqrt(2) ∨ x ≥ sqrt(2)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
     }
   ]
 }

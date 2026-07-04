@@ -118,6 +118,22 @@ def verify(case: dict) -> str | None:
                 return f"linsolve: {name.strip()} = {got[sp.Symbol(name.strip())]}, corpus says {val.strip()}"
         return None
 
+    if op == "solve_ineq":
+        x = sp.Symbol(case["var"])
+        lhs, opstr, rhs = None, None, None
+        for cand in ("<=", ">=", "<", ">"):
+            i = case["input"].find(cand)
+            if i > 0:
+                lhs, opstr, rhs = case["input"][:i], cand, case["input"][i + len(cand):]
+                break
+        rel = {"<": sp.Lt, "<=": sp.Le, ">": sp.Gt, ">=": sp.Ge}[opstr]
+        ineq = rel(to_sympy(lhs), to_sympy(rhs))
+        ref = sp.solve_univariate_inequality(ineq, x, relational=False)
+        got = _parse_solution_dsl(exp_raw, x)
+        if got != ref and sp.simplify(got.symmetric_difference(ref)) != sp.S.EmptySet:
+            return f"solve_ineq: DSL set {got} != SymPy {ref}"
+        return None
+
     if op == "solve":
         x = sp.Symbol(case["var"])
         roots = sp.solveset(to_sympy(case["input"]), x, domain=sp.S.Complexes)
@@ -147,6 +163,55 @@ def verify(case: dict) -> str | None:
         return None
 
     return f"unknown op {op!r}"
+
+
+def _parse_solution_dsl(dsl: str, x):
+    """Parse the app's solution notation into a SymPy set.
+    Formats: 'x ∈ ℝ', 'x ∈ ∅', 'x = a', 'x ≠ a[ ∧ x ≠ b]',
+    'x < a' / 'x ≤ a' / 'x > a' / 'x ≥ a', 'a < x < b' (mixed ≤),
+    segments joined by ' ∨ '."""
+    v = str(x)
+    dsl = dsl.strip()
+    if dsl == f"{v} ∈ ℝ":
+        return sp.S.Reals
+    if dsl == f"{v} ∈ ∅":
+        return sp.S.EmptySet
+    if " ∧ " in dsl or dsl.startswith(f"{v} ≠ "):
+        pts = [to_sympy(part.split("≠")[1]) for part in dsl.split(" ∧ ")]
+        return sp.Complement(sp.S.Reals, sp.FiniteSet(*pts))
+    total = sp.S.EmptySet
+    for seg in dsl.split(" ∨ "):
+        seg = seg.strip()
+        if seg.startswith(f"{v} = "):
+            total = sp.Union(total, sp.FiniteSet(to_sympy(seg[len(v) + 3:])))
+            continue
+        for sym, incl in (("≤", True), ("<", False), ("≥", None), (">", None)):
+            pass  # handled below explicitly
+        if seg.startswith(f"{v} "):
+            opc, val = seg[len(v) + 1:].split(" ", 1)
+            a = to_sympy(val)
+            if opc == "<":
+                s = sp.Interval.open(-sp.oo, a)
+            elif opc == "≤":
+                s = sp.Interval(-sp.oo, a)
+            elif opc == ">":
+                s = sp.Interval.open(a, sp.oo)
+            elif opc == "≥":
+                s = sp.Interval(a, sp.oo)
+            else:
+                raise ValueError(f"bad op in {seg!r}")
+            total = sp.Union(total, s)
+            continue
+        # 'a < x < b' style
+        import re as _re
+        m = _re.match(rf"(.+?) (<|≤) {_re.escape(v)} (<|≤) (.+)", seg)
+        if not m:
+            raise ValueError(f"unparseable segment {seg!r}")
+        lo, lop, rop, hi = m.group(1), m.group(2), m.group(3), m.group(4)
+        total = sp.Union(total, sp.Interval(
+            to_sympy(lo), to_sympy(hi),
+            left_open=(lop == "<"), right_open=(rop == "<")))
+    return total
 
 
 def emit_dart(raw: str) -> None:

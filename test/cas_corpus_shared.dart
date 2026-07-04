@@ -112,6 +112,8 @@ String runOp(CalculatorEngine engine, CorpusCase c) {
           point: c.point ?? '0', order: c.order ?? 6);
     case 'linsolve':
       return engine.solveLinearSystem(c.equations!, c.symbols!);
+    case 'solve_ineq':
+      return engine.solveInequality(c.input!, c.variable!);
     default:
       throw ArgumentError('unknown corpus op ${c.op}');
   }
