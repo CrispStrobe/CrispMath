@@ -271,7 +271,7 @@ void main() {
       s.setVariable('a', '42');
       s.updateFunction(0, 'sin(x)');
       s.setUserFunction(
-          const UserFunction(name: 'f', paramVar: 'x', body: 'x^2'));
+          UserFunction(name: 'f', paramVar: 'x', body: 'x^2'));
 
       final exported = s.exportToJson();
 

@@ -28,7 +28,7 @@ void main() {
     test('setUserFunction writes through to prefs', () async {
       final s = await _freshAppState();
       s.setUserFunction(
-        const UserFunction(name: 'f', paramVar: 'x', body: 'x^2 + 1'),
+        UserFunction(name: 'f', paramVar: 'x', body: 'x^2 + 1'),
       );
       final fresh = await SharedPreferences.getInstance();
       final raw = fresh.getString('crisp.userFunctions');
@@ -52,7 +52,7 @@ void main() {
     test('removeUserFunction drops the entry from prefs', () async {
       final s = await _freshAppState();
       s.setUserFunction(
-        const UserFunction(name: 'h', paramVar: 'x', body: 'x'),
+        UserFunction(name: 'h', paramVar: 'x', body: 'x'),
       );
       s.removeUserFunction('h');
       final fresh = await SharedPreferences.getInstance();
@@ -62,7 +62,7 @@ void main() {
     test('exportToJson includes user functions', () async {
       final s = await _freshAppState();
       s.setUserFunction(
-        const UserFunction(name: 'f', paramVar: 'x', body: 'x*2'),
+        UserFunction(name: 'f', paramVar: 'x', body: 'x*2'),
       );
       final json = s.exportToJson();
       expect(json['userFunctions'], isA<List>());
@@ -93,7 +93,7 @@ void main() {
     test('simple inline: f(3) with f(x) = x^2 + 1', () async {
       final s = await _freshAppState();
       s.setUserFunction(
-        const UserFunction(name: 'f', paramVar: 'x', body: 'x^2 + 1'),
+        UserFunction(name: 'f', paramVar: 'x', body: 'x^2 + 1'),
       );
       final out = ExpressionPreprocessingUtils.preprocessExpression('f(3)', s);
       // `(3)` substituted for `x` inside the body, then the whole body
@@ -104,10 +104,10 @@ void main() {
     test('composition g(f(x)) expands twice', () async {
       final s = await _freshAppState();
       s.setUserFunction(
-        const UserFunction(name: 'f', paramVar: 'x', body: 'x + 1'),
+        UserFunction(name: 'f', paramVar: 'x', body: 'x + 1'),
       );
       s.setUserFunction(
-        const UserFunction(name: 'g', paramVar: 'x', body: '2*x'),
+        UserFunction(name: 'g', paramVar: 'x', body: '2*x'),
       );
       final out =
           ExpressionPreprocessingUtils.preprocessExpression('g(f(2))', s);
@@ -119,7 +119,7 @@ void main() {
     test('built-in names are NOT inlined when no UDF shadows them', () async {
       final s = await _freshAppState();
       s.setUserFunction(
-        const UserFunction(name: 'f', paramVar: 'x', body: 'x*2'),
+        UserFunction(name: 'f', paramVar: 'x', body: 'x*2'),
       );
       // `sin(x)` should pass through untouched.
       final out =
@@ -132,7 +132,7 @@ void main() {
       final s = await _freshAppState();
       // Self-referential definition (silly but possible).
       s.setUserFunction(
-        const UserFunction(name: 'f', paramVar: 'x', body: 'f(x) + 1'),
+        UserFunction(name: 'f', paramVar: 'x', body: 'f(x) + 1'),
       );
       // Should terminate; output still contains some f( residue but
       // doesn't loop forever. The maxDepth=4 default bottoms out and
@@ -147,7 +147,7 @@ void main() {
       final s = await _freshAppState();
       // Body uses `x`; expression uses `xx` as a separate identifier.
       s.setUserFunction(
-        const UserFunction(name: 'f', paramVar: 'x', body: 'x + xx'),
+        UserFunction(name: 'f', paramVar: 'x', body: 'x + xx'),
       );
       final out = ExpressionPreprocessingUtils.preprocessExpression('f(2)', s);
       // `x` becomes `(2)`, but `xx` stays.
@@ -158,7 +158,7 @@ void main() {
     test('different parameter variable: f(t) = sin(t)', () async {
       final s = await _freshAppState();
       s.setUserFunction(
-        const UserFunction(name: 'f', paramVar: 't', body: 'sin(t)'),
+        UserFunction(name: 'f', paramVar: 't', body: 'sin(t)'),
       );
       final out =
           ExpressionPreprocessingUtils.preprocessExpression('f(0.5)', s);

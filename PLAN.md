@@ -118,8 +118,12 @@ system solver, no inequality solver.
   serves `evalf`/`cevalf`, isprime/factorint/modpow/…, and Bessel in
   the browser — the June loader race had been masking it. Banner +
   readme claims corrected. Remaining web gap: multivariate factor.
-- [ ] **User-defined functions V2.** Multi-letter names, multiple
-  parameters, piecewise; today UDFs are single-letter/single-arg.
+- [~] **User-defined functions V2.** Landed 2026-07-04: multi-letter
+  names + multiple parameters — `dist(a, b) = sqrt(a^2 + b^2)`, typed
+  directly or via the dialog, inlined by the preprocessor with
+  simultaneous positional substitution + arity checks. Legacy
+  single-param definitions load unchanged (`paramVar` compat getter,
+  legacy `v` JSON key). Still open: piecewise bodies.
 - [ ] **Plot types.** Parametric + polar + implicit 2D; contour lines
   and hidden-surface handling in the 3D surface view.
 

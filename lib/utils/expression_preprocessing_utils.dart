@@ -621,18 +621,56 @@ class ExpressionPreprocessingUtils {
         i++;
         continue;
       }
-      final arg = expression.substring(match.end, j);
+      final argStr = expression.substring(match.end, j);
       final fn = appState.userFunctions[name]!;
-      final substituted = fn.body.replaceAll(
-        RegExp(r'(?<![a-zA-Z_])' +
-            RegExp.escape(fn.paramVar) +
-            r'(?![a-zA-Z_0-9])'),
-        '($arg)',
-      );
+      final args = _splitTopLevelArgs(argStr);
+      if (args.length != fn.arity) {
+        // Arity mismatch — leave the call untouched (an error surfaces
+        // downstream) rather than silently substituting wrong.
+        out.write(expression.substring(i, j + 1));
+        i = j + 1;
+        continue;
+      }
+      // Substitute all parameters simultaneously: replace each param
+      // token with a placeholder first, then fill placeholders. This
+      // avoids a just-substituted arg being re-matched as another
+      // parameter name (e.g. params [a, b], body `a + b`, call with
+      // arg containing `b`).
+      var substituted = fn.body;
+      for (var p = 0; p < fn.params.length; p++) {
+        substituted = substituted.replaceAll(
+          RegExp(r'(?<![a-zA-Z_])' +
+              RegExp.escape(fn.params[p]) +
+              r'(?![a-zA-Z_0-9])'),
+          '\u0000$p\u0001',
+        );
+      }
+      for (var p = 0; p < args.length; p++) {
+        substituted = substituted.replaceAll('\u0000$p\u0001', '(${args[p]})');
+      }
       out.write('($substituted)');
       i = j + 1;
     }
     return out.toString();
+  }
+
+  /// Split a user-function argument list on commas that are not nested
+  /// inside parentheses/brackets — so `f(g(a, b), c)` yields two args.
+  static List<String> _splitTopLevelArgs(String s) {
+    if (s.trim().isEmpty) return const [];
+    final parts = <String>[];
+    var depth = 0, start = 0;
+    for (var i = 0; i < s.length; i++) {
+      final c = s[i];
+      if (c == '(' || c == '[') depth++;
+      if (c == ')' || c == ']') depth--;
+      if (c == ',' && depth == 0) {
+        parts.add(s.substring(start, i).trim());
+        start = i + 1;
+      }
+    }
+    parts.add(s.substring(start).trim());
+    return parts;
   }
 
   static String _expandFunctions(
