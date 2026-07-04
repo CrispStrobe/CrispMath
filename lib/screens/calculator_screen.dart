@@ -10,6 +10,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 // Engine imports
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
+import '../engine/inequality_solver.dart';
 import '../engine/ocr_provider.dart';
 import '../engine/scan_cleanup.dart';
 import '../widgets/ocr_capture_dialog.dart';
@@ -1181,6 +1182,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
       } else if (_isFunctionCall(converted, 'linsolve') ||
           _isFunctionCall(converted, 'solvesys')) {
         result = await _handleLinsolveFunction(converted);
+      } else if (InequalitySolver.looksLikeInequality(converted) &&
+          RegExp(r'[a-zA-Z]').hasMatch(converted)) {
+        // `x^2 - 4 > 0` typed directly — route like bare equations are
+        // auto-wrapped in solve(). Must run BEFORE the bare-equation
+        // branch: `>=` contains `=` and would mis-split there.
+        final variable = ExpressionPreprocessingUtils.detectVariable(converted);
+        final preprocessedIneq =
+            ExpressionPreprocessingUtils.preprocessNativeExpression(
+                ExpressionPreprocessingUtils.preprocessExpression(
+                    converted, _appState));
+        result = _engine.solveInequality(preprocessedIneq, variable);
       } else if (_looksLikeBareEquation(converted)) {
         // `2x + 3 = 0`, `x^2 - 4 = 0`, etc. — anything with a `=` that
         // didn't match the assignment or function-def patterns above. Wrap
@@ -1424,6 +1436,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
         variable = parts[1].trim();
       } else {
         return 'Error: solve() format: solve(equation) or solve(equation, variable)';
+      }
+
+      if (InequalitySolver.looksLikeInequality(equation)) {
+        final preprocessedIneq =
+            ExpressionPreprocessingUtils.preprocessNativeExpression(
+                ExpressionPreprocessingUtils.preprocessExpression(
+                    equation, _appState));
+        return _engine.solveInequality(preprocessedIneq, variable);
       }
 
       if (equation.contains('=')) {

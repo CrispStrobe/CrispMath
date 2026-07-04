@@ -68,9 +68,10 @@ system solver, no inequality solver.
 - [x] **`linsolve`.** Landed 2026-07-04 alongside series:
   `linsolve(eq1; eq2, x, y)` (alias `solvesys`), exact symbolic
   solutions in symbol order, 3 corpus cases. Web parity same day.
-- [ ] **Fill the empty binary-function FFI table** in the bridge
-  (`symbolic_math_bridge_io.dart` — "none implemented in your C
-  wrapper"): atan2, log-base, nroot, …
+- [x] **Binary-function FFI table — closed as unnecessary.** The
+  SymEngine parser already handles atan2/log(x, b)/etc. through the
+  `evaluate` path, so dedicated FFI entry points add nothing. The
+  empty table stays as-is.
 - [ ] **Re-enable disabled backends** in math-stack: WITH_LLVM (fast
   repeated numeric eval for plotting), WITH_ARB (rigorous ball
   arithmetic). WITH_ECM/PRIMESIEVE only if the ~90-bit factorint cap
@@ -86,9 +87,11 @@ system solver, no inequality solver.
   linear, exact, Bernoulli. Second order: constant coefficients
   (homogeneous + undetermined coefficients). Pattern-based `dsolve`,
   step-by-step traces like the existing StepEngine.
-- [ ] **Polynomial inequality solving.** Root isolation (already
-  have) + sign analysis → interval answers:
-  `solve(x^2-4>0)` → `x < -2 ∨ x > 2`.
+- [x] **Polynomial inequality solving.** Landed 2026-07-04:
+  `solve(x^2-4>0)` → `x < -2 ∨ x > 2` (also bare input, unicode ≤/≥,
+  exact surd endpoints, ≠/point/ℝ/∅ cases). Exact roots via native
+  solve or SymbolicWeb + sign sampling — works on every platform.
+  `lib/engine/inequality_solver.dart`, 8 SymPy-certified corpus cases.
 - [~] **Identity simplification pass.** Core trig identities now
   handled NATIVELY (bridge 1.4.2 ships the C++ rewrite engine:
   Pythagorean, double angle, power reduction, secant form — it had

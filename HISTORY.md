@@ -2,6 +2,24 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 4) — Polynomial inequality solving (C3)
+
+`solve(x^2 - 4 > 0)` → `x < -2 ∨ x > 2` — new
+`lib/engine/inequality_solver.dart`: normalize to f(x) ⋚ 0, exact real
+roots (native SymEngine solve, or SymbolicWeb headless/web-fallback),
+sign sampling per interval, language-neutral rendering with exact
+endpoints (`x ≤ -sqrt(2) ∨ x ≥ sqrt(2)`), including the edge shapes
+`x ≠ 1` (strict double root), `x = 1` (non-strict double root),
+`x ∈ ℝ`, `x ∈ ∅`. Wired into `solve(...)` and bare input
+(`x^2-4>0` typed directly; routed before the bare-equation branch
+since `>=` contains `=`). Unicode ≤/≥ accepted.
+
+Corpus grew to **77 SymPy-certified cases** (8 inequality cases,
+verified against `solve_univariate_inequality` via a DSL→set parser
+in the verifier). 10 new unit tests. C2's "binary-function FFI table"
+item closed as unnecessary (SymEngine's parser already covers atan2
+etc. through evaluate).
+
 ## 2026-07-04 (cont. 3) — Web precision/number theory: already live, claims corrected
 
 Follow-up verification on production after the loader fix: the browser

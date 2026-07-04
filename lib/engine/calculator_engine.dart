@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'matrix_evaluator.dart';
+import 'inequality_solver.dart';
 import 'numeric_fallback.dart';
 import 'numerical.dart';
 import 'polynomial.dart';
@@ -1105,6 +1106,12 @@ class CalculatorEngine {
     if (n < 0) return 'Error: fibonacci requires non-negative integer';
     return _bridgeCall('fibonacci', (b) => b.fibonacci(n));
   }
+
+  /// Polynomial inequality solving (roadmap C3):
+  /// `solveInequality('x^2 - 4 > 0', 'x')` -> `x < -2 ∨ x > 2`.
+  /// Pure Dart (sign sampling over exact roots); works on all platforms.
+  String solveInequality(String inequality, String variable) =>
+      InequalitySolver.solve(this, inequality, variable);
 
   /// Taylor/Maclaurin series of [expression] in [variable] about [point],
   /// truncated at [order] terms (roadmap C2). Native-only: SymEngine C++
