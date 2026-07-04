@@ -2,6 +2,28 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 15) — Discoverability of the new CAS features
+
+An audit found the session's new features were nearly invisible: the
+worked-examples gallery had ZERO entries for any of them, four had no
+function-reference example, and the DE/FR/ES dsolve descriptions were
+stale (constant-coefficient only). Fixed:
+
+- **7 worked-examples** (gallery is a primary discovery surface): 2nd-order
+  ODE, separable ODE, Taylor series, Rothstein–Trager log integral,
+  quadratic inequality, piecewise selection, linear system — each with
+  DE/FR/ES title + description (strict localization test enforces all 3).
+- **Reference examples**: inequality case added to `solve`
+  (solve(x²-4>0) → x<-2 ∨ x>2), rational/Rothstein–Trager case rewritten
+  under `integrate`, each with DE/FR/ES hints.
+- **Stale locales fixed**: DE/FR/ES dsolve short descriptions now cover
+  the whole first-order syllabus (separable / linear / Bernoulli / exact)
+  plus 2nd-order, matching the English entry.
+
+Full suite 4011 green. (Plot modes and piecewise UDFs already have real
+UI affordances — the segmented selector and the Functions dialog — so
+they needed no extra surfacing.)
+
 ## 2026-07-04 (cont. 14) — Piecewise UDF bodies (C5.4)
 
 User-defined functions can now have piecewise bodies:

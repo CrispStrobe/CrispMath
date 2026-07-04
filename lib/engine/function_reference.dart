@@ -162,6 +162,15 @@ class FunctionReferences {
               'further calls (e.g. `expand((-I)*(I))`) and the bridge keeps '
               'them symbolic.',
         ),
+        FunctionRefExample(
+          input: 'solve(x^2 - 4 > 0)',
+          expected: 'x < -2 ∨ x > 2',
+          hint: 'Polynomial INEQUALITIES are solved too: the roots split the '
+              'line into intervals and each interval\'s sign decides '
+              'membership. Also handles ≤/≥, exact surd endpoints '
+              '(x ≤ -sqrt(2) ∨ x ≥ sqrt(2)), and the ≠ / single-point / '
+              'ℝ / ∅ cases. Works even without the native engine.',
+        ),
       ],
       seeAlso: ['expand', 'factor', 'simplify'],
       workedExampleId: 'quadraticFormula',
@@ -314,9 +323,14 @@ class FunctionReferences {
         ),
         FunctionRefExample(
           input: 'integrate(1/(x^2 - 1), x)',
-          expected: '-log(x + 1)/2 + log(x - 1)/2',
-          hint: 'Partial fractions: 1/(x²-1) = 1/(2(x-1)) - 1/(2(x+1)). '
-              'SymEngine handles the cover-up automatically.',
+          expected: '1/2*log(x - 1) - 1/2*log(x + 1)',
+          hint: 'Rational functions integrate EXACTLY: partial fractions over '
+              'linear + quadratic factors give log / atan terms '
+              '(1/(x²+1) → atan(x)), Hermite reduction handles repeated '
+              'factors, and Rothstein–Trager covers log-derivative numerators '
+              'even over irreducible cubics — ∫(3x²+1)/(x³+x+1) = '
+              'log(x³+x+1). All in exact rational arithmetic, on every '
+              'platform.',
         ),
       ],
       seeAlso: ['diff', 'limit', 'subst'],

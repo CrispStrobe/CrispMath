@@ -80,6 +80,35 @@ class WorkedExamples {
       description: '∫ 1/(x² − 1) dx via cover-up on x = ±1.',
       expression: 'integrate(1/(x^2 - 1), x)',
     ),
+    WorkedExample(
+      id: 'dsolveSecondOrder',
+      category: WorkedExampleCategory.calculus,
+      title: 'Second-order linear ODE',
+      description: "y'' + 3y' + 2y = 0 via the characteristic roots −1, −2.",
+      expression: "dsolve(y'' + 3*y' + 2*y = 0)",
+    ),
+    WorkedExample(
+      id: 'dsolveSeparable',
+      category: WorkedExampleCategory.calculus,
+      title: 'Separable first-order ODE',
+      description: "y' = x·y separates to ∫dy/y = ∫x dx → C·e^(x²/2).",
+      expression: "dsolve(y' = x*y)",
+    ),
+    WorkedExample(
+      id: 'taylorSine',
+      category: WorkedExampleCategory.calculus,
+      title: 'Taylor series of sine',
+      description: 'sin(x) about 0 to 7 terms — odd powers, (−1)^k/(2k+1)!.',
+      expression: 'taylor(sin(x), x, 0, 7)',
+    ),
+    WorkedExample(
+      id: 'rationalLogIntegral',
+      category: WorkedExampleCategory.calculus,
+      title: 'Logarithmic integral (Rothstein–Trager)',
+      description: '∫ (3x² + 1)/(x³ + x + 1) dx = log(x³ + x + 1) — the '
+          'numerator is the denominator\'s derivative.',
+      expression: 'integrate((3*x^2 + 1)/(x^3 + x + 1), x)',
+    ),
 
     // === Algebra =============================================================
     WorkedExample(
@@ -133,6 +162,22 @@ class WorkedExamples {
           '(x + 1)⁴ over 𝔽₂.',
       expression: 'polyfactor(x^4 + 1, mod=2)',
     ),
+    WorkedExample(
+      id: 'quadraticInequality',
+      category: WorkedExampleCategory.algebra,
+      title: 'Quadratic inequality',
+      description: 'solve x² − 4 > 0 → x < −2 ∨ x > 2 (sign analysis on the '
+          'intervals between the roots).',
+      expression: 'solve(x^2 - 4 > 0)',
+    ),
+    WorkedExample(
+      id: 'piecewiseSelect',
+      category: WorkedExampleCategory.algebra,
+      title: 'Piecewise selection',
+      description: 'piecewise(cond, val, …) picks the first true branch — the '
+          'basis for piecewise user-defined functions.',
+      expression: 'piecewise(3 > 0, 1, -1)',
+    ),
 
     // === Linear algebra ======================================================
     WorkedExample(
@@ -155,6 +200,14 @@ class WorkedExamples {
       title: 'Reduced row echelon form',
       description: 'rref of a 2×3 augmented system.',
       expression: 'rref(Matrix([[1, 2, 5], [3, 4, 11]]))',
+    ),
+    WorkedExample(
+      id: 'linsolveSystem',
+      category: WorkedExampleCategory.linearAlgebra,
+      title: 'Solve a linear system',
+      description: 'x + y = 3, x − y = 1 → x = 2, y = 1 (exact symbolic '
+          'linsolve).',
+      expression: 'linsolve(x + y = 3; x - y = 1, x, y)',
     ),
 
     // === Number theory =======================================================
