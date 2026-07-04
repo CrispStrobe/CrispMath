@@ -102,9 +102,11 @@ system solver, no inequality solver.
   education case p = k/x (μ = x^k). Bernoulli
   y' + p·y = q·y^n (n≥2) also landed: v = y^(1-n) reduction to the
   linear/constant path via a recursive solve(), giving explicit forms
-  (y' + y = y^2 → y = 1/(C1*exp(x) + 1); n=3 → 1/sqrt(…)). Still open:
-  exact ODEs, non-elementary integrating factors (p polynomial), trig
-  resonance, step-by-step traces.
+  (y' + y = y^2 → y = 1/(C1*exp(x) + 1); n=3 → 1/sqrt(…)). Exact ODEs also
+  landed: M(x,y) + N(x,y)·y' = 0 with ∂M/∂y = ∂N/∂x → the implicit
+  potential F(x,y) = C1 (bivariate term-map arithmetic). Still open:
+  non-elementary integrating factors (p polynomial), trig resonance,
+  step-by-step traces.
 - [x] **Polynomial inequality solving.** Landed 2026-07-04:
   `solve(x^2-4>0)` → `x < -2 ∨ x > 2` (also bare input, unicode ≤/≥,
   exact surd endpoints, ≠/point/ℝ/∅ cases). Exact roots via native
@@ -138,6 +140,27 @@ decision-procedure integrator (Risch), Gröbner-basis general
 polynomial-system solving, and a full assumptions facility. These are
 multi-year CAS-team projects; for queries beyond the local engine,
 CrispAssist remains the escape hatch (as verifier/frontend).
+
+### C5 — Remaining worklist (ordered, agreed 2026-07-04)
+
+The user's chosen order for finishing the roadmap. Do them in sequence;
+each ships as its own arc (feature branch → SymPy-certified corpus /
+tests → full suite → merge → CI green) from `~/code/CrispCalc-local`.
+
+1. [x] **Exact ODEs.** Landed 2026-07-04. `M + N·y' = 0` with
+   ∂M/∂y = ∂N/∂x → implicit potential `F(x,y) = C1`, all on a bivariate
+   term map (exact ℚ arithmetic, no engine round-trips). Corpus verifier
+   generalized to a total-derivative check for implicit solutions.
+2. [ ] **Plot types.** Parametric `(x(t), y(t))`, polar `r(θ)`, and
+   implicit `F(x,y) = 0` (marching squares) in the graphing screen —
+   mode selector + painters. Biggest user-visible win.
+3. [ ] **LRT.** Lazard–Rioboo–Trager for irreducible rational-integrand
+   factors of degree ≥ 3 (resultant-based log part) — makes rational
+   integration total. Hard; RootSum-style output.
+4. [ ] **Piecewise UDF bodies.** `piecewise(cond, val, …)` evaluated at
+   call time — needs evaluation-time conditionals (the current
+   preprocessor-inline model doesn't fit), so this one carries the most
+   design risk.
 
 ---
 

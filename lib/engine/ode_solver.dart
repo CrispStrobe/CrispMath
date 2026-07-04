@@ -47,6 +47,8 @@ class OdeSolver {
         continue;
       }
       if (y.coeff == null) {
+        final exact = _tryExact(lhs, rhs);
+        if (exact != null) return exact;
         final bern = _tryBernoulli(engine, lhs, rhs);
         if (bern != null) return bern;
         final lin = _tryLinearFirstOrder(engine, lhs, rhs);
@@ -330,7 +332,9 @@ class OdeSolver {
 
   static Rational? _parseRationalToken(String s) {
     final p = Polynomial.tryParse(_unwrap(s));
-    if (p == null || p.degree != 0) return null;
+    if (p == null) return null;
+    if (p.isZero) return Rational.zero; // zero poly has degree -1
+    if (p.degree != 0) return null;
     return p.coeffs[0];
   }
 
@@ -509,6 +513,204 @@ class OdeSolver {
   // y), so any rational g(y) works. Explicit solutions for the classic
   // shapes g = y (→ C1·e^F, with c·log(u) collapsed to u^c), g = y²,
   // g = 1/y; implicit "H(y) = F(x) + C1" otherwise.
+
+  // --- exact: M(x,y) dx + N(x,y) dy = 0  (∂M/∂y = ∂N/∂x) ------------------
+  //
+  // Input as the differential form  M + N·y' = 0  (rhs moved over), with
+  // M, N polynomials in x and y (sums of monomials, no nested parens).
+  // If ∂M/∂y = ∂N/∂x the equation is exact and there is a potential
+  // F with ∂F/∂x = M, ∂F/∂y = N; F = ∫M dx + ∫(N − ∂(∫M dx)/∂y) dy, and
+  // the general solution is the implicit relation F(x, y) = C1.
+  //
+  // Everything runs on a bivariate term map {(i, j): coeff for x^i·y^j},
+  // so exactness, the two integrals, and the y-partial are all exact
+  // rational arithmetic with no engine round-trips.
+  static String? _tryExact(String lhs, String rhs) {
+    final m = <(int, int), Rational>{}; // M(x, y)
+    final nn = <(int, int), Rational>{}; // N(x, y)
+
+    for (final (term, sign) in [
+      ..._terms(lhs).map((t) => (t.$1, t.$2)),
+      ..._terms(rhs).map((t) => (t.$1, -t.$2)),
+    ]) {
+      final t = term.replaceAll(' ', '');
+      if (t == '0' || t.isEmpty) continue; // no contribution
+      if (t.contains("y''")) return null;
+      if (t.contains("y'")) {
+        final coeff = _stripYPrime(t);
+        if (coeff == null) return null;
+        final parsed = _parseBivariate(coeff);
+        if (parsed == null) return null;
+        _accumulate(nn, parsed, sign);
+      } else {
+        final parsed = _parseBivariate(t);
+        if (parsed == null) return null;
+        _accumulate(m, parsed, sign);
+      }
+    }
+    // ignore: avoid_print
+    print('EXACT m=\$m n=\$nn dYm=\${_dY(m)} dXn=\${_dX(nn)}');
+    if (m.isEmpty || nn.isEmpty) return null;
+
+    // Exactness: ∂M/∂y == ∂N/∂x.
+    if (!_bivEqual(_dY(m), _dX(nn))) return null;
+
+    // F = ∫M dx + ∫(N − ∂(∫M dx)/∂y) dy.
+    final intMdx = _intX(m);
+    final gPrime = _bivSub(nn, _dY(intMdx));
+    // gPrime must be a function of y only (all x-exponents zero) — it is,
+    // when the equation is exact, but guard anyway.
+    for (final k in gPrime.keys) {
+      if (k.$1 != 0) return null;
+    }
+    final gy = _intY(gPrime);
+    final f = _bivAdd(intMdx, gy);
+    return '${_renderBivariate(f)} = C1';
+  }
+
+  /// Strip a trailing `*y'` (or bare `y'`) and return the coefficient
+  /// string, or null if y' appears in a non-coefficient position.
+  static String? _stripYPrime(String t) {
+    final idx = t.indexOf("y'");
+    var pre = t.substring(0, idx);
+    final post = t.substring(idx + 2);
+    if (post.isNotEmpty) return null;
+    if (pre.endsWith('*')) pre = pre.substring(0, pre.length - 1);
+    return pre.isEmpty ? '1' : _unwrap(pre);
+  }
+
+  /// Parse a sum of x/y monomials into {(i, j): coeff}. Rejects nested
+  /// parens, other variables, and non-constant denominators.
+  static Map<(int, int), Rational>? _parseBivariate(String expr) {
+    final out = <(int, int), Rational>{};
+    final e = _unwrap(expr);
+    if (e.contains('(') || e.contains(')')) return null;
+    for (final (term, sign) in _terms(e)) {
+      final mono = _parseMonomial(term.replaceAll(' ', ''));
+      if (mono == null) return null;
+      final key = (mono.$1, mono.$2);
+      final c = sign < 0 ? -mono.$3 : mono.$3;
+      out[key] = (out[key] ?? Rational.zero) + c;
+    }
+    out.removeWhere((_, v) => v.isZero);
+    return out;
+  }
+
+  /// One monomial → (xExp, yExp, coeff), or null.
+  static (int, int, Rational)? _parseMonomial(String t) {
+    var xExp = 0, yExp = 0;
+    var coeff = Rational.one;
+    for (var factor in t.split('*')) {
+      if (factor.isEmpty) continue;
+      final xm = RegExp(r'^x(?:\^(\d+))?$').firstMatch(factor);
+      final ym = RegExp(r'^y(?:\^(\d+))?$').firstMatch(factor);
+      if (xm != null) {
+        xExp += xm.group(1) == null ? 1 : int.parse(xm.group(1)!);
+      } else if (ym != null) {
+        yExp += ym.group(1) == null ? 1 : int.parse(ym.group(1)!);
+      } else {
+        final r = _parseRationalToken(factor);
+        if (r == null) return null; // unknown variable / function
+        coeff = coeff * r;
+      }
+    }
+    return (xExp, yExp, coeff);
+  }
+
+  static void _accumulate(
+      Map<(int, int), Rational> into, Map<(int, int), Rational> add, int sign) {
+    add.forEach((k, v) {
+      final c = sign < 0 ? -v : v;
+      into[k] = (into[k] ?? Rational.zero) + c;
+    });
+    into.removeWhere((_, v) => v.isZero);
+  }
+
+  static Map<(int, int), Rational> _dY(Map<(int, int), Rational> p) {
+    final out = <(int, int), Rational>{};
+    p.forEach((k, v) {
+      if (k.$2 >= 1) out[(k.$1, k.$2 - 1)] = v * Rational.fromInt(k.$2);
+    });
+    return out;
+  }
+
+  static Map<(int, int), Rational> _dX(Map<(int, int), Rational> p) {
+    final out = <(int, int), Rational>{};
+    p.forEach((k, v) {
+      if (k.$1 >= 1) out[(k.$1 - 1, k.$2)] = v * Rational.fromInt(k.$1);
+    });
+    return out;
+  }
+
+  static Map<(int, int), Rational> _intX(Map<(int, int), Rational> p) {
+    final out = <(int, int), Rational>{};
+    p.forEach((k, v) {
+      out[(k.$1 + 1, k.$2)] = v / Rational.fromInt(k.$1 + 1);
+    });
+    return out;
+  }
+
+  static Map<(int, int), Rational> _intY(Map<(int, int), Rational> p) {
+    final out = <(int, int), Rational>{};
+    p.forEach((k, v) {
+      out[(k.$1, k.$2 + 1)] = v / Rational.fromInt(k.$2 + 1);
+    });
+    return out;
+  }
+
+  static Map<(int, int), Rational> _bivAdd(
+      Map<(int, int), Rational> a, Map<(int, int), Rational> b) {
+    final out = Map<(int, int), Rational>.from(a);
+    b.forEach((k, v) => out[k] = (out[k] ?? Rational.zero) + v);
+    out.removeWhere((_, v) => v.isZero);
+    return out;
+  }
+
+  static Map<(int, int), Rational> _bivSub(
+      Map<(int, int), Rational> a, Map<(int, int), Rational> b) {
+    final out = Map<(int, int), Rational>.from(a);
+    b.forEach((k, v) => out[k] = (out[k] ?? Rational.zero) - v);
+    out.removeWhere((_, v) => v.isZero);
+    return out;
+  }
+
+  static bool _bivEqual(
+      Map<(int, int), Rational> a, Map<(int, int), Rational> b) {
+    if (a.length != b.length) return false;
+    for (final e in a.entries) {
+      if (b[e.key] != e.value) return false;
+    }
+    return true;
+  }
+
+  /// Render {(i, j): c} as "c*x^i*y^j + …" in descending (i+j, i) order.
+  static String _renderBivariate(Map<(int, int), Rational> p) {
+    if (p.isEmpty) return '0';
+    final keys = p.keys.toList()
+      ..sort((a, b) {
+        final da = a.$1 + a.$2, db = b.$1 + b.$2;
+        if (da != db) return db - da;
+        return b.$1 - a.$1;
+      });
+    final parts = <String>[];
+    for (final k in keys) {
+      final c = p[k]!;
+      final mag = c.abs;
+      final factors = <String>[];
+      if (mag != Rational.one || (k.$1 == 0 && k.$2 == 0)) {
+        factors.add(_fmt(mag));
+      }
+      if (k.$1 > 0) factors.add(k.$1 == 1 ? 'x' : 'x^${k.$1}');
+      if (k.$2 > 0) factors.add(k.$2 == 1 ? 'y' : 'y^${k.$2}');
+      final term = factors.join('*');
+      if (parts.isEmpty) {
+        parts.add(c.sign < 0 ? '-$term' : term);
+      } else {
+        parts.add(c.sign < 0 ? '- $term' : '+ $term');
+      }
+    }
+    return parts.join(' ');
+  }
 
   // --- Bernoulli: y' + p(x)·y = q(x)·y^n  (n ≠ 0, 1) ----------------------
   //

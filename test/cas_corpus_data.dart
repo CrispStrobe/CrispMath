@@ -1179,7 +1179,7 @@ const String kCasCorpusJson = '''
       "id": "dsolve_sep_reciprocal_sq",
       "op": "dsolve",
       "input": "y' = -y^2",
-      "expected": "y = -1/(-x + C1)",
+      "expected": "y = 1/(C1 + x)",
       "runners": [
         "dart",
         "native"
@@ -1257,6 +1257,39 @@ const String kCasCorpusJson = '''
       "op": "dsolve",
       "input": "y' + 2*y = y^3",
       "expected": "y = 1/sqrt(C1*exp(4*x) + 1/2)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_exact_symmetric",
+      "op": "dsolve",
+      "input": "(2*x + y) + (x + 2*y)*y' = 0",
+      "expected": "x^2 + x*y + y^2 = C1",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_exact_mixed",
+      "op": "dsolve",
+      "input": "(2*x*y + 3) + (x^2 - 1)*y' = 0",
+      "expected": "x^2*y + 3*x - y = C1",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_exact_cubic",
+      "op": "dsolve",
+      "input": "(3*x^2 + 2*y) + (2*x + 4*y)*y' = 0",
+      "expected": "x^3 + 2*x*y + 2*y^2 = C1",
       "runners": [
         "dart",
         "native"

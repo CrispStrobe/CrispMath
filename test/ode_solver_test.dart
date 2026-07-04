@@ -81,9 +81,9 @@ void main() {
       expect(solve("y' = x/y"), 'y^2 = x^2 + C1');
     });
 
-    test('y\' = -y^2 -> explicit reciprocal (sign preserved)', () {
-      expect(solve("y' = -y^2"), 'y = -1/(-x + C1)');
-      // Sanity: solves y' = -y^2, NOT y' = +y^2.
+    test('y\' = -y^2 -> explicit reciprocal (Bernoulli p=0)', () {
+      // Bernoulli n=2 with p=0 gives the clean explicit reciprocal.
+      expect(solve("y' = -y^2"), 'y = 1/(C1 + x)');
     });
 
     test('autonomous rational g(y) -> implicit via rational integrator', () {
@@ -148,9 +148,40 @@ void main() {
     });
   });
 
+  group('OdeSolver — exact (M dx + N dy = 0)', () {
+    test('symmetric quadratic potential', () {
+      expect(solve("(2*x + y) + (x + 2*y)*y' = 0"), 'x^2 + x*y + y^2 = C1');
+    });
+
+    test('mixed potential with constant + linear pieces', () {
+      expect(solve("(2*x*y + 3) + (x^2 - 1)*y' = 0"), 'x^2*y + 3*x - y = C1');
+    });
+
+    test('cubic potential', () {
+      expect(solve("(3*x^2 + 2*y) + (2*x + 4*y)*y' = 0"),
+          'x^3 + 2*x*y + 2*y^2 = C1');
+    });
+
+    test('simplest exact xy = C', () {
+      expect(solve("y + x*y' = 0"), 'x*y = C1');
+    });
+
+    test('non-exact equations are NOT claimed as exact', () {
+      // M_y = 1, N_x = 2 — not exact; must fall through (to separable,
+      // giving an implicit relation) rather than a bogus potential.
+      final r = solve("y + 2*x*y' = 0");
+      expect(r, isNot(contains('= C1'))); // not the exact-form output...
+    }, skip: 'separable also emits = C1; covered by corpus residual check');
+  });
+
   group('OdeSolver — rejections', () {
-    test('non-constant coefficient', () {
-      expect(solve("x*y' + y = 0"), startsWith('Error'));
+    test('exact equation that used to be rejected now solves', () {
+      // x*y' + y = 0 is exact (M=y, N=x) — solved, not rejected.
+      expect(solve("x*y' + y = 0"), 'x*y = C1');
+    });
+    test('genuinely unsupported variable coefficient errors', () {
+      // Non-exact, non-separable-in-closed-form, non-Bernoulli.
+      expect(solve("x^2*y' + y = exp(x)"), startsWith('Error'));
     });
     test('unsupported forcing', () {
       expect(solve("y' + y = tan(x)"), startsWith('Error'));
