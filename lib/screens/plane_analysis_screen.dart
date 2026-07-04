@@ -123,7 +123,7 @@ class _PlaneAnalysisScreenState extends State<PlaneAnalysisScreen> {
   }
 
   static String _fmt(double v) {
-    if ((v - v.roundToDouble()).abs() < 1e-9) return v.toInt().toString();
+    if ((v - v.roundToDouble()).abs() < 1e-9) return v.round().toString();
     return v
         .toStringAsPrecision(6)
         .replaceAll(RegExp(r'0+$'), '')

@@ -1112,7 +1112,7 @@ class NotepadEvaluator {
 
   static String _formatAggregate(double v) {
     if ((v - v.roundToDouble()).abs() < 1e-9 && v.abs() < 1e15) {
-      return v.toInt().toString();
+      return v.round().toString();
     }
     final s = v.toStringAsPrecision(10);
     return s.contains('.')

@@ -127,7 +127,7 @@ class _ConicSectionScreenState extends State<ConicSectionScreen> {
   }
 
   static String _fmt(double v) {
-    if ((v - v.roundToDouble()).abs() < 1e-9) return v.toInt().toString();
+    if ((v - v.roundToDouble()).abs() < 1e-9) return v.round().toString();
     return v
         .toStringAsPrecision(6)
         .replaceAll(RegExp(r'0+$'), '')

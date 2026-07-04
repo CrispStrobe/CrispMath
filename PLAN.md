@@ -21,6 +21,93 @@ with a 2026 input surface."
 
 ---
 
+## CAS depth roadmap (July 2026)
+
+Goal: close the gap between CrispCalc's symbolic core and what users
+of professional CAS software expect. The breadth story (units, dates,
+stats, number theory, linear algebra, plotting, notepad) is already
+competitive; the depth gaps are simplification, integration, series,
+ODEs, systems, and inequalities. Ordered stages C1–C4 (numbering kept
+separate from the app-worklist tiers below).
+
+**Ground truth (verified 2026-07-04).** `simplify` and `factor` are
+*real* since bridge `59ba08c` / math-stack `9b4b3c0c`: simplify =
+SymEngine `simplify()` + univariate rational cancellation; factor =
+FLINT `fmpz_poly_factor` (univariate ℤ) + `fmpz_mpoly_factor`
+(multivariate, native only — aborts under wasm32, gated). `integrate`
+never touches SymEngine (no C-API binding; the engine-side
+implementation is the pure-Dart StepEngine rule walker + Simpson
+fallback). No series/taylor binding, no ODE solver, no symbolic
+system solver, no inequality solver.
+
+### C1 — Truthfulness + verified regression corpus
+
+- [x] **Stale-claim sweep.** Code comments describing simplify/factor
+  as expand-aliases updated to the real wrapper behavior (2026-07-04).
+- [x] **CAS regression corpus.** 58 expression → operation → expected
+  cases, every expected value certified by an independent open-source
+  CAS (`tool/cas_corpus_verify.py`, SymPy). Two runners: pure-Dart
+  subset in `flutter test`, full corpus against native SymEngine via
+  `integration_test/cas_corpus_native_test.dart -d macos`. Found and
+  fixed two real bugs on day one (near-integer truncation in 7 result
+  formatters; SymbolicLimit blind to complex-formatted evaluate
+  output). Known gaps are enforced expected-failures (`knownGap`).
+  Details in HISTORY.md 2026-07-04.
+- [ ] **Honest capability signaling.** Where an operation returns a
+  weaker-than-asked result (e.g. simplify can't reduce trig
+  identities), the UI/docs must say so rather than imply success.
+
+### C2 — Bind what SymEngine already has (needs xcframework rebuild)
+
+- [ ] **`series` / `taylor`.** SymEngine C++ has FLINT-backed
+  univariate series expansion; expose it through the C wrapper +
+  bridge + engine + function reference. Highest-value single binding.
+- [ ] **`linsolve`.** Symbolic linear-system solving exists in
+  SymEngine C++; binding it gives `solvesys([...], [x,y])` without
+  writing new mathematics.
+- [ ] **Fill the empty binary-function FFI table** in the bridge
+  (`symbolic_math_bridge_io.dart` — "none implemented in your C
+  wrapper"): atan2, log-base, nroot, …
+- [ ] **Re-enable disabled backends** in math-stack: WITH_LLVM (fast
+  repeated numeric eval for plotting), WITH_ARB (rigorous ball
+  arithmetic). WITH_ECM/PRIMESIEVE only if the ~90-bit factorint cap
+  starts to bite.
+
+### C3 — Grow the pure-Dart mathematics (no native rebuild)
+
+- [ ] **Rational-function integration** (Hermite reduction +
+  Lazard–Rioboo–Trager on the exact `Rational`/`Polynomial` stack).
+  Complete algorithm for a whole input class; composes with the
+  existing rule walker.
+- [ ] **ODE solving, education subset.** First order: separable,
+  linear, exact, Bernoulli. Second order: constant coefficients
+  (homogeneous + undetermined coefficients). Pattern-based `dsolve`,
+  step-by-step traces like the existing StepEngine.
+- [ ] **Polynomial inequality solving.** Root isolation (already
+  have) + sign analysis → interval answers:
+  `solve(x^2-4>0)` → `x < -2 ∨ x > 2`.
+- [ ] **Identity simplification pass** layered over engine output:
+  Pythagorean/angle trig identities, log/exp rules, radical
+  denesting. Pure Dart, since the native core won't do this well.
+
+### C4 — Platform + surface parity
+
+- [ ] **Arbitrary precision on web.** MPFR/FLINT compile under
+  Emscripten; extend the WASM build so `evalf`/number theory stop
+  being native-only.
+- [ ] **User-defined functions V2.** Multi-letter names, multiple
+  parameters, piecewise; today UDFs are single-letter/single-arg.
+- [ ] **Plot types.** Parametric + polar + implicit 2D; contour lines
+  and hidden-surface handling in the 3D surface view.
+
+**Non-goals** (documented so nobody starts them casually): a complete
+decision-procedure integrator (Risch), Gröbner-basis general
+polynomial-system solving, and a full assumptions facility. These are
+multi-year CAS-team projects; for queries beyond the local engine,
+CrispAssist remains the escape hatch (as verifier/frontend).
+
+---
+
 ## Open work items (priority order)
 
 ### Tier 1 — Ship blockers
