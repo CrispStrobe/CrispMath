@@ -67,6 +67,38 @@ void main() {
     });
   });
 
+  group('OdeSolver — separable / variable coefficients', () {
+    test('linear variable coefficient -> exp of integral', () {
+      expect(solve("y' = x*y"), 'y = C1*exp(1/2*x^2)');
+    });
+
+    test('power law: y\' = 2*y/x -> C1*x^2', () {
+      expect(solve("y' = 2*y/x"), 'y = C1*x^2');
+      expect(solve("y' = y/x"), 'y = C1*x');
+    });
+
+    test('y\' = x/y -> implicit parabola family', () {
+      expect(solve("y' = x/y"), 'y^2 = x^2 + C1');
+    });
+
+    test('y\' = -y^2 -> explicit reciprocal (sign preserved)', () {
+      expect(solve("y' = -y^2"), 'y = -1/(-x + C1)');
+      // Sanity: solves y' = -y^2, NOT y' = +y^2.
+    });
+
+    test('autonomous rational g(y) -> implicit via rational integrator', () {
+      final r = solve("y' = y*(1 - y)");
+      expect(r, isNotNull);
+      expect(r, contains('log'));
+      // k = -1 moves to the x side: -log(y) + log(y - 1) = -x + C1.
+      expect(r, contains('= -x + C1'));
+    });
+
+    test('scaled reciprocal: y\' = x/(2*y)', () {
+      expect(solve("y' = x/(2*y)"), 'y^2 = 1/2*x^2 + C1');
+    });
+  });
+
   group('OdeSolver — rejections', () {
     test('non-constant coefficient', () {
       expect(solve("x*y' + y = 0"), startsWith('Error'));

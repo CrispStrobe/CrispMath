@@ -18,6 +18,7 @@
 
 import 'calculator_engine.dart';
 import 'polynomial.dart';
+import 'rational_integrator.dart';
 
 class OdeSolver {
   /// Solve an ODE given as an equation string, e.g. "y'' + 3*y' + 2*y = 0".
@@ -46,6 +47,8 @@ class OdeSolver {
         continue;
       }
       if (y.coeff == null) {
+        final sep = _trySeparable(engine, lhs, rhs);
+        if (sep != null) return sep;
         return 'Error: dsolve supports constant coefficients only '
             '(term "$term")';
       }
@@ -83,6 +86,8 @@ class OdeSolver {
       }
     }
     if (q == null) {
+      final sep = _trySeparable(engine, lhs, rhs);
+      if (sep != null) return sep;
       return 'Error: dsolve supports polynomial, exp and sin/cos '
           'right-hand sides';
     }
@@ -447,7 +452,7 @@ class OdeSolver {
       if (i == 0) {
         term = _fmt(mag);
       } else {
-        final x = i == 1 ? 'x' : 'x^$i';
+        final x = i == 1 ? p.variable : '${p.variable}^$i';
         term = mag == Rational.one ? x : '${_fmt(mag)}*$x';
       }
       if (parts.isEmpty) {
@@ -490,6 +495,196 @@ class OdeSolver {
     }
     return x;
   }
+
+  // --- separable / variable-coefficient first order -----------------------
+  //
+  // Textbook explicit form only: the input must literally be  y' = RHS.
+  // RHS is factored at the top level into x-only and y-only parts:
+  //   y' = f(x)·g(y)  →  ∫ dy/g(y) = ∫ f(x) dx
+  // The y-side integral runs through the exact rational integrator (in
+  // y), so any rational g(y) works. Explicit solutions for the classic
+  // shapes g = y (→ C1·e^F, with c·log(u) collapsed to u^c), g = y²,
+  // g = 1/y; implicit "H(y) = F(x) + C1" otherwise.
+
+  static String? _trySeparable(
+      CalculatorEngine engine, String lhs, String rhs) {
+    if (lhs.replaceAll(' ', '') != "y'") return null;
+    final split = _splitFactors(rhs.replaceAll(' ', ''));
+    if (split == null) return null;
+    final (yNumRaw, yDenRaw, xParts) = split;
+    if (yNumRaw.degree == 0 && yDenRaw.degree == 0) {
+      return null; // no y — upstream
+    }
+
+    // Move the y-polynomials' constant content into the x-side factor:
+    // g = k·(yN/yD) with yN, yD monic — otherwise a constant hidden in
+    // the y-part (e.g. y' = -y^2) would flip the solution family.
+    final k = yNumRaw.leading / yDenRaw.leading;
+    final yNum = yNumRaw.monic();
+    final yDen = yDenRaw.monic();
+
+    // f(x) as a string (may be '1'), then F(x) = k·∫ f dx.
+    final f = _composeX(xParts, yNum, yDen);
+    final fx = _integrateX(engine, f, k);
+    if (fx == null) return null;
+
+    // g(y) = yNum/yDen (constants folded in). ∫ yDen/yNum dy:
+    if (yDen.degree == 0 && yNum.degree == 1 && yNum.coeffs[0].isZero) {
+      // g = k·y  →  y = C1·exp(F/k-scaled) — the k is already inside f.
+      return 'y = ${_expSolution(fx)}';
+    }
+    if (yDen.degree == 0 &&
+        yNum.degree == 2 &&
+        yNum.coeffs[0].isZero &&
+        yNum.coeffs[1].isZero) {
+      // g = k·y²  →  −1/y = F + C1  →  y = −1/(F + C1).
+      return 'y = -1/($fx + C1)';
+    }
+    if (yNum.degree == 0 && yDen.degree == 1 && yDen.coeffs[0].isZero) {
+      // g = k/y  →  y²/2 = F + C  →  y² = 2F + C1.
+      final doubled = _doubleExpr(fx);
+      return 'y^2 = $doubled + C1';
+    }
+    // General rational g: implicit  ∫ yDen/yNum dy = F + C1.
+    final h = RationalIntegrator.integrate(
+        engine, '(${_polyStr(yDen)})/(${_polyStr(yNum)})', 'y');
+    if (h == null) return null;
+    return '$h = $fx + C1';
+  }
+
+  /// Split RHS at top-level * and / into y-polynomial numerator and
+  /// denominator plus x-only factor strings (num/den kept via exponent
+  /// sign in the string composition).
+  static (Polynomial, Polynomial, List<(String, bool)>)? _splitFactors(
+      String s) {
+    var yNum = Polynomial.constant(Rational.one, 'y');
+    var yDen = Polynomial.constant(Rational.one, 'y');
+    final xParts = <(String, bool)>[]; // (factor, isDenominator)
+
+    var depth = 0, start = 0;
+    var isDen = false;
+    void take(String piece, bool den) {
+      var t = piece;
+      while (t.startsWith('(') && t.endsWith(')') && _wraps(t)) {
+        t = t.substring(1, t.length - 1);
+      }
+      if (t.isEmpty) return;
+      if (t.contains('y')) {
+        final poly = Polynomial.tryParse(t);
+        if (poly == null || (poly.degree > 0 && poly.variable != 'y')) {
+          throw const FormatException();
+        }
+        final asY = Polynomial.fromCoeffs(poly.coeffs, 'y');
+        if (den) {
+          yDen = yDen * asY;
+        } else {
+          yNum = yNum * asY;
+        }
+      } else {
+        xParts.add((t, den));
+      }
+    }
+
+    try {
+      for (var i = 0; i < s.length; i++) {
+        final ch = s[i];
+        if (ch == '(') depth++;
+        if (ch == ')') depth--;
+        if ((ch == '*' || ch == '/') && depth == 0) {
+          take(s.substring(start, i), isDen);
+          isDen = ch == '/';
+          start = i + 1;
+        }
+      }
+      take(s.substring(start), isDen);
+    } on FormatException {
+      return null;
+    }
+    return (yNum, yDen, xParts);
+  }
+
+  /// Compose the x-only part of f(x); constant factors of the y-polys
+  /// stay inside them and cancel through the integrals consistently.
+  static String _composeX(
+      List<(String, bool)> xParts, Polynomial yNum, Polynomial yDen) {
+    final nums = <String>[];
+    final dens = <String>[];
+    for (final (t, den) in xParts) {
+      (den ? dens : nums).add(t);
+    }
+    if (nums.isEmpty) nums.add('1');
+    final n = nums
+        .map((t) => t.contains('+') || t.contains('-') ? '($t)' : t)
+        .join('*');
+    if (dens.isEmpty) return n;
+    final d = dens
+        .map((t) =>
+            t.contains('+') || t.contains('-') || t.contains('*') ? '($t)' : t)
+        .join('*');
+    return '($n)/($d)';
+  }
+
+  /// ∫ f dx with deterministic rendering: polynomial via the exact poly
+  /// renderer, rational via RationalIntegrator, otherwise engine.integrate.
+  static String? _integrateX(CalculatorEngine engine, String f, Rational k) {
+    if (f == '1' && k == Rational.one) return 'x';
+    var t = f;
+    while (t.startsWith('(') && t.endsWith(')') && _wraps(t)) {
+      t = t.substring(1, t.length - 1);
+    }
+    final poly = Polynomial.tryParse(t);
+    if (poly != null && (poly.degree == 0 || poly.variable == 'x')) {
+      final integrated =
+          _integratePoly(Polynomial.fromCoeffs(poly.coeffs, 'x')).scale(k);
+      return _renderPoly(integrated);
+    }
+    // Fold k into the fraction's numerator — a textual 'k*(n/d)' prefix
+    // would defeat the rational integrator's top-level-/ parse.
+    String scaled;
+    if (k == Rational.one) {
+      scaled = f;
+    } else if (f.contains(')/(')) {
+      final i = f.indexOf(')/(');
+      final n = f.substring(1, i);
+      final d = f.substring(i + 3, f.length - 1);
+      scaled = '(${_fmt(k)}*($n))/($d)';
+    } else {
+      scaled = '${_fmt(k)}*($f)';
+    }
+    final rational = RationalIntegrator.integrate(engine, scaled, 'x');
+    if (rational != null) return rational;
+    final anti = engine.integrate(scaled, 'x');
+    if (anti.startsWith('Error')) return null;
+    return anti.replaceAll(' + C', '');
+  }
+
+  /// y = C1·exp(F), collapsing c·log(u) → u^c for power-law solutions.
+  static String _expSolution(String fx) {
+    final t = fx.replaceAll(' ', '');
+    final m = RegExp(r'^(-?\d+(?:/\d+)?)\*log\(([^()]+)\)$').firstMatch(t);
+    if (m != null) {
+      final c = m.group(1)!;
+      final u = m.group(2)!;
+      if (c == '1') return 'C1*$u';
+      if (c == '-1') return 'C1/$u';
+      return 'C1*$u^${c.contains('/') || c.startsWith('-') ? '($c)' : c}';
+    }
+    final mLog = RegExp(r'^log\(([^()]+)\)$').firstMatch(t);
+    if (mLog != null) return 'C1*${mLog.group(1)!}';
+    return 'C1*exp($fx)';
+  }
+
+  /// 2·F for the y² = 2F + C1 form — exact for polynomials, textual
+  /// otherwise.
+  static String _doubleExpr(String fx) {
+    final poly = Polynomial.tryParse(fx.replaceAll(' ', ''));
+    if (poly != null && (poly.degree == 0 || poly.variable == 'x')) {
+      return _renderPoly(poly.scale(Rational.fromInt(2)));
+    }
+    return '2*($fx)';
+  }
+
+  static String _polyStr(Polynomial p) => _renderPoly(p);
 }
 
 class _Forcing {

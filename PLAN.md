@@ -93,9 +93,12 @@ system solver, no inequality solver.
   exact surds), undetermined coefficients for polynomial/exp/trig
   right-hand sides incl. exp+poly resonance; `y' = f(x)` delegates to
   integrate. 8 SymPy-certified corpus cases (residual substitution
-  check), 14 unit tests, function reference EN/DE/FR/ES. Still open:
-  variable coefficients (separable, linear ∫-factor, exact,
-  Bernoulli), trig resonance, step-by-step traces.
+  check), 14 unit tests, function reference EN/DE/FR/ES. Separable /
+  variable-coefficient first order landed same day: y' = f(x)·g(y)
+  with rational g via the rational integrator (explicit for g = y —
+  incl. power-law C1·x^k — g = y², g = 1/y; implicit otherwise, e.g.
+  logistic). Still open: linear ∫-factor with q≠0, exact/Bernoulli
+  forms, trig resonance, step-by-step traces.
 - [x] **Polynomial inequality solving.** Landed 2026-07-04:
   `solve(x^2-4>0)` → `x < -2 ∨ x > 2` (also bare input, unicode ≤/≥,
   exact surd endpoints, ≠/point/ℝ/∅ cases). Exact roots via native

@@ -2,6 +2,27 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 7) — Separable / variable-coefficient ODEs
+
+`dsolve` now handles the textbook explicit form `y' = f(x)·g(y)`:
+
+- `y' = x*y`      → y = C1*exp(1/2*x^2)
+- `y' = 2*y/x`    → y = C1*x^2   (c·log(u) collapsed to a power law)
+- `y' = x/y`      → y^2 = x^2 + C1
+- `y' = -y^2`     → y = -1/(-x + C1)
+- `y' = y*(1-y)`  → -log(y) + log(y - 1) = -x + C1  (logistic, implicit
+                     via the rational integrator in y)
+
+RHS is factored at the top level into x-only and y-only parts; the
+y-polynomials are normalized monic with their constant content moved
+into the x-integral (a constant hidden in the y-part — y' = -y^2 —
+would otherwise flip the solution family; caught by unit test while
+hand-tracing). ∫dy/g(y) runs through the exact rational integrator
+with variable y, so any rational g works implicitly. The corpus
+verifier gained implicit-solution support (implicit differentiation:
+dG/dx = dF/dy·g). Corpus: **97 SymPy-certified cases**; 20 ODE unit
+tests.
+
 ## 2026-07-04 (cont. 6) — dsolve: constant-coefficient linear ODEs (C3)
 
 New `dsolve(a*y'' + b*y' + c*y = q(x))` — the education core of ODE

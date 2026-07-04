@@ -122,7 +122,19 @@ def verify(case: dict) -> str | None:
         # Residual check: substitute the claimed general solution into the
         # original equation; it must vanish identically in x, C1, C2.
         x = sp.Symbol("x")
-        assert exp_raw.startswith("y = "), "dsolve expected must start 'y = '"
+        if not exp_raw.startswith("y = "):
+            # Implicit solution "F(y) = G(x) + C1": verify by implicit
+            # differentiation — dG/dx must equal dF/dy * rhs(x, y).
+            y = sp.Symbol("y")
+            lhs_i, _, rhs_i = exp_raw.partition("=")
+            assert case["input"].replace(" ", "").startswith("y'="), \
+                "implicit dsolve corpus case needs y' = g(x, y) input"
+            g = to_sympy(case["input"].split("=", 1)[1])
+            residual = sp.diff(to_sympy(rhs_i), x) - \
+                sp.diff(to_sympy(lhs_i), y) * g
+            if sp.simplify(residual) != 0:
+                return f"dsolve implicit: residual {sp.simplify(residual)}"
+            return None
         sol = to_sympy(exp_raw[4:])
         if "y''" in case["input"] and sp.Symbol("C2") not in sol.free_symbols:
             return "dsolve: 2nd-order solution lacks C2"
