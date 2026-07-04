@@ -2,6 +2,30 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 17) — Distribution prep
+
+Config audit toward App Store / Mac App Store / Play submission (the
+Tier-1 ship blocker). New DISTRIBUTION.md captures the account decision
+(Gewerbe-before-Apple, individual-vs-organization), the store BLOCKERS,
+and the ordered pre-submission checklist. Surfaced three blockers:
+
+1. Placeholder bundle IDs `com.example.crispCalc` (iOS + macOS) — App
+   Store rejects com.example.*. Left for the user to confirm the domain
+   (recommended `be.crispstro.crispCalc`, matching the Android
+   applicationId) since it's identity-sensitive and permanent.
+2. Android release build signed with the DEBUG keystore
+   (build.gradle.kts, already TODO-flagged) — Play rejects it; needs a
+   real upload keystore (a secret the user must generate).
+3. macOS sandbox lacked `com.apple.security.network.client` — FIXED in
+   both Release + DebugProfile entitlements. Without it a sandboxed Mac
+   App Store build blocks all outbound requests (CrispAssist AI, cloud
+   OCR, crash reporting — all confirmed network clients).
+
+Also fixed the Android display label (crisp_calc → CrispChalc… →
+CrispCalc). release.yml already builds unsigned per-platform artifacts
+on v* tags (good foundation, not store submission). Screenshots (via
+the verify harness) + store copy are ready to generate on request.
+
 ## 2026-07-04 (cont. 16) — Step-by-step traces for dsolve
 
 `dsolve` gains a step-by-step derivation for the constant-coefficient
