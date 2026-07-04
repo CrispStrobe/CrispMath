@@ -2,6 +2,34 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 5) — Exact rational-function integration (C3)
+
+`integrate` gains a complete, exact algorithm for rational functions
+P(x)/Q(x) — before, only what the rule walker pattern-matched worked:
+
+- ∫ 1/(x²+x+1)      → 2/sqrt(3)*atan((2*x + 1)/sqrt(3))
+- ∫ 1/(x−1)²        → -1/(x - 1)                     (Hermite part)
+- ∫ (x³+1)/x²       → 1/2*x^2 - 1/(x)                (polynomial part)
+- ∫ 1/(x²−1/3)      → exact surd log-quotient
+- ∫ 1/(x⁴−1)        → logs + atan (headless too: RRT strips the
+                       linear factors, the quadratic remainder is
+                       handled without FLINT)
+
+`lib/engine/rational_integrator.dart`: polynomial division → Yun
+squarefree decomposition → partial fractions across coprime moduli
+(ext-Euclid mod-inverse) → Bézout power reduction until squarefree →
+per-factor log/atan/log-quotient emission (Δ<0 / Δ>0 quadratics with
+exact sqrt strings). All arithmetic in the exact `Rational`/
+`Polynomial` stack; ℚ-irreducible splitting via native FLINT factor
+with a rational-root fallback, so native and web/headless produce
+equivalent antiderivatives. Wired into `engine.integrate` between the
+polynomial path and the rule walker. Degree ≥ 3 irreducible factors
+(needing Lazard–Rioboo–Trager) return null and fall through.
+
+Corpus: **85 SymPy-certified cases** (8 rational-integration cases,
+antiderivative-checked). 10 unit tests with a numeric-derivative
+oracle.
+
 ## 2026-07-04 (cont. 4) — Polynomial inequality solving (C3)
 
 `solve(x^2 - 4 > 0)` → `x < -2 ∨ x > 2` — new

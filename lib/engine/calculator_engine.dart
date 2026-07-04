@@ -10,6 +10,7 @@ import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'matrix_evaluator.dart';
 import 'inequality_solver.dart';
+import 'rational_integrator.dart';
 import 'numeric_fallback.dart';
 import 'numerical.dart';
 import 'polynomial.dart';
@@ -1275,7 +1276,13 @@ class CalculatorEngine {
       //    round-trips) — reliable on every platform.
       final poly = SymbolicWeb.integrate(expression, variable);
       if (poly != null) return '$poly + C';
-      // 2. Broad textbook integrator (trig/exp/IBP/u-sub/partial fractions).
+      // 2. Complete rational-function integrator (roadmap C3): polynomial
+      //    part + Hermite-style power reduction + exact log/atan terms
+      //    over linear and quadratic irreducible factors. Pure Dart,
+      //    exact ℚ arithmetic; uses native FLINT factoring when loaded.
+      final rational = RationalIntegrator.integrate(this, expression, variable);
+      if (rational != null) return '$rational + C';
+      // 3. Broad textbook integrator (trig/exp/IBP/u-sub/partial fractions).
       //    Resolves on native; on web it handles only what SymbolicWeb can
       //    back its differentiate/simplify checks with.
       final anti = StepEngine.antiderivative(expression, variable, this);

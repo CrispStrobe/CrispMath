@@ -79,10 +79,14 @@ system solver, no inequality solver.
 
 ### C3 — Grow the pure-Dart mathematics (no native rebuild)
 
-- [ ] **Rational-function integration** (Hermite reduction +
-  Lazard–Rioboo–Trager on the exact `Rational`/`Polynomial` stack).
-  Complete algorithm for a whole input class; composes with the
-  existing rule walker.
+- [~] **Rational-function integration.** Landed 2026-07-04
+  (`lib/engine/rational_integrator.dart`): polynomial part + Yun
+  squarefree decomposition + Bézout power reduction (Hermite) + exact
+  log/atan/log-quotient terms over linear and quadratic ℚ-irreducible
+  factors (FLINT factoring natively, RRT fallback headless/web). Exact
+  ℚ arithmetic throughout; 8 SymPy-certified corpus cases. Still open:
+  Lazard–Rioboo–Trager for irreducible factors of degree ≥ 3
+  (currently falls through to the rule walker / numeric path).
 - [ ] **ODE solving, education subset.** First order: separable,
   linear, exact, Bernoulli. Second order: constant coefficients
   (homogeneous + undetermined coefficients). Pattern-based `dsolve`,
