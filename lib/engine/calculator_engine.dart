@@ -1106,6 +1106,71 @@ class CalculatorEngine {
     return _bridgeCall('fibonacci', (b) => b.fibonacci(n));
   }
 
+  /// Taylor/Maclaurin series of [expression] in [variable] about [point],
+  /// truncated at [order] terms (roadmap C2). Native-only: SymEngine C++
+  /// series() via bridge >= 1.4.0; older libs surface the capability error.
+  String series(String expression, String variable,
+      {String point = '0', int order = 6}) {
+    final bridge = _liveBridge;
+    if (bridge == null) return 'Error: series requires native library';
+    if (!bridge.hasSeries) {
+      return 'Error: series requires a newer native library build';
+    }
+    if (order < 1 || order > 64) return 'Error: order must be in 1..64';
+    try {
+      return bridge.series(expression, variable, point: point, order: order);
+    } catch (e) {
+      _log('series error: $e');
+      return 'Error: series failed';
+    }
+  }
+
+  /// Symbolic linear-system solve (roadmap C2): SymEngine linsolve() via
+  /// bridge >= 1.4.0. Returns "x = v1, y = v2" in [symbols] order, or an
+  /// error for non-linear input / no unique solution. Native-only.
+  String solveLinearSystem(List<String> equations, List<String> symbols) {
+    final bridge = _liveBridge;
+    if (bridge == null) return 'Error: linsolve requires native library';
+    if (!bridge.hasLinsolve) {
+      return 'Error: linsolve requires a newer native library build';
+    }
+    try {
+      final raw = bridge.linsolve(equations, symbols); // "[v1, v2, ...]"
+      var inner = raw.trim();
+      if (inner.startsWith('[') && inner.endsWith(']')) {
+        inner = inner.substring(1, inner.length - 1);
+      }
+      final values = _splitTopLevelCommas(inner);
+      if (values.length != symbols.length) return raw; // surface as-is
+      final pairs = <String>[];
+      for (var i = 0; i < symbols.length; i++) {
+        pairs.add('${symbols[i]} = ${values[i].trim()}');
+      }
+      return pairs.join(', ');
+    } catch (e) {
+      _log('linsolve error: $e');
+      return 'Error: linsolve failed (system not linear or no unique '
+          'solution)';
+    }
+  }
+
+  /// Split on commas not nested inside parentheses/brackets.
+  static List<String> _splitTopLevelCommas(String s) {
+    final parts = <String>[];
+    var depth = 0, start = 0;
+    for (var i = 0; i < s.length; i++) {
+      final ch = s[i];
+      if (ch == '(' || ch == '[') depth++;
+      if (ch == ')' || ch == ']') depth--;
+      if (ch == ',' && depth == 0) {
+        parts.add(s.substring(start, i));
+        start = i + 1;
+      }
+    }
+    parts.add(s.substring(start));
+    return parts;
+  }
+
   String gcd(String a, String b) => _bridgeCall('gcd', (br) => br.gcd(a, b));
 
   String lcm(String a, String b) => _bridgeCall('lcm', (br) => br.lcm(a, b));

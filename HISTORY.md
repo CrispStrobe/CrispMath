@@ -2,6 +2,33 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont.) — C2: taylor/series + linsolve land natively
+
+First slice of roadmap C2 ("bind what SymEngine already has") across
+all three repos, feature branch `feat/series-linsolve` in each:
+
+- **math-stack** (`72c6d2a8`): `flutter_symengine_series(expr, sym,
+  point, order)` via SymEngine C++ `series()` (FLINT-backed; non-zero
+  expansion point via shift substitution) and
+  `flutter_symengine_linsolve(equations, symbols)` via SymEngine
+  `linsolve()` in `flutter_symengine_cas.cpp`; dispatched under
+  `SYM_HAS_NATIVE_LIBS`; xcframework rebuilt with
+  `build_wrapper_incremental.sh`.
+- **bridge 1.4.0** (`8916148`): optional FFI lookups (old libs → null),
+  `series()`/`linsolve()` + `hasSeries`/`hasLinsolve`; web gated off
+  until the WASM build exports the new entry points. The pubspec
+  `version:` field (lagging at 1.2.1 since the 1.3.0 release) caught up.
+- **CrispCalc**: engine `series()`/`solveLinearSystem()`, worker-isolate
+  ops, calculator dispatch — `taylor(f, x, x0, n)`, `series(f, x, n)`,
+  `linsolve(x + y = 3; x - y = 1, x, y)` (alias `solvesys`), function
+  reference entries in EN/DE/FR/ES, bridge repin.
+
+Corpus grew to **66 SymPy-certified cases** (5 series + 3 linsolve).
+Native run 66/66 on macOS; `flutter analyze` clean; full suite green.
+
+Still open in C2: binary-function FFI table, WITH_LLVM/WITH_ARB
+backends, WASM exports for series/linsolve (web parity).
+
 ## 2026-07-04 — CAS roadmap C1: SymPy-certified corpus + two real bugs found
 
 ### CAS depth roadmap written into PLAN.md

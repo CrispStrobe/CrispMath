@@ -28,7 +28,7 @@ dependencies:
   symbolic_math_bridge:
     git:
       url: https://github.com/CrispStrobe/symbolic_math_bridge.git
-      ref: "59ba08c"   # bridge main: multivariate factor + real simplify + WASM web CAS
+      ref: "8916148"   # bridge feat/series-linsolve: series (Taylor) + linsolve, v1.4.0
 
   # Constraint Satisfaction Problem solver — pure Dart, no native
   # deps. Powers the Analysis-hub "Constraints" module (Diophantine

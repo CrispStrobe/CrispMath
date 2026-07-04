@@ -59,12 +59,15 @@ system solver, no inequality solver.
 
 ### C2 — Bind what SymEngine already has (needs xcframework rebuild)
 
-- [ ] **`series` / `taylor`.** SymEngine C++ has FLINT-backed
-  univariate series expansion; expose it through the C wrapper +
-  bridge + engine + function reference. Highest-value single binding.
-- [ ] **`linsolve`.** Symbolic linear-system solving exists in
-  SymEngine C++; binding it gives `solvesys([...], [x,y])` without
-  writing new mathematics.
+- [x] **`series` / `taylor`.** Landed 2026-07-04: wrapper
+  `flutter_symengine_series` (math-stack feat/series-linsolve), bridge
+  1.4.0 `series()` + `hasSeries`, engine + calculator dispatch
+  (`taylor(f,x,x0,n)` / `series(f,x,n)`), function reference (4
+  locales), 5 SymPy-certified corpus cases. Native only; WASM exports
+  still pending (web gated off via hasSeries=false).
+- [x] **`linsolve`.** Landed 2026-07-04 alongside series:
+  `linsolve(eq1; eq2, x, y)` (alias `solvesys`), exact symbolic
+  solutions in symbol order, 3 corpus cases. Same WASM caveat.
 - [ ] **Fill the empty binary-function FFI table** in the bridge
   (`symbolic_math_bridge_io.dart` — "none implemented in your C
   wrapper"): atan2, log-base, nroot, …

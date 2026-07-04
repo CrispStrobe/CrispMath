@@ -61,10 +61,10 @@ void main() {
     });
 
     test('round 97: catalogue covers the PLAN P6 §97 CAS slate', () {
-      // PLAN §97 names ~15 CAS entries; `series` and `taylor` are
-      // deferred (no SymEngine series_expansion binding yet) so the
-      // expected list omits them. Anything else dropping from the
-      // catalogue should be intentional and tracked here.
+      // PLAN §97 named ~15 CAS entries; `taylor`/`series` and `linsolve`
+      // landed with the C2 arc (bridge 1.4.0 binds SymEngine's C++
+      // series() and linsolve()). Anything dropping from the catalogue
+      // should be intentional and tracked here.
       final ids = {for (final e in FunctionReferences.all) e.id};
       const expectedCas = {
         'solve',
@@ -79,6 +79,8 @@ void main() {
         'lcm',
         'factorial',
         'fibonacci',
+        'taylor',
+        'linsolve',
       };
       for (final id in expectedCas) {
         expect(ids, contains(id), reason: 'Round 97 CAS slate missing "$id"');

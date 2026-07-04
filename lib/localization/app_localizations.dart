@@ -4123,6 +4123,14 @@ class DeLocalizations implements AppLocalizations {
             '`BigInt`; große `n` werden an SymEngine übergeben.';
       case 'fibonacci':
         return 'n-te Fibonacci-Zahl. `fib(n)` ist der Kurzname.';
+      case 'taylor':
+        return 'Taylor-/Maclaurin-Polynom von f am Entwicklungspunkt x0 '
+            '(Standard 0), abgeschnitten nach n Termen (Standard 6). Nur '
+            'native Builds (SymEngine-Reihe, FLINT-gestützt).';
+      case 'linsolve':
+        return 'Löst ein lineares Gleichungssystem symbolisch (exakte '
+            'Brüche/Symbole). Gleichungen durch ";" getrennt, danach die '
+            'Unbekannten. Nur native Builds.';
       // --- Zahlentheorie ---
       case 'isprime':
         return 'Probabilistischer Primzahltest für ganze Zahlen.';
@@ -4517,6 +4525,22 @@ class DeLocalizations implements AppLocalizations {
             'IEEE-754 würde hier auf 1,0 × 10^157 runden.',
         'Konvention des leeren Produkts: 0! = 1. Notwendig, damit die '
             'Rekursion n! = n · (n-1)! bei 1 endet.',
+      ],
+      'taylor': [
+        'Nur ungerade Potenzen — der Sinus ist eine ungerade Funktion. Die '
+            'Entwicklung bricht vor x^8 ab (Restglied O(x^8)); die '
+            'Koeffizienten sind (-1)^k/(2k+1)!.',
+        '`series(f, x, n)` ist die Kurzform der Maclaurin-Entwicklung '
+            '(Entwicklungspunkt 0). Die Koeffizienten der Exponentialreihe '
+            'sind 1/k!.',
+      ],
+      'linsolve': [
+        'Jede Gleichung darf als "linke Seite = rechte Seite" oder als '
+            'Ausdruck (implizit = 0) geschrieben werden. Gelöst wird exakt '
+            'über SymEngines linsolve().',
+        'Ergebnisse bleiben exakte Brüche — keine Gleitkomma-Rundung. '
+            'Nichtlineare oder unterbestimmte Systeme liefern eine '
+            'Fehlermeldung.',
       ],
       'fibonacci': [
         'In CrispCalc sind `fib(n)` und `fibonacci(n)` derselbe Aufruf. Für '
@@ -7077,6 +7101,14 @@ class FrLocalizations implements AppLocalizations {
             "`BigInt` de Dart ; les grands `n` sont confiés à SymEngine.";
       case 'fibonacci':
         return "n-ième nombre de Fibonacci. `fib(n)` est le nom abrégé.";
+      case 'taylor':
+        return "Polynôme de Taylor/Maclaurin de f au point de développement "
+            "x0 (0 par défaut), tronqué après n termes (6 par défaut). "
+            "Builds natifs uniquement (séries SymEngine sur FLINT).";
+      case 'linsolve':
+        return "Résout un système d'équations linéaires symboliquement "
+            "(fractions exactes/symboles). Équations séparées par « ; », "
+            "puis les inconnues. Builds natifs uniquement.";
       case 'isprime':
         return "Test de primalité probabiliste sur les entiers.";
       case 'nextprime':
@@ -7471,6 +7503,21 @@ class FrLocalizations implements AppLocalizations {
           "IEEE-754 arrondirait ici à 1,0 × 10^157.",
       "Convention du produit vide : 0! = 1. Nécessaire pour que la récurrence "
           "n! = n · (n-1)! se termine à 1.",
+    ],
+    'taylor': [
+      "Seulement des puissances impaires — le sinus est une fonction "
+          "impaire. Le développement s'arrête avant x^8 (reste O(x^8)) ; "
+          "les coefficients sont (-1)^k/(2k+1)!.",
+      "`series(f, x, n)` est le raccourci du développement de Maclaurin "
+          "(point 0). Les coefficients de la série exponentielle sont 1/k!.",
+    ],
+    'linsolve': [
+      "Chaque équation peut s'écrire « membre gauche = membre droit » ou "
+          "comme expression (implicitement = 0). La résolution est exacte "
+          "via le linsolve() de SymEngine.",
+      "Les résultats restent des fractions exactes — pas d'arrondi "
+          "flottant. Les systèmes non linéaires ou sous-déterminés "
+          "renvoient une erreur.",
     ],
     'fibonacci': [
       "Dans CrispCalc, `fib(n)` et `fibonacci(n)` sont le même appel. Pour "
@@ -10009,6 +10056,14 @@ class EsLocalizations implements AppLocalizations {
             "de Dart; los `n` grandes se delegan en SymEngine.";
       case 'fibonacci':
         return "n-ésimo número de Fibonacci. `fib(n)` es el alias corto.";
+      case 'taylor':
+        return "Polinomio de Taylor/Maclaurin de f en el punto de "
+            "desarrollo x0 (0 por defecto), truncado tras n términos (6 por "
+            "defecto). Solo builds nativos (series de SymEngine con FLINT).";
+      case 'linsolve':
+        return "Resuelve un sistema de ecuaciones lineales simbólicamente "
+            "(fracciones exactas/símbolos). Ecuaciones separadas por \";\", "
+            "después las incógnitas. Solo builds nativos.";
       case 'isprime':
         return "Test de primalidad probabilístico sobre enteros.";
       case 'nextprime':
@@ -10397,6 +10452,21 @@ class EsLocalizations implements AppLocalizations {
           "IEEE-754 redondearía aquí a 1,0 × 10^157.",
       "Convención del producto vacío: 0! = 1. Necesaria para que la "
           "recurrencia n! = n · (n-1)! termine en 1.",
+    ],
+    'taylor': [
+      "Solo potencias impares: el seno es una función impar. El desarrollo "
+          "se corta antes de x^8 (resto O(x^8)); los coeficientes son "
+          "(-1)^k/(2k+1)!.",
+      "`series(f, x, n)` es el atajo del desarrollo de Maclaurin (punto 0). "
+          "Los coeficientes de la serie exponencial son 1/k!.",
+    ],
+    'linsolve': [
+      "Cada ecuación puede escribirse como \"lado izquierdo = lado "
+          "derecho\" o como expresión (implícitamente = 0). Se resuelve de "
+          "forma exacta con linsolve() de SymEngine.",
+      "Los resultados quedan como fracciones exactas, sin redondeo de coma "
+          "flotante. Los sistemas no lineales o subdeterminados devuelven "
+          "un error.",
     ],
     'fibonacci': [
       "En CrispCalc, `fib(n)` y `fibonacci(n)` son la misma llamada. Para "
