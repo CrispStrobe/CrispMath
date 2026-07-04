@@ -2,6 +2,34 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 16) — Step-by-step traces for dsolve
+
+`dsolve` gains a step-by-step derivation for the constant-coefficient
+linear case (the most common ODE homework, and the strongest education
+signal for the German-curriculum audience). New `ode_steps.dart`
+produces a MathStep trace:
+
+  Characteristic equation → Roots (distinct / double / complex,
+  classified with the discriminant) → Homogeneous solution (the mode
+  form for the root type) → Particular solution (when forced) →
+  General solution.
+
+The final "General solution" line is taken verbatim from
+OdeSolver.solve, so the trace can never disagree with the answer; the
+homogeneous step solves the RHS=0 version separately so a forced case
+shows y_h alone. Surfaced through the existing history-row steps
+affordance (StepsDialog) — a `dsolve(...)` result is now classified
+`HistoryStepKind.dsolve` in `history_help_modal.dart`, passing the RAW
+equation (y'/y'' must survive preprocessing). Non-constant-coefficient
+ODEs get a graceful one-step "answer only" fallback. New `odeStepsTitle`
+localized EN/DE/FR/ES; 7 step-content unit tests; full suite 4019 green.
+
+Scope note: rational-integrator step traces (quadratic/atan +
+Rothstein–Trager) and first-order-form traces (separable /
+integrating-factor / Bernoulli / exact) are follow-ups — dsolve
+constant-coefficient was the highest-value slice (it had no steps at
+all; integrate already produces partial-fraction/IBP traces).
+
 ## 2026-07-04 (cont. 15) — Discoverability of the new CAS features
 
 An audit found the session's new features were nearly invisible: the

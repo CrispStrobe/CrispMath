@@ -340,6 +340,7 @@ abstract class AppLocalizations {
   String get differentiationStepsTitle;
   String differentiationStepsHeader(String variable);
   String get solveStepsTitle;
+  String get odeStepsTitle;
   String get solveStepsEquationLabel;
   String get solveStepsSolveFor;
   String get solveStepsHint;
@@ -1430,6 +1431,8 @@ class EnLocalizations implements AppLocalizations {
       'Differentiating with respect to $variable:';
   @override
   String get solveStepsTitle => 'Solve steps';
+  @override
+  String get odeStepsTitle => 'ODE solution steps';
   @override
   String get solveStepsEquationLabel => 'Equation or expression';
   @override
@@ -3117,6 +3120,8 @@ class DeLocalizations implements AppLocalizations {
       'Ableiten nach $variable:';
   @override
   String get solveStepsTitle => 'Lösungsschritte';
+  @override
+  String get odeStepsTitle => 'Lösungsschritte der DGL';
   @override
   String get solveStepsEquationLabel => 'Gleichung oder Ausdruck';
   @override
@@ -6131,6 +6136,8 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get solveStepsTitle => 'Étapes de résolution';
   @override
+  String get odeStepsTitle => 'Étapes de résolution de l\'EDO';
+  @override
   String get solveStepsEquationLabel => 'Équation ou expression';
   @override
   String get solveStepsSolveFor => 'Résoudre pour';
@@ -9135,6 +9142,8 @@ class EsLocalizations implements AppLocalizations {
       'Derivando respecto a $variable:';
   @override
   String get solveStepsTitle => 'Pasos de resolución';
+  @override
+  String get odeStepsTitle => 'Pasos de resolución de la EDO';
   @override
   String get solveStepsEquationLabel => 'Ecuación o expresión';
   @override

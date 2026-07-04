@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
 import '../engine/function_reference.dart';
+import '../engine/ode_solver.dart';
+import '../engine/ode_steps.dart';
 import '../engine/step_engine.dart';
 import '../localization/app_localizations.dart';
 import '../utils/expression_preprocessing_utils.dart';
@@ -23,7 +25,7 @@ import 'steps_dialog.dart';
 
 /// Which [StepEngine] entry-point applies to a row, or `none` when the
 /// row's computation has no step trace.
-enum HistoryStepKind { none, solve, diff, integrate }
+enum HistoryStepKind { none, solve, diff, integrate, dsolve }
 
 /// Detection result for a history row. `engineLabel` and `refId` are
 /// null when the row is bare arithmetic — the modal then falls back to
@@ -61,6 +63,19 @@ HistoryHelpInfo detectHistoryHelp(String raw) {
   if (s.isEmpty) return HistoryHelpInfo.direct;
 
   // --- Function-call form `name(args)` ----------------------------------
+  if (s.startsWith('dsolve(')) {
+    // The ODE equation is passed RAW (y'/y'' must survive) — no arg
+    // preprocessing. stepVar is unused for ODEs but the runner requires
+    // it non-null, so pass 'y'.
+    final inner = s.substring(7, s.length - 1);
+    return HistoryHelpInfo._(
+      engineLabel: 'dsolve',
+      refId: 'dsolve',
+      stepKind: HistoryStepKind.dsolve,
+      stepExpr: inner.trim().isEmpty ? null : inner,
+      stepVar: 'y',
+    );
+  }
   if (s.startsWith('solve(')) {
     final args = _parseCallArgs(s, 'solve');
     final body = args == null || args.isEmpty ? '' : args[0];
@@ -429,6 +444,25 @@ Future<void> runHistoryStepTrace({
           MathDisplayUtils.toHistoryDisplayLatex(preprocessed) +
           r' \, d' +
           variable;
+      break;
+    case HistoryStepKind.dsolve:
+      // Raw equation — y'/y'' must not be preprocessed away.
+      final odeSteps = OdeStepEngine.steps(engine, info.stepExpr!);
+      steps = odeSteps ??
+          [
+            MathStep(
+              rule: 'Solution',
+              formula: '',
+              before: info.stepExpr!,
+              after: OdeSolver.solve(engine, info.stepExpr!),
+              note: 'A full step-by-step trace is available for '
+                  'constant-coefficient linear ODEs; the answer is shown '
+                  'above.',
+            ),
+          ];
+      title = t.odeStepsTitle;
+      subtitle = t.odeStepsTitle;
+      headlineLatex = null;
       break;
     case HistoryStepKind.none:
       return;
