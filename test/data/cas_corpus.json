@@ -1191,6 +1191,39 @@
         "native"
       ],
       "check": "exact"
+    },
+    {
+      "id": "dsolve_linear_var_poly",
+      "op": "dsolve",
+      "input": "y' + 2*y/x = x",
+      "expected": "y = 1/4*x^2 + C1/x^2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_linear_var_const",
+      "op": "dsolve",
+      "input": "y' + y/x = 1",
+      "expected": "y = 1/2*x + C1/x",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_linear_var_homog",
+      "op": "dsolve",
+      "input": "y' + 2*y/x = 0",
+      "expected": "y = C1/x^2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
     }
   ]
 }

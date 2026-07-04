@@ -97,8 +97,11 @@ system solver, no inequality solver.
   variable-coefficient first order landed same day: y' = f(x)·g(y)
   with rational g via the rational integrator (explicit for g = y —
   incl. power-law C1·x^k — g = y², g = 1/y; implicit otherwise, e.g.
-  logistic). Still open: linear ∫-factor with q≠0, exact/Bernoulli
-  forms, trig resonance, step-by-step traces.
+  logistic). Linear first-order integrating-factor also landed:
+  y' + p(x)·y = q(x) → μ = exp(∫p), y = (∫μq + C1)/μ, tractable
+  education case p = k/x (μ = x^k). Still open: exact/Bernoulli forms,
+  non-elementary integrating factors (p polynomial), trig resonance,
+  step-by-step traces.
 - [x] **Polynomial inequality solving.** Landed 2026-07-04:
   `solve(x^2-4>0)` → `x < -2 ∨ x > 2` (also bare input, unicode ≤/≥,
   exact surd endpoints, ≠/point/ℝ/∅ cases). Exact roots via native

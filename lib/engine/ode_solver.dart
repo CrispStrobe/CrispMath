@@ -47,6 +47,8 @@ class OdeSolver {
         continue;
       }
       if (y.coeff == null) {
+        final lin = _tryLinearFirstOrder(engine, lhs, rhs);
+        if (lin != null) return lin;
         final sep = _trySeparable(engine, lhs, rhs);
         if (sep != null) return sep;
         return 'Error: dsolve supports constant coefficients only '
@@ -505,6 +507,192 @@ class OdeSolver {
   // y), so any rational g(y) works. Explicit solutions for the classic
   // shapes g = y (→ C1·e^F, with c·log(u) collapsed to u^c), g = y²,
   // g = 1/y; implicit "H(y) = F(x) + C1" otherwise.
+
+  // --- linear first order: y' + p(x)·y = q(x) -----------------------------
+  //
+  // Integrating factor μ = exp(∫p dx); solution y = (∫μ·q dx + C1)/μ.
+  // Both integrals go through engine.integrate (which now includes the
+  // rational integrator), so the tractable education case p(x) = k/x —
+  // μ = x^k, the classic "linear ODE" example — works, and anything the
+  // engine can't integrate returns null (falls through to separable).
+  // Constant p is already handled by the constant-coefficient path
+  // upstream, so this only ever fires for a genuinely variable p(x).
+  static String? _tryLinearFirstOrder(
+      CalculatorEngine engine, String lhs, String rhs) {
+    Rational? a; // coefficient on y'
+    final pTerms = <String>[]; // x-coefficients of the y term
+    final qTerms = <String>[]; // forcing (x-only), on the RHS of L[y]=q
+
+    for (final (term, sign) in [
+      ..._terms(lhs).map((t) => (t.$1, t.$2)),
+      ..._terms(rhs).map((t) => (t.$1, -t.$2)),
+    ]) {
+      final t = term.replaceAll(' ', '');
+      if (t.contains("y''")) return null; // second order — not here
+      if (t.contains("y'")) {
+        final c = _yPrimeConstant(t);
+        if (c == null) return null; // variable coeff on y' — unsupported
+        a = (a ?? Rational.zero) + (sign < 0 ? -c : c);
+      } else if (RegExp(r'(?<![a-zA-Z])y(?![a-zA-Z])').hasMatch(t)) {
+        final coeff = _yCoefficientExpr(t);
+        if (coeff == null) return null;
+        // Prepend the sign directly (each coeff is a single monomial or
+        // k/x factor) so a top-level '/' stays visible to the rational
+        // integrator — '-(1/x)' would hide it inside parens.
+        pTerms.add(sign < 0 ? '-$coeff' : coeff);
+      } else {
+        // x-only forcing, moved across: opposite sign.
+        qTerms.add(sign < 0 ? '($t)' : '-($t)');
+      }
+    }
+    if (a == null || a.isZero || pTerms.isEmpty) return null;
+
+    final p = _unwrap(_sumStrings(pTerms));
+    final q = qTerms.isEmpty ? '0' : _unwrap(_sumStrings(qTerms));
+    // Normalize to y' + (p/a)·y = q/a.
+    final pN = _unwrap(_scaleExpr(p, a));
+    final qN = q == '0' ? '0' : _unwrap(_scaleExpr(q, a));
+
+    // P = ∫p dx.
+    final pInt = engine.integrate(pN, 'x');
+    if (pInt.startsWith('Error')) return null;
+    final capP = pInt.replaceAll(' + C', '').trim();
+
+    // μ = exp(P), with k·log(x) → x^k collapse (the only case that keeps
+    // the μ·q integral elementary here).
+    final mu = _muFromIntegral(capP);
+    if (mu == null) return null; // non-monomial μ — μ·q won't integrate
+
+    // I = ∫ μ·q dx.
+    if (qN == '0') {
+      // Homogeneous: y = C1/μ.
+      return 'y = ${_divideByMonomial('C1', mu, constant: true)}';
+    }
+    final muq = _multiplyMonomial(mu, qN);
+    final iInt = engine.integrate(muq, 'x');
+    if (iInt.startsWith('Error')) return null;
+    final capI = iInt.replaceAll(' + C', '').trim();
+
+    // y = (I + C1)/μ.
+    final divided = _divideByMonomial(capI, mu);
+    final constPart = _divideByMonomial('C1', mu, constant: true);
+    return 'y = $divided + $constPart';
+  }
+
+  /// Constant coefficient on a y' term, or null if variable / malformed.
+  static Rational? _yPrimeConstant(String t) {
+    final idx = t.indexOf("y'");
+    var pre = t.substring(0, idx);
+    final post = t.substring(idx + 2);
+    if (pre.endsWith('*')) pre = pre.substring(0, pre.length - 1);
+    if (post.isNotEmpty) return null; // y' followed by something — reject
+    if (pre.isEmpty) return Rational.one;
+    return _parseRationalToken(pre);
+  }
+
+  /// The x-coefficient string of a y (order-0) term: `2*y/x` → `2/x`,
+  /// `x*y` → `x`, `y/x` → `1/x`, `y` → `1`. Returns null if y appears in
+  /// a way we can't factor out (e.g. `y^2`, `sin(y)`).
+  static String? _yCoefficientExpr(String t) {
+    // Reject powers / functions of y.
+    if (RegExp(r'y\^').hasMatch(t)) return null;
+    if (RegExp(r'[a-zA-Z]y|y[a-zA-Z]').hasMatch(t)) return null;
+    final m = RegExp(r'(?<![a-zA-Z])y(?![a-zA-Z])').firstMatch(t);
+    if (m == null) return null;
+    var pre = t.substring(0, m.start);
+    var post = t.substring(m.end);
+    if (pre.endsWith('*')) pre = pre.substring(0, pre.length - 1);
+    if (post.startsWith('*')) post = post.substring(1);
+    final num = pre.isEmpty ? '1' : pre;
+    if (post.isEmpty) return num;
+    if (post.startsWith('/')) return '$num$post'; // 1/x etc.
+    return null;
+  }
+
+  static String _sumStrings(List<String> parts) =>
+      parts.join(' + ').replaceAll('+ -', '- ');
+
+  /// μ from P = ∫p dx: only the k·log(x) / log(x) shape yields a monomial
+  /// x^k (returned as the exponent Rational). Anything else → null.
+  static Rational? _muFromIntegral(String capP) {
+    final t = capP.replaceAll(' ', '');
+    if (t == 'log(x)') return Rational.one;
+    if (t == '-log(x)') return -Rational.one;
+    // k*log(x) with an explicit numeric coefficient (incl. fractions).
+    final m = RegExp(r'^(-?\d+(?:/\d+)?)\*log\(x\)$').firstMatch(t);
+    if (m == null) return null;
+    return _parseRationalToken(m.group(1)!);
+  }
+
+  /// x^k · (expr) as an integrable string.
+  static String _multiplyMonomial(Rational k, String expr) {
+    final e = _unwrap(expr);
+    if (k.isZero) return e;
+    // Negative exponent → division, so the result stays a rational the
+    // integrator can parse ('x^-1*(x)' would be rejected).
+    if (k.sign < 0) {
+      final den = k == -Rational.one ? 'x' : 'x^${_fmt(-k)}';
+      return '($e)/$den';
+    }
+    final mono = k == Rational.one ? 'x' : 'x^${_fmt(k)}';
+    return '$mono*($e)';
+  }
+
+  /// Strip a single outer wrap of matched parentheses.
+  static String _unwrap(String s) {
+    var t = s.trim();
+    while (t.length > 1 && t.startsWith('(') && t.endsWith(')') && _wraps(t)) {
+      t = t.substring(1, t.length - 1).trim();
+    }
+    return t;
+  }
+
+  /// (numerExpr) / x^k, cleanly per-term when numer is a plain polynomial;
+  /// otherwise the literal fraction. `constant:true` treats numer as an
+  /// opaque constant (for the C1/μ term).
+  static String _divideByMonomial(String numer, Rational k,
+      {bool constant = false}) {
+    if (k.isZero) return numer;
+    if (constant) {
+      if (k == Rational.one) return '$numer/x';
+      if (k == -Rational.one) return '$numer*x';
+      if (k.sign > 0) return '$numer/x^${_fmt(k)}';
+      return '$numer*x^${_fmt(-k)}';
+    }
+    final poly = Polynomial.tryParse(numer.replaceAll(' ', ''));
+    if (poly != null &&
+        (poly.degree == 0 || poly.variable == 'x') &&
+        k.isInteger) {
+      final kk = k.numerator.toInt();
+      final parts = <String>[];
+      for (var i = poly.degree; i >= 0; i--) {
+        final c = poly.coeffs[i];
+        if (c.isZero) continue;
+        final e = i - kk; // exponent after division
+        final mag = c.abs;
+        final cs = _fmt(mag);
+        String term;
+        if (e == 0) {
+          term = cs;
+        } else if (e > 0) {
+          final x = e == 1 ? 'x' : 'x^$e';
+          term = mag == Rational.one ? x : '$cs*$x';
+        } else {
+          final x = e == -1 ? 'x' : 'x^${-e}';
+          term = mag == Rational.one ? '1/$x' : '$cs/$x';
+        }
+        if (parts.isEmpty) {
+          parts.add(c.sign < 0 ? '-$term' : term);
+        } else {
+          parts.add(c.sign < 0 ? '- $term' : '+ $term');
+        }
+      }
+      return parts.isEmpty ? '0' : parts.join(' ');
+    }
+    // Fallback: literal fraction.
+    final den = k == Rational.one ? 'x' : 'x^${_fmt(k)}';
+    return '($numer)/$den';
+  }
 
   static String? _trySeparable(
       CalculatorEngine engine, String lhs, String rhs) {
