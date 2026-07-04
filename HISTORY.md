@@ -2,6 +2,26 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 6) — dsolve: constant-coefficient linear ODEs (C3)
+
+New `dsolve(a*y'' + b*y' + c*y = q(x))` — the education core of ODE
+solving, exact and pure Dart:
+
+- Homogeneous via the characteristic equation: distinct real roots
+  (`y'' + 3*y' + 2*y = 0` → C1*exp(-x) + C2*exp(-2*x)), double roots
+  ((C1 + C2*x)*exp(x)), complex pairs (exp(-x)*(C1*cos(2*x) +
+  C2*sin(2*x))), irrational roots kept as exact surds.
+- Particular via undetermined coefficients: polynomial (coefficient
+  back-substitution, with the a0=0 reduction z=y′), k*exp(m*x) with
+  single/double resonance (x·e^x, x²·e^x), k*sin/cos via the exact
+  2×2 solve. Trig resonance reports an honest error (v2).
+- `y' = f(x)` (no y term) delegates to engine.integrate — which now
+  includes the rational integrator, so dsolve inherits it.
+- Corpus: **93 SymPy-certified cases** — dsolve cases verified by
+  substituting the claimed general solution back into the original
+  equation and requiring the residual to vanish identically in
+  x, C1, C2. 14 unit tests; function reference entry in EN/DE/FR/ES.
+
 ## 2026-07-04 (cont. 5) — Exact rational-function integration (C3)
 
 `integrate` gains a complete, exact algorithm for rational functions

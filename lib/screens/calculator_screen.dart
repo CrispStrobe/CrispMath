@@ -1182,6 +1182,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
       } else if (_isFunctionCall(converted, 'linsolve') ||
           _isFunctionCall(converted, 'solvesys')) {
         result = await _handleLinsolveFunction(converted);
+      } else if (_isFunctionCall(converted, 'dsolve')) {
+        // NOTE: raw content — preprocessing would mangle the y'/y''
+        // derivative ticks.
+        final open = converted.indexOf('(');
+        result = _engine
+            .solveOde(converted.substring(open + 1, converted.length - 1));
       } else if (InequalitySolver.looksLikeInequality(converted) &&
           RegExp(r'[a-zA-Z]').hasMatch(converted)) {
         // `x^2 - 4 > 0` typed directly — route like bare equations are

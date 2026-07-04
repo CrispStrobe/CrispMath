@@ -1059,6 +1059,94 @@
         "native"
       ],
       "check": "antiderivative"
+    },
+    {
+      "id": "dsolve_growth",
+      "op": "dsolve",
+      "input": "y' = 3*y",
+      "expected": "y = C1*exp(3*x)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_distinct_real",
+      "op": "dsolve",
+      "input": "y'' + 3*y' + 2*y = 0",
+      "expected": "y = C1*exp(-x) + C2*exp(-2*x)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_double_root",
+      "op": "dsolve",
+      "input": "y'' - 2*y' + y = 0",
+      "expected": "y = (C1 + C2*x)*exp(x)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_complex",
+      "op": "dsolve",
+      "input": "y'' + 2*y' + 5*y = 0",
+      "expected": "y = exp(-x)*(C1*cos(2*x) + C2*sin(2*x))",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_poly_forcing",
+      "op": "dsolve",
+      "input": "y' + y = x^2",
+      "expected": "y = C1*exp(-x) + x^2 - 2*x + 2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_exp_forcing",
+      "op": "dsolve",
+      "input": "y'' - y = exp(2*x)",
+      "expected": "y = C1*exp(x) + C2*exp(-x) + 1/3*exp(2*x)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_exp_resonance",
+      "op": "dsolve",
+      "input": "y' - y = exp(x)",
+      "expected": "y = C1*exp(x) + x*exp(x)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "dsolve_trig_forcing",
+      "op": "dsolve",
+      "input": "y'' + y = sin(2*x)",
+      "expected": "y = C1*cos(x) + C2*sin(x) - 1/3*sin(2*x)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "exact"
     }
   ]
 }

@@ -81,6 +81,7 @@ void main() {
         'fibonacci',
         'taylor',
         'linsolve',
+        'dsolve',
       };
       for (final id in expectedCas) {
         expect(ids, contains(id), reason: 'Round 97 CAS slate missing "$id"');

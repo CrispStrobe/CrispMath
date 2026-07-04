@@ -87,10 +87,15 @@ system solver, no inequality solver.
   ℚ arithmetic throughout; 8 SymPy-certified corpus cases. Still open:
   Lazard–Rioboo–Trager for irreducible factors of degree ≥ 3
   (currently falls through to the rule walker / numeric path).
-- [ ] **ODE solving, education subset.** First order: separable,
-  linear, exact, Bernoulli. Second order: constant coefficients
-  (homogeneous + undetermined coefficients). Pattern-based `dsolve`,
-  step-by-step traces like the existing StepEngine.
+- [~] **ODE solving, education subset.** Constant-coefficient core
+  landed 2026-07-04 (`lib/engine/ode_solver.dart`): `dsolve(a*y'' +
+  b*y' + c*y = q)` — characteristic roots (distinct/double/complex,
+  exact surds), undetermined coefficients for polynomial/exp/trig
+  right-hand sides incl. exp+poly resonance; `y' = f(x)` delegates to
+  integrate. 8 SymPy-certified corpus cases (residual substitution
+  check), 14 unit tests, function reference EN/DE/FR/ES. Still open:
+  variable coefficients (separable, linear ∫-factor, exact,
+  Bernoulli), trig resonance, step-by-step traces.
 - [x] **Polynomial inequality solving.** Landed 2026-07-04:
   `solve(x^2-4>0)` → `x < -2 ∨ x > 2` (also bare input, unicode ≤/≥,
   exact surd endpoints, ≠/point/ℝ/∅ cases). Exact roots via native
