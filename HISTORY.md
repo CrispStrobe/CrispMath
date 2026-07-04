@@ -2,6 +2,23 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 14) — Piecewise UDF bodies (C5.4)
+
+User-defined functions can now have piecewise bodies:
+`f(x) = piecewise(x<0, -x, x)`, `sgn(x) = piecewise(x<0, -1, x>0, 1, 0)`.
+`ExpressionPreprocessingUtils.tryFoldPiecewise` is the N-branch
+generalization of the existing `if(cond, then, else)` fold: after the
+UDF is inlined (`absx(-3)` → `(piecewise((-3)<0, -3, -3))`), each
+condition is lowered (`preprocessLogicalOperators`) and evaluated
+through the engine in order; the first true branch's value expression
+is returned (then evaluated downstream). Odd argument count = trailing
+`else`; a symbolic condition or non-piecewise input returns null and is
+left untouched. This resolved the design risk flagged in the roadmap —
+reusing the if-fold machinery instead of inventing a piecewise lowering
+(SymEngine's text parser has no Piecewise). 8 fold unit tests + a native
+integration test (absx/sgn through real SymEngine). Dialog body hint
+updated to advertise piecewise.
+
 ## 2026-07-04 (cont. 13) — Rothstein–Trager rational-root integration (C5.3)
 
 The rational integrator gains the clean, verifiable subset of

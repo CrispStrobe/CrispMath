@@ -1134,6 +1134,24 @@ class CalculatorScreenState extends State<CalculatorScreen>
         converted = ifFolded;
       }
 
+      // Piecewise fold (roadmap C5.4). UDF-expand first so a piecewise
+      // user-function body (f(x) = piecewise(x<0, -x, x)) is inlined
+      // before the fold; only adopt the expansion if it actually folds,
+      // so non-piecewise expressions are untouched here.
+      final pwExpanded = ExpressionPreprocessingUtils.preprocessExpression(
+          converted, _appState);
+      final pwFolded = await ExpressionPreprocessingUtils.tryFoldPiecewise(
+        pwExpanded,
+        (cond) async => await _runEngineOpMaybeAsync(
+          'evaluate',
+          cond,
+          fallback: () => _engine.evaluate(cond),
+        ),
+      );
+      if (pwFolded != null) {
+        converted = pwFolded;
+      }
+
       // Round 91 (P6): precision-arc top-level calls — `pi(100)`,
       // `factorint(360)`, `isprime(2027)`, etc. Routes to the bridge's
       // MPFR / ntheory / FLINT wrappers and bypasses SymEngine entirely.
