@@ -29,6 +29,21 @@ Native run 66/66 on macOS; `flutter analyze` clean; full suite green.
 Still open in C2: binary-function FFI table, WITH_LLVM/WITH_ARB
 backends, WASM exports for series/linsolve (web parity).
 
+### Bonus: the dormant trig-identity engine now actually ships (1.4.2)
+
+Merging origin/master surfaced `4cd0d535` — a trig-identity rewrite
+engine for simplify() (Pythagorean, double angle, power reduction,
+secant form) committed 2026-05-31 by a headless session and **never
+compiled**: two build errors (RCP nullptr brace-init, RCP-to-bool) and
+one behavioral bug the corpus caught on first run — bottom-up recursion
+applied power reduction to each sin²/cos² term before the parent Add's
+pair analysis, so `sin(x)^2 + cos(x)^2` returned the expanded
+half-angle sum instead of `1`. Fixed (rule 4 now top-level only,
+math-stack e1cafdd3), rebuilt, shipped as bridge 1.4.2; CrispCalc
+repinned. 3 new corpus cases (69 total, all green natively). The
+readme "no trig identities" limitation is now history for native
+builds; web follows with the WASM rebuild.
+
 ## 2026-07-04 — CAS roadmap C1: SymPy-certified corpus + two real bugs found
 
 ### CAS depth roadmap written into PLAN.md

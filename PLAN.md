@@ -89,9 +89,12 @@ system solver, no inequality solver.
 - [ ] **Polynomial inequality solving.** Root isolation (already
   have) + sign analysis → interval answers:
   `solve(x^2-4>0)` → `x < -2 ∨ x > 2`.
-- [ ] **Identity simplification pass** layered over engine output:
-  Pythagorean/angle trig identities, log/exp rules, radical
-  denesting. Pure Dart, since the native core won't do this well.
+- [~] **Identity simplification pass.** Core trig identities now
+  handled NATIVELY (bridge 1.4.2 ships the C++ rewrite engine:
+  Pythagorean, double angle, power reduction, secant form — it had
+  been committed 2026-05-31 but never compiled; fixed + shipped
+  2026-07-04). Still open: angle sums/half angles, log/exp rules,
+  radical denesting (Dart layer), and web parity.
 
 ### C4 — Platform + surface parity
 

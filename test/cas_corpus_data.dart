@@ -839,6 +839,39 @@ const String kCasCorpusJson = '''
         "native"
       ],
       "check": "exact"
+    },
+    {
+      "id": "simplify_pythagorean",
+      "op": "simplify",
+      "input": "sin(x)^2 + cos(x)^2",
+      "var": "x",
+      "expected": "1",
+      "runners": [
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "simplify_pythagorean_scaled",
+      "op": "simplify",
+      "input": "3*sin(x)^2 + 3*cos(x)^2",
+      "var": "x",
+      "expected": "3",
+      "runners": [
+        "native"
+      ],
+      "check": "exact"
+    },
+    {
+      "id": "simplify_double_angle",
+      "op": "simplify",
+      "input": "2*sin(x)*cos(x)",
+      "var": "x",
+      "expected": "sin(2*x)",
+      "runners": [
+        "native"
+      ],
+      "check": "equiv"
     }
   ]
 }

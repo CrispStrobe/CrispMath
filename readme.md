@@ -174,8 +174,9 @@ On-device math equation recognition via CrispEmbed's ggml inference:
   analysis) — no native SymEngine binding yet.
 - Matrix eigenvalues/eigenvectors use a pure-Dart QR algorithm — works well
   for small matrices (tested up to 4x4), but not optimized for large ones.
-- `simplify()` has no trig identities (sin^2 + cos^2 stays as-is) — this is
-  an upstream SymEngine limitation.
+- `simplify()` handles the core trig identities natively since bridge
+  1.4.1 (Pythagorean, double angle, power reduction, secant form); broader
+  identity rewriting (angle sums, half angles, radicals) is still open.
 - OCR requires the CrispEmbed native library bundled per platform.
 - Multivariate `factor()` uses FLINT and is not available in the web build
   (WASM `fmpz_mpoly_factor` traps).
