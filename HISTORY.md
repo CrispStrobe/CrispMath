@@ -2,6 +2,28 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 10) — Bernoulli ODEs (reduction to linear)
+
+`dsolve` handles y' + p(x)·y = q(x)·y^n (n ≥ 2) by the substitution
+v = y^(1-n), which linearizes the equation; the transformed ODE is
+solved by a RECURSIVE solve() (so it reuses the constant-coefficient
+and linear-integrating-factor paths), then y = v^(1/(1-n)):
+
+- y' + y = y^2    → y = 1/(C1*exp(x) + 1)      (explicit logistic)
+- y' - y = y^2    → y = 1/(C1*exp(-x) - 1)
+- y' + 2*y = y^3  → y = 1/sqrt(C1*exp(4*x) + 1/2)
+- y' + y/x = y^2  → y = 1/((-log(x))*x + C1*x)  (variable coeff)
+
+Routed BEFORE separable so the named method returns an explicit closed
+form where separable would only give an implicit log relation. Several
+string-simplification fixes fell out and improved the shared helpers:
+_parseRationalToken now unwraps parens (so transformed coefficients
+like (-1) parse), _timesRational/_foldConst collapse constant
+subexpressions (-(-1) → 1, -2*2 → -4), and _divideByMonomial's
+negative-exponent fallback multiplies instead of dividing by x^-k.
+Corpus: **103 SymPy-certified cases** (3 Bernoulli, residual-checked);
+29 ODE unit tests.
+
 ## 2026-07-04 (cont. 9) — Linear first-order ODEs (integrating factor)
 
 `dsolve` completes the first-order family with the linear

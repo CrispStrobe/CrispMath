@@ -47,6 +47,8 @@ class OdeSolver {
         continue;
       }
       if (y.coeff == null) {
+        final bern = _tryBernoulli(engine, lhs, rhs);
+        if (bern != null) return bern;
         final lin = _tryLinearFirstOrder(engine, lhs, rhs);
         if (lin != null) return lin;
         final sep = _trySeparable(engine, lhs, rhs);
@@ -327,7 +329,7 @@ class OdeSolver {
   }
 
   static Rational? _parseRationalToken(String s) {
-    final p = Polynomial.tryParse(s);
+    final p = Polynomial.tryParse(_unwrap(s));
     if (p == null || p.degree != 0) return null;
     return p.coeffs[0];
   }
@@ -507,6 +509,120 @@ class OdeSolver {
   // y), so any rational g(y) works. Explicit solutions for the classic
   // shapes g = y (→ C1·e^F, with c·log(u) collapsed to u^c), g = y²,
   // g = 1/y; implicit "H(y) = F(x) + C1" otherwise.
+
+  // --- Bernoulli: y' + p(x)·y = q(x)·y^n  (n ≠ 0, 1) ----------------------
+  //
+  // Substitute v = y^(1-n): the equation becomes LINEAR in v,
+  //   v' + (1-n)·p·v = (1-n)·q,
+  // solved by the constant-coefficient / linear-integrating-factor paths
+  // via a recursive solve(), then y = v^(1/(1-n)). Routed before
+  // separable so the named method gives an EXPLICIT closed form
+  // (y' + y = y^2 → y = 1/(C1*exp(x) + 1)) where separable would only
+  // give an implicit log relation.
+  static String? _tryBernoulli(
+      CalculatorEngine engine, String lhs, String rhs) {
+    Rational? a; // y' coefficient (constant)
+    final pTerms = <String>[]; // signed x-coeffs of y^1
+    final qByN = <int, List<String>>{}; // n → signed x-coeffs of y^n
+
+    for (final (term, sign) in [
+      ..._terms(lhs).map((t) => (t.$1, t.$2)),
+      ..._terms(rhs).map((t) => (t.$1, -t.$2)),
+    ]) {
+      final t = term.replaceAll(' ', '');
+      if (t.contains("y''")) return null;
+      if (t.contains("y'")) {
+        final c = _yPrimeConstant(t);
+        if (c == null) return null;
+        a = (a ?? Rational.zero) + (sign < 0 ? -c : c);
+        continue;
+      }
+      final pw = _yPowerTerm(t);
+      if (pw != null) {
+        (qByN[pw.$1] ??= []).add(sign < 0 ? '-${pw.$2}' : pw.$2);
+        continue;
+      }
+      if (RegExp(r'(?<![a-zA-Z])y(?![a-zA-Z])').hasMatch(t)) {
+        final coeff = _yCoefficientExpr(t);
+        if (coeff == null) return null;
+        pTerms.add(sign < 0 ? '-$coeff' : coeff);
+        continue;
+      }
+      return null; // x-only term — not a pure Bernoulli equation
+    }
+
+    if (a == null || a.isZero || qByN.length != 1) return null;
+    final n = qByN.keys.first;
+    if (n < 2) return null; // n=0,1 are linear (handled elsewhere)
+    final cn = _sumStrings(qByN[n]!); // coeff of y^n in L = lhs - rhs
+    // L: a y' + (Σp) y + cn y^n = 0  ⇒  y' + P y = Q y^n,
+    //   P = (Σp)/a,  Q = -cn/a.
+    final pExpr = pTerms.isEmpty ? '0' : _unwrap(_sumStrings(pTerms));
+    final pN = pExpr == '0' ? '0' : _foldConst(_scaleExpr(pExpr, a));
+    final qN = _foldConst(_scaleExpr(_timesRational(-Rational.one, cn), a));
+
+    // Transformed linear ODE in v:  v' + (1-n)P·v = (1-n)Q.
+    final oneMinusN = Rational.fromInt(1 - n);
+    final pT = _timesRational(oneMinusN, pN);
+    final qT = _timesRational(oneMinusN, qN);
+    final transformed = "y' + ($pT)*y = ($qT)";
+
+    final vSol = solve(engine, transformed);
+    if (vSol.startsWith('Error') || !vSol.startsWith('y = ')) return null;
+    final v = vSol.substring(4).trim();
+
+    // y = v^(1/(1-n)).
+    final exp = Rational.one / oneMinusN;
+    return 'y = ${_powString(v, exp)}';
+  }
+
+  /// Parse a `q·y^n` term → (n, coefficientString), or null.
+  static (int, String)? _yPowerTerm(String t) {
+    final m = RegExp(r'(?<![a-zA-Z])y\^(\d+)').firstMatch(t);
+    if (m == null) return null;
+    final n = int.parse(m.group(1)!);
+    var pre = t.substring(0, m.start);
+    var post = t.substring(m.end);
+    if (pre.endsWith('*')) pre = pre.substring(0, pre.length - 1);
+    if (post.startsWith('*')) post = post.substring(1);
+    final num = pre.isEmpty ? '1' : pre;
+    if (post.isEmpty) return (n, num);
+    if (post.startsWith('/')) return (n, '$num$post');
+    return null;
+  }
+
+  /// Collapse a constant expression to its canonical rational string
+  /// (e.g. '-(-1)' → '1'); otherwise just unwrap outer parens.
+  static String _foldConst(String expr) {
+    final r = _parseRationalToken(expr);
+    return r != null ? _fmt(r) : _unwrap(expr);
+  }
+
+  /// c·(expr) as a clean string; folds constants and unwraps.
+  static String _timesRational(Rational c, String expr) {
+    final e = _unwrap(expr);
+    if (c.isZero || e == '0') return '0';
+    // Fold when the expression is itself a constant.
+    final r = _parseRationalToken(e);
+    if (r != null) return _fmt(c * r);
+    if (c == Rational.one) return e;
+    if (c == -Rational.one) return e.startsWith('-') ? e.substring(1) : '-$e';
+    return '${_fmt(c)}*($e)';
+  }
+
+  /// (base)^exp with clean forms for the common exponents.
+  static String _powString(String base, Rational exp) {
+    final b = _unwrap(base);
+    if (exp == Rational.one) return b;
+    if (exp == -Rational.one) return '1/($b)';
+    if (exp.numerator == BigInt.from(-1) && exp.denominator == BigInt.two) {
+      return '1/sqrt($b)';
+    }
+    if (exp.numerator == BigInt.one && exp.denominator == BigInt.two) {
+      return 'sqrt($b)';
+    }
+    return '($b)^(${_fmt(exp)})';
+  }
 
   // --- linear first order: y' + p(x)·y = q(x) -----------------------------
   //
@@ -689,7 +805,11 @@ class OdeSolver {
       }
       return parts.isEmpty ? '0' : parts.join(' ');
     }
-    // Fallback: literal fraction.
+    // Fallback: literal fraction / product (negative k → multiply).
+    if (k.sign < 0) {
+      final mono = k == -Rational.one ? 'x' : 'x^${_fmt(-k)}';
+      return '($numer)*$mono';
+    }
     final den = k == Rational.one ? 'x' : 'x^${_fmt(k)}';
     return '($numer)/$den';
   }

@@ -99,9 +99,12 @@ system solver, no inequality solver.
   incl. power-law C1·x^k — g = y², g = 1/y; implicit otherwise, e.g.
   logistic). Linear first-order integrating-factor also landed:
   y' + p(x)·y = q(x) → μ = exp(∫p), y = (∫μq + C1)/μ, tractable
-  education case p = k/x (μ = x^k). Still open: exact/Bernoulli forms,
-  non-elementary integrating factors (p polynomial), trig resonance,
-  step-by-step traces.
+  education case p = k/x (μ = x^k). Bernoulli
+  y' + p·y = q·y^n (n≥2) also landed: v = y^(1-n) reduction to the
+  linear/constant path via a recursive solve(), giving explicit forms
+  (y' + y = y^2 → y = 1/(C1*exp(x) + 1); n=3 → 1/sqrt(…)). Still open:
+  exact ODEs, non-elementary integrating factors (p polynomial), trig
+  resonance, step-by-step traces.
 - [x] **Polynomial inequality solving.** Landed 2026-07-04:
   `solve(x^2-4>0)` → `x < -2 ∨ x > 2` (also bare input, unicode ≤/≥,
   exact surd endpoints, ≠/point/ℝ/∅ cases). Exact roots via native
