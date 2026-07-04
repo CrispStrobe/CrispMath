@@ -98,9 +98,11 @@ system solver, no inequality solver.
 
 ### C4 — Platform + surface parity
 
-- [ ] **Arbitrary precision on web.** MPFR/FLINT compile under
-  Emscripten; extend the WASM build so `evalf`/number theory stop
-  being native-only.
+- [x] **Arbitrary precision on web.** Verified live 2026-07-04: the
+  full-capability WASM (GMP/MPFR/MPC/FLINT, shipped 2026-05-31) already
+  serves `evalf`/`cevalf`, isprime/factorint/modpow/…, and Bessel in
+  the browser — the June loader race had been masking it. Banner +
+  readme claims corrected. Remaining web gap: multivariate factor.
 - [ ] **User-defined functions V2.** Multi-letter names, multiple
   parameters, piecewise; today UDFs are single-letter/single-arg.
 - [ ] **Plot types.** Parametric + polar + implicit 2D; contour lines

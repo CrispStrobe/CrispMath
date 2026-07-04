@@ -183,5 +183,11 @@ On-device math equation recognition via CrispEmbed's ggml inference:
 - Multivariate `factor()` uses FLINT and is not available in the web build
   (WASM `fmpz_mpoly_factor` traps).
 
+Since 2026-07-04 the browser build runs the full CAS — including
+high-precision (`evalf`), number theory (isprime/factorint/…), Bessel,
+Taylor series, `linsolve`, and trig-identity simplify — via the
+full-capability SymEngine WASM (GMP/MPFR/MPC/FLINT). The remaining
+web-only gap is multivariate factoring (falls back to `expand`).
+
 See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
 recently.

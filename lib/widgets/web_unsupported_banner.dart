@@ -6,7 +6,7 @@
 //
 //   - loading     → "loading the in-browser engine…" (transient, ~1s)
 //   - ready       → full CAS works in the browser; only the GMP/MPFR/FLINT-
-//                   only functions (isprime, factorint, evalf, Bessel) still
+//                   the full CAS incl. precision/number theory works; only
 //                   need the native app.
 //   - unavailable → WASM never loaded; symbolic features need the app.
 //

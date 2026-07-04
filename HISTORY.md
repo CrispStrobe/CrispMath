@@ -2,6 +2,17 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 3) — Web precision/number theory: already live, claims corrected
+
+Follow-up verification on production after the loader fix: the browser
+CAS serves `evalf(ln(10),50)` (MPFR), `factorint(360)` -> 2³·3²·5
+(FLINT), `besselj(0,2.5)` (MPFR Bessel) — the full-capability WASM
+shipped 2026-05-31 had the machinery all along; the June loader race
+masked it, and the "web still needs the app for these" claims were
+never re-tested. Corrected: WebUnsupportedBanner partial-state string
+(4 locales), readme, PLAN C4 item marked done. The one remaining
+web-only gap is multivariate factoring (gated, falls back to expand).
+
 ## 2026-07-04 (cont. 2) — Web CAS parity + the silent production outage
 
 ### Production web CAS was silently dead — found and fixed

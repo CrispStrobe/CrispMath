@@ -1486,7 +1486,7 @@ class EnLocalizations implements AppLocalizations {
       'Loading the in-browser symbolic engine… solve, factor and integrate light up once it finishes.';
   @override
   String get webBannerCasPartial =>
-      'Symbolic CAS runs right here in your browser. High-precision and number-theory functions (isprime, factorint, evalf, Bessel) still need the desktop or mobile app.';
+      'The full symbolic CAS — including high-precision and number-theory functions (isprime, factorint, evalf, Bessel) — runs right here in your browser. Only multivariate factoring still needs the desktop or mobile app.';
   @override
   String get webBannerCasUnavailable =>
       'Browser build: symbolic CAS, high-precision and number-theory features need the desktop or mobile app. Statistics, matrices, Sudoku/CSP, units and the calculator all work here.';
@@ -3173,7 +3173,7 @@ class DeLocalizations implements AppLocalizations {
       'Symbolische Engine im Browser wird geladen… solve, factor und integrate stehen gleich zur Verfügung.';
   @override
   String get webBannerCasPartial =>
-      'Symbolisches CAS läuft direkt hier im Browser. Hochpräzise und zahlentheoretische Funktionen (isprime, factorint, evalf, Bessel) benötigen weiterhin die Desktop- oder Mobil-App.';
+      'Das vollständige symbolische CAS – einschließlich Hochpräzisions- und zahlentheoretischer Funktionen (isprime, factorint, evalf, Bessel) – läuft direkt hier im Browser. Nur die multivariate Faktorisierung benötigt weiterhin die Desktop- oder Mobil-App.';
   @override
   String get webBannerCasUnavailable =>
       'Browser-Version: symbolisches CAS, hochpräzise und zahlentheoretische Funktionen benötigen die Desktop- oder Mobil-App. Statistik, Matrizen, Sudoku/CSP, Einheiten und der Rechner funktionieren hier.';
@@ -6143,7 +6143,7 @@ class FrLocalizations implements AppLocalizations {
       'Chargement du moteur symbolique dans le navigateur… solve, factor et integrate seront disponibles dès que ce sera prêt.';
   @override
   String get webBannerCasPartial =>
-      'Le CAS symbolique fonctionne ici, dans votre navigateur. Les fonctions de haute précision et de théorie des nombres (isprime, factorint, evalf, Bessel) nécessitent encore l\'application de bureau ou mobile.';
+      'Le CAS symbolique complet — y compris les fonctions de haute précision et de théorie des nombres (isprime, factorint, evalf, Bessel) — fonctionne ici, dans votre navigateur. Seule la factorisation multivariée nécessite encore l\'application de bureau ou mobile.';
   @override
   String get webBannerCasUnavailable =>
       'Version navigateur : le CAS symbolique, la haute précision et la théorie des nombres nécessitent l\'application de bureau ou mobile. Les statistiques, matrices, Sudoku/CSP, unités et la calculatrice fonctionnent ici.';
@@ -9104,7 +9104,7 @@ class EsLocalizations implements AppLocalizations {
       'Cargando el motor simbólico en el navegador… solve, factor e integrate estarán disponibles en cuanto termine.';
   @override
   String get webBannerCasPartial =>
-      'El CAS simbólico funciona aquí, en tu navegador. Las funciones de alta precisión y teoría de números (isprime, factorint, evalf, Bessel) todavía necesitan la app de escritorio o móvil.';
+      'El CAS simbólico completo —incluidas las funciones de alta precisión y teoría de números (isprime, factorint, evalf, Bessel)— funciona aquí, en tu navegador. Solo la factorización multivariada sigue necesitando la app de escritorio o móvil.';
   @override
   String get webBannerCasUnavailable =>
       'Versión navegador: el CAS simbólico, la alta precisión y la teoría de números necesitan la app de escritorio o móvil. La estadística, matrices, Sudoku/CSP, unidades y la calculadora funcionan aquí.';
