@@ -963,6 +963,102 @@
         "native"
       ],
       "check": "exact"
+    },
+    {
+      "id": "int_rat_partial_fractions",
+      "op": "integrate",
+      "input": "1/(x^2 - 1)",
+      "var": "x",
+      "expected": "log(x - 1)/2 - log(x + 1)/2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
+    },
+    {
+      "id": "int_rat_atan",
+      "op": "integrate",
+      "input": "1/(x^2 + x + 1)",
+      "var": "x",
+      "expected": "2*atan((2*x + 1)/sqrt(3))/sqrt(3)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
+    },
+    {
+      "id": "int_rat_hermite",
+      "op": "integrate",
+      "input": "1/(x^2 - 2*x + 1)",
+      "var": "x",
+      "expected": "-1/(x - 1)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
+    },
+    {
+      "id": "int_rat_polypart",
+      "op": "integrate",
+      "input": "(x^3 + 1)/x^2",
+      "var": "x",
+      "expected": "x^2/2 - 1/x",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
+    },
+    {
+      "id": "int_rat_mixed",
+      "op": "integrate",
+      "input": "(2*x + 3)/(x^2 + x + 1)",
+      "var": "x",
+      "expected": "log(x^2 + x + 1) + 4*atan((2*x + 1)/sqrt(3))/sqrt(3)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
+    },
+    {
+      "id": "int_rat_multiplicity",
+      "op": "integrate",
+      "input": "1/(x - 2)^3",
+      "var": "x",
+      "expected": "-1/(2*(x - 2)^2)",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
+    },
+    {
+      "id": "int_rat_quartic",
+      "op": "integrate",
+      "input": "1/(x^4 - 1)",
+      "var": "x",
+      "expected": "log(x - 1)/4 - log(x + 1)/4 - atan(x)/2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
+    },
+    {
+      "id": "int_rat_surd",
+      "op": "integrate",
+      "input": "1/(x^2 - 1/3)",
+      "var": "x",
+      "expected": "sqrt(3)*log((x - sqrt(3)/3)/(x + sqrt(3)/3))/2",
+      "runners": [
+        "dart",
+        "native"
+      ],
+      "check": "antiderivative"
     }
   ]
 }
