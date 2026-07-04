@@ -75,38 +75,50 @@ class CalculationEntry {
 
 /// A named, user-defined function. Stored by AppState and inlined by
 /// [ExpressionPreprocessingUtils] when the calculator encounters
-/// `<name>(<arg>)` in an expression. Supports composition via
-/// successive expansion passes (`g(f(x))` works as long as both `f` and
-/// `g` are defined). One single-letter parameter per function — kept
-/// minimal to match the calculator-app norm and avoid having to ship a
-/// real argument-list parser.
+/// `<name>(<arg>, …)` in an expression. Supports composition via
+/// successive expansion passes (`g(f(x))` works as long as both are
+/// defined).
+///
+/// V2 (2026-07-04): multi-letter names and multiple parameters —
+/// `dist(a, b) = sqrt(a^2 + b^2)`. V1 single-param definitions load
+/// unchanged (legacy `v` key → single-element [params]); the
+/// [paramVar] getter is kept so older call sites keep compiling.
 class UserFunction {
-  /// Identifier used in expressions. Must be a single letter so it can
-  /// never collide with built-in function names like `sin`, `gcd`,
-  /// `Matrix`. Lowercased on save; ASCII letters only.
+  /// Identifier used in expressions. ASCII letters/digits, must start
+  /// with a letter, lowercased on save. Callers must reject names that
+  /// collide with built-ins (`sin`, `gcd`, `Matrix`) via
+  /// `ExpressionPreprocessingUtils.isReservedName`.
   final String name;
 
-  /// Parameter variable. Defaults to `x`.
-  final String paramVar;
+  /// Parameter variables, in call order. At least one; defaults to
+  /// `[x]`.
+  final List<String> params;
 
   /// Right-hand side of the definition. e.g. `x^2 + 1`.
   final String body;
 
-  const UserFunction({
+  UserFunction({
     required this.name,
-    required this.paramVar,
+    List<String>? params,
+    String? paramVar,
     required this.body,
-  });
+  }) : params = params ?? [paramVar ?? 'x'];
+
+  /// First parameter — back-compat for single-arg call sites.
+  String get paramVar => params.isEmpty ? 'x' : params.first;
+
+  int get arity => params.length;
 
   Map<String, dynamic> toJson() => {
         'n': name,
-        'v': paramVar,
+        'p': params,
         'b': body,
       };
 
   static UserFunction fromJson(Map<String, dynamic> j) => UserFunction(
         name: (j['n'] as String? ?? '').toLowerCase(),
-        paramVar: j['v'] as String? ?? 'x',
+        params: (j['p'] as List?)?.cast<String>() ??
+            [j['v'] as String? ?? 'x'], // legacy single-param key
         body: j['b'] as String? ?? '',
       );
 }

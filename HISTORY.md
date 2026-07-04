@@ -2,6 +2,31 @@
 
 Completed work, newest first.
 
+## 2026-07-04 (cont. 8) — User-defined functions V2 (multi-arg)
+
+UDFs go from single-letter/single-parameter to multi-letter names with
+any number of parameters — `dist(a, b) = sqrt(a^2 + b^2)`, typed at the
+calculator or created in the Functions dialog.
+
+- `UserFunction` now holds `params: List<String>` (was one `paramVar`);
+  `paramVar`/legacy `v` JSON key retained so old definitions and call
+  sites keep working (the constructor is no longer const — call sites
+  updated). New `p:[...]` JSON key.
+- Preprocessor `_expandUserFunctions` splits the argument list at
+  top-level commas (nested calls intact), checks arity, and substitutes
+  all parameters SIMULTANEOUSLY via placeholders so an argument
+  containing another parameter's name can't be re-substituted
+  (sub(b, 2) with body a−b → (b)−(2), not (2)−(2)).
+- Typed `name(params) = body` definition route in the calculator,
+  guarded against shadowing built-ins (`isReservedName`) and duplicate
+  params; dialog validation widened to multi-letter + comma params.
+- 14 new unit tests + a native integration test (dist(3,4)→5,
+  add(dist(3,4),10)→15 through real SymEngine). Full suite green.
+
+(Note: this work was first done on the /Volumes/backups drive, which
+hard-failed with I/O errors before commit; reconstructed from the
+session transcript on the ~/code/CrispCalc-local clone and re-verified.)
+
 ## 2026-07-04 (cont. 7) — Separable / variable-coefficient ODEs
 
 `dsolve` now handles the textbook explicit form `y' = f(x)·g(y)`:

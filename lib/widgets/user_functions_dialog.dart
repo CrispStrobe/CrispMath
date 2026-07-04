@@ -13,6 +13,7 @@
 import 'package:flutter/material.dart';
 
 import '../engine/app_state.dart';
+import '../utils/expression_preprocessing_utils.dart';
 import '../localization/app_localizations.dart';
 
 class UserFunctionsDialog extends StatefulWidget {
@@ -74,7 +75,7 @@ class _UserFunctionsDialogState extends State<UserFunctionsDialog> {
                         return ListTile(
                           dense: true,
                           title: Text(
-                            '${fn.name}(${fn.paramVar}) = ${fn.body}',
+                            '${fn.name}(${fn.params.join(', ')}) = ${fn.body}',
                             style: const TextStyle(fontFamily: 'monospace'),
                           ),
                           trailing: Row(
@@ -126,7 +127,8 @@ class _UserFunctionsDialogState extends State<UserFunctionsDialog> {
   Future<void> _editDialog(BuildContext context, UserFunction? existing) async {
     final t = AppLocalizations.of(context);
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
-    final varCtrl = TextEditingController(text: existing?.paramVar ?? 'x');
+    final varCtrl =
+        TextEditingController(text: existing?.params.join(', ') ?? 'x');
     final bodyCtrl = TextEditingController(text: existing?.body ?? '');
     final formKey = GlobalKey<FormState>();
 
@@ -153,7 +155,10 @@ class _UserFunctionsDialogState extends State<UserFunctionsDialog> {
                     validator: (s) {
                       final v = s?.trim().toLowerCase() ?? '';
                       if (v.isEmpty) return t.userFunctionsNameRequired;
-                      if (!RegExp(r'^[a-z]$').hasMatch(v)) {
+                      // V2: multi-letter names allowed, but must not
+                      // start with a digit or shadow a built-in.
+                      if (!RegExp(r'^[a-z][a-z0-9]*$').hasMatch(v) ||
+                          ExpressionPreprocessingUtils.isReservedName(v)) {
                         return t.userFunctionsNameInvalid;
                       }
                       return null;
@@ -164,11 +169,23 @@ class _UserFunctionsDialogState extends State<UserFunctionsDialog> {
                     controller: varCtrl,
                     decoration: InputDecoration(
                       labelText: t.userFunctionsParam,
-                      hintText: 'x',
+                      hintText: 'x, y',
                     ),
                     validator: (s) {
-                      final v = s?.trim() ?? '';
-                      if (v.isEmpty) return t.userFunctionsNameRequired;
+                      final parts = (s?.trim() ?? '')
+                          .split(',')
+                          .map((p) => p.trim())
+                          .toList();
+                      if (parts.isEmpty || parts.any((p) => p.isEmpty)) {
+                        return t.userFunctionsNameRequired;
+                      }
+                      if (parts.any((p) =>
+                          !RegExp(r'^[a-zA-Z][a-zA-Z0-9]*$').hasMatch(p))) {
+                        return t.userFunctionsNameInvalid;
+                      }
+                      if (parts.toSet().length != parts.length) {
+                        return t.userFunctionsNameInvalid;
+                      }
                       return null;
                     },
                   ),
@@ -197,7 +214,12 @@ class _UserFunctionsDialogState extends State<UserFunctionsDialog> {
                 if (!(formKey.currentState?.validate() ?? false)) return;
                 _appState.setUserFunction(UserFunction(
                   name: nameCtrl.text.trim().toLowerCase(),
-                  paramVar: varCtrl.text.trim(),
+                  params: varCtrl.text
+                      .trim()
+                      .split(',')
+                      .map((p) => p.trim())
+                      .where((p) => p.isNotEmpty)
+                      .toList(),
                   body: bodyCtrl.text.trim(),
                 ));
                 Navigator.of(ctx).pop();
