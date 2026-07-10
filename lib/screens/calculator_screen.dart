@@ -2519,8 +2519,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                    // Round 108: a plain Row overflowed (~90px) on
+                    // narrow phones once the history controls (LaTeX/Plain
+                    // toggle, search, clear) appeared alongside the four
+                    // always-on action icons. Wrap keeps everything on one
+                    // right-aligned line on wide layouts (tablet/desktop)
+                    // and gracefully wraps the extras to a second line on
+                    // narrow ones instead of clipping.
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      runSpacing: 4,
                       children: [
                         // OCR camera button
                         IconButton(
