@@ -49,6 +49,10 @@ key.properties
 *.jks
 *.keystore
 
+# App Store Connect API key (secrets — never commit)
+.appstoreconnect/
+*.p8
+
 # Local-only working notes and harness state — not for the public repo
 HANDOFF.md
 HANDOFF_NEXT.md
