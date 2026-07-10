@@ -231,7 +231,7 @@ void main() {
     });
 
     test('single-letter UDF inlines and substitutes argument', () {
-      AppState().setUserFunction(const UserFunction(
+      AppState().setUserFunction(UserFunction(
         name: 'f',
         paramVar: 'x',
         body: 'x^2 + 1',
@@ -243,12 +243,12 @@ void main() {
     });
 
     test('UDF composition g(f(x))', () {
-      AppState().setUserFunction(const UserFunction(
+      AppState().setUserFunction(UserFunction(
         name: 'f',
         paramVar: 'x',
         body: 'x + 1',
       ));
-      AppState().setUserFunction(const UserFunction(
+      AppState().setUserFunction(UserFunction(
         name: 'g',
         paramVar: 'x',
         body: 'x * 2',
@@ -264,7 +264,7 @@ void main() {
     test('depth budget prevents recursive UDF blow-up', () {
       // Self-referential UDF; expander should stop after maxDepth=4
       // passes rather than recursing forever.
-      AppState().setUserFunction(const UserFunction(
+      AppState().setUserFunction(UserFunction(
         name: 'f',
         paramVar: 'x',
         body: 'f(x) + 1',

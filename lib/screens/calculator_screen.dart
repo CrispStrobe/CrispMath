@@ -1068,6 +1068,16 @@ class CalculatorScreenState extends State<CalculatorScreen>
         return;
       }
 
+      // Named user-function definition: `f(x) = …`, `dist(a, b) = …`.
+      // Multi-letter name + comma-separated params. Must precede the
+      // bare-equation route (which would try to solve the '=').
+      final udfMatch = RegExp(
+              r'^([a-zA-Z][a-zA-Z0-9]*)\s*\(([a-zA-Z][a-zA-Z0-9]*(?:\s*,\s*[a-zA-Z][a-zA-Z0-9]*)*)\)\s*=(?!=)\s*(.+)$')
+          .firstMatch(trimmed);
+      if (udfMatch != null && _tryDefineUserFunction(expression, udfMatch)) {
+        return;
+      }
+
       final convertedExpression = LatexConversionUtils.fromLatex(expression);
       // Collapse whitespace between a function-name identifier and
       // its opening paren so `solve (x, y)` / `diff (x^3, x)` route
@@ -1375,6 +1385,35 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _latexController.clear();
       });
     }
+  }
+
+  /// Define a named user function from typed `name(params) = body`.
+  /// Returns false (so dispatch falls through) when the name collides
+  /// with a built-in — otherwise it would shadow `sin`, `gcd`, etc.
+  bool _tryDefineUserFunction(String originalExpression, RegExpMatch m) {
+    final name = m.group(1)!.toLowerCase();
+    if (ExpressionPreprocessingUtils.isReservedName(name) ||
+        RegExp(r'^[FY]\d+$').hasMatch(m.group(1)!)) {
+      return false;
+    }
+    final params = m
+        .group(2)!
+        .split(',')
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
+    // Duplicate parameter names would make substitution ambiguous.
+    if (params.toSet().length != params.length) return false;
+    final body = LatexConversionUtils.fromLatex(m.group(3)!.trim());
+    _appState
+        .setUserFunction(UserFunction(name: name, params: params, body: body));
+    setState(() {
+      _appState.addHistoryEntry(
+          originalExpression, 'Defined $name(${params.join(', ')})');
+      _justCalculated = true;
+      _latexController.clear();
+    });
+    return true;
   }
 
   Future<void> _handleFunctionDefinition(
