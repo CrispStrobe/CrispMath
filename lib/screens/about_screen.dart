@@ -59,7 +59,24 @@ class AboutScreen extends StatelessWidget {
           _SectionCard(
             icon: Icons.privacy_tip_outlined,
             label: l.aboutPrivacy,
-            child: Text(l.aboutPrivacyText),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.aboutPrivacyText),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => _open(
+                      'https://crisp-math.vercel.app/privacy.html'),
+                  child: const Text(
+                    'Full privacy policy',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           _SectionCard(
             icon: Icons.gavel,

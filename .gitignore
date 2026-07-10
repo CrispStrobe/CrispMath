@@ -44,6 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android release signing (secrets — never commit)
+key.properties
+*.jks
+*.keystore
+
 # Local-only working notes and harness state — not for the public repo
 HANDOFF.md
 HANDOFF_NEXT.md
