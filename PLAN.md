@@ -1,4 +1,4 @@
-# CrispCalc — Plan
+# CrispMath — Plan
 
 Living worklist. `[ ]` pending · `[~]` in-progress · `[x]` done.
 Completed items with details are in `HISTORY.md`.
@@ -11,11 +11,11 @@ Completed items with details are in `HISTORY.md`.
 calculator+notes, (2) notepad/natural-language, (3) AI math
 solvers, (4) graphing, (5) scientific/power-user.
 
-**CrispCalc's position**: competitive-to-ahead on scientific/power-user
+**CrispMath's position**: competitive-to-ahead on scientific/power-user
 with unique CAS+CSP+stats+units+cross-platform breadth. Behind on
 input paradigm (notepad shipped June 2026) and AI (CrispAssist shipped).
 
-**The bet**: notepad mode + CrispAssist reposition CrispCalc from
+**The bet**: notepad mode + CrispAssist reposition CrispMath from
 "strongest engine nobody knows about" to "only CAS-grade calculator
 with a 2026 input surface."
 
@@ -23,7 +23,7 @@ with a 2026 input surface."
 
 ## CAS depth roadmap (July 2026)
 
-Goal: close the gap between CrispCalc's symbolic core and what users
+Goal: close the gap between CrispMath's symbolic core and what users
 of professional CAS software expect. The breadth story (units, dates,
 stats, number theory, linear algebra, plotting, notepad) is already
 competitive; the depth gaps are simplification, integration, series,
@@ -154,7 +154,7 @@ CrispAssist remains the escape hatch (as verifier/frontend).
 
 The user's chosen order for finishing the roadmap. Do them in sequence;
 each ships as its own arc (feature branch → SymPy-certified corpus /
-tests → full suite → merge → CI green) from `~/code/CrispCalc-local`.
+tests → full suite → merge → CI green) from `~/code/CrispMath-local`.
 
 1. [x] **Exact ODEs.** Landed 2026-07-04. `M + N·y' = 0` with
    ∂M/∂y = ∂N/∂x → implicit potential `F(x,y) = C1`, all on a bivariate
@@ -268,7 +268,7 @@ tests → full suite → merge → CI green) from `~/code/CrispCalc-local`.
 
 ### CrispEmbed integration — June 2026 batch
 
-Four features from CrispEmbed to integrate into CrispCalc, in order:
+Four features from CrispEmbed to integrate into CrispMath, in order:
 
 - [x] **1. MixTex model catalog.** Added MixTex (Swin-Tiny + RoBERTa,
   Chinese+English LaTeX OCR) to `ocr_model_catalog.dart`. Quantized
@@ -282,7 +282,7 @@ Four features from CrispEmbed to integrate into CrispCalc, in order:
   Q8_0 layout, BLAS-accelerated decoder matmuls.
 
 - [x] **3. General OCR pipeline.** Wired `CrispOcrPipeline` (DBNet +
-  TrOCR) into CrispCalc. Added `_GeneralOcrProvider` in
+  TrOCR) into CrispMath. Added `_GeneralOcrProvider` in
   `ocr_providers_init.dart` with temp-file PPM bridge. Added DBNet
   (7/12 MB) and TrOCR-small-printed (42/63 MB) to model catalog.
   Published to HuggingFace `cstr/dbnet-ic15-gguf` + `cstr/trocr-small-printed-gguf`.
@@ -293,7 +293,7 @@ Four features from CrispEmbed to integrate into CrispCalc, in order:
   text detection backend (falls back to DBNet if Surya not downloaded).
   Published to `cstr/surya-det-gguf`.
 
-### CrispCalc UI + wiring — June 2026
+### CrispMath UI + wiring — June 2026
 
 - [x] **5. Provider selector UI.** Rewrote OcrSettingsDialog with
   runtime provider switcher (radio-style ListTiles). Shows all 9
@@ -506,16 +506,16 @@ quantizations verified. CI builds all 5 platforms.
 
 ### Three-repo chain
 ```
-math-stack-ios-builder → symbolic_math_bridge → CrispCalc
+math-stack-ios-builder → symbolic_math_bridge → CrispMath
 ```
 - **math-stack**: builds SymEngine + GMP/MPFR/FLINT into
   xcframeworks (iOS/macOS) or shared libs (Android/Windows/Linux/WASM)
 - **symbolic_math_bridge**: Flutter FFI plugin wrapping the C API
-- **CrispCalc**: the app, pins bridge via git ref in pubspec
+- **CrispMath**: the app, pins bridge via git ref in pubspec
 
 ### CrispEmbed integration (OCR)
 ```
-CrispEmbed (C++/ggml) → Flutter plugin (flutter/crispembed/) → CrispCalc
+CrispEmbed (C++/ggml) → Flutter plugin (flutter/crispembed/) → CrispMath
 ```
 - `math_ocr.h/cpp`: DeiT encoder (ggml graph) + TrOCR decoder (scalar)
 - `qwen2vl_ocr.h/cpp`: Qwen2.5-VL + Qwen3-VL (auto-detected from GGUF arch)

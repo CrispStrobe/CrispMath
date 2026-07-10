@@ -1,106 +1,95 @@
 # CrispMath — distribution prep
 
 Status of getting CrispMath onto the App Store, Mac App Store, and Google
-Play. Written 2026-07-04 from a config audit. The engine is competitive;
-this is the remaining gate to reaching users (PLAN.md Tier 1 ship blocker).
+Play. Updated 2026-07-10 after the full rename and app-store readiness pass.
 
-## Account decision (do this first)
+## Account status
 
-Register the **Gewerbeanmeldung before the Apple Developer account.**
-Rationale: it's cheap (~€20–60) and often same-day, it unblocks BOTH Apple
-account types, and it removes tax-timing ambiguity.
+- **Apple Developer Program**: enrolled as individual, Team ID `N9XSJ4M3GT`,
+  API key generated and working (used for CrispChess + CrispSudoku).
+- **Google Play**: one-time $25, individual or business — not yet enrolled.
 
-- **Apple account type — the consequential choice.** *Individual* (seller =
-  your personal legal name, no D-U-N-S needed) vs. *Organization* (needs a
-  D-U-N-S number → a registered entity). Moving apps from an individual to
-  an organization account later is painful, so decide deliberately. If you
-  want a business name from day one, do the Gewerbe/entity first, then
-  enroll as an organization.
-- **Google Play**: one-time $25, individual or business.
-- **Apple Developer Program**: $99/year; enrollment identity check can take
-  several days, so start it in parallel with the Gewerbe.
-- Confirm the Kleinunternehmer (§19 UStG) vs. regular-VAT choice with a
-  Steuerberater — it affects App Store pricing.
+## Completed (2026-07-10)
 
-## Blockers (must fix before any store submission)
+1. **App renamed CrispCalc → CrispMath** — 189 files, GitHub repo, Vercel
+   project, all CI workflows, env vars (`CRISPMATH_*`).
+2. **Bundle IDs fixed** — `com.crispstrobe.crispmath` (iOS/macOS),
+   `com.crispstrobe.crisp_math` (Android/Linux).
+3. **Version bumped** — `1.0.0+1` in pubspec.yaml.
+4. **iOS MARKETING_VERSION wired** — tracks `$(FLUTTER_BUILD_NAME)` from
+   pubspec, no more hardcoded `1.0`.
+5. **PrivacyInfo.xcprivacy** created and wired into iOS Xcode project
+   (UserDefaults + FileTimestamp API declarations).
+6. **ITSAppUsesNonExemptEncryption = false** in Info.plist — eliminates
+   TestFlight export compliance prompt.
+7. **Android release signing** wired in `build.gradle.kts` — reads
+   `key.properties` when present, falls back to debug signing otherwise.
+   `key.properties`, `*.jks`, `*.keystore` added to `.gitignore`.
+8. **Privacy policy** published at `crisp-math.vercel.app/privacy.html`,
+   linked from About screen.
+9. **LGPL compliance** — written offer for object files added to
+   `assets/licenses/SYMENGINE_STACK.txt` (FLINT/GMP/MPFR/MPC).
+10. **AGPL §7 marketplace exception** — already in LICENSE file, documented
+    in SYMENGINE_STACK.txt. App Store distribution is covered.
+11. **CrispEmbed bumped** to v0.14.0 (robust deskew, LoRA hot-swap,
+    Unlimited-OCR engine, WASM OCR pipeline).
+12. **Store listing copy** drafted in `STORE_LISTING.md` (description,
+    keywords, subtitle, promo text, review notes).
+13. **App icons** verified present for all platforms (custom integral+sigma
+    design on dark blue).
+14. **macOS sandbox `network.client`** entitlement — already fixed in prior
+    session.
+15. **Vercel secret** `VERCEL_PROJECT_ID` updated for the renamed project.
+16. **All CI green** — 7 workflows (CI, Web, iOS, Android, macOS, Linux,
+    Windows) passing after rename.
 
-1. ~~**Placeholder bundle identifiers**~~ **DONE** — All platforms now use
-   `com.crispstrobe.crispmath` (iOS/macOS) / `com.crispstrobe.crisp_math`
-   (Android). App renamed from CrispCalc to **CrispMath**.
+## Remaining — on the Mac
 
-2. **Android release build is signed with the DEBUG keystore**
-   (`android/app/build.gradle.kts:37` — `signingConfigs.getByName("debug")`
-   under `buildTypes.release`, with a `// TODO` already noting it). Play
-   rejects debug-signed AABs. Needs: generate an upload keystore
-   (`keytool -genkey -v -keystore upload.jks -keyalg RSA -keysize 2048
-   -validity 10000 -alias upload`), add a `key.properties` (git-ignored),
-   and a real `release` signing config. Then enroll in Play App Signing.
-   Left for you — the keystore is a secret you must generate and hold.
+These require the Mac with Xcode + the `.p8` API key:
 
-3. **macOS sandbox was missing `network.client`** — FIXED this session in
-   both `Release.entitlements` and `DebugProfile.entitlements`. Without it,
-   a sandboxed Mac App Store build would block every outbound request
-   (CrispAssist AI, cloud OCR, crash reporting). Also review whether the
-   OCR model DOWNLOAD-to-disk paths need `network.client` (they do — now
-   covered) and whether any feature needs additional sandbox exceptions
-   (e.g. user-selected file read for image OCR — currently the app uses
-   the image_picker plugin, which is sandbox-friendly).
+1. **Register bundle ID** `com.crispstrobe.crispmath` via App Store Connect
+   API (`POST /v1/bundleIds`). Use the `gen_token.py` pattern from
+   `appstore.md` Step 2.
 
-## Non-blocking cleanups (done this session)
+2. **Create app record** in App Store Connect — browser-only (Step 3).
+   Name: CrispMath, Bundle ID from step 1, SKU: `crispmath`.
 
-- **Android display label** `crisp_calc` → `CrispMath` (now `crisp_math`)
-  (`AndroidManifest.xml`).
+3. **Build + archive + upload** iOS IPA (Steps 5-7 in `appstore.md`).
+   The `DEVELOPMENT_TEAM = N9XSJ4M3GT` is already in the pbxproj.
 
-## Recommended follow-ups (not blocking, low risk)
+4. **Screenshots** via iOS Simulator (Step 11 in `appstore.md`). Need
+   iPhone 6.7"/6.9" + iPad 13" at minimum.
 
-- **Wire iOS/macOS `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` to the
-  Flutter build variables** (`$(FLUTTER_BUILD_NAME)` / `$(FLUTTER_BUILD_NUMBER)`)
-  so the store version tracks `pubspec.yaml` (currently `0.5.0+1`) instead
-  of the hardcoded `1.0` / `1`. Bump pubspec to a real launch version
-  (e.g. `1.0.0+1`) at submission.
-- **iOS `CFBundleName`** is `crisp_math` (internal); `CFBundleDisplayName`
-  is already `CrispMath` (what users see), so this is cosmetic.
+5. **App Privacy nutrition label** — browser-only. Should be "Data Not
+   Collected" since the app collects nothing.
+
+6. **Fill store listing fields** via API using copy from `STORE_LISTING.md`
+   (description, keywords, subtitle, privacy URL, support URL, category,
+   age rating, pricing = free).
+
+7. **Submit for Review** — human decision.
+
+## Remaining — Android (Play Store)
+
+1. Enroll in Google Play Developer Program ($25).
+2. Generate upload keystore:
+   ```bash
+   keytool -genkey -v -keystore upload.jks -keyalg RSA -keysize 2048 \
+     -validity 10000 -alias upload
+   ```
+3. Create `android/key.properties` (git-ignored):
+   ```properties
+   storePassword=...
+   keyPassword=...
+   keyAlias=upload
+   storeFile=../upload.jks
+   ```
+4. `flutter build appbundle --release` → upload to Play Console.
 
 ## What exists already
 
 - `.github/workflows/release.yml` builds UNSIGNED release artifacts for
-  every platform on a `v*` tag and attaches them to a GitHub Release. Good
-  foundation, but it is NOT store submission — it produces downloadable
-  binaries. Store pipelines (fastlane / Transporter / Play Console upload)
-  are additive on top.
+  every platform on a `v*` tag and attaches them to a GitHub Release.
 - CI builds all 7 platforms green on every push.
-
-## Signing / notarization pipeline (draft — needs your credentials)
-
-Once the account + bundle IDs + keystore exist, the store pipeline adds:
-
-- **iOS/macOS**: import the Apple distribution cert + provisioning profile
-  as CI secrets; `flutter build ipa` / `flutter build macos`; `xcrun
-  notarytool submit … --wait` + `xcrun stapler staple` for macOS; upload
-  via `xcrun altool` / Transporter or fastlane `deliver`.
-- **Android**: decode the keystore from a base64 CI secret, write
-  `key.properties`, `flutter build appbundle --release`, upload via
-  fastlane `supply` or the Play Developer API.
-- All credentials (certs, keystore, API keys) as encrypted CI secrets —
-  none committed.
-
-## Store listing assets (ready to generate)
-
-- **Screenshots**: the verify harness already produces real app
-  screenshots (used this session for the plot modes). Can generate the
-  full required set (per-device sizes) for the CAS features, graphing,
-  notepad, and stats on request.
-- **Copy**: app name (CrispMath), subtitle, description, keywords, and the
-  privacy nutrition labels (network use for CrispAssist/OCR/crash reports,
-  no tracking) — drafts on request.
-
-## Ordered next steps
-
-1. Gewerbeanmeldung.
-2. Decide Apple account type (individual vs. organization); enroll (+ Play).
-3. Set the real bundle identifier (blocker #1).
-4. Generate the Android upload keystore + release signing config (blocker #2).
-5. Bump `pubspec.yaml` to the launch version; wire the iOS/macOS version vars.
-6. Build the store signing/notarization pipeline (draft above) with your
-   credentials as CI secrets.
-7. Generate screenshots + write store copy.
+- `appstore.md` (parent dir) has the full iOS submission playbook with all
+  gotchas from CrispChess + CrispSudoku.

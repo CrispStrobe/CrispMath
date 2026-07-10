@@ -6,11 +6,11 @@
 
 ## Task
 
-Fix all remaining gaps in CrispCalc's OCR LaTeX→engine syntax conversion pipeline. The pipeline converts LaTeX output from math OCR models (pix2tex, HMER, BTTR) into SymEngine-compatible expressions.
+Fix all remaining gaps in CrispMath's OCR LaTeX→engine syntax conversion pipeline. The pipeline converts LaTeX output from math OCR models (pix2tex, HMER, BTTR) into SymEngine-compatible expressions.
 
 ## Repository
 
-`/mnt/akademie_storage/CrispCalc` — Flutter app, git repo on `main`.
+`/mnt/akademie_storage/CrispMath` — Flutter app, git repo on `main`.
 
 ## Build/test commands
 

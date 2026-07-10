@@ -5,8 +5,10 @@ features an adaptive UI (mobile bottom-nav / desktop side-rail / wide-screen
 split-view) and is powered by the SymEngine Computer Algebra System for
 symbolic math.
 
-Status: work in progress. It at least showcases how to set up a CAS wrapper
-from Flutter to C++ and how to interact with Flutter's irksome TextField.
+Free and open source (AGPL-3.0 with App Store exception). Available on
+[iOS](https://apps.apple.com/app/crispmath/), web
+([crisp-math.vercel.app](https://crisp-math.vercel.app)), macOS, Android,
+Linux, and Windows.
 
 ## Core Features
 
@@ -128,7 +130,7 @@ CrispMath/
 
 ```bash
 flutter pub get
-flutter test            # ~3820 unit tests run without the native bridge
+flutter test            # ~4018 unit tests run without the native bridge
 flutter run             # Runs the app; SymEngine bridge required for math
 
 # CAS regression corpus (SymPy-certified expected values):
@@ -141,7 +143,7 @@ The native side lives in the `symbolic_math_bridge` plugin (separate
 repository, git-pinned in `pubspec.yaml`). See its README for the SymEngine
 build.
 
-## Platform support (v0.4.1)
+## Platform support (v1.0.0)
 
 | Platform | SymEngine bridge | Notes |
 |---|---|---|
