@@ -102,6 +102,22 @@ class AboutScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                // AGPL "offer of source": link to the complete corresponding
+                // source. This is what lets the app statically link the LGPL
+                // math stack (GMP/MPFR/MPC/FLINT) under the combined-work route.
+                const Text('Source code:'),
+                InkWell(
+                  onTap: () =>
+                      _open('https://github.com/CrispStrobe/CrispMath'),
+                  child: const Text(
+                    'https://github.com/CrispStrobe/CrispMath',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
