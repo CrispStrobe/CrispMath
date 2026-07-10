@@ -1,4 +1,4 @@
-package be.crispstro.crisp_calc
+package com.crispstrobe.crisp_math
 
 import io.flutter.embedding.android.FlutterActivity
 

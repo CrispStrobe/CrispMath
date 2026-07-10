@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:crisp_calc/localization/app_localizations.dart';
-import 'package:crisp_calc/screens/graphing_screen.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
+import 'package:crisp_math/screens/graphing_screen.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));

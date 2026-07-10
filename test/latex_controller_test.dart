@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/controllers/latex_controller.dart';
+import 'package:crisp_math/controllers/latex_controller.dart';
 
 void main() {
   group('insert', () {

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:crisp_calc/engine/plane_math.dart';
+import 'package:crisp_math/engine/plane_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _eps = 1e-9;

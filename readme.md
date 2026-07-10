@@ -1,4 +1,4 @@
-# CrispCalc — CAS Calculator
+# CrispMath — CAS Calculator
 
 A cross-platform scientific and graphing calculator built with Flutter. It
 features an adaptive UI (mobile bottom-nav / desktop side-rail / wide-screen
@@ -78,7 +78,7 @@ graph LR
 ## Project layout
 
 ```
-CrispCalc/
+CrispMath/
 ├── lib/
 │   ├── main.dart                       # App entry, adaptive shell, settings
 │   ├── controllers/
@@ -151,10 +151,10 @@ build.
 | **Windows x86_64** | ✓ full | `symbolic_math_bridge_plugin.dll`, MSYS2/MinGW64 build (PLAN P11 R131) |
 | **Linux x86_64** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg `x64-linux` static build on ubuntu-22.04 / GLIBC 2.35 (PLAN P11 R130) |
 | Android x86_64 / armeabi-v7a | ✗ not built | extend the bridge's build matrix when needed |
-| **Web** (Vercel) | ✓ CAS via WASM | **Live: https://crisp-calc.vercel.app** (PLAN P10 Path B). Full CAS core (evaluate, expand, diff, solve, substitute, trig, gcd/lcm/factorial/fibonacci, matrices) runs via SymEngine WASM (1.1 MB, `INTEGER_CLASS=boostmp`). Pure-Dart CAS interim (expand/diff/solve for single-variable polynomials) serves as synchronous pre-load fallback. MPFR precision / FLINT number-theory / Bessel not available in web build. |
+| **Web** (Vercel) | ✓ CAS via WASM | **Live: https://crisp-math.vercel.app** (PLAN P10 Path B). Full CAS core (evaluate, expand, diff, solve, substitute, trig, gcd/lcm/factorial/fibonacci, matrices) runs via SymEngine WASM (1.1 MB, `INTEGER_CLASS=boostmp`). Pure-Dart CAS interim (expand/diff/solve for single-variable polynomials) serves as synchronous pre-load fallback. MPFR precision / FLINT number-theory / Bessel not available in web build. |
 
 Releases ship platform binaries via GitHub Actions; see GH Releases
-for `crisp_calc-vX.Y.Z-{macos.zip,ios-unsigned.zip,linux-x64.tar.gz,
+for `crisp_math-vX.Y.Z-{macos.zip,ios-unsigned.zip,linux-x64.tar.gz,
 windows-x64.zip,android.apk}`.
 
 ## Math OCR (June 2026)

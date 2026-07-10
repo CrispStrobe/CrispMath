@@ -15,8 +15,8 @@
 // and intentionally fall back to English; when they're done, add them
 // to the `complete` map below.
 
-import 'package:crisp_calc/engine/function_reference.dart';
-import 'package:crisp_calc/localization/app_localizations.dart';
+import 'package:crisp_math/engine/function_reference.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

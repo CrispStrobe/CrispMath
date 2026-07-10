@@ -1,4 +1,4 @@
-import 'package:crisp_calc/utils/share_link.dart';
+import 'package:crisp_math/utils/share_link.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

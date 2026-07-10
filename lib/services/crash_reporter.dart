@@ -100,7 +100,7 @@ class CrashReporter {
   /// Build a text summary of all reports for email/issue body.
   String buildReportText() {
     final buf = StringBuffer();
-    buf.writeln('CrispCalc Crash Report');
+    buf.writeln('CrispMath Crash Report');
     buf.writeln('Reports: ${_reports.length}');
     buf.writeln('Generated: ${DateTime.now().toIso8601String()}');
     buf.writeln('---');
@@ -117,7 +117,7 @@ class CrashReporter {
   }) async {
     final body = Uri.encodeComponent(buildReportText());
     final subject = Uri.encodeComponent(
-        'CrispCalc crash report (${_reports.length} errors)');
+        'CrispMath crash report (${_reports.length} errors)');
     final uri = Uri.parse('mailto:$recipient?subject=$subject&body=$body');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -131,7 +131,7 @@ class CrashReporter {
     final body = Uri.encodeComponent(buildReportText());
     final title =
         Uri.encodeComponent('Crash report (${_reports.length} errors)');
-    final uri = Uri.parse('https://github.com/CrispStrobe/CrispCalc/issues/new'
+    final uri = Uri.parse('https://github.com/CrispStrobe/CrispMath/issues/new'
         '?title=$title&body=$body&labels=bug');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);

@@ -3,7 +3,7 @@
 // Rounds 85 + 86 (precision arc) — end-to-end tests for pi(N),
 // e(N), EulerGamma(N), sqrt(2, N). Exercises the three-repo chain
 // (math-stack-ios-builder C wrapper → symbolic_math_bridge Dart
-// FFI → CrispCalc engine binding) by asking for each constant at
+// FFI → CrispMath engine binding) by asking for each constant at
 // several precisions and verifying against known reference prefixes.
 //
 // Each test skips silently when the native bridge isn't available
@@ -11,7 +11,7 @@
 // engine method returns the standard double-precision fallback,
 // which is the inlined `_*Fallback` constant for that test group.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Reference prefixes (≥ 100 decimal digits).

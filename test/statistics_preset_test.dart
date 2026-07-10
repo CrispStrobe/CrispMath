@@ -6,10 +6,10 @@
 // slot, the screen drain + pre-fill side effect, graceful degrade on
 // an unknown id, and catalog/preset cross-consistency.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/statistics_presets.dart';
-import 'package:crisp_calc/engine/worked_examples.dart';
-import 'package:crisp_calc/screens/statistics_screen.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/statistics_presets.dart';
+import 'package:crisp_math/engine/worked_examples.dart';
+import 'package:crisp_math/screens/statistics_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

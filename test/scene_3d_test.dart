@@ -4,9 +4,9 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:crisp_calc/engine/plane_math.dart' show Vector3;
-import 'package:crisp_calc/engine/scene_3d/scene_object.dart';
-import 'package:crisp_calc/engine/scene_3d/scene_state.dart';
+import 'package:crisp_math/engine/plane_math.dart' show Vector3;
+import 'package:crisp_math/engine/scene_3d/scene_object.dart';
+import 'package:crisp_math/engine/scene_3d/scene_state.dart';
 
 void main() {
   group('PlaneObject', () {

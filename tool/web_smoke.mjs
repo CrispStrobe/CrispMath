@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // tool/web_smoke.mjs
 //
-// Headless-browser smoke test for the CrispCalc web build. Drives a real
+// Headless-browser smoke test for the CrispMath web build. Drives a real
 // Chromium via the DevTools Protocol (zero npm deps — Node >= 21 global
 // `fetch` + `WebSocket`), loads the deployed SPA, waits for the SymEngine
 // WASM module to finish loading, and asserts that the in-browser CAS
@@ -16,7 +16,7 @@
 //
 // Usage:
 //   node tool/web_smoke.mjs [url]
-//   CRISPCALC_WEB_SMOKE_URL=https://crisp-calc.vercel.app node tool/web_smoke.mjs
+//   CRISPMATH_WEB_SMOKE_URL=https://crisp-math.vercel.app node tool/web_smoke.mjs
 //   CHROME_PATH=/path/to/chrome node tool/web_smoke.mjs http://localhost:8099/
 //
 // Exit code: 0 = all assertions passed, non-zero = a failure (or no browser
@@ -31,8 +31,8 @@ import { join } from 'node:path';
 
 const URL =
   process.argv[2] ||
-  process.env.CRISPCALC_WEB_SMOKE_URL ||
-  'https://crisp-calc.vercel.app/';
+  process.env.CRISPMATH_WEB_SMOKE_URL ||
+  'https://crisp-math.vercel.app/';
 
 const READY_TIMEOUT_MS = Number(process.env.WEB_SMOKE_TIMEOUT_MS || 30000);
 const DEBUG_PORT = Number(process.env.WEB_SMOKE_PORT || 0) || 9300 + (process.pid % 500);

@@ -4,8 +4,8 @@
 
 import 'dart:math';
 
-import 'package:crisp_calc/engine/csp_solver.dart';
-import 'package:crisp_calc/engine/magic_square.dart';
+import 'package:crisp_math/engine/csp_solver.dart';
+import 'package:crisp_math/engine/magic_square.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

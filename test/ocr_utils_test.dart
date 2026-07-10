@@ -5,7 +5,7 @@
 //   - latexToEngineSyntax (LaTeX → engine syntax with OCR artifacts)
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/ocr_provider.dart';
+import 'package:crisp_math/engine/ocr_provider.dart';
 
 void main() {
   // ===========================================================================

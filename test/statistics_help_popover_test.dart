@@ -9,10 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/function_reference.dart';
-import 'package:crisp_calc/localization/app_localizations.dart';
-import 'package:crisp_calc/screens/statistics_screen.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/function_reference.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
+import 'package:crisp_math/screens/statistics_screen.dart';
 
 void main() {
   setUp(() => AppState().setHelpMode(false));

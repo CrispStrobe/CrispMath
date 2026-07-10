@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:crisp_calc/engine/numerical.dart';
+import 'package:crisp_math/engine/numerical.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

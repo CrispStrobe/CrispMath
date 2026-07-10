@@ -1,7 +1,7 @@
 // test/ocr_capture_dialog_test.dart
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/ocr_provider.dart';
+import 'package:crisp_math/engine/ocr_provider.dart';
 
 void main() {
   group('OcrProviders integration', () {

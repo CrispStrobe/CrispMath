@@ -2,13 +2,13 @@
 //
 // Opt-in browser smoke test. Normal `flutter test` and CI run on the Dart
 // VM and can't load the SymEngine WASM module, so this test is SKIPPED
-// unless CRISPCALC_WEB_SMOKE is set. When enabled it shells out to
+// unless CRISPMATH_WEB_SMOKE is set. When enabled it shells out to
 // `tool/web_smoke.mjs`, which drives a headless Chromium against the
 // deployed web build and asserts the in-browser CAS computes.
 //
 // Run it:
-//   CRISPCALC_WEB_SMOKE=1 flutter test test/web_smoke_test.dart
-//   CRISPCALC_WEB_SMOKE=1 CRISPCALC_WEB_SMOKE_URL=http://localhost:8099/ \
+//   CRISPMATH_WEB_SMOKE=1 flutter test test/web_smoke_test.dart
+//   CRISPMATH_WEB_SMOKE=1 CRISPMATH_WEB_SMOKE_URL=http://localhost:8099/ \
 //     flutter test test/web_smoke_test.dart
 //
 // Requires: Node >= 21 on PATH and a Chromium-family browser (Chrome /
@@ -20,10 +20,10 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final enabled = Platform.environment['CRISPCALC_WEB_SMOKE'] == '1' ||
-      Platform.environment['CRISPCALC_WEB_SMOKE']?.toLowerCase() == 'true';
-  final url = Platform.environment['CRISPCALC_WEB_SMOKE_URL'] ??
-      'https://crisp-calc.vercel.app/';
+  final enabled = Platform.environment['CRISPMATH_WEB_SMOKE'] == '1' ||
+      Platform.environment['CRISPMATH_WEB_SMOKE']?.toLowerCase() == 'true';
+  final url = Platform.environment['CRISPMATH_WEB_SMOKE_URL'] ??
+      'https://crisp-math.vercel.app/';
 
   test(
     'deployed web build: SymEngine WASM CAS computes in a real browser',
@@ -85,7 +85,7 @@ void main() {
     },
     skip: enabled
         ? false
-        : 'browser smoke is opt-in — set CRISPCALC_WEB_SMOKE=1 to run',
+        : 'browser smoke is opt-in — set CRISPMATH_WEB_SMOKE=1 to run',
     timeout: const Timeout(Duration(minutes: 2)),
   );
 }

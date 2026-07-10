@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/analysis_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/analysis_engine.dart';
 
 // These tests exercise the analysis pipeline without the native bridge — the
 // underlying CalculatorEngine returns "Error: ... requires native library" for

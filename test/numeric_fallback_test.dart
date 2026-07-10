@@ -5,8 +5,8 @@
 // unavailable (the test host never loads the dylib), so they also cover
 // the CalculatorEngine.evaluate() routing end-to-end.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/numeric_fallback.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

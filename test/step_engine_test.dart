@@ -6,9 +6,9 @@
 // fine, the rule-detection logic doesn't depend on the bridge.
 // These tests assert which rule gets emitted for each input shape.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/step_engine.dart';
-import 'package:crisp_calc/engine/symbolic_web.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/step_engine.dart';
+import 'package:crisp_math/engine/symbolic_web.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

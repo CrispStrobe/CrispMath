@@ -39,10 +39,10 @@ jobs:
       - name: Zip the bundle
         run: |
           cd build\windows\x64\runner\Release
-          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\crisp_calc-windows-x64.zip
+          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\crisp_math-windows-x64.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: crisp_calc-windows-x64
-          path: crisp_calc-windows-x64.zip
+          name: crisp_math-windows-x64
+          path: crisp_math-windows-x64.zip
           retention-days: 14

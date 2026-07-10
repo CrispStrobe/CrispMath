@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/eigen.dart';
+import 'package:crisp_math/engine/eigen.dart';
 
 void main() {
   group('eigenvalues', () {

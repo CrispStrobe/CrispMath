@@ -10,7 +10,7 @@
 // path on bad precision). End-to-end MPFR-backed precision is
 // already covered by the round-85/86/89/90 native tests.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

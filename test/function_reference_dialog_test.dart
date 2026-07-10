@@ -6,8 +6,8 @@
 // + category chips, verify the "Try in Calculator" tap stashes
 // onto AppState.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/widgets/function_reference_dialog.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/widgets/function_reference_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

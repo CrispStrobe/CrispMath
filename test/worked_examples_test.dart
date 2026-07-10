@@ -3,7 +3,7 @@
 // Sanity-checks the curated catalog so an accidental empty entry,
 // duplicate, or wrong-category drift fails CI rather than ships.
 
-import 'package:crisp_calc/engine/worked_examples.dart';
+import 'package:crisp_math/engine/worked_examples.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

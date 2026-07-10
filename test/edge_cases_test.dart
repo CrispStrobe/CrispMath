@@ -11,9 +11,9 @@
 // The point is to catch silent failures in branches the typical
 // user input never exercises but that ship in production.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/unit_expression.dart';
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/unit_expression.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

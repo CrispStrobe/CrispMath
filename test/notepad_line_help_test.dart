@@ -5,12 +5,12 @@
 // the expression, `cachedError ?? cachedResult` the displayed
 // result.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/function_reference.dart';
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/main.dart';
-import 'package:crisp_calc/services/engine_service.dart';
-import 'package:crisp_calc/widgets/history_help_modal.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/function_reference.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/main.dart';
+import 'package:crisp_math/services/engine_service.dart';
+import 'package:crisp_math/widgets/history_help_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +23,7 @@ Future<void> _bootApp(WidgetTester tester, {Size? size}) async {
     await tester.binding.setSurfaceSize(size);
   }
   await AppState().load(force: true);
-  await tester.pumpWidget(const CrispCalcApp());
+  await tester.pumpWidget(const CrispMathApp());
   await tester.pump();
   await tester.pump(const Duration(seconds: 1));
 }

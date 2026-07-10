@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/step_diagnostics.dart';
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/step_diagnostics.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 
 void main() {
   group('StepDiagnostics normalize', () {

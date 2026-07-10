@@ -8,10 +8,10 @@
 // rule unfolds, sum-rule decomposition).
 //
 // End-to-end math correctness against the live bridge is verified by
-// the `CRISPCALC_DIAGNOSTIC=steps` headless battery.
+// the `CRISPMATH_DIAGNOSTIC=steps` headless battery.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/step_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/step_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

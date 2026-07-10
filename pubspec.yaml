@@ -1,4 +1,4 @@
-name: crisp_calc
+name: crisp_math
 description: CAS calculator with SymEngine
 publish_to: 'none'
 
@@ -67,7 +67,7 @@ dependencies:
     git:
       url: https://github.com/CrispStrobe/CrispEmbed.git
       path: flutter/crispembed
-      ref: "a7bd61f"  # v0.12.0: GraniteVision + LightOnOcr + ScanCleanup + SR perf (6x SCUNet, SwinIR fix)
+      ref: "985fce1"  # v0.14.0: robust deskew, LoRA hot-swap, Unlimited-OCR engine, WASM OCR pipeline
 
 dev_dependencies:
   flutter_test:

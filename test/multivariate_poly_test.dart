@@ -1,5 +1,5 @@
-import 'package:crisp_calc/engine/polynomial.dart';
-import 'package:crisp_calc/engine/multivariate_poly.dart';
+import 'package:crisp_math/engine/polynomial.dart';
+import 'package:crisp_math/engine/multivariate_poly.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 MultivariatePolynomial _mp(Map<List<int>, Rational> terms) =>

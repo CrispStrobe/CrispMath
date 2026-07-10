@@ -10,8 +10,8 @@
 // End-to-end constant-folding through `Eq(2, 2) → True` runs in
 // the on-device builds.
 
-import 'package:crisp_calc/engine/notepad_evaluator.dart';
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

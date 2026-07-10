@@ -1,7 +1,7 @@
 // test/ocr_model_manager_test.dart
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/ocr_model_manager.dart';
+import 'package:crisp_math/engine/ocr_model_manager.dart';
 
 void main() {
   group('OcrModelCatalog', () {

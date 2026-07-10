@@ -7,7 +7,7 @@
 // (pi, e), digit-letter implicit multiplication boundaries, and
 // multi-character identifier names.
 
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -9,11 +9,11 @@
 //   flutter test integration_test/app_smoke_test.dart
 //
 // The matrix and step engine batteries are still verified via their
-// own `CRISPCALC_DIAGNOSTIC=…` headless mode — this file covers the
+// own `CRISPMATH_DIAGNOSTIC=…` headless mode — this file covers the
 // UI side that those env-var modes deliberately skip.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/main.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -31,16 +31,16 @@ void main() {
     await AppState().load(force: true);
   });
 
-  group('CrispCalc app — smoke', () {
+  group('CrispMath app — smoke', () {
     testWidgets('boots without throwing', (tester) async {
-      await tester.pumpWidget(const CrispCalcApp());
+      await tester.pumpWidget(const CrispMathApp());
       // Multiple pumps so the post-frame focus callback in
       // CalculatorScreen has a chance to run.
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
       // The root widget must be present.
-      expect(find.byType(CrispCalcApp), findsOneWidget);
+      expect(find.byType(CrispMathApp), findsOneWidget);
       // The calculator history placeholder text should be present
       // on first launch (no entries yet).
       expect(find.byType(MaterialApp), findsOneWidget);
@@ -48,7 +48,7 @@ void main() {
 
     testWidgets('Settings tab can be reached and reveals the converter card',
         (tester) async {
-      await tester.pumpWidget(const CrispCalcApp());
+      await tester.pumpWidget(const CrispMathApp());
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 

@@ -2,8 +2,8 @@
 // detection. Complements notepad_evaluator_test.dart with deeper
 // cycles, diamonds, and aggregate interactions.
 
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 NotepadDocument docOf(List<({String source, String? cached})> spec) {

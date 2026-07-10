@@ -7,9 +7,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/function_reference.dart';
-import 'package:crisp_calc/screens/constraints_screen.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/function_reference.dart';
+import 'package:crisp_math/screens/constraints_screen.dart';
 
 Future<void> _openDslTab(WidgetTester tester) async {
   await tester.binding.setSurfaceSize(const Size(1280, 800));

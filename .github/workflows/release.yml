@@ -35,7 +35,7 @@ jobs:
       - name: Verify SymEngine symbols
         run: |
           set -eu
-          APP="build/macos/Build/Products/Release/crisp_calc.app"
+          APP="build/macos/Build/Products/Release/crisp_math.app"
           TOTAL=0
           for bin in $(find "$APP" -type f -perm -u+x); do
             c=$(nm -arch arm64 "$bin" 2>/dev/null | grep -c flutter_symengine || true)
@@ -48,11 +48,11 @@ jobs:
           fi
       - run: |
           cd build/macos/Build/Products/Release
-          zip -ryq ../../../../../crisp_calc-${{ github.ref_name }}-macos.zip crisp_calc.app
+          zip -ryq ../../../../../crisp_math-${{ github.ref_name }}-macos.zip crisp_math.app
       - uses: actions/upload-artifact@v4
         with:
           name: macos-release
-          path: crisp_calc-${{ github.ref_name }}-macos.zip
+          path: crisp_math-${{ github.ref_name }}-macos.zip
 
   # ── iOS (full SymEngine support, unsigned) ──────────────────────────
   ios:
@@ -72,11 +72,11 @@ jobs:
             --dart-define=APP_VERSION=${{ github.ref_name }}
       - run: |
           cd build/ios/iphoneos
-          zip -ryq ../../../crisp_calc-${{ github.ref_name }}-ios-unsigned.zip Runner.app
+          zip -ryq ../../../crisp_math-${{ github.ref_name }}-ios-unsigned.zip Runner.app
       - uses: actions/upload-artifact@v4
         with:
           name: ios-release
-          path: crisp_calc-${{ github.ref_name }}-ios-unsigned.zip
+          path: crisp_math-${{ github.ref_name }}-ios-unsigned.zip
 
   # ── Linux (degraded SymEngine support) ───────────────────────────────
   linux:
@@ -96,11 +96,11 @@ jobs:
       - run: flutter build linux --release --dart-define=APP_VERSION=${{ github.ref_name }}
       - run: |
           cd build/linux/x64/release/
-          tar czf ../../../../crisp_calc-${{ github.ref_name }}-linux-x64.tar.gz bundle
+          tar czf ../../../../crisp_math-${{ github.ref_name }}-linux-x64.tar.gz bundle
       - uses: actions/upload-artifact@v4
         with:
           name: linux-release
-          path: crisp_calc-${{ github.ref_name }}-linux-x64.tar.gz
+          path: crisp_math-${{ github.ref_name }}-linux-x64.tar.gz
 
   # ── Windows (degraded SymEngine support) ─────────────────────────────
   windows:
@@ -118,11 +118,11 @@ jobs:
       - name: Zip the bundle
         run: |
           cd build\windows\x64\runner\Release
-          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\crisp_calc-${{ github.ref_name }}-windows-x64.zip
+          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\crisp_math-${{ github.ref_name }}-windows-x64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: windows-release
-          path: crisp_calc-${{ github.ref_name }}-windows-x64.zip
+          path: crisp_math-${{ github.ref_name }}-windows-x64.zip
 
   # ── Android (degraded SymEngine support, unsigned APK) ───────────────
   android:
@@ -141,11 +141,11 @@ jobs:
       - run: flutter pub get
       - run: flutter build apk --release --dart-define=APP_VERSION=${{ github.ref_name }}
       - name: Rename APK
-        run: mv build/app/outputs/flutter-apk/app-release.apk crisp_calc-${{ github.ref_name }}-android.apk
+        run: mv build/app/outputs/flutter-apk/app-release.apk crisp_math-${{ github.ref_name }}-android.apk
       - uses: actions/upload-artifact@v4
         with:
           name: android-release
-          path: crisp_calc-${{ github.ref_name }}-android.apk
+          path: crisp_math-${{ github.ref_name }}-android.apk
 
   # ── Publish all artifacts to a GitHub Release ───────────────────────
   publish:

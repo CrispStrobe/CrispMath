@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/utils/math_display_utils.dart';
+import 'package:crisp_math/utils/math_display_utils.dart';
 
 void main() {
   group('toLatexFormat', () {

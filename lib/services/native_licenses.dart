@@ -1,6 +1,6 @@
 // lib/services/native_licenses.dart
 //
-// Register licenses for the *native* math stack CrispCalc bundles —
+// Register licenses for the *native* math stack CrispMath bundles —
 // `showLicensePage` only surfaces pub/Dart packages by default, so
 // SymEngine, GMP, MPFR, MPC, and FLINT would otherwise be invisible.
 //

@@ -4,8 +4,8 @@
 // Pure-Dart and fully headless: exact Rational/BigInt coefficients,
 // no native bridge. Reference values cross-checked against SymPy.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/polynomial.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/polynomial.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

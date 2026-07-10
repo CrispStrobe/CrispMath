@@ -36,7 +36,7 @@ void _injectIdbHelpers() {
   if (_idbHelpersInjected) return;
   _jsEval('''
     (function() {
-      var DB_NAME = 'CrispCalcOcrModels';
+      var DB_NAME = 'CrispMathOcrModels';
       var STORE = 'models';
       var DB_VERSION = 1;
 

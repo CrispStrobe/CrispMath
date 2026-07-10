@@ -5,7 +5,7 @@
 // tolerance: ~1% on p-values since they come from numerical
 // integration of the PDF).
 
-import 'package:crisp_calc/engine/hypothesis_tests.dart';
+import 'package:crisp_math/engine/hypothesis_tests.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

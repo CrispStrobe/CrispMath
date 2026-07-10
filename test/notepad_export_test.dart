@@ -3,8 +3,8 @@
 // Tests for notepad export (Markdown, LaTeX, structured).
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/engine/notepad_export.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_export.dart';
 
 void main() {
   NotepadDocument makeDoc({

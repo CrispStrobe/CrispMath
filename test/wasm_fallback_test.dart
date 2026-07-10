@@ -2,8 +2,8 @@
 // returns an error, the engine should try NumericFallbackEvaluator
 // before surfacing the error to the user.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/numeric_fallback.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

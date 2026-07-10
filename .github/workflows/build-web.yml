@@ -7,13 +7,13 @@
 #
 # Every push/PR builds the bundle and uploads it as an artifact (needs no
 # secrets). Pushes to `main` additionally deploy to production at
-# https://crisp-calc.vercel.app — but only when the Vercel secrets are set,
+# https://crisp-math.vercel.app — but only when the Vercel secrets are set,
 # so the workflow stays green on forks / before secrets are configured.
 #
 # Required repo secrets for the deploy step (Settings → Secrets → Actions):
 #   VERCEL_TOKEN       — account token (account `crispstrobe`)
 #   VERCEL_ORG_ID      — from `.vercel/project.json` after `vercel link`
-#   VERCEL_PROJECT_ID  — likewise (project `crisp-calc`)
+#   VERCEL_PROJECT_ID  — likewise (project `crisp-math`)
 # The Vercel CLI auto-reads VERCEL_ORG_ID / VERCEL_PROJECT_ID from the env,
 # so no `vercel link` / `vercel pull` is needed in CI.
 
@@ -61,7 +61,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: crisp_calc-web
+          name: crisp_math-web
           path: build/web
           retention-days: 14
 

@@ -1,6 +1,6 @@
 // Tests for the KeypadGrid compact-mode spacing adaptation.
 
-import 'package:crisp_calc/widgets/keypad_grid.dart';
+import 'package:crisp_math/widgets/keypad_grid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

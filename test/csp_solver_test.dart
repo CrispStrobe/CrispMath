@@ -4,7 +4,7 @@
 // enumeration + cryptarithm) are exercised against canonical inputs
 // the dart_csp engine handles deterministically.
 
-import 'package:crisp_calc/engine/csp_solver.dart';
+import 'package:crisp_math/engine/csp_solver.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

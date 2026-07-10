@@ -14,7 +14,7 @@
 //   * the terminal solution snapshot is all-singleton and matches the
 //     reported assignment.
 
-import 'package:crisp_calc/engine/csp_solver.dart';
+import 'package:crisp_math/engine/csp_solver.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

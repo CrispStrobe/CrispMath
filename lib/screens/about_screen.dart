@@ -1,6 +1,6 @@
 // lib/screens/about_screen.dart
 //
-// About / legal info for CrispCalc. Layout mirrors the sibling CrisperWeaver
+// About / legal info for CrispMath. Layout mirrors the sibling CrisperWeaver
 // app so the two are visually consistent: app header card, then sections for
 // service provider, contact, privacy, disclaimer, license. The bottom button
 // opens Flutter's `showLicensePage`, which lists every pub dep plus the
@@ -16,7 +16,7 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   static const _email = 'postmaster@crispstro.be';
-  static const _appName = 'CrispCalc';
+  static const _appName = 'CrispMath';
   static const _providerJoin =
       'Christian Ströbele\nNikolausstr. 5\n70190 Stuttgart\nDeutschland / Germany';
 

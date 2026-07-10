@@ -1,5 +1,5 @@
-import 'package:crisp_calc/engine/notepad_templates.dart';
-import 'package:crisp_calc/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_templates.dart';
+import 'package:crisp_math/engine/notepad.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

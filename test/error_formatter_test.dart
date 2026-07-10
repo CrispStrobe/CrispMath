@@ -7,8 +7,8 @@
 // non-empty across every locale) is enforced separately by the
 // localizations_test.dart sweep.
 
-import 'package:crisp_calc/localization/app_localizations.dart';
-import 'package:crisp_calc/utils/error_formatter.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
+import 'package:crisp_math/utils/error_formatter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

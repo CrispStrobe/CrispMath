@@ -51,11 +51,11 @@ import '../screens/curve_analysis_input_screen.dart';
 import '../screens/matrix_editor_screen.dart';
 
 /// Verbose calculator-pipeline tracing. Gated by an
-/// `--dart-define=CRISPCALC_VERBOSE=true` env so debug builds
+/// `--dart-define=CRISPMATH_VERBOSE=true` env so debug builds
 /// stay quiet by default; flip it on (or temporarily edit this
 /// to `true`) when investigating dispatch / preprocessing bugs.
 const bool _kVerboseCalc =
-    bool.fromEnvironment('CRISPCALC_VERBOSE', defaultValue: false);
+    bool.fromEnvironment('CRISPMATH_VERBOSE', defaultValue: false);
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key, this.onGoToGraphing, this.onGoToAnalysis});

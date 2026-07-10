@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/multivariate_poly.dart';
-import 'package:crisp_calc/engine/symbolic_web.dart';
+import 'package:crisp_math/engine/multivariate_poly.dart';
+import 'package:crisp_math/engine/symbolic_web.dart';
 
 void main() {
   group('MultivariateFactoring', () {

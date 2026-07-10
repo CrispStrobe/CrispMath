@@ -10,7 +10,7 @@
 // number-theory ops are actually exercised end-to-end. If the bridge isn't
 // loaded (e.g. run on web), the whole group is skipped rather than failed.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 

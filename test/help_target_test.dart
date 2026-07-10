@@ -4,8 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/widgets/help_target.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/widgets/help_target.dart';
 
 void main() {
   setUp(() => AppState().setHelpMode(false));

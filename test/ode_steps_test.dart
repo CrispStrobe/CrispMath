@@ -4,9 +4,9 @@
 // checked for the key pedagogical content (characteristic equation,
 // root classification, homogeneous form).
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/ode_solver.dart';
-import 'package:crisp_calc/engine/ode_steps.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/ode_solver.dart';
+import 'package:crisp_math/engine/ode_steps.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

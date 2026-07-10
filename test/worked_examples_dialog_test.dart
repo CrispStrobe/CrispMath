@@ -6,8 +6,8 @@
 // number theory and hides module-bound categories (statistics /
 // units / constraints).
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/widgets/worked_examples_dialog.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/widgets/worked_examples_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

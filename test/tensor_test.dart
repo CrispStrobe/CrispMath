@@ -1,4 +1,4 @@
-import 'package:crisp_calc/engine/tensor.dart';
+import 'package:crisp_math/engine/tensor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

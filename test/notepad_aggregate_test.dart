@@ -3,8 +3,8 @@
 // Tests for notepad aggregate keywords: total, subtotal, average, count.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
 
 void main() {
   group('classifyNotepadLine — aggregate keywords', () {

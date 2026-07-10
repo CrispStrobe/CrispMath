@@ -12,7 +12,7 @@
 // pin the rewrite shape here — end-to-end folding through
 // `And(True, True) → True` runs in the on-device builds.
 
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

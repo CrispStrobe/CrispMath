@@ -6,7 +6,7 @@
 // environment the web build's fallbacks see. The full corpus runs against
 // real SymEngine in integration_test/cas_corpus_native_test.dart.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'cas_corpus_shared.dart';

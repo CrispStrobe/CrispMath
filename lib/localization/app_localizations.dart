@@ -1320,12 +1320,12 @@ class EnLocalizations implements AppLocalizations {
   String get settingsLayoutTitle => 'Layout';
   @override
   String get settingsLayoutBody =>
-      'CrispCalc adapts to window width: bottom nav on phones, a side rail on '
+      'CrispMath adapts to window width: bottom nav on phones, a side rail on '
       'tablets and desktop. Above ~760 px the calculator keypad drops its tab '
       'bar and shows every function key at once.';
 
   @override
-  String get aboutTitle => 'About CrispCalc';
+  String get aboutTitle => 'About CrispMath';
   @override
   String get aboutTagline => 'Symbolic CAS calculator powered by SymEngine';
   @override
@@ -1338,14 +1338,14 @@ class EnLocalizations implements AppLocalizations {
   String get aboutPrivacy => 'Privacy';
   @override
   String get aboutPrivacyText =>
-      'CrispCalc runs entirely on-device. No calculation, history entry, '
+      'CrispMath runs entirely on-device. No calculation, history entry, '
       'or user variable is ever sent to a server. The app does not collect '
       'analytics or contact remote services.';
   @override
   String get aboutDisclaimer => 'Disclaimer';
   @override
   String get aboutDisclaimerText =>
-      'CrispCalc is provided "as is", without warranty of any kind. The '
+      'CrispMath is provided "as is", without warranty of any kind. The '
       'symbolic engine may return imprecise results for ill-conditioned '
       'numeric inputs or unsupported symbolic constructs. Verify critical '
       'computations independently.';
@@ -1353,14 +1353,14 @@ class EnLocalizations implements AppLocalizations {
   String get aboutLicense => 'License';
   @override
   String get aboutLicenseText =>
-      'CrispCalc is free software, distributed under the GNU Affero '
+      'CrispMath is free software, distributed under the GNU Affero '
       'General Public License version 3 or later. This choice mirrors the '
       'copyleft requirements of the bundled GMP/MPFR/MPC/FLINT math '
       'libraries, which are statically linked.';
   @override
   String get aboutOpenSourceLicenses => 'Open-source licenses';
   @override
-  String get settingsAbout => 'About CrispCalc';
+  String get settingsAbout => 'About CrispMath';
   @override
   String get matrixDiagnosticsTitle => 'Matrix self-test';
   @override
@@ -1512,7 +1512,7 @@ class EnLocalizations implements AppLocalizations {
   String get exportDataTitle => 'Export data';
   @override
   String get exportDataSubtitle =>
-      'JSON below contains everything CrispCalc has stored on this device — history, variables, graph functions, parameters, settings. Copy it to a notes app or cloud doc before reinstalling.';
+      'JSON below contains everything CrispMath has stored on this device — history, variables, graph functions, parameters, settings. Copy it to a notes app or cloud doc before reinstalling.';
   @override
   String get exportDataCopy => 'Copy to clipboard';
   @override
@@ -2137,7 +2137,7 @@ class EnLocalizations implements AppLocalizations {
   String get settingsFunctionRef => 'Function reference';
   @override
   String get settingsFunctionRefSubtitle =>
-      'Browse every CrispCalc function: signature, examples, related '
+      'Browse every CrispMath function: signature, examples, related '
       'functions, and a paste-into-calculator shortcut.';
 
   @override
@@ -3006,12 +3006,12 @@ class DeLocalizations implements AppLocalizations {
   String get settingsLayoutTitle => 'Layout';
   @override
   String get settingsLayoutBody =>
-      'CrispCalc passt sich an die Fensterbreite an: untere Navigation auf '
+      'CrispMath passt sich an die Fensterbreite an: untere Navigation auf '
       'Smartphones, Seitenleiste auf Tablets und Desktop. Ab ~760 px zeigt die '
       'Tastatur alle Funktionstasten gleichzeitig (ohne Reiter).';
 
   @override
-  String get aboutTitle => 'Über CrispCalc';
+  String get aboutTitle => 'Über CrispMath';
   @override
   String get aboutTagline => 'Symbolischer CAS-Rechner basierend auf SymEngine';
   @override
@@ -3024,7 +3024,7 @@ class DeLocalizations implements AppLocalizations {
   String get aboutPrivacy => 'Datenschutz';
   @override
   String get aboutPrivacyText =>
-      'CrispCalc läuft vollständig auf dem Gerät. Keine Berechnung, kein '
+      'CrispMath läuft vollständig auf dem Gerät. Keine Berechnung, kein '
       'Verlaufseintrag und keine benutzerdefinierte Variable wird je an '
       'einen Server übertragen. Die App erhebt keine Analysedaten und '
       'kontaktiert keine entfernten Dienste.';
@@ -3032,7 +3032,7 @@ class DeLocalizations implements AppLocalizations {
   String get aboutDisclaimer => 'Haftungsausschluss';
   @override
   String get aboutDisclaimerText =>
-      'CrispCalc wird "wie besehen" bereitgestellt, ohne jegliche '
+      'CrispMath wird "wie besehen" bereitgestellt, ohne jegliche '
       'Gewährleistung. Die symbolische Engine kann bei schlecht '
       'konditionierten numerischen Eingaben oder nicht unterstützten '
       'symbolischen Ausdrücken ungenaue Ergebnisse liefern. Kritische '
@@ -3041,14 +3041,14 @@ class DeLocalizations implements AppLocalizations {
   String get aboutLicense => 'Lizenz';
   @override
   String get aboutLicenseText =>
-      'CrispCalc ist freie Software, veröffentlicht unter der GNU Affero '
+      'CrispMath ist freie Software, veröffentlicht unter der GNU Affero '
       'General Public License Version 3 oder neuer. Diese Wahl folgt aus '
       'den Copyleft-Anforderungen der mitgelieferten GMP-/MPFR-/MPC-/FLINT-'
       'Bibliotheken, die statisch eingebunden sind.';
   @override
   String get aboutOpenSourceLicenses => 'Open-Source-Lizenzen';
   @override
-  String get settingsAbout => 'Über CrispCalc';
+  String get settingsAbout => 'Über CrispMath';
   @override
   String get matrixDiagnosticsTitle => 'Matrix-Selbsttest';
   @override
@@ -3201,7 +3201,7 @@ class DeLocalizations implements AppLocalizations {
   String get exportDataTitle => 'Daten exportieren';
   @override
   String get exportDataSubtitle =>
-      'Das JSON unten enthält alles, was CrispCalc auf diesem Gerät gespeichert hat — Verlauf, Variablen, Funktionen, Parameter, Einstellungen. Vor einer Neuinstallation in eine Notiz oder Cloud-Datei kopieren.';
+      'Das JSON unten enthält alles, was CrispMath auf diesem Gerät gespeichert hat — Verlauf, Variablen, Funktionen, Parameter, Einstellungen. Vor einer Neuinstallation in eine Notiz oder Cloud-Datei kopieren.';
   @override
   String get exportDataCopy => 'In Zwischenablage kopieren';
   @override
@@ -4303,7 +4303,7 @@ class DeLocalizations implements AppLocalizations {
       // --- Constraints-DSL ---
       case 'vars':
         return 'Deklariert ganzzahlige Entscheidungsvariablen und ihren '
-            'Wertebereich. Stets die erste Zeile eines CrispCalc-DSL-Programms.';
+            'Wertebereich. Stets die erste Zeile eines CrispMath-DSL-Programms.';
       case 'all_different':
         return 'Globale Bedingung „alle Werte paarweise verschieden". Die '
             'wichtigste CP-Bedingung — deutlich stärkere Propagation als '
@@ -4372,7 +4372,7 @@ class DeLocalizations implements AppLocalizations {
   String? functionRefExampleHint(String id, int index) {
     const hints = <String, List<String>>{
       'solve': [
-        'In CrispCalc liefert `solve(x^2 - 1, x)` eine Liste der Nullstellen '
+        'In CrispMath liefert `solve(x^2 - 1, x)` eine Liste der Nullstellen '
             'im Python-Stil zurück. Der zugrunde liegende Aufruf ist '
             'SymEngines `solve()` (der Zweig für rationale Nullstellen bei '
             'Polynomen), von der Bridge umschlossen und zurück in eine '
@@ -4386,7 +4386,7 @@ class DeLocalizations implements AppLocalizations {
         'Auch polynomiale UNGLEICHUNGEN werden gelöst: Die Nullstellen teilen die Zahlengerade in Intervalle, das Vorzeichen je Intervall entscheidet. Auch ≤/≥, exakte Wurzel-Grenzen und die Fälle ≠ / Einzelpunkt / ℝ / ∅.',
       ],
       'expand': [
-        'In CrispCalc liefert `expand((x + 1)^2)` die binomische Entwicklung. '
+        'In CrispMath liefert `expand((x + 1)^2)` die binomische Entwicklung. '
             'Der zugrunde liegende Aufruf ist SymEngines `expand()`, das '
             '`Pow`- und `Mul`-Knoten auflöst und gleichartige Terme '
             'zusammenfasst.',
@@ -4397,7 +4397,7 @@ class DeLocalizations implements AppLocalizations {
             'Wechselspiel mit `factor`, um zwischen den Formen zu wechseln.',
       ],
       'simplify': [
-        'In CrispCalc kürzt `simplify` den gemeinsamen Faktor `(x - 2)`. Der '
+        'In CrispMath kürzt `simplify` den gemeinsamen Faktor `(x - 2)`. Der '
             'zugrunde liegende Aufruf ist SymEngines `simplify()`, das '
             '`rational_simplify` sowie eine kleine Sammlung von '
             'Umformungsregeln versucht.',
@@ -4408,7 +4408,7 @@ class DeLocalizations implements AppLocalizations {
             'Umformungsregel an, bevor das Literal `1` zurückgegeben wird.',
       ],
       'factor': [
-        'In CrispCalc liefert `factor(x^2 - 1)` die Faktorisierung als '
+        'In CrispMath liefert `factor(x^2 - 1)` die Faktorisierung als '
             'Differenz von Quadraten. Der zugrunde liegende Aufruf ist '
             'SymEngines `factor()`, das für univariate Polynome über Q '
             'Berlekamp / Cantor–Zassenhaus verwendet.',
@@ -4418,7 +4418,7 @@ class DeLocalizations implements AppLocalizations {
             'zerfällt nicht weiter, ohne komplexe Nullstellen zuzulassen.',
       ],
       'diff': [
-        'In CrispCalc wendet `diff(...)` die Potenz- und Konstantenregel '
+        'In CrispMath wendet `diff(...)` die Potenz- und Konstantenregel '
             'termweise an. Der zugrunde liegende Aufruf ist SymEngines '
             '`diff()`, das den Ausdrucksbaum durchläuft und einen neuen '
             'symbolischen `Add`-Knoten erzeugt.',
@@ -4428,18 +4428,18 @@ class DeLocalizations implements AppLocalizations {
             'lässt. Durch `factor` geleitet, wird `exp(x)` ausgeklammert.',
       ],
       'integrate': [
-        'In CrispCalc delegiert das unbestimmte `integrate(...)` an '
+        'In CrispMath delegiert das unbestimmte `integrate(...)` an '
             'SymEngines `integrate()`. Partielle Integration wird automatisch '
             'angewandt, wenn ein Faktor zu einem Polynom differenziert.',
         'Bestimmte Form: Hat SymEngine eine geschlossene Stammfunktion, wendet '
             'es den Hauptsatz der Differential- und Integralrechnung an. '
-            'Schlägt das symbolisch fehl, fällt CrispCalc auf die Simpson-Regel '
+            'Schlägt das symbolisch fehl, fällt CrispMath auf die Simpson-Regel '
             '(200 Streifen) zurück.',
         'Partialbruchzerlegung: 1/(x²-1) = 1/(2(x-1)) - 1/(2(x+1)). SymEngine '
             'erledigt das Abdeckverfahren automatisch.',
       ],
       'subst': [
-        'In CrispCalc schreibt `subst` den Ausdrucksbaum um und versucht '
+        'In CrispMath schreibt `subst` den Ausdrucksbaum um und versucht '
             'anschließend einen Vereinfachungsdurchlauf. Der zugrunde liegende '
             'Aufruf ist SymEngines `xreplace()` (reine Variablenersetzung, '
             'kein Mustervergleich).',
@@ -4450,7 +4450,7 @@ class DeLocalizations implements AppLocalizations {
             '`b` bleiben unverändert erhalten.',
       ],
       'limit': [
-        'In CrispCalc ist `limit(...)` ein numerisches Verfahren: Die Bridge '
+        'In CrispMath ist `limit(...)` ein numerisches Verfahren: Die Bridge '
             'wertet den Ausdruck an einer Folge von Punkten aus, die gegen '
             '`point` konvergieren, und meldet den Grenzwert, sobald '
             'aufeinanderfolgende Stichproben bis zur Arbeitsgenauigkeit '
@@ -4463,7 +4463,7 @@ class DeLocalizations implements AppLocalizations {
             'hochpräzise Konstante.',
       ],
       'gcd': [
-        'In CrispCalc nutzt der ganzzahlige `gcd(...)` die euklidische '
+        'In CrispMath nutzt der ganzzahlige `gcd(...)` die euklidische '
             'Rekursion gcd(a, b) = gcd(b, a mod b). Der zugrunde liegende '
             'Aufruf ist SymEngines `gcd()`, das im ganzzahligen Fall an GMPs '
             '`mpz_gcd` weiterreicht.',
@@ -4473,7 +4473,7 @@ class DeLocalizations implements AppLocalizations {
             'Definition, die 0 als Vielfaches jeder ganzen Zahl behandelt.',
       ],
       'lcm': [
-        'In CrispCalc wird das ganzzahlige `lcm(...)` über die Identität '
+        'In CrispMath wird das ganzzahlige `lcm(...)` über die Identität '
             '`lcm(a, b) = |a*b| / gcd(a, b)` berechnet. Der zugrunde liegende '
             'Aufruf ist SymEngines `lcm()`, das an GMPs `mpz_lcm` delegiert.',
         '36 = 2²·3², die Vereinigung der Primpotenzfaktoren aus 12 = 2²·3 und '
@@ -4482,7 +4482,7 @@ class DeLocalizations implements AppLocalizations {
             'enthält `x + 1` bereits als Faktor.',
       ],
       'polygcd': [
-        'In CrispCalc führt `polygcd` den euklidischen Algorithmus mit '
+        'In CrispMath führt `polygcd` den euklidischen Algorithmus mit '
             'exakten rationalen Koeffizienten aus (reines Dart). Beide '
             'Polynome teilen den Faktor `x - 1`; das Ergebnis wird normiert.',
         'Teilerfremde Polynome ergeben die normierte Konstante 1.',
@@ -4500,12 +4500,12 @@ class DeLocalizations implements AppLocalizations {
       ],
       'polydiscriminant': [
         'Für `x² + bx + c` ist die Diskriminante `b² − 4c` — hier 25 − 24 = '
-            '1. CrispCalc verwendet `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.',
+            '1. CrispMath verwendet `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.',
         '`(x − 2)²` hat eine doppelte Nullstelle, daher ist die Diskriminante '
             '0.',
       ],
       'polyfactor': [
-        'In CrispCalc reduziert `polyfactor` das Polynom modulo k, führt eine '
+        'In CrispMath reduziert `polyfactor` das Polynom modulo k, führt eine '
             'quadratfreie Zerlegung und anschließend Berlekamps Algorithmus '
             'aus (reines Dart). Koeffizienten erscheinen als Reste in [0, k), '
             'daher steht `x − 1` modulo 5 als `x + 4`.',
@@ -4556,7 +4556,7 @@ class DeLocalizations implements AppLocalizations {
         'Grafikfähig: zeichne `bessely(0, x)` neben `besselj(0, x)`.',
       ],
       'factorial': [
-        'In CrispCalc sind das Postfix `n!` und `factorial(n)` gleichwertig — '
+        'In CrispMath sind das Postfix `n!` und `factorial(n)` gleichwertig — '
             'der Präprozessor schreibt das Postfix in den Aufruf um. Für '
             '`n ≤ 1000` rechnen wir in Dart mit `BigInt`-Multiplikation; '
             'darüber hinaus ist der zugrunde liegende Aufruf SymEngines '
@@ -4591,7 +4591,7 @@ class DeLocalizations implements AppLocalizations {
             'Fehlermeldung.',
       ],
       'fibonacci': [
-        'In CrispCalc sind `fib(n)` und `fibonacci(n)` derselbe Aufruf. Für '
+        'In CrispMath sind `fib(n)` und `fibonacci(n)` derselbe Aufruf. Für '
             '`n ≤ 90` nutzen wir eine vorberechnete Tabelle; für größere `n` '
             'ist der zugrunde liegende Aufruf SymEngines `fibonacci()`, das '
             'Fast-Doubling verwendet (O(log n) Multiplikationen über GMP).',
@@ -4604,7 +4604,7 @@ class DeLocalizations implements AppLocalizations {
       ],
       // --- Zahlentheorie ---
       'isprime': [
-        'In CrispCalc gibt `isprime(n)` einen booleschen Chip zurück. Der '
+        'In CrispMath gibt `isprime(n)` einen booleschen Chip zurück. Der '
             'zugrunde liegende Aufruf ist GMPs `mpz_probab_prime_p` (25 '
             'Miller-Rabin-Runden, Fehlerschranke 4^-25 ≈ 9×10^-16) über '
             'SymEngines `ntheory`-Modul. 2027 ist die 308. Primzahl.',
@@ -4614,7 +4614,7 @@ class DeLocalizations implements AppLocalizations {
             'modularen Potenzierungen, nicht in der Bitlänge.',
       ],
       'nextprime': [
-        'In CrispCalc iteriert `nextprime(n)` von `n+1` aufwärts und testet '
+        'In CrispMath iteriert `nextprime(n)` von `n+1` aufwärts und testet '
             'jeden Kandidaten. Der zugrunde liegende Aufruf ist SymEngines '
             '`ntheory::nextprime()`, das über kurze Fenster FLINTs Sieb '
             'verwendet, wenn die Lücke groß ist.',
@@ -4622,25 +4622,25 @@ class DeLocalizations implements AppLocalizations {
             'prim ist.',
       ],
       'prevprime': [
-        'In CrispCalc geht `prevprime(n)` von `n-1` abwärts. Der zugrunde '
+        'In CrispMath geht `prevprime(n)` von `n-1` abwärts. Der zugrunde '
             'liegende Aufruf ist SymEngines `ntheory::prevprime()`.',
         'Unter 2 existieren keine Primzahlen; die Bridge wirft einen Fehler, '
-            'statt einen Sentinel-Wert zurückzugeben. CrispCalc zeigt den '
+            'statt einen Sentinel-Wert zurückzugeben. CrispMath zeigt den '
             'Fehler-Chip an.',
       ],
       'factorint': [
-        'In CrispCalc liefert `factorint(n)` eine dargestellte '
+        'In CrispMath liefert `factorint(n)` eine dargestellte '
             'Primfaktorzerlegung. Der zugrunde liegende Aufruf ist FLINTs '
             '`fmpz_factor`, vorgelagert über SymEngines ntheory-Wrapper; '
-            'CrispCalc wandelt die Liste aus (Primzahl, Exponent) in die '
+            'CrispMath wandelt die Liste aus (Primzahl, Exponent) in die '
             'Darstellung mit hochgestellten Unicode-Ziffern um.',
         'Die 8. Mersenne-Primzahl, M31. Ein einziger Faktor (sie selbst) — '
             '`factorint` bricht ab, wenn die Eingabe prim ist.',
-        'Sonderfall: Per Konvention hat 1 die leere Faktorzerlegung; CrispCalc '
+        'Sonderfall: Per Konvention hat 1 die leere Faktorzerlegung; CrispMath '
             'stellt dies als das Literal `1` dar statt als leere Zeichenkette.',
       ],
       'divisors': [
-        'In CrispCalc wird `divisors(n)` rein in Dart aus `factorint(n)` '
+        'In CrispMath wird `divisors(n)` rein in Dart aus `factorint(n)` '
             'abgeleitet: jedes Produkt von Primzahlpotenzen pᵏ mit '
             '0 ≤ k ≤ Exponent. Die Anzahl ist ∏(eᵢ + 1) — hier '
             '(2+1)(1+1) = 6.',
@@ -4648,7 +4648,7 @@ class DeLocalizations implements AppLocalizations {
             'außer 28 selbst) ergibt 28.',
       ],
       'totient': [
-        'Die vier zu 12 teilerfremden Reste sind {1, 5, 7, 11}. CrispCalc '
+        'Die vier zu 12 teilerfremden Reste sind {1, 5, 7, 11}. CrispMath '
             'berechnet φ aus der Primfaktorzerlegung über FLINTs '
             '`fmpz_euler_phi`.',
         'Für eine Primzahl p gilt φ(p) = p − 1, da jede kleinere positive '
@@ -4677,7 +4677,7 @@ class DeLocalizations implements AppLocalizations {
             'ggT(6, 9) = 3.',
       ],
       'cfrac': [
-        'In CrispCalc führt `cfrac` eine exakte BigInt-Entwicklung über eine '
+        'In CrispMath führt `cfrac` eine exakte BigInt-Entwicklung über eine '
             'hochpräzise MPFR-Näherung der Konstante aus. Das große Glied 292 '
             'ist genau der Grund, warum der Näherungsbruch 355/113 π so '
             'bemerkenswert gut annähert.',
@@ -4687,14 +4687,14 @@ class DeLocalizations implements AppLocalizations {
       ],
       'convergent': [
         'Milü — die Näherung von π durch Zu Chongzhi (5. Jahrhundert), auf '
-            'sechs Dezimalstellen genau. CrispCalc faltet die ersten k+1 '
+            'sechs Dezimalstellen genau. CrispMath faltet die ersten k+1 '
             'Teilquotienten von `cfrac` zum Bruch zusammen.',
         'Die Schulbuch-Näherung von π; `convergent(x, 0)` ist der ganzzahlige '
             'Anteil ⌊x⌋.',
       ],
       // --- Hochpräzision ---
       'pi_precision': [
-        'In CrispCalc ist `pi(N)` ein gesondert behandelter Aufruf, der vor '
+        'In CrispMath ist `pi(N)` ein gesondert behandelter Aufruf, der vor '
             'SymEngine auf den Hochpräzisionspfad geleitet wird. Der zugrunde '
             'liegende Aufruf ist MPFRs `mpfr_const_pi` mit der Genauigkeit '
             '⌈N·log2(10)⌉ + 16 Schutzbits, gefolgt von der Umwandlung ins '
@@ -4704,7 +4704,7 @@ class DeLocalizations implements AppLocalizations {
             'anzeigt.',
       ],
       'e_precision': [
-        'In CrispCalc spiegelt `e(N)` die Pipeline von `pi(N)` wider: MPFRs '
+        'In CrispMath spiegelt `e(N)` die Pipeline von `pi(N)` wider: MPFRs '
             '`mpfr_const_e` (das die Taylor-Reihe Σ 1/k! verwendet) mit der '
             'Genauigkeit ⌈N·log2(10)⌉ + 16 Schutzbits, dann die Darstellung '
             'im Dezimalsystem.',
@@ -4712,7 +4712,7 @@ class DeLocalizations implements AppLocalizations {
             '`limit((1 + 1/n)^n, n, oo)`.',
       ],
       'sqrt_precision': [
-        'In CrispCalc ist das zweiargumentige `sqrt(k, N)` der '
+        'In CrispMath ist das zweiargumentige `sqrt(k, N)` der '
             'Hochpräzisionsweg. Der zugrunde liegende Aufruf ist MPFRs '
             '`mpfr_sqrt_ui` mit der Genauigkeit ⌈N·log2(10)⌉ + 16 Schutzbits. '
             'Das einargumentige `sqrt(2)` gibt stattdessen das symbolische '
@@ -4721,16 +4721,16 @@ class DeLocalizations implements AppLocalizations {
             'hergeleiteten Referenzziffern übereinstimmen.',
       ],
       'eulergamma_precision': [
-        'In CrispCalc verwendet `EulerGamma(N)` MPFRs `mpfr_const_euler`, das '
+        'In CrispMath verwendet `EulerGamma(N)` MPFRs `mpfr_const_euler`, das '
             'γ über die Brent-McMillan-Formel (modifizierte Bessel-Funktionen) '
             'auswertet. Die Genauigkeit beträgt ⌈N·log2(10)⌉ + 16 Schutzbits, '
             'passend zur Pipeline von `pi(N)` und `e(N)`.',
         'γ hat keine bekannte geschlossene Form. Die MPFR-Routine ist die '
-            'Standard-Referenzimplementierung; CrispCalc stellt lediglich die '
+            'Standard-Referenzimplementierung; CrispMath stellt lediglich die '
             'Ziffernfolge dar.',
       ],
       'evalf': [
-        'In CrispCalc parst `evalf` einen beliebigen Ausdruck und leitet ihn '
+        'In CrispMath parst `evalf` einen beliebigen Ausdruck und leitet ihn '
             'durch SymEngines `basic_evalf` mit ⌈N·log2(10)⌉ + 8 Bit. Das '
             'generische Gegenstück zu `pi(N)` / `e(N)` — funktioniert für '
             'Logarithmen, Wurzeln, Summen und die Spezialfunktionen.',
@@ -4740,14 +4740,14 @@ class DeLocalizations implements AppLocalizations {
       ],
       // --- Matrizen / Lineare Algebra ---
       'cevalf': [
-        'In CrispCalc nutzt `cevalf` SymEngines `basic_evalf` auf dem '
+        'In CrispMath nutzt `cevalf` SymEngines `basic_evalf` auf dem '
             'MPC-(komplexen)-Pfad. (1+i)¹⁰ = 32i. Die imaginäre Einheit ist '
             'das Literal `I`.',
         'Wo `evalf` ein nicht-reelles Ergebnis ablehnt, gibt `cevalf` den '
             'vollen komplexen Wert zurück: √(−2) = i·√2.',
       ],
       'matrix_literal': [
-        'In CrispCalc wird das Literal `Matrix(...)` vom Matrix-Auswerter '
+        'In CrispMath wird das Literal `Matrix(...)` vom Matrix-Auswerter '
             'erkannt, bevor die Engine den Ausdruck sieht. Der zugrunde '
             'liegende Aufruf ist SymEngines Konstruktor `DenseMatrix` — das '
             'Zeilen-/Spaltenlayout wird bei der Konstruktion festgelegt.',
@@ -4760,7 +4760,7 @@ class DeLocalizations implements AppLocalizations {
             'Eingaben erfordern.',
       ],
       'det': [
-        'In CrispCalc wird `det(M)` als einzelner Skalar ausgewertet. Der '
+        'In CrispMath wird `det(M)` als einzelner Skalar ausgewertet. Der '
             'zugrunde liegende Aufruf ist SymEngines `DenseMatrix::det()`, das '
             'den bruchfreien Bareiss-Algorithmus verwendet — exakt für '
             'symbolische/rationale Einträge, ohne Aufblähen durch '
@@ -4771,7 +4771,7 @@ class DeLocalizations implements AppLocalizations {
             'als SymEngine-`Add` statt als Gleitkommazahl.',
       ],
       'inv': [
-        'In CrispCalc gibt `inv(M)` `adj(M)/det(M)` zurück. Der zugrunde '
+        'In CrispMath gibt `inv(M)` `adj(M)/det(M)` zurück. Der zugrunde '
             'liegende Aufruf ist SymEngines `DenseMatrix::inv()`, das den '
             'Gauß-Jordan-Algorithmus über den rationalen Zahlen verwendet — '
             'die Einträge kommen als exakte Brüche zurück, nicht als '
@@ -4783,7 +4783,7 @@ class DeLocalizations implements AppLocalizations {
             'Rechnerverlauf.',
       ],
       'transpose': [
-        'In CrispCalc ist `transpose(M)` auf der Dart-Seite implementiert, '
+        'In CrispMath ist `transpose(M)` auf der Dart-Seite implementiert, '
             'weil die Bridge keinen Einstiegspunkt zum Transponieren '
             'bereitstellt. Wir legen eine neue `SymEngineMatrix` mit '
             'vertauschten Dimensionen an und kopieren die Zellen Element für '
@@ -4794,7 +4794,7 @@ class DeLocalizations implements AppLocalizations {
             'der Zellen den symbolischen Inhalt unverändert lässt.',
       ],
       'rref': [
-        'In CrispCalc führt `rref` Gauß-Jordan in Dart aus und ruft bei jeder '
+        'In CrispMath führt `rref` Gauß-Jordan in Dart aus und ruft bei jeder '
             'Zellaktualisierung SymEngines `simplify()` auf. Die Bridge stellt '
             '`rref` nicht direkt bereit, daher durchläuft der Algorithmus die '
             'Spalten von links nach rechts, skaliert die Pivotzeile und '
@@ -4806,7 +4806,7 @@ class DeLocalizations implements AppLocalizations {
             'siehe den Algorithmus-Hinweis in `matrix_evaluator.dart`.',
       ],
       'matrix_arithmetic': [
-        'In CrispCalc werden binäre Matrixoperationen vom Matrix-Auswerter '
+        'In CrispMath werden binäre Matrixoperationen vom Matrix-Auswerter '
             'verarbeitet, wenn beide Operanden als `Matrix(...)`-Literale '
             'geparst werden. Der zugrunde liegende Aufruf ist SymEngines '
             '`add_dense_dense`; die Subtraktion läuft über `add_dense_dense` '
@@ -4832,7 +4832,7 @@ class DeLocalizations implements AppLocalizations {
       ],
       // --- Statistik ---
       'mean': [
-        'In CrispCalc wird `mean` von `DescriptiveStats.mean` berechnet (siehe '
+        'In CrispMath wird `mean` von `DescriptiveStats.mean` berechnet (siehe '
             '`lib/engine/statistics.dart`) — eine Summe in einem Durchlauf / '
             'n. Für gepaarte oder gruppierte Daten stellt das Statistik-Modul '
             'außerdem Standardabweichung, Median, Quartile und den '
@@ -4842,7 +4842,7 @@ class DeLocalizations implements AppLocalizations {
             'Summationsalgorithmus erfordern, wenn du >15 Stellen brauchst.',
       ],
       'one_sample_t': [
-        'In CrispCalc liegt `oneSampleT` in `lib/engine/hypothesis_tests.dart`. '
+        'In CrispMath liegt `oneSampleT` in `lib/engine/hypothesis_tests.dart`. '
             'Der zugrunde liegende Aufruf berechnet t = (x̄ − μ₀) / (s / √n) und '
             'liest den zweiseitigen p-Wert aus `TDistribution.cdf` mit '
             'df = n − 1 ab.',
@@ -4851,7 +4851,7 @@ class DeLocalizations implements AppLocalizations {
             'Einstichproben-t-Test des Differenzvektors.',
       ],
       'welch_t': [
-        'In CrispCalc liegt `welchT` in `lib/engine/hypothesis_tests.dart`. '
+        'In CrispMath liegt `welchT` in `lib/engine/hypothesis_tests.dart`. '
             'Der zugrunde liegende Aufruf berechnet die Teststatistik '
             't = (x̄_A − x̄_B) / √(s_A²/n_A + s_B²/n_B), nähert dann die '
             'Freiheitsgrade über Welch-Satterthwaite an und liest den p-Wert '
@@ -4861,7 +4861,7 @@ class DeLocalizations implements AppLocalizations {
             'Unsicherheit der Varianzschätzung berücksichtigt.',
       ],
       'paired_t': [
-        'In CrispCalc reduziert sich `pairedT` auf einen Einstichproben-t-Test '
+        'In CrispMath reduziert sich `pairedT` auf einen Einstichproben-t-Test '
             'des Differenzvektors d = nachher − vorher. Der zugrunde liegende '
             'Aufruf ist derselbe `TDistribution.cdf`-Weg wie bei `welchT`, '
             'jedoch mit df = n - 1 (keine Welch-Korrektur, da nur eine '
@@ -4871,7 +4871,7 @@ class DeLocalizations implements AppLocalizations {
             'darstellt statt als NaN.',
       ],
       'anova_1': [
-        'In CrispCalc zerlegt `anovaOneWay` die Gesamt-Quadratsumme in die '
+        'In CrispMath zerlegt `anovaOneWay` die Gesamt-Quadratsumme in die '
             'Quadratsumme zwischen den Gruppen und die innerhalb der Gruppen. '
             'Der zugrunde liegende Aufruf ist F = MS_zwischen / MS_innerhalb '
             'mit df1 = K - 1 und df2 = N - K, dann `FDistribution.sf` für den '
@@ -4880,7 +4880,7 @@ class DeLocalizations implements AppLocalizations {
             'H₀ (alle Mittelwerte gleich) wird bei α = 0,05 verworfen.',
       ],
       'chi2_goodness': [
-        'In CrispCalc wertet `chiSquareGof` Σ (O - E)² / E aus und liest den '
+        'In CrispMath wertet `chiSquareGof` Σ (O - E)² / E aus und liest den '
             'p-Wert des oberen Endes aus `ChiSquaredDistribution.sf` mit '
             'df = k - 1 ab, wobei k die Anzahl der Kategorien ist. Es wird '
             'angenommen, dass die zugrunde liegenden Zellhäufigkeiten ≥ 5 '
@@ -4889,7 +4889,7 @@ class DeLocalizations implements AppLocalizations {
         'Perfekte Übereinstimmung → χ² = 0 → H₀ wird bei keinem α verworfen.',
       ],
       'chi2_independence': [
-        'In CrispCalc berechnet `chiSquareIndependence` die erwarteten '
+        'In CrispMath berechnet `chiSquareIndependence` die erwarteten '
             'Häufigkeiten aus den Randsummen von Zeile × Spalte '
             '(E_ij = Zeile_i · Spalte_j / Gesamt), dann Σ (O - E)² / E mit '
             'df = (Zeilen - 1) · (Spalten - 1). Der zugrunde liegende p-Wert '
@@ -4899,7 +4899,7 @@ class DeLocalizations implements AppLocalizations {
             'nicht auf der Chi-Quadrat-Näherung für große Stichproben beruht.',
       ],
       'fisher_exact': [
-        'In CrispCalc zählt `fisherExact` alle 2×2-Tafeln mit denselben '
+        'In CrispMath zählt `fisherExact` alle 2×2-Tafeln mit denselben '
             'Randsummen auf und summiert die hypergeometrischen '
             'Wahrscheinlichkeiten der Tafeln, die mindestens so extrem wie die '
             'beobachtete sind. Der zugrunde liegende Aufruf berechnet '
@@ -4910,7 +4910,7 @@ class DeLocalizations implements AppLocalizations {
         'Symmetrische Tafel → kein Hinweis auf einen Zusammenhang.',
       ],
       'wilcoxon': [
-        'In CrispCalc fasst `wilcoxonRankSum` beide Stichproben zusammen, '
+        'In CrispMath fasst `wilcoxonRankSum` beide Stichproben zusammen, '
             'vergibt mittelwertkorrigierte Ränge, summiert die Ränge der '
             'Gruppe A und gibt das z der Normalnäherung aus. Der zugrunde '
             'liegende Aufruf wendet eine Bindungskorrektur auf die Varianz an '
@@ -4921,7 +4921,7 @@ class DeLocalizations implements AppLocalizations {
             'exakte Permutationsverteilung vorzuziehen (noch nicht enthalten).',
       ],
       'sign_test': [
-        'In CrispCalc verwirft `pairedSign` Paare mit Differenz null, zählt '
+        'In CrispMath verwirft `pairedSign` Paare mit Differenz null, zählt '
             'die positiven unter den verbleibenden n und testet gegen '
             'Binomial(n, 0,5). Der zugrunde liegende p-Wert nutzt das exakte '
             'Binomialende — keine Normalnäherung, daher die richtige Wahl für '
@@ -4931,7 +4931,7 @@ class DeLocalizations implements AppLocalizations {
             'p-Wert ist 2 · min(Binom(3, 0,5).cdf(3), …).',
       ],
       'linreg': [
-        'In CrispCalc passt der Reiter „Regression" die Daten über die '
+        'In CrispMath passt der Reiter „Regression" die Daten über die '
             'geschlossenen Kleinste-Quadrate-Schätzer a = Sxy / Sxx und '
             'b = ȳ − a·x̄ an (siehe `lib/engine/statistics.dart`). Derselbe '
             'Reiter bietet auch polynomielle und exponentielle Modelle.',
@@ -4939,7 +4939,7 @@ class DeLocalizations implements AppLocalizations {
             'R² nahe 1 — eine nahezu perfekte lineare Anpassung.',
       ],
       'normal_dist': [
-        'In CrispCalc wertet der Reiter „Verteilungen" die '
+        'In CrispMath wertet der Reiter „Verteilungen" die '
             'Verteilungsfunktion der Normalverteilung über die Fehlerfunktion '
             'aus (`Normal.cdf` in `lib/engine/statistics.dart`); x = μ + 2σ '
             'liegt etwa beim 97,7. Perzentil.',
@@ -4948,7 +4948,7 @@ class DeLocalizations implements AppLocalizations {
             '`erf`, das der Verteilungsfunktion zugrunde liegt.',
       ],
       'binomial_dist': [
-        'In CrispCalc wertet der Reiter „Verteilungen" die binomiale '
+        'In CrispMath wertet der Reiter „Verteilungen" die binomiale '
             'Wahrscheinlichkeitsfunktion C(n, k)·pᵏ·(1−p)^(n−k) aus '
             '(`Binomial.pmf` in `lib/engine/statistics.dart`); bei einer '
             'Ausschussrate von 10 % unter 20 Stücken ist die wahrscheinlichste '
@@ -4959,7 +4959,7 @@ class DeLocalizations implements AppLocalizations {
       ],
       // --- Constraints-DSL ---
       'vars': [
-        'In CrispCalc wird die Zeile `vars:` von `DslToFlatZinc` geparst '
+        'In CrispMath wird die Zeile `vars:` von `DslToFlatZinc` geparst '
             '(siehe `lib/engine/csp_solver.dart`) und erzeugt pro Name eine '
             'FlatZinc-Deklaration `var int: x :: …`. Die Bereichsgrenzen sind '
             'konkrete ganze Zahlen; symbolische Wertebereiche werden nicht '
@@ -4970,7 +4970,7 @@ class DeLocalizations implements AppLocalizations {
             'effizient.',
       ],
       'all_different': [
-        'In CrispCalc wird `allDifferent` in FlatZincs '
+        'In CrispMath wird `allDifferent` in FlatZincs '
             '`all_different_int([a, b, c])` übersetzt. Der zugrunde liegende '
             'Solver (dart_csp) implementiert die Propagation der '
             'Schrankenkonsistenz über Régins Matching-Algorithmus — bei großen '
@@ -4980,7 +4980,7 @@ class DeLocalizations implements AppLocalizations {
             'etwaige Variantenzonen.',
       ],
       'no_overlap': [
-        'In CrispCalc wird `noOverlap` in FlatZincs '
+        'In CrispMath wird `noOverlap` in FlatZincs '
             '`disjunctive([s1, s2, s3], [4, 3, 2])` übersetzt. Der zugrunde '
             'liegende Solver verwendet Edge-Finding plus Vilíms '
             'θ-Baum-Propagator — derselbe Algorithmus wie in MiniZincs '
@@ -4991,7 +4991,7 @@ class DeLocalizations implements AppLocalizations {
             'Beispiel.',
       ],
       'cumulative': [
-        'In CrispCalc wird `cumulative` in FlatZincs '
+        'In CrispMath wird `cumulative` in FlatZincs '
             '`cumulative([starts], [durations], [resources], capacity)` '
             'übersetzt. Der zugrunde liegende Solver verwendet '
             'Timetable-Propagation plus energetisches Schließen — '
@@ -5001,7 +5001,7 @@ class DeLocalizations implements AppLocalizations {
             'Beispiel `dslRcpsp` zeigt ein Projekt mit zwei Ressourcen.',
       ],
       'minimize': [
-        'In CrispCalc erzeugt `minimize` FlatZincs '
+        'In CrispMath erzeugt `minimize` FlatZincs '
             '`solve minimize __obj__;`, nachdem die Zielvariable durch das '
             'Parsen des linearen Ausdrucks konstruiert wurde. Der zugrunde '
             'liegende Solver verwendet Branch-and-Bound — Zulässigkeitsprüfung, '
@@ -5012,7 +5012,7 @@ class DeLocalizations implements AppLocalizations {
             'die den Zielbetrag ergibt.',
       ],
       'maximize': [
-        'In CrispCalc erzeugt `maximize` FlatZincs `solve maximize __obj__;`. '
+        'In CrispMath erzeugt `maximize` FlatZincs `solve maximize __obj__;`. '
             'Der zugrunde liegende Solver führt Branch-and-Bound genau wie '
             '`minimize` aus, jedoch mit umgekehrtem Verschärfen der unteren '
             'Schranke.',
@@ -5022,25 +5022,25 @@ class DeLocalizations implements AppLocalizations {
       ],
       // --- Sudoku-Varianten ---
       'sudoku_regular': [
-        'In CrispCalc liegt die reguläre Variante in `lib/engine/sudoku.dart` '
+        'In CrispMath liegt die reguläre Variante in `lib/engine/sudoku.dart` '
             'als `SudokuVariant.regular`. Der zugrunde liegende Solver '
             'instanziiert ein `allDifferent` pro Zeile, Spalte und Box '
             '(insgesamt 27 bei 9×9) und übergibt sie an `dart_csp`.',
       ],
       'sudoku_x': [
-        'In CrispCalc ist Sudoku-X `SudokuVariant.x` '
+        'In CrispMath ist Sudoku-X `SudokuVariant.x` '
             '(`lib/engine/sudoku.dart`). Der zugrunde liegende Solver fügt '
             'zusätzlich zum regulären Trio aus Zeile/Spalte/Box zwei weitere '
             '`allDifferent`-Bedingungen hinzu — eine pro Diagonale.',
       ],
       'sudoku_disjoint': [
-        'In CrispCalc ist dies `SudokuVariant.disjoint`. Für ein N×N-Gitter '
+        'In CrispMath ist dies `SudokuVariant.disjoint`. Für ein N×N-Gitter '
             'mit √N × √N großen Boxen fügt die Bedingung N weitere '
             '`allDifferent`-Überlagerungen hinzu — eine pro Position innerhalb '
             'der Box. Die 8×8 wird als einzelne Vorlage geliefert.',
       ],
       'sudoku_killer': [
-        'In CrispCalc ist dies `SudokuVariant.killer`. Der zugrunde liegende '
+        'In CrispMath ist dies `SudokuVariant.killer`. Der zugrunde liegende '
             'Solver legt über das reguläre Trio aus Zeile/Spalte/Box je Käfig '
             'eine `allDifferent`-Bedingung und je Käfig eine Bedingung '
             '`Summe = Ziel`. Die Killer-Vorlagen für 4×4 und 9×9 werden beide '
@@ -5137,7 +5137,7 @@ class DeLocalizations implements AppLocalizations {
   String get settingsFunctionRef => 'Funktionsreferenz';
   @override
   String get settingsFunctionRefSubtitle =>
-      'Jede CrispCalc-Funktion durchstöbern: Signatur, Beispiele, '
+      'Jede CrispMath-Funktion durchstöbern: Signatur, Beispiele, '
       'verwandte Funktionen und ein Schnellzugriff in den Rechner.';
 
   @override
@@ -6019,12 +6019,12 @@ class FrLocalizations implements AppLocalizations {
   String get settingsLayoutTitle => 'Disposition';
   @override
   String get settingsLayoutBody =>
-      'CrispCalc s\'adapte à la largeur de la fenêtre : navigation '
+      'CrispMath s\'adapte à la largeur de la fenêtre : navigation '
       'inférieure sur smartphone, rail latéral sur tablette et bureau. '
       'À partir de ~760 px, le pavé affiche toutes les touches sans onglets.';
 
   @override
-  String get aboutTitle => 'À propos de CrispCalc';
+  String get aboutTitle => 'À propos de CrispMath';
   @override
   String get aboutTagline => 'Calculatrice symbolique CAS basée sur SymEngine';
   @override
@@ -6037,7 +6037,7 @@ class FrLocalizations implements AppLocalizations {
   String get aboutPrivacy => 'Confidentialité';
   @override
   String get aboutPrivacyText =>
-      'CrispCalc fonctionne entièrement sur l\'appareil. Aucun calcul, '
+      'CrispMath fonctionne entièrement sur l\'appareil. Aucun calcul, '
       'entrée d\'historique ou variable utilisateur n\'est jamais transmis '
       'à un serveur. L\'application ne collecte aucune donnée d\'analyse '
       'et ne contacte aucun service distant.';
@@ -6045,7 +6045,7 @@ class FrLocalizations implements AppLocalizations {
   String get aboutDisclaimer => 'Avertissement';
   @override
   String get aboutDisclaimerText =>
-      'CrispCalc est fourni « tel quel », sans aucune garantie. Le moteur '
+      'CrispMath est fourni « tel quel », sans aucune garantie. Le moteur '
       'symbolique peut renvoyer des résultats imprécis pour des entrées '
       'numériques mal conditionnées ou des expressions symboliques non '
       'prises en charge. Vérifiez de manière indépendante les calculs '
@@ -6054,14 +6054,14 @@ class FrLocalizations implements AppLocalizations {
   String get aboutLicense => 'Licence';
   @override
   String get aboutLicenseText =>
-      'CrispCalc est un logiciel libre publié sous la GNU Affero General '
+      'CrispMath est un logiciel libre publié sous la GNU Affero General '
       'Public License version 3 ou ultérieure. Ce choix découle des '
       'exigences de copyleft des bibliothèques GMP/MPFR/MPC/FLINT '
       'incluses, liées statiquement.';
   @override
   String get aboutOpenSourceLicenses => 'Licences open source';
   @override
-  String get settingsAbout => 'À propos de CrispCalc';
+  String get settingsAbout => 'À propos de CrispMath';
   @override
   String get matrixDiagnosticsTitle => 'Auto-test matriciel';
   @override
@@ -6216,7 +6216,7 @@ class FrLocalizations implements AppLocalizations {
   String get exportDataTitle => 'Exporter les données';
   @override
   String get exportDataSubtitle =>
-      'Le JSON ci-dessous contient tout ce que CrispCalc a stocké sur cet appareil — historique, variables, fonctions, paramètres, réglages. Copiez-le dans une note ou un document cloud avant de réinstaller.';
+      'Le JSON ci-dessous contient tout ce que CrispMath a stocké sur cet appareil — historique, variables, fonctions, paramètres, réglages. Copiez-le dans une note ou un document cloud avant de réinstaller.';
   @override
   String get exportDataCopy => 'Copier dans le presse-papiers';
   @override
@@ -7326,7 +7326,7 @@ class FrLocalizations implements AppLocalizations {
             "masse ponctuelle P(X = k) et la probabilité cumulée P(X ≤ k).";
       case 'vars':
         return "Déclare les variables de décision entières et leur domaine. "
-            "Toujours la première ligne d'un programme DSL de CrispCalc.";
+            "Toujours la première ligne d'un programme DSL de CrispMath.";
       case 'all_different':
         return "Contrainte globale « toutes les valeurs deux à deux "
             "distinctes ». La contrainte PPC phare — propagation bien plus "
@@ -7399,7 +7399,7 @@ class FrLocalizations implements AppLocalizations {
 
   static const _frHints = <String, List<String>>{
     'solve': [
-      "Dans CrispCalc, `solve(x^2 - 1, x)` renvoie une liste de racines à la "
+      "Dans CrispMath, `solve(x^2 - 1, x)` renvoie une liste de racines à la "
           "manière de Python. L'appel sous-jacent est le `solve()` de "
           "SymEngine (branche des racines rationnelles pour les polynômes), "
           "encapsulé par le pont et sérialisé en chaîne Dart.",
@@ -7412,7 +7412,7 @@ class FrLocalizations implements AppLocalizations {
       "Les INÉQUATIONS polynomiales sont aussi résolues : les racines découpent la droite en intervalles et le signe de chaque intervalle décide. Gère aussi ≤/≥, les bornes en radicaux exacts et les cas ≠ / point / ℝ / ∅.",
     ],
     'expand': [
-      "Dans CrispCalc, `expand((x + 1)^2)` renvoie le développement du "
+      "Dans CrispMath, `expand((x + 1)^2)` renvoie le développement du "
           "binôme. L'appel sous-jacent est le `expand()` de SymEngine, qui "
           "décompose les nœuds `Pow` et `Mul` et regroupe les termes "
           "semblables.",
@@ -7423,7 +7423,7 @@ class FrLocalizations implements AppLocalizations {
           "`factor` pour passer d'une forme à l'autre.",
     ],
     'simplify': [
-      "Dans CrispCalc, `simplify` simplifie le facteur commun `(x - 2)`. "
+      "Dans CrispMath, `simplify` simplifie le facteur commun `(x - 2)`. "
           "L'appel sous-jacent est le `simplify()` de SymEngine, qui essaie "
           "`rational_simplify` ainsi qu'un petit ensemble de règles de "
           "réécriture.",
@@ -7434,7 +7434,7 @@ class FrLocalizations implements AppLocalizations {
           "trigonométrique avant de renvoyer le littéral `1`.",
     ],
     'factor': [
-      "Dans CrispCalc, `factor(x^2 - 1)` renvoie la factorisation en "
+      "Dans CrispMath, `factor(x^2 - 1)` renvoie la factorisation en "
           "différence de deux carrés. L'appel sous-jacent est le `factor()` "
           "de SymEngine, qui utilise Berlekamp / Cantor–Zassenhaus pour les "
           "polynômes à une variable sur Q.",
@@ -7444,7 +7444,7 @@ class FrLocalizations implements AppLocalizations {
           "décompose pas davantage sans admettre de racines complexes.",
     ],
     'diff': [
-      "Dans CrispCalc, `diff(...)` applique terme à terme les règles de "
+      "Dans CrispMath, `diff(...)` applique terme à terme les règles de "
           "dérivation des puissances et des constantes. L'appel sous-jacent "
           "est le `diff()` de SymEngine, qui parcourt l'arbre d'expression et "
           "produit un nouveau nœud `Add` symbolique.",
@@ -7454,19 +7454,19 @@ class FrLocalizations implements AppLocalizations {
           "factorisé. Passé dans `factor`, `exp(x)` est mis en facteur.",
     ],
     'integrate': [
-      "Dans CrispCalc, l'intégrale indéfinie `integrate(...)` est déléguée "
+      "Dans CrispMath, l'intégrale indéfinie `integrate(...)` est déléguée "
           "au `integrate()` de SymEngine. L'intégration par parties est "
           "appliquée automatiquement lorsqu'un facteur se dérive en un "
           "polynôme.",
       "Forme définie : lorsque SymEngine dispose d'une primitive sous forme "
           "close, il applique le théorème fondamental de l'analyse. En cas "
-          "d'échec symbolique, CrispCalc se rabat sur la méthode de Simpson "
+          "d'échec symbolique, CrispMath se rabat sur la méthode de Simpson "
           "(200 sous-intervalles).",
       "Décomposition en éléments simples : 1/(x²-1) = 1/(2(x-1)) - "
           "1/(2(x+1)). SymEngine effectue le calcul automatiquement.",
     ],
     'subst': [
-      "Dans CrispCalc, `subst` réécrit l'arbre d'expression puis tente une "
+      "Dans CrispMath, `subst` réécrit l'arbre d'expression puis tente une "
           "passe de simplification. L'appel sous-jacent est le `xreplace()` "
           "de SymEngine (remplacement de variables uniquement, sans filtrage "
           "de motif).",
@@ -7477,7 +7477,7 @@ class FrLocalizations implements AppLocalizations {
           "`a` et `b` restent intactes.",
     ],
     'limit': [
-      "Dans CrispCalc, `limit(...)` est une approche numérique : le pont "
+      "Dans CrispMath, `limit(...)` est une approche numérique : le pont "
           "évalue l'expression en une suite de points convergeant vers "
           "`point` et renvoie la limite dès que des échantillons consécutifs "
           "concordent à la précision de travail. Pas de développement en "
@@ -7490,7 +7490,7 @@ class FrLocalizations implements AppLocalizations {
           "la constante en haute précision.",
     ],
     'gcd': [
-      "Dans CrispCalc, le `gcd(...)` entier utilise la récurrence "
+      "Dans CrispMath, le `gcd(...)` entier utilise la récurrence "
           "d'Euclide gcd(a, b) = gcd(b, a mod b). L'appel sous-jacent est le "
           "`gcd()` de SymEngine, qui s'appuie sur `mpz_gcd` de GMP dans le "
           "cas entier.",
@@ -7500,7 +7500,7 @@ class FrLocalizations implements AppLocalizations {
           "mathématique qui traite 0 comme un multiple de tout entier.",
     ],
     'lcm': [
-      "Dans CrispCalc, le `lcm(...)` entier est calculé via l'identité "
+      "Dans CrispMath, le `lcm(...)` entier est calculé via l'identité "
           "`lcm(a, b) = |a*b| / gcd(a, b)`. L'appel sous-jacent est le "
           "`lcm()` de SymEngine, qui délègue à `mpz_lcm` de GMP.",
       "36 = 2²·3², l'union des facteurs en puissances de nombres premiers de "
@@ -7509,7 +7509,7 @@ class FrLocalizations implements AppLocalizations {
           "contient déjà `x + 1` comme facteur.",
     ],
     'polygcd': [
-      "Dans CrispCalc, `polygcd` exécute l'algorithme d'Euclide avec des "
+      "Dans CrispMath, `polygcd` exécute l'algorithme d'Euclide avec des "
           "coefficients rationnels exacts (Dart pur). Les deux polynômes "
           "partagent le facteur `x - 1` ; le résultat est rendu unitaire.",
       "Des polynômes premiers entre eux donnent la constante unitaire 1.",
@@ -7527,11 +7527,11 @@ class FrLocalizations implements AppLocalizations {
     ],
     'polydiscriminant': [
       "Pour `x² + bx + c`, le discriminant est `b² − 4c` — ici 25 − 24 = 1. "
-          "CrispCalc utilise `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.",
+          "CrispMath utilise `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.",
       "`(x − 2)²` a une racine double, donc le discriminant est 0.",
     ],
     'polyfactor': [
-      "Dans CrispCalc, `polyfactor` réduit le polynôme modulo k, effectue une "
+      "Dans CrispMath, `polyfactor` réduit le polynôme modulo k, effectue une "
           "factorisation sans carré puis l'algorithme de Berlekamp (Dart "
           "pur). Les coefficients s'affichent comme des restes dans [0, k), "
           "donc `x − 1` apparaît comme `x + 4` modulo 5.",
@@ -7580,7 +7580,7 @@ class FrLocalizations implements AppLocalizations {
       "Traçable : tracez `bessely(0, x)` à côté de `besselj(0, x)`.",
     ],
     'factorial': [
-      "Dans CrispCalc, le suffixe `n!` et `factorial(n)` sont équivalents — "
+      "Dans CrispMath, le suffixe `n!` et `factorial(n)` sont équivalents — "
           "le préprocesseur réécrit le suffixe en appel. Pour `n ≤ 1000`, "
           "nous calculons en Dart avec la multiplication `BigInt` ; au-delà, "
           "l'appel sous-jacent est le `factorial()` de SymEngine.",
@@ -7614,7 +7614,7 @@ class FrLocalizations implements AppLocalizations {
           "renvoient une erreur.",
     ],
     'fibonacci': [
-      "Dans CrispCalc, `fib(n)` et `fibonacci(n)` sont le même appel. Pour "
+      "Dans CrispMath, `fib(n)` et `fibonacci(n)` sont le même appel. Pour "
           "`n ≤ 90`, nous utilisons une table précalculée ; pour les `n` plus "
           "grands, l'appel sous-jacent est le `fibonacci()` de SymEngine, qui "
           "utilise le doublement rapide (O(log n) multiplications via GMP).",
@@ -7626,7 +7626,7 @@ class FrLocalizations implements AppLocalizations {
           "sous la seconde.",
     ],
     'isprime': [
-      "Dans CrispCalc, `isprime(n)` renvoie une puce booléenne. L'appel "
+      "Dans CrispMath, `isprime(n)` renvoie une puce booléenne. L'appel "
           "sous-jacent est `mpz_probab_prime_p` de GMP (25 tours de "
           "Miller-Rabin, borne d'erreur 4^-25 ≈ 9×10^-16) via le module "
           "`ntheory` de SymEngine. 2027 est le 308ᵉ nombre premier.",
@@ -7636,7 +7636,7 @@ class FrLocalizations implements AppLocalizations {
           "exponentiations modulaires, pas dans la longueur en bits.",
     ],
     'nextprime': [
-      "Dans CrispCalc, `nextprime(n)` itère à partir de `n+1` et teste "
+      "Dans CrispMath, `nextprime(n)` itère à partir de `n+1` et teste "
           "chaque candidat. L'appel sous-jacent est le "
           "`ntheory::nextprime()` de SymEngine, qui utilise le crible de "
           "FLINT sur de courtes fenêtres lorsque l'écart est grand.",
@@ -7644,32 +7644,32 @@ class FrLocalizations implements AppLocalizations {
           "même lorsque `p` est premier.",
     ],
     'prevprime': [
-      "Dans CrispCalc, `prevprime(n)` descend à partir de `n-1`. L'appel "
+      "Dans CrispMath, `prevprime(n)` descend à partir de `n-1`. L'appel "
           "sous-jacent est le `ntheory::prevprime()` de SymEngine.",
       "Il n'existe aucun nombre premier en dessous de 2 ; le pont lève une "
-          "erreur plutôt que de renvoyer une valeur sentinelle. CrispCalc "
+          "erreur plutôt que de renvoyer une valeur sentinelle. CrispMath "
           "affiche la puce d'erreur.",
     ],
     'factorint': [
-      "Dans CrispCalc, `factorint(n)` renvoie une décomposition en facteurs "
+      "Dans CrispMath, `factorint(n)` renvoie une décomposition en facteurs "
           "premiers mise en forme. L'appel sous-jacent est `fmpz_factor` de "
-          "FLINT, en façade via l'enveloppe ntheory de SymEngine ; CrispCalc "
+          "FLINT, en façade via l'enveloppe ntheory de SymEngine ; CrispMath "
           "convertit la liste de (nombre premier, exposant) en l'affichage à "
           "chiffres Unicode en exposant.",
       "Le 8ᵉ nombre premier de Mersenne, M31. Un facteur unique (lui-même) — "
           "`factorint` court-circuite lorsque l'entrée est première.",
-      "Cas limite : par convention, 1 a la factorisation vide ; CrispCalc "
+      "Cas limite : par convention, 1 a la factorisation vide ; CrispMath "
           "l'affiche comme le littéral `1` plutôt qu'une chaîne vide.",
     ],
     'divisors': [
-      "Dans CrispCalc, `divisors(n)` est dérivé en Dart pur de `factorint(n)` : "
+      "Dans CrispMath, `divisors(n)` est dérivé en Dart pur de `factorint(n)` : "
           "chaque produit de puissances de nombres premiers pᵏ avec "
           "0 ≤ k ≤ exposant. Le compte vaut ∏(eᵢ + 1) — ici (2+1)(1+1) = 6.",
       "28 est un nombre parfait : la somme de ses diviseurs propres (tous "
           "sauf 28 lui-même) vaut 28.",
     ],
     'totient': [
-      "Les quatre restes premiers avec 12 sont {1, 5, 7, 11}. CrispCalc "
+      "Les quatre restes premiers avec 12 sont {1, 5, 7, 11}. CrispMath "
           "calcule φ à partir de la décomposition en facteurs premiers via "
           "`fmpz_euler_phi` de FLINT.",
       "Pour un nombre premier p, φ(p) = p − 1, car tout entier positif plus "
@@ -7698,7 +7698,7 @@ class FrLocalizations implements AppLocalizations {
           "pgcd(6, 9) = 3.",
     ],
     'cfrac': [
-      "Dans CrispCalc, `cfrac` effectue un développement exact en BigInt sur "
+      "Dans CrispMath, `cfrac` effectue un développement exact en BigInt sur "
           "une approximation MPFR haute précision de la constante. Le grand "
           "terme 292 est précisément pourquoi la réduite 355/113 approche π "
           "de façon si remarquable.",
@@ -7707,13 +7707,13 @@ class FrLocalizations implements AppLocalizations {
     ],
     'convergent': [
       "Milü — l'approximation de π par Zu Chongzhi (Ve siècle), exacte à six "
-          "décimales. CrispCalc replie les k+1 premiers quotients partiels de "
+          "décimales. CrispMath replie les k+1 premiers quotients partiels de "
           "`cfrac` en une fraction.",
       "L'approximation scolaire de π ; `convergent(x, 0)` est la partie "
           "entière ⌊x⌋.",
     ],
     'pi_precision': [
-      "Dans CrispCalc, `pi(N)` est un appel traité à part, dirigé vers le "
+      "Dans CrispMath, `pi(N)` est un appel traité à part, dirigé vers le "
           "chemin haute précision avant que SymEngine ne le voie. L'appel "
           "sous-jacent est `mpfr_const_pi` de MPFR à la précision "
           "⌈N·log2(10)⌉ + 16 bits de garde, suivi de la conversion en base "
@@ -7723,14 +7723,14 @@ class FrLocalizations implements AppLocalizations {
           "de fin arrondis.",
     ],
     'e_precision': [
-      "Dans CrispCalc, `e(N)` reflète le pipeline de `pi(N)` : `mpfr_const_e` "
+      "Dans CrispMath, `e(N)` reflète le pipeline de `pi(N)` : `mpfr_const_e` "
           "de MPFR (qui utilise la série de Taylor Σ 1/k!) à la précision "
           "⌈N·log2(10)⌉ + 16 bits de garde, puis le rendu en base 10.",
       "Assez court pour être mémorisé — utile comme vérification rapide de "
           "précision face à `limit((1 + 1/n)^n, n, oo)`.",
     ],
     'sqrt_precision': [
-      "Dans CrispCalc, le `sqrt(k, N)` à deux arguments est la voie haute "
+      "Dans CrispMath, le `sqrt(k, N)` à deux arguments est la voie haute "
           "précision. L'appel sous-jacent est `mpfr_sqrt_ui` de MPFR à la "
           "précision ⌈N·log2(10)⌉ + 16 bits de garde. Le `sqrt(2)` à un "
           "argument renvoie plutôt le `sqrt(2)` symbolique via SymEngine.",
@@ -7738,16 +7738,16 @@ class FrLocalizations implements AppLocalizations {
           "chiffres de référence dérivés indépendamment.",
     ],
     'eulergamma_precision': [
-      "Dans CrispCalc, `EulerGamma(N)` utilise `mpfr_const_euler` de MPFR, "
+      "Dans CrispMath, `EulerGamma(N)` utilise `mpfr_const_euler` de MPFR, "
           "qui évalue γ via la formule de Brent–McMillan (fonctions de "
           "Bessel modifiées). La précision est ⌈N·log2(10)⌉ + 16 bits de "
           "garde, comme le pipeline de `pi(N)` et `e(N)`.",
       "γ n'a aucune forme close connue. La routine MPFR est l'implémentation "
-          "de référence standard ; CrispCalc se contente d'afficher la chaîne "
+          "de référence standard ; CrispMath se contente d'afficher la chaîne "
           "de chiffres.",
     ],
     'evalf': [
-      "Dans CrispCalc, `evalf` analyse n'importe quelle expression et la "
+      "Dans CrispMath, `evalf` analyse n'importe quelle expression et la "
           "dirige vers `basic_evalf` de SymEngine à ⌈N·log2(10)⌉ + 8 bits. "
           "Le pendant générique de `pi(N)` / `e(N)` — fonctionne pour les "
           "logarithmes, racines, sommes et les fonctions spéciales.",
@@ -7756,14 +7756,14 @@ class FrLocalizations implements AppLocalizations {
           "(le complexe haute précision est un chemin distinct).",
     ],
     'cevalf': [
-      "Dans CrispCalc, `cevalf` utilise `basic_evalf` de SymEngine sur le "
+      "Dans CrispMath, `cevalf` utilise `basic_evalf` de SymEngine sur le "
           "chemin MPC (complexe). (1+i)¹⁰ = 32i. L'unité imaginaire est le "
           "littéral `I`.",
       "Là où `evalf` rejette un résultat non réel, `cevalf` renvoie la "
           "valeur complexe complète : √(−2) = i·√2.",
     ],
     'matrix_literal': [
-      "Dans CrispCalc, le littéral `Matrix(...)` est reconnu par "
+      "Dans CrispMath, le littéral `Matrix(...)` est reconnu par "
           "l'évaluateur de matrices avant que le moteur ne voie l'expression. "
           "L'appel sous-jacent est le constructeur `DenseMatrix` de "
           "SymEngine — la disposition lignes/colonnes est fixée à la "
@@ -7776,7 +7776,7 @@ class FrLocalizations implements AppLocalizations {
           "échouent pour `det` / `inv`, qui exigent une entrée carrée.",
     ],
     'det': [
-      "Dans CrispCalc, `det(M)` est évalué comme un scalaire unique. L'appel "
+      "Dans CrispMath, `det(M)` est évalué comme un scalaire unique. L'appel "
           "sous-jacent est le `DenseMatrix::det()` de SymEngine, qui utilise "
           "l'algorithme sans fraction de Bareiss — exact pour des entrées "
           "symboliques/rationnelles, sans explosion en virgule flottante.",
@@ -7787,7 +7787,7 @@ class FrLocalizations implements AppLocalizations {
           "virgule flottante.",
     ],
     'inv': [
-      "Dans CrispCalc, `inv(M)` renvoie `adj(M)/det(M)`. L'appel sous-jacent "
+      "Dans CrispMath, `inv(M)` renvoie `adj(M)/det(M)`. L'appel sous-jacent "
           "est le `DenseMatrix::inv()` de SymEngine, qui utilise "
           "l'élimination de Gauss-Jordan sur les rationnels — les entrées "
           "reviennent en fractions exactes, pas en nombres à virgule "
@@ -7800,7 +7800,7 @@ class FrLocalizations implements AppLocalizations {
           "dans l'historique de la calculatrice.",
     ],
     'transpose': [
-      "Dans CrispCalc, `transpose(M)` est implémenté côté Dart car le pont "
+      "Dans CrispMath, `transpose(M)` est implémenté côté Dart car le pont "
           "n'expose pas de point d'entrée de transposition. Nous allouons une "
           "nouvelle `SymEngineMatrix` aux dimensions échangées et copions les "
           "cellules une à une.",
@@ -7810,7 +7810,7 @@ class FrLocalizations implements AppLocalizations {
           "cellules laisse le contenu symbolique intact.",
     ],
     'rref': [
-      "Dans CrispCalc, `rref` exécute Gauss-Jordan en Dart et appelle le "
+      "Dans CrispMath, `rref` exécute Gauss-Jordan en Dart et appelle le "
           "`simplify()` de SymEngine à chaque mise à jour de cellule. Le pont "
           "n'expose pas `rref` directement, donc l'algorithme parcourt les "
           "colonnes de gauche à droite, met à l'échelle la ligne de pivot, "
@@ -7822,7 +7822,7 @@ class FrLocalizations implements AppLocalizations {
           "sensible — voir la note d'algorithme dans `matrix_evaluator.dart`.",
     ],
     'matrix_arithmetic': [
-      "Dans CrispCalc, les opérations binaires sur matrices sont prises en "
+      "Dans CrispMath, les opérations binaires sur matrices sont prises en "
           "charge par l'évaluateur de matrices lorsque les deux opérandes se "
           "lisent comme des littéraux `Matrix(...)`. L'appel sous-jacent est "
           "`add_dense_dense` de SymEngine ; la soustraction passe par "
@@ -7849,7 +7849,7 @@ class FrLocalizations implements AppLocalizations {
           "sont renvoyées.",
     ],
     'mean': [
-      "Dans CrispCalc, `mean` est calculée par `DescriptiveStats.mean` (voir "
+      "Dans CrispMath, `mean` est calculée par `DescriptiveStats.mean` (voir "
           "`lib/engine/statistics.dart`) — une somme en une passe / n. Pour "
           "des données appariées ou groupées, le module Statistiques expose "
           "aussi l'écart-type, la médiane, les quartiles et l'écart "
@@ -7860,7 +7860,7 @@ class FrLocalizations implements AppLocalizations {
           "voulez plus de 15 chiffres.",
     ],
     'one_sample_t': [
-      "Dans CrispCalc, `oneSampleT` se trouve dans "
+      "Dans CrispMath, `oneSampleT` se trouve dans "
           "`lib/engine/hypothesis_tests.dart`. L'appel sous-jacent calcule "
           "t = (x̄ − μ₀) / (s / √n), puis lit la valeur p bilatérale dans "
           "`TDistribution.cdf` avec df = n − 1.",
@@ -7870,7 +7870,7 @@ class FrLocalizations implements AppLocalizations {
           "différences.",
     ],
     'welch_t': [
-      "Dans CrispCalc, `welchT` se trouve dans "
+      "Dans CrispMath, `welchT` se trouve dans "
           "`lib/engine/hypothesis_tests.dart`. L'appel sous-jacent calcule la "
           "statistique de test t = (x̄_A − x̄_B) / √(s_A²/n_A + s_B²/n_B), "
           "approche ensuite les degrés de liberté via Welch-Satterthwaite, et "
@@ -7880,7 +7880,7 @@ class FrLocalizations implements AppLocalizations {
           "l'incertitude de l'estimation de la variance.",
     ],
     'paired_t': [
-      "Dans CrispCalc, `pairedT` se ramène à un test t à un échantillon sur "
+      "Dans CrispMath, `pairedT` se ramène à un test t à un échantillon sur "
           "le vecteur des différences d = après − avant. L'appel sous-jacent "
           "est la même voie `TDistribution.cdf` que `welchT`, mais avec "
           "ddl = n - 1 (pas de correction de Welch car il n'y a qu'une seule "
@@ -7890,7 +7890,7 @@ class FrLocalizations implements AppLocalizations {
           "limite p = 0 plutôt qu'un NaN.",
     ],
     'anova_1': [
-      "Dans CrispCalc, `anovaOneWay` partitionne la somme des carrés totale "
+      "Dans CrispMath, `anovaOneWay` partitionne la somme des carrés totale "
           "en somme des carrés inter-groupes et intra-groupes. L'appel "
           "sous-jacent est F = MS_inter / MS_intra avec ddl1 = K - 1 et "
           "ddl2 = N - K, puis `FDistribution.sf` pour la valeur p de la queue "
@@ -7900,7 +7900,7 @@ class FrLocalizations implements AppLocalizations {
           "α = 0,05.",
     ],
     'chi2_goodness': [
-      "Dans CrispCalc, `chiSquareGof` évalue Σ (O - E)² / E et lit la valeur "
+      "Dans CrispMath, `chiSquareGof` évalue Σ (O - E)² / E et lit la valeur "
           "p de la queue supérieure sur `ChiSquaredDistribution.sf` avec "
           "ddl = k - 1, où k est le nombre de catégories. On suppose les "
           "effectifs des cellules ≥ 5 — l'implémentation n'applique pas de "
@@ -7908,7 +7908,7 @@ class FrLocalizations implements AppLocalizations {
       "Concordance parfaite → χ² = 0 → on ne rejette H₀ à aucun seuil α.",
     ],
     'chi2_independence': [
-      "Dans CrispCalc, `chiSquareIndependence` calcule les effectifs "
+      "Dans CrispMath, `chiSquareIndependence` calcule les effectifs "
           "attendus à partir des marges ligne × colonne (E_ij = ligne_i · "
           "colonne_j / total), puis Σ (O - E)² / E avec "
           "ddl = (lignes - 1) · (colonnes - 1). La valeur p sous-jacente "
@@ -7918,7 +7918,7 @@ class FrLocalizations implements AppLocalizations {
           "l'approximation du khi-deux pour grands échantillons.",
     ],
     'fisher_exact': [
-      "Dans CrispCalc, `fisherExact` énumère toutes les tables 2×2 ayant les "
+      "Dans CrispMath, `fisherExact` énumère toutes les tables 2×2 ayant les "
           "mêmes marges et somme les probabilités hypergéométriques des "
           "tables au moins aussi extrêmes que l'observée. L'appel sous-jacent "
           "calcule des termes log-binomiaux pour éviter le dépassement sur de "
@@ -7928,7 +7928,7 @@ class FrLocalizations implements AppLocalizations {
       "Table symétrique → aucun indice d'association.",
     ],
     'wilcoxon': [
-      "Dans CrispCalc, `wilcoxonRankSum` réunit les deux échantillons, "
+      "Dans CrispMath, `wilcoxonRankSum` réunit les deux échantillons, "
           "attribue des rangs corrigés par les rangs moyens, somme les rangs "
           "du groupe A et fournit le z de l'approximation normale. L'appel "
           "sous-jacent applique une correction de liaisons à la variance et "
@@ -7938,7 +7938,7 @@ class FrLocalizations implements AppLocalizations {
           "loi de permutation exacte (pas encore livrée).",
     ],
     'sign_test': [
-      "Dans CrispCalc, `pairedSign` écarte les paires de différence nulle, "
+      "Dans CrispMath, `pairedSign` écarte les paires de différence nulle, "
           "compte les positives parmi les n restantes et teste contre une "
           "loi Binomiale(n, 0,5). La valeur p sous-jacente utilise la queue "
           "binomiale exacte — pas d'approximation normale, c'est donc le bon "
@@ -7948,7 +7948,7 @@ class FrLocalizations implements AppLocalizations {
           "2 · min(Binom(3, 0,5).cdf(3), …).",
     ],
     'linreg': [
-      "Dans CrispCalc, l'onglet « Régression » ajuste les données via les "
+      "Dans CrispMath, l'onglet « Régression » ajuste les données via les "
           "estimateurs des moindres carrés en forme close a = Sxy / Sxx et "
           "b = ȳ − a·x̄ (voir `lib/engine/statistics.dart`). Le même onglet "
           "propose aussi des modèles polynomial et exponentiel.",
@@ -7956,7 +7956,7 @@ class FrLocalizations implements AppLocalizations {
           "1 — un ajustement linéaire presque parfait.",
     ],
     'normal_dist': [
-      "Dans CrispCalc, l'onglet « Distributions » évalue la fonction de "
+      "Dans CrispMath, l'onglet « Distributions » évalue la fonction de "
           "répartition de la loi normale via la fonction d'erreur "
           "(`Normal.cdf` dans `lib/engine/statistics.dart`) ; x = μ + 2σ se "
           "situe au ≈ 97,7ᵉ centile.",
@@ -7965,7 +7965,7 @@ class FrLocalizations implements AppLocalizations {
           "Va de pair avec `erf`, qui sous-tend la fonction de répartition.",
     ],
     'binomial_dist': [
-      "Dans CrispCalc, l'onglet « Distributions » évalue la fonction de masse "
+      "Dans CrispMath, l'onglet « Distributions » évalue la fonction de masse "
           "binomiale C(n, k)·pᵏ·(1−p)^(n−k) (`Binomial.pmf` dans "
           "`lib/engine/statistics.dart`) ; avec un taux de défaut de 10 % sur "
           "20 articles, le nombre de défauts le plus probable est la moyenne, "
@@ -7975,7 +7975,7 @@ class FrLocalizations implements AppLocalizations {
           "n·p·(1−p) = 1,8, donc l'écart-type ≈ 1,34.",
     ],
     'vars': [
-      "Dans CrispCalc, la ligne `vars:` est analysée par `DslToFlatZinc` "
+      "Dans CrispMath, la ligne `vars:` est analysée par `DslToFlatZinc` "
           "(voir `lib/engine/csp_solver.dart`) et émet une déclaration "
           "FlatZinc `var int: x :: …` par nom. Les bornes du domaine sont des "
           "entiers concrets ; les domaines symboliques ne sont pas pris en "
@@ -7985,7 +7985,7 @@ class FrLocalizations implements AppLocalizations {
           "solveur traite l'entier 0/1 tout aussi efficacement.",
     ],
     'all_different': [
-      "Dans CrispCalc, `allDifferent` se traduit en "
+      "Dans CrispMath, `allDifferent` se traduit en "
           "`all_different_int([a, b, c])` de FlatZinc. Le solveur sous-jacent "
           "(dart_csp) implémente la propagation par cohérence de bornes via "
           "l'algorithme de couplage de Régin — bien plus rapide que le mode "
@@ -7995,7 +7995,7 @@ class FrLocalizations implements AppLocalizations {
           "éventuelles zones de variante.",
     ],
     'no_overlap': [
-      "Dans CrispCalc, `noOverlap` se traduit en "
+      "Dans CrispMath, `noOverlap` se traduit en "
           "`disjunctive([s1, s2, s3], [4, 3, 2])` de FlatZinc. Le solveur "
           "sous-jacent utilise l'edge-finding plus le propagateur θ-tree de "
           "Vilím — le même algorithme que celui intégré à MiniZinc.",
@@ -8005,7 +8005,7 @@ class FrLocalizations implements AppLocalizations {
           "DSL complet.",
     ],
     'cumulative': [
-      "Dans CrispCalc, `cumulative` se traduit en "
+      "Dans CrispMath, `cumulative` se traduit en "
           "`cumulative([starts], [durations], [resources], capacity)` de "
           "FlatZinc. Le solveur sous-jacent utilise la propagation par "
           "emploi du temps plus le raisonnement énergétique — des variantes "
@@ -8016,7 +8016,7 @@ class FrLocalizations implements AppLocalizations {
           "ressources.",
     ],
     'minimize': [
-      "Dans CrispCalc, `minimize` émet `solve minimize __obj__;` de FlatZinc "
+      "Dans CrispMath, `minimize` émet `solve minimize __obj__;` de FlatZinc "
           "après avoir construit la variable objectif via l'analyse de "
           "l'expression linéaire. Le solveur sous-jacent utilise la "
           "séparation-évaluation — test de faisabilité, puis resserrement de "
@@ -8026,7 +8026,7 @@ class FrLocalizations implements AppLocalizations {
           "pièces totalisant la cible.",
     ],
     'maximize': [
-      "Dans CrispCalc, `maximize` émet `solve maximize __obj__;` de FlatZinc. "
+      "Dans CrispMath, `maximize` émet `solve maximize __obj__;` de FlatZinc. "
           "Le solveur sous-jacent fait de la séparation-évaluation tout comme "
           "`minimize`, mais avec le resserrement de la borne inférieure "
           "inversé.",
@@ -8035,26 +8035,26 @@ class FrLocalizations implements AppLocalizations {
           "de capacité linéaire et un objectif linéaire.",
     ],
     'sudoku_regular': [
-      "Dans CrispCalc, la variante classique se trouve dans "
+      "Dans CrispMath, la variante classique se trouve dans "
           "`lib/engine/sudoku.dart` sous `SudokuVariant.regular`. Le solveur "
           "sous-jacent instancie une contrainte `allDifferent` par ligne, "
           "colonne et bloc (27 au total pour le 9×9) et les confie à "
           "`dart_csp`.",
     ],
     'sudoku_x': [
-      "Dans CrispCalc, le Sudoku-X est `SudokuVariant.x` "
+      "Dans CrispMath, le Sudoku-X est `SudokuVariant.x` "
           "(`lib/engine/sudoku.dart`). Le solveur sous-jacent ajoute deux "
           "contraintes `allDifferent` supplémentaires au trio classique "
           "ligne/colonne/bloc — une par diagonale.",
     ],
     'sudoku_disjoint': [
-      "Dans CrispCalc, c'est `SudokuVariant.disjoint`. Pour une grille N×N "
+      "Dans CrispMath, c'est `SudokuVariant.disjoint`. Pour une grille N×N "
           "avec des blocs √N × √N, la contrainte ajoute N recouvrements "
           "`allDifferent` de plus — un par position dans le bloc. Le 8×8 est "
           "livré comme un modèle unique.",
     ],
     'sudoku_killer': [
-      "Dans CrispCalc, c'est `SudokuVariant.killer`. Le solveur sous-jacent "
+      "Dans CrispMath, c'est `SudokuVariant.killer`. Le solveur sous-jacent "
           "superpose au trio classique ligne/colonne/bloc une contrainte "
           "`allDifferent` par cage et une contrainte `somme = cible` par "
           "cage. Les modèles killer 4×4 et 9×9 sont tous deux livrés.",
@@ -8147,7 +8147,7 @@ class FrLocalizations implements AppLocalizations {
   String get settingsFunctionRef => 'Référence des fonctions';
   @override
   String get settingsFunctionRefSubtitle =>
-      'Parcourez chaque fonction de CrispCalc : signature, exemples, '
+      'Parcourez chaque fonction de CrispMath : signature, exemples, '
       'fonctions liées et un raccourci pour coller dans la Calculatrice.';
 
   @override
@@ -9029,12 +9029,12 @@ class EsLocalizations implements AppLocalizations {
   String get settingsLayoutTitle => 'Diseño';
   @override
   String get settingsLayoutBody =>
-      'CrispCalc se adapta al ancho de la ventana: navegación inferior en '
+      'CrispMath se adapta al ancho de la ventana: navegación inferior en '
       'móviles, raíl lateral en tabletas y escritorio. A partir de ~760 px '
       'el teclado muestra todas las teclas sin pestañas.';
 
   @override
-  String get aboutTitle => 'Acerca de CrispCalc';
+  String get aboutTitle => 'Acerca de CrispMath';
   @override
   String get aboutTagline => 'Calculadora CAS simbólica basada en SymEngine';
   @override
@@ -9047,7 +9047,7 @@ class EsLocalizations implements AppLocalizations {
   String get aboutPrivacy => 'Privacidad';
   @override
   String get aboutPrivacyText =>
-      'CrispCalc funciona íntegramente en el dispositivo. Ningún cálculo, '
+      'CrispMath funciona íntegramente en el dispositivo. Ningún cálculo, '
       'entrada del historial o variable de usuario se envía a un servidor. '
       'La aplicación no recopila datos de telemetría ni contacta servicios '
       'remotos.';
@@ -9055,7 +9055,7 @@ class EsLocalizations implements AppLocalizations {
   String get aboutDisclaimer => 'Aviso legal';
   @override
   String get aboutDisclaimerText =>
-      'CrispCalc se ofrece «tal cual», sin garantía alguna. El motor '
+      'CrispMath se ofrece «tal cual», sin garantía alguna. El motor '
       'simbólico puede devolver resultados imprecisos para entradas '
       'numéricas mal condicionadas o expresiones simbólicas no '
       'soportadas. Verifica de forma independiente los cálculos críticos.';
@@ -9063,14 +9063,14 @@ class EsLocalizations implements AppLocalizations {
   String get aboutLicense => 'Licencia';
   @override
   String get aboutLicenseText =>
-      'CrispCalc es software libre publicado bajo la GNU Affero General '
+      'CrispMath es software libre publicado bajo la GNU Affero General '
       'Public License versión 3 o posterior. Esta elección se debe a los '
       'requisitos de copyleft de las bibliotecas GMP/MPFR/MPC/FLINT '
       'incluidas, enlazadas estáticamente.';
   @override
   String get aboutOpenSourceLicenses => 'Licencias de código abierto';
   @override
-  String get settingsAbout => 'Acerca de CrispCalc';
+  String get settingsAbout => 'Acerca de CrispMath';
   @override
   String get matrixDiagnosticsTitle => 'Autoprueba de matrices';
   @override
@@ -9223,7 +9223,7 @@ class EsLocalizations implements AppLocalizations {
   String get exportDataTitle => 'Exportar datos';
   @override
   String get exportDataSubtitle =>
-      'El JSON de abajo contiene todo lo que CrispCalc ha guardado en este dispositivo: historial, variables, funciones, parámetros, ajustes. Cópialo a una nota o documento en la nube antes de reinstalar.';
+      'El JSON de abajo contiene todo lo que CrispMath ha guardado en este dispositivo: historial, variables, funciones, parámetros, ajustes. Cópialo a una nota o documento en la nube antes de reinstalar.';
   @override
   String get exportDataCopy => 'Copiar al portapapeles';
   @override
@@ -10324,7 +10324,7 @@ class EsLocalizations implements AppLocalizations {
             "masa puntual P(X = k) y la acumulada P(X ≤ k).";
       case 'vars':
         return "Declara las variables de decisión enteras y su dominio. "
-            "Siempre la primera línea de un programa DSL de CrispCalc.";
+            "Siempre la primera línea de un programa DSL de CrispMath.";
       case 'all_different':
         return "Restricción global «todos los valores distintos dos a dos». "
             "La restricción estrella de PPC: propagación mucho más fuerte que "
@@ -10397,7 +10397,7 @@ class EsLocalizations implements AppLocalizations {
 
   static const _esHints = <String, List<String>>{
     'solve': [
-      "En CrispCalc, `solve(x^2 - 1, x)` devuelve una lista de raíces al "
+      "En CrispMath, `solve(x^2 - 1, x)` devuelve una lista de raíces al "
           "estilo de Python. La llamada subyacente es el `solve()` de "
           "SymEngine (la rama de raíces racionales para polinomios), envuelta "
           "por el puente y serializada de nuevo a una cadena de Dart.",
@@ -10410,7 +10410,7 @@ class EsLocalizations implements AppLocalizations {
       "También se resuelven las DESIGUALDADES polinómicas: las raíces dividen la recta en intervalos y el signo de cada intervalo decide. También ≤/≥, extremos con radicales exactos y los casos ≠ / punto / ℝ / ∅.",
     ],
     'expand': [
-      "En CrispCalc, `expand((x + 1)^2)` devuelve el desarrollo del binomio. "
+      "En CrispMath, `expand((x + 1)^2)` devuelve el desarrollo del binomio. "
           "La llamada subyacente es el `expand()` de SymEngine, que descompone "
           "los nodos `Pow` y `Mul` y agrupa los términos semejantes.",
       "Los coeficientes coinciden con la fila 5 del triángulo de Pascal: "
@@ -10420,7 +10420,7 @@ class EsLocalizations implements AppLocalizations {
           "`factor` para alternar entre las formas.",
     ],
     'simplify': [
-      "En CrispCalc, `simplify` cancela el factor común `(x - 2)`. La "
+      "En CrispMath, `simplify` cancela el factor común `(x - 2)`. La "
           "llamada subyacente es el `simplify()` de SymEngine, que prueba "
           "`rational_simplify` más un pequeño conjunto de reglas de "
           "reescritura.",
@@ -10431,7 +10431,7 @@ class EsLocalizations implements AppLocalizations {
           "trigonométrica antes de devolver el literal `1`.",
     ],
     'factor': [
-      "En CrispCalc, `factor(x^2 - 1)` devuelve la factorización como "
+      "En CrispMath, `factor(x^2 - 1)` devuelve la factorización como "
           "diferencia de cuadrados. La llamada subyacente es el `factor()` de "
           "SymEngine, que usa Berlekamp / Cantor–Zassenhaus para polinomios "
           "de una variable sobre Q.",
@@ -10441,7 +10441,7 @@ class EsLocalizations implements AppLocalizations {
           "no se descompone más sin admitir raíces complejas.",
     ],
     'diff': [
-      "En CrispCalc, `diff(...)` aplica término a término las reglas de la "
+      "En CrispMath, `diff(...)` aplica término a término las reglas de la "
           "potencia y de la constante. La llamada subyacente es el `diff()` "
           "de SymEngine, que recorre el árbol de la expresión y emite un "
           "nuevo nodo `Add` simbólico.",
@@ -10452,18 +10452,18 @@ class EsLocalizations implements AppLocalizations {
           "común.",
     ],
     'integrate': [
-      "En CrispCalc, la integral indefinida `integrate(...)` se delega en el "
+      "En CrispMath, la integral indefinida `integrate(...)` se delega en el "
           "`integrate()` de SymEngine. La integración por partes se aplica "
           "automáticamente cuando un factor se deriva a un polinomio.",
       "Forma definida: cuando SymEngine dispone de una primitiva en forma "
           "cerrada, aplica el teorema fundamental del cálculo. Si falla "
-          "simbólicamente, CrispCalc recurre a la regla de Simpson "
+          "simbólicamente, CrispMath recurre a la regla de Simpson "
           "(200 subintervalos).",
       "Fracciones parciales: 1/(x²-1) = 1/(2(x-1)) - 1/(2(x+1)). SymEngine "
           "realiza el cálculo automáticamente.",
     ],
     'subst': [
-      "En CrispCalc, `subst` reescribe el árbol de la expresión y luego "
+      "En CrispMath, `subst` reescribe el árbol de la expresión y luego "
           "intenta una pasada de simplificación. La llamada subyacente es el "
           "`xreplace()` de SymEngine (sustitución solo de variables, sin "
           "coincidencia de patrones).",
@@ -10474,7 +10474,7 @@ class EsLocalizations implements AppLocalizations {
           "y `b` permanecen intactas.",
     ],
     'limit': [
-      "En CrispCalc, `limit(...)` es un método numérico: el puente evalúa la "
+      "En CrispMath, `limit(...)` es un método numérico: el puente evalúa la "
           "expresión en una sucesión de puntos que convergen a `point` y "
           "comunica el límite cuando muestras consecutivas concuerdan a la "
           "precisión de trabajo. Sin desarrollo en serie simbólico.",
@@ -10486,7 +10486,7 @@ class EsLocalizations implements AppLocalizations {
           "precisión.",
     ],
     'gcd': [
-      "En CrispCalc, el `gcd(...)` entero usa la recurrencia de Euclides "
+      "En CrispMath, el `gcd(...)` entero usa la recurrencia de Euclides "
           "gcd(a, b) = gcd(b, a mod b). La llamada subyacente es el `gcd()` "
           "de SymEngine, que en el caso entero recurre a `mpz_gcd` de GMP.",
       "MCD de polinomios mediante el algoritmo de subresultantes (PRS). Útil "
@@ -10495,7 +10495,7 @@ class EsLocalizations implements AppLocalizations {
           "que trata el 0 como múltiplo de todo entero.",
     ],
     'lcm': [
-      "En CrispCalc, el `lcm(...)` entero se calcula mediante la identidad "
+      "En CrispMath, el `lcm(...)` entero se calcula mediante la identidad "
           "`lcm(a, b) = |a*b| / gcd(a, b)`. La llamada subyacente es el "
           "`lcm()` de SymEngine, que delega en `mpz_lcm` de GMP.",
       "36 = 2²·3², la unión de los factores en potencias de primos de "
@@ -10504,7 +10504,7 @@ class EsLocalizations implements AppLocalizations {
           "contiene `x + 1` como factor.",
     ],
     'polygcd': [
-      "En CrispCalc, `polygcd` ejecuta el algoritmo de Euclides con "
+      "En CrispMath, `polygcd` ejecuta el algoritmo de Euclides con "
           "coeficientes racionales exactos (Dart puro). Ambos polinomios "
           "comparten el factor `x - 1`; el resultado se normaliza a mónico.",
       "Polinomios coprimos dan la constante mónica 1.",
@@ -10522,11 +10522,11 @@ class EsLocalizations implements AppLocalizations {
     ],
     'polydiscriminant': [
       "Para `x² + bx + c` el discriminante es `b² − 4c`: aquí 25 − 24 = 1. "
-          "CrispCalc usa `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.",
+          "CrispMath usa `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.",
       "`(x − 2)²` tiene una raíz doble, así que el discriminante es 0.",
     ],
     'polyfactor': [
-      "En CrispCalc, `polyfactor` reduce el polinomio módulo k, realiza una "
+      "En CrispMath, `polyfactor` reduce el polinomio módulo k, realiza una "
           "factorización libre de cuadrados y luego el algoritmo de "
           "Berlekamp (Dart puro). Los coeficientes se muestran como restos "
           "en [0, k), así que `x − 1` aparece como `x + 4` módulo 5.",
@@ -10575,7 +10575,7 @@ class EsLocalizations implements AppLocalizations {
       "Graficable: dibuja `bessely(0, x)` junto a `besselj(0, x)`.",
     ],
     'factorial': [
-      "En CrispCalc, el sufijo `n!` y `factorial(n)` son equivalentes: el "
+      "En CrispMath, el sufijo `n!` y `factorial(n)` son equivalentes: el "
           "preprocesador reescribe el sufijo como llamada. Para `n ≤ 1000` "
           "calculamos en Dart con multiplicación `BigInt`; más allá, la "
           "llamada subyacente es el `factorial()` de SymEngine.",
@@ -10608,7 +10608,7 @@ class EsLocalizations implements AppLocalizations {
           "un error.",
     ],
     'fibonacci': [
-      "En CrispCalc, `fib(n)` y `fibonacci(n)` son la misma llamada. Para "
+      "En CrispMath, `fib(n)` y `fibonacci(n)` son la misma llamada. Para "
           "`n ≤ 90` usamos una tabla precalculada; para `n` mayores, la "
           "llamada subyacente es el `fibonacci()` de SymEngine, que usa "
           "duplicación rápida (O(log n) multiplicaciones mediante GMP).",
@@ -10620,7 +10620,7 @@ class EsLocalizations implements AppLocalizations {
           "debajo de un segundo.",
     ],
     'isprime': [
-      "En CrispCalc, `isprime(n)` devuelve una etiqueta booleana. La llamada "
+      "En CrispMath, `isprime(n)` devuelve una etiqueta booleana. La llamada "
           "subyacente es `mpz_probab_prime_p` de GMP (25 rondas de "
           "Miller-Rabin, cota de error 4^-25 ≈ 9×10^-16) mediante el módulo "
           "`ntheory` de SymEngine. 2027 es el 308.º número primo.",
@@ -10630,7 +10630,7 @@ class EsLocalizations implements AppLocalizations {
           "exponenciaciones modulares, no en la longitud en bits.",
     ],
     'nextprime': [
-      "En CrispCalc, `nextprime(n)` itera desde `n+1` y prueba cada "
+      "En CrispMath, `nextprime(n)` itera desde `n+1` y prueba cada "
           "candidato. La llamada subyacente es el `ntheory::nextprime()` de "
           "SymEngine, que usa la criba de FLINT sobre ventanas cortas cuando "
           "el hueco es grande.",
@@ -10638,33 +10638,33 @@ class EsLocalizations implements AppLocalizations {
           "primo.",
     ],
     'prevprime': [
-      "En CrispCalc, `prevprime(n)` desciende desde `n-1`. La llamada "
+      "En CrispMath, `prevprime(n)` desciende desde `n-1`. La llamada "
           "subyacente es el `ntheory::prevprime()` de SymEngine.",
       "Por debajo de 2 no existen primos; el puente lanza un error en lugar "
-          "de devolver un valor centinela. CrispCalc muestra la etiqueta de "
+          "de devolver un valor centinela. CrispMath muestra la etiqueta de "
           "error.",
     ],
     'factorint': [
-      "En CrispCalc, `factorint(n)` devuelve una descomposición en primos "
+      "En CrispMath, `factorint(n)` devuelve una descomposición en primos "
           "ya formateada. La llamada subyacente es `fmpz_factor` de FLINT, "
-          "con la envoltura ntheory de SymEngine por delante; CrispCalc "
+          "con la envoltura ntheory de SymEngine por delante; CrispMath "
           "convierte la lista de (primo, exponente) en la representación con "
           "dígitos Unicode en superíndice.",
       "El 8.º número primo de Mersenne, M31. Un único factor (él mismo): "
           "`factorint` se cortocircuita cuando la entrada es prima.",
       "Caso límite: por convención, 1 tiene la factorización vacía; "
-          "CrispCalc lo muestra como el literal `1` en vez de una cadena "
+          "CrispMath lo muestra como el literal `1` en vez de una cadena "
           "vacía.",
     ],
     'divisors': [
-      "En CrispCalc, `divisors(n)` se deriva en Dart puro a partir de "
+      "En CrispMath, `divisors(n)` se deriva en Dart puro a partir de "
           "`factorint(n)`: cada producto de potencias de primos pᵏ con "
           "0 ≤ k ≤ exponente. La cantidad es ∏(eᵢ + 1) — aquí (2+1)(1+1) = 6.",
       "28 es un número perfecto: la suma de sus divisores propios (todos "
           "salvo el propio 28) es 28.",
     ],
     'totient': [
-      "Los cuatro restos coprimos con 12 son {1, 5, 7, 11}. CrispCalc calcula "
+      "Los cuatro restos coprimos con 12 son {1, 5, 7, 11}. CrispMath calcula "
           "φ a partir de la factorización en primos mediante `fmpz_euler_phi` "
           "de FLINT.",
       "Para un primo p, φ(p) = p − 1, ya que todo entero positivo menor es "
@@ -10692,7 +10692,7 @@ class EsLocalizations implements AppLocalizations {
       "El símbolo es 0 exactamente cuando mcd(a, n) ≠ 1; aquí mcd(6, 9) = 3.",
     ],
     'cfrac': [
-      "En CrispCalc, `cfrac` realiza un desarrollo exacto en BigInt sobre una "
+      "En CrispMath, `cfrac` realiza un desarrollo exacto en BigInt sobre una "
           "aproximación MPFR de alta precisión de la constante. El término "
           "grande 292 es justamente por qué el convergente 355/113 aproxima "
           "π de forma tan notable.",
@@ -10701,13 +10701,13 @@ class EsLocalizations implements AppLocalizations {
     ],
     'convergent': [
       "Milü — la aproximación de π de Zu Chongzhi (siglo V), exacta hasta "
-          "seis decimales. CrispCalc pliega los primeros k+1 cocientes "
+          "seis decimales. CrispMath pliega los primeros k+1 cocientes "
           "parciales de `cfrac` en la fracción.",
       "La aproximación escolar de π; `convergent(x, 0)` es la parte entera "
           "⌊x⌋.",
     ],
     'pi_precision': [
-      "En CrispCalc, `pi(N)` es una llamada con tratamiento especial, "
+      "En CrispMath, `pi(N)` es una llamada con tratamiento especial, "
           "dirigida a la vía de alta precisión antes de que SymEngine la vea. "
           "La llamada subyacente es `mpfr_const_pi` de MPFR con precisión "
           "⌈N·log2(10)⌉ + 16 bits de guarda, seguida de la conversión a "
@@ -10717,7 +10717,7 @@ class EsLocalizations implements AppLocalizations {
           "redondeados.",
     ],
     'e_precision': [
-      "En CrispCalc, `e(N)` refleja la canalización de `pi(N)`: "
+      "En CrispMath, `e(N)` refleja la canalización de `pi(N)`: "
           "`mpfr_const_e` de MPFR (que usa la serie de Taylor Σ 1/k!) con "
           "precisión ⌈N·log2(10)⌉ + 16 bits de guarda, y luego la "
           "representación en base 10.",
@@ -10725,7 +10725,7 @@ class EsLocalizations implements AppLocalizations {
           "precisión frente a `limit((1 + 1/n)^n, n, oo)`.",
     ],
     'sqrt_precision': [
-      "En CrispCalc, el `sqrt(k, N)` de dos argumentos es la vía de alta "
+      "En CrispMath, el `sqrt(k, N)` de dos argumentos es la vía de alta "
           "precisión. La llamada subyacente es `mpfr_sqrt_ui` de MPFR con "
           "precisión ⌈N·log2(10)⌉ + 16 bits de guarda. El `sqrt(2)` de un "
           "argumento devuelve en cambio el `sqrt(2)` simbólico mediante "
@@ -10734,16 +10734,16 @@ class EsLocalizations implements AppLocalizations {
           "referencia obtenidos de forma independiente.",
     ],
     'eulergamma_precision': [
-      "En CrispCalc, `EulerGamma(N)` usa `mpfr_const_euler` de MPFR, que "
+      "En CrispMath, `EulerGamma(N)` usa `mpfr_const_euler` de MPFR, que "
           "evalúa γ mediante la fórmula de Brent–McMillan (funciones de "
           "Bessel modificadas). La precisión es ⌈N·log2(10)⌉ + 16 bits de "
           "guarda, igual que la canalización de `pi(N)` y `e(N)`.",
       "γ no tiene forma cerrada conocida. La rutina de MPFR es la "
-          "implementación de referencia estándar; CrispCalc se limita a "
+          "implementación de referencia estándar; CrispMath se limita a "
           "mostrar la cadena de dígitos.",
     ],
     'evalf': [
-      "En CrispCalc, `evalf` analiza cualquier expresión y la dirige a "
+      "En CrispMath, `evalf` analiza cualquier expresión y la dirige a "
           "`basic_evalf` de SymEngine con ⌈N·log2(10)⌉ + 8 bits. El "
           "equivalente genérico de `pi(N)` / `e(N)`: funciona con "
           "logaritmos, raíces, sumas y las funciones especiales.",
@@ -10752,13 +10752,13 @@ class EsLocalizations implements AppLocalizations {
           "de alta precisión es una vía aparte).",
     ],
     'cevalf': [
-      "En CrispCalc, `cevalf` usa `basic_evalf` de SymEngine en la vía MPC "
+      "En CrispMath, `cevalf` usa `basic_evalf` de SymEngine en la vía MPC "
           "(compleja). (1+i)¹⁰ = 32i. La unidad imaginaria es el literal `I`.",
       "Donde `evalf` rechaza un resultado no real, `cevalf` devuelve el "
           "valor complejo completo: √(−2) = i·√2.",
     ],
     'matrix_literal': [
-      "En CrispCalc, el literal `Matrix(...)` lo reconoce el evaluador de "
+      "En CrispMath, el literal `Matrix(...)` lo reconoce el evaluador de "
           "matrices antes de que el motor vea la expresión. La llamada "
           "subyacente es el constructor `DenseMatrix` de SymEngine: la "
           "disposición de filas/columnas se fija en la construcción.",
@@ -10770,7 +10770,7 @@ class EsLocalizations implements AppLocalizations {
           "en `det` / `inv`, que exigen una entrada cuadrada.",
     ],
     'det': [
-      "En CrispCalc, `det(M)` se evalúa como un único escalar. La llamada "
+      "En CrispMath, `det(M)` se evalúa como un único escalar. La llamada "
           "subyacente es el `DenseMatrix::det()` de SymEngine, que usa el "
           "algoritmo sin fracciones de Bareiss: exacto para entradas "
           "simbólicas/racionales, sin desbordamiento en coma flotante.",
@@ -10781,7 +10781,7 @@ class EsLocalizations implements AppLocalizations {
           "flotante.",
     ],
     'inv': [
-      "En CrispCalc, `inv(M)` devuelve `adj(M)/det(M)`. La llamada subyacente "
+      "En CrispMath, `inv(M)` devuelve `adj(M)/det(M)`. La llamada subyacente "
           "es el `DenseMatrix::inv()` de SymEngine, que usa la eliminación de "
           "Gauss-Jordan sobre los racionales: las entradas vuelven como "
           "fracciones exactas, no como coma flotante.",
@@ -10792,7 +10792,7 @@ class EsLocalizations implements AppLocalizations {
           "en el historial de la calculadora.",
     ],
     'transpose': [
-      "En CrispCalc, `transpose(M)` está implementado del lado de Dart "
+      "En CrispMath, `transpose(M)` está implementado del lado de Dart "
           "porque el puente no expone un punto de entrada de transposición. "
           "Reservamos una nueva `SymEngineMatrix` con dimensiones "
           "intercambiadas y copiamos las celdas una a una.",
@@ -10802,7 +10802,7 @@ class EsLocalizations implements AppLocalizations {
           "celdas deja intacto el contenido simbólico.",
     ],
     'rref': [
-      "En CrispCalc, `rref` ejecuta Gauss-Jordan en Dart y llama al "
+      "En CrispMath, `rref` ejecuta Gauss-Jordan en Dart y llama al "
           "`simplify()` de SymEngine en cada actualización de celda. El "
           "puente no expone `rref` directamente, así que el algoritmo recorre "
           "las columnas de izquierda a derecha, escala la fila pivote y luego "
@@ -10814,7 +10814,7 @@ class EsLocalizations implements AppLocalizations {
           "la nota del algoritmo en `matrix_evaluator.dart`.",
     ],
     'matrix_arithmetic': [
-      "En CrispCalc, las operaciones binarias con matrices las gestiona el "
+      "En CrispMath, las operaciones binarias con matrices las gestiona el "
           "evaluador de matrices cuando ambos operandos se analizan como "
           "literales `Matrix(...)`. La llamada subyacente es `add_dense_dense` "
           "de SymEngine; la resta pasa por `add_dense_dense` con una negación "
@@ -10840,7 +10840,7 @@ class EsLocalizations implements AppLocalizations {
           "propios.",
     ],
     'mean': [
-      "En CrispCalc, `mean` la calcula `DescriptiveStats.mean` (véase "
+      "En CrispMath, `mean` la calcula `DescriptiveStats.mean` (véase "
           "`lib/engine/statistics.dart`): una suma en una pasada / n. Para "
           "datos pareados o agrupados, el módulo de Estadística también ofrece "
           "desviación típica, mediana, cuartiles y el rango intercuartílico.",
@@ -10849,7 +10849,7 @@ class EsLocalizations implements AppLocalizations {
           "un algoritmo de suma estable si necesitas más de 15 dígitos.",
     ],
     'one_sample_t': [
-      "En CrispCalc, `oneSampleT` está en "
+      "En CrispMath, `oneSampleT` está en "
           "`lib/engine/hypothesis_tests.dart`. La llamada subyacente calcula "
           "t = (x̄ − μ₀) / (s / √n) y lee el valor p bilateral de "
           "`TDistribution.cdf` con df = n − 1.",
@@ -10858,7 +10858,7 @@ class EsLocalizations implements AppLocalizations {
           "prueba t para una muestra sobre el vector de diferencias.",
     ],
     'welch_t': [
-      "En CrispCalc, `welchT` está en "
+      "En CrispMath, `welchT` está en "
           "`lib/engine/hypothesis_tests.dart`. La llamada subyacente calcula "
           "el estadístico t = (x̄_A − x̄_B) / √(s_A²/n_A + s_B²/n_B), luego "
           "aproxima los grados de libertad mediante Welch-Satterthwaite y lee "
@@ -10868,7 +10868,7 @@ class EsLocalizations implements AppLocalizations {
           "de la estimación de la varianza.",
     ],
     'paired_t': [
-      "En CrispCalc, `pairedT` se reduce a una prueba t de una muestra sobre "
+      "En CrispMath, `pairedT` se reduce a una prueba t de una muestra sobre "
           "el vector de diferencias d = después − antes. La llamada subyacente "
           "es la misma vía `TDistribution.cdf` que usa `welchT`, pero con "
           "gl = n - 1 (sin ajuste de Welch, ya que solo hay una estimación de "
@@ -10878,7 +10878,7 @@ class EsLocalizations implements AppLocalizations {
           "p = 0 en lugar de un NaN.",
     ],
     'anova_1': [
-      "En CrispCalc, `anovaOneWay` descompone la suma de cuadrados total en "
+      "En CrispMath, `anovaOneWay` descompone la suma de cuadrados total en "
           "la suma de cuadrados entre grupos y dentro de los grupos. La "
           "llamada subyacente es F = MC_entre / MC_dentro con gl1 = K - 1 y "
           "gl2 = N - K, y luego `FDistribution.sf` para el valor p de la cola "
@@ -10887,7 +10887,7 @@ class EsLocalizations implements AppLocalizations {
           "rechaza H₀ (todas las medias iguales) al nivel α = 0,05.",
     ],
     'chi2_goodness': [
-      "En CrispCalc, `chiSquareGof` evalúa Σ (O - E)² / E y lee el valor p "
+      "En CrispMath, `chiSquareGof` evalúa Σ (O - E)² / E y lee el valor p "
           "de la cola superior en `ChiSquaredDistribution.sf` con gl = k - 1, "
           "donde k es el número de categorías. Se supone que los recuentos de "
           "celda son ≥ 5: la implementación no aplica la corrección de Yates "
@@ -10895,7 +10895,7 @@ class EsLocalizations implements AppLocalizations {
       "Coincidencia perfecta → χ² = 0 → no se rechaza H₀ a ningún nivel α.",
     ],
     'chi2_independence': [
-      "En CrispCalc, `chiSquareIndependence` calcula los recuentos esperados "
+      "En CrispMath, `chiSquareIndependence` calcula los recuentos esperados "
           "a partir de los marginales de fila × columna (E_ij = fila_i · "
           "columna_j / total), luego Σ (O - E)² / E con "
           "gl = (filas - 1) · (columnas - 1). El valor p subyacente proviene "
@@ -10905,7 +10905,7 @@ class EsLocalizations implements AppLocalizations {
           "aproximación chi-cuadrado para muestras grandes.",
     ],
     'fisher_exact': [
-      "En CrispCalc, `fisherExact` enumera todas las tablas 2×2 con los "
+      "En CrispMath, `fisherExact` enumera todas las tablas 2×2 con los "
           "mismos marginales y suma las probabilidades hipergeométricas de "
           "las tablas al menos tan extremas como la observada. La llamada "
           "subyacente calcula términos log-binomiales para evitar el "
@@ -10915,7 +10915,7 @@ class EsLocalizations implements AppLocalizations {
       "Tabla simétrica → ninguna evidencia de asociación.",
     ],
     'wilcoxon': [
-      "En CrispCalc, `wilcoxonRankSum` une ambas muestras, asigna rangos "
+      "En CrispMath, `wilcoxonRankSum` une ambas muestras, asigna rangos "
           "corregidos por rangos medios, suma los rangos del grupo A e "
           "informa del z de la aproximación normal. La llamada subyacente "
           "aplica una corrección por empates a la varianza y lee el valor p "
@@ -10925,7 +10925,7 @@ class EsLocalizations implements AppLocalizations {
           "de permutación exacta (aún no incluida).",
     ],
     'sign_test': [
-      "En CrispCalc, `pairedSign` descarta los pares con diferencia nula, "
+      "En CrispMath, `pairedSign` descarta los pares con diferencia nula, "
           "cuenta los positivos entre los n restantes y contrasta frente a "
           "una Binomial(n, 0,5). El valor p subyacente usa la cola binomial "
           "exacta: sin aproximación normal, por lo que es la opción adecuada "
@@ -10935,7 +10935,7 @@ class EsLocalizations implements AppLocalizations {
           "2 · min(Binom(3, 0,5).cdf(3), …).",
     ],
     'linreg': [
-      "En CrispCalc, la pestaña «Regresión» ajusta los datos mediante los "
+      "En CrispMath, la pestaña «Regresión» ajusta los datos mediante los "
           "estimadores de mínimos cuadrados en forma cerrada a = Sxy / Sxx y "
           "b = ȳ − a·x̄ (véase `lib/engine/statistics.dart`). La misma pestaña "
           "ofrece también modelos polinómico y exponencial.",
@@ -10943,7 +10943,7 @@ class EsLocalizations implements AppLocalizations {
           "ajuste lineal casi perfecto.",
     ],
     'normal_dist': [
-      "En CrispCalc, la pestaña «Distribuciones» evalúa la función de "
+      "En CrispMath, la pestaña «Distribuciones» evalúa la función de "
           "distribución de la normal mediante la función de error "
           "(`Normal.cdf` en `lib/engine/statistics.dart`); x = μ + 2σ se sitúa "
           "en torno al percentil 97,7.",
@@ -10952,7 +10952,7 @@ class EsLocalizations implements AppLocalizations {
           "mano de `erf`, que sustenta la función de distribución.",
     ],
     'binomial_dist': [
-      "En CrispCalc, la pestaña «Distribuciones» evalúa la función de masa "
+      "En CrispMath, la pestaña «Distribuciones» evalúa la función de masa "
           "binomial C(n, k)·pᵏ·(1−p)^(n−k) (`Binomial.pmf` en "
           "`lib/engine/statistics.dart`); con una tasa de defectos del 10 % "
           "sobre 20 artículos, el número de defectos más probable es la media, "
@@ -10962,7 +10962,7 @@ class EsLocalizations implements AppLocalizations {
           "es n·p·(1−p) = 1,8, así que la desviación típica ≈ 1,34.",
     ],
     'vars': [
-      "En CrispCalc, la línea `vars:` la analiza `DslToFlatZinc` (véase "
+      "En CrispMath, la línea `vars:` la analiza `DslToFlatZinc` (véase "
           "`lib/engine/csp_solver.dart`) y emite una declaración FlatZinc "
           "`var int: x :: …` por nombre. Las cotas del dominio son enteros "
           "concretos; los dominios simbólicos no se admiten.",
@@ -10971,7 +10971,7 @@ class EsLocalizations implements AppLocalizations {
           "trata el entero 0/1 con la misma eficiencia.",
     ],
     'all_different': [
-      "En CrispCalc, `allDifferent` se traduce a "
+      "En CrispMath, `allDifferent` se traduce a "
           "`all_different_int([a, b, c])` de FlatZinc. El solucionador "
           "subyacente (dart_csp) implementa la propagación por consistencia de "
           "cotas mediante el algoritmo de emparejamiento de Régin: mucho más "
@@ -10981,7 +10981,7 @@ class EsLocalizations implements AppLocalizations {
           "zonas de variante que haya.",
     ],
     'no_overlap': [
-      "En CrispCalc, `noOverlap` se traduce a "
+      "En CrispMath, `noOverlap` se traduce a "
           "`disjunctive([s1, s2, s3], [4, 3, 2])` de FlatZinc. El "
           "solucionador subyacente usa edge-finding más el propagador θ-tree "
           "de Vilím: el mismo algoritmo que el integrado en MiniZinc.",
@@ -10991,7 +10991,7 @@ class EsLocalizations implements AppLocalizations {
           "DSL completo.",
     ],
     'cumulative': [
-      "En CrispCalc, `cumulative` se traduce a "
+      "En CrispMath, `cumulative` se traduce a "
           "`cumulative([starts], [durations], [resources], capacity)` de "
           "FlatZinc. El solucionador subyacente usa propagación por "
           "calendario más razonamiento energético: variantes conscientes de "
@@ -11002,7 +11002,7 @@ class EsLocalizations implements AppLocalizations {
           "dos recursos.",
     ],
     'minimize': [
-      "En CrispCalc, `minimize` emite `solve minimize __obj__;` de FlatZinc "
+      "En CrispMath, `minimize` emite `solve minimize __obj__;` de FlatZinc "
           "tras construir la variable objetivo mediante el análisis de la "
           "expresión lineal. El solucionador subyacente usa ramificación y "
           "acotación: comprobación de factibilidad y luego ajuste de la cota "
@@ -11012,7 +11012,7 @@ class EsLocalizations implements AppLocalizations {
           "suma el objetivo.",
     ],
     'maximize': [
-      "En CrispCalc, `maximize` emite `solve maximize __obj__;` de FlatZinc. "
+      "En CrispMath, `maximize` emite `solve maximize __obj__;` de FlatZinc. "
           "El solucionador subyacente hace ramificación y acotación igual que "
           "`minimize`, pero con el ajuste de la cota inferior invertido.",
       "Problema clásico de la mochila 0/1. El DSL lo gestiona de forma "
@@ -11020,25 +11020,25 @@ class EsLocalizations implements AppLocalizations {
           "restricción de capacidad lineal y un objetivo lineal.",
     ],
     'sudoku_regular': [
-      "En CrispCalc, la variante clásica está en `lib/engine/sudoku.dart` "
+      "En CrispMath, la variante clásica está en `lib/engine/sudoku.dart` "
           "como `SudokuVariant.regular`. El solucionador subyacente instancia "
           "una restricción `allDifferent` por fila, columna y caja (27 en "
           "total para el 9×9) y se las pasa a `dart_csp`.",
     ],
     'sudoku_x': [
-      "En CrispCalc, el Sudoku-X es `SudokuVariant.x` "
+      "En CrispMath, el Sudoku-X es `SudokuVariant.x` "
           "(`lib/engine/sudoku.dart`). El solucionador subyacente añade dos "
           "restricciones `allDifferent` adicionales al trío clásico "
           "fila/columna/caja: una por diagonal.",
     ],
     'sudoku_disjoint': [
-      "En CrispCalc, es `SudokuVariant.disjoint`. Para una cuadrícula N×N "
+      "En CrispMath, es `SudokuVariant.disjoint`. Para una cuadrícula N×N "
           "con cajas √N × √N, la restricción añade N superposiciones "
           "`allDifferent` más: una por posición dentro de la caja. El 8×8 se "
           "ofrece como una sola plantilla.",
     ],
     'sudoku_killer': [
-      "En CrispCalc, es `SudokuVariant.killer`. El solucionador subyacente "
+      "En CrispMath, es `SudokuVariant.killer`. El solucionador subyacente "
           "superpone al trío clásico fila/columna/caja una restricción "
           "`allDifferent` por jaula y una restricción `suma = objetivo` por "
           "jaula. Se ofrecen las plantillas killer de 4×4 y 9×9.",
@@ -11131,7 +11131,7 @@ class EsLocalizations implements AppLocalizations {
   String get settingsFunctionRef => 'Referencia de funciones';
   @override
   String get settingsFunctionRefSubtitle =>
-      'Explora cada función de CrispCalc: firma, ejemplos, funciones '
+      'Explora cada función de CrispMath: firma, ejemplos, funciones '
       'relacionadas y un atajo para pegar en la Calculadora.';
 
   @override

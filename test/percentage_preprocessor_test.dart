@@ -4,7 +4,7 @@
 // ExpressionPreprocessingUtils.preprocessPercentage.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 
 void main() {
   String pct(String input) =>

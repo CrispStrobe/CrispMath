@@ -1,8 +1,8 @@
 // Unit tests for the constant-coefficient linear ODE solver (C3).
 // Pure Dart and deterministic — identical output on every platform.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/ode_solver.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/ode_solver.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

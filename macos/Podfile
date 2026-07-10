@@ -46,7 +46,7 @@ post_install do |installer|
   # would happily drop them.
   #
   # Debug works (45 `flutter_symengine_*` symbols land in
-  # `crisp_calc.debug.dylib`). Release silently drops them anyway — see
+  # `crisp_math.debug.dylib`). Release silently drops them anyway — see
   # PLAN.md P1#2 for the long investigation. The bridge repo carries a
   # wrapper-only static archive ready to wire up once that's resolved.
   installer.aggregate_targets.each do |agg|

@@ -7,7 +7,7 @@
 //
 // Like MatrixDiagnostics, this exists in two forms:
 //   - Settings → "Step engine self-test" dialog
-//   - CRISPCALC_DIAGNOSTIC=steps for headless CI verification
+//   - CRISPMATH_DIAGNOSTIC=steps for headless CI verification
 //
 // The native bridge isn't loaded in `flutter test`, so this can only
 // run in a real launched binary. Designed to be invariant to small

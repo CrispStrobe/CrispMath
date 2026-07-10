@@ -8,8 +8,8 @@
 // extends CAS + precision so the catalogue now resolves all of
 // its own seeAlso pointers — the v1 carve-out is removed.
 
-import 'package:crisp_calc/engine/function_reference.dart';
-import 'package:crisp_calc/engine/worked_examples.dart';
+import 'package:crisp_math/engine/function_reference.dart';
+import 'package:crisp_math/engine/worked_examples.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

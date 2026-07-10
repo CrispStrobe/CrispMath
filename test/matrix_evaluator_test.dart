@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/matrix_evaluator.dart';
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/matrix_evaluator.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 
 void main() {
   final engine = CalculatorEngine();

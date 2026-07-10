@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/statistics_presets.dart';
+import 'package:crisp_math/engine/statistics_presets.dart';
 
 void main() {
   group('StatisticsPresets catalog', () {

@@ -4,8 +4,8 @@
 // scope-name substitution, `Ans` resolution, and `use` directive
 // handling.
 
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ParsedNotepadLine classify(

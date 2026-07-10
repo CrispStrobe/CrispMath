@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:crisp_calc/services/crisp_assist_service.dart';
-import 'package:crisp_calc/engine/step_engine.dart';
+import 'package:crisp_math/services/crisp_assist_service.dart';
+import 'package:crisp_math/engine/step_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

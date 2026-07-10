@@ -3,8 +3,8 @@
 // Tests for Step Engine V5 + basic step engine verification.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/step_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/step_engine.dart';
 
 void main() {
   final engine = CalculatorEngine();

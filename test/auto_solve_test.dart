@@ -2,7 +2,7 @@
 // _calculate path (it's private to a State class and touches the SymEngine
 // bridge), but we can verify the heuristics behave correctly.
 
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

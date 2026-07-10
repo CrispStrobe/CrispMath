@@ -10,9 +10,9 @@
 //
 // All pure-Dart, no engine bridge required.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/numeric_fallback.dart';
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

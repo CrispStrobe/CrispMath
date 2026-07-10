@@ -1,6 +1,6 @@
-# CrispCalc — distribution prep
+# CrispMath — distribution prep
 
-Status of getting CrispCalc onto the App Store, Mac App Store, and Google
+Status of getting CrispMath onto the App Store, Mac App Store, and Google
 Play. Written 2026-07-04 from a config audit. The engine is competitive;
 this is the remaining gate to reaching users (PLAN.md Tier 1 ship blocker).
 
@@ -24,15 +24,9 @@ account types, and it removes tax-timing ambiguity.
 
 ## Blockers (must fix before any store submission)
 
-1. **Placeholder bundle identifiers — `com.example.crispCalc`** (iOS main +
-   RunnerTests, and macOS). The App Store rejects `com.example.*`. Pick a
-   real reverse-domain and set it everywhere. **Recommended:**
-   `be.crispstro.crispCalc` (matches the existing Android applicationId
-   `be.crispstro.crisp_calc`). This is IDENTITY-SENSITIVE and permanent
-   once published — left for you to confirm the domain, then set in:
-   - `ios/Runner.xcodeproj/project.pbxproj` (Runner + RunnerTests targets)
-   - `macos/Runner.xcodeproj/project.pbxproj`
-   - keep Android's `be.crispstro.crisp_calc` as-is (already real).
+1. ~~**Placeholder bundle identifiers**~~ **DONE** — All platforms now use
+   `com.crispstrobe.crispmath` (iOS/macOS) / `com.crispstrobe.crisp_math`
+   (Android). App renamed from CrispCalc to **CrispMath**.
 
 2. **Android release build is signed with the DEBUG keystore**
    (`android/app/build.gradle.kts:37` — `signingConfigs.getByName("debug")`
@@ -54,7 +48,7 @@ account types, and it removes tax-timing ambiguity.
 
 ## Non-blocking cleanups (done this session)
 
-- **Android display label** `crisp_calc` → `CrispCalc`
+- **Android display label** `crisp_calc` → `CrispMath` (now `crisp_math`)
   (`AndroidManifest.xml`).
 
 ## Recommended follow-ups (not blocking, low risk)
@@ -64,8 +58,8 @@ account types, and it removes tax-timing ambiguity.
   so the store version tracks `pubspec.yaml` (currently `0.5.0+1`) instead
   of the hardcoded `1.0` / `1`. Bump pubspec to a real launch version
   (e.g. `1.0.0+1`) at submission.
-- **iOS `CFBundleName`** is `crisp_calc` (internal); `CFBundleDisplayName`
-  is already `CrispCalc` (what users see), so this is cosmetic.
+- **iOS `CFBundleName`** is `crisp_math` (internal); `CFBundleDisplayName`
+  is already `CrispMath` (what users see), so this is cosmetic.
 
 ## What exists already
 
@@ -96,7 +90,7 @@ Once the account + bundle IDs + keystore exist, the store pipeline adds:
   screenshots (used this session for the plot modes). Can generate the
   full required set (per-device sizes) for the CAS features, graphing,
   notepad, and stats on request.
-- **Copy**: app name (CrispCalc), subtitle, description, keywords, and the
+- **Copy**: app name (CrispMath), subtitle, description, keywords, and the
   privacy nutrition labels (network use for CrispAssist/OCR/crash reports,
   no tracking) — drafts on request.
 

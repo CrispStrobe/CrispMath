@@ -5,8 +5,8 @@
 // substring. The test verifies the runner produces the expected number of
 // results without throwing.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/matrix_diagnostics.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/matrix_diagnostics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

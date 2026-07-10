@@ -1,4 +1,4 @@
-import 'package:crisp_calc/widgets/perf_overlay.dart';
+import 'package:crisp_math/widgets/perf_overlay.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

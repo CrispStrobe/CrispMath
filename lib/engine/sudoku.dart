@@ -955,7 +955,7 @@ class SudokuGenerator {
 
   static int _targetClueCount(
       SudokuLayout layout, SudokuDifficulty difficulty) {
-    // Per the Wikipedia minimum-clue table (and CrispCalc's
+    // Per the Wikipedia minimum-clue table (and CrispMath's
     // PLAN.md notes): 4×4 minimum is 4 clues, 6×6 minimum is 8,
     // 9×9 minimum is 17, 16×16 known-low is 55. We pad above the
     // minimum for "easy" so the puzzle is approachable; sit near

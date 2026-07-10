@@ -78,7 +78,7 @@ void main() async {
   unawaited(initOcrProviders());
 
   // Headless self-test for CI / manual verification. Invoke with the
-  // `CRISPCALC_DIAGNOSTIC=matrix|steps` environment variable set (desktop
+  // `CRISPMATH_DIAGNOSTIC=matrix|steps` environment variable set (desktop
   // only). Runs the matrix / step battery against the native bridge,
   // prints PASS/FAIL lines, and exits non-zero on any failure. On web this
   // is a no-op (the conditional import resolves to the stub).
@@ -92,11 +92,11 @@ void main() async {
   // success and gives up quietly if WASM never loads.
   unawaited(pollForNativeBridge());
 
-  runApp(const CrispCalcApp());
+  runApp(const CrispMathApp());
 }
 
-class CrispCalcApp extends StatelessWidget {
-  const CrispCalcApp({super.key});
+class CrispMathApp extends StatelessWidget {
+  const CrispMathApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +105,7 @@ class CrispCalcApp extends StatelessWidget {
       listenable: appState,
       builder: (context, _) {
         return MaterialApp(
-          title: 'CrispCalc - CAS Calculator',
+          title: 'CrispMath - CAS Calculator',
           debugShowCheckedModeBanner: false,
           locale: appState.locale,
           localizationsDelegates: const [
@@ -783,7 +783,7 @@ class SettingsScreen extends StatelessWidget {
               // it, and a release-build user who taps it sees raw
               // bridge output. Gate behind kDebugMode so it ships only
               // to dev builds. CI / scripted runs still reach it via
-              // the CRISPCALC_DIAGNOSTIC=matrix env-var at startup
+              // the CRISPMATH_DIAGNOSTIC=matrix env-var at startup
               // (see main.dart:73-79).
               if (kDebugMode) ...[
                 const SizedBox(height: 16),

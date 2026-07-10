@@ -7,11 +7,11 @@
 // navigation sentinel, and the end-to-end widget flow (tap → the
 // pre-filled Statistics Tests tab).
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/function_reference.dart';
-import 'package:crisp_calc/engine/statistics_presets.dart';
-import 'package:crisp_calc/widgets/function_reference_dialog.dart';
-import 'package:crisp_calc/widgets/module_navigation.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/function_reference.dart';
+import 'package:crisp_math/engine/statistics_presets.dart';
+import 'package:crisp_math/widgets/function_reference_dialog.dart';
+import 'package:crisp_math/widgets/module_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

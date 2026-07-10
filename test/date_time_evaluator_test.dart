@@ -3,7 +3,7 @@
 // Thorough tests for the date/time evaluator.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/date_time_evaluator.dart';
+import 'package:crisp_math/engine/date_time_evaluator.dart';
 
 void main() {
   group('DateTimeEvaluator — date recognition', () {

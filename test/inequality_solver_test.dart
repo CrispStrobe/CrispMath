@@ -3,8 +3,8 @@
 // exactly what the pre-WASM web fallback uses. The SymPy-certified
 // corpus (cas_corpus) covers the same cases plus the native root path.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/inequality_solver.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/inequality_solver.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -6,8 +6,8 @@
 // evaluator never has to know UDFs exist. Composition + recursion
 // budget + collision-with-builtins behavior all covered here.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

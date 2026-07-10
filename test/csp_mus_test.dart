@@ -16,7 +16,7 @@
 // Also covers the satisfiable-after-all branch: when the user
 // hits Explain on a result that turns out to be satisfiable.
 
-import 'package:crisp_calc/engine/csp_solver.dart';
+import 'package:crisp_math/engine/csp_solver.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

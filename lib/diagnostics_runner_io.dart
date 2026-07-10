@@ -1,6 +1,6 @@
 // Native (dart:io) implementation of the headless diagnostic self-test.
 //
-// Invoked with CRISPCALC_DIAGNOSTIC=matrix|steps on a desktop binary: it
+// Invoked with CRISPMATH_DIAGNOSTIC=matrix|steps on a desktop binary: it
 // runs the matrix / step battery against the native bridge, prints
 // PASS/FAIL lines, and exits with a non-zero code on any failure (so CI
 // can assert on it). Selected by the conditional import in main.dart on
@@ -12,11 +12,11 @@ import 'engine/calculator_engine.dart';
 import 'engine/matrix_diagnostics.dart';
 import 'engine/step_diagnostics.dart';
 
-/// Runs the diagnostic battery if CRISPCALC_DIAGNOSTIC is set on a
+/// Runs the diagnostic battery if CRISPMATH_DIAGNOSTIC is set on a
 /// desktop platform, then exits the process. Returns normally (a no-op)
 /// otherwise. Never returns on web — the stub variant handles that.
 void runDiagnosticsIfRequested() {
-  final diag = Platform.environment['CRISPCALC_DIAGNOSTIC'];
+  final diag = Platform.environment['CRISPMATH_DIAGNOSTIC'];
   if (!(Platform.isMacOS || Platform.isLinux || Platform.isWindows) ||
       diag == null) {
     return;

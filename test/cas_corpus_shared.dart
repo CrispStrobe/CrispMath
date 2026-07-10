@@ -13,8 +13,8 @@
 
 import 'dart:convert';
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/numeric_fallback.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
 
 import 'cas_corpus_data.dart';
 

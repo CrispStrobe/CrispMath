@@ -1,5 +1,5 @@
-import 'package:crisp_calc/engine/polynomial.dart';
-import 'package:crisp_calc/engine/polynomial_mod.dart';
+import 'package:crisp_math/engine/polynomial.dart';
+import 'package:crisp_math/engine/polynomial_mod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Build a polynomial from integer coefficients (low-degree-first).

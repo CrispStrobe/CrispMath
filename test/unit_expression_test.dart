@@ -6,7 +6,7 @@
 // for same-dimension `+` and `-`, the `in <unit>` conversion suffix,
 // and the error cases (mixed dimensions, temperature arithmetic).
 
-import 'package:crisp_calc/engine/unit_expression.dart';
+import 'package:crisp_math/engine/unit_expression.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 String? _eval(String e) => UnitExpressionEvaluator.tryEvaluate(e);

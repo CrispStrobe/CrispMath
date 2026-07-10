@@ -4,7 +4,7 @@
 // Encodes calculator expression + optional result into a URL query
 // parameter that can be shared and auto-loaded on visit.
 //
-// URL format: https://crisp-calc.vercel.app/?expr=<encoded>&tab=<0-5>
+// URL format: https://crisp-math.vercel.app/?expr=<encoded>&tab=<0-5>
 //
 // On native platforms, share uses the system share sheet (if available)
 // or clipboard. On web, it generates a shareable URL.
@@ -15,7 +15,7 @@ import 'package:flutter/services.dart';
 /// Build a shareable URL for the given expression.
 String buildShareUrl(String expression, {int tab = 0}) {
   final encoded = Uri.encodeComponent(expression);
-  final base = kIsWeb ? Uri.base.origin : 'https://crisp-calc.vercel.app';
+  final base = kIsWeb ? Uri.base.origin : 'https://crisp-math.vercel.app';
   return '$base/?expr=$encoded${tab != 0 ? '&tab=$tab' : ''}';
 }
 

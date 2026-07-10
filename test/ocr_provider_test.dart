@@ -3,7 +3,7 @@
 // Tests for OCR provider abstraction, post-processing, and LaTeX conversion.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/ocr_provider.dart';
+import 'package:crisp_math/engine/ocr_provider.dart';
 
 void main() {
   // =========================================================================

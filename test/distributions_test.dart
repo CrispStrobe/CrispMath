@@ -4,7 +4,7 @@
 // Reference values come from standard statistical tables (z-tables,
 // binomial CDF tables) and known closed-form relationships.
 
-import 'package:crisp_calc/engine/distributions.dart';
+import 'package:crisp_math/engine/distributions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

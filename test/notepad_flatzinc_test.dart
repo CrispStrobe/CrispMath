@@ -14,8 +14,8 @@
 //   - Unsatisfiable output blocks dependents via blockedBy.
 //   - End-to-end with the real dart_csp FlatZinc.solve binding.
 
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:dart_csp/dart_csp.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/unit_catalog.dart';
+import 'package:crisp_math/engine/unit_catalog.dart';
 
 void main() {
   group('UnitDimension enum', () {

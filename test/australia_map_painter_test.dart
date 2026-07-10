@@ -1,7 +1,7 @@
 // Coverage for the Australia map-coloring visualization that the DSL
 // result panel shows for the `mapColoringAustralia` gallery program.
 
-import 'package:crisp_calc/widgets/australia_map_painter.dart';
+import 'package:crisp_math/widgets/australia_map_painter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

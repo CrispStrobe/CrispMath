@@ -1,7 +1,7 @@
 // Smoke test: the app boots without throwing.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/main.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,8 +13,8 @@ void main() {
       'crisp.onboardingDismissed': true,
     });
     await AppState().load(force: true);
-    await tester.pumpWidget(const CrispCalcApp());
+    await tester.pumpWidget(const CrispMathApp());
     await tester.pump();
-    expect(find.byType(CrispCalcApp), findsOneWidget);
+    expect(find.byType(CrispMathApp), findsOneWidget);
   });
 }

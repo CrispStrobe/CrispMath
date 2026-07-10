@@ -24,7 +24,7 @@ class WebUnsupportedBanner extends StatelessWidget {
   const WebUnsupportedBanner({super.key});
 
   static final Uri _releases =
-      Uri.parse('https://github.com/CrispStrobe/CrispCalc/releases');
+      Uri.parse('https://github.com/CrispStrobe/CrispMath/releases');
 
   @override
   Widget build(BuildContext context) {

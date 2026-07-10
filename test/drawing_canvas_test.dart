@@ -1,4 +1,4 @@
-import 'package:crisp_calc/widgets/drawing_canvas.dart';
+import 'package:crisp_math/widgets/drawing_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

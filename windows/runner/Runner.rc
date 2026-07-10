@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "be.crispstro" "\0"
-            VALUE "FileDescription", "crisp_calc" "\0"
+            VALUE "CompanyName", "CrispStrobe" "\0"
+            VALUE "FileDescription", "crisp_math" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "crisp_calc" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 be.crispstro. All rights reserved." "\0"
-            VALUE "OriginalFilename", "crisp_calc.exe" "\0"
-            VALUE "ProductName", "crisp_calc" "\0"
+            VALUE "InternalName", "crisp_math" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 CrispStrobe. All rights reserved." "\0"
+            VALUE "OriginalFilename", "crisp_math.exe" "\0"
+            VALUE "ProductName", "CrispMath" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

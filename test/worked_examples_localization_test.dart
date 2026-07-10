@@ -6,8 +6,8 @@
 // and the dialog falls back to it). A missing DE/FR/ES translation
 // fails CI rather than silently shipping mixed-language UI.
 
-import 'package:crisp_calc/engine/worked_examples.dart';
-import 'package:crisp_calc/localization/app_localizations.dart';
+import 'package:crisp_math/engine/worked_examples.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

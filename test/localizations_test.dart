@@ -6,7 +6,7 @@
 // safety net), but this test additionally catches accidentally-empty
 // translations and templated methods that throw on edge-case inputs.
 
-import 'package:crisp_calc/localization/app_localizations.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

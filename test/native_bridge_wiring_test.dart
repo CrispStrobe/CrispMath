@@ -9,7 +9,7 @@
 // in fallback, a poll that never finds a bridge settles on `unavailable`,
 // and the status enum drives `nativeBridgeReady`.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

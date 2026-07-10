@@ -3,7 +3,7 @@
 // Detection / digit count / abbreviation helpers for arbitrary-precision
 // integer results from the SymEngine bridge (e.g. 100! = 158 digits).
 
-import 'package:crisp_calc/utils/exact_integer.dart';
+import 'package:crisp_math/utils/exact_integer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

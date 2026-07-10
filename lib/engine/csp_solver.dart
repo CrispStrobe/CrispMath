@@ -1930,7 +1930,7 @@ class FlatZincExportResult {
 /// standard FlatZinc subset every CP solver (Choco, Gecode,
 /// OR-Tools, MiniZinc IDE) consumes. Output is plain text the user
 /// can paste into another solver for cross-verification or to crack
-/// problems CrispCalc's in-process search times out on.
+/// problems CrispMath's in-process search times out on.
 ///
 /// Mapping (DSL → FlatZinc):
 ///   vars: x in 1..9             →  var 1..9: x :: output_var;
@@ -2158,7 +2158,7 @@ class DslToFlatZinc {
     }
 
     final buf = StringBuffer();
-    buf.writeln('% Generated from CrispCalc DSL — CSP Round E.3');
+    buf.writeln('% Generated from CrispMath DSL — CSP Round E.3');
     buf.writeln('% Paste into Choco / Gecode / OR-Tools / MiniZinc IDE.');
     buf.writeln();
 

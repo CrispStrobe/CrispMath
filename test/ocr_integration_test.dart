@@ -14,8 +14,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:crisp_calc/engine/ocr_model_catalog.dart';
-import 'package:crisp_calc/engine/ocr_provider.dart';
+import 'package:crisp_math/engine/ocr_model_catalog.dart';
+import 'package:crisp_math/engine/ocr_provider.dart';
 
 void main() {
   // =========================================================================

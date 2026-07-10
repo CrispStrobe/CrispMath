@@ -4,9 +4,9 @@
 // (only present when a refId is mapped), and the omission of
 // Learn-more for modules without a FunctionRef summary.
 
-import 'package:crisp_calc/localization/app_localizations.dart';
-import 'package:crisp_calc/widgets/function_reference_dialog.dart';
-import 'package:crisp_calc/widgets/module_help_dialog.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
+import 'package:crisp_math/widgets/function_reference_dialog.dart';
+import 'package:crisp_math/widgets/module_help_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';

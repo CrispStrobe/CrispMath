@@ -5,10 +5,10 @@
 // screens directly with a pre-set AppState pending slot and verifies
 // the drain + side effect.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/screens/statistics_screen.dart';
-import 'package:crisp_calc/screens/sudoku_screen.dart';
-import 'package:crisp_calc/widgets/worked_examples_dialog.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/screens/statistics_screen.dart';
+import 'package:crisp_math/screens/sudoku_screen.dart';
+import 'package:crisp_math/widgets/worked_examples_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

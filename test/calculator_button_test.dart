@@ -4,7 +4,7 @@
 // glyph-only keypad buttons. Without the wrapper, VoiceOver / TalkBack
 // would announce "√" as nothing or "u+221A" depending on platform.
 
-import 'package:crisp_calc/widgets/calculator_button.dart';
+import 'package:crisp_math/widgets/calculator_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

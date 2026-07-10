@@ -3,7 +3,7 @@
 
 import 'dart:math' as math;
 
-import 'package:crisp_calc/engine/plot_types.dart';
+import 'package:crisp_math/engine/plot_types.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

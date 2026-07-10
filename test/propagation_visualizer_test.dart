@@ -3,8 +3,8 @@
 // path end-to-end through the UI: type a tiny 3-coloring program, hit
 // Visualize, and assert the replay surface appears and steps.
 
-import 'package:crisp_calc/screens/constraints_screen.dart';
-import 'package:crisp_calc/widgets/propagation_visualizer.dart';
+import 'package:crisp_math/screens/constraints_screen.dart';
+import 'package:crisp_math/widgets/propagation_visualizer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

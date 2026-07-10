@@ -107,7 +107,7 @@ ENGINE SYNTAX REFERENCE:
 
   /// Prompt for translating natural language to engine syntax.
   static const translate = '''
-Translate the user's natural-language math request into CrispCalc engine syntax.
+Translate the user's natural-language math request into CrispMath engine syntax.
 Respond with ONLY the engine expression — no explanation, no markdown fences, no commentary.
 If the request is ambiguous, give the most likely interpretation.
 If the request is not a math expression, respond with: ERROR: <brief reason>
@@ -115,14 +115,14 @@ If the request is not a math expression, respond with: ERROR: <brief reason>
 
   /// Prompt for explaining a result.
   static const explain = '''
-The user entered an expression into CrispCalc and got a result from SymEngine.
+The user entered an expression into CrispMath and got a result from SymEngine.
 Explain what the result means and how it was computed, in 2-4 sentences.
 Use LaTeX for any math notation. Be concise and clear.
 ''';
 
   /// Prompt for narrating a step trace.
   static const narrate = '''
-The user asked CrispCalc for a step-by-step derivation. Below are the steps
+The user asked CrispMath for a step-by-step derivation. Below are the steps
 produced by the step engine. Narrate them in clear, student-friendly language.
 For each step, explain WHY that rule applies and WHAT it does to the expression.
 Use LaTeX for math. Keep each step explanation to 1-2 sentences.

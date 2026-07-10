@@ -261,7 +261,7 @@ Future<pw.Document> exportToPdf(NotepadDocument doc) async {
     footer: (context) => pw.Container(
       alignment: pw.Alignment.centerRight,
       child: pw.Text(
-        'CrispCalc — ${exported.name}',
+        'CrispMath — ${exported.name}',
         style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
       ),
     ),

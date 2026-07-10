@@ -10,8 +10,8 @@
 // depend on the specific layout breakpoint (1- vs 2-pane keypad on
 // wide screens), which is brittle in widget tests.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/main.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,7 +27,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
   });
   await tester.binding.setSurfaceSize(const Size(1280, 800));
   await AppState().load(force: true);
-  await tester.pumpWidget(const CrispCalcApp());
+  await tester.pumpWidget(const CrispMathApp());
   await tester.pump();
   await tester.pump(const Duration(seconds: 1));
 }

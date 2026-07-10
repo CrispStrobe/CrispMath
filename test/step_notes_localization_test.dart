@@ -8,8 +8,8 @@
 // of en/de/fr/es returns a non-empty string with all placeholders
 // substituted.
 
-import 'package:crisp_calc/engine/step_engine.dart';
-import 'package:crisp_calc/localization/app_localizations.dart';
+import 'package:crisp_math/engine/step_engine.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

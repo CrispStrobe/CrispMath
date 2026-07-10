@@ -10,7 +10,7 @@
 // behaviors); this file asserts independently verified mathematics for
 // every corpus case.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 

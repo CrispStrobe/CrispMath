@@ -3,9 +3,9 @@
 // condition folds through the engine to select the branch.
 //   flutter test integration_test/piecewise_udf_native_test.dart -d macos
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

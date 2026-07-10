@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/app_state.dart';
+import 'package:crisp_math/engine/app_state.dart';
 
 void main() {
   group('CSV export helpers', () {

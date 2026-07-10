@@ -5,7 +5,7 @@
 // boolean predicate results in both the calculator history column
 // and the notepad result column.
 
-import 'package:crisp_calc/widgets/boolean_chip.dart';
+import 'package:crisp_math/widgets/boolean_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

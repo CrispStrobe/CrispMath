@@ -1,6 +1,6 @@
 {
-    "name": "crisp_calc",
-    "short_name": "crisp_calc",
+    "name": "crisp_math",
+    "short_name": "crisp_math",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

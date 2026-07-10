@@ -5,7 +5,7 @@
 // produces and answers true/false, or returns the input unchanged to
 // simulate a symbolic (unfoldable) condition.
 
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Evaluate a lowered relational like `Lt(-3, 0)` numerically.

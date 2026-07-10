@@ -5,7 +5,7 @@
 // and the result model.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/symbolic_limit.dart';
+import 'package:crisp_math/engine/symbolic_limit.dart';
 
 void main() {
   group('SymbolicLimit ratio parser', () {

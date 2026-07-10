@@ -1,4 +1,4 @@
-import 'package:crisp_calc/engine/vector_math.dart';
+import 'package:crisp_math/engine/vector_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

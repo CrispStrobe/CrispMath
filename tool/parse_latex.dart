@@ -3,7 +3,7 @@
 // Reads from argv or stdin (one per line), prints engine syntax.
 
 import 'dart:io';
-import 'package:crisp_calc/engine/ocr_provider.dart';
+import 'package:crisp_math/engine/ocr_provider.dart';
 
 void main(List<String> args) {
   if (args.isNotEmpty) {

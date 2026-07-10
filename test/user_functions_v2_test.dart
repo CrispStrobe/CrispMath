@@ -3,8 +3,8 @@
 // multi-arg substitution, arity checks, nesting, and legacy-load
 // compatibility.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

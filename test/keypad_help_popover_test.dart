@@ -11,12 +11,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/function_reference.dart';
-import 'package:crisp_calc/localization/app_localizations.dart';
-import 'package:crisp_calc/widgets/calculator_keypad.dart';
-import 'package:crisp_calc/widgets/function_reference_dialog.dart';
-import 'package:crisp_calc/widgets/keypad_grid.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/function_reference.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
+import 'package:crisp_math/widgets/calculator_keypad.dart';
+import 'package:crisp_math/widgets/function_reference_dialog.dart';
+import 'package:crisp_math/widgets/keypad_grid.dart';
 
 void main() {
   setUp(() => AppState().setHelpMode(false));

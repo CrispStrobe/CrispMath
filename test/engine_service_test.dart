@@ -11,7 +11,7 @@
 //      confirm the wrapper completes and returns a string (the bridge's
 //      "requires native library" error path is fine for this).
 
-import 'package:crisp_calc/services/engine_service.dart';
+import 'package:crisp_math/services/engine_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

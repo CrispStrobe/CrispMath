@@ -11,7 +11,7 @@
 //   - A `shortDescription` for the list row (one sentence).
 //   - `examples`: 2–3 (input, expected, hint) triples that the
 //     dialog can render in the detail panel. The first example's
-//     `hint` doubles as the "in CrispCalc, X returns Y; the
+//     `hint` doubles as the "in CrispMath, X returns Y; the
 //     underlying call is SymEngine's / MPFR's / FLINT's Z" prose
 //     that PLAN P6 §97 asks for.
 //   - `seeAlso`: ids of related FunctionRef entries (for cross-
@@ -64,7 +64,7 @@ enum FunctionRefCategory {
 }
 
 /// A concrete example for the detail panel. `expected` is the
-/// string CrispCalc returns; `hint` is a one-line interpretive
+/// string CrispMath returns; `hint` is a one-line interpretive
 /// note.
 class FunctionRefExample {
   final String input;
@@ -143,7 +143,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'solve(x^2 - 1, x)',
           expected: '[-1, 1]',
-          hint: 'In CrispCalc, `solve(x^2 - 1, x)` returns a Python-style list '
+          hint: 'In CrispMath, `solve(x^2 - 1, x)` returns a Python-style list '
               'of roots. The underlying call is SymEngine\'s `solve()` (the '
               'rational-root branch for polynomials), wrapped by the bridge '
               'and serialised back to a Dart string.',
@@ -185,7 +185,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'expand((x + 1)^2)',
           expected: 'x^2 + 2*x + 1',
-          hint: 'In CrispCalc, `expand((x + 1)^2)` returns the binomial '
+          hint: 'In CrispMath, `expand((x + 1)^2)` returns the binomial '
               'expansion. The underlying call is SymEngine\'s `expand()`, '
               'which flattens `Pow` and `Mul` nodes and collects like terms.',
         ),
@@ -216,7 +216,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'simplify((x^2 - 4)/(x - 2))',
           expected: 'x + 2',
-          hint: 'In CrispCalc, `simplify` cancels the common `(x - 2)` factor. '
+          hint: 'In CrispMath, `simplify` cancels the common `(x - 2)` factor. '
               'The underlying call is SymEngine\'s `simplify()`, which '
               'tries `rational_simplify` plus a small bag of rewrite rules.',
         ),
@@ -246,7 +246,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'factor(x^2 - 1)',
           expected: '(x - 1)*(x + 1)',
-          hint: 'In CrispCalc, `factor(x^2 - 1)` returns the difference-of-'
+          hint: 'In CrispMath, `factor(x^2 - 1)` returns the difference-of-'
               'squares factorisation. The underlying call is SymEngine\'s '
               '`factor()`, which uses Berlekamp / Cantor–Zassenhaus for '
               'univariate polynomials over Q.',
@@ -277,7 +277,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'diff(x^3 - 4*x + 7, x)',
           expected: '3*x^2 - 4',
-          hint: 'In CrispCalc, `diff(...)` applies the power and constant '
+          hint: 'In CrispMath, `diff(...)` applies the power and constant '
               'rules term-by-term. The underlying call is SymEngine\'s '
               '`diff()`, which walks the expression tree and emits a new '
               'symbolic `Add` node.',
@@ -309,7 +309,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'integrate(x*sin(x), x)',
           expected: 'sin(x) - x*cos(x)',
-          hint: 'In CrispCalc, indefinite `integrate(...)` delegates to '
+          hint: 'In CrispMath, indefinite `integrate(...)` delegates to '
               'SymEngine\'s `integrate()`. Integration by parts is applied '
               'automatically when one factor differentiates to a polynomial.',
         ),
@@ -319,7 +319,7 @@ class FunctionReferences {
           hint:
               'Definite form: when SymEngine has a closed-form antiderivative '
               'it applies the fundamental theorem. If symbolic fails, '
-              'CrispCalc falls back to Simpson\'s rule (200 panels).',
+              'CrispMath falls back to Simpson\'s rule (200 panels).',
         ),
         FunctionRefExample(
           input: 'integrate(1/(x^2 - 1), x)',
@@ -347,7 +347,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'subst(x^2 + 1, x, 2)',
           expected: '5',
-          hint: 'In CrispCalc, `subst` rewrites the expression tree and then '
+          hint: 'In CrispMath, `subst` rewrites the expression tree and then '
               'tries one simplify pass. The underlying call is SymEngine\'s '
               '`xreplace()` (variable-only replacement, not pattern matching).',
         ),
@@ -378,7 +378,7 @@ class FunctionReferences {
           input: 'limit(sin(x)/x, x, 0)',
           expected: '1',
           hint:
-              'In CrispCalc, `limit(...)` is a numerical approach: the bridge '
+              'In CrispMath, `limit(...)` is a numerical approach: the bridge '
               'evaluates the expression at a sequence of points converging '
               'on `point` and reports the limit when consecutive samples '
               'agree to the working precision. No symbolic Series.',
@@ -412,7 +412,7 @@ class FunctionReferences {
           input: 'gcd(252, 105)',
           expected: '21',
           hint:
-              'In CrispCalc, integer `gcd(...)` uses the Euclidean recurrence '
+              'In CrispMath, integer `gcd(...)` uses the Euclidean recurrence '
               'gcd(a, b) = gcd(b, a mod b). The underlying call is '
               'SymEngine\'s `gcd()` which dispatches to GMP\'s `mpz_gcd` for '
               'the integer case.',
@@ -442,7 +442,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'lcm(4, 6)',
           expected: '12',
-          hint: 'In CrispCalc, integer `lcm(...)` is computed via the identity '
+          hint: 'In CrispMath, integer `lcm(...)` is computed via the identity '
               '`lcm(a, b) = |a*b| / gcd(a, b)`. The underlying call is '
               'SymEngine\'s `lcm()` which delegates to GMP\'s `mpz_lcm`.',
         ),
@@ -472,7 +472,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'polygcd(x^2-1, x^2-2x+1)',
           expected: 'x - 1',
-          hint: 'In CrispCalc, `polygcd` runs the Euclidean algorithm on '
+          hint: 'In CrispMath, `polygcd` runs the Euclidean algorithm on '
               'exact rational coefficients (pure Dart). Both polynomials '
               'share the factor `x - 1`; the result is normalised monic.',
         ),
@@ -541,7 +541,7 @@ class FunctionReferences {
           input: 'polydiscriminant(x^2-5x+6)',
           expected: '1',
           hint: 'For `x² + bx + c` the discriminant is `b² − 4c` — here '
-              '25 − 24 = 1. CrispCalc uses `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.',
+              '25 − 24 = 1. CrispMath uses `(−1)^(n(n−1)/2)·Res(p, p′)/aₙ`.',
         ),
         FunctionRefExample(
           input: 'polydiscriminant(x^2-4x+4)',
@@ -563,7 +563,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'polyfactor(x^2-1, mod=5)',
           expected: '(x + 1) · (x + 4)',
-          hint: 'In CrispCalc, `polyfactor` reduces the polynomial mod k, '
+          hint: 'In CrispMath, `polyfactor` reduces the polynomial mod k, '
               'runs square-free factorisation, then Berlekamp\'s algorithm '
               '(pure Dart). Coefficients display as residues in [0, k), so '
               '`x − 1` appears as `x + 4` mod 5.',
@@ -752,7 +752,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: '5!',
           expected: '120',
-          hint: 'In CrispCalc, the `n!` postfix and `factorial(n)` are '
+          hint: 'In CrispMath, the `n!` postfix and `factorial(n)` are '
               'equivalent — the preprocessor rewrites the postfix to the '
               'call. For `n ≤ 1000` we evaluate in Dart with `BigInt` '
               'multiplication; beyond that the underlying call is '
@@ -785,7 +785,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'fib(10)',
           expected: '55',
-          hint: 'In CrispCalc, `fib(n)` and `fibonacci(n)` are the same call. '
+          hint: 'In CrispMath, `fib(n)` and `fibonacci(n)` are the same call. '
               'For `n ≤ 90` we use a precomputed table; for larger `n` the '
               'underlying call is SymEngine\'s `fibonacci()`, which uses '
               'fast-doubling (O(log n) multiplications via GMP).',
@@ -895,7 +895,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'isprime(2027)',
           expected: 'true',
-          hint: 'In CrispCalc, `isprime(n)` returns a boolean chip. The '
+          hint: 'In CrispMath, `isprime(n)` returns a boolean chip. The '
               'underlying call is GMP\'s `mpz_probab_prime_p` (25 Miller-'
               'Rabin rounds, error bound 4^-25 ≈ 9×10^-16) via SymEngine\'s '
               '`ntheory` module. 2027 is the 308th prime.',
@@ -925,7 +925,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'nextprime(1000)',
           expected: '1009',
-          hint: 'In CrispCalc, `nextprime(n)` iterates from `n+1` and tests '
+          hint: 'In CrispMath, `nextprime(n)` iterates from `n+1` and tests '
               'each candidate. The underlying call is SymEngine\'s '
               '`ntheory::nextprime()`, which uses FLINT\'s sieve over short '
               'windows when the gap is large.',
@@ -951,14 +951,14 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'prevprime(100)',
           expected: '97',
-          hint: 'In CrispCalc, `prevprime(n)` walks downward from `n-1`. The '
+          hint: 'In CrispMath, `prevprime(n)` walks downward from `n-1`. The '
               'underlying call is SymEngine\'s `ntheory::prevprime()`.',
         ),
         FunctionRefExample(
           input: 'prevprime(2)',
           expected: 'Error: no prime less than 2',
           hint: 'No primes exist below 2; the bridge raises rather than '
-              'returning a sentinel. CrispCalc surfaces the error chip.',
+              'returning a sentinel. CrispMath surfaces the error chip.',
         ),
       ],
       seeAlso: ['isprime', 'nextprime', 'factorint'],
@@ -974,10 +974,10 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'factorint(360)',
           expected: '2³ · 3² · 5',
-          hint: 'In CrispCalc, `factorint(n)` returns a rendered prime '
+          hint: 'In CrispMath, `factorint(n)` returns a rendered prime '
               'decomposition. The underlying call is FLINT\'s '
               '`fmpz_factor`, fronted by SymEngine\'s ntheory wrapper; '
-              'CrispCalc converts the (prime, exponent) list into the '
+              'CrispMath converts the (prime, exponent) list into the '
               'Unicode superscript display.',
         ),
         FunctionRefExample(
@@ -990,7 +990,7 @@ class FunctionReferences {
           input: 'factorint(1)',
           expected: '1',
           hint: 'Edge case: by convention 1 has the empty factorisation; '
-              'CrispCalc renders this as the literal `1` rather than an '
+              'CrispMath renders this as the literal `1` rather than an '
               'empty string.',
         ),
       ],
@@ -1007,7 +1007,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'divisors(12)',
           expected: '1, 2, 3, 4, 6, 12',
-          hint: 'In CrispCalc, `divisors(n)` is derived in pure Dart from '
+          hint: 'In CrispMath, `divisors(n)` is derived in pure Dart from '
               '`factorint(n)`: every product of prime powers pᵏ with '
               '0 ≤ k ≤ exponent. The count equals ∏(eᵢ + 1) — here '
               '(2+1)(1+1) = 6.',
@@ -1033,7 +1033,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'totient(12)',
           expected: '4',
-          hint: 'The four units modulo 12 are {1, 5, 7, 11}. CrispCalc '
+          hint: 'The four units modulo 12 are {1, 5, 7, 11}. CrispMath '
               "computes φ from the prime factorisation via FLINT's "
               '`fmpz_euler_phi`.',
         ),
@@ -1132,7 +1132,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'cfrac(pi, 10)',
           expected: '[3; 7, 15, 1, 292, 1, 1, 1, 2, 1]',
-          hint: 'In CrispCalc, `cfrac` runs an exact BigInt expansion over a '
+          hint: 'In CrispMath, `cfrac` runs an exact BigInt expansion over a '
               'high-precision MPFR approximation of the constant. The large '
               'term 292 is precisely why the convergent 355/113 is such a '
               'remarkable approximation of π.',
@@ -1159,7 +1159,7 @@ class FunctionReferences {
           input: 'convergent(pi, 3)',
           expected: '355/113',
           hint: 'Milü — Zu Chongzhi’s 5th-century approximation of π, correct '
-              'to six decimal places. CrispCalc folds the first k+1 partial '
+              'to six decimal places. CrispMath folds the first k+1 partial '
               'quotients of `cfrac` into the rational.',
         ),
         FunctionRefExample(
@@ -1182,7 +1182,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'pi(50)',
           expected: '3.14159265358979323846264338327950288419716939937510',
-          hint: 'In CrispCalc, `pi(N)` is a special-cased call routed to the '
+          hint: 'In CrispMath, `pi(N)` is a special-cased call routed to the '
               'high-precision path before SymEngine sees it. The underlying '
               'call is MPFR\'s `mpfr_const_pi` at precision ⌈N·log2(10)⌉ + '
               '16 guard bits, followed by base-10 conversion.',
@@ -1208,7 +1208,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'e(50)',
           expected: '2.71828182845904523536028747135266249775724709369995',
-          hint: 'In CrispCalc, `e(N)` mirrors the `pi(N)` pipeline: MPFR\'s '
+          hint: 'In CrispMath, `e(N)` mirrors the `pi(N)` pipeline: MPFR\'s '
               '`mpfr_const_e` (which uses the Taylor series Σ 1/k!) at '
               'precision ⌈N·log2(10)⌉ + 16 guard bits, then base-10 '
               'rendering.',
@@ -1234,7 +1234,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'sqrt(2, 50)',
           expected: '1.41421356237309504880168872420969807856967187537694',
-          hint: 'In CrispCalc, the 2-argument `sqrt(k, N)` is the high-'
+          hint: 'In CrispMath, the 2-argument `sqrt(k, N)` is the high-'
               'precision route. The underlying call is MPFR\'s '
               '`mpfr_sqrt_ui` at precision ⌈N·log2(10)⌉ + 16 guard bits. '
               'The 1-argument `sqrt(2)` instead returns the symbolic '
@@ -1261,7 +1261,7 @@ class FunctionReferences {
           input: 'EulerGamma(20)',
           expected: '0.57721566490153286061',
           hint:
-              'In CrispCalc, `EulerGamma(N)` uses MPFR\'s `mpfr_const_euler`, '
+              'In CrispMath, `EulerGamma(N)` uses MPFR\'s `mpfr_const_euler`, '
               'which evaluates γ via the Brent–McMillan formula '
               '(modified Bessel functions). Precision is ⌈N·log2(10)⌉ + 16 '
               'guard bits, matching the `pi(N)` and `e(N)` pipeline.',
@@ -1270,7 +1270,7 @@ class FunctionReferences {
           input: 'EulerGamma(50)',
           expected: '0.57721566490153286060651209008240243104215933593992',
           hint: 'γ has no known closed form. The MPFR routine is the '
-              'standard reference implementation; CrispCalc just renders '
+              'standard reference implementation; CrispMath just renders '
               'the digit string.',
         ),
       ],
@@ -1287,7 +1287,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'evalf(ln(10), 50)',
           expected: '2.3025850929940456840179914546843642076011014886288',
-          hint: 'In CrispCalc, `evalf` parses any expression and routes it '
+          hint: 'In CrispMath, `evalf` parses any expression and routes it '
               'through SymEngine\'s `basic_evalf` at ⌈N·log2(10)⌉ + 8 bits. '
               'The generic counterpart to `pi(N)` / `e(N)` — works on '
               'logs, roots, sums, and the special functions.',
@@ -1314,7 +1314,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'cevalf((1+I)^10, 20)',
           expected: '32.0*I',
-          hint: 'In CrispCalc, `cevalf` routes through SymEngine\'s '
+          hint: 'In CrispMath, `cevalf` routes through SymEngine\'s '
               '`basic_evalf` on the MPC (complex) path. (1+i)¹⁰ = 32i. Use '
               'the literal `I` for the imaginary unit.',
         ),
@@ -1339,7 +1339,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'Matrix([[1, 2], [3, 4]])',
           expected: 'Matrix([[1, 2], [3, 4]])',
-          hint: 'In CrispCalc, the `Matrix(...)` literal is recognised by the '
+          hint: 'In CrispMath, the `Matrix(...)` literal is recognised by the '
               'matrix evaluator before the engine sees the expression. The '
               'underlying call is SymEngine\'s `DenseMatrix` constructor — '
               'the row/col layout is fixed at construction.',
@@ -1370,7 +1370,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'det(Matrix([[1, 2], [3, 4]]))',
           expected: '-2',
-          hint: 'In CrispCalc, `det(M)` evaluates as a single scalar. The '
+          hint: 'In CrispMath, `det(M)` evaluates as a single scalar. The '
               'underlying call is SymEngine\'s `DenseMatrix::det()`, which '
               'uses the Bareiss fraction-free algorithm — exact for '
               'symbolic / rational entries, no float blow-up.',
@@ -1401,7 +1401,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'inv(Matrix([[4, 7], [2, 6]]))',
           expected: 'Matrix([[3/5, -7/10], [-1/5, 2/5]])',
-          hint: 'In CrispCalc, `inv(M)` returns `adj(M)/det(M)`. The '
+          hint: 'In CrispMath, `inv(M)` returns `adj(M)/det(M)`. The '
               'underlying call is SymEngine\'s `DenseMatrix::inv()`, which '
               'uses Gauss–Jordan elimination over the rationals — entries '
               'come back as exact fractions, not floats.',
@@ -1433,7 +1433,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'transpose(Matrix([[1, 2], [3, 4]]))',
           expected: 'Matrix([[1, 3], [2, 4]])',
-          hint: 'In CrispCalc, `transpose(M)` is implemented Dart-side because '
+          hint: 'In CrispMath, `transpose(M)` is implemented Dart-side because '
               'the bridge doesn\'t expose a transpose entry point. We '
               'allocate a fresh `SymEngineMatrix` with swapped dimensions '
               'and copy cells element-by-element.',
@@ -1464,7 +1464,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'rref(Matrix([[1, 2, 5], [3, 4, 11]]))',
           expected: 'Matrix([[1, 0, -1], [0, 1, 3]])',
-          hint: 'In CrispCalc, `rref` runs Gauss–Jordan in Dart and calls '
+          hint: 'In CrispMath, `rref` runs Gauss–Jordan in Dart and calls '
               'SymEngine\'s `simplify()` per cell update. The bridge '
               'doesn\'t expose `rref` directly, so the algorithm walks '
               'columns left-to-right, scales the pivot row, then '
@@ -1498,7 +1498,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'Matrix([[1, 2], [3, 4]]) + Matrix([[5, 6], [7, 8]])',
           expected: 'Matrix([[6, 8], [10, 12]])',
-          hint: 'In CrispCalc, matrix binary ops are dispatched by the '
+          hint: 'In CrispMath, matrix binary ops are dispatched by the '
               'matrix evaluator when both operands parse as `Matrix(...)` '
               'literals. The underlying call is SymEngine\'s `add_dense_'
               'dense`; subtraction goes through `add_dense_dense` with '
@@ -1590,7 +1590,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'data = [1, 2, 3, 4, 5]',
           expected: 'mean = 3.0',
-          hint: 'In CrispCalc, `mean` is computed by `DescriptiveStats.mean` '
+          hint: 'In CrispMath, `mean` is computed by `DescriptiveStats.mean` '
               '(see `lib/engine/statistics.dart`) — a single-pass sum / n. '
               'For paired or grouped data the Stats module also exposes '
               'standard deviation, median, quartiles, and the IQR.',
@@ -1621,7 +1621,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'data = [...], μ₀ = 70',
           expected: 't, df = n-1, p',
-          hint: 'In CrispCalc, `oneSampleT` lives in '
+          hint: 'In CrispMath, `oneSampleT` lives in '
               '`lib/engine/hypothesis_tests.dart`. The underlying call computes '
               't = (x̄ − μ₀) / (s / √n), then reads the two-sided p-value off '
               '`TDistribution.cdf` with df = n − 1.',
@@ -1651,7 +1651,7 @@ class FunctionReferences {
           input: 'A = [...], B = [...]',
           expected: 't, df, p',
           hint:
-              'In CrispCalc, `welchT` lives in `lib/engine/hypothesis_tests.dart`. '
+              'In CrispMath, `welchT` lives in `lib/engine/hypothesis_tests.dart`. '
               'The underlying call computes the test statistic '
               't = (x̄_A − x̄_B) / √(s_A²/n_A + s_B²/n_B), then approximates '
               'the degrees of freedom via Welch–Satterthwaite, and reads the '
@@ -1684,7 +1684,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'before = [...], after = [...]',
           expected: 't, df = n-1, p',
-          hint: 'In CrispCalc, `pairedT` reduces to a one-sample t-test on the '
+          hint: 'In CrispMath, `pairedT` reduces to a one-sample t-test on the '
               'difference vector d = after − before. The underlying call is '
               'the same `TDistribution.cdf` route used by `welchT`, but with '
               'df = n - 1 (no Welch adjustment because there\'s only one '
@@ -1714,7 +1714,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'groups = [[...], [...], [...]]',
           expected: 'F, df1 = K-1, df2 = N-K, p',
-          hint: 'In CrispCalc, `anovaOneWay` partitions total SS into '
+          hint: 'In CrispMath, `anovaOneWay` partitions total SS into '
               'between-group SS and within-group SS. The underlying call is '
               'F = MS_between / MS_within with df1 = K - 1 and df2 = N - K, '
               'then `FDistribution.sf` for the upper-tail p-value.',
@@ -1745,7 +1745,7 @@ class FunctionReferences {
           input: 'observed = [10, 20, 30], expected = [15, 20, 25]',
           expected: 'χ² = 2.67, df = 2, p ≈ 0.264',
           hint:
-              'In CrispCalc, `chiSquareGof` evaluates Σ (O - E)² / E and reads '
+              'In CrispMath, `chiSquareGof` evaluates Σ (O - E)² / E and reads '
               'the upper-tail p-value off `ChiSquaredDistribution.sf` with '
               'df = k - 1 where k is the number of categories. Underlying '
               'cell counts are assumed ≥ 5 — the implementation does not '
@@ -1776,7 +1776,7 @@ class FunctionReferences {
           input: 'table = [[10, 20], [15, 25]]',
           expected: 'χ² ≈ 0.06, df = 1, p ≈ 0.81',
           hint:
-              'In CrispCalc, `chiSquareIndependence` computes expected counts '
+              'In CrispMath, `chiSquareIndependence` computes expected counts '
               'from row × column marginals (E_ij = row_i · col_j / total), '
               'then Σ (O - E)² / E with df = (rows - 1) · (cols - 1). The '
               'underlying p-value comes from `ChiSquaredDistribution.sf`.',
@@ -1806,7 +1806,7 @@ class FunctionReferences {
           input: 'table = [[8, 2], [1, 9]]',
           expected: 'p ≈ 0.0055',
           hint:
-              'In CrispCalc, `fisherExact` enumerates all 2×2 tables with the '
+              'In CrispMath, `fisherExact` enumerates all 2×2 tables with the '
               'same marginals and sums the hypergeometric probabilities of '
               'tables at least as extreme as observed. The underlying call '
               'computes log-Choose terms to avoid overflow on large totals, '
@@ -1835,7 +1835,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'A = [...], B = [...]',
           expected: 'W, z, p',
-          hint: 'In CrispCalc, `wilcoxonRankSum` pools both samples, assigns '
+          hint: 'In CrispMath, `wilcoxonRankSum` pools both samples, assigns '
               'midrank-corrected ranks, sums the ranks of group A, and '
               'reports the normal-approximation z. The underlying call '
               'applies a tie correction to the variance and reads the '
@@ -1866,7 +1866,7 @@ class FunctionReferences {
           input: 'before = [...], after = [...]',
           expected: 's, n, p',
           hint:
-              'In CrispCalc, `pairedSign` discards pairs with zero difference, '
+              'In CrispMath, `pairedSign` discards pairs with zero difference, '
               'counts positives among the remaining n, and tests against '
               'Binomial(n, 0.5). The underlying p-value uses the exact '
               'binomial tail — no normal approximation, so it\'s the right '
@@ -1897,7 +1897,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'x = [...], y = [...]',
           expected: 'y = a·x + b, R²',
-          hint: 'In CrispCalc, the Regression tab fits via the closed-form '
+          hint: 'In CrispMath, the Regression tab fits via the closed-form '
               'least-squares estimators a = Sxy / Sxx and b = ȳ − a·x̄ (see '
               '`lib/engine/statistics.dart`). The same tab also offers '
               'polynomial and exponential models.',
@@ -1924,7 +1924,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'μ = 100, σ = 15, x = 130',
           expected: 'P(X ≤ 130) ≈ 0.977',
-          hint: 'In CrispCalc, the Distributions tab evaluates the normal CDF '
+          hint: 'In CrispMath, the Distributions tab evaluates the normal CDF '
               'via the error function (`Normal.cdf` in '
               '`lib/engine/statistics.dart`); x = μ + 2σ sits at the ≈ 97.7th '
               'percentile.',
@@ -1953,7 +1953,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'n = 20, p = 0.1, k = 2',
           expected: 'mean = 2, P(X = 2) ≈ 0.285',
-          hint: 'In CrispCalc, the Distributions tab evaluates the binomial '
+          hint: 'In CrispMath, the Distributions tab evaluates the binomial '
               'PMF C(n, k)·pᵏ·(1−p)^(n−k) (`Binomial.pmf` in '
               '`lib/engine/statistics.dart`); with a 10 % defect rate over 20 '
               'items the most likely defect count is the mean, 2.',
@@ -1981,13 +1981,13 @@ class FunctionReferences {
       signature: 'vars: x, y in 1..9',
       shortDescription:
           'Declare integer decision variables and their domain. Always the '
-          'first line of a CrispCalc DSL program.',
+          'first line of a CrispMath DSL program.',
       runnable: false,
       examples: [
         FunctionRefExample(
           input: 'vars: a, b, c in 1..20',
           expected: '(declares three CP-int variables)',
-          hint: 'In CrispCalc, the `vars:` line is parsed by `DslToFlatZinc` '
+          hint: 'In CrispMath, the `vars:` line is parsed by `DslToFlatZinc` '
               '(see `lib/engine/csp_solver.dart`) and emits one FlatZinc '
               '`var int: x :: …` declaration per name. The domain bounds '
               'are concrete integers; symbolic domains aren\'t supported.',
@@ -2016,7 +2016,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'allDifferent(a, b, c)',
           expected: '(adds the constraint)',
-          hint: 'In CrispCalc, `allDifferent` transpiles to FlatZinc\'s '
+          hint: 'In CrispMath, `allDifferent` transpiles to FlatZinc\'s '
               '`all_different_int([a, b, c])`. The underlying solver '
               '(dart_csp) implements bound-consistency propagation via '
               'Régin\'s matching algorithm — much faster than pairwise on '
@@ -2045,7 +2045,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'noOverlap(s1=4, s2=3, s3=2)',
           expected: '(disjunctive constraint on three tasks)',
-          hint: 'In CrispCalc, `noOverlap` transpiles to FlatZinc\'s '
+          hint: 'In CrispMath, `noOverlap` transpiles to FlatZinc\'s '
               '`disjunctive([s1, s2, s3], [4, 3, 2])`. The underlying '
               'solver uses edge-finding plus Vilím\'s θ-tree propagator — '
               'the same algorithm as MiniZinc\'s built-in.',
@@ -2074,7 +2074,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'cumulative(s1=2@2, s2=3@1, s3=2@2; capacity=3)',
           expected: '(at most 3 units of resource used at any time)',
-          hint: 'In CrispCalc, `cumulative` transpiles to FlatZinc\'s '
+          hint: 'In CrispMath, `cumulative` transpiles to FlatZinc\'s '
               '`cumulative([starts], [durations], [resources], capacity)`. '
               'The underlying solver uses timetable propagation plus '
               'energetic reasoning — capacity-aware versions of the '
@@ -2105,7 +2105,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'minimize x + y',
           expected: '(finds the assignment with smallest x + y)',
-          hint: 'In CrispCalc, `minimize` emits FlatZinc\'s '
+          hint: 'In CrispMath, `minimize` emits FlatZinc\'s '
               '`solve minimize __obj__;` after constructing the objective '
               'variable via linear-expression parsing. The underlying '
               'solver uses branch-and-bound — feasibility check, then tighten '
@@ -2134,7 +2134,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'maximize 3*a + 2*b',
           expected: '(finds the assignment with largest 3a + 2b)',
-          hint: 'In CrispCalc, `maximize` emits FlatZinc\'s '
+          hint: 'In CrispMath, `maximize` emits FlatZinc\'s '
               '`solve maximize __obj__;`. The underlying solver does '
               'branch-and-bound just like `minimize` but with the '
               'lower-bound tightening flipped.',
@@ -2171,7 +2171,7 @@ class FunctionReferences {
           input: 'Sudoku module → preset → "Regular 9×9"',
           expected: '(loads a standard 9×9 grid)',
           hint:
-              'In CrispCalc, the Regular variant lives in `lib/engine/sudoku.dart` '
+              'In CrispMath, the Regular variant lives in `lib/engine/sudoku.dart` '
               'as `SudokuVariant.regular`. The underlying solver instantiates '
               'one `allDifferent` per row, column, and box (27 in total for '
               '9×9), and hands them off to `dart_csp`.',
@@ -2193,7 +2193,7 @@ class FunctionReferences {
           input: 'Sudoku module → preset → "X 8×8"',
           expected: '(loads an 8×8 grid with diagonal constraints)',
           hint:
-              'In CrispCalc, Sudoku-X is `SudokuVariant.x` (`lib/engine/sudoku.dart`). '
+              'In CrispMath, Sudoku-X is `SudokuVariant.x` (`lib/engine/sudoku.dart`). '
               'The underlying solver adds two extra `allDifferent` constraints '
               'on top of the regular row/column/box trio — one per diagonal.',
         ),
@@ -2214,7 +2214,7 @@ class FunctionReferences {
           input: 'Sudoku module → preset → "Disjoint 8×8"',
           expected: '(loads an 8×8 grid with disjoint-group constraints)',
           hint:
-              'In CrispCalc, this is `SudokuVariant.disjoint`. For an N×N grid '
+              'In CrispMath, this is `SudokuVariant.disjoint`. For an N×N grid '
               'with √N × √N boxes, the constraint adds N more `allDifferent` '
               'overlays — one per in-box position. The 8×8 ships as a single '
               'preset.',
@@ -2235,7 +2235,7 @@ class FunctionReferences {
         FunctionRefExample(
           input: 'Sudoku module → preset → "Killer 9×9"',
           expected: '(loads a 9×9 cage-puzzle)',
-          hint: 'In CrispCalc, this is `SudokuVariant.killer`. The underlying '
+          hint: 'In CrispMath, this is `SudokuVariant.killer`. The underlying '
               'solver layers per-cage `allDifferent` + a per-cage `sum = '
               'target` over the regular row/column/box trio. The 4×4 and '
               '9×9 killer presets both ship.',

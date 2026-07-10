@@ -6,8 +6,8 @@
 //   - clear() method
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/engine/notepad_undo.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_undo.dart';
 
 void main() {
   // =========================================================================

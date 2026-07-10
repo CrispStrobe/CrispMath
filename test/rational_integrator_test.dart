@@ -3,9 +3,9 @@
 // remainders. Results are validated structurally here; the SymPy-certified
 // corpus checks the mathematics (difference-is-constant sampling).
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/numeric_fallback.dart';
-import 'package:crisp_calc/engine/rational_integrator.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
+import 'package:crisp_math/engine/rational_integrator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

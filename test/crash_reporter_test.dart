@@ -1,4 +1,4 @@
-import 'package:crisp_calc/services/crash_reporter.dart';
+import 'package:crisp_math/services/crash_reporter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -53,7 +53,7 @@ void main() {
         StackTrace.current,
       );
       final text = CrashReporter.instance.buildReportText();
-      expect(text, contains('CrispCalc Crash Report'));
+      expect(text, contains('CrispMath Crash Report'));
       expect(text, contains('Reports: 1'));
       expect(text, contains('sample'));
       expect(text, contains('[zone]'));

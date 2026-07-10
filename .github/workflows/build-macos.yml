@@ -50,7 +50,7 @@ jobs:
         # bridge to grow without making CI brittle.
         run: |
           set -eu
-          APP="build/macos/Build/Products/Release/crisp_calc.app"
+          APP="build/macos/Build/Products/Release/crisp_math.app"
           ls -la "$APP/Contents/MacOS"
           TOTAL=0
           for bin in $(find "$APP" -type f -perm -u+x); do
@@ -73,8 +73,8 @@ jobs:
         # statically present. The binary exits non-zero on any failure.
         run: |
           set -eu
-          BIN="build/macos/Build/Products/Release/crisp_calc.app/Contents/MacOS/crisp_calc"
-          CRISPCALC_DIAGNOSTIC=matrix "$BIN"
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          CRISPMATH_DIAGNOSTIC=matrix "$BIN"
 
       - name: Run step engine self-test against the release binary
         # Headless invocation of the step-by-step diagnostic battery
@@ -84,16 +84,16 @@ jobs:
         # SymEngine's output format shifts between bridge versions.
         run: |
           set -eu
-          BIN="build/macos/Build/Products/Release/crisp_calc.app/Contents/MacOS/crisp_calc"
-          CRISPCALC_DIAGNOSTIC=steps "$BIN"
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          CRISPMATH_DIAGNOSTIC=steps "$BIN"
 
       - name: Zip the .app for download
         run: |
           cd build/macos/Build/Products/Release
-          zip -ryq ../../../../../crisp_calc-macos-release.zip crisp_calc.app
+          zip -ryq ../../../../../crisp_math-macos-release.zip crisp_math.app
 
       - uses: actions/upload-artifact@v4
         with:
-          name: crisp_calc-macos-release
-          path: crisp_calc-macos-release.zip
+          name: crisp_math-macos-release
+          path: crisp_math-macos-release.zip
           retention-days: 14

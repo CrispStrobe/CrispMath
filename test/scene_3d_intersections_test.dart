@@ -6,10 +6,10 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:crisp_calc/engine/conic_math.dart' show ConicKind;
-import 'package:crisp_calc/engine/plane_math.dart' show Vector3;
-import 'package:crisp_calc/engine/scene_3d/intersections.dart';
-import 'package:crisp_calc/engine/scene_3d/scene_object.dart';
+import 'package:crisp_math/engine/conic_math.dart' show ConicKind;
+import 'package:crisp_math/engine/plane_math.dart' show Vector3;
+import 'package:crisp_math/engine/scene_3d/intersections.dart';
+import 'package:crisp_math/engine/scene_3d/scene_object.dart';
 
 PlaneObject plane(double a, double b, double c, double d) =>
     PlaneObject(id: 'p', label: 'P', color: 0, a: a, b: b, c: c, d: d);

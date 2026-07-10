@@ -7,9 +7,9 @@
 // (`TWO+TWO=FOUR`) so the assertion proves the prefill actually ran —
 // the tab's own default is already `SEND + MORE = MONEY`.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/worked_examples.dart';
-import 'package:crisp_calc/screens/constraints_screen.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/worked_examples.dart';
+import 'package:crisp_math/screens/constraints_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

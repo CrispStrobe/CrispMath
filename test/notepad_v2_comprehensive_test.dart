@@ -3,15 +3,15 @@
 // Comprehensive tests for all Notepad V2 + session features.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/engine/notepad_evaluator.dart';
-import 'package:crisp_calc/engine/notepad_undo.dart';
-import 'package:crisp_calc/engine/notepad_templates.dart';
-import 'package:crisp_calc/engine/date_time_evaluator.dart';
-import 'package:crisp_calc/engine/currency_evaluator.dart';
-import 'package:crisp_calc/engine/symbolic_limit.dart';
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
-import 'package:crisp_calc/widgets/mini_plot_widget.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad_undo.dart';
+import 'package:crisp_math/engine/notepad_templates.dart';
+import 'package:crisp_math/engine/date_time_evaluator.dart';
+import 'package:crisp_math/engine/currency_evaluator.dart';
+import 'package:crisp_math/engine/symbolic_limit.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/widgets/mini_plot_widget.dart';
 
 void main() {
   // =========================================================================

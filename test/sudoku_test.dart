@@ -4,7 +4,7 @@
 // and round-trip cleanly through dart_csp. Trace mode must record
 // frames and end with the same solution as the quick-solve mode.
 
-import 'package:crisp_calc/engine/sudoku.dart';
+import 'package:crisp_math/engine/sudoku.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

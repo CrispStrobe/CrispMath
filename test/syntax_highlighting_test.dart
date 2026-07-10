@@ -3,7 +3,7 @@
 // Tests for the SyntaxHighlightingController's token pattern.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/widgets/syntax_highlighting_controller.dart';
+import 'package:crisp_math/widgets/syntax_highlighting_controller.dart';
 
 void main() {
   group('SyntaxHighlightingController', () {

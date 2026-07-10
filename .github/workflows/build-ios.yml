@@ -38,10 +38,10 @@ jobs:
       - name: Zip the Runner.app
         run: |
           cd build/ios/iphoneos
-          zip -ryq ../../../crisp_calc-ios-unsigned.zip Runner.app
+          zip -ryq ../../../crisp_math-ios-unsigned.zip Runner.app
 
       - uses: actions/upload-artifact@v4
         with:
-          name: crisp_calc-ios-unsigned
-          path: crisp_calc-ios-unsigned.zip
+          name: crisp_math-ios-unsigned
+          path: crisp_math-ios-unsigned.zip
           retention-days: 14

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pre-commit hook for CrispCalc. Runs the same checks the CI
+# Pre-commit hook for CrispMath. Runs the same checks the CI
 # analyze-and-test job runs locally so format/analyze failures
 # surface BEFORE the push instead of after.
 #

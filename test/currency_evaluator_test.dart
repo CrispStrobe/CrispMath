@@ -1,7 +1,7 @@
 // test/currency_evaluator_test.dart
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/currency_evaluator.dart';
+import 'package:crisp_math/engine/currency_evaluator.dart';
 
 void main() {
   group('CurrencyEvaluator', () {

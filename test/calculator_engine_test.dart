@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 
 // These tests run without the native bridge available (the test host doesn't
 // load the SymEngine dylib). Every method should return cleanly — typically a

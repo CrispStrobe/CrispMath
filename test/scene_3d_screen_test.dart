@@ -7,11 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/plane_math.dart' show Vector3;
-import 'package:crisp_calc/engine/scene_3d/scene_object.dart';
-import 'package:crisp_calc/localization/app_localizations.dart';
-import 'package:crisp_calc/screens/scene_3d_screen.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/plane_math.dart' show Vector3;
+import 'package:crisp_math/engine/scene_3d/scene_object.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
+import 'package:crisp_math/screens/scene_3d_screen.dart';
 
 void main() {
   setUp(() async {

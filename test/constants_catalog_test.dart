@@ -4,7 +4,7 @@
 // well-known textbook values, search behavior, and that we ship
 // at least a few entries in every category.
 
-import 'package:crisp_calc/engine/constants_catalog.dart';
+import 'package:crisp_math/engine/constants_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 PhysicalConstant _find(String symbol) =>

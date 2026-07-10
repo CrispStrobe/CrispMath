@@ -10,7 +10,7 @@
 //     bearing guarantee: if a DSL program solves locally, its
 //     FlatZinc export must also solve.
 
-import 'package:crisp_calc/engine/csp_solver.dart';
+import 'package:crisp_math/engine/csp_solver.dart';
 import 'package:dart_csp/dart_csp.dart';
 import 'package:flutter_test/flutter_test.dart';
 

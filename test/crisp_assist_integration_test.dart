@@ -5,8 +5,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crisp_calc/engine/step_engine.dart';
-import 'package:crisp_calc/services/crisp_assist_service.dart';
+import 'package:crisp_math/engine/step_engine.dart';
+import 'package:crisp_math/services/crisp_assist_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Starts a local HTTP server that responds with canned JSON.

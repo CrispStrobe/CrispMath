@@ -4,8 +4,8 @@
 // conversion to within 1e-9 relative tolerance — these are pure
 // constant relationships, so we shouldn't need looser bounds.
 
-import 'package:crisp_calc/engine/unit_catalog.dart';
-import 'package:crisp_calc/engine/unit_converter.dart';
+import 'package:crisp_math/engine/unit_catalog.dart';
+import 'package:crisp_math/engine/unit_converter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _eps = 1e-9;

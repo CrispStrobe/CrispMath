@@ -5,12 +5,12 @@
 // undo/redo, document templates.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:crisp_calc/engine/notepad.dart';
-import 'package:crisp_calc/engine/notepad_evaluator.dart';
-import 'package:crisp_calc/engine/notepad_undo.dart';
-import 'package:crisp_calc/engine/notepad_templates.dart';
-import 'package:crisp_calc/engine/date_time_evaluator.dart';
-import 'package:crisp_calc/widgets/mini_plot_widget.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad_undo.dart';
+import 'package:crisp_math/engine/notepad_templates.dart';
+import 'package:crisp_math/engine/date_time_evaluator.dart';
+import 'package:crisp_math/widgets/mini_plot_widget.dart';
 
 void main() {
   // =========================================================================

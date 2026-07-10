@@ -4,8 +4,8 @@
 // single-variable polynomials, with everything outside that grammar
 // returning null so the caller falls through to the native-only path.
 
-import 'package:crisp_calc/engine/calculator_engine.dart';
-import 'package:crisp_calc/engine/symbolic_web.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/symbolic_web.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

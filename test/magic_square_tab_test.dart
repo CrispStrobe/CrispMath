@@ -1,7 +1,7 @@
 // Widget coverage for the Constraints → Magic square generator tab.
 
-import 'package:crisp_calc/engine/magic_square.dart';
-import 'package:crisp_calc/screens/constraints_screen.dart';
+import 'package:crisp_math/engine/magic_square.dart';
+import 'package:crisp_math/screens/constraints_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

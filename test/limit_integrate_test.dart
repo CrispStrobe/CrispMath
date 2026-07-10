@@ -1,4 +1,4 @@
-import 'package:crisp_calc/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // The numerical limit/integrate paths in CalculatorEngine *need* the native

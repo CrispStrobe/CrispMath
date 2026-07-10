@@ -6,8 +6,8 @@
 // Welcome sample), and export/import handle the Welcome-sample
 // recreation contract correctly.
 
-import 'package:crisp_calc/engine/app_state.dart';
-import 'package:crisp_calc/engine/notepad.dart';
+import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/notepad.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

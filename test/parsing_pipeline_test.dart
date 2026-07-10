@@ -8,8 +8,8 @@
 // rewrites, factorial expansion, etc. should land here as a
 // failing case before they reach the running app.
 
-import 'package:crisp_calc/utils/expression_preprocessing_utils.dart';
-import 'package:crisp_calc/utils/latex_conversion_utils.dart';
+import 'package:crisp_math/utils/expression_preprocessing_utils.dart';
+import 'package:crisp_math/utils/latex_conversion_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
