@@ -65,8 +65,8 @@ class AboutScreen extends StatelessWidget {
                 Text(l.aboutPrivacyText),
                 const SizedBox(height: 8),
                 GestureDetector(
-                  onTap: () => _open(
-                      'https://crisp-math.vercel.app/privacy.html'),
+                  onTap: () =>
+                      _open('https://crisp-math.vercel.app/privacy.html'),
                   child: const Text(
                     'Full privacy policy',
                     style: TextStyle(
