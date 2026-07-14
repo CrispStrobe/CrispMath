@@ -1,6 +1,7 @@
-CrispMath bundles a native math stack built from several upstream libraries.
-Each one is the work of its own authors and ships under its own license,
-reproduced (or summarized + linked) below.
+CrispMath bundles a math stack built from several upstream libraries. Each one
+is the work of its own authors and ships under its own license, reproduced or
+summarized below. The same notice covers the native binaries delivered through
+the `symbolic_math_bridge` plugin and the web build's `symengine.wasm`.
 
 ────────────────────────────────────────────────────────────────────────────
 SymEngine — symbolic algebra core
@@ -45,8 +46,9 @@ terms of either:
     Foundation; either version 2 of the License, or (at your option) any
     later version. (https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 
-CrispMath invokes GMP through SymEngine via dart:ffi. The full LGPL/GPL
-texts are obtainable at the URLs above and from the FSF.
+CrispMath invokes GMP through SymEngine via Dart FFI on native platforms and
+through the bundled SymEngine WebAssembly module on web. The full LGPL/GPL
+texts are available at the URLs above and from the FSF.
 
 ────────────────────────────────────────────────────────────────────────────
 MPFR — Multiple-Precision Floating-point with correct Rounding
@@ -79,21 +81,37 @@ https://flintlib.org/
 
 Copyright © the FLINT authors (William Hart, Fredrik Johansson, et al.).
 
-FLINT is dual-licensed under the GNU Lesser General Public License v2.1
-or any later version, and the GNU General Public License.
+FLINT is distributed under the GNU Lesser General Public License v2.1
+or any later version.
 https://www.gnu.org/licenses/lgpl-2.1.html
 
 ────────────────────────────────────────────────────────────────────────────
-LGPL compliance — written offer
+LGPL compliance — source, build, and relink materials
 ────────────────────────────────────────────────────────────────────────────
-CrispMath statically links GMP, MPFR, MPC, and FLINT, which are distributed
-under the GNU Lesser General Public License v2.1 or v3 (as noted above).
+CrispMath distributes prebuilt binaries that include GMP, MPFR, MPC, and FLINT,
+which are distributed under LGPL-family licenses as noted above. On native
+platforms these libraries are statically linked through the `symbolic_math_bridge`
+plugin. On web they are linked into `web/symengine.wasm`.
 
-Per LGPL §4, you may request the application object files needed to relink
-CrispMath against a modified version of these libraries by contacting:
+The application source code is available at:
+  https://github.com/CrispStrobe/CrispMath
+
+The Flutter bridge and bundled platform binaries are built from:
+  https://github.com/CrispStrobe/symbolic_math_bridge
+
+The native Apple math-stack build scripts and pinned dependency versions are at:
+  https://github.com/CrispStrobe/math-stack-ios-builder
+
+Those repositories are the preferred source/build route for rebuilding the app
+or math stack with modified LGPL libraries. For distributed App Store/mobile
+binaries where the published source is not enough to relink the exact released
+binary, you may request the corresponding object files or equivalent relink
+materials for that release by contacting:
   support@crispstro.be
 
-The LGPL library sources are available at the upstream URLs listed above.
+This offer is valid for at least three years after the corresponding binary
+release. The LGPL library sources are available at the upstream URLs listed
+above.
 
 ────────────────────────────────────────────────────────────────────────────
 CrispMath itself

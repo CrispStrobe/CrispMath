@@ -1354,9 +1354,10 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get aboutLicenseText =>
       'CrispMath is free software, distributed under the GNU Affero '
-      'General Public License version 3 or later. This choice mirrors the '
-      'copyleft requirements of the bundled GMP/MPFR/MPC/FLINT math '
-      'libraries, which are statically linked.';
+      'General Public License version 3 or later, with an App Store '
+      'permission. Bundled GMP/MPFR/MPC/FLINT libraries keep their own '
+      'LGPL-family licenses; source, build, and relink details are listed '
+      'under Open-source licenses.';
   @override
   String get aboutOpenSourceLicenses => 'Open-source licenses';
   @override
@@ -3042,9 +3043,10 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get aboutLicenseText =>
       'CrispMath ist freie Software, veröffentlicht unter der GNU Affero '
-      'General Public License Version 3 oder neuer. Diese Wahl folgt aus '
-      'den Copyleft-Anforderungen der mitgelieferten GMP-/MPFR-/MPC-/FLINT-'
-      'Bibliotheken, die statisch eingebunden sind.';
+      'General Public License Version 3 oder neuer, mit einer App-Store-'
+      'Erlaubnis. Die mitgelieferten GMP-/MPFR-/MPC-/FLINT-Bibliotheken '
+      'behalten ihre eigenen LGPL-Lizenzen; Quellcode-, Build- und Relink-'
+      'Details stehen unter Open-Source-Lizenzen.';
   @override
   String get aboutOpenSourceLicenses => 'Open-Source-Lizenzen';
   @override
@@ -6055,9 +6057,10 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get aboutLicenseText =>
       'CrispMath est un logiciel libre publié sous la GNU Affero General '
-      'Public License version 3 ou ultérieure. Ce choix découle des '
-      'exigences de copyleft des bibliothèques GMP/MPFR/MPC/FLINT '
-      'incluses, liées statiquement.';
+      'Public License version 3 ou ultérieure, avec une permission App '
+      'Store. Les bibliothèques GMP/MPFR/MPC/FLINT incluses conservent '
+      'leurs licences LGPL; les détails de source, build et relink sont '
+      'dans Licences open source.';
   @override
   String get aboutOpenSourceLicenses => 'Licences open source';
   @override
@@ -9064,9 +9067,10 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get aboutLicenseText =>
       'CrispMath es software libre publicado bajo la GNU Affero General '
-      'Public License versión 3 o posterior. Esta elección se debe a los '
-      'requisitos de copyleft de las bibliotecas GMP/MPFR/MPC/FLINT '
-      'incluidas, enlazadas estáticamente.';
+      'Public License versión 3 o posterior, con un permiso para tiendas '
+      'de apps. Las bibliotecas GMP/MPFR/MPC/FLINT incluidas conservan sus '
+      'propias licencias LGPL; los detalles de código fuente, build y '
+      'relink están en Licencias de código abierto.';
   @override
   String get aboutOpenSourceLicenses => 'Licencias de código abierto';
   @override

@@ -103,9 +103,8 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // AGPL "offer of source": link to the complete corresponding
-                // source. This is what lets the app statically link the LGPL
-                // math stack (GMP/MPFR/MPC/FLINT) under the combined-work route.
+                // App source plus the native-stack notices in showLicensePage
+                // provide the source/build/relink path for the LGPL math stack.
                 const Text('Source code:'),
                 InkWell(
                   onTap: () =>
@@ -136,7 +135,7 @@ class AboutScreen extends StatelessWidget {
                 applicationName: _appName,
                 applicationVersion: version,
                 applicationLegalese:
-                    '© ${DateTime.now().year} Christian Ströbele — AGPL-3.0',
+                    '© ${DateTime.now().year} Christian Ströbele — AGPL-3.0-or-later with App Store permission',
               );
             },
           ),
