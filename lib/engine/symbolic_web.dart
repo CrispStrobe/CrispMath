@@ -418,6 +418,20 @@ class _PolyExprParser {
   int _pos = 0;
   String? _variable;
 
+  // Reject expansions whose degree would explode. pow()/multiply are ~O(deg^2)
+  // (a degree-4096 expand is well under a second), so bounding the degree keeps
+  // a hostile input — `x^999999`, or `x^200 12` which the space-strip in
+  // _parsePolynomial fuses into `x^20012` — from driving a multi-second hang.
+  // Bailing here returns null from _parsePolynomial (the null-on-unsupported
+  // contract), letting the caller fall through to the native path.
+  static const int _maxDegree = 4096;
+
+  // Bound recursion so deeply nested parens (`((((…` or `x^(((…`) surface as a
+  // clean bail instead of a StackOverflowError, which _parsePolynomial's
+  // `on _PolyBail` does not catch.
+  static const int _maxDepth = 500;
+  int _depth = 0;
+
   bool get atEnd => _pos >= src.length;
   String? get _peek => _pos < src.length ? src[_pos] : null;
 
@@ -425,6 +439,18 @@ class _PolyExprParser {
 
   // expr := ('+'|'-')? term (('+'|'-') term)*
   Polynomial parseExpr() {
+    if (++_depth > _maxDepth) {
+      _depth--;
+      throw _PolyBail();
+    }
+    try {
+      return _parseExprInner();
+    } finally {
+      _depth--;
+    }
+  }
+
+  Polynomial _parseExprInner() {
     var negate = false;
     if (_peek == '+') {
       _pos++;
@@ -455,7 +481,7 @@ class _PolyExprParser {
       final c = _peek;
       if (c == '*') {
         _pos++;
-        value = value * _parseFactor();
+        value = _multiply(value, _parseFactor());
       } else if (c == '/') {
         _pos++;
         final divisor = _parseFactor();
@@ -463,11 +489,19 @@ class _PolyExprParser {
         value = value.scale(Rational.one / divisor.coeffs[0]);
       } else if (_startsFactor(c)) {
         // Implicit multiplication: 2x, x(x+1), (x+1)(x-1).
-        value = value * _parseFactor();
+        value = _multiply(value, _parseFactor());
       } else {
         return value;
       }
     }
+  }
+
+  // Product degree is the sum of the operand degrees; bail before the O(deg^2)
+  // multiply if that would exceed the cap (guards long factor chains like
+  // `x^2000 x^2000 x^2000 …` that no single exponent bounds).
+  Polynomial _multiply(Polynomial a, Polynomial b) {
+    if (a.degree + b.degree > _maxDegree) throw _PolyBail();
+    return a * b;
   }
 
   bool _startsFactor(String? c) {
@@ -480,7 +514,15 @@ class _PolyExprParser {
     var base = _parseBase();
     if (_peek == '^') {
       _pos++;
-      base = base.pow(_parseExponent());
+      final exp = _parseExponent();
+      // Expanded degree is base.degree * exp; bail before pow() if it (or the
+      // exponent alone, which bounds `constant^exp` bignum growth) blows the
+      // cap. The division form avoids overflowing the product.
+      if (exp > _maxDegree ||
+          (exp > 0 && base.degree > _maxDegree ~/ exp)) {
+        throw _PolyBail();
+      }
+      base = base.pow(exp);
     }
     return base;
   }
@@ -532,8 +574,17 @@ class _PolyExprParser {
   // exponent := nonneg-int | '(' nonneg-int ')'
   int _parseExponent() {
     if (_peek == '(') {
+      if (++_depth > _maxDepth) {
+        _depth--;
+        throw _PolyBail();
+      }
       _pos++;
-      final v = _parseExponent();
+      final int v;
+      try {
+        v = _parseExponent();
+      } finally {
+        _depth--;
+      }
       if (_peek != ')') throw _PolyBail();
       _pos++;
       return v;

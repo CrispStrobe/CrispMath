@@ -257,4 +257,49 @@ void main() {
       expect(engine.solve('x^3 - 1', 'x'), contains('requires native library'));
     });
   });
+
+  group('SymbolicWeb rejects pathological input cheaply (robustness)', () {
+    // A hostile exponent must not drive pow() into a multi-second O(deg^2)
+    // expansion. The polynomial parser strips spaces, so `x^200 12` fuses into
+    // the exponent `x^20012`; both this and a bare `x^999999` used to hang for
+    // 10-20s. They must now bail (null) fast. Guard is a wall-clock budget so a
+    // regression re-introduces a visible failure, not just a slow test.
+    test('huge exponents bail quickly instead of hanging', () {
+      final sw = Stopwatch()..start();
+      expect(SymbolicWeb.expand('x^999999'), isNull);
+      expect(SymbolicWeb.expand('x^200 12'), isNull); // space-strip -> x^20012
+      expect(SymbolicWeb.expand('3x^248 12'), isNull);
+      expect(SymbolicWeb.expand('(x^10)^5000'), isNull);
+      expect(SymbolicWeb.factor('x^999999 - 1'), isNull);
+      expect(SymbolicWeb.differentiate('x^999999', 'x'), isNull);
+      expect(sw.elapsedMilliseconds, lessThan(3000),
+          reason: 'degree cap must keep pathological input cheap');
+    });
+
+    test('long factor chains are degree-bounded', () {
+      final sw = Stopwatch()..start();
+      expect(
+          SymbolicWeb.expand('x^2000 x^2000 x^2000 x^2000 x^2000'), isNull);
+      expect(sw.elapsedMilliseconds, lessThan(3000));
+    });
+
+    test('deeply nested parens bail cleanly, not StackOverflowError', () {
+      final open = '(' * 20000;
+      // Must return null (unsupported), never throw a StackOverflowError that
+      // escapes the String?-returning API.
+      expect(() => SymbolicWeb.expand('$open 1 ${')' * 20000}'),
+          returnsNormally);
+      expect(SymbolicWeb.expand('$open 1 ${')' * 20000}'), isNull);
+      expect(() => SymbolicWeb.expand('x^$open'), returnsNormally);
+    });
+
+    test('legitimate expansions are unaffected by the caps', () {
+      expect(SymbolicWeb.expand('(x+1)^2'), 'x^2 + 2x + 1');
+      expect(SymbolicWeb.expand('(x+1)(x-1)'), 'x^2 - 1');
+      // (x+1)^100 is degree 100 — well under the cap — and still expands.
+      final big = SymbolicWeb.expand('(x+1)^100');
+      expect(big, isNotNull);
+      expect(big, startsWith('x^100 + 100x^99'));
+    });
+  });
 }
