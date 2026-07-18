@@ -283,6 +283,48 @@ void main() {
       expect(sw.elapsedMilliseconds, lessThan(3000));
     });
 
+    test('dense high-degree expansions bail fast (decode-bomb guard)', () {
+      // A dense expansion's coefficients are BigInts that grow with the degree,
+      // so it is super-quadratic in wall time even though the degree is capped.
+      // Two paths reach it and both must bail (null) fast, not spend 5-8s:
+      //   - a single dense power:      (x+1)^4096
+      //   - a long implicit-mult chain: (x+1)(x+1)…(x+1)  (5000 factors)
+      // Exercise all four public String-entry ops on each, under one budget.
+      final sw = Stopwatch()..start();
+      const densePow = '(x+1)^4096';
+      final longChain = '(x+1)' * 5000;
+      for (final s in [densePow, longChain]) {
+        expect(SymbolicWeb.expand(s), isNull, reason: s);
+        expect(SymbolicWeb.factor(s), isNull, reason: s);
+        expect(SymbolicWeb.differentiate(s, 'x'), isNull, reason: s);
+        expect(SymbolicWeb.solveList(s, 'x'), isNull, reason: s);
+      }
+      expect(sw.elapsedMilliseconds, lessThan(3000),
+          reason: 'the degree cap must keep dense expansions cheap');
+    });
+
+    test('multivariate factoring bails fast on dense expansions', () {
+      // `factor(...)` falls through to the multivariate parser for inputs the
+      // univariate parser rejects. That parser expands products/powers into a
+      // flat term map with a linear per-term lookup (~O(terms^2) per multiply),
+      // so a huge power, a long chain, or a many-variable dense power must bail
+      // (null) fast, not hang. Both the public `factor` and `factorMultivariate`
+      // entries reach it.
+      final sw = Stopwatch()..start();
+      final cases = <String>[
+        '(x+y)^100000', // huge exponent
+        '(x+y)' * 2000, // long implicit-multiply chain
+        '(w+x+y+z)^32', // only degree 32 but ~6500 terms
+        'x^99999*y', // huge sparse exponent
+      ];
+      for (final s in cases) {
+        expect(SymbolicWeb.factorMultivariate(s), isNull, reason: s);
+        expect(SymbolicWeb.factor(s), isNull, reason: s);
+      }
+      expect(sw.elapsedMilliseconds, lessThan(3000),
+          reason: 'multivariate degree/term caps must keep expansion cheap');
+    });
+
     test('deeply nested parens bail cleanly, not StackOverflowError', () {
       final open = '(' * 20000;
       // Must return null (unsupported), never throw a StackOverflowError that

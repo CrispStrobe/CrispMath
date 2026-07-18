@@ -419,12 +419,19 @@ class _PolyExprParser {
   String? _variable;
 
   // Reject expansions whose degree would explode. pow()/multiply are ~O(deg^2)
-  // (a degree-4096 expand is well under a second), so bounding the degree keeps
-  // a hostile input — `x^999999`, or `x^200 12` which the space-strip in
-  // _parsePolynomial fuses into `x^20012` — from driving a multi-second hang.
+  // in *term* ops, but each coefficient is a BigInt that itself grows with the
+  // degree, so a *dense* expansion is super-quadratic in wall time: a sparse
+  // `x^4096` expands in ~0.4s, yet a dense `(x+1)^4096` — via a single pow, or
+  // built up through a long implicit-multiply chain `(x+1)(x+1)…` — costs 5–8s,
+  // a residual decode-bomb the old 4096 cap did not stop. 256 keeps the
+  // worst-case dense expand (pow *or* chain, across all four public ops) under
+  // ~0.1s while still comfortably exceeding any real school/teaching input
+  // (degrees in the tens; the `(x+1)^100` test is degree 100).
   // Bailing here returns null from _parsePolynomial (the null-on-unsupported
-  // contract), letting the caller fall through to the native path.
-  static const int _maxDegree = 4096;
+  // contract), letting the caller fall through to the native path. This bounds
+  // `x^999999`, `x^200 12` (space-strip → `x^20012`), long multiply chains, and
+  // dense high powers alike.
+  static const int _maxDegree = 256;
 
   // Bound recursion so deeply nested parens (`((((…` or `x^(((…`) surface as a
   // clean bail instead of a StackOverflowError, which _parsePolynomial's
@@ -500,7 +507,9 @@ class _PolyExprParser {
   // multiply if that would exceed the cap (guards long factor chains like
   // `x^2000 x^2000 x^2000 …` that no single exponent bounds).
   Polynomial _multiply(Polynomial a, Polynomial b) {
+    // GUARD:degcost >>>
     if (a.degree + b.degree > _maxDegree) throw _PolyBail();
+    // GUARD:degcost <<<
     return a * b;
   }
 
@@ -518,10 +527,12 @@ class _PolyExprParser {
       // Expanded degree is base.degree * exp; bail before pow() if it (or the
       // exponent alone, which bounds `constant^exp` bignum growth) blows the
       // cap. The division form avoids overflowing the product.
+      // GUARD:degcost >>>
       if (exp > _maxDegree ||
           (exp > 0 && base.degree > _maxDegree ~/ exp)) {
         throw _PolyBail();
       }
+      // GUARD:degcost <<<
       base = base.pow(exp);
     }
     return base;

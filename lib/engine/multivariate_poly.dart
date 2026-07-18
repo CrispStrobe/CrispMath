@@ -900,6 +900,37 @@ class _MultiPolyParser {
   int _pos = 0;
   final _vars = <String>{};
 
+  // GUARD:mvcost >>>
+  // Reject expansions that would explode, so a hostile `factor(...)` input
+  // (which reaches this parser via SymbolicWeb.factor/factorMultivariate) bails
+  // to null fast instead of hanging. Two independent axes drive the cost, and
+  // both must be bounded:
+  //   * total degree — a huge power `(x+y)^100000` or a long implicit-multiply
+  //     chain `(x+y)(x+y)…` grows the degree without limit;
+  //   * term count — `_mulTerms` uses a linear `_findKey` scan, so it is
+  //     ~O(terms^2) per product, and a dense multivariate expansion explodes in
+  //     *term count* even at a modest degree: `(w+x+y+z)^32` is only degree 32
+  //     yet ~6500 terms and ~8.5s.
+  // Real inputs this path serves (school bivariate factoring) are degree <= ~3
+  // with a handful of terms, so these caps leave orders of magnitude of head
+  // room while keeping the worst case well under ~0.1s. A guard throws (any
+  // exception), and `MultivariateFactoring._parse` maps that to null.
+  static const int _maxDegree = 128;
+  static const int _maxTerms = 512;
+
+  static int _totalDeg(Map<Map<String, int>, Rational> t) {
+    var max = 0;
+    for (final key in t.keys) {
+      var d = 0;
+      for (final v in key.values) {
+        d += v;
+      }
+      if (d > max) max = d;
+    }
+    return max;
+  }
+  // GUARD:mvcost <<<
+
   bool get _atEnd => _pos >= src.length;
   String? get _peek => _pos < src.length ? src[_pos] : null;
 
@@ -1114,6 +1145,15 @@ class _MultiPolyParser {
 
   Map<Map<String, int>, Rational> _mulTerms(
       Map<Map<String, int>, Rational> a, Map<Map<String, int>, Rational> b) {
+    // GUARD:mvcost >>>
+    // Bound both cost axes before the O(terms^2) product runs: the result
+    // degree (a.deg + b.deg) and the raw product size (a.terms * b.terms, which
+    // also bounds the result term count and thus every `_findKey` scan).
+    if (_totalDeg(a) + _totalDeg(b) > _maxDegree ||
+        a.length * b.length > _maxTerms) {
+      throw const FormatException('expansion too large');
+    }
+    // GUARD:mvcost <<<
     final result = <Map<String, int>, Rational>{};
     for (final ea in a.entries) {
       for (final eb in b.entries) {
@@ -1146,6 +1186,16 @@ class _MultiPolyParser {
   Map<Map<String, int>, Rational> _powTerms(
       Map<Map<String, int>, Rational> base, int exp) {
     if (exp == 0) return {<String, int>{}: Rational.one};
+    // GUARD:mvcost >>>
+    // Short-circuit a hostile exponent (`(x+y)^100000`) before the loop, so it
+    // bails instantly instead of running the cap-many multiplies it would take
+    // for `_mulTerms`'s degree guard to trip. `_maxDegree ~/ exp` avoids
+    // overflowing base.deg * exp.
+    final bd = _totalDeg(base);
+    if (exp < 0 || exp > _maxDegree || bd > _maxDegree ~/ exp) {
+      throw const FormatException('exponent too large');
+    }
+    // GUARD:mvcost <<<
     var result = base;
     for (var i = 1; i < exp; i++) {
       result = _mulTerms(result, base);
