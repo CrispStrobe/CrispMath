@@ -109,6 +109,33 @@ const Map<String, String> kCasKeyHelpRefId = {
   'lcm': 'lcm',
 };
 
+/// Round 108c: per-glyph → FunctionRef.id mapping for the Trig tab.
+/// `C` (clear) is UX, not an engine function, so it has no row.
+const Map<String, String> kTrigKeyHelpRefId = {
+  'sin': 'sin',
+  'cos': 'cos',
+  'tan': 'tan',
+  'ln': 'ln',
+  'asin': 'asin',
+  'acos': 'acos',
+  'atan': 'atan',
+  'log': 'log',
+  'sinh': 'sinh',
+  'cosh': 'cosh',
+  'tanh': 'tanh',
+  'exp': 'exp',
+  'asinh': 'asinh',
+  'acosh': 'acosh',
+  'atanh': 'atanh',
+  'abs': 'abs',
+};
+
+/// Round 108c: the Num tab is mostly digits / operators (UX), but its
+/// `sqrt` key is a real function that deserves a help popover.
+const Map<String, String> kNumKeyHelpRefId = {
+  'sqrt': 'sqrt',
+};
+
 /// Round 102: shows a small AlertDialog explaining a single
 /// FunctionRef. "Learn more" deep-links to the full Function Reference
 /// filtered by id. Round 105b: the implementation now lives in the
@@ -372,9 +399,17 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
             controller: widget.tabController,
             children: [
               KeypadGrid(
-                  buttons: _numKeys, onButtonPressed: widget.onButtonPressed),
+                buttons: _numKeys,
+                onButtonPressed: widget.onButtonPressed,
+                helpRefIdFor: (text) => kNumKeyHelpRefId[text],
+                onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
+              ),
               KeypadGrid(
-                  buttons: _trigKeys, onButtonPressed: widget.onButtonPressed),
+                buttons: _trigKeys,
+                onButtonPressed: widget.onButtonPressed,
+                helpRefIdFor: (text) => kTrigKeyHelpRefId[text],
+                onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
+              ),
               KeypadGrid(
                 buttons: _casKeys,
                 onButtonPressed: widget.onButtonPressed,
@@ -460,28 +495,20 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
         onInsertExpression: widget.onVariableTap,
       );
     }
-    // Round 102 / 102b (P6): Adv and CAS panes wire the help-mode
-    // popover machinery through. Num + Trig panes are left untouched
-    // until a later round catalogues their entries.
-    if (kind == _PaneKind.advanced) {
-      return KeypadGrid(
-        buttons: _advKeys,
-        onButtonPressed: widget.onButtonPressed,
-        helpRefIdFor: (text) => kAdvKeyHelpRefId[text],
-        onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
-      );
-    }
-    if (kind == _PaneKind.cas) {
-      return KeypadGrid(
-        buttons: _casKeys,
-        onButtonPressed: widget.onButtonPressed,
-        helpRefIdFor: (text) => kCasKeyHelpRefId[text],
-        onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
-      );
-    }
+    // Round 102 / 102b / 108c (P6): every function pane wires the
+    // help-mode popover machinery through its per-glyph → FunctionRef map.
+    final helpMap = switch (kind) {
+      _PaneKind.num => kNumKeyHelpRefId,
+      _PaneKind.trig => kTrigKeyHelpRefId,
+      _PaneKind.cas => kCasKeyHelpRefId,
+      _PaneKind.advanced => kAdvKeyHelpRefId,
+      _PaneKind.vars => const <String, String>{},
+    };
     return KeypadGrid(
       buttons: _keysFor(kind),
       onButtonPressed: widget.onButtonPressed,
+      helpRefIdFor: (text) => helpMap[text],
+      onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
     );
   }
 }

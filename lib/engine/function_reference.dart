@@ -2459,6 +2459,250 @@ class FunctionReferences {
       ],
       seeAlso: ['sqrt_precision', 'evalf'],
     ),
+    // === Round 108c: elementary trig / log / root functions (Trig
+    // + Num tabs) that had no help popover.
+    FunctionRef(
+      id: 'sin',
+      category: FunctionRefCategory.cas,
+      signature: 'sin(x)',
+      shortDescription: 'Sine of x (x in radians).',
+      examples: [
+        FunctionRefExample(
+          input: 'sin(0)',
+          expected: '0',
+          hint:
+              'Period 2π, range [-1, 1]. The calculator treats the argument as radians.',
+        ),
+      ],
+      seeAlso: ['cos', 'tan', 'asin'],
+    ),
+    FunctionRef(
+      id: 'cos',
+      category: FunctionRefCategory.cas,
+      signature: 'cos(x)',
+      shortDescription: 'Cosine of x (x in radians).',
+      examples: [
+        FunctionRefExample(
+          input: 'cos(0)',
+          expected: '1',
+          hint: 'Period 2π, range [-1, 1]; cos is sin shifted by π/2.',
+        ),
+      ],
+      seeAlso: ['sin', 'tan', 'acos'],
+    ),
+    FunctionRef(
+      id: 'tan',
+      category: FunctionRefCategory.cas,
+      signature: 'tan(x)',
+      shortDescription: 'Tangent of x = sin(x)/cos(x) (x in radians).',
+      examples: [
+        FunctionRefExample(
+          input: 'tan(0)',
+          expected: '0',
+          hint: 'Period π; undefined where cos(x)=0 (x = π/2 + kπ).',
+        ),
+      ],
+      seeAlso: ['sin', 'cos', 'atan'],
+    ),
+    FunctionRef(
+      id: 'asin',
+      category: FunctionRefCategory.cas,
+      signature: 'asin(x)',
+      shortDescription: 'Inverse sine (arcsine): the angle whose sine is x.',
+      examples: [
+        FunctionRefExample(
+          input: 'asin(1)',
+          expected: 'pi/2',
+          hint: 'Domain [-1, 1], principal range [-π/2, π/2].',
+        ),
+      ],
+      seeAlso: ['sin', 'acos', 'atan'],
+    ),
+    FunctionRef(
+      id: 'acos',
+      category: FunctionRefCategory.cas,
+      signature: 'acos(x)',
+      shortDescription:
+          'Inverse cosine (arccosine): the angle whose cosine is x.',
+      examples: [
+        FunctionRefExample(
+          input: 'acos(1)',
+          expected: '0',
+          hint: 'Domain [-1, 1], principal range [0, π].',
+        ),
+      ],
+      seeAlso: ['cos', 'asin', 'atan'],
+    ),
+    FunctionRef(
+      id: 'atan',
+      category: FunctionRefCategory.cas,
+      signature: 'atan(x)',
+      shortDescription:
+          'Inverse tangent (arctangent): the angle whose tangent is x.',
+      examples: [
+        FunctionRefExample(
+          input: 'atan(0)',
+          expected: '0',
+          hint: 'Domain all reals, principal range (-π/2, π/2).',
+        ),
+      ],
+      seeAlso: ['tan', 'asin', 'acos'],
+    ),
+    FunctionRef(
+      id: 'sinh',
+      category: FunctionRefCategory.cas,
+      signature: 'sinh(x)',
+      shortDescription: 'Hyperbolic sine: (eˣ − e⁻ˣ)/2.',
+      examples: [
+        FunctionRefExample(
+          input: 'sinh(0)',
+          expected: '0',
+          hint: 'Odd function, unbounded; the catenary family.',
+        ),
+      ],
+      seeAlso: ['cosh', 'tanh', 'asinh'],
+    ),
+    FunctionRef(
+      id: 'cosh',
+      category: FunctionRefCategory.cas,
+      signature: 'cosh(x)',
+      shortDescription: 'Hyperbolic cosine: (eˣ + e⁻ˣ)/2.',
+      examples: [
+        FunctionRefExample(
+          input: 'cosh(0)',
+          expected: '1',
+          hint: 'Even function, minimum 1 at x=0; shape of a hanging chain.',
+        ),
+      ],
+      seeAlso: ['sinh', 'tanh', 'acosh'],
+    ),
+    FunctionRef(
+      id: 'tanh',
+      category: FunctionRefCategory.cas,
+      signature: 'tanh(x)',
+      shortDescription: 'Hyperbolic tangent: sinh(x)/cosh(x).',
+      examples: [
+        FunctionRefExample(
+          input: 'tanh(0)',
+          expected: '0',
+          hint: 'Odd, range (-1, 1); a common neural-network activation.',
+        ),
+      ],
+      seeAlso: ['sinh', 'cosh', 'atanh'],
+    ),
+    FunctionRef(
+      id: 'asinh',
+      category: FunctionRefCategory.cas,
+      signature: 'asinh(x)',
+      shortDescription: 'Inverse hyperbolic sine.',
+      examples: [
+        FunctionRefExample(
+          input: 'asinh(0)',
+          expected: '0',
+          hint: 'Domain all reals; asinh(x) = ln(x + √(x²+1)).',
+        ),
+      ],
+      seeAlso: ['sinh', 'acosh', 'atanh'],
+    ),
+    FunctionRef(
+      id: 'acosh',
+      category: FunctionRefCategory.cas,
+      signature: 'acosh(x)',
+      shortDescription: 'Inverse hyperbolic cosine.',
+      examples: [
+        FunctionRefExample(
+          input: 'acosh(1)',
+          expected: '0',
+          hint: 'Domain x ≥ 1; acosh(x) = ln(x + √(x²−1)).',
+        ),
+      ],
+      seeAlso: ['cosh', 'asinh', 'atanh'],
+    ),
+    FunctionRef(
+      id: 'atanh',
+      category: FunctionRefCategory.cas,
+      signature: 'atanh(x)',
+      shortDescription: 'Inverse hyperbolic tangent.',
+      examples: [
+        FunctionRefExample(
+          input: 'atanh(0)',
+          expected: '0',
+          hint: 'Domain (-1, 1); atanh(x) = ½·ln((1+x)/(1−x)).',
+        ),
+      ],
+      seeAlso: ['tanh', 'asinh', 'acosh'],
+    ),
+    FunctionRef(
+      id: 'ln',
+      category: FunctionRefCategory.cas,
+      signature: 'ln(x)',
+      shortDescription: 'Natural logarithm (base e) of x.',
+      examples: [
+        FunctionRefExample(
+          input: 'ln(1)',
+          expected: '0',
+          hint: 'Inverse of exp; domain x > 0. ln(e) = 1.',
+        ),
+      ],
+      seeAlso: ['exp', 'log', 'sqrt'],
+    ),
+    FunctionRef(
+      id: 'log',
+      category: FunctionRefCategory.cas,
+      signature: 'log(x)',
+      shortDescription: 'Base-10 (common) logarithm of x.',
+      examples: [
+        FunctionRefExample(
+          input: 'log(100)',
+          expected: '2',
+          hint: 'Domain x > 0. For other bases use ln(x)/ln(b).',
+        ),
+      ],
+      seeAlso: ['ln', 'exp', 'sqrt'],
+    ),
+    FunctionRef(
+      id: 'exp',
+      category: FunctionRefCategory.cas,
+      signature: 'exp(x)',
+      shortDescription: 'Exponential function e^x.',
+      examples: [
+        FunctionRefExample(
+          input: 'exp(0)',
+          expected: '1',
+          hint: 'Inverse of ln; always positive, its own derivative.',
+        ),
+      ],
+      seeAlso: ['ln', 'log', 'sinh'],
+    ),
+    FunctionRef(
+      id: 'abs',
+      category: FunctionRefCategory.cas,
+      signature: 'abs(x)',
+      shortDescription:
+          'Absolute value (magnitude) of x — also the modulus of a complex number.',
+      examples: [
+        FunctionRefExample(
+          input: 'abs(-3)',
+          expected: '3',
+          hint: 'abs(x) = √(x²); for a+bi returns √(a²+b²).',
+        ),
+      ],
+      seeAlso: ['norm', 'sqrt', 'evalf'],
+    ),
+    FunctionRef(
+      id: 'sqrt',
+      category: FunctionRefCategory.cas,
+      signature: 'sqrt(x)',
+      shortDescription: 'Square root of x (principal, non-negative branch).',
+      examples: [
+        FunctionRefExample(
+          input: 'sqrt(16)',
+          expected: '4',
+          hint: 'sqrt(x) = x^(1/2). For other degrees use the ⁿ√x key.',
+        ),
+      ],
+      seeAlso: ['nth_root', 'ln', 'abs'],
+    ),
     // === Sudoku variants =====================================================
     // Sudoku entries describe the variant rules — they're presets in
     // the Sudoku module, not DSL operators. All carry runnable: false

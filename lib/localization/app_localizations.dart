@@ -4398,6 +4398,40 @@ class DeLocalizations implements AppLocalizations {
         return 'Modulo: der Rest von a ÷ n. Die `mod`-Taste fügt den Operator zwischen zwei ganze Zahlen ein.';
       case 'nth_root':
         return 'Die n-te Wurzel von x, also x^(1/n). Die Taste öffnet einen kleinen Dialog für den Grad n und den Radikanden x.';
+      case 'sin':
+        return 'Sinus von x (x im Bogenmaß).';
+      case 'cos':
+        return 'Kosinus von x (x im Bogenmaß).';
+      case 'tan':
+        return 'Tangens von x = sin(x)/cos(x) (x im Bogenmaß).';
+      case 'asin':
+        return 'Arkussinus (Umkehrfunktion des Sinus): der Winkel, dessen Sinus x ist.';
+      case 'acos':
+        return 'Arkuskosinus: der Winkel, dessen Kosinus x ist.';
+      case 'atan':
+        return 'Arkustangens: der Winkel, dessen Tangens x ist.';
+      case 'sinh':
+        return 'Sinus hyperbolicus: (eˣ − e⁻ˣ)/2.';
+      case 'cosh':
+        return 'Kosinus hyperbolicus: (eˣ + e⁻ˣ)/2.';
+      case 'tanh':
+        return 'Tangens hyperbolicus: sinh(x)/cosh(x).';
+      case 'asinh':
+        return 'Areasinus hyperbolicus (Umkehrfunktion des Sinus hyperbolicus).';
+      case 'acosh':
+        return 'Areakosinus hyperbolicus.';
+      case 'atanh':
+        return 'Areatangens hyperbolicus.';
+      case 'ln':
+        return 'Natürlicher Logarithmus (Basis e) von x.';
+      case 'log':
+        return 'Dekadischer Logarithmus (Basis 10) von x.';
+      case 'exp':
+        return 'Exponentialfunktion e^x.';
+      case 'abs':
+        return 'Betrag von x — auch der Betrag einer komplexen Zahl.';
+      case 'sqrt':
+        return 'Quadratwurzel von x (Hauptwert, nicht-negativer Zweig).';
       case 'sudoku_regular':
         return 'Klassische Sudoku-Regeln: Jede Zeile, Spalte und Box enthält '
             'jede Ziffer genau einmal. Vorlagen gibt es für 4×4, 6×6, 8×8, '
@@ -5157,6 +5191,57 @@ class DeLocalizations implements AppLocalizations {
       ],
       'nth_root': [
         'Die Kubikwurzel von 27. Für n = 2 die eigene √-Taste; `ⁿ√x` deckt jeden Grad ab.',
+      ],
+      'sin': [
+        'Periode 2π, Wertebereich [-1, 1]. Der Rechner interpretiert das Argument im Bogenmaß.',
+      ],
+      'cos': [
+        'Periode 2π, Wertebereich [-1, 1]; cos ist sin um π/2 verschoben.',
+      ],
+      'tan': [
+        'Periode π; undefiniert, wo cos(x)=0 (x = π/2 + kπ).',
+      ],
+      'asin': [
+        'Definitionsbereich [-1, 1], Hauptwertebereich [-π/2, π/2].',
+      ],
+      'acos': [
+        'Definitionsbereich [-1, 1], Hauptwertebereich [0, π].',
+      ],
+      'atan': [
+        'Definitionsbereich alle reellen Zahlen, Hauptwertebereich (-π/2, π/2).',
+      ],
+      'sinh': [
+        'Ungerade Funktion, unbeschränkt; die Kettenlinien-Familie.',
+      ],
+      'cosh': [
+        'Gerade Funktion, Minimum 1 bei x=0; Form einer hängenden Kette.',
+      ],
+      'tanh': [
+        'Ungerade, Wertebereich (-1, 1); häufige Aktivierungsfunktion in neuronalen Netzen.',
+      ],
+      'asinh': [
+        'Definitionsbereich alle reellen Zahlen; asinh(x) = ln(x + √(x²+1)).',
+      ],
+      'acosh': [
+        'Definitionsbereich x ≥ 1; acosh(x) = ln(x + √(x²−1)).',
+      ],
+      'atanh': [
+        'Definitionsbereich (-1, 1); atanh(x) = ½·ln((1+x)/(1−x)).',
+      ],
+      'ln': [
+        'Umkehrung von exp; Definitionsbereich x > 0. ln(e) = 1.',
+      ],
+      'log': [
+        'Definitionsbereich x > 0. Für andere Basen ln(x)/ln(b).',
+      ],
+      'exp': [
+        'Umkehrung von ln; stets positiv, eigene Ableitung.',
+      ],
+      'abs': [
+        'abs(x) = √(x²); für a+bi ergibt √(a²+b²).',
+      ],
+      'sqrt': [
+        'sqrt(x) = x^(1/2). Für andere Grade die Taste ⁿ√x.',
       ],
       // --- Sudoku-Varianten ---
       'sudoku_regular': [
@@ -7528,6 +7613,40 @@ class FrLocalizations implements AppLocalizations {
         return 'Modulo : le reste de a ÷ n. La touche `mod` insère l\'opérateur entre deux entiers.';
       case 'nth_root':
         return 'La racine n-ième de x, soit x^(1/n). La touche ouvre une petite boîte de dialogue pour le degré n et le radicande x.';
+      case 'sin':
+        return 'Sinus de x (x en radians).';
+      case 'cos':
+        return 'Cosinus de x (x en radians).';
+      case 'tan':
+        return 'Tangente de x = sin(x)/cos(x) (x en radians).';
+      case 'asin':
+        return 'Arc sinus : l\'angle dont le sinus vaut x.';
+      case 'acos':
+        return 'Arc cosinus : l\'angle dont le cosinus vaut x.';
+      case 'atan':
+        return 'Arc tangente : l\'angle dont la tangente vaut x.';
+      case 'sinh':
+        return 'Sinus hyperbolique : (eˣ − e⁻ˣ)/2.';
+      case 'cosh':
+        return 'Cosinus hyperbolique : (eˣ + e⁻ˣ)/2.';
+      case 'tanh':
+        return 'Tangente hyperbolique : sinh(x)/cosh(x).';
+      case 'asinh':
+        return 'Argument sinus hyperbolique (réciproque de sinh).';
+      case 'acosh':
+        return 'Argument cosinus hyperbolique.';
+      case 'atanh':
+        return 'Argument tangente hyperbolique.';
+      case 'ln':
+        return 'Logarithme naturel (base e) de x.';
+      case 'log':
+        return 'Logarithme décimal (base 10) de x.';
+      case 'exp':
+        return 'Fonction exponentielle e^x.';
+      case 'abs':
+        return 'Valeur absolue de x — aussi le module d\'un nombre complexe.';
+      case 'sqrt':
+        return 'Racine carrée de x (valeur principale, branche positive).';
       case 'sudoku_regular':
         return "Règles classiques du Sudoku : chaque ligne, colonne et bloc "
             "contient chaque chiffre exactement une fois. Des modèles "
@@ -8265,6 +8384,57 @@ class FrLocalizations implements AppLocalizations {
     ],
     'nth_root': [
       'La racine cubique de 27. Pour n = 2, utilisez la touche √ dédiée ; `ⁿ√x` couvre tout degré.',
+    ],
+    'sin': [
+      'Période 2π, image [-1, 1]. La calculatrice interprète l\'argument en radians.',
+    ],
+    'cos': [
+      'Période 2π, image [-1, 1] ; cos est sin décalé de π/2.',
+    ],
+    'tan': [
+      'Période π ; indéfinie là où cos(x)=0 (x = π/2 + kπ).',
+    ],
+    'asin': [
+      'Domaine [-1, 1], image principale [-π/2, π/2].',
+    ],
+    'acos': [
+      'Domaine [-1, 1], image principale [0, π].',
+    ],
+    'atan': [
+      'Domaine tous réels, image principale (-π/2, π/2).',
+    ],
+    'sinh': [
+      'Fonction impaire, non bornée ; la famille des chaînettes.',
+    ],
+    'cosh': [
+      'Fonction paire, minimum 1 en x=0 ; forme d\'une chaîne suspendue.',
+    ],
+    'tanh': [
+      'Impaire, image (-1, 1) ; fonction d\'activation courante en réseaux de neurones.',
+    ],
+    'asinh': [
+      'Domaine tous réels ; asinh(x) = ln(x + √(x²+1)).',
+    ],
+    'acosh': [
+      'Domaine x ≥ 1 ; acosh(x) = ln(x + √(x²−1)).',
+    ],
+    'atanh': [
+      'Domaine (-1, 1) ; atanh(x) = ½·ln((1+x)/(1−x)).',
+    ],
+    'ln': [
+      'Réciproque de exp ; domaine x > 0. ln(e) = 1.',
+    ],
+    'log': [
+      'Domaine x > 0. Pour d\'autres bases : ln(x)/ln(b).',
+    ],
+    'exp': [
+      'Réciproque de ln ; toujours positive, sa propre dérivée.',
+    ],
+    'abs': [
+      'abs(x) = √(x²) ; pour a+bi renvoie √(a²+b²).',
+    ],
+    'sqrt': [
+      'sqrt(x) = x^(1/2). Pour d\'autres degrés, la touche ⁿ√x.',
     ],
     'sudoku_regular': [
       "Dans CrispMath, la variante classique se trouve dans "
@@ -10620,6 +10790,40 @@ class EsLocalizations implements AppLocalizations {
         return 'Módulo: el resto de a ÷ n. La tecla `mod` inserta el operador entre dos enteros.';
       case 'nth_root':
         return 'La raíz n-ésima de x, es decir x^(1/n). La tecla abre un pequeño diálogo para el grado n y el radicando x.';
+      case 'sin':
+        return 'Seno de x (x en radianes).';
+      case 'cos':
+        return 'Coseno de x (x en radianes).';
+      case 'tan':
+        return 'Tangente de x = sin(x)/cos(x) (x en radianes).';
+      case 'asin':
+        return 'Arcoseno: el ángulo cuyo seno es x.';
+      case 'acos':
+        return 'Arcocoseno: el ángulo cuyo coseno es x.';
+      case 'atan':
+        return 'Arcotangente: el ángulo cuya tangente es x.';
+      case 'sinh':
+        return 'Seno hiperbólico: (eˣ − e⁻ˣ)/2.';
+      case 'cosh':
+        return 'Coseno hiperbólico: (eˣ + e⁻ˣ)/2.';
+      case 'tanh':
+        return 'Tangente hiperbólica: sinh(x)/cosh(x).';
+      case 'asinh':
+        return 'Arcoseno hiperbólico (inversa de sinh).';
+      case 'acosh':
+        return 'Arcocoseno hiperbólico.';
+      case 'atanh':
+        return 'Arcotangente hiperbólica.';
+      case 'ln':
+        return 'Logaritmo natural (base e) de x.';
+      case 'log':
+        return 'Logaritmo decimal (base 10) de x.';
+      case 'exp':
+        return 'Función exponencial e^x.';
+      case 'abs':
+        return 'Valor absoluto de x — también el módulo de un número complejo.';
+      case 'sqrt':
+        return 'Raíz cuadrada de x (valor principal, rama no negativa).';
       case 'sudoku_regular':
         return "Reglas clásicas del Sudoku: cada fila, columna y caja "
             "contiene cada dígito exactamente una vez. Hay plantillas para "
@@ -11344,6 +11548,57 @@ class EsLocalizations implements AppLocalizations {
     ],
     'nth_root': [
       'La raíz cúbica de 27. Para n = 2 usa la tecla √ dedicada; `ⁿ√x` cubre cualquier grado.',
+    ],
+    'sin': [
+      'Período 2π, rango [-1, 1]. La calculadora interpreta el argumento en radianes.',
+    ],
+    'cos': [
+      'Período 2π, rango [-1, 1]; cos es sin desplazado π/2.',
+    ],
+    'tan': [
+      'Período π; indefinida donde cos(x)=0 (x = π/2 + kπ).',
+    ],
+    'asin': [
+      'Dominio [-1, 1], rango principal [-π/2, π/2].',
+    ],
+    'acos': [
+      'Dominio [-1, 1], rango principal [0, π].',
+    ],
+    'atan': [
+      'Dominio todos los reales, rango principal (-π/2, π/2).',
+    ],
+    'sinh': [
+      'Función impar, no acotada; la familia de las catenarias.',
+    ],
+    'cosh': [
+      'Función par, mínimo 1 en x=0; forma de una cadena colgante.',
+    ],
+    'tanh': [
+      'Impar, rango (-1, 1); función de activación común en redes neuronales.',
+    ],
+    'asinh': [
+      'Dominio todos los reales; asinh(x) = ln(x + √(x²+1)).',
+    ],
+    'acosh': [
+      'Dominio x ≥ 1; acosh(x) = ln(x + √(x²−1)).',
+    ],
+    'atanh': [
+      'Dominio (-1, 1); atanh(x) = ½·ln((1+x)/(1−x)).',
+    ],
+    'ln': [
+      'Inversa de exp; dominio x > 0. ln(e) = 1.',
+    ],
+    'log': [
+      'Dominio x > 0. Para otras bases: ln(x)/ln(b).',
+    ],
+    'exp': [
+      'Inversa de ln; siempre positiva, su propia derivada.',
+    ],
+    'abs': [
+      'abs(x) = √(x²); para a+bi devuelve √(a²+b²).',
+    ],
+    'sqrt': [
+      'sqrt(x) = x^(1/2). Para otros grados, la tecla ⁿ√x.',
     ],
     'sudoku_regular': [
       "En CrispMath, la variante clásica está en `lib/engine/sudoku.dart` "
