@@ -1142,9 +1142,7 @@ class _TourPainter extends CustomPainter {
       final on = visited[i];
       final fill = Paint()
         ..style = PaintingStyle.fill
-        ..color = on
-            ? scheme.primaryContainer
-            : scheme.surfaceContainerHighest;
+        ..color = on ? scheme.primaryContainer : scheme.surfaceContainerHighest;
       final ring = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5

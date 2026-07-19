@@ -1648,7 +1648,8 @@ class CspSolver {
         if (err != null) return err;
         List<String>? labels;
         if (circuitMatch.group(3) != null) {
-          labels = circuitMatch.group(3)!.split(',').map((s) => s.trim()).toList();
+          labels =
+              circuitMatch.group(3)!.split(',').map((s) => s.trim()).toList();
           if (labels.length != names.length) {
             return DiophantineResult.failure('Line ${lineNum + 1}: circuit has '
                 '${names.length} node(s) but ${labels.length} label(s).');
@@ -1658,8 +1659,8 @@ class CspSolver {
         circuitLabels = labels;
         circuitIsSub = isSub;
         circuitLineNum = lineNum;
-        extraConstraints.add((p) =>
-            isSub ? p.addSubcircuit(names) : p.addCircuit(names));
+        extraConstraints
+            .add((p) => isSub ? p.addSubcircuit(names) : p.addCircuit(names));
         continue;
       }
 

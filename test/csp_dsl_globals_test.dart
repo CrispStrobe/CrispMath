@@ -513,8 +513,8 @@ subcircuit(a, b, c)
       expect(r.ok, isTrue, reason: r.error);
       expect(r.circuitIsSub, isTrue);
       // The all-self-loop assignment (empty subcircuit) is valid.
-      final hasEmpty = r.solutions
-          .any((s) => s['a'] == 0 && s['b'] == 1 && s['c'] == 2);
+      final hasEmpty =
+          r.solutions.any((s) => s['a'] == 0 && s['b'] == 1 && s['c'] == 2);
       expect(hasEmpty, isTrue);
     }, timeout: _t);
 
