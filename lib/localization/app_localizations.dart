@@ -538,6 +538,7 @@ abstract class AppLocalizations {
   String get constraintsStrategyDecisions;
   String get constraintsStrategyBacktracks;
   String get constraintsStrategyPropagations;
+  String get constraintsStrategyIterations;
   String get constraintsStrategyTime;
   String get constraintsStructureButton;
   String constraintsStructureHeader(int vars, int constraints);
@@ -1895,6 +1896,8 @@ class EnLocalizations implements AppLocalizations {
   String get constraintsStrategyBacktracks => 'Backtracks';
   @override
   String get constraintsStrategyPropagations => 'Propagations';
+  @override
+  String get constraintsStrategyIterations => 'Iterations';
   @override
   String get constraintsStrategyTime => 'Time';
   @override
@@ -3639,6 +3642,8 @@ class DeLocalizations implements AppLocalizations {
   String get constraintsStrategyBacktracks => 'Rücksprünge';
   @override
   String get constraintsStrategyPropagations => 'Propagationen';
+  @override
+  String get constraintsStrategyIterations => 'Iterationen';
   @override
   String get constraintsStrategyTime => 'Zeit';
   @override
@@ -6985,6 +6990,8 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get constraintsStrategyPropagations => 'Propagations';
   @override
+  String get constraintsStrategyIterations => 'Itérations';
+  @override
   String get constraintsStrategyTime => 'Temps';
   @override
   String get constraintsStructureButton => 'Afficher la structure';
@@ -10259,6 +10266,8 @@ class EsLocalizations implements AppLocalizations {
   String get constraintsStrategyBacktracks => 'Retrocesos';
   @override
   String get constraintsStrategyPropagations => 'Propagaciones';
+  @override
+  String get constraintsStrategyIterations => 'Iteraciones';
   @override
   String get constraintsStrategyTime => 'Tiempo';
   @override

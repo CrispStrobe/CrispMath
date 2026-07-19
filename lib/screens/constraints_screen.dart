@@ -1520,8 +1520,11 @@ class _SetCluster extends StatelessWidget {
 /// search effort (decisions / backtracks / propagations) and wall-clock
 /// to find a single solution. The lightest decision count is highlighted
 /// — a teaching aid for "which variable/value ordering fits this
-/// problem". Wall-clock is shown but noisy (JIT warmup on the first run),
-/// so the pedagogical signal is the decision/backtrack counts.
+/// problem". The final row is min-conflicts *local search* — a different
+/// solver family measured in iterations (the backtracking counters read
+/// `·`), so the table contrasts systematic search against guess-and-
+/// repair. Wall-clock is shown but noisy (JIT warmup on the first run),
+/// so the pedagogical signal is the decision / iteration counts.
 class _StrategyStatsTable extends StatelessWidget {
   final List<SearchStrategyStat> stats;
 
@@ -1531,8 +1534,10 @@ class _StrategyStatsTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final t = AppLocalizations.of(context);
-    // The best (fewest decisions) among strategies that found a solution.
-    final solved = stats.where((s) => s.found).toList();
+    // The best (fewest decisions) among *backtracking* strategies that
+    // found a solution — min-conflicts is a different family (measured in
+    // iterations) and never competes for the fewest-decisions star.
+    final solved = stats.where((s) => s.found && !s.isLocalSearch).toList();
     final bestDecisions = solved.isEmpty
         ? null
         : solved.map((s) => s.decisions).reduce((a, b) => a < b ? a : b);
@@ -1579,6 +1584,7 @@ class _StrategyStatsTable extends StatelessWidget {
                   Text(t.constraintsStrategyDecisions, style: headerStyle),
                   Text(t.constraintsStrategyBacktracks, style: headerStyle),
                   Text(t.constraintsStrategyPropagations, style: headerStyle),
+                  Text(t.constraintsStrategyIterations, style: headerStyle),
                   Text(t.constraintsStrategyTime, style: headerStyle),
                 ]),
                 for (final s in stats)
@@ -1587,6 +1593,7 @@ class _StrategyStatsTable extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (s.found &&
+                            !s.isLocalSearch &&
                             bestDecisions != null &&
                             s.decisions == bestDecisions)
                           Padding(
@@ -1602,9 +1609,28 @@ class _StrategyStatsTable extends StatelessWidget {
                                     : scheme.onSurfaceVariant)),
                       ],
                     ),
-                    Text(s.found ? '${s.decisions}' : '—', style: numStyle),
-                    Text(s.found ? '${s.backtracks}' : '—', style: numStyle),
-                    Text(s.found ? '${s.propagations}' : '—', style: numStyle),
+                    // Backtracking counters — n/a ('·') for local search.
+                    Text(
+                        s.isLocalSearch
+                            ? '·'
+                            : (s.found ? '${s.decisions}' : '—'),
+                        style: numStyle),
+                    Text(
+                        s.isLocalSearch
+                            ? '·'
+                            : (s.found ? '${s.backtracks}' : '—'),
+                        style: numStyle),
+                    Text(
+                        s.isLocalSearch
+                            ? '·'
+                            : (s.found ? '${s.propagations}' : '—'),
+                        style: numStyle),
+                    // Iterations — n/a ('·') for backtracking search.
+                    Text(
+                        !s.isLocalSearch
+                            ? '·'
+                            : (s.found ? '${s.iterations}' : '—'),
+                        style: numStyle),
                     Text(
                         s.found
                             ? '${(s.elapsedMicros / 1000).toStringAsFixed(1)} ms'

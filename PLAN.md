@@ -274,11 +274,18 @@ display can't do justice.
   colour and a `w×h` caption. Ships with a `packing` gallery example,
   a `diff_n` Function Reference entry + help chip, de/fr/es i18n, and
   engine tests.
-- [ ] **Min-conflicts local search** — `solveWithMinConflicts` for large
-  / loosely-constrained instances (big N-queens, timetabling). *Viz:* an
-  educational "local search vs backtracking" panel animating the
-  conflict count dropping per iteration (line/step chart), contrasted
-  with the systematic backtracker's decision/backtrack counts.
+- [x] **Min-conflicts local search** — `solveWithMinConflicts` for large
+  / loosely-constrained instances (big N-queens, timetabling). *Done
+  (round 113, C8):* min-conflicts is added as the final row of the
+  search-strategy comparison table — a different solver *family* measured
+  in `iterations` (the backtracking counters read `·`), fixed-seed for
+  stable re-runs. This delivers the "local search vs backtracking"
+  contrast in one table. `SearchStrategyStat` gained `iterations` +
+  `isLocalSearch`; the fewest-decisions star only competes among
+  backtracking rows. de/fr/es (Iterations column) + engine tests. *Note:*
+  the animated per-iteration conflict chart isn't feasible — dart_csp's
+  `solveWithMinConflicts` exposes no per-step callback, only the final
+  iteration count.
 - [x] **Search-strategy selector** — expose `getSolutionWithRestarts`
   (Luby), `…WithDomWdeg`, `…WithActivity` (VSIDS), `…WithImpact`.
   *Done (round 112, C8):* a "Compare strategies" button on the DSL tab

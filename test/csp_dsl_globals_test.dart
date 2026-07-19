@@ -774,13 +774,18 @@ a + b + c + d == 14
 ''', compareStrategies: true);
       expect(r.ok, isTrue, reason: r.error);
       expect(r.solutions, isNotEmpty);
-      // Default + dom/wdeg + VSIDS + Impact + Restarts = 5 strategies.
-      expect(r.strategyStats, hasLength(5));
+      // 5 backtracking heuristics + 1 min-conflicts local search = 6.
+      expect(r.strategyStats, hasLength(6));
       expect(r.strategyStats.map((s) => s.name), contains('Default (MRV)'));
       // Every strategy finds a solution to this satisfiable program.
       expect(r.strategyStats.every((s) => s.found), isTrue);
-      // Decisions are recorded (a real backtracking search ran).
-      expect(r.strategyStats.every((s) => s.decisions > 0), isTrue);
+      // Decisions are recorded for the backtracking rows (a real
+      // systematic search ran); local search reports 0 decisions.
+      expect(
+          r.strategyStats
+              .where((s) => !s.isLocalSearch)
+              .every((s) => s.decisions > 0),
+          isTrue);
     }, timeout: _t);
 
     test('without the flag no stats are collected', () async {
@@ -809,6 +814,26 @@ card(S) = 1
 ''', compareStrategies: true);
       expect(r.ok, isTrue, reason: r.error);
       expect(r.strategyStats, isEmpty);
+    }, timeout: _t);
+
+    test('the comparison includes a min-conflicts local-search row', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b, c, d in 1..6
+allDifferent(a, b, c, d)
+a + b + c + d == 14
+''', compareStrategies: true);
+      expect(r.ok, isTrue, reason: r.error);
+      // 5 backtracking heuristics + 1 local search = 6 rows.
+      expect(r.strategyStats, hasLength(6));
+      final local = r.strategyStats.where((s) => s.isLocalSearch).toList();
+      expect(local, hasLength(1));
+      expect(local.first.name, 'Min-conflicts');
+      // Local search reports iterations, not backtracking decisions.
+      expect(local.first.found, isTrue);
+      expect(local.first.decisions, 0);
+      expect(local.first.iterations, greaterThan(0));
+      // The backtracking rows are not flagged as local search.
+      expect(r.strategyStats.where((s) => !s.isLocalSearch), hasLength(5));
     }, timeout: _t);
   });
 

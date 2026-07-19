@@ -127,14 +127,19 @@ class SoftConstraintResult {
 /// solver stats for finding a single solution under a named heuristic.
 /// A teaching aid contrasting how variable/value ordering and restarts
 /// change the search effort (decisions / backtracks / propagations) and
-/// wall-clock on the same program.
+/// wall-clock on the same program. Round 113 adds [isLocalSearch]: the
+/// min-conflicts row measures effort in [iterations] instead of the
+/// backtracking counters (which stay 0), so the table can contrast the
+/// two solver families side by side.
 class SearchStrategyStat {
   final String name;
   final bool found;
   final int decisions;
   final int backtracks;
   final int propagations;
+  final int iterations;
   final int elapsedMicros;
+  final bool isLocalSearch;
 
   const SearchStrategyStat({
     required this.name,
@@ -142,7 +147,9 @@ class SearchStrategyStat {
     required this.decisions,
     required this.backtracks,
     required this.propagations,
+    this.iterations = 0,
     required this.elapsedMicros,
+    this.isLocalSearch = false,
   });
 }
 
@@ -912,7 +919,8 @@ class CspSolver {
   static Future<List<SearchStrategyStat>> _runStrategies(
       csp.Problem problem) async {
     final out = <SearchStrategyStat>[];
-    Future<void> run(String name, Future<dynamic> Function() solve) async {
+    Future<void> run(String name, Future<dynamic> Function() solve,
+        {bool isLocalSearch = false}) async {
       dynamic res;
       try {
         res = await solve();
@@ -928,7 +936,9 @@ class CspSolver {
         decisions: st?.decisions ?? 0,
         backtracks: st?.backtracks ?? 0,
         propagations: st?.propagations ?? 0,
+        iterations: st?.iterations ?? 0,
         elapsedMicros: st?.elapsedMicros ?? 0,
+        isLocalSearch: isLocalSearch,
       ));
     }
 
@@ -937,6 +947,16 @@ class CspSolver {
     await run('VSIDS activity', () => problem.getSolutionWithActivity());
     await run('Impact', () => problem.getSolutionWithImpact());
     await run('Restarts (Luby)', () => problem.getSolutionWithRestarts());
+    // Round 113 (C8): min-conflicts local search — a different solver
+    // family. It reports effort as `iterations` (the backtracking
+    // counters stay 0), so the table can contrast "guess-and-repair"
+    // against systematic search. A fixed seed keeps re-runs stable; it's
+    // incomplete, so on a hard/tight instance it may report not-found.
+    await run(
+      'Min-conflicts',
+      () => problem.solveWithMinConflicts(maxSteps: 5000, seed: 12345),
+      isLocalSearch: true,
+    );
     return out;
   }
 
