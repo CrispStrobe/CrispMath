@@ -1535,6 +1535,176 @@ class _StrategyStatsTable extends StatelessWidget {
   }
 }
 
+/// Constraint-network (factor) graph for a DSL program — a structural
+/// view drawn before/without solving. Variable nodes sit on a circle
+/// (set variables as rounded squares); a binary constraint draws a
+/// direct edge, an n-ary constraint a small square factor node wired to
+/// each variable, and a unary constraint a dot on the node. Built on the
+/// same circular-layout foundation as [_TourChart].
+class _ConstraintGraph extends StatelessWidget {
+  final DslStructure structure;
+
+  const _ConstraintGraph({required this.structure});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context);
+    if (structure.variables.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t.constraintsStructureHeader(
+                structure.variables.length, structure.constraints.length),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: SizedBox(
+              width: 280,
+              height: 280,
+              child: CustomPaint(
+                painter: _ConstraintGraphPainter(
+                  structure: structure,
+                  scheme: scheme,
+                  textStyle: Theme.of(context).textTheme.bodySmall ??
+                      const TextStyle(fontSize: 12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConstraintGraphPainter extends CustomPainter {
+  final DslStructure structure;
+  final ColorScheme scheme;
+  final TextStyle textStyle;
+
+  _ConstraintGraphPainter({
+    required this.structure,
+    required this.scheme,
+    required this.textStyle,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final vars = structure.variables;
+    final n = vars.length;
+    const nodeR = 17.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final layoutR = size.shortestSide / 2 - nodeR - 8;
+    final index = {for (var i = 0; i < n; i++) vars[i]: i};
+
+    Offset posOf(int i) {
+      // Single node sits at the centre; otherwise spread on a circle.
+      if (n == 1) return center;
+      final a = -pi / 2 + i * 2 * pi / n;
+      return center + Offset(cos(a) * layoutR, sin(a) * layoutR);
+    }
+
+    final edgePaint = Paint()
+      ..color = scheme.outline
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    final factorFill = Paint()
+      ..color = scheme.tertiary
+      ..style = PaintingStyle.fill;
+    final unaryPaint = Paint()
+      ..color = scheme.secondary
+      ..style = PaintingStyle.fill;
+
+    // Edges + factor nodes first, so variable nodes render on top.
+    for (final c in structure.constraints) {
+      final ids = [
+        for (final v in c.vars)
+          if (index.containsKey(v)) index[v]!
+      ];
+      if (ids.isEmpty) continue;
+      if (ids.length == 1) {
+        // Unary: a small dot just outside the node.
+        final p = posOf(ids.first);
+        final dir =
+            n == 1 ? const Offset(0, -1) : (p - center) / (p - center).distance;
+        canvas.drawCircle(p + dir * (nodeR + 5), 3.5, unaryPaint);
+      } else if (ids.length == 2) {
+        canvas.drawLine(posOf(ids[0]), posOf(ids[1]), edgePaint);
+      } else {
+        // N-ary: a factor node at the centroid pulled toward the centre.
+        var cx = 0.0, cy = 0.0;
+        for (final id in ids) {
+          final p = posOf(id);
+          cx += p.dx;
+          cy += p.dy;
+        }
+        var fp = Offset(cx / ids.length, cy / ids.length);
+        fp = Offset.lerp(fp, center, 0.25)!;
+        for (final id in ids) {
+          canvas.drawLine(fp, posOf(id), edgePaint);
+        }
+        canvas.drawRect(
+          Rect.fromCenter(center: fp, width: 11, height: 11),
+          factorFill,
+        );
+      }
+    }
+
+    // Variable nodes.
+    for (var i = 0; i < n; i++) {
+      final p = posOf(i);
+      final isSet = structure.setVars.contains(vars[i]);
+      final fill = Paint()
+        ..style = PaintingStyle.fill
+        ..color = isSet ? scheme.tertiaryContainer : scheme.primaryContainer;
+      final ring = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = isSet ? scheme.tertiary : scheme.primary;
+      if (isSet) {
+        final rrect = RRect.fromRectAndRadius(
+          Rect.fromCenter(center: p, width: nodeR * 2, height: nodeR * 2),
+          const Radius.circular(5),
+        );
+        canvas.drawRRect(rrect, fill);
+        canvas.drawRRect(rrect, ring);
+      } else {
+        canvas.drawCircle(p, nodeR, fill);
+        canvas.drawCircle(p, nodeR, ring);
+      }
+      final tp = TextPainter(
+        text: TextSpan(
+          text: vars[i],
+          style: textStyle.copyWith(
+            color:
+                isSet ? scheme.onTertiaryContainer : scheme.onPrimaryContainer,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: nodeR * 2 - 2);
+      tp.paint(canvas, p - Offset(tp.width / 2, tp.height / 2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ConstraintGraphPainter old) => old.structure != structure;
+}
+
 // === Cryptarithm tab ====================================================
 
 class _CryptarithmTab extends StatefulWidget {
@@ -2066,6 +2236,10 @@ Committee contains 1''',
   // linger after the program changed.
   CspTraceResult? _trace;
   bool _tracing = false;
+  // Round 113 (C9): constraint-network structure graph. Computed
+  // synchronously from the program text; cleared on every fresh
+  // solve / example load / export so it can't outlive its program.
+  DslStructure? _structure;
 
   @override
   void initState() {
@@ -2091,12 +2265,24 @@ Committee contains 1''',
       _mus = null;
       _export = null;
       _trace = null;
+      _structure = null;
     });
   }
 
   void _doExport() {
     setState(() {
       _export = DslToFlatZinc.export(_ctl.text);
+      _trace = null;
+      _structure = null;
+    });
+  }
+
+  // Round 113 (C9): compute + reveal the constraint-network graph. A
+  // synchronous structural parse — no solving — so no spinner needed.
+  void _showStructure() {
+    setState(() {
+      _structure = CspSolver.analyzeDslStructure(_ctl.text);
+      _export = null;
       _trace = null;
     });
   }
@@ -2113,6 +2299,7 @@ Committee contains 1''',
       _mus = null;
       _export = null;
       _trace = null;
+      _structure = null;
     });
     final r = await CspSolver.solveDsl(_ctl.text,
         compareStrategies: compareStrategies);
@@ -2237,6 +2424,12 @@ Committee contains 1''',
                 icon: const Icon(Icons.speed_outlined, size: 18),
                 label: Text(t.constraintsCompareStrategies),
               ),
+              // Round 113 (C9): draw the constraint-network graph.
+              OutlinedButton.icon(
+                onPressed: _showStructure,
+                icon: const Icon(Icons.hub_outlined, size: 18),
+                label: Text(t.constraintsStructureButton),
+              ),
             ],
           ),
           // Round 105b (P6): in help mode, reveal a reference row of
@@ -2267,6 +2460,13 @@ Committee contains 1''',
               PropagationVisualizer(trace: _trace!)
             else
               _TraceErrorBlock(message: _trace!.error!),
+          ],
+          if (_structure != null) ...[
+            const SizedBox(height: 16),
+            if (_structure!.ok)
+              _ConstraintGraph(structure: _structure!)
+            else
+              _TraceErrorBlock(message: _structure!.error!),
           ],
         ],
       ),

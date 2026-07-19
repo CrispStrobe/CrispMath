@@ -538,6 +538,8 @@ abstract class AppLocalizations {
   String get constraintsStrategyBacktracks;
   String get constraintsStrategyPropagations;
   String get constraintsStrategyTime;
+  String get constraintsStructureButton;
+  String constraintsStructureHeader(int vars, int constraints);
   String get constraintsTraceHeader;
   String get constraintsTraceIntro;
   String constraintsTraceStepCounter(int current, int total);
@@ -1890,6 +1892,11 @@ class EnLocalizations implements AppLocalizations {
   String get constraintsStrategyPropagations => 'Propagations';
   @override
   String get constraintsStrategyTime => 'Time';
+  @override
+  String get constraintsStructureButton => 'Show structure';
+  @override
+  String constraintsStructureHeader(int vars, int constraints) =>
+      'Constraint network · $vars variables · $constraints constraints';
   @override
   String get constraintsTraceHeader => 'Propagation trace';
   @override
@@ -3623,6 +3630,11 @@ class DeLocalizations implements AppLocalizations {
   String get constraintsStrategyPropagations => 'Propagationen';
   @override
   String get constraintsStrategyTime => 'Zeit';
+  @override
+  String get constraintsStructureButton => 'Struktur zeigen';
+  @override
+  String constraintsStructureHeader(int vars, int constraints) =>
+      'Constraint-Netz · $vars Variablen · $constraints Constraints';
   @override
   String get constraintsTraceHeader => 'Propagierungs-Verlauf';
   @override
@@ -6958,6 +6970,11 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get constraintsStrategyTime => 'Temps';
   @override
+  String get constraintsStructureButton => 'Afficher la structure';
+  @override
+  String constraintsStructureHeader(int vars, int constraints) =>
+      'Réseau de contraintes · $vars variables · $constraints contraintes';
+  @override
   String get constraintsTraceHeader => 'Trace de propagation';
   @override
   String get constraintsTraceIntro =>
@@ -10221,6 +10238,11 @@ class EsLocalizations implements AppLocalizations {
   String get constraintsStrategyPropagations => 'Propagaciones';
   @override
   String get constraintsStrategyTime => 'Tiempo';
+  @override
+  String get constraintsStructureButton => 'Mostrar estructura';
+  @override
+  String constraintsStructureHeader(int vars, int constraints) =>
+      'Red de restricciones · $vars variables · $constraints restricciones';
   @override
   String get constraintsTraceHeader => 'Traza de propagación';
   @override

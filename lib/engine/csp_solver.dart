@@ -146,6 +146,43 @@ class SearchStrategyStat {
   });
 }
 
+/// Round 113 (C9): one constraint in a program's structure graph — a
+/// short [label] plus the declared variables it involves. Binary
+/// constraints (2 vars) draw as a direct edge; n-ary (≥3) as a factor
+/// node; unary (1) as a self-marker on the node.
+class DslStructureConstraint {
+  final String label;
+  final List<String> vars;
+  const DslStructureConstraint({required this.label, required this.vars});
+}
+
+/// Round 113 (C9): the parsed structure of a DSL program for the
+/// constraint-network graph — variable nodes (with the set-variable
+/// subset flagged) and the constraints wiring them together. A purely
+/// structural view; no solving happens.
+class DslStructure {
+  final List<String> variables;
+  final Set<String> setVars;
+  final List<DslStructureConstraint> constraints;
+  final String? error;
+
+  const DslStructure({
+    required this.variables,
+    required this.setVars,
+    required this.constraints,
+    this.error,
+  });
+
+  bool get ok => error == null;
+
+  factory DslStructure.failure(String message) => DslStructure(
+        variables: const [],
+        setVars: const {},
+        constraints: const [],
+        error: message,
+      );
+}
+
 /// Result envelope returned by [CspSolver.solveDiophantine]. Holds
 /// either a list of solutions or an error message — never both.
 class DiophantineResult {
@@ -2227,6 +2264,89 @@ class CspSolver {
       setVariables: setVars,
       strategyStats: strategyStats,
       maxSolutions: maxSolutions,
+    );
+  }
+
+  /// Round 113 (C9): analyse a DSL program's *structure* without solving
+  /// it — the variable set and which constraints connect which
+  /// variables. Feeds the constraint-network graph. Two passes: collect
+  /// every declared variable (`vars:` / `set`) first, then attribute each
+  /// remaining line to the declared variables whose names appear in it.
+  static DslStructure analyzeDslStructure(String input) {
+    final variables = <String>[];
+    final setVars = <String>{};
+    final lines = input.split('\n');
+
+    // Strip comments once, keeping line alignment for the second pass.
+    final cleaned = <String>[];
+    for (final raw in lines) {
+      var line = raw.trim();
+      final hash = line.indexOf('#');
+      if (hash >= 0) line = line.substring(0, hash).trim();
+      cleaned.add(line);
+    }
+
+    // Pass 1: declarations.
+    for (final line in cleaned) {
+      if (line.isEmpty) continue;
+      final vm = RegExp(r'^vars\s*:\s*(.+?)\s+in\s+-?\d+\s*\.\.\s*-?\d+$')
+          .firstMatch(line);
+      if (vm != null) {
+        for (final n in _splitNames(vm.group(1)!)) {
+          if (!variables.contains(n)) variables.add(n);
+        }
+        continue;
+      }
+      final sm = RegExp(r'^set\s+(.+?)\s+from\s+-?\d+\s*\.\.\s*-?\d+$',
+              caseSensitive: false)
+          .firstMatch(line);
+      if (sm != null) {
+        for (final n in _splitNames(sm.group(1)!)) {
+          if (!variables.contains(n)) variables.add(n);
+          setVars.add(n);
+        }
+        continue;
+      }
+    }
+
+    if (variables.isEmpty) {
+      return DslStructure.failure(
+          'No variables declared. Use `vars: x, y in 1..9`.');
+    }
+    final varSet = variables.toSet();
+
+    // Pass 2: attribute each non-declaration line to its variables.
+    final constraints = <DslStructureConstraint>[];
+    for (final line in cleaned) {
+      if (line.isEmpty) continue;
+      if (RegExp(r'^vars\s*:').hasMatch(line)) continue;
+      if (RegExp(r'^set\s+', caseSensitive: false).hasMatch(line)) continue;
+      // Objective lines carry no structural edge between variables.
+      if (RegExp(r'^(minimize|maximize)\s+').hasMatch(line)) continue;
+
+      // Involved variables = declared names appearing as whole tokens,
+      // in first-seen order, de-duplicated.
+      final involved = <String>[];
+      for (final m in RegExp(r'[a-zA-Z_][a-zA-Z0-9_]*').allMatches(line)) {
+        final tok = m.group(0)!;
+        if (varSet.contains(tok) && !involved.contains(tok)) involved.add(tok);
+      }
+      if (involved.isEmpty) continue;
+
+      // Label: the operator name for a `name(...)` form, else a compact
+      // rendering of the line.
+      final opMatch =
+          RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*\(').firstMatch(line);
+      var label = opMatch != null ? opMatch.group(1)! : line;
+      if (label.length > 22) label = '${label.substring(0, 21)}…';
+
+      constraints.add(DslStructureConstraint(label: label, vars: involved));
+    }
+
+    return DslStructure(
+      variables: variables,
+      setVars: setVars,
+      constraints: constraints,
     );
   }
 

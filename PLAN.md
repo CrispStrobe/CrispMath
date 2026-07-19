@@ -296,11 +296,19 @@ display can't do justice.
 
 ### C9 — Cross-cutting visualizations & infra
 
-- [ ] **Constraint-network graph** — a structural view of any DSL
+- [x] **Constraint-network graph** — a structural view of any DSL
   program: variables as nodes, constraints as (hyper)edges, drawn before
-  solving. Turns an opaque text program into a picture; pairs naturally
-  with the propagation step-visualizer (highlight the edge being
-  revised). Reusable node-graph widget shared with `circuit`.
+  solving. *Done (round 113, C9):* `CspSolver.analyzeDslStructure` does a
+  two-pass parse (collect declared `vars:`/`set` names, then attribute
+  each line to the declared names it mentions), returning a `DslStructure`
+  (variables + set-var flags + per-constraint variable lists). *Viz:*
+  `_ConstraintGraph` / `_ConstraintGraphPainter` — a factor graph on the
+  `_TourChart` circular-layout foundation: variable nodes (set vars as
+  rounded squares), binary constraints as direct edges, n-ary as a small
+  factor node wired to each variable, unary as a dot on the node. A "Show
+  structure" button on the DSL tab renders it (synchronous, no solve).
+  de/fr/es i18n + engine tests. *Future:* highlight the edge being revised
+  during the propagation step-trace.
 - [ ] **Graph-colouring render** — for `nvalue`/`!=` colouring problems,
   draw the graph with each node filled by its solved colour (the
   `chromaticNumber` example is begging for this).

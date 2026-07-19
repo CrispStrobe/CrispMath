@@ -811,4 +811,65 @@ card(S) = 1
       expect(r.strategyStats, isEmpty);
     }, timeout: _t);
   });
+
+  group('constraint-network structure', () {
+    test('classifies unary / binary / n-ary constraints', () {
+      final s = CspSolver.analyzeDslStructure('''
+vars: x, y, z in 1..9
+allDifferent(x, y, z)
+x + y == 10
+z != 3
+''');
+      expect(s.ok, isTrue, reason: s.error);
+      expect(s.variables, ['x', 'y', 'z']);
+      expect(s.constraints, hasLength(3));
+      expect(s.constraints[0].label, 'allDifferent');
+      expect(s.constraints[0].vars, ['x', 'y', 'z']);
+      expect(s.constraints[1].vars, ['x', 'y']);
+      expect(s.constraints[2].vars, ['z']);
+    });
+
+    test('set variables are flagged', () {
+      final s = CspSolver.analyzeDslStructure('''
+vars: k in 1..3
+set Team from 1..5
+card(Team) = 2
+k == 2
+''');
+      expect(s.ok, isTrue, reason: s.error);
+      expect(s.variables, containsAll(['k', 'Team']));
+      expect(s.setVars, contains('Team'));
+      expect(s.setVars, isNot(contains('k')));
+      // card(Team) touches Team; k==2 touches k.
+      expect(s.constraints.any((c) => c.vars.contains('Team')), isTrue);
+    });
+
+    test('objective lines carry no structural edge', () {
+      final s = CspSolver.analyzeDslStructure('''
+vars: a, b in 1..9
+a + b == 10
+minimize a
+''');
+      expect(s.ok, isTrue, reason: s.error);
+      // Only the sum constraint, not the minimize line.
+      expect(s.constraints, hasLength(1));
+      expect(s.constraints.single.vars, ['a', 'b']);
+    });
+
+    test('no variables is an error', () {
+      final s = CspSolver.analyzeDslStructure('# just a comment');
+      expect(s.ok, isFalse);
+      expect(s.error, contains('No variables'));
+    });
+
+    test('long labels are truncated for a name(...) form uses the op', () {
+      final s = CspSolver.analyzeDslStructure('''
+vars: a, b, c, d in 1..9
+a + b + c + d == 20
+''');
+      // A bare expression keeps a compact label; the op-form uses the name.
+      expect(s.constraints.single.vars, ['a', 'b', 'c', 'd']);
+      expect(s.constraints.single.label.length, lessThanOrEqualTo(22));
+    });
+  });
 }
