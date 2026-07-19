@@ -47,6 +47,10 @@ const Map<String, String> kAdvKeyHelpRefId = {
   'unit': 'unit',
   'mod': 'mod',
   'ⁿ√x': 'nth_root',
+  // Constants (Round 108d).
+  'i': 'imaginary_unit',
+  'γ': 'euler_gamma',
+  '∞': 'infinity',
   'π(N)': 'pi_precision',
   'e(N)': 'e_precision',
   'γ(N)': 'eulergamma_precision',
@@ -134,6 +138,7 @@ const Map<String, String> kTrigKeyHelpRefId = {
 /// `sqrt` key is a real function that deserves a help popover.
 const Map<String, String> kNumKeyHelpRefId = {
   'sqrt': 'sqrt',
+  'π': 'pi',
 };
 
 /// Round 102: shows a small AlertDialog explaining a single

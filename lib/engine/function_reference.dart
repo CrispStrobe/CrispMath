@@ -2703,6 +2703,81 @@ class FunctionReferences {
       ],
       seeAlso: ['nth_root', 'ln', 'abs'],
     ),
+    // === Round 108d: mathematical constants surfaced on the keypad
+    // (π on Num; i, γ, ∞ on Advanced). Not directly "runnable" on their
+    // own, so runnable: false.
+    FunctionRef(
+      id: 'pi',
+      category: FunctionRefCategory.cas,
+      signature: 'π',
+      shortDescription:
+          'The circle constant π ≈ 3.14159 — a circle\'s circumference over '
+          'its diameter. The keypad key inserts the symbol.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: '2·π·r',
+          expected: '(circumference of a circle of radius r)',
+          hint: 'For π to a chosen number of digits use the π(N) key '
+              '(pi_precision).',
+        ),
+      ],
+      seeAlso: ['pi_precision', 'e_precision', 'euler_gamma'],
+    ),
+    FunctionRef(
+      id: 'imaginary_unit',
+      category: FunctionRefCategory.cas,
+      signature: 'i',
+      shortDescription:
+          'The imaginary unit i, with i² = −1. Represented internally as '
+          'SymEngine\'s `I`.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'i^2',
+          expected: '-1',
+          hint: 'Complex results come back in terms of I — e.g. '
+              'solve(x^2 + 1 = 0) → x = ±i.',
+        ),
+      ],
+      seeAlso: ['solve', 'evalf', 'cevalf'],
+    ),
+    FunctionRef(
+      id: 'euler_gamma',
+      category: FunctionRefCategory.cas,
+      signature: 'γ',
+      shortDescription:
+          'The Euler–Mascheroni constant γ ≈ 0.57722 — the limit of '
+          '(Σ 1/k − ln n) as n → ∞.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'γ',
+          expected: '≈ 0.5772156649',
+          hint: 'Inserts `EulerGamma`; for γ to a chosen number of digits use '
+              'the γ(N) key (eulergamma_precision).',
+        ),
+      ],
+      seeAlso: ['eulergamma_precision', 'pi', 'e_precision'],
+    ),
+    FunctionRef(
+      id: 'infinity',
+      category: FunctionRefCategory.cas,
+      signature: '∞',
+      shortDescription:
+          'Positive infinity ∞ — used as a bound in limits and improper '
+          'integrals rather than as a value to compute with.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'lim(1/x, x, ∞)',
+          expected: '0',
+          hint: 'Inserts `\\infty`; pair with `lim` or `∫` to describe '
+              'limiting / improper behaviour.',
+        ),
+      ],
+      seeAlso: ['limit', 'integrate'],
+    ),
     // === Sudoku variants =====================================================
     // Sudoku entries describe the variant rules — they're presets in
     // the Sudoku module, not DSL operators. All carry runnable: false

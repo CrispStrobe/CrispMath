@@ -4432,6 +4432,14 @@ class DeLocalizations implements AppLocalizations {
         return 'Betrag von x — auch der Betrag einer komplexen Zahl.';
       case 'sqrt':
         return 'Quadratwurzel von x (Hauptwert, nicht-negativer Zweig).';
+      case 'pi':
+        return 'Die Kreiszahl π ≈ 3,14159 — Umfang eines Kreises geteilt durch seinen Durchmesser. Die Taste fügt das Symbol ein.';
+      case 'imaginary_unit':
+        return 'Die imaginäre Einheit i mit i² = −1. Intern als SymEngines I dargestellt.';
+      case 'euler_gamma':
+        return 'Die Euler-Mascheroni-Konstante γ ≈ 0,57722 — der Grenzwert von (Σ 1/k − ln n) für n → ∞.';
+      case 'infinity':
+        return 'Positive Unendlichkeit ∞ — als Grenze in Grenzwerten und uneigentlichen Integralen, nicht als Rechenwert.';
       case 'sudoku_regular':
         return 'Klassische Sudoku-Regeln: Jede Zeile, Spalte und Box enthält '
             'jede Ziffer genau einmal. Vorlagen gibt es für 4×4, 6×6, 8×8, '
@@ -5242,6 +5250,18 @@ class DeLocalizations implements AppLocalizations {
       ],
       'sqrt': [
         'sqrt(x) = x^(1/2). Für andere Grade die Taste ⁿ√x.',
+      ],
+      'pi': [
+        'Für π auf eine gewählte Stellenzahl die Taste π(N) (pi_precision).',
+      ],
+      'imaginary_unit': [
+        'Komplexe Ergebnisse kommen als I zurück — z. B. solve(x² + 1 = 0) → x = ±i.',
+      ],
+      'euler_gamma': [
+        'Fügt EulerGamma ein; für γ auf eine gewählte Stellenzahl die Taste γ(N) (eulergamma_precision).',
+      ],
+      'infinity': [
+        'Fügt das ∞-Symbol ein; mit `lim` oder `∫` für Grenz-/uneigentliches Verhalten kombinieren.',
       ],
       // --- Sudoku-Varianten ---
       'sudoku_regular': [
@@ -7647,6 +7667,14 @@ class FrLocalizations implements AppLocalizations {
         return 'Valeur absolue de x — aussi le module d\'un nombre complexe.';
       case 'sqrt':
         return 'Racine carrée de x (valeur principale, branche positive).';
+      case 'pi':
+        return 'La constante π ≈ 3,14159 — circonférence d\'un cercle divisée par son diamètre. La touche insère le symbole.';
+      case 'imaginary_unit':
+        return 'L\'unité imaginaire i, avec i² = −1. Représentée en interne par I de SymEngine.';
+      case 'euler_gamma':
+        return 'La constante d\'Euler-Mascheroni γ ≈ 0,57722 — la limite de (Σ 1/k − ln n) quand n → ∞.';
+      case 'infinity':
+        return 'L\'infini positif ∞ — comme borne dans les limites et intégrales impropres, non comme valeur à calculer.';
       case 'sudoku_regular':
         return "Règles classiques du Sudoku : chaque ligne, colonne et bloc "
             "contient chaque chiffre exactement une fois. Des modèles "
@@ -8435,6 +8463,18 @@ class FrLocalizations implements AppLocalizations {
     ],
     'sqrt': [
       'sqrt(x) = x^(1/2). Pour d\'autres degrés, la touche ⁿ√x.',
+    ],
+    'pi': [
+      'Pour π à un nombre de chiffres choisi, la touche π(N) (pi_precision).',
+    ],
+    'imaginary_unit': [
+      'Les résultats complexes reviennent en termes de I — p. ex. solve(x² + 1 = 0) → x = ±i.',
+    ],
+    'euler_gamma': [
+      'Insère EulerGamma ; pour γ à un nombre de chiffres choisi, la touche γ(N) (eulergamma_precision).',
+    ],
+    'infinity': [
+      'Insère le symbole ∞ ; à combiner avec `lim` ou `∫` pour un comportement limite / impropre.',
     ],
     'sudoku_regular': [
       "Dans CrispMath, la variante classique se trouve dans "
@@ -10824,6 +10864,14 @@ class EsLocalizations implements AppLocalizations {
         return 'Valor absoluto de x — también el módulo de un número complejo.';
       case 'sqrt':
         return 'Raíz cuadrada de x (valor principal, rama no negativa).';
+      case 'pi':
+        return 'La constante π ≈ 3,14159 — circunferencia de un círculo dividida por su diámetro. La tecla inserta el símbolo.';
+      case 'imaginary_unit':
+        return 'La unidad imaginaria i, con i² = −1. Representada internamente como I de SymEngine.';
+      case 'euler_gamma':
+        return 'La constante de Euler-Mascheroni γ ≈ 0,57722 — el límite de (Σ 1/k − ln n) cuando n → ∞.';
+      case 'infinity':
+        return 'El infinito positivo ∞ — como cota en límites e integrales impropias, no como valor a calcular.';
       case 'sudoku_regular':
         return "Reglas clásicas del Sudoku: cada fila, columna y caja "
             "contiene cada dígito exactamente una vez. Hay plantillas para "
@@ -11599,6 +11647,18 @@ class EsLocalizations implements AppLocalizations {
     ],
     'sqrt': [
       'sqrt(x) = x^(1/2). Para otros grados, la tecla ⁿ√x.',
+    ],
+    'pi': [
+      'Para π con un número de dígitos elegido, la tecla π(N) (pi_precision).',
+    ],
+    'imaginary_unit': [
+      'Los resultados complejos vuelven en términos de I — p. ej. solve(x² + 1 = 0) → x = ±i.',
+    ],
+    'euler_gamma': [
+      'Inserta EulerGamma; para γ con un número de dígitos elegido, la tecla γ(N) (eulergamma_precision).',
+    ],
+    'infinity': [
+      'Inserta el símbolo ∞; combínalo con `lim` o `∫` para comportamiento límite / impropio.',
     ],
     'sudoku_regular': [
       "En CrispMath, la variante clásica está en `lib/engine/sudoku.dart` "
