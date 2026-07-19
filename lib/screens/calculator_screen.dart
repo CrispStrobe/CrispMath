@@ -22,7 +22,7 @@ import '../widgets/calculator_keypad.dart';
 import '../widgets/function_reference_dialog.dart';
 import '../widgets/help_target.dart';
 import '../widgets/history_help_modal.dart';
-import '../widgets/latex_input_field.dart';
+import '../widgets/calculator_input_bar.dart';
 import '../widgets/memory_dialogs.dart';
 import '../widgets/function_picker_dialogs.dart';
 import '../widgets/progress_overlay.dart';
@@ -2838,86 +2838,15 @@ class CalculatorScreenState extends State<CalculatorScreen>
             // backspace, ◀/▶, =/EXE) so the user never has to hunt for a
             // submit button across keypad tabs and can always recover from
             // a stuck focus state by tapping the refresh icon.
-            Container(
-              height: 120,
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        // Toolbar on the LEFT — the LaTeX field below is
-                        // right-bound (new characters appear on the right),
-                        // so keeping tools on the left keeps them out of
-                        // the way of the live input.
-                        IconButton(
-                          icon: const Icon(Icons.refresh,
-                              semanticLabel: 'Reset keyboard focus'),
-                          tooltip: 'Reset keyboard focus',
-                          onPressed: _resetFocus,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.backspace_outlined,
-                              semanticLabel: 'Backspace'),
-                          tooltip: 'Backspace',
-                          onPressed: () => _latexController.backspace(),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left,
-                              semanticLabel: 'Move cursor left'),
-                          tooltip: 'Move cursor left',
-                          onPressed: () => _latexController.moveCursor(-1),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right,
-                              semanticLabel: 'Move cursor right'),
-                          tooltip: 'Move cursor right',
-                          onPressed: () => _latexController.moveCursor(1),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        FilledButton.icon(
-                          icon: const Icon(Icons.keyboard_return,
-                              size: 18, semanticLabel: 'Evaluate'),
-                          label: const Text('='),
-                          onPressed: () => _onButtonPressed('EXE'),
-                          style: FilledButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Container(
-                            alignment: Alignment.centerRight,
-                            constraints: const BoxConstraints(minHeight: 60),
-                            child: SingleChildScrollView(
-                              reverse: true,
-                              scrollDirection: Axis.horizontal,
-                              child:
-                                  LatexInputField(controller: _latexController),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_resultPreview.isNotEmpty)
-                    Container(
-                      height: 28,
-                      alignment: Alignment.centerRight,
-                      child: Text("= $_resultPreview",
-                          style:
-                              TextStyle(fontSize: 20, color: Colors.grey[600])),
-                    ),
-                ],
-              ),
+            // Round 108: responsive input area — see CalculatorInputBar.
+            // Wide layouts keep the toolbar left of the field; phone
+            // widths stack the field full-width above the toolbar so long
+            // numbers have room.
+            CalculatorInputBar(
+              controller: _latexController,
+              onResetFocus: _resetFocus,
+              onEvaluate: () => _onButtonPressed('EXE'),
+              resultPreview: _resultPreview,
             ),
 
             // Keypad - Use the existing CalculatorKeypad widget
