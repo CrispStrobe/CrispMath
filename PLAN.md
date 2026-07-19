@@ -192,6 +192,110 @@ tests → full suite → merge → CI green) from `~/code/CrispMath-local`.
 
 ---
 
+## Constraint (CSP) module roadmap (July 2026)
+
+The Analysis-hub "Constraints" module wraps `dart_csp` (pub.dev ^2.2.0)
+behind a line-based mini-DSL, a FlatZinc tab, a MUS "Explain" panel, and
+an AC-3/GAC propagation step-visualizer. Round 108 (2026-07) widened the
+DSL to most of `dart_csp`'s global-constraint surface. What's left is
+mostly *new problem classes* that each want their own result
+visualization — the reason they're staged rather than shipped.
+
+### C7 — DSL breadth (mostly done, Round 108)
+
+- [x] **Logic combinators** — `atLeast/atMost/exactly(k, name=value, …)`
+  and `implies(a=1, b=2)` over reified conditions. Unlocks logic-grid /
+  Einstein-zebra deduction riddles. Worked example `logicGrid`.
+- [x] **Global cardinality** — `gcc(vars; v=count, …)`, `among(vars;
+  values=…; count=c)`, `nvalue(vars; count=c)`. Rostering + chromatic
+  number. Worked examples `nurseRostering`, `chromaticNumber`.
+- [x] **Regular shift-rule** — `atMostInARow(vars; value=v; max=k)`,
+  compiled to a small DFA via `addRegular`.
+- [x] **Symmetry breaking** — `valuePrecedence(vars; order=…)`.
+- [x] **Relational** — `table(vars; (…), (…))` (allowed tuples /
+  compatibility matrices) and `element(idx; list=…; value=v)` (0-based
+  indexed lookup, composes with minimize/maximize). Worked example
+  `menuPairing`.
+- [x] **Discoverability** — all 11 operators surfaced as help-mode
+  Function-Reference chips with de/fr/es descriptions + example hints;
+  6 worked examples across the puzzle classes.
+
+### C8 — New problem classes (staged; each needs a visualization)
+
+Ordered by value-for-effort. The gating cost is the **result rendering**,
+not the solve — each returns a shape the current "wall of `x = 3`" text
+display can't do justice.
+
+- [ ] **Soft constraints / MaxCSP** — `declareSoft` / `addSoftConstraint`
+  / `maximizeSatisfaction` for over-constrained problems ("satisfy as
+  many preferences as possible"). *Viz:* a satisfaction score header +
+  the soft-constraint list with satisfied ones green / violated ones
+  struck through — reuse the MUS "Explain" panel's row styling.
+- [ ] **Set variables** — `addSetVariable` / `addSubset` /
+  `addSetCardinality` / `addSetDisjoint`; team / committee selection.
+  Returns `Set` values, a genuinely new result type. *Viz:* render each
+  set solution as a chip cluster (membership), optionally a small
+  Venn/overlap diagram for `disjoint`/`subset` relations.
+- [ ] **`circuit` / `subcircuit` (TSP / routing)** — a single Hamiltonian
+  tour over successor variables. Graph-theory curriculum. *Viz:* a
+  node-graph painter drawing the tour as directed edges around placed
+  nodes (force-directed or circular layout) — the highest-impact new
+  visualization.
+- [ ] **`diffN` (2D packing / tiling)** — non-overlapping rectangles.
+  *Viz:* a 2D rectangle-layout painter, the planar sibling of the
+  existing 1-D `_GanttChart` — draw each placed rectangle at its solved
+  (x, y, w, h) with a per-item colour.
+- [ ] **Min-conflicts local search** — `solveWithMinConflicts` for large
+  / loosely-constrained instances (big N-queens, timetabling). *Viz:* an
+  educational "local search vs backtracking" panel animating the
+  conflict count dropping per iteration (line/step chart), contrasted
+  with the systematic backtracker's decision/backtrack counts.
+- [ ] **Search-strategy selector** — expose `getSolutionWithRestarts`
+  (Luby), `…WithDomWdeg`, `…WithActivity` (VSIDS), `…WithImpact`,
+  `…WithLastConflict`, `enableConflictBackjumping`. Mostly perf knobs;
+  the user-facing value is a teaching aid. *Viz:* a "solver strategy"
+  dropdown + a `SolverStats` comparison (decisions / backtracks /
+  propagations / wall-clock) so students see the heuristics' effect.
+- [ ] **LNS** — `lnsMinimize` / `lnsMaximize` for near-optimal large
+  optimization. Experimental; lowest priority.
+
+### C9 — Cross-cutting visualizations & infra
+
+- [ ] **Constraint-network graph** — a structural view of any DSL
+  program: variables as nodes, constraints as (hyper)edges, drawn before
+  solving. Turns an opaque text program into a picture; pairs naturally
+  with the propagation step-visualizer (highlight the edge being
+  revised). Reusable node-graph widget shared with `circuit`.
+- [ ] **Graph-colouring render** — for `nvalue`/`!=` colouring problems,
+  draw the graph with each node filled by its solved colour (the
+  `chromaticNumber` example is begging for this).
+- [ ] **Propagation trace for the Diophantine + Cryptarithm tabs** — the
+  step-visualizer is wired only for the DSL and Sudoku tabs today, though
+  those tabs build the same model kind (`csp_solver.dart`). Thread
+  `solveWithTrace` through and reuse `PropagationVisualizer`.
+- [ ] **Off-thread DSL solve + cancel** — the generic DSL solve still
+  runs in-process because its constraint overlays are runtime closures,
+  not sendable across an isolate. Refactor the overlays into sendable
+  data specs (kind + params) so a top-level builder can reconstruct the
+  Problem inside a worker, then route through `solveInIsolate` with a
+  `CancellationToken` (Sudoku's advanced-hint compute already does this,
+  Round 108). Also lets long/optimization solves show a real progress +
+  cancel affordance instead of blocking the UI isolate.
+- [ ] **Deeper MUS** — surface the deletion-based
+  `findMinimalUnsatisfiableSubset` alongside QuickXplain, and use
+  `ConstraintRef` granularity to point at the *specific* offending clue
+  in over-constrained logic grids.
+
+### C10 — Dev-environment note
+
+- [x] **CoreSimulator device set moved off the failing USB drive**
+  (2026-07-19). `~/Library/Developer/CoreSimulator` was a symlink into
+  `/Volumes/backups` (99% full, intermittent I/O), which broke `simctl
+  create` every session; repointed to local disk. See
+  `project_repo_location_drive_failure` memory.
+
+---
+
 ## Open work items (priority order)
 
 ### Tier 1 — Ship blockers
