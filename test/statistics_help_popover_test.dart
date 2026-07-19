@@ -2,8 +2,8 @@
 // tab. Each test-picker chip whose test has a Function Reference entry
 // is wrapped in a HelpTarget; in help mode a tap opens the shared
 // FunctionRef popover (signature + localized description + "Learn
-// more") instead of selecting the test. The one-sample-t chip has no
-// catalog entry, so it stays a plain selector even in help mode.
+// more") instead of selecting the test. Round 108: every test chip —
+// including one-sample t — is now wired to its catalogue entry.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -84,16 +84,22 @@ void main() {
         find.textContaining(deDesc!.split('(').first.trim()), findsOneWidget);
   });
 
-  testWidgets('help on: the one-sample-t chip (no catalog entry) skips popover',
+  testWidgets('help on: the one-sample-t chip opens its popover (R108)',
       (tester) async {
+    // Round 108: the `one_sample_t` catalogue entry existed but the chip
+    // was wired to a null refId; it now opens the popover like the others.
     await tester.pumpWidget(host());
     await openTestsTab(tester);
 
     AppState().setHelpMode(true);
     await tester.pump();
 
-    await tester.tap(find.text('One-sample t'));
+    await tester.tap(find.text('One-sample t'), warnIfMissed: false);
     await tester.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    final ref =
+        FunctionReferences.all.firstWhere((e) => e.id == 'one_sample_t');
+    expect(find.text(ref.signature), findsOneWidget);
+    expect(find.text('Learn more'), findsOneWidget);
   });
 }

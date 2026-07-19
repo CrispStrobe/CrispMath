@@ -23,7 +23,7 @@ void main() {
       expect(FunctionReferences.all.length, greaterThan(0));
       // Round 108 added 11 constraint-DSL globals (logic combinators,
       // cardinality, regular, symmetry, relational) as help-chip entries.
-      expect(FunctionReferences.all.length, lessThanOrEqualTo(125));
+      expect(FunctionReferences.all.length, lessThanOrEqualTo(130));
     });
 
     test('ids are non-empty, unique, and snake_case-shaped', () {

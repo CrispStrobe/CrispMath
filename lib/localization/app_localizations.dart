@@ -4309,6 +4309,10 @@ class DeLocalizations implements AppLocalizations {
         return 'Lineare Regression nach der Methode der kleinsten Quadrate '
             'y = a·x + b für gepaarte (x, y)-Daten. Gibt Steigung, '
             'Achsenabschnitt und Bestimmtheitsmaß R² aus.';
+      case 'poly_fit':
+        return 'Polynomiale Regression nach kleinsten Quadraten y = c₀ + c₁x + … + c_d·xᵈ eines gewählten Grades d auf gepaarten (x, y)-Daten. Gibt die Koeffizienten und R² aus.';
+      case 'exp_fit':
+        return 'Exponentielle Regression nach kleinsten Quadraten y = a·e^(b·x) auf gepaarten (x, y)-Daten (über eine log-lineare Transformation). Gibt a, b und R² aus.';
       case 'normal_dist':
         return 'Normalverteilung (Gauß-Verteilung) N(μ, σ): kumulierte '
             'Wahrscheinlichkeit P(X ≤ x) und das Quantil (Umkehrfunktion der '
@@ -5052,6 +5056,12 @@ class DeLocalizations implements AppLocalizations {
             'Reiter bietet auch polynomielle und exponentielle Modelle.',
         'Punkte, die nahe an y = 2x liegen, ergeben eine Steigung ≈ 2 und ein '
             'R² nahe 1 — eine nahezu perfekte lineare Anpassung.',
+      ],
+      'poly_fit': [
+        'Der Gradregler (2–5) im Regressions-Tab legt d fest; ein höherer Grad passt mehr Krümmung an, birgt aber Überanpassung. Basiert auf Statistics.polynomialFit.',
+      ],
+      'exp_fit': [
+        'Passt Wachstums-/Zerfallsdaten an; intern wird ln(y) gegen x regressiert, daher müssen alle y positiv sein. Basiert auf Statistics.expFit.',
       ],
       'normal_dist': [
         'In CrispMath wertet der Reiter „Verteilungen" die '
@@ -7601,6 +7611,10 @@ class FrLocalizations implements AppLocalizations {
             "opposé.";
       case 'at_least':
         return 'Au moins k des conditions `nom=valeur` données doivent être vraies. Chaque condition est réifiée en booléen et leur somme est minorée.';
+      case 'poly_fit':
+        return 'Régression polynomiale des moindres carrés y = c₀ + c₁x + … + c_d·xᵈ d\'un degré d choisi sur des données appariées (x, y). Renvoie les coefficients et R².';
+      case 'exp_fit':
+        return 'Régression exponentielle des moindres carrés y = a·e^(b·x) sur des données appariées (x, y) (ajustement par transformation log-linéaire). Renvoie a, b et R².';
       case 'at_most':
         return 'Au plus k des conditions `nom=valeur` données peuvent être vraies — les conditions réifiées se somment à k au maximum.';
       case 'exactly':
@@ -8282,6 +8296,12 @@ class FrLocalizations implements AppLocalizations {
           "propose aussi des modèles polynomial et exponentiel.",
       "Des points proches de y = 2x donnent une pente ≈ 2 et un R² proche de "
           "1 — un ajustement linéaire presque parfait.",
+    ],
+    'poly_fit': [
+      'Le sélecteur de degré (2–5) de l\'onglet Régression fixe d ; un degré plus élevé épouse plus de courbure mais risque le surajustement. Basé sur Statistics.polynomialFit.',
+    ],
+    'exp_fit': [
+      'Ajuste des données de croissance / décroissance ; régresse en interne ln(y) contre x, donc tous les y doivent être positifs. Basé sur Statistics.expFit.',
     ],
     'normal_dist': [
       "Dans CrispMath, l'onglet « Distributions » évalue la fonction de "
@@ -10798,6 +10818,10 @@ class EsLocalizations implements AppLocalizations {
             "opuesto.";
       case 'at_least':
         return 'Al menos k de las condiciones `nombre=valor` dadas deben cumplirse. Cada condición se reifica a booleano y su suma se acota inferiormente.';
+      case 'poly_fit':
+        return 'Regresión polinómica por mínimos cuadrados y = c₀ + c₁x + … + c_d·xᵈ de un grado d elegido sobre datos emparejados (x, y). Devuelve los coeficientes y R².';
+      case 'exp_fit':
+        return 'Regresión exponencial por mínimos cuadrados y = a·e^(b·x) sobre datos emparejados (x, y) (ajuste por transformación log-lineal). Devuelve a, b y R².';
       case 'at_most':
         return 'Como máximo k de las condiciones `nombre=valor` dadas pueden cumplirse — las condiciones reificadas suman k o menos.';
       case 'exactly':
@@ -11468,6 +11492,12 @@ class EsLocalizations implements AppLocalizations {
           "ofrece también modelos polinómico y exponencial.",
       "Puntos próximos a y = 2x dan una pendiente ≈ 2 y un R² cercano a 1: un "
           "ajuste lineal casi perfecto.",
+    ],
+    'poly_fit': [
+      'El selector de grado (2–5) de la pestaña Regresión fija d; un grado mayor ajusta más curvatura pero arriesga sobreajuste. Basado en Statistics.polynomialFit.',
+    ],
+    'exp_fit': [
+      'Regresa internamente ln(y) contra x, así que todos los y deben ser positivos; ajusta datos de crecimiento / decaimiento. Basado en Statistics.expFit.',
     ],
     'normal_dist': [
       "En CrispMath, la pestaña «Distribuciones» evalúa la función de "

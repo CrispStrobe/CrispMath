@@ -1909,8 +1909,46 @@ class FunctionReferences {
               '1 — an almost perfect linear fit.',
         ),
       ],
-      seeAlso: ['mean', 'one_sample_t'],
+      seeAlso: ['mean', 'one_sample_t', 'poly_fit', 'exp_fit'],
       openTarget: 'open:statistics?preset=statsLinearRegression',
+    ),
+    FunctionRef(
+      id: 'poly_fit',
+      category: FunctionRefCategory.statistics,
+      signature: 'Regression → Polynomial fit',
+      shortDescription:
+          'Least-squares polynomial regression y = c₀ + c₁x + … + c_d·xᵈ of a '
+          'chosen degree d on paired (x, y) data. Reports the coefficients '
+          'and R².',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'x = [...], y = [...], degree d',
+          expected: 'y = Σ cₖ·xᵏ, R²',
+          hint: 'The Regression tab\'s degree selector (2–5) sets d; a higher '
+              'degree fits more curvature but risks overfitting. Backed by '
+              'Statistics.polynomialFit (`lib/engine/statistics.dart`).',
+        ),
+      ],
+      seeAlso: ['linreg', 'exp_fit', 'mean'],
+    ),
+    FunctionRef(
+      id: 'exp_fit',
+      category: FunctionRefCategory.statistics,
+      signature: 'Regression → Exponential fit',
+      shortDescription:
+          'Least-squares exponential regression y = a·e^(b·x) on paired '
+          '(x, y) data (fit via a log-linear transform). Reports a, b and R².',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'x = [...], y = [...]',
+          expected: 'y = a·e^(b·x), R²',
+          hint: 'Fits growth / decay data; internally regresses ln(y) against '
+              'x, so every y must be positive. Backed by Statistics.expFit.',
+        ),
+      ],
+      seeAlso: ['linreg', 'poly_fit', 'mean'],
     ),
     FunctionRef(
       id: 'normal_dist',

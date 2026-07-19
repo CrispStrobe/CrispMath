@@ -399,6 +399,20 @@ class _RegressionTabState extends State<_RegressionTab> {
     }
   }
 
+  // A regression-model selector chip that also opens its Function
+  // Reference popover in help mode (mirrors the Tests tab's _testChip).
+  Widget _modelChip(String label, _RegressionModel model, String refId) {
+    final chip = ChoiceChip(
+      label: Text(label),
+      selected: _model == model,
+      onSelected: (_) => setState(() => _model = model),
+    );
+    return HelpTarget(
+      onHelpTap: () => showFunctionRefHelpPopover(context, refId),
+      child: chip,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final xs = _parse(_xs.text);
@@ -412,24 +426,10 @@ class _RegressionTabState extends State<_RegressionTab> {
           Wrap(
             spacing: 6,
             children: [
-              ChoiceChip(
-                label: const Text('Linear'),
-                selected: _model == _RegressionModel.linear,
-                onSelected: (_) =>
-                    setState(() => _model = _RegressionModel.linear),
-              ),
-              ChoiceChip(
-                label: const Text('Polynomial'),
-                selected: _model == _RegressionModel.polynomial,
-                onSelected: (_) =>
-                    setState(() => _model = _RegressionModel.polynomial),
-              ),
-              ChoiceChip(
-                label: const Text('Exponential'),
-                selected: _model == _RegressionModel.exponential,
-                onSelected: (_) =>
-                    setState(() => _model = _RegressionModel.exponential),
-              ),
+              _modelChip('Linear', _RegressionModel.linear, 'linreg'),
+              _modelChip('Polynomial', _RegressionModel.polynomial, 'poly_fit'),
+              _modelChip(
+                  'Exponential', _RegressionModel.exponential, 'exp_fit'),
             ],
           ),
           if (_model == _RegressionModel.polynomial) ...[
@@ -1363,7 +1363,7 @@ class _TestsTabState extends State<_TestsTab> {
             spacing: 6,
             runSpacing: 4,
             children: [
-              _testChip('One-sample t', _TestKind.oneSampleT, null),
+              _testChip('One-sample t', _TestKind.oneSampleT, 'one_sample_t'),
               _testChip(
                   'Two-sample t (Welch)', _TestKind.twoSampleT, 'welch_t'),
               _testChip('Paired t', _TestKind.pairedT, 'paired_t'),
