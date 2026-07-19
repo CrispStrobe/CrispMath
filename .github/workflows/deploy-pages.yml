@@ -1,0 +1,68 @@
+# GitHub Pages deploy — the per-push preview channel. Every push to
+# `main` rebuilds the web bundle and publishes it to
+# https://crispstrobe.github.io/CrispMath/ (Pages has no per-day deploy
+# cap, unlike Vercel's free tier). Production on Vercel is reserved for
+# release tags — see build-web.yml.
+#
+# Pages serves the site from a repo sub-path, so the build needs
+# `--base-href /CrispMath/` (root `/` would break asset URLs). A copy of
+# index.html as 404.html gives the Flutter SPA a client-side-routing
+# fallback, since Pages has no rewrite rules.
+#
+# Pages must be set to "GitHub Actions" as its source (Settings → Pages,
+# or `gh api -X POST repos/<owner>/<repo>/pages -f build_type=workflow`).
+
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The deploy-pages action needs these to mint the Pages OIDC token.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two Pages deploys race; keep the most recent push.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          # Pinned in lockstep with ci.yml / build-web.yml.
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build web (release, dart2js, Pages base-href)
+        run: flutter build web --release --base-href /CrispMath/
+
+      - name: SPA 404 fallback
+        run: cp build/web/index.html build/web/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
