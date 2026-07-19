@@ -4386,6 +4386,18 @@ class DeLocalizations implements AppLocalizations {
             'Index. Modelliert Indirektion wie „die Kosten der gewählten '
             'Option sind v".';
       // --- Sudoku-Varianten ---
+      case 'dot':
+        return 'Skalarprodukt (Punktprodukt) zweier gleich langer Vektoren: Σ aᵢ·bᵢ. Ergibt einen Skalar.';
+      case 'cross':
+        return 'Kreuzprodukt zweier 3-Vektoren: der zu beiden orthogonale Vektor mit Länge |a||b|sin θ.';
+      case 'norm':
+        return 'Euklidische Länge (2-Norm) eines Vektors: √(Σ vᵢ²).';
+      case 'unit':
+        return 'Einheitsvektor in Richtung von v: v / norm(v). Gleiche Richtung, Länge 1.';
+      case 'mod':
+        return 'Modulo: der Rest von a ÷ n. Die `mod`-Taste fügt den Operator zwischen zwei ganze Zahlen ein.';
+      case 'nth_root':
+        return 'Die n-te Wurzel von x, also x^(1/n). Die Taste öffnet einen kleinen Dialog für den Grad n und den Radikanden x.';
       case 'sudoku_regular':
         return 'Klassische Sudoku-Regeln: Jede Zeile, Spalte und Box enthält '
             'jede Ziffer genau einmal. Vorlagen gibt es für 4×4, 6×6, 8×8, '
@@ -5127,6 +5139,24 @@ class DeLocalizations implements AppLocalizations {
       'element': [
         'Kombiniere mit `minimize`/`maximize` über den nachgeschlagenen Wert, '
             'um eine Auswahl unter tabellierten Kosten zu optimieren.',
+      ],
+      'dot': [
+        'Das Skalarprodukt ist |a||b|cos θ — genau dann null, wenn die Vektoren orthogonal sind.',
+      ],
+      'cross': [
+        'Rechte-Hand-Regel: x × y = z. Nur für 3-Vektoren definiert.',
+      ],
+      'norm': [
+        'Das 3-4-5-Dreieck. `norm` ist der Betrag, durch den `unit` teilt.',
+      ],
+      'unit': [
+        'Normieren behält die Richtung, verwirft den Betrag — für den Nullvektor undefiniert.',
+      ],
+      'mod': [
+        'Passt zu `modpow` / `modinv` für modulare Arithmetik; `a mod n` ist `a − n·⌊a/n⌋`.',
+      ],
+      'nth_root': [
+        'Die Kubikwurzel von 27. Für n = 2 die eigene √-Taste; `ⁿ√x` deckt jeden Grad ab.',
       ],
       // --- Sudoku-Varianten ---
       'sudoku_regular': [
@@ -7486,6 +7516,18 @@ class FrLocalizations implements AppLocalizations {
         return 'Le tuple (x, y, z) doit correspondre à l\'une des lignes listées. Encode des relations arbitraires : matrices de compatibilité, combinaisons autorisées, tables d\'indices de casse-tête logique.';
       case 'element':
         return 'Accès indexé : list[idx] == value, index base 0. Modélise une indirection comme « le coût de l\'option choisie est v ».';
+      case 'dot':
+        return 'Produit scalaire de deux vecteurs de même longueur : Σ aᵢ·bᵢ. Renvoie un scalaire.';
+      case 'cross':
+        return 'Produit vectoriel de deux vecteurs 3D : le vecteur orthogonal aux deux, de longueur |a||b|sin θ.';
+      case 'norm':
+        return 'Longueur euclidienne (norme 2) d\'un vecteur : √(Σ vᵢ²).';
+      case 'unit':
+        return 'Vecteur unitaire dans la direction de v : v / norm(v). Même direction, longueur 1.';
+      case 'mod':
+        return 'Modulo : le reste de a ÷ n. La touche `mod` insère l\'opérateur entre deux entiers.';
+      case 'nth_root':
+        return 'La racine n-ième de x, soit x^(1/n). La touche ouvre une petite boîte de dialogue pour le degré n et le radicande x.';
       case 'sudoku_regular':
         return "Règles classiques du Sudoku : chaque ligne, colonne et bloc "
             "contient chaque chiffre exactement une fois. Des modèles "
@@ -8205,6 +8247,24 @@ class FrLocalizations implements AppLocalizations {
     ],
     'element': [
       'Combinez avec `minimize`/`maximize` sur la valeur consultée pour optimiser un choix parmi des coûts tabulés.',
+    ],
+    'dot': [
+      'Le produit scalaire vaut |a||b|cos θ — nul exactement quand les vecteurs sont orthogonaux.',
+    ],
+    'cross': [
+      'Règle de la main droite : x × y = z. Défini seulement pour les vecteurs 3D.',
+    ],
+    'norm': [
+      'Le triangle 3-4-5. `norm` est la magnitude par laquelle `unit` divise.',
+    ],
+    'unit': [
+      'Normaliser conserve la direction, jette la magnitude — indéfini pour le vecteur nul.',
+    ],
+    'mod': [
+      'Se combine avec `modpow` / `modinv` pour l\'arithmétique modulaire ; `a mod n` vaut `a − n·⌊a/n⌋`.',
+    ],
+    'nth_root': [
+      'La racine cubique de 27. Pour n = 2, utilisez la touche √ dédiée ; `ⁿ√x` couvre tout degré.',
     ],
     'sudoku_regular': [
       "Dans CrispMath, la variante classique se trouve dans "
@@ -10548,6 +10608,18 @@ class EsLocalizations implements AppLocalizations {
         return 'La tupla (x, y, z) debe coincidir con una de las filas listadas. Codifica relaciones arbitrarias: matrices de compatibilidad, combinaciones permitidas, tablas de pistas de acertijos lógicos.';
       case 'element':
         return 'Acceso indexado: list[idx] == value, índice base 0. Modela indirección como «el coste de la opción elegida es v».';
+      case 'dot':
+        return 'Producto escalar de dos vectores de igual longitud: Σ aᵢ·bᵢ. Devuelve un escalar.';
+      case 'cross':
+        return 'Producto vectorial de dos vectores 3D: el vector ortogonal a ambos, de longitud |a||b|sin θ.';
+      case 'norm':
+        return 'Longitud euclídea (norma 2) de un vector: √(Σ vᵢ²).';
+      case 'unit':
+        return 'Vector unitario en la dirección de v: v / norm(v). Misma dirección, longitud 1.';
+      case 'mod':
+        return 'Módulo: el resto de a ÷ n. La tecla `mod` inserta el operador entre dos enteros.';
+      case 'nth_root':
+        return 'La raíz n-ésima de x, es decir x^(1/n). La tecla abre un pequeño diálogo para el grado n y el radicando x.';
       case 'sudoku_regular':
         return "Reglas clásicas del Sudoku: cada fila, columna y caja "
             "contiene cada dígito exactamente una vez. Hay plantillas para "
@@ -11254,6 +11326,24 @@ class EsLocalizations implements AppLocalizations {
     ],
     'element': [
       'Combina con `minimize`/`maximize` sobre el valor consultado para optimizar una elección entre costes tabulados.',
+    ],
+    'dot': [
+      'El producto escalar es |a||b|cos θ — cero exactamente cuando los vectores son ortogonales.',
+    ],
+    'cross': [
+      'Regla de la mano derecha: x × y = z. Definido solo para vectores 3D.',
+    ],
+    'norm': [
+      'El triángulo 3-4-5. `norm` es la magnitud por la que `unit` divide.',
+    ],
+    'unit': [
+      'Normalizar conserva la dirección, descarta la magnitud — indefinido para el vector cero.',
+    ],
+    'mod': [
+      'Se combina con `modpow` / `modinv` para aritmética modular; `a mod n` es `a − n·⌊a/n⌋`.',
+    ],
+    'nth_root': [
+      'La raíz cúbica de 27. Para n = 2 usa la tecla √ dedicada; `ⁿ√x` cubre cualquier grado.',
     ],
     'sudoku_regular': [
       "En CrispMath, la variante clásica está en `lib/engine/sudoku.dart` "

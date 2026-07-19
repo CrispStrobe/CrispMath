@@ -21,6 +21,23 @@ import 'package:crisp_math/widgets/keypad_grid.dart';
 void main() {
   setUp(() => AppState().setHelpMode(false));
 
+  test('every keypad help-map refId resolves to a Function Reference entry',
+      () {
+    final ids = {for (final e in FunctionReferences.all) e.id};
+    for (final map in [kCasKeyHelpRefId, kAdvKeyHelpRefId]) {
+      map.forEach((key, refId) {
+        expect(ids, contains(refId),
+            reason: 'keypad key "$key" → refId "$refId" has no catalogue '
+                'entry (dangling help mapping)');
+      });
+    }
+    // The Round 108b Advanced-tab methods are wired.
+    for (final k in ['dot', 'cross', 'norm', 'unit', 'mod', 'ⁿ√x']) {
+      expect(kAdvKeyHelpRefId, contains(k),
+          reason: 'Advanced method "$k" lost its help mapping');
+    }
+  });
+
   Widget host(Widget child) => MaterialApp(
         localizationsDelegates: const [AppLocalizationsDelegate()],
         supportedLocales: const [Locale('en')],

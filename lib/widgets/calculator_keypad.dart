@@ -32,7 +32,7 @@ enum _PaneKind { num, trig, cas, advanced, vars }
 /// `calculator_screen.dart`'s `case '<glyph>':` arms — e.g. the
 /// `prime` button inserts `isprime()`, so it maps to the
 /// `isprime` FunctionRef row.
-const Map<String, String> _kAdvKeyHelpRefId = {
+const Map<String, String> kAdvKeyHelpRefId = {
   '!': 'factorial',
   'fib': 'fibonacci',
   'prime': 'isprime',
@@ -41,6 +41,12 @@ const Map<String, String> _kAdvKeyHelpRefId = {
   'inv': 'inv',
   'transpose': 'transpose',
   'rref': 'rref',
+  'dot': 'dot',
+  'cross': 'cross',
+  'norm': 'norm',
+  'unit': 'unit',
+  'mod': 'mod',
+  'ⁿ√x': 'nth_root',
   'π(N)': 'pi_precision',
   'e(N)': 'e_precision',
   'γ(N)': 'eulergamma_precision',
@@ -89,8 +95,8 @@ const Map<String, String> _kAdvKeyHelpRefId = {
 /// the `=` / `,` punctuation, and the `f(x)` user-function template
 /// are deliberately absent — they're calculator UX, not engine
 /// surface, and have no FunctionRef row. The Adv tab's
-/// [_kAdvKeyHelpRefId] documents the same convention.
-const Map<String, String> _kCasKeyHelpRefId = {
+/// [kAdvKeyHelpRefId] documents the same convention.
+const Map<String, String> kCasKeyHelpRefId = {
   'solve': 'solve',
   'factor': 'factor',
   'expand': 'expand',
@@ -372,13 +378,13 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
               KeypadGrid(
                 buttons: _casKeys,
                 onButtonPressed: widget.onButtonPressed,
-                helpRefIdFor: (text) => _kCasKeyHelpRefId[text],
+                helpRefIdFor: (text) => kCasKeyHelpRefId[text],
                 onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
               ),
               KeypadGrid(
                 buttons: _advKeys,
                 onButtonPressed: widget.onButtonPressed,
-                helpRefIdFor: (text) => _kAdvKeyHelpRefId[text],
+                helpRefIdFor: (text) => kAdvKeyHelpRefId[text],
                 onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
               ),
               VariableViewer(
@@ -461,7 +467,7 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
       return KeypadGrid(
         buttons: _advKeys,
         onButtonPressed: widget.onButtonPressed,
-        helpRefIdFor: (text) => _kAdvKeyHelpRefId[text],
+        helpRefIdFor: (text) => kAdvKeyHelpRefId[text],
         onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
       );
     }
@@ -469,7 +475,7 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
       return KeypadGrid(
         buttons: _casKeys,
         onButtonPressed: widget.onButtonPressed,
-        helpRefIdFor: (text) => _kCasKeyHelpRefId[text],
+        helpRefIdFor: (text) => kCasKeyHelpRefId[text],
         onHelpTap: (refId) => showKeypadHelpPopover(context, refId),
       );
     }

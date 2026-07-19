@@ -2355,6 +2355,110 @@ class FunctionReferences {
       ],
       seeAlso: ['table', 'minimize'],
     ),
+    // === Round 108b: Advanced-tab vector / modular / root operations
+    // that previously had no help popover. Runnable calculator
+    // expressions except where the invocation is operator/dialog-based.
+    FunctionRef(
+      id: 'dot',
+      category: FunctionRefCategory.matrix,
+      signature: 'dot([a1, a2, …], [b1, b2, …])',
+      shortDescription:
+          'Dot (scalar) product of two equal-length vectors: Σ aᵢ·bᵢ. '
+          'Returns a scalar.',
+      examples: [
+        FunctionRefExample(
+          input: 'dot([1, 2, 3], [4, 5, 6])',
+          expected: '32',
+          hint: 'The dot product is |a||b|cos θ — zero exactly when the '
+              'vectors are orthogonal.',
+        ),
+      ],
+      seeAlso: ['cross', 'norm', 'matrix_literal'],
+    ),
+    FunctionRef(
+      id: 'cross',
+      category: FunctionRefCategory.matrix,
+      signature: 'cross([a1, a2, a3], [b1, b2, b3])',
+      shortDescription:
+          'Cross product of two 3-vectors: the vector orthogonal to both, '
+          'with length |a||b|sin θ.',
+      examples: [
+        FunctionRefExample(
+          input: 'cross([1, 0, 0], [0, 1, 0])',
+          expected: '[0, 0, 1]',
+          hint: 'Right-hand rule: x × y = z. Defined only for 3-vectors.',
+        ),
+      ],
+      seeAlso: ['dot', 'norm', 'matrix_literal'],
+    ),
+    FunctionRef(
+      id: 'norm',
+      category: FunctionRefCategory.matrix,
+      signature: 'norm([v1, v2, …])',
+      shortDescription: 'Euclidean length (2-norm) of a vector: √(Σ vᵢ²).',
+      examples: [
+        FunctionRefExample(
+          input: 'norm([3, 4])',
+          expected: '5',
+          hint: 'The 3-4-5 right triangle. `norm` is the magnitude that '
+              '`unit` divides by.',
+        ),
+      ],
+      seeAlso: ['unit', 'dot', 'matrix_literal'],
+    ),
+    FunctionRef(
+      id: 'unit',
+      category: FunctionRefCategory.matrix,
+      signature: 'unit([v1, v2, …])',
+      shortDescription:
+          'Unit vector in the direction of v: v / norm(v). Same direction, '
+          'length 1.',
+      examples: [
+        FunctionRefExample(
+          input: 'unit([3, 4])',
+          expected: '[3/5, 4/5]',
+          hint: 'Normalizing keeps direction, discards magnitude — undefined '
+              'for the zero vector.',
+        ),
+      ],
+      seeAlso: ['norm', 'dot', 'matrix_literal'],
+    ),
+    FunctionRef(
+      id: 'mod',
+      category: FunctionRefCategory.numberTheory,
+      signature: 'a mod n',
+      shortDescription:
+          'Modulo: the remainder of a ÷ n. The `mod` keypad key inserts the '
+          'operator between two integers.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: '17 mod 5',
+          expected: '2',
+          hint: 'Pairs with `modpow` / `modinv` for modular arithmetic; '
+              '`a mod n` equals `a − n·⌊a/n⌋`.',
+        ),
+      ],
+      seeAlso: ['modpow', 'modinv', 'gcd'],
+    ),
+    FunctionRef(
+      id: 'nth_root',
+      category: FunctionRefCategory.cas,
+      signature: 'ⁿ√x  (n-th root of x)',
+      shortDescription:
+          'The n-th root of x, i.e. x^(1/n). The keypad key opens a small '
+          'dialog for the degree n and the radicand x.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'ⁿ√x with n = 3, x = 27',
+          expected: '3',
+          hint: 'The cube root of 27. For n = 2 use the dedicated √ key; '
+              '`ⁿ√x` covers any degree.',
+        ),
+      ],
+      seeAlso: ['sqrt_precision', 'evalf'],
+    ),
     // === Sudoku variants =====================================================
     // Sudoku entries describe the variant rules — they're presets in
     // the Sudoku module, not DSL operators. All carry runnable: false
