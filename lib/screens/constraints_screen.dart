@@ -575,6 +575,17 @@ class _ResultBlock extends StatelessWidget {
             isSub: result.circuitIsSub,
           ),
         ],
+        // Soft-constraint (MaxCSP) overlay: present when the DSL program
+        // had `soft(…)` lines. Shows the satisfaction score plus each
+        // preference — satisfied in green, violated struck through.
+        if (result.softResults.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _SoftConstraintPanel(
+            results: result.softResults,
+            satisfiedWeight: result.satisfiedWeight,
+            totalWeight: result.totalWeight,
+          ),
+        ],
         // Map-coloring overlay: the `mapColoringAustralia` gallery
         // program assigns a color to each of the seven Australian
         // regions. When the first solution is exactly that variable
@@ -1174,6 +1185,100 @@ class _TourPainter extends CustomPainter {
       old.isSub != isSub;
 }
 
+/// MaxCSP satisfaction panel for `soft(…)` programs. A score header
+/// (satisfied weight / total, with a progress bar) over a list of the
+/// preferences — satisfied ones in green with a check, violated ones
+/// struck through with the outline colour.
+class _SoftConstraintPanel extends StatelessWidget {
+  final List<SoftConstraintResult> results;
+  final int satisfiedWeight;
+  final int totalWeight;
+
+  const _SoftConstraintPanel({
+    required this.results,
+    required this.satisfiedWeight,
+    required this.totalWeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context);
+    final frac = totalWeight == 0 ? 0.0 : satisfiedWeight / totalWeight;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t.constraintsSoftScore(satisfiedWeight, totalWeight),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: frac,
+              minHeight: 6,
+              backgroundColor: scheme.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Color.lerp(scheme.error, const Color(0xFF388E3C), frac) ??
+                    scheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          for (final s in results)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Icon(
+                    s.satisfied ? Icons.check_circle : Icons.cancel_outlined,
+                    size: 16,
+                    color: s.satisfied
+                        ? const Color(0xFF388E3C)
+                        : scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      s.description,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: s.satisfied
+                            ? scheme.onSurface
+                            : scheme.onSurfaceVariant,
+                        decoration:
+                            s.satisfied ? null : TextDecoration.lineThrough,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'w${s.weight}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 // === Cryptarithm tab ====================================================
 
 class _CryptarithmTab extends StatefulWidget {
@@ -1662,6 +1767,20 @@ diffN((ax,ay,2,2), (bx,by,2,1), (cx,cy,1,2))''',
 vars: depot, shop, bank, park in 0..3
 circuit(depot, shop, bank, park; labels=Depot, Shop, Bank, Park)''',
     ),
+    (
+      // Round 110 (C8): over-constrained scheduling with soft
+      // preferences. The hard constraint forces two shifts apart; three
+      // weighted preferences pull in conflicting directions, so the
+      // MaxCSP solver keeps the heaviest satisfiable set.
+      id: 'shiftPrefs',
+      program: '''# Two people, three time slots (0,1,2). They must differ.
+# Weighted preferences — the solver keeps the best satisfiable set.
+vars: alex, bo in 0..2
+alex != bo
+soft(3): alex = 0     # Alex strongly prefers the early slot
+soft(2): bo = 0       # Bo also wants it (they can't both have it)
+soft(1): alex = bo    # a nice-to-have that the hard rule forbids''',
+    ),
   ];
 
   final _ctl = TextEditingController(text: _gallery.first.program);
@@ -1936,6 +2055,7 @@ const dslOperatorHelpChips = <(String, String)>[
   ('element', 'element'),
   ('diffN', 'diff_n'),
   ('circuit', 'circuit'),
+  ('soft', 'soft'),
   ('minimize', 'minimize'),
   ('maximize', 'maximize'),
 ];

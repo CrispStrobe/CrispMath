@@ -508,6 +508,7 @@ abstract class AppLocalizations {
   String get constraintsMagicIntro;
   String get constraintsMagicSize;
   String constraintsMagicConstant(int m);
+  String constraintsSoftScore(int satisfied, int total);
   String get constraintsMagicGenerate;
   String get constraintsMagicHint;
   String get constraintsDslIntro;
@@ -1752,6 +1753,9 @@ class EnLocalizations implements AppLocalizations {
   @override
   String constraintsMagicConstant(int m) => 'Magic constant: $m';
   @override
+  String constraintsSoftScore(int satisfied, int total) =>
+      'Satisfaction: $satisfied / $total';
+  @override
   String get constraintsMagicGenerate => 'Generate';
   @override
   String get constraintsMagicHint =>
@@ -1814,6 +1818,8 @@ class EnLocalizations implements AppLocalizations {
         return '2D packing (diffN layout)';
       case 'deliveryRoute':
         return 'Delivery route (circuit / TSP)';
+      case 'shiftPrefs':
+        return 'Shift preferences (soft / MaxCSP)';
     }
     return id;
   }
@@ -3462,6 +3468,9 @@ class DeLocalizations implements AppLocalizations {
   @override
   String constraintsMagicConstant(int m) => 'Magische Konstante: $m';
   @override
+  String constraintsSoftScore(int satisfied, int total) =>
+      'Erfüllung: $satisfied / $total';
+  @override
   String get constraintsMagicGenerate => 'Erzeugen';
   @override
   String get constraintsMagicHint =>
@@ -3524,6 +3533,8 @@ class DeLocalizations implements AppLocalizations {
         return '2D-Packung (diffN-Layout)';
       case 'deliveryRoute':
         return 'Lieferroute (circuit / TSP)';
+      case 'shiftPrefs':
+        return 'Schichtpräferenzen (soft / MaxCSP)';
     }
     return id;
   }
@@ -4417,6 +4428,12 @@ class DeLocalizations implements AppLocalizations {
             'Modelliert Rundreise- und Routingprobleme; der DSL-Tab zeichnet '
             'die Tour als gerichteten Knotengraphen. `subcircuit` erlaubt '
             'unbesuchte Knoten (Schleifen).';
+      case 'soft':
+        return 'Eine MaxCSP-Präferenz: Der Löser erfüllt sie, wenn möglich, '
+            'und sie trägt ihr Gewicht (Standard 1) zur Bewertung bei. Bei '
+            'widersprüchlichen Präferenzen gewinnt die Zuweisung mit dem '
+            'höchsten erfüllten Gesamtgewicht. Der DSL-Tab zeigt einen '
+            'Erfüllungswert und welche Präferenzen galten.';
       // --- Sudoku-Varianten ---
       case 'dot':
         return 'Skalarprodukt (Punktprodukt) zweier gleich langer Vektoren: Σ aᵢ·bᵢ. Ergibt einen Skalar.';
@@ -5229,6 +5246,11 @@ class DeLocalizations implements AppLocalizations {
         'Jede Nachfolgervariable muss mit einem Wertebereich deklariert sein, '
             'der 0..n-1 abdeckt. Mit `; labels=…` werden die Knoten im '
             'Diagramm benannt; `subcircuit` erlaubt übersprungene Knoten.',
+      ],
+      'soft': [
+        'Der Rumpf ist ein einfacher Vergleich (`x = 5`, `x < 3`, `x = y`). '
+            'Kann nicht mit `minimize`/`maximize` kombiniert werden — beides '
+            'sind Zielfunktionen.',
       ],
       'dot': [
         'Das Skalarprodukt ist |a||b|cos θ — genau dann null, wenn die Vektoren orthogonal sind.',
@@ -6751,6 +6773,9 @@ class FrLocalizations implements AppLocalizations {
   @override
   String constraintsMagicConstant(int m) => 'Constante magique : $m';
   @override
+  String constraintsSoftScore(int satisfied, int total) =>
+      'Satisfaction : $satisfied / $total';
+  @override
   String get constraintsMagicGenerate => 'Générer';
   @override
   String get constraintsMagicHint =>
@@ -6815,6 +6840,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Placement 2D (disposition diffN)';
       case 'deliveryRoute':
         return 'Tournée de livraison (circuit / TSP)';
+      case 'shiftPrefs':
+        return 'Préférences d\'horaire (soft / MaxCSP)';
     }
     return id;
   }
@@ -7685,6 +7712,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Rectangles 2D sans chevauchement : chaque tuple place un rectangle w×h au coin inférieur gauche (x, y). Modélise le placement, le pavage et les plans au sol ; l\'onglet DSL dessine la disposition trouvée à l\'échelle.';
       case 'circuit':
         return 'Un unique circuit hamiltonien sur des variables successeur : next[i] est le nœud visité après le nœud i, et le circuit doit atteindre chaque nœud une fois puis revenir au départ. Modélise le voyageur de commerce et le routage ; l\'onglet DSL dessine le circuit en graphe orienté. `subcircuit` autorise des nœuds non visités (boucles).';
+      case 'soft':
+        return 'Une préférence MaxCSP : le solveur la satisfait si possible, contribuant son poids (1 par défaut) au score. Quand les préférences s\'opposent, l\'affectation qui maximise le poids total satisfait l\'emporte. L\'onglet DSL affiche un score de satisfaction et quelles préférences ont tenu.';
       case 'dot':
         return 'Produit scalaire de deux vecteurs de même longueur : Σ aᵢ·bᵢ. Renvoie un scalaire.';
       case 'cross':
@@ -8470,6 +8499,9 @@ class FrLocalizations implements AppLocalizations {
     ],
     'circuit': [
       'Chaque variable successeur doit être déclarée avec un domaine couvrant 0..n-1. Ajoutez `; labels=…` pour nommer les nœuds dans le graphe ; utilisez `subcircuit` si certains nœuds peuvent être ignorés.',
+    ],
+    'soft': [
+      'Le corps est une comparaison simple (`x = 5`, `x < 3`, `x = y`). Ne peut pas être combiné avec `minimize`/`maximize` — les deux sont des objectifs.',
     ],
     'dot': [
       'Le produit scalaire vaut |a||b|cos θ — nul exactement quand les vecteurs sont orthogonaux.',
@@ -9984,6 +10016,9 @@ class EsLocalizations implements AppLocalizations {
   @override
   String constraintsMagicConstant(int m) => 'Constante mágica: $m';
   @override
+  String constraintsSoftScore(int satisfied, int total) =>
+      'Satisfacción: $satisfied / $total';
+  @override
   String get constraintsMagicGenerate => 'Generar';
   @override
   String get constraintsMagicHint =>
@@ -10047,6 +10082,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Empaquetado 2D (disposición diffN)';
       case 'deliveryRoute':
         return 'Ruta de reparto (circuit / TSP)';
+      case 'shiftPrefs':
+        return 'Preferencias de turno (soft / MaxCSP)';
     }
     return id;
   }
@@ -10910,6 +10947,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Rectángulos 2D sin solapamiento: cada tupla coloca un rectángulo w×h en la esquina inferior izquierda (x, y). Modela empaquetado, teselado y planos de planta; la pestaña DSL dibuja la disposición hallada a escala.';
       case 'circuit':
         return 'Un único circuito hamiltoniano sobre variables sucesoras: next[i] es el nodo visitado tras el nodo i, y el circuito debe alcanzar cada nodo una vez y volver al inicio. Modela el viajante de comercio y el enrutamiento; la pestaña DSL dibuja el circuito como grafo dirigido. `subcircuit` permite nodos no visitados (bucles).';
+      case 'soft':
+        return 'Una preferencia MaxCSP: el solucionador la satisface cuando puede, aportando su peso (1 por defecto) a la puntuación. Cuando las preferencias entran en conflicto, gana la asignación que maximiza el peso total satisfecho. La pestaña DSL muestra una puntuación de satisfacción y qué preferencias se cumplieron.';
       case 'dot':
         return 'Producto escalar de dos vectores de igual longitud: Σ aᵢ·bᵢ. Devuelve un escalar.';
       case 'cross':
@@ -11682,6 +11721,9 @@ class EsLocalizations implements AppLocalizations {
     ],
     'circuit': [
       'Cada variable sucesora debe declararse con un dominio que cubra 0..n-1. Añade `; labels=…` para nombrar los nodos en el grafo; usa `subcircuit` si algunos nodos pueden omitirse.',
+    ],
+    'soft': [
+      'El cuerpo es una comparación simple (`x = 5`, `x < 3`, `x = y`). No puede combinarse con `minimize`/`maximize`: ambos son objetivos.',
     ],
     'dot': [
       'El producto escalar es |a||b|cos θ — cero exactamente cuando los vectores son ortogonales.',

@@ -268,6 +268,27 @@ circuit(depot, shop, bank, park; labels=Depot, Shop, Bank, Park)''');
       expect(r.solutions, hasLength(6));
     }, timeout: _t);
 
+    test('shiftPrefs — MaxCSP keeps the best satisfiable preference set',
+        () async {
+      final r = await CspSolver.solveDsl(
+          '''# Two people, three time slots (0,1,2). They must differ.
+# Weighted preferences — the solver keeps the best satisfiable set.
+vars: alex, bo in 0..2
+alex != bo
+soft(3): alex = 0     # Alex strongly prefers the early slot
+soft(2): bo = 0       # Bo also wants it (they can't both have it)
+soft(1): alex = bo    # a nice-to-have that the hard rule forbids''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.softResults, hasLength(3));
+      final byDesc = {for (final s in r.softResults) s.description: s};
+      // alex=0 (w3) is kept; bo=0 conflicts with it (alex!=bo), and
+      // alex=bo is forbidden by the hard rule. Best score = 3.
+      expect(byDesc['alex = 0']!.satisfied, isTrue);
+      expect(byDesc['alex = bo']!.satisfied, isFalse);
+      expect(r.satisfiedWeight, 3);
+      expect(r.totalWeight, 6);
+    }, timeout: _t);
+
     test('chromaticNumber — odd 5-cycle needs 3 colours', () async {
       final r = await CspSolver.solveDsl(
           '''# Fewest colours for a 5-cycle (odd cycle ⇒ 3).
@@ -545,6 +566,82 @@ circuit(a, b, c)
 ''');
       expect(r.ok, isFalse);
       expect(r.error, contains('only one circuit'));
+    });
+  });
+
+  group('soft constraints (MaxCSP)', () {
+    test('conflicting preferences: the heavier one is kept', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b in 0..2
+a != b
+soft(3): a = 1
+soft(2): b = 1
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, hasLength(1));
+      expect(r.softResults, hasLength(2));
+      // a=1 (w3) beats b=1 (w2); a != b forbids both.
+      final byDesc = {for (final s in r.softResults) s.description: s};
+      expect(byDesc['a = 1']!.satisfied, isTrue);
+      expect(byDesc['b = 1']!.satisfied, isFalse);
+      expect(r.satisfiedWeight, 3);
+      expect(r.totalWeight, 5);
+      // The reified indicator vars never leak into the assignment.
+      expect(r.solutions.first.keys.every((k) => !k.startsWith('_')), isTrue);
+    }, timeout: _t);
+
+    test('all preferences satisfiable ⇒ full score', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b in 0..3
+soft: a = 2
+soft: b < 2
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      // Default weight 1 each; both can hold (a=2, b∈{0,1}).
+      expect(r.satisfiedWeight, 2);
+      expect(r.totalWeight, 2);
+      expect(r.solutions.first['a'], 2);
+      expect(r.solutions.first['b']! < 2, isTrue);
+    }, timeout: _t);
+
+    test('variable-to-variable soft preference', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b in 0..2
+soft(5): a = b
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      // No hard constraint blocks a = b, so it holds.
+      expect(r.softResults.single.satisfied, isTrue);
+      expect(r.solutions.first['a'], r.solutions.first['b']);
+    }, timeout: _t);
+
+    test('soft cannot be combined with minimize', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a in 0..5
+soft: a = 3
+minimize a
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('cannot combine'));
+    });
+
+    test('a malformed soft body is a line-numbered error', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b in 0..2
+soft(2): a + b = 3
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('simple comparison'));
+      expect(r.error, contains('Line 2'));
+    });
+
+    test('a non-positive weight is rejected', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a in 0..2
+soft(0): a = 1
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('positive integer'));
     });
   });
 }

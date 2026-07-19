@@ -2436,6 +2436,27 @@ class FunctionReferences {
       ],
       seeAlso: ['all_different', 'diff_n', 'no_overlap'],
     ),
+    FunctionRef(
+      id: 'soft',
+      category: FunctionRefCategory.constraints,
+      signature: 'soft(weight): x = 5',
+      shortDescription:
+          'A MaxCSP preference: the solver satisfies it when it can, '
+          'contributing weight (default 1) to the score. When preferences '
+          'conflict, the assignment maximizing total satisfied weight wins. '
+          'The DSL tab shows a satisfaction score and which preferences held.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'vars: a, b in 0..2\na != b\nsoft(3): a = 1\nsoft(2): b = 1',
+          expected: '(a=1 kept — heavier — b=1 dropped: score 3/5)',
+          hint: 'The body is a simple comparison (`x = 5`, `x < 3`, `x = y`). '
+              'Cannot be combined with `minimize`/`maximize` — both are '
+              'objectives.',
+        ),
+      ],
+      seeAlso: ['all_different', 'minimize', 'implies'],
+    ),
     // === Round 108b: Advanced-tab vector / modular / root operations
     // that previously had no help popover. Runnable calculator
     // expressions except where the invocation is operator/dialog-based.

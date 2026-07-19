@@ -226,11 +226,20 @@ Ordered by value-for-effort. The gating cost is the **result rendering**,
 not the solve — each returns a shape the current "wall of `x = 3`" text
 display can't do justice.
 
-- [ ] **Soft constraints / MaxCSP** — `declareSoft` / `addSoftConstraint`
-  / `maximizeSatisfaction` for over-constrained problems ("satisfy as
-  many preferences as possible"). *Viz:* a satisfaction score header +
-  the soft-constraint list with satisfied ones green / violated ones
-  struck through — reuse the MUS "Explain" panel's row styling.
+- [x] **Soft constraints / MaxCSP** — `declareSoft` /
+  `maximizeSatisfaction` for over-constrained problems ("satisfy as many
+  preferences as possible"). *Done (round 110, C8):* `soft(weight): x =
+  5` DSL keyword reifies a comparison (`x OP c` for `= != < <= > >=`, or
+  `x = y`) to a 0/1 indicator, calls `declareSoft`, and routes the whole
+  program through a new MaxCSP branch in `solveDiophantine` that runs
+  `maximizeSatisfaction` instead of enumerating. Rejected in combination
+  with `minimize`/`maximize` (two objectives). New result metadata
+  (`softResults` + `satisfiedWeight`/`totalWeight`). *Viz:*
+  `_SoftConstraintPanel` — a satisfaction-score header with a progress
+  bar over the preference list, satisfied ones green with a check /
+  violated ones struck through. Ships with a `shiftPrefs` gallery
+  example, a `soft` Function Reference entry + help chip, de/fr/es i18n
+  (incl. a parametric `constraintsSoftScore`), and engine tests.
 - [ ] **Set variables** — `addSetVariable` / `addSubset` /
   `addSetCardinality` / `addSetDisjoint`; team / committee selection.
   Returns `Set` values, a genuinely new result type. *Viz:* render each

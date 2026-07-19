@@ -91,6 +91,38 @@ class PackingRectSpec {
   });
 }
 
+/// Round 110 (C8): one parsed `soft(weight): …` line. [boolVar] is the
+/// reified 0/1 indicator the DSL parser attaches (its value in the
+/// solution says whether the preference held); [weight] is its
+/// contribution to the MaxCSP objective; [description] is the original
+/// comparison text for display.
+class SoftConstraintSpec {
+  final String boolVar;
+  final int weight;
+  final String description;
+
+  const SoftConstraintSpec({
+    required this.boolVar,
+    required this.weight,
+    required this.description,
+  });
+}
+
+/// The post-solve outcome of a soft constraint: whether the optimal
+/// MaxCSP assignment satisfied it. Threaded to the DSL tab, which lists
+/// satisfied preferences in green and violated ones struck through.
+class SoftConstraintResult {
+  final String description;
+  final int weight;
+  final bool satisfied;
+
+  const SoftConstraintResult({
+    required this.description,
+    required this.weight,
+    required this.satisfied,
+  });
+}
+
 /// Result envelope returned by [CspSolver.solveDiophantine]. Holds
 /// either a list of solutions or an error message — never both.
 class DiophantineResult {
@@ -140,6 +172,16 @@ class DiophantineResult {
   final List<String>? circuitLabels;
   final bool circuitIsSub;
 
+  /// Round 110 (C8): MaxCSP soft-constraint outcomes. Non-empty only for
+  /// a program with `soft(…)` lines, in which case [solutions] holds the
+  /// single satisfaction-maximizing assignment and each entry says which
+  /// preference held. [satisfiedWeight] / [totalWeight] summarise the
+  /// score for the results header.
+  final List<SoftConstraintResult> softResults;
+  int get satisfiedWeight =>
+      softResults.where((s) => s.satisfied).fold(0, (a, s) => a + s.weight);
+  int get totalWeight => softResults.fold(0, (a, s) => a + s.weight);
+
   const DiophantineResult._({
     required this.solutions,
     required this.error,
@@ -153,6 +195,7 @@ class DiophantineResult {
     this.circuitVars = const [],
     this.circuitLabels,
     this.circuitIsSub = false,
+    this.softResults = const [],
   });
 
   factory DiophantineResult.ok(
@@ -166,6 +209,7 @@ class DiophantineResult {
     List<String> circuitVars = const [],
     List<String>? circuitLabels,
     bool circuitIsSub = false,
+    List<SoftConstraintResult> softResults = const [],
   }) =>
       DiophantineResult._(
         solutions: solutions,
@@ -179,6 +223,7 @@ class DiophantineResult {
         circuitVars: circuitVars,
         circuitLabels: circuitLabels,
         circuitIsSub: circuitIsSub,
+        softResults: softResults,
       );
 
   factory DiophantineResult.failure(String message) => DiophantineResult._(
@@ -519,6 +564,7 @@ class CspSolver {
     List<String> circuitVars = const [],
     List<String>? circuitLabels,
     bool circuitIsSub = false,
+    List<SoftConstraintSpec> softConstraints = const [],
     int maxSolutions = 100,
   }) async {
     if (variables.isEmpty) {
@@ -599,6 +645,51 @@ class CspSolver {
     } catch (e) {
       return DiophantineResult.failure(
           'Failed to parse constraints: ${_friendlyError(e)}');
+    }
+
+    // Round 110 (C8): MaxCSP path. With `soft(…)` lines present, the
+    // reify + declareSoft closures already ran in `extraConstraints`;
+    // here we run branch-and-bound over the total satisfied weight
+    // instead of enumerating. It returns a single provably-optimal
+    // assignment (or 'FAILURE' when the hard constraints alone are
+    // infeasible).
+    if (softConstraints.isNotEmpty) {
+      try {
+        final raw = await problem.maximizeSatisfaction();
+        if (raw is! Map) {
+          // Hard constraints unsatisfiable → no assignment.
+          return DiophantineResult.ok(const []);
+        }
+        final assignment = <String, int>{
+          for (final entry in raw.entries)
+            if (!entry.key.startsWith('__') &&
+                !entry.key.startsWith('_soft_total_'))
+              entry.key: (entry.value as num).toInt(),
+        };
+        final softResults = [
+          for (final spec in softConstraints)
+            SoftConstraintResult(
+              description: spec.description,
+              weight: spec.weight,
+              satisfied: (raw[spec.boolVar] as num?)?.toInt() == 1,
+            ),
+        ];
+        return DiophantineResult.ok(
+          [assignment],
+          ganttTasks: _buildGanttTasks(noOverlap, cumulative),
+          ganttCapacity: _firstCapacity(cumulative),
+          packingRects: packing,
+          packingWidth: packingWidth,
+          packingHeight: packingHeight,
+          circuitVars: circuitVars,
+          circuitLabels: circuitLabels,
+          circuitIsSub: circuitIsSub,
+          softResults: softResults,
+        );
+      } catch (e) {
+        return DiophantineResult.failure(
+            'MaxCSP solve failed: ${_friendlyError(e)}');
+      }
     }
 
     try {
@@ -1025,6 +1116,8 @@ class CspSolver {
   /// table(x, y; (1,2), (2,3), (3,1))    # (x,y) must match an allowed row
   /// element(idx; list=10,20,30; value=v)      # list[idx] == v (0-based)
   /// minimize x + y      # or `maximize <linear-expr>` — at most one
+  /// # Round 110 — MaxCSP soft preferences (satisfy as many as possible):
+  /// soft(3): x = 5      # weighted preference; `soft: …` defaults to 1
   /// ```
   ///
   /// `vars:` lines accept comma-separated variable names + an
@@ -1060,6 +1153,10 @@ class CspSolver {
     List<String>? circuitLabels;
     var circuitIsSub = false;
     var circuitLineNum = -1;
+    // Round 110 (C8): `soft(weight): <comparison>` MaxCSP preferences.
+    // Each reifies to a `__soft{n}` indicator (posted via extraConstraints)
+    // whose value in the optimal assignment says whether it held.
+    final softConstraints = <SoftConstraintSpec>[];
     ({String op, String expr, int lineNum})? objective;
 
     final lines = input.split('\n');
@@ -1664,6 +1761,90 @@ class CspSolver {
         continue;
       }
 
+      // === `soft(weight): <comparison>` / `soft: <comparison>` — a
+      // MaxCSP preference the solver satisfies if it can, contributing
+      // `weight` (default 1) to the score. The comparison reifies to a
+      // 0/1 indicator; `maximizeSatisfaction` then maximises the total
+      // satisfied weight. Supported shapes: `x OP c` (OP in = != < <= >
+      // >=) and `x = y` between two declared variables.
+      final softMatch = RegExp(r'^soft\s*(?:\(\s*(\d+)\s*\))?\s*:\s*(.+)$',
+              caseSensitive: false)
+          .firstMatch(line);
+      if (softMatch != null) {
+        final weight =
+            softMatch.group(1) != null ? int.parse(softMatch.group(1)!) : 1;
+        if (weight <= 0) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: soft weight must be a positive integer.');
+        }
+        final body = softMatch.group(2)!.trim();
+        final cmp = RegExp(
+                r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*(==|=|!=|<=|>=|<|>)\s*(-?[a-zA-Z0-9_]+)$')
+            .firstMatch(body);
+        if (cmp == null) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: soft body '
+              '"$body" must be a simple comparison like `x = 5`, `x < 3`, or '
+              '`x = y`.');
+        }
+        final left = cmp.group(1)!;
+        final op = cmp.group(2)!;
+        final rhs = cmp.group(3)!;
+        if (!vars.containsKey(left)) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: soft '
+              'variable "$left" is not declared.');
+        }
+        final boolVar = '__soft${softConstraints.length}';
+        final rhsInt = int.tryParse(rhs);
+        void Function(csp.Problem)? reify;
+        if (rhsInt != null) {
+          switch (op) {
+            case '==':
+            case '=':
+              reify = (p) => p.addReifiedEquals(boolVar, left, rhsInt);
+              break;
+            case '!=':
+              reify = (p) => p.addReifiedNotEquals(boolVar, left, rhsInt);
+              break;
+            case '<':
+              reify = (p) => p.addReifiedLessThan(boolVar, left, rhsInt);
+              break;
+            case '<=':
+              reify = (p) => p.addReifiedLessOrEqual(boolVar, left, rhsInt);
+              break;
+            case '>':
+              reify = (p) => p.addReifiedGreaterThan(boolVar, left, rhsInt);
+              break;
+            case '>=':
+              reify = (p) => p.addReifiedGreaterOrEqual(boolVar, left, rhsInt);
+              break;
+          }
+        } else if (vars.containsKey(rhs)) {
+          if (op == '==' || op == '=') {
+            reify = (p) => p.addReifiedEqualsVar(boolVar, left, rhs);
+          } else {
+            return DiophantineResult.failure('Line ${lineNum + 1}: soft '
+                'variable-to-variable comparisons only support `=` (got '
+                '"$op").');
+          }
+        } else {
+          return DiophantineResult.failure('Line ${lineNum + 1}: soft '
+              'right-hand side "$rhs" is neither an integer nor a declared '
+              'variable.');
+        }
+        if (reify == null) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: soft '
+              'comparison operator "$op" is not supported.');
+        }
+        extraConstraints.add(reify);
+        extraConstraints.add((p) => p.declareSoft(boolVar, weight));
+        softConstraints.add(SoftConstraintSpec(
+          boolVar: boolVar,
+          weight: weight,
+          description: '$left $op $rhs',
+        ));
+        continue;
+      }
+
       // Anything else is a constraint.
       constraints.add(line);
     }
@@ -1686,6 +1867,15 @@ class CspSolver {
       }
       packingWidth = w;
       packingHeight = h;
+    }
+
+    // Soft constraints (MaxCSP) and a minimize/maximize objective are
+    // two different objectives — reject the combination rather than
+    // silently ignoring one.
+    if (objective != null && softConstraints.isNotEmpty) {
+      return DiophantineResult.failure(
+          'A program cannot combine `soft(…)` preferences with '
+          '`minimize`/`maximize` — both define an objective.');
     }
 
     if (objective != null) {
@@ -1718,6 +1908,7 @@ class CspSolver {
       circuitVars: circuitVars,
       circuitLabels: circuitLabels,
       circuitIsSub: circuitIsSub,
+      softConstraints: softConstraints,
       maxSolutions: maxSolutions,
     );
   }
