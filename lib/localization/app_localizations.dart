@@ -1802,6 +1802,12 @@ class EnLocalizations implements AppLocalizations {
         return 'Cumulative scheduling — capacity 2';
       case 'rcpsp':
         return 'RCPSP — crew + equipment';
+      case 'logicGrid':
+        return 'Logic grid — deduction riddle';
+      case 'nurseRostering':
+        return 'Nurse rostering (shift patterns)';
+      case 'chromaticNumber':
+        return 'Chromatic number (fewest colors)';
     }
     return id;
   }
@@ -3496,6 +3502,12 @@ class DeLocalizations implements AppLocalizations {
         return 'Kumulatives Scheduling — Kapazität 2';
       case 'rcpsp':
         return 'RCPSP — Crew + Ausrüstung';
+      case 'logicGrid':
+        return 'Logikrätsel — Deduktion';
+      case 'nurseRostering':
+        return 'Dienstplan (Schichtmuster)';
+      case 'chromaticNumber':
+        return 'Chromatische Zahl (wenigste Farben)';
     }
     return id;
   }
@@ -6514,6 +6526,12 @@ class FrLocalizations implements AppLocalizations {
         return 'Ordonnancement cumulatif — capacité 2';
       case 'rcpsp':
         return 'RCPSP — équipe + équipement';
+      case 'logicGrid':
+        return 'Grille de logique — déduction';
+      case 'nurseRostering':
+        return 'Planning d\'infirmières (motifs de gardes)';
+      case 'chromaticNumber':
+        return 'Nombre chromatique (moins de couleurs)';
     }
     return id;
   }
@@ -9520,6 +9538,12 @@ class EsLocalizations implements AppLocalizations {
         return 'Planificación acumulativa — capacidad 2';
       case 'rcpsp':
         return 'RCPSP — equipo + equipamiento';
+      case 'logicGrid':
+        return 'Rejilla lógica — deducción';
+      case 'nurseRostering':
+        return 'Turnos de enfermería (patrones)';
+      case 'chromaticNumber':
+        return 'Número cromático (menos colores)';
     }
     return id;
   }

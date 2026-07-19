@@ -443,6 +443,7 @@ class CspSolver {
     required List<String> constraints,
     List<NoOverlapGroup> noOverlap = const [],
     List<CumulativeGroup> cumulative = const [],
+    List<void Function(csp.Problem)> extraConstraints = const [],
     int maxSolutions = 100,
   }) async {
     if (variables.isEmpty) {
@@ -514,6 +515,12 @@ class CspSolver {
           group.capacity,
         );
       }
+      // Round 108: logic-combinator / cardinality / regular / symmetry
+      // overlays. Each closure posts its dart_csp constraint (creating
+      // any reified bool vars it needs) on the freshly-built problem.
+      for (final apply in extraConstraints) {
+        apply(problem);
+      }
     } catch (e) {
       return DiophantineResult.failure(
           'Failed to parse constraints: ${_friendlyError(e)}');
@@ -523,10 +530,13 @@ class CspSolver {
       final solutions = <DiophantineSolution>[];
       await for (final s in problem.getSolutions()) {
         // dart_csp returns Map<String, dynamic>; coerce values to int
-        // since every range variable carries int values.
+        // since every range variable carries int values. Skip synthetic
+        // `__`-prefixed vars (reified bools from logic combinators, the
+        // `__obj__` objective) so they never surface in the UI.
         final coerced = <String, int>{
           for (final entry in s.entries)
-            entry.key: (entry.value as num).toInt(),
+            if (!entry.key.startsWith('__'))
+              entry.key: (entry.value as num).toInt(),
         };
         solutions.add(coerced);
         if (solutions.length >= maxSolutions) {
@@ -814,6 +824,89 @@ class CspSolver {
     return cumulative.isEmpty ? null : cumulative.first.capacity;
   }
 
+  // === Round 108 helpers: parsing/validation for the logic-combinator,
+  // cardinality, regular and symmetry-breaking DSL lines.
+
+  /// Parses a comma-separated list of `name=value` reified conditions
+  /// (used by `atLeast` / `atMost` / `exactly` / `implies`). Each name
+  /// must be a declared variable and each value an integer. Returns the
+  /// parsed pairs, or a human-readable [error] (with [conds] empty).
+  static ({List<({String variable, int value})> conds, String? error})
+      _parseConds(String raw, Map<String, ({int min, int max})> vars) {
+    final conds = <({String variable, int value})>[];
+    for (final part in raw.split(',')) {
+      final t = part.trim();
+      if (t.isEmpty) continue;
+      final m =
+          RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(-?\d+)$').firstMatch(t);
+      if (m == null) {
+        return (
+          conds: const [],
+          error: 'condition "$t" — expected `name=value`.'
+        );
+      }
+      final name = m.group(1)!;
+      if (!vars.containsKey(name)) {
+        return (
+          conds: const [],
+          error: 'condition references undeclared variable "$name".'
+        );
+      }
+      conds.add((variable: name, value: int.parse(m.group(2)!)));
+    }
+    return (conds: conds, error: null);
+  }
+
+  /// Splits a comma-separated variable list, trimming blanks.
+  static List<String> _splitNames(String raw) =>
+      raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+
+  /// Validates that [names] is non-empty and every name is declared.
+  /// Returns a `.failure` result (for the caller to return) or null.
+  static DiophantineResult? _checkDeclared(List<String> names,
+      Map<String, ({int min, int max})> vars, int lineNum, String kw) {
+    if (names.isEmpty) {
+      return DiophantineResult.failure(
+          'Line ${lineNum + 1}: $kw needs at least one variable.');
+    }
+    for (final n in names) {
+      if (!vars.containsKey(n)) {
+        return DiophantineResult.failure('Line ${lineNum + 1}: $kw references '
+            'undeclared variable "$n".');
+      }
+    }
+    return null;
+  }
+
+  /// Builds a DFA accepting sequences with no run of more than [maxRun]
+  /// consecutive [value]s. States `0..maxRun` count the current run
+  /// length of [value]: reading [value] in state `s` advances to `s+1`
+  /// (state `maxRun` has no onward [value] edge, so a longer run is
+  /// rejected); any other [alphabet] symbol resets to state 0. Every
+  /// state is accepting. A missing edge is a reject in dart_csp's
+  /// [csp.Dfa], so every symbol gets an explicit edge.
+  static csp.Dfa _buildAtMostInARowDfa(
+      int value, int maxRun, Set<int> alphabet) {
+    final transitions = <int, Map<dynamic, int>>{};
+    for (var s = 0; s <= maxRun; s++) {
+      final row = <dynamic, int>{};
+      for (final sym in alphabet) {
+        if (sym == value) {
+          if (s < maxRun) row[sym] = s + 1;
+        } else {
+          row[sym] = 0;
+        }
+      }
+      transitions[s] = row;
+    }
+    return csp.Dfa(
+      numStates: maxRun + 1,
+      start: 0,
+      accepting: {for (var s = 0; s <= maxRun; s++) s},
+      transitions: transitions,
+    );
+  }
+
   static String _friendlyError(Object e) {
     final s = e.toString();
     return s.replaceAll(RegExp(r'^Exception:\s*'), '').split('\n').first;
@@ -831,6 +924,16 @@ class CspSolver {
   /// x + y + z == 15
   /// noOverlap(s1=4, s2=3)               # single-resource scheduling
   /// cumulative(s1=2@2, s2=3@1; capacity=2)
+  /// # Round 108 — logic combinators over `name=value` conditions:
+  /// atMost(1, a=1, b=1, c=1)            # ≤1 of these equalities holds
+  /// atLeast(2, a=1, b=1, c=1)           # (also exactly(k, …))
+  /// implies(a=1, b=2)                   # a==1 ⇒ b==2  (logic-grid riddles)
+  /// # Global cardinality:
+  /// gcc(x, y, z; 1=2, 2=1)              # value 1 twice, value 2 once
+  /// among(x, y, z; values=1,3,5; count=c)   # c = #vars in the set
+  /// nvalue(x, y, z; count=c)            # c = # distinct values
+  /// atMostInARow(a, b, c, d; value=1; max=2)  # shift-pattern rule
+  /// valuePrecedence(a, b, c; order=1,2,3)     # break value symmetry
   /// minimize x + y      # or `maximize <linear-expr>` — at most one
   /// ```
   ///
@@ -852,6 +955,11 @@ class CspSolver {
     final constraints = <String>[];
     final noOverlap = <NoOverlapGroup>[];
     final cumulative = <CumulativeGroup>[];
+    // Round 108: logic combinators / cardinality / regular / symmetry.
+    // Each such line is validated here (line-numbered errors) and turned
+    // into a closure that posts the constraint on the dart_csp Problem
+    // once it exists (applied in solveDiophantine / solveOptimization).
+    final extraConstraints = <void Function(csp.Problem)>[];
     ({String op, String expr, int lineNum})? objective;
 
     final lines = input.split('\n');
@@ -901,6 +1009,10 @@ class CspSolver {
           if (!RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$').hasMatch(name)) {
             return DiophantineResult.failure(
                 'Line ${lineNum + 1}: invalid variable name "$name".');
+          }
+          if (name.startsWith('__')) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: variable '
+                'names starting with "__" are reserved for internal use.');
           }
           if (vars.containsKey(name)) {
             return DiophantineResult.failure(
@@ -1069,6 +1181,217 @@ class CspSolver {
         continue;
       }
 
+      // === Round 108: logic combinators over reified `name=value`
+      // conditions. `atLeast(k, …)` / `atMost(k, …)` / `exactly(k, …)`
+      // reify each condition into a fresh boolean and post a cardinality
+      // constraint over them; `implies(a=1, b=2)` posts `a=1 ⇒ b=2`.
+      // Reified-bool names are deterministic per line so they never
+      // collide across programs.
+      final logicMatch =
+          RegExp(r'^(atLeast|atMost|exactly)\s*\(\s*(\d+)\s*,\s*([^)]*)\)$')
+              .firstMatch(line);
+      if (logicMatch != null) {
+        final kind = logicMatch.group(1)!;
+        final k = int.parse(logicMatch.group(2)!);
+        final parsed = _parseConds(logicMatch.group(3)!, vars);
+        if (parsed.error != null) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: ${parsed.error}');
+        }
+        if (parsed.conds.isEmpty) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: $kind needs '
+              'at least one `name=value` condition.');
+        }
+        if (k > parsed.conds.length) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: $kind($k, …) '
+              'but only ${parsed.conds.length} condition(s) given.');
+        }
+        final conds = parsed.conds;
+        final tag = 'L${lineNum + 1}';
+        extraConstraints.add((p) {
+          final bools = <String>[];
+          for (var i = 0; i < conds.length; i++) {
+            final b = '__b${tag}_$i';
+            p.addReifiedEquals(b, conds[i].variable, conds[i].value);
+            bools.add(b);
+          }
+          // Post the cardinality as a linear constraint over the reified
+          // bools (Σ bools ⋛ k). dart_csp's addAtLeast/atMost/exactly use
+          // an n-ary Map predicate that its addConstraint rejects for the
+          // exactly-2-variable case; the linear form is uniform for any
+          // condition count and reuses the bounds-consistency propagator.
+          final ones = List<int>.filled(bools.length, 1);
+          switch (kind) {
+            case 'atLeast':
+              p.addLinearGeq(bools, ones, k);
+            case 'atMost':
+              p.addLinearLeq(bools, ones, k);
+            case 'exactly':
+              p.addLinearEquals(bools, ones, k);
+          }
+        });
+        continue;
+      }
+
+      final impliesMatch =
+          RegExp(r'^implies\s*\(\s*([^)]*)\)$').firstMatch(line);
+      if (impliesMatch != null) {
+        final parsed = _parseConds(impliesMatch.group(1)!, vars);
+        if (parsed.error != null) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: ${parsed.error}');
+        }
+        if (parsed.conds.length != 2) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: implies needs '
+              'exactly two conditions: `implies(a=1, b=2)`.');
+        }
+        final conds = parsed.conds;
+        final tag = 'L${lineNum + 1}';
+        extraConstraints.add((p) {
+          p.addReifiedEquals('__bi${tag}_0', conds[0].variable, conds[0].value);
+          p.addReifiedEquals('__bi${tag}_1', conds[1].variable, conds[1].value);
+          p.addImplies('__bi${tag}_0', '__bi${tag}_1');
+        });
+        continue;
+      }
+
+      // === Global cardinality: `gcc(x, y, z; 1=2, 2=1)` — value 1 must
+      // occur exactly twice among the vars, value 2 exactly once.
+      final gccMatch =
+          RegExp(r'^gcc\s*\(\s*([^;]*?)\s*;\s*([^)]*)\)$').firstMatch(line);
+      if (gccMatch != null) {
+        final names = _splitNames(gccMatch.group(1)!);
+        final err = _checkDeclared(names, vars, lineNum, 'gcc');
+        if (err != null) return err;
+        if (names.length < 2) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: gcc needs ≥ 2 variables.');
+        }
+        final counts = <int, int>{};
+        for (final raw in gccMatch.group(2)!.split(',')) {
+          final m = RegExp(r'^\s*(-?\d+)\s*=\s*(\d+)\s*$').firstMatch(raw);
+          if (m == null) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: gcc count '
+                '"${raw.trim()}" — expected `value=count`.');
+          }
+          counts[int.parse(m.group(1)!)] = int.parse(m.group(2)!);
+        }
+        extraConstraints.add((p) => p.addGcc(names, counts));
+        continue;
+      }
+
+      // === `among(x, y, z; values=1,3,5; count=c)` — c (a declared var)
+      // equals how many of the vars take a value in the set.
+      final amongMatch = RegExp(
+              r'^among\s*\(\s*([^;]*?)\s*;\s*values\s*=\s*([^;]*?)\s*;\s*count\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)$')
+          .firstMatch(line);
+      if (amongMatch != null) {
+        final names = _splitNames(amongMatch.group(1)!);
+        final err = _checkDeclared(names, vars, lineNum, 'among');
+        if (err != null) return err;
+        final countVar = amongMatch.group(3)!;
+        if (!vars.containsKey(countVar)) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: among count '
+              'variable "$countVar" is not declared.');
+        }
+        final values = <int>{};
+        for (final raw in amongMatch.group(2)!.split(',')) {
+          final t = raw.trim();
+          final v = int.tryParse(t);
+          if (v == null) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: among '
+                'value "$t" is not an integer.');
+          }
+          values.add(v);
+        }
+        extraConstraints.add((p) => p.addAmong(names, values, countVar));
+        continue;
+      }
+
+      // === `nvalue(x, y, z; count=c)` — c equals the number of DISTINCT
+      // values taken by the vars (e.g. minimize c → fewest colours).
+      final nvalueMatch = RegExp(
+              r'^nvalue\s*\(\s*([^;]*?)\s*;\s*count\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)$')
+          .firstMatch(line);
+      if (nvalueMatch != null) {
+        final names = _splitNames(nvalueMatch.group(1)!);
+        final err = _checkDeclared(names, vars, lineNum, 'nvalue');
+        if (err != null) return err;
+        final countVar = nvalueMatch.group(2)!;
+        if (!vars.containsKey(countVar)) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: nvalue count '
+              'variable "$countVar" is not declared.');
+        }
+        extraConstraints.add((p) => p.addNvalue(names, countVar));
+        continue;
+      }
+
+      // === `atMostInARow(x, y, z, w; value=1; max=2)` — a shift-pattern
+      // rule: no run of more than `max` consecutive `value`s across the
+      // sequence. Compiled to a small DFA and posted via addRegular.
+      final runMatch = RegExp(
+              r'^atMostInARow\s*\(\s*([^;]*?)\s*;\s*value\s*=\s*(-?\d+)\s*;\s*max\s*=\s*(\d+)\s*\)$')
+          .firstMatch(line);
+      if (runMatch != null) {
+        final names = _splitNames(runMatch.group(1)!);
+        final err = _checkDeclared(names, vars, lineNum, 'atMostInARow');
+        if (err != null) return err;
+        final value = int.parse(runMatch.group(2)!);
+        final maxRun = int.parse(runMatch.group(3)!);
+        if (maxRun < 1) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: '
+              'atMostInARow max must be ≥ 1 (got $maxRun).');
+        }
+        // The DFA needs an explicit edge per symbol (a missing edge is a
+        // reject), so gather the alphabet from the referenced variables'
+        // domains. Small by construction for shift-style problems; cap it
+        // so a wide range can't blow up the transition table.
+        final alphabet = <int>{};
+        for (final nm in names) {
+          final r = vars[nm]!;
+          for (var v = r.min; v <= r.max; v++) {
+            alphabet.add(v);
+          }
+          if (alphabet.length > 64) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: '
+                'atMostInARow domain too large (> 64 distinct values) for a '
+                'regular constraint.');
+          }
+        }
+        final dfa = _buildAtMostInARowDfa(value, maxRun, alphabet);
+        extraConstraints.add((p) => p.addRegular(names, dfa));
+        continue;
+      }
+
+      // === `valuePrecedence(x, y, z; order=1,2,3)` — symmetry breaking:
+      // value `order[i+1]` may not first appear before `order[i]` in the
+      // sequence. Collapses interchangeable-value duplicates (e.g. map
+      // colours) so enumeration doesn't list every relabelling.
+      final precMatch = RegExp(
+              r'^valuePrecedence\s*\(\s*([^;]*?)\s*;\s*order\s*=\s*([^)]*)\)$')
+          .firstMatch(line);
+      if (precMatch != null) {
+        final names = _splitNames(precMatch.group(1)!);
+        final err = _checkDeclared(names, vars, lineNum, 'valuePrecedence');
+        if (err != null) return err;
+        final order = <int>[];
+        for (final raw in precMatch.group(2)!.split(',')) {
+          final t = raw.trim();
+          final v = int.tryParse(t);
+          if (v == null) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: '
+                'valuePrecedence value "$t" is not an integer.');
+          }
+          order.add(v);
+        }
+        if (order.length < 2) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: '
+              'valuePrecedence needs ≥ 2 values in `order=`.');
+        }
+        extraConstraints.add((p) => p.addValuePrecedence(names, order));
+        continue;
+      }
+
       // Anything else is a constraint.
       constraints.add(line);
     }
@@ -1086,6 +1409,7 @@ class CspSolver {
         objectiveExpr: objective.expr,
         noOverlap: noOverlap,
         cumulative: cumulative,
+        extraConstraints: extraConstraints,
       );
     }
 
@@ -1094,6 +1418,7 @@ class CspSolver {
       constraints: constraints,
       noOverlap: noOverlap,
       cumulative: cumulative,
+      extraConstraints: extraConstraints,
       maxSolutions: maxSolutions,
     );
   }
@@ -1122,6 +1447,7 @@ class CspSolver {
     required String objectiveExpr,
     List<NoOverlapGroup> noOverlap = const [],
     List<CumulativeGroup> cumulative = const [],
+    List<void Function(csp.Problem)> extraConstraints = const [],
   }) async {
     if (variables.isEmpty) {
       return DiophantineResult.failure('No variables declared.');
@@ -1216,6 +1542,10 @@ class CspSolver {
           group.capacity,
         );
       }
+      // Round 108: logic / cardinality / regular / symmetry overlays.
+      for (final apply in extraConstraints) {
+        apply(problem);
+      }
     } catch (e) {
       return DiophantineResult.failure(
           'Failed to parse constraints: ${_friendlyError(e)}');
@@ -1232,7 +1562,10 @@ class CspSolver {
       final objValue = (result[objVar] as num).toInt();
       final assignment = <String, int>{
         for (final entry in result.entries)
-          if (entry.key != objVar) entry.key: (entry.value as num).toInt(),
+          // Skip the synthetic objective and any reified bool vars from
+          // logic-combinator overlays (all `__`-prefixed).
+          if (!entry.key.startsWith('__'))
+            entry.key: (entry.value as num).toInt(),
       };
       return DiophantineResult.optimal(
         assignment,

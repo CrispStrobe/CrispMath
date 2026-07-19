@@ -1200,6 +1200,48 @@ s3 + 2 <= makespan
 s4 + 3 <= makespan
 minimize makespan''',
     ),
+    (
+      // Round 108: logic-grid deduction. `implies` and `exactly` over
+      // `name=value` conditions are the vocabulary logic-grid riddles
+      // ("Einstein"/"zebra" puzzles) are built from. Ann, Bob and Cy
+      // each pick a different pet; two clues prune the permutations.
+      id: 'logicGrid',
+      program: '''# Ann, Bob, Cy each pick a different pet.
+# 1 = cat, 2 = dog, 3 = fish.
+vars: ann, bob, cy in 1..3
+allDifferent(ann, bob, cy)
+ann != 3
+implies(bob=1, cy=2)
+exactly(1, ann=1, bob=1)''',
+    ),
+    (
+      // Round 108: nurse rostering. `atMostInARow` compiles to a small
+      // regular-language (DFA) automaton — the natural way to express
+      // "no more than k of a shift back-to-back"; `gcc` pins the exact
+      // number of days off across the week.
+      id: 'nurseRostering',
+      program: '''# One nurse's 5-day plan. 0 = off, 1 = day, 2 = night.
+vars: d1, d2, d3, d4, d5 in 0..2
+atMostInARow(d1, d2, d3, d4, d5; value=1; max=2)
+atMostInARow(d1, d2, d3, d4, d5; value=2; max=1)
+gcc(d1, d2, d3, d4, d5; 0=2)''',
+    ),
+    (
+      // Round 108: chromatic number. `nvalue` counts the distinct
+      // values (colours); minimizing it finds the fewest colours a
+      // graph needs. An odd cycle (here a 5-cycle) needs 3.
+      id: 'chromaticNumber',
+      program: '''# Fewest colours for a 5-cycle (odd cycle => 3).
+vars: a, b, c, d, e in 1..5
+vars: colors in 1..5
+a != b
+b != c
+c != d
+d != e
+e != a
+nvalue(a, b, c, d, e; count=colors)
+minimize colors''',
+    ),
   ];
 
   final _ctl = TextEditingController(text: _gallery.first.program);
