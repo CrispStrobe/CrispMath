@@ -478,9 +478,17 @@ class _ResultBlock extends StatelessWidget {
     }
     final lines = <String>[];
     for (var i = 0; i < result.solutions.length; i++) {
-      final entries = result.solutions[i].entries
+      final parts = result.solutions[i].entries
           .map((e) => '${e.key}=${e.value}')
-          .join(', ');
+          .toList();
+      // Round 111: append any set-variable members for this assignment,
+      // e.g. `Team={1, 3}`.
+      if (i < result.setSolutions.length) {
+        result.setSolutions[i].forEach((name, members) {
+          parts.add('$name={${members.join(', ')}}');
+        });
+      }
+      final entries = parts.join(', ');
       // Optimization mode is always one assignment — drop the
       // numbering so the result reads "x=3, y=4" rather than
       // "1. x=3, y=4".
@@ -534,6 +542,17 @@ class _ResultBlock extends StatelessWidget {
             style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
           ),
         ),
+        // Set-variable overlay: present when the DSL program declared
+        // `set` variables. Renders each solution's chosen subsets as
+        // chip clusters — the natural shape for membership results.
+        if (result.setVarNames.isNotEmpty &&
+            result.setSolutions.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _SetSolutionView(
+            setVarNames: result.setVarNames,
+            setSolutions: result.setSolutions,
+          ),
+        ],
         // Gantt overlay: present only when the DSL program had
         // `noOverlap` / `cumulative` constraints AND we got at
         // least one solution. Renders the first solution's start
@@ -1279,6 +1298,133 @@ class _SoftConstraintPanel extends StatelessWidget {
   }
 }
 
+/// Chip-cluster view for `set` programs. Each solution is one row of
+/// labelled clusters — one cluster per set variable, its members shown
+/// as chips (or an "∅" chip when the set is empty). Caps the number of
+/// rendered solutions so a large enumeration stays readable.
+class _SetSolutionView extends StatelessWidget {
+  final List<String> setVarNames;
+  final List<Map<String, List<int>>> setSolutions;
+
+  const _SetSolutionView({
+    required this.setVarNames,
+    required this.setSolutions,
+  });
+
+  static const _maxRows = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final shown = setSolutions.take(_maxRows).toList();
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < shown.length; i++)
+            Padding(
+              padding: EdgeInsets.only(top: i == 0 ? 0 : 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (setSolutions.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '#${i + 1}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      for (final name in setVarNames)
+                        _SetCluster(
+                            name: name, members: shown[i][name] ?? const []),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          if (setSolutions.length > shown.length)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '… +${setSolutions.length - shown.length} more',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetCluster extends StatelessWidget {
+  final String name;
+  final List<int> members;
+
+  const _SetCluster({required this.name, required this.members});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$name  (${members.length})',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: scheme.onSurface,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            if (members.isEmpty)
+              _chip(scheme, '∅', muted: true)
+            else
+              for (final m in members) _chip(scheme, '$m'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _chip(ColorScheme scheme, String text, {bool muted = false}) =>
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color:
+              muted ? scheme.surfaceContainerHighest : scheme.primaryContainer,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: muted ? scheme.onSurfaceVariant : scheme.onPrimaryContainer,
+          ),
+        ),
+      );
+}
+
 // === Cryptarithm tab ====================================================
 
 class _CryptarithmTab extends StatefulWidget {
@@ -1781,6 +1927,19 @@ soft(3): alex = 0     # Alex strongly prefers the early slot
 soft(2): bo = 0       # Bo also wants it (they can't both have it)
 soft(1): alex = bo    # a nice-to-have that the hard rule forbids''',
     ),
+    (
+      // Round 111 (C8): set-variable committee selection. Pick a 3-member
+      // committee and a disjoint 2-member reserve bench from a pool of 5,
+      // with one member pinned. Solutions render as chip clusters.
+      id: 'committee',
+      program: '''# Pick a committee + a disjoint reserve bench from 5 people.
+# Universe 1..5 = the five candidates; member 1 must be on the committee.
+set Committee, Bench from 1..5
+card(Committee) = 3
+card(Bench) = 2
+disjoint(Committee, Bench)
+Committee contains 1''',
+    ),
   ];
 
   final _ctl = TextEditingController(text: _gallery.first.program);
@@ -2056,6 +2215,10 @@ const dslOperatorHelpChips = <(String, String)>[
   ('diffN', 'diff_n'),
   ('circuit', 'circuit'),
   ('soft', 'soft'),
+  ('set', 'set_var'),
+  ('card', 'set_var'),
+  ('subset', 'set_var'),
+  ('disjoint', 'set_var'),
   ('minimize', 'minimize'),
   ('maximize', 'maximize'),
 ];

@@ -1820,6 +1820,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Delivery route (circuit / TSP)';
       case 'shiftPrefs':
         return 'Shift preferences (soft / MaxCSP)';
+      case 'committee':
+        return 'Committee selection (set variables)';
     }
     return id;
   }
@@ -3535,6 +3537,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Lieferroute (circuit / TSP)';
       case 'shiftPrefs':
         return 'Schichtpräferenzen (soft / MaxCSP)';
+      case 'committee':
+        return 'Ausschusswahl (Mengenvariablen)';
     }
     return id;
   }
@@ -4434,6 +4438,12 @@ class DeLocalizations implements AppLocalizations {
             'widersprüchlichen Präferenzen gewinnt die Zuweisung mit dem '
             'höchsten erfüllten Gesamtgewicht. Der DSL-Tab zeigt einen '
             'Erfüllungswert und welche Präferenzen galten.';
+      case 'set_var':
+        return 'Mengenvariablen wählen eine Teilmenge eines ganzzahligen '
+            'Universums — Team-/Ausschusswahl. Deklaration mit `set S from '
+            'lo..hi`, dann formen: `card(S) = k` (auch `<=`, `in a..b`), '
+            '`subset(A, B)`, `disjoint(A, B)`, `setEquals(A, B)`, `S contains '
+            'e`, `S excludes e`. Lösungen erscheinen als Chip-Gruppen.';
       // --- Sudoku-Varianten ---
       case 'dot':
         return 'Skalarprodukt (Punktprodukt) zweier gleich langer Vektoren: Σ aᵢ·bᵢ. Ergibt einen Skalar.';
@@ -5251,6 +5261,11 @@ class DeLocalizations implements AppLocalizations {
         'Der Rumpf ist ein einfacher Vergleich (`x = 5`, `x < 3`, `x = y`). '
             'Kann nicht mit `minimize`/`maximize` kombiniert werden — beides '
             'sind Zielfunktionen.',
+      ],
+      'set_var': [
+        'Universumselemente sind ganze Zahlen. Kann nicht mit '
+            '`minimize`/`maximize` oder `soft(…)` kombiniert werden. '
+            'Mitglieder erscheinen als Chips.',
       ],
       'dot': [
         'Das Skalarprodukt ist |a||b|cos θ — genau dann null, wenn die Vektoren orthogonal sind.',
@@ -6842,6 +6857,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Tournée de livraison (circuit / TSP)';
       case 'shiftPrefs':
         return 'Préférences d\'horaire (soft / MaxCSP)';
+      case 'committee':
+        return 'Sélection de comité (variables ensemblistes)';
     }
     return id;
   }
@@ -7714,6 +7731,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Un unique circuit hamiltonien sur des variables successeur : next[i] est le nœud visité après le nœud i, et le circuit doit atteindre chaque nœud une fois puis revenir au départ. Modélise le voyageur de commerce et le routage ; l\'onglet DSL dessine le circuit en graphe orienté. `subcircuit` autorise des nœuds non visités (boucles).';
       case 'soft':
         return 'Une préférence MaxCSP : le solveur la satisfait si possible, contribuant son poids (1 par défaut) au score. Quand les préférences s\'opposent, l\'affectation qui maximise le poids total satisfait l\'emporte. L\'onglet DSL affiche un score de satisfaction et quelles préférences ont tenu.';
+      case 'set_var':
+        return 'Les variables ensemblistes choisissent un sous-ensemble d\'un univers entier — sélection d\'équipe / de comité. Déclarez avec `set S from lo..hi`, puis façonnez : `card(S) = k` (aussi `<=`, `in a..b`), `subset(A, B)`, `disjoint(A, B)`, `setEquals(A, B)`, `S contains e`, `S excludes e`. Les solutions s\'affichent en grappes de puces.';
       case 'dot':
         return 'Produit scalaire de deux vecteurs de même longueur : Σ aᵢ·bᵢ. Renvoie un scalaire.';
       case 'cross':
@@ -8502,6 +8521,9 @@ class FrLocalizations implements AppLocalizations {
     ],
     'soft': [
       'Le corps est une comparaison simple (`x = 5`, `x < 3`, `x = y`). Ne peut pas être combiné avec `minimize`/`maximize` — les deux sont des objectifs.',
+    ],
+    'set_var': [
+      'Les éléments de l\'univers sont des entiers. Ne peut pas être combiné avec `minimize`/`maximize` ni `soft(…)`. Les membres s\'affichent en puces.',
     ],
     'dot': [
       'Le produit scalaire vaut |a||b|cos θ — nul exactement quand les vecteurs sont orthogonaux.',
@@ -10084,6 +10106,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Ruta de reparto (circuit / TSP)';
       case 'shiftPrefs':
         return 'Preferencias de turno (soft / MaxCSP)';
+      case 'committee':
+        return 'Selección de comité (variables de conjunto)';
     }
     return id;
   }
@@ -10949,6 +10973,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Un único circuito hamiltoniano sobre variables sucesoras: next[i] es el nodo visitado tras el nodo i, y el circuito debe alcanzar cada nodo una vez y volver al inicio. Modela el viajante de comercio y el enrutamiento; la pestaña DSL dibuja el circuito como grafo dirigido. `subcircuit` permite nodos no visitados (bucles).';
       case 'soft':
         return 'Una preferencia MaxCSP: el solucionador la satisface cuando puede, aportando su peso (1 por defecto) a la puntuación. Cuando las preferencias entran en conflicto, gana la asignación que maximiza el peso total satisfecho. La pestaña DSL muestra una puntuación de satisfacción y qué preferencias se cumplieron.';
+      case 'set_var':
+        return 'Las variables de conjunto eligen un subconjunto de un universo entero — selección de equipo / comité. Declara con `set S from lo..hi`, luego moldea: `card(S) = k` (también `<=`, `in a..b`), `subset(A, B)`, `disjoint(A, B)`, `setEquals(A, B)`, `S contains e`, `S excludes e`. Las soluciones se muestran como grupos de fichas.';
       case 'dot':
         return 'Producto escalar de dos vectores de igual longitud: Σ aᵢ·bᵢ. Devuelve un escalar.';
       case 'cross':
@@ -11724,6 +11750,9 @@ class EsLocalizations implements AppLocalizations {
     ],
     'soft': [
       'El cuerpo es una comparación simple (`x = 5`, `x < 3`, `x = y`). No puede combinarse con `minimize`/`maximize`: ambos son objetivos.',
+    ],
+    'set_var': [
+      'Los elementos del universo son enteros. No puede combinarse con `minimize`/`maximize` ni `soft(…)`. Los miembros se muestran como fichas.',
     ],
     'dot': [
       'El producto escalar es |a||b|cos θ — cero exactamente cuando los vectores son ortogonales.',

@@ -2457,6 +2457,27 @@ class FunctionReferences {
       ],
       seeAlso: ['all_different', 'minimize', 'implies'],
     ),
+    FunctionRef(
+      id: 'set_var',
+      category: FunctionRefCategory.constraints,
+      signature: 'set Team from 1..5   ·   card / subset / disjoint / contains',
+      shortDescription:
+          'Set variables choose a subset of an integer universe — team / '
+          'committee selection. Declare with `set S from lo..hi`, then shape '
+          'it: `card(S) = k` (or `<=`, `in a..b`), `subset(A, B)`, '
+          '`disjoint(A, B)`, `setEquals(A, B)`, `S contains e`, `S excludes e`. '
+          'Solutions render as chip clusters.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'set Team from 1..4\ncard(Team) = 2\nTeam contains 1',
+          expected: '(size-2 subsets containing 1: {1,2}, {1,3}, {1,4})',
+          hint: 'Universe elements are integers. Cannot be combined with '
+              '`minimize`/`maximize` or `soft(…)`. Members show as chips.',
+        ),
+      ],
+      seeAlso: ['all_different', 'among', 'gcc'],
+    ),
     // === Round 108b: Advanced-tab vector / modular / root operations
     // that previously had no help popover. Runnable calculator
     // expressions except where the invocation is operator/dialog-based.

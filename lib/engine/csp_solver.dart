@@ -182,6 +182,14 @@ class DiophantineResult {
       softResults.where((s) => s.satisfied).fold(0, (a, s) => a + s.weight);
   int get totalWeight => softResults.fold(0, (a, s) => a + s.weight);
 
+  /// Round 111 (C8): set-variable metadata. [setVarNames] lists the
+  /// declared set variables in program order; [setSolutions] is aligned
+  /// index-for-index with [solutions] — entry `i` maps each set name to
+  /// its sorted member list in the `i`-th assignment. Both empty when the
+  /// program declared no `set` variables.
+  final List<String> setVarNames;
+  final List<Map<String, List<int>>> setSolutions;
+
   const DiophantineResult._({
     required this.solutions,
     required this.error,
@@ -196,6 +204,8 @@ class DiophantineResult {
     this.circuitLabels,
     this.circuitIsSub = false,
     this.softResults = const [],
+    this.setVarNames = const [],
+    this.setSolutions = const [],
   });
 
   factory DiophantineResult.ok(
@@ -210,6 +220,8 @@ class DiophantineResult {
     List<String>? circuitLabels,
     bool circuitIsSub = false,
     List<SoftConstraintResult> softResults = const [],
+    List<String> setVarNames = const [],
+    List<Map<String, List<int>>> setSolutions = const [],
   }) =>
       DiophantineResult._(
         solutions: solutions,
@@ -224,6 +236,8 @@ class DiophantineResult {
         circuitLabels: circuitLabels,
         circuitIsSub: circuitIsSub,
         softResults: softResults,
+        setVarNames: setVarNames,
+        setSolutions: setSolutions,
       );
 
   factory DiophantineResult.failure(String message) => DiophantineResult._(
@@ -565,9 +579,10 @@ class CspSolver {
     List<String>? circuitLabels,
     bool circuitIsSub = false,
     List<SoftConstraintSpec> softConstraints = const [],
+    Map<String, List<int>> setVariables = const {},
     int maxSolutions = 100,
   }) async {
-    if (variables.isEmpty) {
+    if (variables.isEmpty && setVariables.isEmpty) {
       return DiophantineResult.failure('No variables declared.');
     }
     final problem = csp.Problem();
@@ -583,6 +598,12 @@ class CspSolver {
               'Variable ${entry.key}: range too large (max−min > 10000).');
         }
         problem.addRangeVariable(entry.key, lo, hi);
+      }
+      // Round 111 (C8): set variables. Each becomes a vector of 0/1
+      // indicator vars over its universe; dart_csp's solve entry points
+      // re-materialise them as `Set` values in the result.
+      for (final entry in setVariables.entries) {
+        problem.addSetVariable(entry.key, universe: entry.value);
       }
       final knownVars = variables.keys.toSet();
       for (final c in constraints) {
@@ -694,17 +715,28 @@ class CspSolver {
 
     try {
       final solutions = <DiophantineSolution>[];
+      // Round 111: parallel list of set-variable member lists, aligned
+      // index-for-index with [solutions].
+      final setSolutions = <Map<String, List<int>>>[];
+      final hasSets = setVariables.isNotEmpty;
       await for (final s in problem.getSolutions()) {
-        // dart_csp returns Map<String, dynamic>; coerce values to int
-        // since every range variable carries int values. Skip synthetic
-        // `__`-prefixed vars (reified bools from logic combinators, the
+        // dart_csp returns Map<String, dynamic>; range vars carry ints
+        // and set vars are re-materialised as `Set`. Split the two, coerce
+        // ints, and drop synthetic `__`-prefixed vars (reified bools, the
         // `__obj__` objective) so they never surface in the UI.
-        final coerced = <String, int>{
-          for (final entry in s.entries)
-            if (!entry.key.startsWith('__'))
-              entry.key: (entry.value as num).toInt(),
-        };
+        final coerced = <String, int>{};
+        final sets = <String, List<int>>{};
+        for (final entry in s.entries) {
+          if (entry.key.startsWith('__')) continue;
+          final v = entry.value;
+          if (v is Set) {
+            sets[entry.key] = [for (final e in v) (e as num).toInt()]..sort();
+          } else {
+            coerced[entry.key] = (v as num).toInt();
+          }
+        }
         solutions.add(coerced);
+        if (hasSets) setSolutions.add(sets);
         if (solutions.length >= maxSolutions) {
           return DiophantineResult.ok(
             solutions,
@@ -717,6 +749,8 @@ class CspSolver {
             circuitVars: circuitVars,
             circuitLabels: circuitLabels,
             circuitIsSub: circuitIsSub,
+            setVarNames: setVariables.keys.toList(),
+            setSolutions: setSolutions,
           );
         }
       }
@@ -730,6 +764,8 @@ class CspSolver {
         circuitVars: circuitVars,
         circuitLabels: circuitLabels,
         circuitIsSub: circuitIsSub,
+        setVarNames: setVariables.keys.toList(),
+        setSolutions: setSolutions,
       );
     } catch (e) {
       return DiophantineResult.failure('Solver failed: ${_friendlyError(e)}');
@@ -1157,6 +1193,10 @@ class CspSolver {
     // Each reifies to a `__soft{n}` indicator (posted via extraConstraints)
     // whose value in the optimal assignment says whether it held.
     final softConstraints = <SoftConstraintSpec>[];
+    // Round 111 (C8): set variables. `setVars` maps each declared set to
+    // its integer universe; its constraints (cardinality / subset /
+    // disjoint / membership) are posted via extraConstraints closures.
+    final setVars = <String, List<int>>{};
     ({String op, String expr, int lineNum})? objective;
 
     final lines = input.split('\n');
@@ -1216,6 +1256,47 @@ class CspSolver {
                 'Line ${lineNum + 1}: variable "$name" already declared.');
           }
           vars[name] = (min: lo, max: hi);
+        }
+        continue;
+      }
+
+      // === Set-variable declaration (round 111, C8):
+      //   set Team from 1..5
+      //   set Team, Bench from 1..5
+      // Declares one or more set variables whose members are drawn from
+      // the integer universe `lo..hi`. Constraints below (card / subset /
+      // disjoint / contains / excludes) then shape the chosen subsets.
+      final setDeclMatch = RegExp(
+              r'^set\s+(.+?)\s+from\s+(-?\d+)\s*\.\.\s*(-?\d+)$',
+              caseSensitive: false)
+          .firstMatch(line);
+      if (setDeclMatch != null) {
+        final names = _splitNames(setDeclMatch.group(1)!);
+        final lo = int.parse(setDeclMatch.group(2)!);
+        final hi = int.parse(setDeclMatch.group(3)!);
+        if (hi < lo) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: set universe '
+              'max ($hi) < min ($lo).');
+        }
+        if (hi - lo > 1000) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: set universe '
+              'too large (max−min > 1000).');
+        }
+        final universe = [for (var v = lo; v <= hi; v++) v];
+        for (final name in names) {
+          if (!RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$').hasMatch(name)) {
+            return DiophantineResult.failure(
+                'Line ${lineNum + 1}: invalid set name "$name".');
+          }
+          if (name.startsWith('__')) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: set names '
+                'starting with "__" are reserved for internal use.');
+          }
+          if (vars.containsKey(name) || setVars.containsKey(name)) {
+            return DiophantineResult.failure(
+                'Line ${lineNum + 1}: name "$name" already declared.');
+          }
+          setVars[name] = universe;
         }
         continue;
       }
@@ -1845,13 +1926,125 @@ class CspSolver {
         continue;
       }
 
+      // === Set-variable constraints (round 111, C8). Each references
+      // one or two previously-declared `set` variables.
+      String? setErr(String name) => setVars.containsKey(name)
+          ? null
+          : 'Line ${lineNum + 1}: set variable "$name" is not declared.';
+
+      // `card(S) in lo..hi` — cardinality range.
+      final cardRangeMatch =
+          RegExp(r'^card\s*\(\s*(\w+)\s*\)\s*in\s+(\d+)\s*\.\.\s*(\d+)$')
+              .firstMatch(line);
+      if (cardRangeMatch != null) {
+        final name = cardRangeMatch.group(1)!;
+        final e = setErr(name);
+        if (e != null) return DiophantineResult.failure(e);
+        final lo = int.parse(cardRangeMatch.group(2)!);
+        final hi = int.parse(cardRangeMatch.group(3)!);
+        extraConstraints.add((p) => p.addSetCardinalityRange(name, lo, hi));
+        continue;
+      }
+
+      // `card(S) OP k` — cardinality comparison.
+      final cardMatch =
+          RegExp(r'^card\s*\(\s*(\w+)\s*\)\s*(==|=|<=|>=|<|>)\s*(\d+)$')
+              .firstMatch(line);
+      if (cardMatch != null) {
+        final name = cardMatch.group(1)!;
+        final e = setErr(name);
+        if (e != null) return DiophantineResult.failure(e);
+        final op = cardMatch.group(2)!;
+        final k = int.parse(cardMatch.group(3)!);
+        final size = setVars[name]!.length;
+        switch (op) {
+          case '==':
+          case '=':
+            extraConstraints.add((p) => p.addSetCardinality(name, k));
+            break;
+          case '<=':
+            extraConstraints.add((p) => p.addSetCardinalityRange(name, 0, k));
+            break;
+          case '<':
+            extraConstraints
+                .add((p) => p.addSetCardinalityRange(name, 0, k - 1));
+            break;
+          case '>=':
+            extraConstraints
+                .add((p) => p.addSetCardinalityRange(name, k, size));
+            break;
+          case '>':
+            extraConstraints
+                .add((p) => p.addSetCardinalityRange(name, k + 1, size));
+            break;
+        }
+        continue;
+      }
+
+      // `subset(A, B)`, `disjoint(A, B)`, `setEquals(A, B)`.
+      final setRelMatch = RegExp(
+              r'^(subset|disjoint|setEquals)\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)$',
+              caseSensitive: false)
+          .firstMatch(line);
+      if (setRelMatch != null) {
+        final rel = setRelMatch.group(1)!.toLowerCase();
+        final a = setRelMatch.group(2)!;
+        final b = setRelMatch.group(3)!;
+        for (final n in [a, b]) {
+          final e = setErr(n);
+          if (e != null) return DiophantineResult.failure(e);
+        }
+        switch (rel) {
+          case 'subset':
+            extraConstraints.add((p) => p.addSubset(a, b));
+            break;
+          case 'disjoint':
+            extraConstraints.add((p) => p.addSetDisjoint(a, b));
+            break;
+          case 'setequals':
+            extraConstraints.add((p) => p.addSetEquals(a, b));
+            break;
+        }
+        continue;
+      }
+
+      // `S contains e` / `S excludes e` — pin a universe element in/out.
+      final setMemberMatch = RegExp(r'^(\w+)\s+(contains|excludes)\s+(-?\d+)$',
+              caseSensitive: false)
+          .firstMatch(line);
+      if (setMemberMatch != null &&
+          setVars.containsKey(setMemberMatch.group(1)!)) {
+        final name = setMemberMatch.group(1)!;
+        final verb = setMemberMatch.group(2)!.toLowerCase();
+        final elem = int.parse(setMemberMatch.group(3)!);
+        if (!setVars[name]!.contains(elem)) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: element '
+              '$elem is outside set "$name"\'s universe.');
+        }
+        extraConstraints.add((p) => verb == 'contains'
+            ? p.addRequiredInSet(name, elem)
+            : p.addExcludedFromSet(name, elem));
+        continue;
+      }
+
       // Anything else is a constraint.
       constraints.add(line);
     }
 
-    if (vars.isEmpty) {
+    if (vars.isEmpty && setVars.isEmpty) {
       return DiophantineResult.failure(
           'No variables declared. Use `vars: x, y in 1..9`.');
+    }
+
+    // Set variables define their own enumeration and carry a distinct
+    // result type; combining them with an objective or soft preferences
+    // (which route through paths that coerce every value to int) is
+    // rejected rather than silently mis-handled.
+    if (setVars.isNotEmpty &&
+        (objective != null || softConstraints.isNotEmpty)) {
+      return DiophantineResult.failure(
+          '`set` variables cannot be combined with `minimize`/`maximize` '
+          'or `soft(…)` in the same program.');
     }
 
     // Infer the drawing container from the coordinate domains: the box
@@ -1909,6 +2102,7 @@ class CspSolver {
       circuitLabels: circuitLabels,
       circuitIsSub: circuitIsSub,
       softConstraints: softConstraints,
+      setVariables: setVars,
       maxSolutions: maxSolutions,
     );
   }

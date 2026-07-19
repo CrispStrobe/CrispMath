@@ -240,11 +240,20 @@ display can't do justice.
   violated ones struck through. Ships with a `shiftPrefs` gallery
   example, a `soft` Function Reference entry + help chip, de/fr/es i18n
   (incl. a parametric `constraintsSoftScore`), and engine tests.
-- [ ] **Set variables** — `addSetVariable` / `addSubset` /
+- [x] **Set variables** — `addSetVariable` / `addSubset` /
   `addSetCardinality` / `addSetDisjoint`; team / committee selection.
-  Returns `Set` values, a genuinely new result type. *Viz:* render each
-  set solution as a chip cluster (membership), optionally a small
-  Venn/overlap diagram for `disjoint`/`subset` relations.
+  Returns `Set` values, a genuinely new result type. *Done (round 111,
+  C8):* `set S from lo..hi` declares an integer-universe set variable;
+  `card(S) = k` / `<= k` / `in a..b`, `subset(A,B)`, `disjoint(A,B)`,
+  `setEquals(A,B)`, `S contains e`, `S excludes e` shape it. A new
+  `setVariables` param on `solveDiophantine` re-materialises the 0/1
+  indicators into `Set` values and threads `setVarNames` +
+  `setSolutions` (aligned with `solutions`) to the result; rejected in
+  combination with `minimize`/`maximize`/`soft`. *Viz:* `_SetSolutionView`
+  chip clusters — one labelled cluster per set var per solution, `∅` for
+  the empty set, capped at 8 rows. Ships with a `committee` gallery
+  example, a consolidated `set_var` Function Reference entry (four help
+  chips point to it), de/fr/es i18n, and engine tests.
 - [x] **`circuit` / `subcircuit` (TSP / routing)** — a single Hamiltonian
   tour over successor variables. Graph-theory curriculum. *Done (round
   109, C8):* `circuit(next0, next1, …; labels=…)` / `subcircuit(…)` DSL

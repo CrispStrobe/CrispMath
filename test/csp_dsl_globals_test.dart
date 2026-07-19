@@ -289,6 +289,28 @@ soft(1): alex = bo    # a nice-to-have that the hard rule forbids''');
       expect(r.totalWeight, 6);
     }, timeout: _t);
 
+    test('committee — set selection with disjoint bench', () async {
+      final r = await CspSolver.solveDsl(
+          '''# Pick a committee + a disjoint reserve bench from 5 people.
+# Universe 1..5 = the five candidates; member 1 must be on the committee.
+set Committee, Bench from 1..5
+card(Committee) = 3
+card(Bench) = 2
+disjoint(Committee, Bench)
+Committee contains 1''',
+          maxSolutions: 200);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.setVarNames, ['Committee', 'Bench']);
+      expect(r.setSolutions, isNotEmpty);
+      for (final ss in r.setSolutions) {
+        expect(ss['Committee']!, contains(1));
+        expect(ss['Committee']!, hasLength(3));
+        expect(ss['Bench']!, hasLength(2));
+        expect(ss['Committee']!.toSet().intersection(ss['Bench']!.toSet()),
+            isEmpty);
+      }
+    }, timeout: _t);
+
     test('chromaticNumber — odd 5-cycle needs 3 colours', () async {
       final r = await CspSolver.solveDsl(
           '''# Fewest colours for a 5-cycle (odd cycle ⇒ 3).
@@ -642,6 +664,104 @@ soft(0): a = 1
 ''');
       expect(r.ok, isFalse);
       expect(r.error, contains('positive integer'));
+    });
+  });
+
+  group('set variables', () {
+    test('cardinality + required element enumerate the right subsets',
+        () async {
+      final r = await CspSolver.solveDsl('''
+set Team from 1..4
+card(Team) = 2
+Team contains 1
+''', maxSolutions: 50);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.setVarNames, ['Team']);
+      // Size-2 subsets of {1,2,3,4} containing 1: {1,2},{1,3},{1,4}.
+      expect(r.setSolutions, hasLength(3));
+      final got = {for (final ss in r.setSolutions) ss['Team']!.join(',')};
+      expect(got, {'1,2', '1,3', '1,4'});
+      // Members are sorted and the row is set-only (no int vars).
+      expect(r.solutions.first, isEmpty);
+    }, timeout: _t);
+
+    test('disjoint singletons: no shared element', () async {
+      final r = await CspSolver.solveDsl('''
+set A, B from 1..3
+card(A) = 1
+card(B) = 1
+disjoint(A, B)
+''', maxSolutions: 100);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.setSolutions, hasLength(6)); // 3·2 ordered disjoint singletons
+      for (final ss in r.setSolutions) {
+        expect(ss['A']!.toSet().intersection(ss['B']!.toSet()), isEmpty);
+      }
+    }, timeout: _t);
+
+    test('subset relation constrains membership', () async {
+      final r = await CspSolver.solveDsl('''
+set Small, Big from 1..3
+card(Small) = 1
+card(Big) = 2
+subset(Small, Big)
+''', maxSolutions: 100);
+      expect(r.ok, isTrue, reason: r.error);
+      for (final ss in r.setSolutions) {
+        expect(ss['Big']!.toSet().containsAll(ss['Small']!), isTrue);
+      }
+    }, timeout: _t);
+
+    test('cardinality range `in`', () async {
+      final r = await CspSolver.solveDsl('''
+set S from 1..3
+card(S) in 1..2
+''', maxSolutions: 100);
+      expect(r.ok, isTrue, reason: r.error);
+      for (final ss in r.setSolutions) {
+        expect(ss['S']!.length, inInclusiveRange(1, 2));
+      }
+      // Subsets of {1,2,3} with size 1 or 2: C(3,1)+C(3,2) = 6.
+      expect(r.setSolutions, hasLength(6));
+    }, timeout: _t);
+
+    test('excludes pins an element out', () async {
+      final r = await CspSolver.solveDsl('''
+set S from 1..3
+card(S) = 2
+S excludes 3
+''', maxSolutions: 100);
+      expect(r.ok, isTrue, reason: r.error);
+      // Only {1,2} avoids 3 at size 2.
+      expect(r.setSolutions, hasLength(1));
+      expect(r.setSolutions.first['S'], [1, 2]);
+    }, timeout: _t);
+
+    test('set variables cannot be combined with minimize', () async {
+      final r = await CspSolver.solveDsl('''
+set S from 1..3
+minimize S
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('cannot be combined'));
+    });
+
+    test('an undeclared set is a line-numbered error', () async {
+      final r = await CspSolver.solveDsl('''
+set S from 1..3
+card(T) = 1
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('not declared'));
+    });
+
+    test('an out-of-universe element is rejected', () async {
+      final r = await CspSolver.solveDsl('''
+set S from 1..3
+S contains 9
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('outside set'));
     });
   });
 }
