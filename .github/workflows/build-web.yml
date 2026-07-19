@@ -69,4 +69,22 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERCEL_TOKEN != ''
         run: |
           npm install -g vercel@latest
-          vercel deploy build/web --prod --yes --archive=tgz --token="$VERCEL_TOKEN"
+          # The build + tests have already passed by this point; the bundle
+          # is uploaded as an artifact regardless. Vercel's free tier caps
+          # deployments at 100/day, so on a heavy-push day the deploy can
+          # hit `api-deployments-free-per-day` — an external quota, not a
+          # regression. Treat *only* that rate-limit as a soft failure so a
+          # green build isn't turned red by the daily cap; any other deploy
+          # error still fails the job.
+          set -o pipefail
+          if vercel deploy build/web --prod --yes --archive=tgz \
+              --token="$VERCEL_TOKEN" 2>&1 | tee vercel.log; then
+            echo "Vercel deploy succeeded."
+          else
+            if grep -q 'api-deployments-free-per-day' vercel.log; then
+              echo "::warning::Vercel free-tier daily deploy cap reached — skipping deploy (build artifact still uploaded). Retries on the next push after the 24h window."
+            else
+              echo "::error::Vercel deploy failed for a non-quota reason."
+              exit 1
+            fi
+          fi
