@@ -33,12 +33,9 @@ dependencies:
   # Constraint Satisfaction Problem solver — pure Dart, no native
   # deps. Powers the Analysis-hub "Constraints" module (Diophantine
   # equations, cryptarithms in V1; Sudoku and a generic mini-DSL in
-  # follow-up rounds). Bump the `ref:` when CSP-engine features we
-  # depend on grow.
-  dart_csp:
-    git:
-      url: https://github.com/CrispStrobe/dart_csp.git
-      ref: "6b3f5f780930c8a9046eaf5cd37c3783a5b6a1c4"   # main: v2.2.0 (dart2js-safe + propagation-trace API)
+  # follow-up rounds). Now published on pub.dev; bump the version
+  # constraint when CSP-engine features we depend on grow.
+  dart_csp: ^2.2.0
 
   # Math rendering
   flutter_math_fork: ^0.7.2

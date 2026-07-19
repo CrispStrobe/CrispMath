@@ -109,11 +109,10 @@ packages:
   dart_csp:
     dependency: "direct main"
     description:
-      path: "."
-      ref: "6b3f5f780930c8a9046eaf5cd37c3783a5b6a1c4"
-      resolved-ref: "6b3f5f780930c8a9046eaf5cd37c3783a5b6a1c4"
-      url: "https://github.com/CrispStrobe/dart_csp.git"
-    source: git
+      name: dart_csp
+      sha256: "19a62dbb3f8ed04b8d48a03113a87a3e09c8584a852e40030a9a282bdef1c0d5"
+      url: "https://pub.dev"
+    source: hosted
     version: "2.2.0"
   fake_async:
     dependency: transitive
