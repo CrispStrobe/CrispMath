@@ -531,6 +531,13 @@ abstract class AppLocalizations {
   String get constraintsExportFlatZinc;
   // Round F — propagation step-trace visualizer (AC-3 replay).
   String get constraintsVisualizeButton;
+  String get constraintsCompareStrategies;
+  String get constraintsStrategyHeader;
+  String get constraintsStrategyCol;
+  String get constraintsStrategyDecisions;
+  String get constraintsStrategyBacktracks;
+  String get constraintsStrategyPropagations;
+  String get constraintsStrategyTime;
   String get constraintsTraceHeader;
   String get constraintsTraceIntro;
   String constraintsTraceStepCounter(int current, int total);
@@ -1869,6 +1876,20 @@ class EnLocalizations implements AppLocalizations {
   String get constraintsExportFlatZinc => 'Export as FlatZinc';
   @override
   String get constraintsVisualizeButton => 'Visualize';
+  @override
+  String get constraintsCompareStrategies => 'Compare strategies';
+  @override
+  String get constraintsStrategyHeader => 'Search-strategy comparison';
+  @override
+  String get constraintsStrategyCol => 'Strategy';
+  @override
+  String get constraintsStrategyDecisions => 'Decisions';
+  @override
+  String get constraintsStrategyBacktracks => 'Backtracks';
+  @override
+  String get constraintsStrategyPropagations => 'Propagations';
+  @override
+  String get constraintsStrategyTime => 'Time';
   @override
   String get constraintsTraceHeader => 'Propagation trace';
   @override
@@ -3588,6 +3609,20 @@ class DeLocalizations implements AppLocalizations {
   String get constraintsExportFlatZinc => 'Als FlatZinc exportieren';
   @override
   String get constraintsVisualizeButton => 'Visualisieren';
+  @override
+  String get constraintsCompareStrategies => 'Strategien vergleichen';
+  @override
+  String get constraintsStrategyHeader => 'Suchstrategie-Vergleich';
+  @override
+  String get constraintsStrategyCol => 'Strategie';
+  @override
+  String get constraintsStrategyDecisions => 'Entscheidungen';
+  @override
+  String get constraintsStrategyBacktracks => 'Rücksprünge';
+  @override
+  String get constraintsStrategyPropagations => 'Propagationen';
+  @override
+  String get constraintsStrategyTime => 'Zeit';
   @override
   String get constraintsTraceHeader => 'Propagierungs-Verlauf';
   @override
@@ -6908,6 +6943,21 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get constraintsVisualizeButton => 'Visualiser';
   @override
+  String get constraintsCompareStrategies => 'Comparer les stratégies';
+  @override
+  String get constraintsStrategyHeader =>
+      'Comparaison des stratégies de recherche';
+  @override
+  String get constraintsStrategyCol => 'Stratégie';
+  @override
+  String get constraintsStrategyDecisions => 'Décisions';
+  @override
+  String get constraintsStrategyBacktracks => 'Retours arrière';
+  @override
+  String get constraintsStrategyPropagations => 'Propagations';
+  @override
+  String get constraintsStrategyTime => 'Temps';
+  @override
   String get constraintsTraceHeader => 'Trace de propagation';
   @override
   String get constraintsTraceIntro =>
@@ -10156,6 +10206,21 @@ class EsLocalizations implements AppLocalizations {
   String get constraintsExportFlatZinc => 'Exportar como FlatZinc';
   @override
   String get constraintsVisualizeButton => 'Visualizar';
+  @override
+  String get constraintsCompareStrategies => 'Comparar estrategias';
+  @override
+  String get constraintsStrategyHeader =>
+      'Comparación de estrategias de búsqueda';
+  @override
+  String get constraintsStrategyCol => 'Estrategia';
+  @override
+  String get constraintsStrategyDecisions => 'Decisiones';
+  @override
+  String get constraintsStrategyBacktracks => 'Retrocesos';
+  @override
+  String get constraintsStrategyPropagations => 'Propagaciones';
+  @override
+  String get constraintsStrategyTime => 'Tiempo';
   @override
   String get constraintsTraceHeader => 'Traza de propagación';
   @override

@@ -605,6 +605,12 @@ class _ResultBlock extends StatelessWidget {
             totalWeight: result.totalWeight,
           ),
         ],
+        // Search-strategy comparison: present when the program was solved
+        // with "Compare strategies". A per-heuristic solver-stats table.
+        if (result.strategyStats.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _StrategyStatsTable(stats: result.strategyStats),
+        ],
         // Map-coloring overlay: the `mapColoringAustralia` gallery
         // program assigns a color to each of the seven Australian
         // regions. When the first solution is exactly that variable
@@ -1425,6 +1431,110 @@ class _SetCluster extends StatelessWidget {
       );
 }
 
+/// Search-strategy comparison table. One row per heuristic showing the
+/// search effort (decisions / backtracks / propagations) and wall-clock
+/// to find a single solution. The lightest decision count is highlighted
+/// — a teaching aid for "which variable/value ordering fits this
+/// problem". Wall-clock is shown but noisy (JIT warmup on the first run),
+/// so the pedagogical signal is the decision/backtrack counts.
+class _StrategyStatsTable extends StatelessWidget {
+  final List<SearchStrategyStat> stats;
+
+  const _StrategyStatsTable({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context);
+    // The best (fewest decisions) among strategies that found a solution.
+    final solved = stats.where((s) => s.found).toList();
+    final bestDecisions = solved.isEmpty
+        ? null
+        : solved.map((s) => s.decisions).reduce((a, b) => a < b ? a : b);
+
+    final headerStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: scheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        );
+    const numStyle = TextStyle(fontFamily: 'monospace', fontSize: 12);
+
+    TableRow row(List<Widget> cells) => TableRow(children: [
+          for (final c in cells)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+              child: c,
+            ),
+        ]);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t.constraintsStrategyHeader,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Table(
+              defaultColumnWidth: const IntrinsicColumnWidth(),
+              children: [
+                row([
+                  Text(t.constraintsStrategyCol, style: headerStyle),
+                  Text(t.constraintsStrategyDecisions, style: headerStyle),
+                  Text(t.constraintsStrategyBacktracks, style: headerStyle),
+                  Text(t.constraintsStrategyPropagations, style: headerStyle),
+                  Text(t.constraintsStrategyTime, style: headerStyle),
+                ]),
+                for (final s in stats)
+                  row([
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (s.found &&
+                            bestDecisions != null &&
+                            s.decisions == bestDecisions)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Icon(Icons.star,
+                                size: 13, color: scheme.primary),
+                          ),
+                        Text(s.name,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: s.found
+                                    ? scheme.onSurface
+                                    : scheme.onSurfaceVariant)),
+                      ],
+                    ),
+                    Text(s.found ? '${s.decisions}' : '—', style: numStyle),
+                    Text(s.found ? '${s.backtracks}' : '—', style: numStyle),
+                    Text(s.found ? '${s.propagations}' : '—', style: numStyle),
+                    Text(
+                        s.found
+                            ? '${(s.elapsedMicros / 1000).toStringAsFixed(1)} ms'
+                            : '—',
+                        style: numStyle),
+                  ]),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // === Cryptarithm tab ====================================================
 
 class _CryptarithmTab extends StatefulWidget {
@@ -1997,14 +2107,15 @@ Committee contains 1''',
     super.dispose();
   }
 
-  Future<void> _solve() async {
+  Future<void> _solve({bool compareStrategies = false}) async {
     setState(() {
       _solving = true;
       _mus = null;
       _export = null;
       _trace = null;
     });
-    final r = await CspSolver.solveDsl(_ctl.text);
+    final r = await CspSolver.solveDsl(_ctl.text,
+        compareStrategies: compareStrategies);
     if (!mounted) return;
     setState(() {
       _solving = false;
@@ -2117,6 +2228,14 @@ Committee contains 1''',
                       )
                     : const Icon(Icons.slideshow_outlined, size: 18),
                 label: Text(t.constraintsVisualizeButton),
+              ),
+              // Round 112 (C8): run the same program under several
+              // search heuristics and show a solver-stats comparison.
+              OutlinedButton.icon(
+                onPressed:
+                    _solving ? null : () => _solve(compareStrategies: true),
+                icon: const Icon(Icons.speed_outlined, size: 18),
+                label: Text(t.constraintsCompareStrategies),
               ),
             ],
           ),

@@ -123,6 +123,29 @@ class SoftConstraintResult {
   });
 }
 
+/// Round 112 (C8): one row of the search-strategy comparison — the
+/// solver stats for finding a single solution under a named heuristic.
+/// A teaching aid contrasting how variable/value ordering and restarts
+/// change the search effort (decisions / backtracks / propagations) and
+/// wall-clock on the same program.
+class SearchStrategyStat {
+  final String name;
+  final bool found;
+  final int decisions;
+  final int backtracks;
+  final int propagations;
+  final int elapsedMicros;
+
+  const SearchStrategyStat({
+    required this.name,
+    required this.found,
+    required this.decisions,
+    required this.backtracks,
+    required this.propagations,
+    required this.elapsedMicros,
+  });
+}
+
 /// Result envelope returned by [CspSolver.solveDiophantine]. Holds
 /// either a list of solutions or an error message — never both.
 class DiophantineResult {
@@ -190,6 +213,11 @@ class DiophantineResult {
   final List<String> setVarNames;
   final List<Map<String, List<int>>> setSolutions;
 
+  /// Round 112 (C8): optional search-strategy comparison rows, populated
+  /// when [CspSolver.solveDsl] is called with `compareStrategies: true`.
+  /// Empty otherwise.
+  final List<SearchStrategyStat> strategyStats;
+
   const DiophantineResult._({
     required this.solutions,
     required this.error,
@@ -206,6 +234,7 @@ class DiophantineResult {
     this.softResults = const [],
     this.setVarNames = const [],
     this.setSolutions = const [],
+    this.strategyStats = const [],
   });
 
   factory DiophantineResult.ok(
@@ -222,6 +251,7 @@ class DiophantineResult {
     List<SoftConstraintResult> softResults = const [],
     List<String> setVarNames = const [],
     List<Map<String, List<int>>> setSolutions = const [],
+    List<SearchStrategyStat> strategyStats = const [],
   }) =>
       DiophantineResult._(
         solutions: solutions,
@@ -238,6 +268,7 @@ class DiophantineResult {
         softResults: softResults,
         setVarNames: setVarNames,
         setSolutions: setSolutions,
+        strategyStats: strategyStats,
       );
 
   factory DiophantineResult.failure(String message) => DiophantineResult._(
@@ -552,50 +583,34 @@ class CspTraceResult {
 }
 
 class CspSolver {
-  /// Solves a small Diophantine-style problem. [variables] maps each
-  /// variable name to its inclusive `[min..max]` integer range.
-  /// [constraints] is a list of dart_csp string constraints
-  /// (`'x + y == 30'`, `'x != y'`, `'x in [1, 3, 5]'`, etc.).
-  /// Enumerates up to [maxSolutions] solutions and returns them; the
-  /// `truncated` flag on the result tells the caller whether the search
-  /// was cut short.
-  ///
-  /// Returns a `DiophantineResult` rather than throwing — callers
-  /// surface `error` to the user when parsing or solving fails. The
-  /// caller is expected to have already wrapped this in
-  /// `_runWithProgress` if needed (we don't reach for the worker
-  /// isolate yet — CSP problems of typical homework size run in
-  /// milliseconds).
-  static Future<DiophantineResult> solveDiophantine({
+  /// Builds a dart_csp [csp.Problem] from the parsed DSL inputs shared by
+  /// [solveDiophantine] and the search-strategy comparison
+  /// ([compareSearchStrategies]). Returns the problem or a line-free
+  /// error string (validation / parse failures). Extracted so both
+  /// solve entry points post exactly the same constraints.
+  static ({csp.Problem? problem, String? error}) _buildCspProblem({
     required Map<String, ({int min, int max})> variables,
     required List<String> constraints,
     List<NoOverlapGroup> noOverlap = const [],
     List<CumulativeGroup> cumulative = const [],
     List<void Function(csp.Problem)> extraConstraints = const [],
-    List<PackingRectSpec> packing = const [],
-    int? packingWidth,
-    int? packingHeight,
-    List<String> circuitVars = const [],
-    List<String>? circuitLabels,
-    bool circuitIsSub = false,
-    List<SoftConstraintSpec> softConstraints = const [],
     Map<String, List<int>> setVariables = const {},
-    int maxSolutions = 100,
-  }) async {
-    if (variables.isEmpty && setVariables.isEmpty) {
-      return DiophantineResult.failure('No variables declared.');
-    }
+  }) {
     final problem = csp.Problem();
     try {
       for (final entry in variables.entries) {
         final (min: lo, max: hi) = entry.value;
         if (hi < lo) {
-          return DiophantineResult.failure(
-              'Variable ${entry.key}: range max ($hi) < min ($lo).');
+          return (
+            problem: null,
+            error: 'Variable ${entry.key}: range max ($hi) < min ($lo).'
+          );
         }
         if (hi - lo > 10000) {
-          return DiophantineResult.failure(
-              'Variable ${entry.key}: range too large (max−min > 10000).');
+          return (
+            problem: null,
+            error: 'Variable ${entry.key}: range too large (max−min > 10000).'
+          );
         }
         problem.addRangeVariable(entry.key, lo, hi);
       }
@@ -664,9 +679,58 @@ class CspSolver {
         apply(problem);
       }
     } catch (e) {
-      return DiophantineResult.failure(
-          'Failed to parse constraints: ${_friendlyError(e)}');
+      return (
+        problem: null,
+        error: 'Failed to parse constraints: ${_friendlyError(e)}'
+      );
     }
+    return (problem: problem, error: null);
+  }
+
+  /// Solves a small Diophantine-style problem. [variables] maps each
+  /// variable name to its inclusive `[min..max]` integer range.
+  /// [constraints] is a list of dart_csp string constraints
+  /// (`'x + y == 30'`, `'x != y'`, `'x in [1, 3, 5]'`, etc.).
+  /// Enumerates up to [maxSolutions] solutions and returns them; the
+  /// `truncated` flag on the result tells the caller whether the search
+  /// was cut short.
+  ///
+  /// Returns a `DiophantineResult` rather than throwing — callers
+  /// surface `error` to the user when parsing or solving fails. The
+  /// caller is expected to have already wrapped this in
+  /// `_runWithProgress` if needed (we don't reach for the worker
+  /// isolate yet — CSP problems of typical homework size run in
+  /// milliseconds).
+  static Future<DiophantineResult> solveDiophantine({
+    required Map<String, ({int min, int max})> variables,
+    required List<String> constraints,
+    List<NoOverlapGroup> noOverlap = const [],
+    List<CumulativeGroup> cumulative = const [],
+    List<void Function(csp.Problem)> extraConstraints = const [],
+    List<PackingRectSpec> packing = const [],
+    int? packingWidth,
+    int? packingHeight,
+    List<String> circuitVars = const [],
+    List<String>? circuitLabels,
+    bool circuitIsSub = false,
+    List<SoftConstraintSpec> softConstraints = const [],
+    Map<String, List<int>> setVariables = const {},
+    List<SearchStrategyStat> strategyStats = const [],
+    int maxSolutions = 100,
+  }) async {
+    if (variables.isEmpty && setVariables.isEmpty) {
+      return DiophantineResult.failure('No variables declared.');
+    }
+    final built = _buildCspProblem(
+      variables: variables,
+      constraints: constraints,
+      noOverlap: noOverlap,
+      cumulative: cumulative,
+      extraConstraints: extraConstraints,
+      setVariables: setVariables,
+    );
+    if (built.error != null) return DiophantineResult.failure(built.error!);
+    final problem = built.problem!;
 
     // Round 110 (C8): MaxCSP path. With `soft(…)` lines present, the
     // reify + declareSoft closures already ran in `extraConstraints`;
@@ -751,6 +815,7 @@ class CspSolver {
             circuitIsSub: circuitIsSub,
             setVarNames: setVariables.keys.toList(),
             setSolutions: setSolutions,
+            strategyStats: strategyStats,
           );
         }
       }
@@ -766,10 +831,48 @@ class CspSolver {
         circuitIsSub: circuitIsSub,
         setVarNames: setVariables.keys.toList(),
         setSolutions: setSolutions,
+        strategyStats: strategyStats,
       );
     } catch (e) {
       return DiophantineResult.failure('Solver failed: ${_friendlyError(e)}');
     }
+  }
+
+  /// Round 112 (C8): runs a single-solution search under a handful of
+  /// dart_csp's variable/value-ordering heuristics and restart schemes,
+  /// capturing each run's [csp.SolverStats] via `problem.lastStats`. A
+  /// teaching aid — the same problem, different search effort. Each
+  /// strategy method builds its own internal search from the shared
+  /// [problem], so calling them in sequence is safe.
+  static Future<List<SearchStrategyStat>> _runStrategies(
+      csp.Problem problem) async {
+    final out = <SearchStrategyStat>[];
+    Future<void> run(String name, Future<dynamic> Function() solve) async {
+      dynamic res;
+      try {
+        res = await solve();
+      } catch (_) {
+        // A heuristic that isn't applicable to this problem shape is
+        // skipped rather than failing the whole comparison.
+        return;
+      }
+      final st = problem.lastStats;
+      out.add(SearchStrategyStat(
+        name: name,
+        found: res is Map,
+        decisions: st?.decisions ?? 0,
+        backtracks: st?.backtracks ?? 0,
+        propagations: st?.propagations ?? 0,
+        elapsedMicros: st?.elapsedMicros ?? 0,
+      ));
+    }
+
+    await run('Default (MRV)', () => problem.getSolution());
+    await run('dom/wdeg', () => problem.getSolutionWithDomWdeg());
+    await run('VSIDS activity', () => problem.getSolutionWithActivity());
+    await run('Impact', () => problem.getSolutionWithImpact());
+    await run('Restarts (Luby)', () => problem.getSolutionWithRestarts());
+    return out;
   }
 
   /// Solves a cryptarithm of the form `WORD1 + WORD2 = WORD3` (or
@@ -1169,7 +1272,7 @@ class CspSolver {
   /// Anything else is fed to the existing dart_csp string-constraint
   /// parser / `addLinear*` router via [solveDiophantine].
   static Future<DiophantineResult> solveDsl(String input,
-      {int maxSolutions = 100}) async {
+      {int maxSolutions = 100, bool compareStrategies = false}) async {
     final vars = <String, ({int min, int max})>{};
     final constraints = <String>[];
     final noOverlap = <NoOverlapGroup>[];
@@ -2089,6 +2192,25 @@ class CspSolver {
       );
     }
 
+    // Round 112 (C8): search-strategy comparison. Only meaningful for a
+    // plain enumeration program — the heuristics find one solution via
+    // backtracking, so set / soft / objective programs (different solve
+    // modes) are excluded. Runs on a fresh problem built from the same
+    // parsed inputs so it never disturbs the enumeration below.
+    var strategyStats = const <SearchStrategyStat>[];
+    if (compareStrategies && setVars.isEmpty) {
+      final built = _buildCspProblem(
+        variables: vars,
+        constraints: constraints,
+        noOverlap: noOverlap,
+        cumulative: cumulative,
+        extraConstraints: extraConstraints,
+      );
+      if (built.problem != null) {
+        strategyStats = await _runStrategies(built.problem!);
+      }
+    }
+
     return solveDiophantine(
       variables: vars,
       constraints: constraints,
@@ -2103,6 +2225,7 @@ class CspSolver {
       circuitIsSub: circuitIsSub,
       softConstraints: softConstraints,
       setVariables: setVars,
+      strategyStats: strategyStats,
       maxSolutions: maxSolutions,
     );
   }

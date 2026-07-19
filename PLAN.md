@@ -279,12 +279,18 @@ display can't do justice.
   educational "local search vs backtracking" panel animating the
   conflict count dropping per iteration (line/step chart), contrasted
   with the systematic backtracker's decision/backtrack counts.
-- [ ] **Search-strategy selector** — expose `getSolutionWithRestarts`
-  (Luby), `…WithDomWdeg`, `…WithActivity` (VSIDS), `…WithImpact`,
-  `…WithLastConflict`, `enableConflictBackjumping`. Mostly perf knobs;
-  the user-facing value is a teaching aid. *Viz:* a "solver strategy"
-  dropdown + a `SolverStats` comparison (decisions / backtracks /
-  propagations / wall-clock) so students see the heuristics' effect.
+- [x] **Search-strategy selector** — expose `getSolutionWithRestarts`
+  (Luby), `…WithDomWdeg`, `…WithActivity` (VSIDS), `…WithImpact`.
+  *Done (round 112, C8):* a "Compare strategies" button on the DSL tab
+  re-solves via `solveDsl(…, compareStrategies: true)`, which runs the
+  program under all five heuristics on a freshly-built problem (the
+  build was extracted into `_buildCspProblem`, shared with
+  `solveDiophantine`), reading each run's `SolverStats` via
+  `problem.lastStats`. *Viz:* `_StrategyStatsTable` — a per-heuristic
+  table of decisions / backtracks / propagations / wall-clock, starring
+  the fewest-decisions winner (decision counts are the stable signal;
+  wall-clock is shown but JIT-noisy). Skipped for set / soft / objective
+  programs (different solve modes). de/fr/es i18n + engine tests.
 - [ ] **LNS** — `lnsMinimize` / `lnsMaximize` for near-optimal large
   optimization. Experimental; lowest priority.
 

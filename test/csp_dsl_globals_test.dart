@@ -764,4 +764,51 @@ S contains 9
       expect(r.error, contains('outside set'));
     });
   });
+
+  group('search-strategy comparison', () {
+    test('compareStrategies populates one stat row per heuristic', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b, c, d in 1..6
+allDifferent(a, b, c, d)
+a + b + c + d == 14
+''', compareStrategies: true);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      // Default + dom/wdeg + VSIDS + Impact + Restarts = 5 strategies.
+      expect(r.strategyStats, hasLength(5));
+      expect(r.strategyStats.map((s) => s.name), contains('Default (MRV)'));
+      // Every strategy finds a solution to this satisfiable program.
+      expect(r.strategyStats.every((s) => s.found), isTrue);
+      // Decisions are recorded (a real backtracking search ran).
+      expect(r.strategyStats.every((s) => s.decisions > 0), isTrue);
+    }, timeout: _t);
+
+    test('without the flag no stats are collected', () async {
+      final r = await CspSolver.solveDsl('vars: a in 1..3');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.strategyStats, isEmpty);
+    }, timeout: _t);
+
+    test('the enumeration result is unaffected by the comparison', () async {
+      final plain = await CspSolver.solveDsl('''
+vars: x, y in 1..3
+x + y == 4
+''');
+      final withCmp = await CspSolver.solveDsl('''
+vars: x, y in 1..3
+x + y == 4
+''', compareStrategies: true);
+      expect(withCmp.solutions.length, plain.solutions.length);
+      expect(withCmp.strategyStats, isNotEmpty);
+    }, timeout: _t);
+
+    test('set programs skip the comparison (different solve mode)', () async {
+      final r = await CspSolver.solveDsl('''
+set S from 1..3
+card(S) = 1
+''', compareStrategies: true);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.strategyStats, isEmpty);
+    }, timeout: _t);
+  });
 }
