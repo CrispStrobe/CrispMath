@@ -30,21 +30,33 @@ void main() {
     expect(find.widgetWithText(ActionChip, 'allDifferent'), findsNothing);
   });
 
-  testWidgets('help on: operator chips appear and open the FunctionRef popover',
+  test('every DSL help chip maps to a real Function Reference entry', () {
+    final ids = {for (final e in FunctionReferences.all) e.id};
+    for (final (label, refId) in dslOperatorHelpChips) {
+      expect(ids, contains(refId),
+          reason: 'chip "$label" → refId "$refId" has no catalogue entry');
+    }
+  });
+
+  testWidgets('help on: EVERY operator chip appears and opens its popover',
       (tester) async {
     await _openDslTab(tester);
 
     AppState().setHelpMode(true);
     await tester.pump();
 
-    expect(find.widgetWithText(ActionChip, 'allDifferent'), findsOneWidget);
+    // Exhaustive: every operator in the DSL is surfaced as a chip.
+    for (final (label, _) in dslOperatorHelpChips) {
+      expect(find.widgetWithText(ActionChip, label), findsOneWidget,
+          reason: 'missing help chip for "$label"');
+    }
 
-    await tester.tap(find.text('allDifferent'), warnIfMissed: false);
+    // Spot-check a Round 108 global end-to-end: tapping opens the popover
+    // for its Function Reference id.
+    await tester.tap(find.text('table'), warnIfMissed: false);
     await tester.pumpAndSettle();
-
     expect(find.byType(AlertDialog), findsOneWidget);
-    final ref =
-        FunctionReferences.all.firstWhere((e) => e.id == 'all_different');
+    final ref = FunctionReferences.all.firstWhere((e) => e.id == 'table');
     expect(find.text(ref.signature), findsOneWidget);
     expect(find.text('Learn more'), findsOneWidget);
   });

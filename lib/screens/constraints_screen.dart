@@ -1504,30 +1504,35 @@ class _TraceErrorBlock extends StatelessWidget {
 /// that operator's Function Reference popover. This is the DSL's
 /// per-element help surface, since the operators otherwise live only
 /// inside the free-form program text.
+/// (chip label, FunctionRef id) for every mini-DSL operator surfaced as
+/// a help-mode chip. Public so a test can assert the row is exhaustive
+/// (every operator present) and each refId resolves to a catalogue
+/// entry. Keep in sync with the keywords `CspSolver.solveDsl` accepts.
+const dslOperatorHelpChips = <(String, String)>[
+  ('vars:', 'vars'),
+  ('allDifferent', 'all_different'),
+  ('noOverlap', 'no_overlap'),
+  ('cumulative', 'cumulative'),
+  // Round 108 globals.
+  ('atLeast', 'at_least'),
+  ('atMost', 'at_most'),
+  ('exactly', 'exactly'),
+  ('implies', 'implies'),
+  ('gcc', 'gcc'),
+  ('among', 'among'),
+  ('nvalue', 'nvalue'),
+  ('atMostInARow', 'at_most_in_a_row'),
+  ('valuePrecedence', 'value_precedence'),
+  ('table', 'table'),
+  ('element', 'element'),
+  ('minimize', 'minimize'),
+  ('maximize', 'maximize'),
+];
+
 class _DslOperatorHelpRow extends StatelessWidget {
   const _DslOperatorHelpRow();
 
-  // (chip label, FunctionRef id) per mini-DSL operator.
-  static const _operators = <(String, String)>[
-    ('vars:', 'vars'),
-    ('allDifferent', 'all_different'),
-    ('noOverlap', 'no_overlap'),
-    ('cumulative', 'cumulative'),
-    // Round 108 globals.
-    ('atLeast', 'at_least'),
-    ('atMost', 'at_most'),
-    ('exactly', 'exactly'),
-    ('implies', 'implies'),
-    ('gcc', 'gcc'),
-    ('among', 'among'),
-    ('nvalue', 'nvalue'),
-    ('atMostInARow', 'at_most_in_a_row'),
-    ('valuePrecedence', 'value_precedence'),
-    ('table', 'table'),
-    ('element', 'element'),
-    ('minimize', 'minimize'),
-    ('maximize', 'maximize'),
-  ];
+  static const _operators = dslOperatorHelpChips;
 
   @override
   Widget build(BuildContext context) {
