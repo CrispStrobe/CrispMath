@@ -1513,6 +1513,18 @@ class _DslOperatorHelpRow extends StatelessWidget {
     ('allDifferent', 'all_different'),
     ('noOverlap', 'no_overlap'),
     ('cumulative', 'cumulative'),
+    // Round 108 globals.
+    ('atLeast', 'at_least'),
+    ('atMost', 'at_most'),
+    ('exactly', 'exactly'),
+    ('implies', 'implies'),
+    ('gcc', 'gcc'),
+    ('among', 'among'),
+    ('nvalue', 'nvalue'),
+    ('atMostInARow', 'at_most_in_a_row'),
+    ('valuePrecedence', 'value_precedence'),
+    ('table', 'table'),
+    ('element', 'element'),
     ('minimize', 'minimize'),
     ('maximize', 'maximize'),
   ];

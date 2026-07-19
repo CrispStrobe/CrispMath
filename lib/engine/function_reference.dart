@@ -2152,6 +2152,209 @@ class FunctionReferences {
       seeAlso: ['minimize', 'vars', 'all_different'],
       workedExampleId: 'constraintEditor',
     ),
+    // === Round 108 DSL globals: logic combinators, cardinality,
+    // regular, symmetry breaking, and relational constraints. All are
+    // mini-DSL operators (runnable: false) surfaced as help-mode chips.
+    FunctionRef(
+      id: 'at_least',
+      category: FunctionRefCategory.constraints,
+      signature: 'atLeast(k, a=1, b=2, …)',
+      shortDescription:
+          'At least k of the given `name=value` conditions must hold. Each '
+          'condition is reified to a boolean and their sum is bounded below.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'atLeast(2, x=1, y=1, z=1)',
+          expected: '(at least two of x, y, z equal 1)',
+          hint: 'Conditions may target any value, not just booleans — '
+              '`atLeast(1, a=3, b=5)` means a is 3 or b is 5 (or both).',
+        ),
+      ],
+      seeAlso: ['at_most', 'exactly', 'implies'],
+    ),
+    FunctionRef(
+      id: 'at_most',
+      category: FunctionRefCategory.constraints,
+      signature: 'atMost(k, a=1, b=2, …)',
+      shortDescription:
+          'At most k of the given `name=value` conditions may hold — the '
+          'reified conditions sum to k or fewer.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'atMost(1, shift_a=1, shift_b=1, shift_c=1)',
+          expected: '(no more than one of these shifts is taken)',
+          hint: 'Pair with `atLeast` on the same conditions to pin an exact '
+              'count, or use `exactly` directly.',
+        ),
+      ],
+      seeAlso: ['at_least', 'exactly', 'implies'],
+    ),
+    FunctionRef(
+      id: 'exactly',
+      category: FunctionRefCategory.constraints,
+      signature: 'exactly(k, a=1, b=2, …)',
+      shortDescription:
+          'Exactly k of the given `name=value` conditions hold — the reified '
+          'conditions sum to exactly k.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'exactly(1, ann=1, bob=1)',
+          expected: '(exactly one of Ann/Bob chose option 1)',
+          hint: 'The workhorse of logic-grid riddles — "exactly one person '
+              'owns the cat", "exactly two houses are blue", and so on.',
+        ),
+      ],
+      seeAlso: ['at_least', 'at_most', 'implies'],
+    ),
+    FunctionRef(
+      id: 'implies',
+      category: FunctionRefCategory.constraints,
+      signature: 'implies(a=1, b=2)',
+      shortDescription:
+          'Material implication over two `name=value` conditions: if the '
+          'first holds then the second must too (a=1 ⇒ b=2).',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'implies(bob=1, cy=2)',
+          expected: '(if Bob picked 1, Cy must pick 2)',
+          hint: 'Chains of `implies` encode the clue logic of Einstein / '
+              'zebra puzzles. See the `logicGrid` worked example.',
+        ),
+      ],
+      seeAlso: ['exactly', 'at_least', 'all_different'],
+    ),
+    FunctionRef(
+      id: 'gcc',
+      category: FunctionRefCategory.constraints,
+      signature: 'gcc(x, y, z; 1=2, 2=1)',
+      shortDescription:
+          'Global cardinality: each listed value must occur an exact number '
+          'of times among the variables (value 1 twice, value 2 once, …).',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'gcc(d1, d2, d3, d4, d5; 0=2)',
+          expected: '(exactly two of the five days are off)',
+          hint: 'Rostering and timetabling staple — fix how many times each '
+              'shift/value appears. See the `nurseRostering` worked example.',
+        ),
+      ],
+      seeAlso: ['among', 'nvalue', 'all_different'],
+    ),
+    FunctionRef(
+      id: 'among',
+      category: FunctionRefCategory.constraints,
+      signature: 'among(x, y, z; values=1,3,5; count=c)',
+      shortDescription:
+          'The declared variable c equals how many of the listed variables '
+          'take a value in the given set.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'among(x, y, z; values=1,3; count=c)',
+          expected: '(c = number of x, y, z that are 1 or 3)',
+          hint: 'Constrain or minimize c to control how many variables fall '
+              'into a category.',
+        ),
+      ],
+      seeAlso: ['gcc', 'nvalue'],
+    ),
+    FunctionRef(
+      id: 'nvalue',
+      category: FunctionRefCategory.constraints,
+      signature: 'nvalue(x, y, z; count=c)',
+      shortDescription:
+          'The declared variable c equals the number of DISTINCT values taken '
+          'by the listed variables. Minimize c to use as few as possible.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'nvalue(a, b, c, d, e; count=colors)  +  minimize colors',
+          expected: '(chromatic number — fewest colours)',
+          hint: 'With graph-adjacency `!=` constraints, minimizing nvalue '
+              'finds the chromatic number. See the `chromaticNumber` example.',
+        ),
+      ],
+      seeAlso: ['gcc', 'among', 'minimize'],
+    ),
+    FunctionRef(
+      id: 'at_most_in_a_row',
+      category: FunctionRefCategory.constraints,
+      signature: 'atMostInARow(x, y, z; value=1; max=2)',
+      shortDescription:
+          'No run of more than `max` consecutive `value`s across the sequence '
+          '— compiled to a small finite automaton (regular constraint).',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'atMostInARow(d1, d2, d3, d4, d5; value=1; max=2)',
+          expected: '(never three day-shifts back to back)',
+          hint: 'Encodes fatigue / pattern rules that plain counting can\'t. '
+              'The DFA has one state per run length 0..max.',
+        ),
+      ],
+      seeAlso: ['gcc', 'no_overlap'],
+    ),
+    FunctionRef(
+      id: 'value_precedence',
+      category: FunctionRefCategory.constraints,
+      signature: 'valuePrecedence(x, y, z; order=1,2,3)',
+      shortDescription:
+          'Symmetry breaking: value order[i+1] may not first appear before '
+          'order[i]. Collapses interchangeable-value duplicates (e.g. map '
+          'colours) so enumeration lists one representative per class.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'valuePrecedence(a, b, c; order=1,2,3)',
+          expected: '(canonical labelling — a is pinned to value 1)',
+          hint: 'Add to any problem whose values are interchangeable to cut '
+              'the k! relabelling duplicates out of the solution set.',
+        ),
+      ],
+      seeAlso: ['all_different', 'table'],
+    ),
+    FunctionRef(
+      id: 'table',
+      category: FunctionRefCategory.constraints,
+      signature: 'table(x, y, z; (1,2,3), (4,5,6))',
+      shortDescription:
+          'The tuple (x, y, z) must equal one of the listed rows. Encodes '
+          'arbitrary relations: compatibility matrices, allowed combinations, '
+          'logic-grid clue tables.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'table(main, side; (1,1), (1,3), (2,2))',
+          expected: '(only these (main, side) pairings are allowed)',
+          hint: 'Any relation with no clean formula fits a table. See the '
+              '`menuPairing` worked example.',
+        ),
+      ],
+      seeAlso: ['element', 'value_precedence', 'all_different'],
+    ),
+    FunctionRef(
+      id: 'element',
+      category: FunctionRefCategory.constraints,
+      signature: 'element(idx; list=10,20,30; value=v)',
+      shortDescription:
+          'Indexed lookup: list[idx] == value, with a 0-based index. Models '
+          'indirection like "the cost of the chosen option is v".',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'element(idx; list=40,15,30; value=cost)  +  minimize cost',
+          expected: '(pick the cheapest option → idx = 1, cost = 15)',
+          hint: 'Combine with `minimize`/`maximize` over the looked-up value '
+              'to optimize a choice among tabulated costs.',
+        ),
+      ],
+      seeAlso: ['table', 'minimize'],
+    ),
     // === Sudoku variants =====================================================
     // Sudoku entries describe the variant rules — they're presets in
     // the Sudoku module, not DSL operators. All carry runnable: false

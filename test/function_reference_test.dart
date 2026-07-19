@@ -21,7 +21,9 @@ void main() {
       // dialog already scrolls + searches + filters by category chip,
       // so this is a soft guard, not a hard UX limit.
       expect(FunctionReferences.all.length, greaterThan(0));
-      expect(FunctionReferences.all.length, lessThanOrEqualTo(90));
+      // Round 108 added 11 constraint-DSL globals (logic combinators,
+      // cardinality, regular, symmetry, relational) as help-chip entries.
+      expect(FunctionReferences.all.length, lessThanOrEqualTo(105));
     });
 
     test('ids are non-empty, unique, and snake_case-shaped', () {

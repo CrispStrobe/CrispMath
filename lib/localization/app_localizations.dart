@@ -4342,6 +4342,49 @@ class DeLocalizations implements AppLocalizations {
         return 'Zielfunktion: maximiert einen linearen Ausdruck. Spiegelbild '
             'von `minimize` — dasselbe Branch-and-Bound, in entgegengesetzter '
             'Richtung.';
+      // --- Round 108 DSL-Globals ---
+      case 'at_least':
+        return 'Mindestens k der angegebenen `name=Wert`-Bedingungen müssen '
+            'gelten. Jede Bedingung wird zu einer booleschen Variablen '
+            'reifiziert und ihre Summe nach unten beschränkt.';
+      case 'at_most':
+        return 'Höchstens k der angegebenen `name=Wert`-Bedingungen dürfen '
+            'gelten — die reifizierten Bedingungen summieren sich zu '
+            'höchstens k.';
+      case 'exactly':
+        return 'Genau k der angegebenen `name=Wert`-Bedingungen gelten — die '
+            'reifizierten Bedingungen summieren sich zu genau k.';
+      case 'implies':
+        return 'Materiale Implikation über zwei `name=Wert`-Bedingungen: Gilt '
+            'die erste, muss auch die zweite gelten (a=1 ⇒ b=2).';
+      case 'gcc':
+        return 'Globale Kardinalität: Jeder aufgeführte Wert muss genau so oft '
+            'unter den Variablen vorkommen (Wert 1 zweimal, Wert 2 einmal, …).';
+      case 'among':
+        return 'Die deklarierte Variable c ist gleich der Anzahl der '
+            'aufgeführten Variablen, die einen Wert aus der angegebenen Menge '
+            'annehmen.';
+      case 'nvalue':
+        return 'Die deklarierte Variable c ist gleich der Anzahl VERSCHIEDENER '
+            'Werte der aufgeführten Variablen. Minimiere c, um möglichst wenige '
+            'zu verwenden.';
+      case 'at_most_in_a_row':
+        return 'Keine Folge von mehr als `max` aufeinanderfolgenden `Wert`en '
+            'in der Sequenz — kompiliert zu einem kleinen endlichen Automaten '
+            '(regular-Bedingung).';
+      case 'value_precedence':
+        return 'Symmetriebrechung: Wert order[i+1] darf nicht vor order[i] '
+            'erstmals auftreten. Fasst vertauschbare Werte zusammen (z. B. '
+            'Kartenfarben), sodass die Aufzählung nur einen Vertreter je '
+            'Klasse listet.';
+      case 'table':
+        return 'Das Tupel (x, y, z) muss einer der aufgeführten Zeilen '
+            'entsprechen. Kodiert beliebige Relationen: Kompatibilitätsmatrizen, '
+            'erlaubte Kombinationen, Hinweistabellen für Logikrätsel.';
+      case 'element':
+        return 'Indizierter Zugriff: list[idx] == value, mit 0-basiertem '
+            'Index. Modelliert Indirektion wie „die Kosten der gewählten '
+            'Option sind v".';
       // --- Sudoku-Varianten ---
       case 'sudoku_regular':
         return 'Klassische Sudoku-Regeln: Jede Zeile, Spalte und Box enthält '
@@ -5037,6 +5080,53 @@ class DeLocalizations implements AppLocalizations {
         'Klassisches 0/1-Rucksackproblem. Das DSL behandelt dies natürlich als '
             'Deklaration `vars: x_1, ... in 0..1` plus einer linearen '
             'Kapazitätsbedingung und einer linearen Zielfunktion.',
+      ],
+      'at_least': [
+        'Bedingungen können jeden Wert betreffen, nicht nur boolesche — '
+            '`atLeast(1, a=3, b=5)` bedeutet, a ist 3 oder b ist 5 (oder '
+            'beides).',
+      ],
+      'at_most': [
+        'Kombiniere mit `atLeast` über denselben Bedingungen für eine exakte '
+            'Anzahl, oder verwende direkt `exactly`.',
+      ],
+      'exactly': [
+        'Das Arbeitspferd der Logikrätsel — „genau eine Person besitzt die '
+            'Katze", „genau zwei Häuser sind blau" usw.',
+      ],
+      'implies': [
+        'Ketten von `implies` kodieren die Hinweislogik von Einstein-/'
+            'Zebrarätseln. Siehe das Beispiel `logicGrid`.',
+      ],
+      'gcc': [
+        'Klassiker für Dienstpläne und Stundenpläne — lege fest, wie oft jede '
+            'Schicht bzw. jeder Wert vorkommt. Siehe das Beispiel '
+            '`nurseRostering`.',
+      ],
+      'among': [
+        'Beschränke oder minimiere c, um zu steuern, wie viele Variablen in '
+            'eine Kategorie fallen.',
+      ],
+      'nvalue': [
+        'Mit `!=`-Bedingungen der Graph-Nachbarschaft findet das Minimieren '
+            'von nvalue die chromatische Zahl. Siehe das Beispiel '
+            '`chromaticNumber`.',
+      ],
+      'at_most_in_a_row': [
+        'Kodiert Ermüdungs-/Musterregeln, die reines Zählen nicht ausdrücken '
+            'kann. Der Automat hat einen Zustand je Lauflänge 0..max.',
+      ],
+      'value_precedence': [
+        'Füge es jedem Problem mit vertauschbaren Werten hinzu, um die '
+            'k!-Umbenennungsduplikate aus der Lösungsmenge zu entfernen.',
+      ],
+      'table': [
+        'Jede Relation ohne saubere Formel passt in eine Tabelle. Siehe das '
+            'Beispiel `menuPairing`.',
+      ],
+      'element': [
+        'Kombiniere mit `minimize`/`maximize` über den nachgeschlagenen Wert, '
+            'um eine Auswahl unter tabellierten Kosten zu optimieren.',
       ],
       // --- Sudoku-Varianten ---
       'sudoku_regular': [
@@ -7374,6 +7464,28 @@ class FrLocalizations implements AppLocalizations {
         return "Objectif : maximiser une expression linéaire. Image miroir "
             "de `minimize` — même séparation-évaluation, dans le sens "
             "opposé.";
+      case 'at_least':
+        return 'Au moins k des conditions `nom=valeur` données doivent être vraies. Chaque condition est réifiée en booléen et leur somme est minorée.';
+      case 'at_most':
+        return 'Au plus k des conditions `nom=valeur` données peuvent être vraies — les conditions réifiées se somment à k au maximum.';
+      case 'exactly':
+        return 'Exactement k des conditions `nom=valeur` données sont vraies — les conditions réifiées se somment à exactement k.';
+      case 'implies':
+        return 'Implication matérielle sur deux conditions `nom=valeur` : si la première est vraie, la seconde doit l\'être aussi (a=1 ⇒ b=2).';
+      case 'gcc':
+        return 'Cardinalité globale : chaque valeur listée doit apparaître un nombre exact de fois parmi les variables (valeur 1 deux fois, valeur 2 une fois, …).';
+      case 'among':
+        return 'La variable déclarée c est égale au nombre de variables listées prenant une valeur dans l\'ensemble donné.';
+      case 'nvalue':
+        return 'La variable déclarée c est égale au nombre de valeurs DISTINCTES prises par les variables listées. Minimisez c pour en utiliser le moins possible.';
+      case 'at_most_in_a_row':
+        return 'Aucune suite de plus de `max` `valeur`s consécutives dans la séquence — compilé en un petit automate fini (contrainte regular).';
+      case 'value_precedence':
+        return 'Brisure de symétrie : la valeur order[i+1] ne peut apparaître avant order[i]. Regroupe les valeurs interchangeables (p. ex. couleurs de carte) pour n\'énumérer qu\'un représentant par classe.';
+      case 'table':
+        return 'Le tuple (x, y, z) doit correspondre à l\'une des lignes listées. Encode des relations arbitraires : matrices de compatibilité, combinaisons autorisées, tables d\'indices de casse-tête logique.';
+      case 'element':
+        return 'Accès indexé : list[idx] == value, index base 0. Modélise une indirection comme « le coût de l\'option choisie est v ».';
       case 'sudoku_regular':
         return "Règles classiques du Sudoku : chaque ligne, colonne et bloc "
             "contient chaque chiffre exactement une fois. Des modèles "
@@ -8060,6 +8172,39 @@ class FrLocalizations implements AppLocalizations {
       "Problème du sac à dos 0/1 classique. Le DSL le gère naturellement "
           "comme une déclaration `vars: x_1, ... in 0..1` plus une contrainte "
           "de capacité linéaire et un objectif linéaire.",
+    ],
+    'at_least': [
+      'Les conditions peuvent viser n\'importe quelle valeur, pas seulement des booléens — `atLeast(1, a=3, b=5)` signifie a vaut 3 ou b vaut 5 (ou les deux).',
+    ],
+    'at_most': [
+      'Combinez avec `atLeast` sur les mêmes conditions pour un nombre exact, ou utilisez directement `exactly`.',
+    ],
+    'exactly': [
+      'Le cheval de bataille des grilles de logique — « exactement une personne possède le chat », « exactement deux maisons sont bleues », etc.',
+    ],
+    'implies': [
+      'Des chaînes de `implies` encodent la logique des indices des énigmes d\'Einstein / du zèbre. Voir l\'exemple `logicGrid`.',
+    ],
+    'gcc': [
+      'Incontournable des plannings et emplois du temps — fixez combien de fois chaque garde/valeur apparaît. Voir l\'exemple `nurseRostering`.',
+    ],
+    'among': [
+      'Contraignez ou minimisez c pour contrôler combien de variables entrent dans une catégorie.',
+    ],
+    'nvalue': [
+      'Avec des contraintes `!=` d\'adjacence de graphe, minimiser nvalue donne le nombre chromatique. Voir l\'exemple `chromaticNumber`.',
+    ],
+    'at_most_in_a_row': [
+      'Encode des règles de fatigue / de motif que le simple comptage ne peut exprimer. L\'automate a un état par longueur de suite 0..max.',
+    ],
+    'value_precedence': [
+      'Ajoutez-la à tout problème aux valeurs interchangeables pour retirer les k! doublons de renommage de l\'ensemble des solutions.',
+    ],
+    'table': [
+      'Toute relation sans formule nette tient dans une table. Voir l\'exemple `menuPairing`.',
+    ],
+    'element': [
+      'Combinez avec `minimize`/`maximize` sur la valeur consultée pour optimiser un choix parmi des coûts tabulés.',
     ],
     'sudoku_regular': [
       "Dans CrispMath, la variante classique se trouve dans "
@@ -10381,6 +10526,28 @@ class EsLocalizations implements AppLocalizations {
         return "Objetivo: maximizar una expresión lineal. Imagen especular "
             "de `minimize`: la misma ramificación y acotación, en sentido "
             "opuesto.";
+      case 'at_least':
+        return 'Al menos k de las condiciones `nombre=valor` dadas deben cumplirse. Cada condición se reifica a booleano y su suma se acota inferiormente.';
+      case 'at_most':
+        return 'Como máximo k de las condiciones `nombre=valor` dadas pueden cumplirse — las condiciones reificadas suman k o menos.';
+      case 'exactly':
+        return 'Exactamente k de las condiciones `nombre=valor` dadas se cumplen — las condiciones reificadas suman exactamente k.';
+      case 'implies':
+        return 'Implicación material sobre dos condiciones `nombre=valor`: si la primera se cumple, la segunda también debe cumplirse (a=1 ⇒ b=2).';
+      case 'gcc':
+        return 'Cardinalidad global: cada valor listado debe aparecer un número exacto de veces entre las variables (valor 1 dos veces, valor 2 una vez, …).';
+      case 'among':
+        return 'La variable declarada c es igual al número de variables listadas que toman un valor del conjunto dado.';
+      case 'nvalue':
+        return 'La variable declarada c es igual al número de valores DISTINTOS que toman las variables listadas. Minimiza c para usar los menos posibles.';
+      case 'at_most_in_a_row':
+        return 'Ninguna racha de más de `max` `valor`es consecutivos en la secuencia — compilado a un pequeño autómata finito (restricción regular).';
+      case 'value_precedence':
+        return 'Ruptura de simetría: el valor order[i+1] no puede aparecer antes que order[i]. Agrupa valores intercambiables (p. ej. colores de mapa) para enumerar un solo representante por clase.';
+      case 'table':
+        return 'La tupla (x, y, z) debe coincidir con una de las filas listadas. Codifica relaciones arbitrarias: matrices de compatibilidad, combinaciones permitidas, tablas de pistas de acertijos lógicos.';
+      case 'element':
+        return 'Acceso indexado: list[idx] == value, índice base 0. Modela indirección como «el coste de la opción elegida es v».';
       case 'sudoku_regular':
         return "Reglas clásicas del Sudoku: cada fila, columna y caja "
             "contiene cada dígito exactamente una vez. Hay plantillas para "
@@ -11054,6 +11221,39 @@ class EsLocalizations implements AppLocalizations {
       "Problema clásico de la mochila 0/1. El DSL lo gestiona de forma "
           "natural como una declaración `vars: x_1, ... in 0..1` más una "
           "restricción de capacidad lineal y un objetivo lineal.",
+    ],
+    'at_least': [
+      'Las condiciones pueden apuntar a cualquier valor, no solo booleanos — `atLeast(1, a=3, b=5)` significa a es 3 o b es 5 (o ambos).',
+    ],
+    'at_most': [
+      'Combina con `atLeast` sobre las mismas condiciones para un número exacto, o usa `exactly` directamente.',
+    ],
+    'exactly': [
+      'El caballo de batalla de los acertijos de lógica — «exactamente una persona tiene el gato», «exactamente dos casas son azules», etc.',
+    ],
+    'implies': [
+      'Cadenas de `implies` codifican la lógica de pistas de los acertijos de Einstein / la cebra. Ver el ejemplo `logicGrid`.',
+    ],
+    'gcc': [
+      'Básico en horarios y turnos — fija cuántas veces aparece cada turno/valor. Ver el ejemplo `nurseRostering`.',
+    ],
+    'among': [
+      'Restringe o minimiza c para controlar cuántas variables caen en una categoría.',
+    ],
+    'nvalue': [
+      'Con restricciones `!=` de adyacencia de grafo, minimizar nvalue da el número cromático. Ver el ejemplo `chromaticNumber`.',
+    ],
+    'at_most_in_a_row': [
+      'Codifica reglas de fatiga / patrón que el mero conteo no puede expresar. El autómata tiene un estado por longitud de racha 0..max.',
+    ],
+    'value_precedence': [
+      'Añádela a cualquier problema con valores intercambiables para eliminar los k! duplicados de reetiquetado del conjunto de soluciones.',
+    ],
+    'table': [
+      'Cualquier relación sin fórmula limpia cabe en una tabla. Ver el ejemplo `menuPairing`.',
+    ],
+    'element': [
+      'Combina con `minimize`/`maximize` sobre el valor consultado para optimizar una elección entre costes tabulados.',
     ],
     'sudoku_regular': [
       "En CrispMath, la variante clásica está en `lib/engine/sudoku.dart` "
