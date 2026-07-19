@@ -711,8 +711,14 @@ class SudokuSolver {
   /// result back as sendable `List<List<int>>`.
   static Future<void> _advancedHintEntry((SendPort, SudokuPuzzle) args) async {
     final (sendPort, puzzle) = args;
-    final pruned = await computeCandidatesPruned(puzzle);
-    sendPort.send([for (final s in pruned) s.toList()]);
+    try {
+      final pruned = await computeCandidatesPruned(puzzle);
+      sendPort.send([for (final s in pruned) s.toList()]);
+    } catch (_) {
+      // Always report back so the caller's future resolves (and its
+      // spinner clears) instead of hanging if the solve throws.
+      sendPort.send(null);
+    }
   }
 
   /// Round 72 helper: union of digits that appear in ANY

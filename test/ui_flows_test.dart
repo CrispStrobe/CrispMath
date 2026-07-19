@@ -296,11 +296,19 @@ void main() {
       // any background work.
       await tester.tap(find.text('Basic'));
       await tester.pumpAndSettle();
-      // Tap Advanced — kicks off SAC pruning. The default preset
-      // is small enough (9×9 easy) that pumpAndSettle drains the
-      // future without timing out.
+      // Tap Advanced — kicks off SAC pruning. Round 108: this now runs
+      // on a background isolate, which pumpAndSettle can't drain, so let
+      // the real event loop deliver the worker's result (the picker's
+      // progress spinner clears when it commits), then settle.
       await tester.tap(find.text('Advanced'));
-      await tester.pumpAndSettle(const Duration(seconds: 15));
+      await tester.pump();
+      for (var i = 0; i < 30; i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 200)));
+        await tester.pump();
+        if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
+      }
+      await tester.pumpAndSettle();
       // Sanity: still on the Sudoku screen, no exceptions surfaced.
       expect(find.text('Sudoku'), findsWidgets);
       // Flip back to Off — chip stays selectable.
