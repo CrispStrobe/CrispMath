@@ -2846,6 +2846,27 @@ class CspSolver {
           'Failed to build the constraint model: ${_friendlyError(e)}');
     }
 
+    return _traceBuiltProblem(
+      problem,
+      variables,
+      initialDomains,
+      maxEvents: maxEvents,
+      objectiveIgnored:
+          RegExp(r'(^|\n)\s*(minimize|maximize)\s+').hasMatch(input),
+    );
+  }
+
+  /// Shared tail of the trace entry points: run [csp.Problem.solveWithTrace]
+  /// on an already-built [problem], reconstruct the per-step domain
+  /// snapshots, and package a [CspTraceResult]. Used by [traceDsl] and
+  /// [traceCryptarithm] so both feed the same [PropagationVisualizer].
+  static Future<CspTraceResult> _traceBuiltProblem(
+    csp.Problem problem,
+    List<String> variables,
+    Map<String, List<int>> initialDomains, {
+    int maxEvents = 20000,
+    bool objectiveIgnored = false,
+  }) async {
     csp.PropagationTrace trace;
     try {
       trace = await problem.solveWithTrace(maxEvents: maxEvents);
@@ -2870,9 +2891,72 @@ class CspSolver {
       solved: solved,
       solution: solution,
       truncated: trace.truncated,
-      objectiveIgnored:
-          RegExp(r'(^|\n)\s*(minimize|maximize)\s+').hasMatch(input),
+      objectiveIgnored: objectiveIgnored,
     );
+  }
+
+  /// Round 115 (C9): propagation trace for the Cryptarithm tab. Builds
+  /// the same model as [solveCryptarithm] — one 0..9 letter variable,
+  /// `allDifferent`, leading letters non-zero, and the digit-place
+  /// linear equation — but labelled and routed through
+  /// [_traceBuiltProblem] so the AC-3 replay works on cryptarithms too.
+  static Future<CspTraceResult> traceCryptarithm(String expression) async {
+    final parsed = _parseCryptarithmExpression(expression);
+    if (parsed == null) {
+      return CspTraceResult.failure(
+          'Expected `WORD1 + WORD2 = WORD3` (only + / - supported).');
+    }
+    final (:lhsA, :op, :lhsB, :rhs) = parsed;
+    final words = [lhsA, lhsB, rhs];
+    final letters = <String>{
+      for (final w in words)
+        for (final ch in w.split('')) ch,
+    }.toList();
+    if (letters.length > 10) {
+      return CspTraceResult.unsupportedProgram(
+          'Cryptarithm has ${letters.length} distinct letters; '
+          'at most 10 fit into digits 0..9.');
+    }
+
+    final problem = csp.Problem();
+    final initialDomains = <String, List<int>>{};
+    try {
+      for (final l in letters) {
+        problem.addVariable(l, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        initialDomains[l] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+      }
+      problem.addAllDifferent(letters, label: 'allDifferent');
+      for (final w in words) {
+        if (w.length > 1) {
+          problem.addStringConstraint('${w[0]} != 0', label: '${w[0]} ≠ 0');
+        }
+      }
+      final coefs = <String, int>{};
+      void accumulate(String word, int sign) {
+        for (var i = 0; i < word.length; i++) {
+          final place = _intPow(10, word.length - 1 - i);
+          coefs[word[i]] = (coefs[word[i]] ?? 0) + sign * place;
+        }
+      }
+
+      accumulate(lhsA, 1);
+      accumulate(lhsB, op == '-' ? -1 : 1);
+      accumulate(rhs, -1);
+      final orderedLetters = <String>[];
+      final orderedCoeffs = <num>[];
+      for (final entry in coefs.entries) {
+        if (entry.value == 0) continue;
+        orderedLetters.add(entry.key);
+        orderedCoeffs.add(entry.value);
+      }
+      problem.addLinearEquals(orderedLetters, orderedCoeffs, 0,
+          label: '$lhsA $op $lhsB = $rhs');
+    } catch (e) {
+      return CspTraceResult.failure(
+          'Failed to build the constraint model: ${_friendlyError(e)}');
+    }
+
+    return _traceBuiltProblem(problem, letters, initialDomains);
   }
 
   /// Replays the raw `PropagationEvent` stream into [CspTraceStep]s,

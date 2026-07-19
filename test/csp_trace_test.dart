@@ -183,4 +183,31 @@ c != d''', maxEvents: 5);
       expect(r.steps.length, lessThanOrEqualTo(5));
     });
   });
+
+  group('traceCryptarithm (round 115)', () {
+    test('SEND + MORE = MONEY traces to the classic solution', () async {
+      final r = await CspSolver.traceCryptarithm('SEND + MORE = MONEY');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solved, isTrue);
+      expect(r.steps, isNotEmpty);
+      // Every letter is a traced variable; initial domains are 0..9.
+      expect(
+          r.variables, containsAll(['S', 'E', 'N', 'D', 'M', 'O', 'R', 'Y']));
+      expect(r.initialDomains['S'], List.generate(10, (i) => i));
+      // The unique answer pins M = 1, O = 0.
+      expect(r.solution!['M'], 1);
+      expect(r.solution!['O'], 0);
+    });
+
+    test('a malformed expression fails gracefully', () async {
+      final r = await CspSolver.traceCryptarithm('this is not a puzzle');
+      expect(r.ok, isFalse);
+    });
+
+    test('more than 10 distinct letters is unsupported', () async {
+      final r = await CspSolver.traceCryptarithm('ABCDEF + GHIJKL = MNOPQR');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('at most 10'));
+    });
+  });
 }

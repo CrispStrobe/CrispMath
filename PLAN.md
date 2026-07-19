@@ -319,10 +319,16 @@ display can't do justice.
   value; header reports node + colour counts. Suppressed when the bespoke
   Australia/Germany schematic maps already handle the solution. de/fr/es
   i18n + engine tests.
-- [ ] **Propagation trace for the Diophantine + Cryptarithm tabs** — the
-  step-visualizer is wired only for the DSL and Sudoku tabs today, though
-  those tabs build the same model kind (`csp_solver.dart`). Thread
-  `solveWithTrace` through and reuse `PropagationVisualizer`.
+- [x] **Propagation trace for the Diophantine + Cryptarithm tabs** — the
+  step-visualizer was wired only for the DSL and Sudoku tabs. *Done
+  (round 115, C9):* both tabs now have a "Visualize" button. The
+  Diophantine tab converts its form into an equivalent DSL program (one
+  `vars:` line per variable so per-variable ranges survive) and reuses
+  `traceDsl`; the Cryptarithm tab gets a new `traceCryptarithm` that
+  builds the labelled letter/allDifferent/leading-zero/digit-place model
+  and runs it through a shared `_traceBuiltProblem` tail (extracted from
+  `traceDsl`). Both feed the existing `PropagationVisualizer`. Engine
+  tests + reused widget tests.
 - [ ] **Off-thread DSL solve + cancel** — the generic DSL solve still
   runs in-process because its constraint overlays are runtime closures,
   not sendable across an isolate. Refactor the overlays into sendable
