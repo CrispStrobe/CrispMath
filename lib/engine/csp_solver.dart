@@ -2566,6 +2566,7 @@ class CspSolver {
           if (!entry.key.startsWith('__'))
             entry.key: (entry.value as num).toInt(),
       };
+
       return DiophantineResult.optimal(
         assignment,
         objValue,

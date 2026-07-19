@@ -298,8 +298,20 @@ display can't do justice.
   the fewest-decisions winner (decision counts are the stable signal;
   wall-clock is shown but JIT-noisy). Skipped for set / soft / objective
   programs (different solve modes). de/fr/es i18n + engine tests.
-- [ ] **LNS** — `lnsMinimize` / `lnsMaximize` for near-optimal large
-  optimization. Experimental; lowest priority.
+- [~] **LNS** — `lnsMinimize` / `lnsMaximize` for near-optimal large
+  optimization. **Evaluated round 117, not surfaced.** A working
+  integration was prototyped (an LNS-vs-exact contrast behind the
+  "Compare strategies" button on optimization programs), but on the
+  problem shape this DSL produces — a linear objective bound to a single
+  `__obj__` aggregator variable — dart_csp's LNS never improves on its
+  initial feasible solution: its destroy/repair sub-solve is
+  feasibility-based, so for a `maximize` it even reports the *worst*
+  objective as "final" (verified across 4 seeds × improving /
+  late-acceptance / 0.2–0.6 destroy fractions). Shipping that would read
+  as a bug, not a lesson. LNS shines on large models where the objective
+  couples locally to the destroyed variables — not the small,
+  aggregator-objective instances here — so the integration was reverted.
+  Revisit if the DSL grows genuinely large optimization problems.
 
 ### C9 — Cross-cutting visualizations & infra
 
