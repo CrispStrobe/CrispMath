@@ -571,6 +571,7 @@ abstract class AppLocalizations {
   String get constraintsConstraintsHint;
   String get constraintsCryptarithmInputLabel;
   String get constraintsSolveButton;
+  String get constraintsCancelButton;
   String get constraintsBadVarLine;
   String get constraintsNoSolutions;
   String get constraintsCryptarithmFoundHeader;
@@ -1985,6 +1986,8 @@ class EnLocalizations implements AppLocalizations {
   String get constraintsCryptarithmInputLabel => 'Puzzle';
   @override
   String get constraintsSolveButton => 'Solve';
+  @override
+  String get constraintsCancelButton => 'Cancel';
   @override
   String get constraintsBadVarLine =>
       'Could not parse variable line. Expected `name in min..max`';
@@ -3735,6 +3738,8 @@ class DeLocalizations implements AppLocalizations {
   String get constraintsCryptarithmInputLabel => 'Rätsel';
   @override
   String get constraintsSolveButton => 'Lösen';
+  @override
+  String get constraintsCancelButton => 'Abbrechen';
   @override
   String get constraintsBadVarLine =>
       'Variablenzeile nicht erkannt. Erwartet: `name in min..max`';
@@ -7084,6 +7089,8 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get constraintsSolveButton => 'Résoudre';
   @override
+  String get constraintsCancelButton => 'Annuler';
+  @override
   String get constraintsBadVarLine =>
       'Ligne de variable non reconnue. Attendu : `name in min..max`';
   @override
@@ -10359,6 +10366,8 @@ class EsLocalizations implements AppLocalizations {
   String get constraintsCryptarithmInputLabel => 'Puzzle';
   @override
   String get constraintsSolveButton => 'Resolver';
+  @override
+  String get constraintsCancelButton => 'Cancelar';
   @override
   String get constraintsBadVarLine =>
       'No se pudo analizar la línea de variable. Esperado: '

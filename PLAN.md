@@ -348,14 +348,22 @@ display can't do justice.
   and runs it through a shared `_traceBuiltProblem` tail (extracted from
   `traceDsl`). Both feed the existing `PropagationVisualizer`. Engine
   tests + reused widget tests.
-- [ ] **Off-thread DSL solve + cancel** — the generic DSL solve still
-  runs in-process because its constraint overlays are runtime closures,
-  not sendable across an isolate. Refactor the overlays into sendable
-  data specs (kind + params) so a top-level builder can reconstruct the
-  Problem inside a worker, then route through `solveInIsolate` with a
-  `CancellationToken` (Sudoku's advanced-hint compute already does this,
-  Round 108). Also lets long/optimization solves show a real progress +
-  cancel affordance instead of blocking the UI isolate.
+- [x] **Off-thread DSL solve + cancel** — the generic DSL solve ran
+  in-process and froze the UI on a heavy program. *Done (round 118, C9):*
+  `CspSolver.solveDslInBackground` runs the **whole** parse-and-solve on
+  a spawned worker isolate (Sudoku's advanced-hint pattern) — which
+  sidesteps the anticipated overlay-spec refactor entirely: the only
+  payload crossing the port is the program *string* (in) and the
+  `DiophantineResult` (out — plain data incl. materialised set `List`s),
+  never the unsendable overlay closures, since those are built and
+  consumed inside the worker. Returns `(result, cancel)`; `cancel` kills
+  the worker (dart_csp's search isn't interruptible mid-run). The DSL tab
+  routes both Solve and Compare-strategies through it and shows a Cancel
+  button while a solve is in flight; a cancelled solve leaves the prior
+  result intact. Web has no isolates, so it degrades to an in-process
+  solve with a no-op cancel. de/fr/es Cancel string + engine tests
+  (sendable result incl. set variables, cancel→null, stats cross the
+  port).
 - [x] **Deeper MUS** — surface the deletion-based
   `findMinimalUnsatisfiableSubset` alongside QuickXplain. *Done (round
   116, C9):* `_runQuickXplain` now also runs the deletion-based MUS and,

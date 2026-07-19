@@ -2547,6 +2547,9 @@ Committee contains 1''',
   // synchronously from the program text; cleared on every fresh
   // solve / example load / export so it can't outlive its program.
   DslStructure? _structure;
+  // Round 118 (C9): non-null while an off-thread solve is in flight;
+  // calling it kills the worker isolate.
+  void Function()? _cancelSolve;
 
   @override
   void initState() {
@@ -2608,13 +2611,25 @@ Committee contains 1''',
       _trace = null;
       _structure = null;
     });
-    final r = await CspSolver.solveDsl(_ctl.text,
-        compareStrategies: compareStrategies);
+    // Round 118 (C9): solve on a worker isolate so a heavy program never
+    // freezes the UI; the handle's `cancel` kills the worker outright.
+    final handle = CspSolver.solveDslInBackground(_ctl.text,
+        maxSolutions: 100, compareStrategies: compareStrategies);
+    _cancelSolve = handle.cancel;
+    final r = await handle.result;
     if (!mounted) return;
     setState(() {
       _solving = false;
-      _result = r;
+      _cancelSolve = null;
+      // A null result means the solve was cancelled — leave the previous
+      // result (if any) untouched rather than blanking the panel.
+      if (r != null) _result = r;
     });
+  }
+
+  void _cancel() {
+    _cancelSolve?.call();
+    _cancelSolve = null;
   }
 
   // Round F: build a propagation step-trace and reveal the AC-3
@@ -2682,6 +2697,13 @@ Committee contains 1''',
                     : const Icon(Icons.play_arrow),
                 label: Text(t.constraintsSolveButton),
               ),
+              // Round 118 (C9): cancel an in-flight off-thread solve.
+              if (_solving && _cancelSolve != null)
+                OutlinedButton.icon(
+                  onPressed: _cancel,
+                  icon: const Icon(Icons.close, size: 18),
+                  label: Text(t.constraintsCancelButton),
+                ),
               // Round 72: pre-built example programs. Selecting a
               // menu item replaces the TextField with that program.
               PopupMenuButton<String>(

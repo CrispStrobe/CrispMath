@@ -20,7 +20,11 @@
 // later without rewiring the screen. It also gives us a single place
 // to put the safety net (timeouts, max-solution caps).
 
+import 'dart:async';
+import 'dart:isolate';
+
 import 'package:dart_csp/dart_csp.dart' as csp;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// One (variable → integer) solution from `solveDiophantine`.
 typedef DiophantineSolution = Map<String, int>;
@@ -2331,6 +2335,70 @@ class CspSolver {
       colorEdges: colorEdges,
       maxSolutions: maxSolutions,
     );
+  }
+
+  /// Round 118 (C9): run [solveDsl] on a worker isolate so a heavy or
+  /// optimization solve never freezes the UI, and can be cancelled
+  /// outright (dart_csp's search isn't interruptible mid-run, so cancel
+  /// means killing the worker). Returns the pending result plus a
+  /// `cancel` callback; the result resolves to `null` when cancelled or
+  /// when the worker fails to start.
+  ///
+  /// The whole parse-and-solve happens *inside* the worker, so the only
+  /// payload crossing the port is the program text (in) and the
+  /// [DiophantineResult] (out) — both plain data, no unsendable closures.
+  /// On web there are no isolates, so this degrades to an in-process
+  /// solve with a no-op cancel.
+  static ({Future<DiophantineResult?> result, void Function() cancel})
+      solveDslInBackground(String program,
+          {int maxSolutions = 100, bool compareStrategies = false}) {
+    if (kIsWeb) {
+      final completer = Completer<DiophantineResult?>();
+      solveDsl(program,
+              maxSolutions: maxSolutions, compareStrategies: compareStrategies)
+          .then(completer.complete, onError: (_) => completer.complete(null));
+      return (result: completer.future, cancel: () {});
+    }
+
+    final port = ReceivePort();
+    final completer = Completer<DiophantineResult?>();
+    Isolate? iso;
+    var done = false;
+
+    void finish(DiophantineResult? value) {
+      if (done) return;
+      done = true;
+      port.close();
+      iso?.kill(priority: Isolate.immediate);
+      if (!completer.isCompleted) completer.complete(value);
+    }
+
+    Isolate.spawn(_solveDslEntry,
+        (port.sendPort, program, maxSolutions, compareStrategies)).then(
+      (spawned) {
+        iso = spawned;
+        if (done) spawned.kill(priority: Isolate.immediate);
+      },
+      onError: (_, __) => finish(null),
+    );
+
+    port.listen((msg) => finish(msg as DiophantineResult?));
+
+    return (result: completer.future, cancel: () => finish(null));
+  }
+
+  /// Worker entry point for [solveDslInBackground]. Re-parses and solves
+  /// the program on the spawned isolate, shipping the [DiophantineResult]
+  /// back (or `null` on failure so the caller's future always resolves).
+  static Future<void> _solveDslEntry((SendPort, String, int, bool) args) async {
+    final (sendPort, program, maxSolutions, compareStrategies) = args;
+    try {
+      final r = await solveDsl(program,
+          maxSolutions: maxSolutions, compareStrategies: compareStrategies);
+      sendPort.send(r);
+    } catch (_) {
+      sendPort.send(null);
+    }
   }
 
   /// Round 113 (C9): analyse a DSL program's *structure* without solving

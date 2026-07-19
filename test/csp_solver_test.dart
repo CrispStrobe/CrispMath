@@ -1074,4 +1074,48 @@ minimize makespan
       expect(r.ganttTasks[1].duration, 4);
     });
   });
+
+  group('solveDslInBackground (round 118)', () {
+    test('runs the solve on a worker and returns a sendable result', () async {
+      final h = CspSolver.solveDslInBackground('''
+vars: x, y, z in 1..9
+allDifferent(x, y, z)
+x + y + z == 15
+''', maxSolutions: 10);
+      final r = await h.result;
+      expect(r, isNotNull);
+      expect(r!.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+    });
+
+    test('a Set-bearing result (set variables) survives the port', () async {
+      final h = CspSolver.solveDslInBackground('''
+set Team from 1..4
+card(Team) = 2
+''', maxSolutions: 20);
+      final r = await h.result;
+      expect(r, isNotNull);
+      // C(4,2) = 6 two-element subsets.
+      expect(r!.setSolutions, hasLength(6));
+      for (final ss in r.setSolutions) {
+        expect(ss['Team'], hasLength(2));
+      }
+    });
+
+    test('cancel resolves the result to null', () async {
+      final h = CspSolver.solveDslInBackground('vars: a in 1..3');
+      h.cancel();
+      expect(await h.result, isNull);
+    });
+
+    test('strategyStats cross the port when requested', () async {
+      final h = CspSolver.solveDslInBackground('''
+vars: a, b, c in 1..4
+allDifferent(a, b, c)
+''', compareStrategies: true);
+      final r = await h.result;
+      expect(r, isNotNull);
+      expect(r!.strategyStats, isNotEmpty);
+    });
+  });
 }
