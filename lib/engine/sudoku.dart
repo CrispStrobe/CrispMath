@@ -18,6 +18,8 @@
 //      independent of the live solve, so play/pause/scrub in the
 //      UI doesn't need to coordinate with dart_csp.
 
+import 'dart:async';
+import 'dart:isolate';
 import 'dart:math';
 
 import 'package:dart_csp/dart_csp.dart' as csp;
@@ -656,6 +658,61 @@ class SudokuSolver {
       }
     }
     return pruned;
+  }
+
+  /// Round 108: runs [computeCandidatesPruned] on a dedicated background
+  /// isolate. The advanced-hint compute fires a full solve per remaining
+  /// candidate; in-process that both blocks the UI isolate and — because
+  /// dart_csp's solver can't be interrupted mid-search — keeps churning
+  /// even after the grid changes (the caller could only drop the stale
+  /// result). Running it on its own isolate keeps the UI smooth AND lets
+  /// [cancel] kill the worker outright, stopping a stale compute dead.
+  ///
+  /// The returned future resolves to the pruned candidates, or `null`
+  /// when the compute was cancelled or the worker failed to start. Puzzle
+  /// data is plain ints/lists, so the spawn payload is sendable.
+  static ({Future<List<Set<int>>?> result, void Function() cancel})
+      computeCandidatesPrunedInBackground(SudokuPuzzle puzzle) {
+    final port = ReceivePort();
+    final completer = Completer<List<Set<int>>?>();
+    Isolate? iso;
+    var done = false;
+
+    void finish(List<Set<int>>? value) {
+      if (done) return;
+      done = true;
+      port.close();
+      iso?.kill(priority: Isolate.immediate);
+      if (!completer.isCompleted) completer.complete(value);
+    }
+
+    Isolate.spawn(_advancedHintEntry, (port.sendPort, puzzle)).then(
+      (spawned) {
+        iso = spawned;
+        if (done) spawned.kill(priority: Isolate.immediate);
+      },
+      onError: (_, __) => finish(null),
+    );
+
+    port.listen((msg) {
+      // Sets aren't guaranteed sendable, so the worker ships each cell's
+      // candidates as a List<int>; rebuild the Set<int> rows here.
+      final decoded = msg == null
+          ? null
+          : [for (final row in msg as List) (row as List).cast<int>().toSet()];
+      finish(decoded);
+    });
+
+    return (result: completer.future, cancel: () => finish(null));
+  }
+
+  /// Worker entry point for [computeCandidatesPrunedInBackground]. Runs
+  /// the (CPU-bound) probe loop on the spawned isolate and ships the
+  /// result back as sendable `List<List<int>>`.
+  static Future<void> _advancedHintEntry((SendPort, SudokuPuzzle) args) async {
+    final (sendPort, puzzle) = args;
+    final pruned = await computeCandidatesPruned(puzzle);
+    sendPort.send([for (final s in pruned) s.toList()]);
   }
 
   /// Round 72 helper: union of digits that appear in ANY

@@ -91,6 +91,9 @@ class _SudokuScreenState extends State<SudokuScreen> {
   List<Set<int>>? _advancedCandidates;
   bool _computingAdvanced = false;
   int _advancedRequestId = 0;
+  // Round 108: kills the in-flight advanced-hint isolate when a newer
+  // edit supersedes it, so stale computes don't keep burning CPU.
+  void Function()? _advancedCancel;
   SudokuDifficulty _genDifficulty = SudokuDifficulty.medium;
   _Speed _speed = _Speed.medium;
 
@@ -181,6 +184,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _advancedCancel?.call(); // kill any in-flight advanced-hint isolate
     _keyboardFocus.dispose();
     super.dispose();
   }
@@ -411,12 +415,15 @@ class _SudokuScreenState extends State<SudokuScreen> {
   /// request id so a sequence of quick edits cancels stale results
   /// — only the latest in-flight compute commits to state.
   ///
-  /// dart_csp doesn't expose mid-search cancellation, so a busy
-  /// solve still runs to completion; we just drop its result.
+  /// Round 108: the compute now runs on a background isolate. A newer
+  /// edit kills the previous worker outright ([_advancedCancel]) instead
+  /// of letting a stale, uninterruptible solve run to completion, so the
+  /// UI isolate stays free and CPU isn't wasted on abandoned results.
   Future<void> _maybeRecomputeAdvanced() async {
     if (_hintLevel != SudokuHintLevel.advanced || _trace != null) {
       return;
     }
+    _advancedCancel?.call();
     final id = ++_advancedRequestId;
     setState(() => _computingAdvanced = true);
     final livePuzzle = SudokuPuzzle(
@@ -425,11 +432,16 @@ class _SudokuScreenState extends State<SudokuScreen> {
       variant: _puzzle.variant,
       cages: _puzzle.cages,
     );
-    final result = await SudokuSolver.computeCandidatesPruned(livePuzzle);
+    final handle = SudokuSolver.computeCandidatesPrunedInBackground(livePuzzle);
+    _advancedCancel = handle.cancel;
+    final result = await handle.result;
     if (!mounted || id != _advancedRequestId) return;
     setState(() {
       _computingAdvanced = false;
-      _advancedCandidates = result;
+      _advancedCancel = null;
+      // A cancelled/failed compute returns null — keep the prior hints
+      // rather than blanking them.
+      if (result != null) _advancedCandidates = result;
     });
   }
 
