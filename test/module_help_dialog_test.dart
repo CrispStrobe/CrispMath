@@ -44,6 +44,18 @@ void main() {
     expect(find.text('Close'), findsOneWidget);
   });
 
+  testWidgets('ModuleHelpDialog for notepad renders (no Learn-more button)',
+      (tester) async {
+    await tester
+        .pumpWidget(host(const ModuleHelpDialog(kind: ModuleHelpKind.notepad)));
+
+    expect(find.text('Notepad'), findsOneWidget);
+    expect(find.textContaining('live formula'), findsOneWidget);
+    // No single FunctionRef summarizes the notepad — Learn-more absent.
+    expect(find.text('Learn more'), findsNothing);
+    expect(find.text('Close'), findsOneWidget);
+  });
+
   testWidgets('Learn more deep-links to FunctionReferenceDialog seeded with id',
       (tester) async {
     await tester.pumpWidget(

@@ -39,6 +39,7 @@ import '../services/crisp_assist_service_stub.dart'
     if (dart.library.io) '../services/crisp_assist_service.dart';
 import '../widgets/crisp_assist_dialog.dart';
 import '../widgets/handwriting_input_dialog.dart';
+import '../widgets/module_help_dialog.dart';
 import '../engine/ocr_provider.dart';
 import '../engine/scan_cleanup.dart';
 import '../widgets/ocr_capture_dialog.dart';
@@ -1568,6 +1569,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
   List<Widget> _buildActions(NotepadDocument? doc) {
     final t = AppLocalizations.of(context);
     return [
+      // Round 108: module help — explains the live-formula model and the
+      // `use` / `fzn:` / `Ans in <unit>` directives.
+      const ModuleHelpButton(kind: ModuleHelpKind.notepad),
       // Round 93 (P6): worked-examples library is now reachable from
       // the notepad AppBar rather than buried in Settings. Always
       // visible — discovery is the whole point of this round.

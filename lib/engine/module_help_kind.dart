@@ -14,4 +14,5 @@ enum ModuleHelpKind {
   scene3D,
   constraints,
   sudoku,
+  notepad,
 }

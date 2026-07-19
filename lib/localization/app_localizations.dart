@@ -2000,6 +2000,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Constraints';
       case ModuleHelpKind.sudoku:
         return 'Sudoku';
+      case ModuleHelpKind.notepad:
+        return 'Notepad';
     }
   }
 
@@ -2054,6 +2056,8 @@ class EnLocalizations implements AppLocalizations {
             'step-by-step solver shows the search tree so you can see '
             'how the engine narrows the candidates. Hint levels expose '
             'either the next-cell answer or a logical reason for it.';
+      case ModuleHelpKind.notepad:
+        return 'A multi-document scratchpad where every line is a live formula, recomputed as you type. Beyond ordinary math it supports directives: `use <doc>` imports another document\'s variables; `fzn:` solves an inline FlatZinc model; and `Ans in <unit>` reuses the previous line\'s result, optionally converting units. Export to LaTeX or Markdown.';
     }
   }
 
@@ -3708,6 +3712,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Bedingungen';
       case ModuleHelpKind.sudoku:
         return 'Sudoku';
+      case ModuleHelpKind.notepad:
+        return 'Notizblock';
     }
   }
 
@@ -3765,6 +3771,8 @@ class DeLocalizations implements AppLocalizations {
             'nachvollziehbar wird, wie der Algorithmus die Kandidaten '
             'einschränkt. Tippstufen zeigen entweder die nächste '
             'Zellantwort oder eine logische Begründung dafür.';
+      case ModuleHelpKind.notepad:
+        return 'Ein Mehrdokument-Notizblock, in dem jede Zeile eine lebende Formel ist, die beim Tippen neu berechnet wird. Neben gewöhnlicher Mathematik unterstützt er Direktiven: `use <Dokument>` importiert die Variablen eines anderen Dokuments; `fzn:` löst ein eingebettetes FlatZinc-Modell; und `Ans in <Einheit>` verwendet das Ergebnis der vorherigen Zeile weiter, optional mit Einheitenumrechnung. Export nach LaTeX oder Markdown.';
     }
   }
 
@@ -6969,6 +6977,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Contraintes';
       case ModuleHelpKind.sudoku:
         return 'Sudoku';
+      case ModuleHelpKind.notepad:
+        return 'Bloc-notes';
     }
   }
 
@@ -7029,6 +7039,8 @@ class FrLocalizations implements AppLocalizations {
             'pour observer comment le moteur restreint les candidats. '
             'Les niveaux d\'indice révèlent soit la réponse de la '
             'cellule suivante, soit une justification logique.';
+      case ModuleHelpKind.notepad:
+        return 'Un bloc-notes multi-documents où chaque ligne est une formule vivante, recalculée à la frappe. Au-delà des maths ordinaires, il gère des directives : `use <document>` importe les variables d\'un autre document ; `fzn:` résout un modèle FlatZinc en ligne ; et `Ans in <unité>` réutilise le résultat de la ligne précédente, avec conversion d\'unités optionnelle. Export en LaTeX ou Markdown.';
     }
   }
 
@@ -10183,6 +10195,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Restricciones';
       case ModuleHelpKind.sudoku:
         return 'Sudoku';
+      case ModuleHelpKind.notepad:
+        return 'Bloc de notas';
     }
   }
 
@@ -10243,6 +10257,8 @@ class EsLocalizations implements AppLocalizations {
             'permitiendo ver cómo el motor reduce los candidatos. Los '
             'niveles de pista exponen la respuesta de la siguiente '
             'celda o una justificación lógica.';
+      case ModuleHelpKind.notepad:
+        return 'Un bloc de notas multidocumento donde cada línea es una fórmula viva, recalculada mientras escribes. Además de matemáticas ordinarias admite directivas: `use <documento>` importa las variables de otro documento; `fzn:` resuelve un modelo FlatZinc en línea; y `Ans in <unidad>` reutiliza el resultado de la línea anterior, con conversión de unidades opcional. Exporta a LaTeX o Markdown.';
     }
   }
 
