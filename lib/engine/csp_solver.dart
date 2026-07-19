@@ -411,14 +411,29 @@ class CspMusResult {
   final String? error;
   final bool wasSatisfiable;
 
+  /// Round 116 (C9): a *second*, independently-computed minimal
+  /// unsatisfiable subset (deletion-based), populated only when it names
+  /// a different constraint set than [entries] (QuickXplain). A MUS is
+  /// only *a* minimal conflict, not *the* one; surfacing a distinct
+  /// second explanation teaches that unsatisfiability can be pinned on
+  /// more than one minimal core. Empty when the two agree.
+  final List<MusEntry> altEntries;
+
   const CspMusResult._({
     required this.entries,
     required this.error,
     required this.wasSatisfiable,
+    this.altEntries = const [],
   });
 
-  factory CspMusResult.ok(List<MusEntry> entries) =>
-      CspMusResult._(entries: entries, error: null, wasSatisfiable: false);
+  factory CspMusResult.ok(List<MusEntry> entries,
+          {List<MusEntry> altEntries = const []}) =>
+      CspMusResult._(
+        entries: entries,
+        error: null,
+        wasSatisfiable: false,
+        altEntries: altEntries,
+      );
 
   factory CspMusResult.satisfiable() => const CspMusResult._(
         entries: [],
@@ -3099,24 +3114,53 @@ class CspSolver {
         // unsat or on a result that was capped at maxSolutions.
         return CspMusResult.satisfiable();
       }
-      // Deduplicate by ref.id so a binary constraint's forward +
-      // reverse arcs don't double-list. (dart_csp already does
-      // this; belt-and-suspenders against future refactors.)
-      final seen = <String>{};
-      final entries = <MusEntry>[];
-      for (final ref in mus) {
-        if (!seen.add(ref.id)) continue;
-        entries.add(MusEntry(
-          label: ref.label ?? '${ref.kind}(${ref.variables.join(', ')})',
-          kind: ref.kind,
-          variables: List<String>.unmodifiable(ref.variables),
-        ));
+      final entries = _musEntries(mus);
+
+      // Round 116 (C9): also compute the deletion-based MUS. It explores
+      // the constraints in a different order, so on an over-constrained
+      // model with several minimal cores it can pin the conflict on a
+      // *different* set — a genuinely distinct explanation worth showing.
+      // Only surfaced when its id-set differs from QuickXplain's.
+      var altEntries = const <MusEntry>[];
+      try {
+        final delMus = await problem.findMinimalUnsatisfiableSubset();
+        if (delMus != null) {
+          final qxIds = {for (final r in mus) r.id};
+          final delIds = {for (final r in delMus) r.id};
+          if (!_setEquals(qxIds, delIds)) {
+            altEntries = _musEntries(delMus);
+          }
+        }
+      } catch (_) {
+        // The secondary explanation is best-effort; a failure here must
+        // not sink the primary QuickXplain result.
       }
-      return CspMusResult.ok(entries);
+
+      return CspMusResult.ok(entries, altEntries: altEntries);
     } catch (e) {
       return CspMusResult.failure('QuickXplain failed: ${_friendlyError(e)}');
     }
   }
+
+  /// Projects a dart_csp MUS (`List<ConstraintRef>`) into [MusEntry]s,
+  /// de-duplicated by `ref.id` (a binary constraint's forward + reverse
+  /// arcs share an id).
+  static List<MusEntry> _musEntries(List<csp.ConstraintRef> mus) {
+    final seen = <String>{};
+    final entries = <MusEntry>[];
+    for (final ref in mus) {
+      if (!seen.add(ref.id)) continue;
+      entries.add(MusEntry(
+        label: ref.label ?? '${ref.kind}(${ref.variables.join(', ')})',
+        kind: ref.kind,
+        variables: List<String>.unmodifiable(ref.variables),
+      ));
+    }
+    return entries;
+  }
+
+  static bool _setEquals(Set<String> a, Set<String> b) =>
+      a.length == b.length && a.containsAll(b);
 
   /// Re-parses a DSL source for the MUS path. Returns a struct
   /// carrying [variables], a list of `(text, label)` constraints,

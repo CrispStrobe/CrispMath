@@ -150,4 +150,49 @@ solve satisfy;
       );
     });
   });
+
+  group('deeper MUS — second conflict (round 116)', () {
+    test('two disjoint triangles yield two different minimal conflicts',
+        () async {
+      // Two independent K3-over-2-colours cliques; each is its own MUS.
+      // QuickXplain and the deletion algorithm pin different ones.
+      final r = await CspSolver.explainDsl('''vars: a, b, c, p, q, r in 1..2
+a != b
+b != c
+a != c
+p != q
+q != r
+p != r''');
+      expect(r.error, isNull);
+      expect(r.wasSatisfiable, isFalse);
+      expect(r.entries, hasLength(3));
+      expect(r.altEntries, hasLength(3));
+      // The two conflicts name disjoint constraint sets.
+      final primary = r.entries.map((e) => e.label).toSet();
+      final alt = r.altEntries.map((e) => e.label).toSet();
+      expect(primary.intersection(alt), isEmpty);
+    });
+
+    test('a single-core conflict has no distinct second conflict', () async {
+      // K4/3-colours: the unique MUS is all six edges; both algorithms
+      // agree, so no alt is surfaced.
+      final r = await CspSolver.explainDsl('''vars: a, b, c, d in 1..3
+a != b
+a != c
+a != d
+b != c
+b != d
+c != d''');
+      expect(r.error, isNull);
+      expect(r.entries, isNotEmpty);
+      expect(r.altEntries, isEmpty);
+    });
+
+    test('a satisfiable program reports neither conflict', () async {
+      final r = await CspSolver.explainDsl('vars: a, b in 1..3\na != b');
+      expect(r.wasSatisfiable, isTrue);
+      expect(r.entries, isEmpty);
+      expect(r.altEntries, isEmpty);
+    });
+  });
 }

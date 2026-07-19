@@ -528,6 +528,7 @@ abstract class AppLocalizations {
   String get constraintsExplainHeader;
   String get constraintsExplainSatisfiable;
   String constraintsExplainEntryCount(int n);
+  String constraintsExplainAltHeader(int n);
   String get constraintsExportFlatZinc;
   // Round F — propagation step-trace visualizer (AC-3 replay).
   String get constraintsVisualizeButton;
@@ -1875,6 +1876,9 @@ class EnLocalizations implements AppLocalizations {
   @override
   String constraintsExplainEntryCount(int n) =>
       n == 1 ? '1 conflicting constraint' : '$n conflicting constraints';
+  @override
+  String constraintsExplainAltHeader(int n) =>
+      'Another minimal conflict ($n constraints)';
   @override
   String get constraintsExportFlatZinc => 'Export as FlatZinc';
   @override
@@ -3616,6 +3620,9 @@ class DeLocalizations implements AppLocalizations {
   String constraintsExplainEntryCount(int n) => n == 1
       ? '1 widersprüchliche Bedingung'
       : '$n widersprüchliche Bedingungen';
+  @override
+  String constraintsExplainAltHeader(int n) =>
+      'Ein weiterer minimaler Konflikt ($n Bedingungen)';
   @override
   String get constraintsExportFlatZinc => 'Als FlatZinc exportieren';
   @override
@@ -6958,6 +6965,9 @@ class FrLocalizations implements AppLocalizations {
   String constraintsExplainEntryCount(int n) =>
       n == 1 ? '1 contrainte conflictuelle' : '$n contraintes conflictuelles';
   @override
+  String constraintsExplainAltHeader(int n) =>
+      'Un autre conflit minimal ($n contraintes)';
+  @override
   String get constraintsExportFlatZinc => 'Exporter en FlatZinc';
   @override
   String get constraintsVisualizeButton => 'Visualiser';
@@ -10229,6 +10239,9 @@ class EsLocalizations implements AppLocalizations {
   @override
   String constraintsExplainEntryCount(int n) =>
       n == 1 ? '1 restricción en conflicto' : '$n restricciones en conflicto';
+  @override
+  String constraintsExplainAltHeader(int n) =>
+      'Otro conflicto mínimo ($n restricciones)';
   @override
   String get constraintsExportFlatZinc => 'Exportar como FlatZinc';
   @override

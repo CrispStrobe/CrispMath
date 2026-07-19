@@ -337,10 +337,17 @@ display can't do justice.
   `CancellationToken` (Sudoku's advanced-hint compute already does this,
   Round 108). Also lets long/optimization solves show a real progress +
   cancel affordance instead of blocking the UI isolate.
-- [ ] **Deeper MUS** — surface the deletion-based
-  `findMinimalUnsatisfiableSubset` alongside QuickXplain, and use
-  `ConstraintRef` granularity to point at the *specific* offending clue
-  in over-constrained logic grids.
+- [x] **Deeper MUS** — surface the deletion-based
+  `findMinimalUnsatisfiableSubset` alongside QuickXplain. *Done (round
+  116, C9):* `_runQuickXplain` now also runs the deletion-based MUS and,
+  when it pins the unsatisfiability on a *different* constraint set (by
+  `ConstraintRef.id`), surfaces it as `CspMusResult.altEntries`. The
+  Explain panel renders it under an "Another minimal conflict" header —
+  teaching that unsat can have several minimal cores (e.g. two disjoint
+  triangles each explain the conflict independently). Best-effort: a
+  failure in the secondary pass never sinks the primary result. de/fr/es
+  i18n + engine tests (disjoint-triangles differ, single-core agrees,
+  satisfiable reports neither).
 
 ### C10 — Dev-environment note
 
