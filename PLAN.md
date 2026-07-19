@@ -236,11 +236,17 @@ display can't do justice.
   Returns `Set` values, a genuinely new result type. *Viz:* render each
   set solution as a chip cluster (membership), optionally a small
   Venn/overlap diagram for `disjoint`/`subset` relations.
-- [ ] **`circuit` / `subcircuit` (TSP / routing)** — a single Hamiltonian
-  tour over successor variables. Graph-theory curriculum. *Viz:* a
-  node-graph painter drawing the tour as directed edges around placed
-  nodes (force-directed or circular layout) — the highest-impact new
-  visualization.
+- [x] **`circuit` / `subcircuit` (TSP / routing)** — a single Hamiltonian
+  tour over successor variables. Graph-theory curriculum. *Done (round
+  109, C8):* `circuit(next0, next1, …; labels=…)` / `subcircuit(…)` DSL
+  keywords → `addCircuit` / `addSubcircuit`; successor vars + optional
+  node labels + the sub flag threaded to `DiophantineResult.circuit*`.
+  *Viz:* `_TourChart` / `_TourPainter` — nodes on a circular layout,
+  directed arrow edges `i → next[i]`, subcircuit self-loops drawn
+  dimmed. This is the **reusable node-graph widget** the C9
+  constraint-network view builds on. Ships with a `deliveryRoute`
+  gallery example, a `circuit` Function Reference entry + help chip,
+  de/fr/es i18n, and engine tests.
 - [x] **`diffN` (2D packing / tiling)** — non-overlapping rectangles.
   *Done (round 108, C8):* `diffN((x,y,w,h), …)` DSL keyword →
   `addDiffN`; container size inferred from coordinate domains and

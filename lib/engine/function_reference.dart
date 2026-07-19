@@ -2414,6 +2414,28 @@ class FunctionReferences {
       ],
       seeAlso: ['no_overlap', 'cumulative', 'all_different'],
     ),
+    FunctionRef(
+      id: 'circuit',
+      category: FunctionRefCategory.constraints,
+      signature: 'circuit(next0, next1, …; labels=A, B, …)',
+      shortDescription:
+          'A single Hamiltonian tour over successor variables: next[i] is the '
+          'node visited after node i, and the tour must reach every node once '
+          'and close back to the start. Models TSP and routing; the DSL tab '
+          'draws the tour as a directed node-graph. `subcircuit` allows '
+          'unvisited nodes (self-loops).',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input: 'vars: a, b, c in 0..2\ncircuit(a, b, c)',
+          expected: '(a→b→c→a and its reverse — the tours through all 3 nodes)',
+          hint: 'Each successor variable must be declared with a domain '
+              'covering 0..n-1. Add `; labels=…` to name the nodes in the '
+              'chart; use `subcircuit` when some nodes may be skipped.',
+        ),
+      ],
+      seeAlso: ['all_different', 'diff_n', 'no_overlap'],
+    ),
     // === Round 108b: Advanced-tab vector / modular / root operations
     // that previously had no help popover. Runnable calculator
     // expressions except where the invocation is operator/dialog-based.

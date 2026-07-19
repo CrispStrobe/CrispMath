@@ -129,6 +129,17 @@ class DiophantineResult {
   final int? packingWidth;
   final int? packingHeight;
 
+  /// Round 109 (C8): tour metadata threaded through from a `circuit` /
+  /// `subcircuit` program. [circuitVars] holds the successor variables
+  /// in node order — `solution[circuitVars[i]]` is the index of the
+  /// node that follows node `i`. [circuitLabels], when present, names
+  /// the nodes for the tour chart; [circuitIsSub] is true for
+  /// `subcircuit` (self-loops = "not visited"). Empty when the program
+  /// had no circuit line.
+  final List<String> circuitVars;
+  final List<String>? circuitLabels;
+  final bool circuitIsSub;
+
   const DiophantineResult._({
     required this.solutions,
     required this.error,
@@ -139,6 +150,9 @@ class DiophantineResult {
     this.packingRects = const [],
     this.packingWidth,
     this.packingHeight,
+    this.circuitVars = const [],
+    this.circuitLabels,
+    this.circuitIsSub = false,
   });
 
   factory DiophantineResult.ok(
@@ -149,6 +163,9 @@ class DiophantineResult {
     List<PackingRectSpec> packingRects = const [],
     int? packingWidth,
     int? packingHeight,
+    List<String> circuitVars = const [],
+    List<String>? circuitLabels,
+    bool circuitIsSub = false,
   }) =>
       DiophantineResult._(
         solutions: solutions,
@@ -159,6 +176,9 @@ class DiophantineResult {
         packingRects: packingRects,
         packingWidth: packingWidth,
         packingHeight: packingHeight,
+        circuitVars: circuitVars,
+        circuitLabels: circuitLabels,
+        circuitIsSub: circuitIsSub,
       );
 
   factory DiophantineResult.failure(String message) => DiophantineResult._(
@@ -177,6 +197,9 @@ class DiophantineResult {
     List<PackingRectSpec> packingRects = const [],
     int? packingWidth,
     int? packingHeight,
+    List<String> circuitVars = const [],
+    List<String>? circuitLabels,
+    bool circuitIsSub = false,
   }) =>
       DiophantineResult._(
         solutions: [assignment],
@@ -188,6 +211,9 @@ class DiophantineResult {
         packingRects: packingRects,
         packingWidth: packingWidth,
         packingHeight: packingHeight,
+        circuitVars: circuitVars,
+        circuitLabels: circuitLabels,
+        circuitIsSub: circuitIsSub,
       );
 }
 
@@ -490,6 +516,9 @@ class CspSolver {
     List<PackingRectSpec> packing = const [],
     int? packingWidth,
     int? packingHeight,
+    List<String> circuitVars = const [],
+    List<String>? circuitLabels,
+    bool circuitIsSub = false,
     int maxSolutions = 100,
   }) async {
     if (variables.isEmpty) {
@@ -594,6 +623,9 @@ class CspSolver {
             packingRects: packing,
             packingWidth: packingWidth,
             packingHeight: packingHeight,
+            circuitVars: circuitVars,
+            circuitLabels: circuitLabels,
+            circuitIsSub: circuitIsSub,
           );
         }
       }
@@ -604,6 +636,9 @@ class CspSolver {
         packingRects: packing,
         packingWidth: packingWidth,
         packingHeight: packingHeight,
+        circuitVars: circuitVars,
+        circuitLabels: circuitLabels,
+        circuitIsSub: circuitIsSub,
       );
     } catch (e) {
       return DiophantineResult.failure('Solver failed: ${_friendlyError(e)}');
@@ -1018,6 +1053,13 @@ class CspSolver {
     // Round 108 (C8): `diffN` 2D packing. Collected rectangles are
     // threaded to the result so the DSL tab can draw a layout chart.
     final packingRects = <PackingRectSpec>[];
+    // Round 109 (C8): `circuit` / `subcircuit` tour metadata. Only one
+    // circuit line is allowed per program; its successor variables and
+    // optional node labels are threaded to the result for the tour chart.
+    List<String> circuitVars = const [];
+    List<String>? circuitLabels;
+    var circuitIsSub = false;
+    var circuitLineNum = -1;
     ({String op, String expr, int lineNum})? objective;
 
     final lines = input.split('\n');
@@ -1579,6 +1621,48 @@ class CspSolver {
         continue;
       }
 
+      // === `circuit(n0, n1, …)` / `subcircuit(…)` — a single
+      // Hamiltonian tour over successor variables (TSP / routing).
+      // `vars[i]` is the index of the node visited after node `i`, so
+      // each variable's domain must cover `0..n-1`. An optional
+      // `; labels=Home, Shop, …` clause names the nodes in the tour
+      // chart. Only one circuit line is allowed per program.
+      final circuitMatch = RegExp(
+              r'^(sub)?circuit\s*\(\s*([^;]*?)\s*(?:;\s*labels\s*=\s*(.+?)\s*)?\)$',
+              caseSensitive: false)
+          .firstMatch(line);
+      if (circuitMatch != null) {
+        if (circuitLineNum >= 0) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: only one circuit/subcircuit allowed '
+              '(first one was on line ${circuitLineNum + 1}).');
+        }
+        final isSub = circuitMatch.group(1) != null;
+        final names = _splitNames(circuitMatch.group(2)!);
+        if (names.length < 2) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: '
+              '${isSub ? 'subcircuit' : 'circuit'} needs at least two nodes.');
+        }
+        final err = _checkDeclared(
+            names, vars, lineNum, isSub ? 'subcircuit' : 'circuit');
+        if (err != null) return err;
+        List<String>? labels;
+        if (circuitMatch.group(3) != null) {
+          labels = circuitMatch.group(3)!.split(',').map((s) => s.trim()).toList();
+          if (labels.length != names.length) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: circuit has '
+                '${names.length} node(s) but ${labels.length} label(s).');
+          }
+        }
+        circuitVars = names;
+        circuitLabels = labels;
+        circuitIsSub = isSub;
+        circuitLineNum = lineNum;
+        extraConstraints.add((p) =>
+            isSub ? p.addSubcircuit(names) : p.addCircuit(names));
+        continue;
+      }
+
       // Anything else is a constraint.
       constraints.add(line);
     }
@@ -1615,6 +1699,9 @@ class CspSolver {
         packing: packingRects,
         packingWidth: packingWidth,
         packingHeight: packingHeight,
+        circuitVars: circuitVars,
+        circuitLabels: circuitLabels,
+        circuitIsSub: circuitIsSub,
       );
     }
 
@@ -1627,6 +1714,9 @@ class CspSolver {
       packing: packingRects,
       packingWidth: packingWidth,
       packingHeight: packingHeight,
+      circuitVars: circuitVars,
+      circuitLabels: circuitLabels,
+      circuitIsSub: circuitIsSub,
       maxSolutions: maxSolutions,
     );
   }
@@ -1659,6 +1749,9 @@ class CspSolver {
     List<PackingRectSpec> packing = const [],
     int? packingWidth,
     int? packingHeight,
+    List<String> circuitVars = const [],
+    List<String>? circuitLabels,
+    bool circuitIsSub = false,
   }) async {
     if (variables.isEmpty) {
       return DiophantineResult.failure('No variables declared.');
@@ -1786,6 +1879,9 @@ class CspSolver {
         packingRects: packing,
         packingWidth: packingWidth,
         packingHeight: packingHeight,
+        circuitVars: circuitVars,
+        circuitLabels: circuitLabels,
+        circuitIsSub: circuitIsSub,
       );
     } catch (e) {
       return DiophantineResult.failure(

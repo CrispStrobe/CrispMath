@@ -562,6 +562,19 @@ class _ResultBlock extends StatelessWidget {
             containerHeight: result.packingHeight!,
           ),
         ],
+        // Tour overlay: present when the DSL program had a `circuit` /
+        // `subcircuit` constraint AND we got at least one solution. Draws
+        // the first solution's Hamiltonian tour as a directed node-graph
+        // with the nodes on a circle (successor-model edges i → next[i]).
+        if (result.circuitVars.isNotEmpty && result.solutions.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _TourChart(
+            successors: result.circuitVars,
+            labels: result.circuitLabels,
+            assignment: result.solutions.first,
+            isSub: result.circuitIsSub,
+          ),
+        ],
         // Map-coloring overlay: the `mapColoringAustralia` gallery
         // program assigns a color to each of the seven Australian
         // regions. When the first solution is exactly that variable
@@ -976,6 +989,191 @@ class _PackingPainter extends CustomPainter {
       old.assignment != assignment ||
       old.containerWidth != containerWidth ||
       old.containerHeight != containerHeight;
+}
+
+/// Directed node-graph for `circuit` / `subcircuit` tours. Nodes are
+/// laid out on a circle in index order; a solved successor value
+/// `next[i]` draws an arrow from node `i` to node `next[i]`. For
+/// `subcircuit`, a self-loop (`next[i] == i`) means the node is not
+/// visited — it is drawn dimmed with no outgoing edge. This is the
+/// reusable node-graph widget the C9 constraint-network view builds on.
+class _TourChart extends StatelessWidget {
+  final List<String> successors;
+  final List<String>? labels;
+  final DiophantineSolution assignment;
+  final bool isSub;
+
+  const _TourChart({
+    required this.successors,
+    required this.labels,
+    required this.assignment,
+    required this.isSub,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (successors.length < 2) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isSub
+                ? 'Subcircuit · ${successors.length} nodes'
+                : 'Tour · ${successors.length} nodes',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: SizedBox(
+              width: 240,
+              height: 240,
+              child: CustomPaint(
+                painter: _TourPainter(
+                  successors: successors,
+                  labels: labels,
+                  assignment: assignment,
+                  isSub: isSub,
+                  scheme: scheme,
+                  textStyle: Theme.of(context).textTheme.bodySmall ??
+                      const TextStyle(fontSize: 12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TourPainter extends CustomPainter {
+  final List<String> successors;
+  final List<String>? labels;
+  final DiophantineSolution assignment;
+  final bool isSub;
+  final ColorScheme scheme;
+  final TextStyle textStyle;
+
+  _TourPainter({
+    required this.successors,
+    required this.labels,
+    required this.assignment,
+    required this.isSub,
+    required this.scheme,
+    required this.textStyle,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final n = successors.length;
+    const nodeR = 16.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final layoutR = size.shortestSide / 2 - nodeR - 6;
+
+    // Circular layout: node i at angle -90° + i·(360°/n), so node 0
+    // sits at the top and the tour reads clockwise.
+    Offset posOf(int i) {
+      final a = -pi / 2 + i * 2 * pi / n;
+      return center + Offset(cos(a) * layoutR, sin(a) * layoutR);
+    }
+
+    final visited = List<bool>.filled(n, !isSub);
+    if (isSub) {
+      // Mark nodes that participate (successor != self).
+      for (var i = 0; i < n; i++) {
+        final nxt = (assignment[successors[i]] as num?)?.toInt();
+        if (nxt != null && nxt != i) {
+          visited[i] = true;
+          visited[nxt] = true;
+        }
+      }
+    }
+
+    final edgePaint = Paint()
+      ..color = scheme.primary
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    // Directed edges i → next[i], drawn as arrows stopping at the node rim.
+    for (var i = 0; i < n; i++) {
+      final nxt = (assignment[successors[i]] as num?)?.toInt();
+      if (nxt == null || nxt < 0 || nxt >= n) continue;
+      if (nxt == i) continue; // self-loop = not visited (subcircuit)
+      final from = posOf(i);
+      final to = posOf(nxt);
+      final dir = (to - from);
+      final len = dir.distance;
+      if (len == 0) continue;
+      final unit = dir / len;
+      final start = from + unit * nodeR;
+      final end = to - unit * nodeR;
+      canvas.drawLine(start, end, edgePaint);
+
+      // Arrowhead at the destination rim.
+      const headLen = 9.0;
+      const headHalf = 5.0;
+      final back = end - unit * headLen;
+      final perp = Offset(-unit.dy, unit.dx) * headHalf;
+      final headPaint = Paint()
+        ..color = scheme.primary
+        ..style = PaintingStyle.fill;
+      final path = Path()
+        ..moveTo(end.dx, end.dy)
+        ..lineTo(back.dx + perp.dx, back.dy + perp.dy)
+        ..lineTo(back.dx - perp.dx, back.dy - perp.dy)
+        ..close();
+      canvas.drawPath(path, headPaint);
+    }
+
+    // Nodes on top of the edges.
+    for (var i = 0; i < n; i++) {
+      final p = posOf(i);
+      final on = visited[i];
+      final fill = Paint()
+        ..style = PaintingStyle.fill
+        ..color = on
+            ? scheme.primaryContainer
+            : scheme.surfaceContainerHighest;
+      final ring = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = on ? scheme.primary : scheme.outlineVariant;
+      canvas.drawCircle(p, nodeR, fill);
+      canvas.drawCircle(p, nodeR, ring);
+
+      final label = labels != null ? labels![i] : '$i';
+      final tp = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: textStyle.copyWith(
+            color: on ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: nodeR * 2 - 2);
+      tp.paint(canvas, p - Offset(tp.width / 2, tp.height / 2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TourPainter old) =>
+      old.successors != successors ||
+      old.labels != labels ||
+      old.assignment != assignment ||
+      old.isSub != isSub;
 }
 
 // === Cryptarithm tab ====================================================
@@ -1454,6 +1652,18 @@ table(main, side; (1,1), (1,3), (2,2), (2,3), (3,1), (3,2))''',
 vars: ax, ay, bx, by, cx, cy in 0..2
 diffN((ax,ay,2,2), (bx,by,2,1), (cx,cy,1,2))''',
     ),
+    (
+      // Round 109 (C8): a single tour over successor variables with the
+      // `circuit` constraint — a TSP / delivery-routing skeleton. Each
+      // variable is the index of the stop visited next; enumerating the
+      // program lists every Hamiltonian tour, drawn as a directed
+      // node-graph in the DSL tab.
+      id: 'deliveryRoute',
+      program: '''# Delivery route — visit all four stops once, back to depot.
+# next[i] = index of the stop visited after stop i (0=depot … 3=park).
+vars: depot, shop, bank, park in 0..3
+circuit(depot, shop, bank, park; labels=Depot, Shop, Bank, Park)''',
+    ),
   ];
 
   final _ctl = TextEditingController(text: _gallery.first.program);
@@ -1727,6 +1937,7 @@ const dslOperatorHelpChips = <(String, String)>[
   ('table', 'table'),
   ('element', 'element'),
   ('diffN', 'diff_n'),
+  ('circuit', 'circuit'),
   ('minimize', 'minimize'),
   ('maximize', 'maximize'),
 ];

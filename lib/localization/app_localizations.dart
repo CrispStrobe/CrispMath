@@ -1812,6 +1812,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Menu pairings (table constraint)';
       case 'packing':
         return '2D packing (diffN layout)';
+      case 'deliveryRoute':
+        return 'Delivery route (circuit / TSP)';
     }
     return id;
   }
@@ -3520,6 +3522,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Menü-Kombinationen (Tabelle)';
       case 'packing':
         return '2D-Packung (diffN-Layout)';
+      case 'deliveryRoute':
+        return 'Lieferroute (circuit / TSP)';
     }
     return id;
   }
@@ -4406,6 +4410,13 @@ class DeLocalizations implements AppLocalizations {
             'w×h-Rechteck an der unteren linken Ecke (x, y). Modelliert '
             'Packprobleme, Parkettierungen und Grundrisse; der DSL-Tab '
             'zeichnet die gefundene Anordnung maßstabsgetreu.';
+      case 'circuit':
+        return 'Eine einzige Hamilton-Rundreise über Nachfolgervariablen: '
+            'next[i] ist der nach Knoten i besuchte Knoten; die Tour muss '
+            'jeden Knoten genau einmal erreichen und zum Start zurückkehren. '
+            'Modelliert Rundreise- und Routingprobleme; der DSL-Tab zeichnet '
+            'die Tour als gerichteten Knotengraphen. `subcircuit` erlaubt '
+            'unbesuchte Knoten (Schleifen).';
       // --- Sudoku-Varianten ---
       case 'dot':
         return 'Skalarprodukt (Punktprodukt) zweier gleich langer Vektoren: Σ aᵢ·bᵢ. Ergibt einen Skalar.';
@@ -5213,6 +5224,11 @@ class DeLocalizations implements AppLocalizations {
         'Koordinatenvariablen müssen deklariert sein; Breite und Höhe sind '
             'ganzzahlige Literale. Die Behältergröße ergibt sich aus den '
             'Wertebereichen der Koordinaten.',
+      ],
+      'circuit': [
+        'Jede Nachfolgervariable muss mit einem Wertebereich deklariert sein, '
+            'der 0..n-1 abdeckt. Mit `; labels=…` werden die Knoten im '
+            'Diagramm benannt; `subcircuit` erlaubt übersprungene Knoten.',
       ],
       'dot': [
         'Das Skalarprodukt ist |a||b|cos θ — genau dann null, wenn die Vektoren orthogonal sind.',
@@ -6797,6 +6813,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Combinaisons de menu (table)';
       case 'packing':
         return 'Placement 2D (disposition diffN)';
+      case 'deliveryRoute':
+        return 'Tournée de livraison (circuit / TSP)';
     }
     return id;
   }
@@ -7665,6 +7683,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Accès indexé : list[idx] == value, index base 0. Modélise une indirection comme « le coût de l\'option choisie est v ».';
       case 'diff_n':
         return 'Rectangles 2D sans chevauchement : chaque tuple place un rectangle w×h au coin inférieur gauche (x, y). Modélise le placement, le pavage et les plans au sol ; l\'onglet DSL dessine la disposition trouvée à l\'échelle.';
+      case 'circuit':
+        return 'Un unique circuit hamiltonien sur des variables successeur : next[i] est le nœud visité après le nœud i, et le circuit doit atteindre chaque nœud une fois puis revenir au départ. Modélise le voyageur de commerce et le routage ; l\'onglet DSL dessine le circuit en graphe orienté. `subcircuit` autorise des nœuds non visités (boucles).';
       case 'dot':
         return 'Produit scalaire de deux vecteurs de même longueur : Σ aᵢ·bᵢ. Renvoie un scalaire.';
       case 'cross':
@@ -8447,6 +8467,9 @@ class FrLocalizations implements AppLocalizations {
     ],
     'diff_n': [
       'Les variables de coordonnées doivent être déclarées ; la largeur et la hauteur sont des littéraux entiers. La taille du conteneur est déduite des plages de coordonnées.',
+    ],
+    'circuit': [
+      'Chaque variable successeur doit être déclarée avec un domaine couvrant 0..n-1. Ajoutez `; labels=…` pour nommer les nœuds dans le graphe ; utilisez `subcircuit` si certains nœuds peuvent être ignorés.',
     ],
     'dot': [
       'Le produit scalaire vaut |a||b|cos θ — nul exactement quand les vecteurs sont orthogonaux.',
@@ -10022,6 +10045,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Combinaciones de menú (tabla)';
       case 'packing':
         return 'Empaquetado 2D (disposición diffN)';
+      case 'deliveryRoute':
+        return 'Ruta de reparto (circuit / TSP)';
     }
     return id;
   }
@@ -10883,6 +10908,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Acceso indexado: list[idx] == value, índice base 0. Modela indirección como «el coste de la opción elegida es v».';
       case 'diff_n':
         return 'Rectángulos 2D sin solapamiento: cada tupla coloca un rectángulo w×h en la esquina inferior izquierda (x, y). Modela empaquetado, teselado y planos de planta; la pestaña DSL dibuja la disposición hallada a escala.';
+      case 'circuit':
+        return 'Un único circuito hamiltoniano sobre variables sucesoras: next[i] es el nodo visitado tras el nodo i, y el circuito debe alcanzar cada nodo una vez y volver al inicio. Modela el viajante de comercio y el enrutamiento; la pestaña DSL dibuja el circuito como grafo dirigido. `subcircuit` permite nodos no visitados (bucles).';
       case 'dot':
         return 'Producto escalar de dos vectores de igual longitud: Σ aᵢ·bᵢ. Devuelve un escalar.';
       case 'cross':
@@ -11652,6 +11679,9 @@ class EsLocalizations implements AppLocalizations {
     ],
     'diff_n': [
       'Las variables de coordenadas deben declararse; el ancho y el alto son literales enteros. El tamaño del contenedor se infiere de los rangos de las coordenadas.',
+    ],
+    'circuit': [
+      'Cada variable sucesora debe declararse con un dominio que cubra 0..n-1. Añade `; labels=…` para nombrar los nodos en el grafo; usa `subcircuit` si algunos nodos pueden omitirse.',
     ],
     'dot': [
       'El producto escalar es |a||b|cos θ — cero exactamente cuando los vectores son ortogonales.',

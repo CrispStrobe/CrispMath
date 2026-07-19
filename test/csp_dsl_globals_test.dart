@@ -255,6 +255,19 @@ diffN((ax,ay,2,2), (bx,by,2,1), (cx,cy,1,2))''');
       expect(r.packingRects, hasLength(3));
     }, timeout: _t);
 
+    test('deliveryRoute — every stop visited once, back to depot', () async {
+      final r = await CspSolver.solveDsl(
+          '''# Delivery route — visit all four stops once, back to depot.
+# next[i] = index of the stop visited after stop i (0=depot … 3=park).
+vars: depot, shop, bank, park in 0..3
+circuit(depot, shop, bank, park; labels=Depot, Shop, Bank, Park)''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.circuitVars, ['depot', 'shop', 'bank', 'park']);
+      expect(r.circuitLabels, ['Depot', 'Shop', 'Bank', 'Park']);
+      // 4 nodes → (4-1)! = 6 directed Hamiltonian tours.
+      expect(r.solutions, hasLength(6));
+    }, timeout: _t);
+
     test('chromaticNumber — odd 5-cycle needs 3 colours', () async {
       final r = await CspSolver.solveDsl(
           '''# Fewest colours for a 5-cycle (odd cycle ⇒ 3).
@@ -449,6 +462,89 @@ diffN((ax,ay,two,1))
 ''');
       expect(r.ok, isFalse);
       expect(r.error, contains('integers'));
+    });
+  });
+
+  group('circuit (Hamiltonian tour)', () {
+    // Verify a successor assignment is a single cycle over [0, n).
+    bool isTour(List<int> next) {
+      final n = next.length;
+      final seen = List<bool>.filled(n, false);
+      var cur = 0;
+      for (var k = 0; k < n; k++) {
+        if (cur < 0 || cur >= n || seen[cur]) return false;
+        seen[cur] = true;
+        cur = next[cur];
+      }
+      return cur == 0 && seen.every((v) => v);
+    }
+
+    test('every solution is a single tour over all nodes', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b, c in 0..2
+circuit(a, b, c)
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      expect(r.circuitVars, ['a', 'b', 'c']);
+      expect(r.circuitIsSub, isFalse);
+      for (final s in r.solutions) {
+        expect(isTour([s['a']!, s['b']!, s['c']!]), isTrue,
+            reason: 'not a tour: $s');
+      }
+      // 3 nodes → (3-1)! = 2 directed Hamiltonian cycles from node 0.
+      expect(r.solutions, hasLength(2));
+    }, timeout: _t);
+
+    test('labels are threaded through to the result', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b, c in 0..2
+circuit(a, b, c; labels=Home, Shop, Bank)
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.circuitLabels, ['Home', 'Shop', 'Bank']);
+    }, timeout: _t);
+
+    test('subcircuit permits skipped nodes (self-loops)', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b, c in 0..2
+subcircuit(a, b, c)
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.circuitIsSub, isTrue);
+      // The all-self-loop assignment (empty subcircuit) is valid.
+      final hasEmpty = r.solutions
+          .any((s) => s['a'] == 0 && s['b'] == 1 && s['c'] == 2);
+      expect(hasEmpty, isTrue);
+    }, timeout: _t);
+
+    test('a mismatched label count is a line-numbered error', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b, c in 0..2
+circuit(a, b, c; labels=Home, Shop)
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('label'));
+      expect(r.error, contains('Line 2'));
+    });
+
+    test('an undeclared node variable is rejected', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b in 0..1
+circuit(a, b, c)
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('undeclared variable'));
+    });
+
+    test('only one circuit line is allowed', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b, c in 0..2
+circuit(a, b, c)
+circuit(a, b, c)
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('only one circuit'));
     });
   });
 }
