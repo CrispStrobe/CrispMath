@@ -1810,6 +1810,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Chromatic number (fewest colors)';
       case 'menuPairing':
         return 'Menu pairings (table constraint)';
+      case 'packing':
+        return '2D packing (diffN layout)';
     }
     return id;
   }
@@ -3516,6 +3518,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Chromatische Zahl (wenigste Farben)';
       case 'menuPairing':
         return 'Menü-Kombinationen (Tabelle)';
+      case 'packing':
+        return '2D-Packung (diffN-Layout)';
     }
     return id;
   }
@@ -4397,6 +4401,11 @@ class DeLocalizations implements AppLocalizations {
         return 'Indizierter Zugriff: list[idx] == value, mit 0-basiertem '
             'Index. Modelliert Indirektion wie „die Kosten der gewählten '
             'Option sind v".';
+      case 'diff_n':
+        return 'Überschneidungsfreie 2D-Rechtecke: jedes Tupel platziert ein '
+            'w×h-Rechteck an der unteren linken Ecke (x, y). Modelliert '
+            'Packprobleme, Parkettierungen und Grundrisse; der DSL-Tab '
+            'zeichnet die gefundene Anordnung maßstabsgetreu.';
       // --- Sudoku-Varianten ---
       case 'dot':
         return 'Skalarprodukt (Punktprodukt) zweier gleich langer Vektoren: Σ aᵢ·bᵢ. Ergibt einen Skalar.';
@@ -5199,6 +5208,11 @@ class DeLocalizations implements AppLocalizations {
       'element': [
         'Kombiniere mit `minimize`/`maximize` über den nachgeschlagenen Wert, '
             'um eine Auswahl unter tabellierten Kosten zu optimieren.',
+      ],
+      'diff_n': [
+        'Koordinatenvariablen müssen deklariert sein; Breite und Höhe sind '
+            'ganzzahlige Literale. Die Behältergröße ergibt sich aus den '
+            'Wertebereichen der Koordinaten.',
       ],
       'dot': [
         'Das Skalarprodukt ist |a||b|cos θ — genau dann null, wenn die Vektoren orthogonal sind.',
@@ -6781,6 +6795,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Nombre chromatique (moins de couleurs)';
       case 'menuPairing':
         return 'Combinaisons de menu (table)';
+      case 'packing':
+        return 'Placement 2D (disposition diffN)';
     }
     return id;
   }
@@ -7647,6 +7663,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Le tuple (x, y, z) doit correspondre à l\'une des lignes listées. Encode des relations arbitraires : matrices de compatibilité, combinaisons autorisées, tables d\'indices de casse-tête logique.';
       case 'element':
         return 'Accès indexé : list[idx] == value, index base 0. Modélise une indirection comme « le coût de l\'option choisie est v ».';
+      case 'diff_n':
+        return 'Rectangles 2D sans chevauchement : chaque tuple place un rectangle w×h au coin inférieur gauche (x, y). Modélise le placement, le pavage et les plans au sol ; l\'onglet DSL dessine la disposition trouvée à l\'échelle.';
       case 'dot':
         return 'Produit scalaire de deux vecteurs de même longueur : Σ aᵢ·bᵢ. Renvoie un scalaire.';
       case 'cross':
@@ -8426,6 +8444,9 @@ class FrLocalizations implements AppLocalizations {
     ],
     'element': [
       'Combinez avec `minimize`/`maximize` sur la valeur consultée pour optimiser un choix parmi des coûts tabulés.',
+    ],
+    'diff_n': [
+      'Les variables de coordonnées doivent être déclarées ; la largeur et la hauteur sont des littéraux entiers. La taille du conteneur est déduite des plages de coordonnées.',
     ],
     'dot': [
       'Le produit scalaire vaut |a||b|cos θ — nul exactement quand les vecteurs sont orthogonaux.',
@@ -9999,6 +10020,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Número cromático (menos colores)';
       case 'menuPairing':
         return 'Combinaciones de menú (tabla)';
+      case 'packing':
+        return 'Empaquetado 2D (disposición diffN)';
     }
     return id;
   }
@@ -10858,6 +10881,8 @@ class EsLocalizations implements AppLocalizations {
         return 'La tupla (x, y, z) debe coincidir con una de las filas listadas. Codifica relaciones arbitrarias: matrices de compatibilidad, combinaciones permitidas, tablas de pistas de acertijos lógicos.';
       case 'element':
         return 'Acceso indexado: list[idx] == value, índice base 0. Modela indirección como «el coste de la opción elegida es v».';
+      case 'diff_n':
+        return 'Rectángulos 2D sin solapamiento: cada tupla coloca un rectángulo w×h en la esquina inferior izquierda (x, y). Modela empaquetado, teselado y planos de planta; la pestaña DSL dibuja la disposición hallada a escala.';
       case 'dot':
         return 'Producto escalar de dos vectores de igual longitud: Σ aᵢ·bᵢ. Devuelve un escalar.';
       case 'cross':
@@ -11624,6 +11649,9 @@ class EsLocalizations implements AppLocalizations {
     ],
     'element': [
       'Combina con `minimize`/`maximize` sobre el valor consultado para optimizar una elección entre costes tabulados.',
+    ],
+    'diff_n': [
+      'Las variables de coordenadas deben declararse; el ancho y el alto son literales enteros. El tamaño del contenedor se infiere de los rangos de las coordenadas.',
     ],
     'dot': [
       'El producto escalar es |a||b|cos θ — cero exactamente cuando los vectores son ortogonales.',

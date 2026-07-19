@@ -242,6 +242,19 @@ table(main, side; (1,1), (1,3), (2,2), (2,3), (3,1), (3,2))''');
       expect(got, {'1,1', '1,3', '2,2', '2,3', '3,1', '3,2'});
     }, timeout: _t);
 
+    test('packing — three tiles fit a 4×4 box without overlap', () async {
+      final r = await CspSolver.solveDsl(
+          '''# Pack three tiles into a 4×4 box — no overlaps.
+# Each tuple is (xVar, yVar, width, height).
+vars: ax, ay, bx, by, cx, cy in 0..2
+diffN((ax,ay,2,2), (bx,by,2,1), (cx,cy,1,2))''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      expect(r.packingWidth, 4);
+      expect(r.packingHeight, 4);
+      expect(r.packingRects, hasLength(3));
+    }, timeout: _t);
+
     test('chromaticNumber — odd 5-cycle needs 3 colours', () async {
       final r = await CspSolver.solveDsl(
           '''# Fewest colours for a 5-cycle (odd cycle ⇒ 3).
@@ -365,6 +378,77 @@ among(x, y; values=1; count=missing)
       final r = await CspSolver.solveDsl('vars: __x in 0..1');
       expect(r.ok, isFalse);
       expect(r.error, contains('reserved'));
+    });
+  });
+
+  group('diffN (2D packing)', () {
+    test('two rectangles never overlap in every solution', () async {
+      final r = await CspSolver.solveDsl('''
+vars: ax, ay, bx, by in 0..2
+diffN((ax,ay,2,2), (bx,by,1,1))
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isNotEmpty);
+      // Container inferred from domains: max(x.max + w) = 2 + 2 = 4.
+      expect(r.packingWidth, 4);
+      expect(r.packingHeight, 4);
+      expect(r.packingRects, hasLength(2));
+      for (final s in r.solutions) {
+        final ax = s['ax']!, ay = s['ay']!, bx = s['bx']!, by = s['by']!;
+        // Axis-separated: no overlap iff disjoint on x OR on y.
+        final sepX = ax + 2 <= bx || bx + 1 <= ax;
+        final sepY = ay + 2 <= by || by + 1 <= ay;
+        expect(sepX || sepY, isTrue,
+            reason: 'overlap at a=($ax,$ay) b=($bx,$by)');
+      }
+    }, timeout: _t);
+
+    test('a full-container tile leaves no room for a second — UNSAT', () async {
+      // A 3×3 tile fills the whole 3×3 box, so a second 1×1 cannot fit.
+      final r = await CspSolver.solveDsl('''
+vars: ax, ay, bx, by in 0..0
+diffN((ax,ay,1,1), (bx,by,1,1))
+''');
+      // Both forced to (0,0) → overlap → no solution.
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, isEmpty);
+    }, timeout: _t);
+
+    test('the alias diff_n parses identically', () async {
+      final r = await CspSolver.solveDsl('''
+vars: ax, ay, bx, by in 0..2
+diff_n((ax,ay,1,1), (bx,by,1,1))
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.packingRects, hasLength(2));
+    }, timeout: _t);
+
+    test('a tuple with the wrong arity is a line-numbered error', () async {
+      final r = await CspSolver.solveDsl('''
+vars: ax, ay in 0..2
+diffN((ax,ay,2))
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('4 entries'));
+      expect(r.error, contains('Line 2'));
+    });
+
+    test('an undeclared coordinate variable is rejected', () async {
+      final r = await CspSolver.solveDsl('''
+vars: ax, ay in 0..2
+diffN((ax,ay,1,1), (bx,by,1,1))
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('not declared'));
+    });
+
+    test('non-integer width is rejected', () async {
+      final r = await CspSolver.solveDsl('''
+vars: ax, ay in 0..2
+diffN((ax,ay,two,1))
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('integers'));
     });
   });
 }

@@ -546,6 +546,22 @@ class _ResultBlock extends StatelessWidget {
             capacity: result.ganttCapacity,
           ),
         ],
+        // 2D packing overlay: present when the DSL program had a `diffN`
+        // constraint AND we got at least one solution. Draws the first
+        // solution's rectangle placement to scale inside the inferred
+        // container, the planar sibling of the 1-D Gantt chart above.
+        if (result.packingRects.isNotEmpty &&
+            result.solutions.isNotEmpty &&
+            result.packingWidth != null &&
+            result.packingHeight != null) ...[
+          const SizedBox(height: 12),
+          _PackingChart(
+            rects: result.packingRects,
+            assignment: result.solutions.first,
+            containerWidth: result.packingWidth!,
+            containerHeight: result.packingHeight!,
+          ),
+        ],
         // Map-coloring overlay: the `mapColoringAustralia` gallery
         // program assigns a color to each of the seven Australian
         // regions. When the first solution is exactly that variable
@@ -786,6 +802,180 @@ class _GanttPainter extends CustomPainter {
       old.assignment != assignment ||
       old.maxEnd != maxEnd ||
       old.capacity != capacity;
+}
+
+/// 2D rectangle-layout chart for `diffN` packing programs — the planar
+/// sibling of [_GanttChart]. Draws each rectangle at its solved lower-
+/// left `(x, y)` within the inferred container, to scale, with the
+/// origin at the bottom-left so the picture reads like a floor plan.
+class _PackingChart extends StatelessWidget {
+  final List<PackingRectSpec> rects;
+  final DiophantineSolution assignment;
+  final int containerWidth;
+  final int containerHeight;
+
+  const _PackingChart({
+    required this.rects,
+    required this.assignment,
+    required this.containerWidth,
+    required this.containerHeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (containerWidth <= 0 || containerHeight <= 0) {
+      return const SizedBox.shrink();
+    }
+    final scheme = Theme.of(context).colorScheme;
+    // Fit the container into a bounded box while preserving aspect ratio.
+    const maxDim = 240.0;
+    final aspect = containerWidth / containerHeight;
+    double drawW, drawH;
+    if (aspect >= 1) {
+      drawW = maxDim;
+      drawH = maxDim / aspect;
+    } else {
+      drawH = maxDim;
+      drawW = maxDim * aspect;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Packing · $containerWidth × $containerHeight',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: SizedBox(
+              width: drawW + 2,
+              height: drawH + 2,
+              child: CustomPaint(
+                painter: _PackingPainter(
+                  rects: rects,
+                  assignment: assignment,
+                  containerWidth: containerWidth,
+                  containerHeight: containerHeight,
+                  scheme: scheme,
+                  textStyle: Theme.of(context).textTheme.bodySmall ??
+                      const TextStyle(fontSize: 12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PackingPainter extends CustomPainter {
+  final List<PackingRectSpec> rects;
+  final DiophantineSolution assignment;
+  final int containerWidth;
+  final int containerHeight;
+  final ColorScheme scheme;
+  final TextStyle textStyle;
+
+  _PackingPainter({
+    required this.rects,
+    required this.assignment,
+    required this.containerWidth,
+    required this.containerHeight,
+    required this.scheme,
+    required this.textStyle,
+  });
+
+  // Same tonal palette as the Gantt painter, cycled per rectangle.
+  static const List<Color> _rectColors = [
+    Color(0xFF1976D2), // blue 700
+    Color(0xFFE64A19), // deep orange 700
+    Color(0xFF388E3C), // green 700
+    Color(0xFF7B1FA2), // purple 700
+    Color(0xFFFBC02D), // yellow 700
+    Color(0xFF00796B), // teal 700
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pxPerX = size.width / containerWidth;
+    final pxPerY = size.height / containerHeight;
+
+    // Container border.
+    final borderPaint = Paint()
+      ..color = scheme.outline
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawRect(Offset.zero & size, borderPaint);
+
+    final fillPaint = Paint()..style = PaintingStyle.fill;
+    final edgePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = Colors.white.withValues(alpha: 0.85);
+
+    for (var i = 0; i < rects.length; i++) {
+      final r = rects[i];
+      final x = (assignment[r.xVar] as num?)?.toInt();
+      final y = (assignment[r.yVar] as num?)?.toInt();
+      if (x == null || y == null) continue;
+
+      // Flip the y-axis so the origin sits at the bottom-left.
+      final left = x * pxPerX;
+      final top = (containerHeight - y - r.height) * pxPerY;
+      final rect = Rect.fromLTWH(
+        left,
+        top,
+        r.width * pxPerX,
+        r.height * pxPerY,
+      );
+      fillPaint.color =
+          _rectColors[i % _rectColors.length].withValues(alpha: 0.85);
+      canvas.drawRect(rect, fillPaint);
+      canvas.drawRect(rect, edgePaint);
+
+      // Inside-rect caption: "w×h" when it fits.
+      final label = '${r.width}×${r.height}';
+      final tp = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: textStyle.copyWith(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      if (tp.width + 4 < rect.width && tp.height + 2 < rect.height) {
+        tp.paint(
+          canvas,
+          Offset(
+            rect.left + (rect.width - tp.width) / 2,
+            rect.top + (rect.height - tp.height) / 2,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PackingPainter old) =>
+      old.rects != rects ||
+      old.assignment != assignment ||
+      old.containerWidth != containerWidth ||
+      old.containerHeight != containerHeight;
 }
 
 // === Cryptarithm tab ====================================================
@@ -1253,6 +1443,17 @@ minimize colors''',
 vars: main, side in 1..3
 table(main, side; (1,1), (1,3), (2,2), (2,3), (3,1), (3,2))''',
     ),
+    (
+      // Round 108 (C8): 2D packing with `diffN`. Three differently
+      // shaped tiles are placed without overlap inside a 4×4 box; the
+      // result renders as a scaled floor-plan layout. Each tuple is
+      // (xVar, yVar, width, height) with the lower-left at (x, y).
+      id: 'packing',
+      program: '''# Pack three tiles into a 4×4 box — no overlaps.
+# Each tuple is (xVar, yVar, width, height).
+vars: ax, ay, bx, by, cx, cy in 0..2
+diffN((ax,ay,2,2), (bx,by,2,1), (cx,cy,1,2))''',
+    ),
   ];
 
   final _ctl = TextEditingController(text: _gallery.first.program);
@@ -1525,6 +1726,7 @@ const dslOperatorHelpChips = <(String, String)>[
   ('valuePrecedence', 'value_precedence'),
   ('table', 'table'),
   ('element', 'element'),
+  ('diffN', 'diff_n'),
   ('minimize', 'minimize'),
   ('maximize', 'maximize'),
 ];

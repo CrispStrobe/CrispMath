@@ -2393,6 +2393,27 @@ class FunctionReferences {
       ],
       seeAlso: ['table', 'minimize'],
     ),
+    FunctionRef(
+      id: 'diff_n',
+      category: FunctionRefCategory.constraints,
+      signature: 'diffN((x1, y1, w1, h1), (x2, y2, w2, h2), …)',
+      shortDescription:
+          'Non-overlapping 2D rectangles: each tuple places a w×h rectangle at '
+          'lower-left (x, y). Models packing, tiling, and floor-planning; the '
+          'DSL tab draws the solved layout to scale.',
+      runnable: false,
+      examples: [
+        FunctionRefExample(
+          input:
+              'vars: ax, ay, bx, by in 0..3\ndiffN((ax,ay,2,2), (bx,by,2,1))',
+          expected: '(the 2×2 and 2×1 tiles never overlap)',
+          hint: 'Coordinate variables must be declared; width and height are '
+              'integer literals. The container size is inferred from the '
+              'coordinate ranges.',
+        ),
+      ],
+      seeAlso: ['no_overlap', 'cumulative', 'all_different'],
+    ),
     // === Round 108b: Advanced-tab vector / modular / root operations
     // that previously had no help popover. Runnable calculator
     // expressions except where the invocation is operator/dialog-based.

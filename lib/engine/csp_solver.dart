@@ -71,6 +71,26 @@ class GanttTaskSpec {
   });
 }
 
+/// Round 108 (C8): one rectangle in a `diffN` 2D-packing program. The
+/// solver assigns [xVar] / [yVar] (its lower-left corner); [width] and
+/// [height] are fixed. Rendered by the DSL tab's `_PackingChart` from
+/// the first solution's coordinates. [containerWidth]/[containerHeight]
+/// (the bounding box, derived from the coordinate variables' ranges +
+/// sizes) are carried on [DiophantineResult], not here.
+class PackingRectSpec {
+  final String xVar;
+  final String yVar;
+  final int width;
+  final int height;
+
+  const PackingRectSpec({
+    required this.xVar,
+    required this.yVar,
+    required this.width,
+    required this.height,
+  });
+}
+
 /// Result envelope returned by [CspSolver.solveDiophantine]. Holds
 /// either a list of solutions or an error message — never both.
 class DiophantineResult {
@@ -101,6 +121,14 @@ class DiophantineResult {
   final List<GanttTaskSpec> ganttTasks;
   final int? ganttCapacity;
 
+  /// Round 108 (C8): rectangle metadata threaded through from a `diffN`
+  /// 2D-packing program. The DSL tab's `_PackingChart` draws each
+  /// rectangle at its solved (x, y) within a [packingWidth] ×
+  /// [packingHeight] box. Empty when the program had no `diffN` line.
+  final List<PackingRectSpec> packingRects;
+  final int? packingWidth;
+  final int? packingHeight;
+
   const DiophantineResult._({
     required this.solutions,
     required this.error,
@@ -108,6 +136,9 @@ class DiophantineResult {
     this.objective,
     this.ganttTasks = const [],
     this.ganttCapacity,
+    this.packingRects = const [],
+    this.packingWidth,
+    this.packingHeight,
   });
 
   factory DiophantineResult.ok(
@@ -115,6 +146,9 @@ class DiophantineResult {
     bool truncated = false,
     List<GanttTaskSpec> ganttTasks = const [],
     int? ganttCapacity,
+    List<PackingRectSpec> packingRects = const [],
+    int? packingWidth,
+    int? packingHeight,
   }) =>
       DiophantineResult._(
         solutions: solutions,
@@ -122,6 +156,9 @@ class DiophantineResult {
         truncated: truncated,
         ganttTasks: ganttTasks,
         ganttCapacity: ganttCapacity,
+        packingRects: packingRects,
+        packingWidth: packingWidth,
+        packingHeight: packingHeight,
       );
 
   factory DiophantineResult.failure(String message) => DiophantineResult._(
@@ -137,6 +174,9 @@ class DiophantineResult {
     num objective, {
     List<GanttTaskSpec> ganttTasks = const [],
     int? ganttCapacity,
+    List<PackingRectSpec> packingRects = const [],
+    int? packingWidth,
+    int? packingHeight,
   }) =>
       DiophantineResult._(
         solutions: [assignment],
@@ -145,6 +185,9 @@ class DiophantineResult {
         objective: objective,
         ganttTasks: ganttTasks,
         ganttCapacity: ganttCapacity,
+        packingRects: packingRects,
+        packingWidth: packingWidth,
+        packingHeight: packingHeight,
       );
 }
 
@@ -444,6 +487,9 @@ class CspSolver {
     List<NoOverlapGroup> noOverlap = const [],
     List<CumulativeGroup> cumulative = const [],
     List<void Function(csp.Problem)> extraConstraints = const [],
+    List<PackingRectSpec> packing = const [],
+    int? packingWidth,
+    int? packingHeight,
     int maxSolutions = 100,
   }) async {
     if (variables.isEmpty) {
@@ -545,6 +591,9 @@ class CspSolver {
             truncated: true,
             ganttTasks: _buildGanttTasks(noOverlap, cumulative),
             ganttCapacity: _firstCapacity(cumulative),
+            packingRects: packing,
+            packingWidth: packingWidth,
+            packingHeight: packingHeight,
           );
         }
       }
@@ -552,6 +601,9 @@ class CspSolver {
         solutions,
         ganttTasks: _buildGanttTasks(noOverlap, cumulative),
         ganttCapacity: _firstCapacity(cumulative),
+        packingRects: packing,
+        packingWidth: packingWidth,
+        packingHeight: packingHeight,
       );
     } catch (e) {
       return DiophantineResult.failure('Solver failed: ${_friendlyError(e)}');
@@ -963,6 +1015,9 @@ class CspSolver {
     // into a closure that posts the constraint on the dart_csp Problem
     // once it exists (applied in solveDiophantine / solveOptimization).
     final extraConstraints = <void Function(csp.Problem)>[];
+    // Round 108 (C8): `diffN` 2D packing. Collected rectangles are
+    // threaded to the result so the DSL tab can draw a layout chart.
+    final packingRects = <PackingRectSpec>[];
     ({String op, String expr, int lineNum})? objective;
 
     final lines = input.split('\n');
@@ -1468,6 +1523,62 @@ class CspSolver {
         continue;
       }
 
+      // === `diffN((x1,y1,w1,h1), (x2,y2,w2,h2), …)` — non-overlapping
+      // 2D rectangles (packing / tiling / floor-planning). Each tuple
+      // pairs the lower-left coordinate variables `(x, y)` with the
+      // integer `width` and `height` of one rectangle. The container's
+      // dimensions are inferred from the coordinate domains so the DSL
+      // tab can draw a to-scale layout of the solved placement.
+      final diffNMatch =
+          RegExp(r'^diff_?n\s*\(\s*(.+)\)$', caseSensitive: false)
+              .firstMatch(line);
+      if (diffNMatch != null) {
+        final specs = <PackingRectSpec>[];
+        for (final m
+            in RegExp(r'\(([^)]*)\)').allMatches(diffNMatch.group(1)!)) {
+          final parts = _splitNames(m.group(1)!);
+          if (parts.length != 4) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: diffN tuple '
+                '(${m.group(1)}) needs exactly 4 entries '
+                '(xVar, yVar, width, height).');
+          }
+          final xVar = parts[0], yVar = parts[1];
+          if (!vars.containsKey(xVar)) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: diffN x '
+                'variable "$xVar" is not declared.');
+          }
+          if (!vars.containsKey(yVar)) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: diffN y '
+                'variable "$yVar" is not declared.');
+          }
+          final w = int.tryParse(parts[2]), h = int.tryParse(parts[3]);
+          if (w == null || h == null) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: diffN width '
+                'and height must be integers (got "${parts[2]}", '
+                '"${parts[3]}").');
+          }
+          if (w < 0 || h < 0) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: diffN width '
+                'and height must be non-negative.');
+          }
+          specs.add(
+              PackingRectSpec(xVar: xVar, yVar: yVar, width: w, height: h));
+        }
+        if (specs.isEmpty) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: diffN needs at least one '
+              '`(xVar, yVar, w, h)` tuple.');
+        }
+        packingRects.addAll(specs);
+        extraConstraints.add((p) => p.addDiffN(
+              [for (final s in specs) s.xVar],
+              [for (final s in specs) s.yVar],
+              [for (final s in specs) s.width],
+              [for (final s in specs) s.height],
+            ));
+        continue;
+      }
+
       // Anything else is a constraint.
       constraints.add(line);
     }
@@ -1475,6 +1586,21 @@ class CspSolver {
     if (vars.isEmpty) {
       return DiophantineResult.failure(
           'No variables declared. Use `vars: x, y in 1..9`.');
+    }
+
+    // Infer the drawing container from the coordinate domains: the box
+    // must fit every rectangle at its right-most / top-most placement.
+    int? packingWidth, packingHeight;
+    if (packingRects.isNotEmpty) {
+      var w = 0, h = 0;
+      for (final s in packingRects) {
+        final xr = vars[s.xVar];
+        final yr = vars[s.yVar];
+        if (xr != null && xr.max + s.width > w) w = xr.max + s.width;
+        if (yr != null && yr.max + s.height > h) h = yr.max + s.height;
+      }
+      packingWidth = w;
+      packingHeight = h;
     }
 
     if (objective != null) {
@@ -1486,6 +1612,9 @@ class CspSolver {
         noOverlap: noOverlap,
         cumulative: cumulative,
         extraConstraints: extraConstraints,
+        packing: packingRects,
+        packingWidth: packingWidth,
+        packingHeight: packingHeight,
       );
     }
 
@@ -1495,6 +1624,9 @@ class CspSolver {
       noOverlap: noOverlap,
       cumulative: cumulative,
       extraConstraints: extraConstraints,
+      packing: packingRects,
+      packingWidth: packingWidth,
+      packingHeight: packingHeight,
       maxSolutions: maxSolutions,
     );
   }
@@ -1524,6 +1656,9 @@ class CspSolver {
     List<NoOverlapGroup> noOverlap = const [],
     List<CumulativeGroup> cumulative = const [],
     List<void Function(csp.Problem)> extraConstraints = const [],
+    List<PackingRectSpec> packing = const [],
+    int? packingWidth,
+    int? packingHeight,
   }) async {
     if (variables.isEmpty) {
       return DiophantineResult.failure('No variables declared.');
@@ -1648,6 +1783,9 @@ class CspSolver {
         objValue,
         ganttTasks: _buildGanttTasks(noOverlap, cumulative),
         ganttCapacity: _firstCapacity(cumulative),
+        packingRects: packing,
+        packingWidth: packingWidth,
+        packingHeight: packingHeight,
       );
     } catch (e) {
       return DiophantineResult.failure(

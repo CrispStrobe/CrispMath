@@ -241,10 +241,15 @@ display can't do justice.
   node-graph painter drawing the tour as directed edges around placed
   nodes (force-directed or circular layout) — the highest-impact new
   visualization.
-- [ ] **`diffN` (2D packing / tiling)** — non-overlapping rectangles.
-  *Viz:* a 2D rectangle-layout painter, the planar sibling of the
-  existing 1-D `_GanttChart` — draw each placed rectangle at its solved
-  (x, y, w, h) with a per-item colour.
+- [x] **`diffN` (2D packing / tiling)** — non-overlapping rectangles.
+  *Done (round 108, C8):* `diffN((x,y,w,h), …)` DSL keyword →
+  `addDiffN`; container size inferred from coordinate domains and
+  threaded to `DiophantineResult.packing*`. *Viz:* `_PackingChart` /
+  `_PackingPainter`, the planar sibling of `_GanttChart`, draws each
+  placed rectangle to scale (origin bottom-left) with a per-item
+  colour and a `w×h` caption. Ships with a `packing` gallery example,
+  a `diff_n` Function Reference entry + help chip, de/fr/es i18n, and
+  engine tests.
 - [ ] **Min-conflicts local search** — `solveWithMinConflicts` for large
   / loosely-constrained instances (big N-queens, timetabling). *Viz:* an
   educational "local search vs backtracking" panel animating the
