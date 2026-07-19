@@ -278,8 +278,7 @@ void main() {
 
     test('long factor chains are degree-bounded', () {
       final sw = Stopwatch()..start();
-      expect(
-          SymbolicWeb.expand('x^2000 x^2000 x^2000 x^2000 x^2000'), isNull);
+      expect(SymbolicWeb.expand('x^2000 x^2000 x^2000 x^2000 x^2000'), isNull);
       expect(sw.elapsedMilliseconds, lessThan(3000));
     });
 
@@ -329,8 +328,8 @@ void main() {
       final open = '(' * 20000;
       // Must return null (unsupported), never throw a StackOverflowError that
       // escapes the String?-returning API.
-      expect(() => SymbolicWeb.expand('$open 1 ${')' * 20000}'),
-          returnsNormally);
+      expect(
+          () => SymbolicWeb.expand('$open 1 ${')' * 20000}'), returnsNormally);
       expect(SymbolicWeb.expand('$open 1 ${')' * 20000}'), isNull);
       expect(() => SymbolicWeb.expand('x^$open'), returnsNormally);
     });

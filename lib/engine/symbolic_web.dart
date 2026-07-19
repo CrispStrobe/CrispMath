@@ -528,8 +528,7 @@ class _PolyExprParser {
       // exponent alone, which bounds `constant^exp` bignum growth) blows the
       // cap. The division form avoids overflowing the product.
       // GUARD:degcost >>>
-      if (exp > _maxDegree ||
-          (exp > 0 && base.degree > _maxDegree ~/ exp)) {
+      if (exp > _maxDegree || (exp > 0 && base.degree > _maxDegree ~/ exp)) {
         throw _PolyBail();
       }
       // GUARD:degcost <<<
