@@ -255,6 +255,13 @@ class DiophantineResult {
   /// Empty otherwise.
   final List<SearchStrategyStat> strategyStats;
 
+  /// Round 114 (C9): binary `!=` edges among declared variables (from
+  /// explicit `x != y` lines and `allDifferent` expansion). When
+  /// non-empty and a solution exists, the DSL tab draws a
+  /// graph-colouring picture — nodes filled by their solved value.
+  /// Each inner list is a `[a, b]` variable pair.
+  final List<List<String>> colorEdges;
+
   const DiophantineResult._({
     required this.solutions,
     required this.error,
@@ -272,6 +279,7 @@ class DiophantineResult {
     this.setVarNames = const [],
     this.setSolutions = const [],
     this.strategyStats = const [],
+    this.colorEdges = const [],
   });
 
   factory DiophantineResult.ok(
@@ -289,6 +297,7 @@ class DiophantineResult {
     List<String> setVarNames = const [],
     List<Map<String, List<int>>> setSolutions = const [],
     List<SearchStrategyStat> strategyStats = const [],
+    List<List<String>> colorEdges = const [],
   }) =>
       DiophantineResult._(
         solutions: solutions,
@@ -306,6 +315,7 @@ class DiophantineResult {
         setVarNames: setVarNames,
         setSolutions: setSolutions,
         strategyStats: strategyStats,
+        colorEdges: colorEdges,
       );
 
   factory DiophantineResult.failure(String message) => DiophantineResult._(
@@ -753,6 +763,7 @@ class CspSolver {
     List<SoftConstraintSpec> softConstraints = const [],
     Map<String, List<int>> setVariables = const {},
     List<SearchStrategyStat> strategyStats = const [],
+    List<List<String>> colorEdges = const [],
     int maxSolutions = 100,
   }) async {
     if (variables.isEmpty && setVariables.isEmpty) {
@@ -853,6 +864,7 @@ class CspSolver {
             setVarNames: setVariables.keys.toList(),
             setSolutions: setSolutions,
             strategyStats: strategyStats,
+            colorEdges: colorEdges,
           );
         }
       }
@@ -869,6 +881,7 @@ class CspSolver {
         setVarNames: setVariables.keys.toList(),
         setSolutions: setSolutions,
         strategyStats: strategyStats,
+        colorEdges: colorEdges,
       );
     } catch (e) {
       return DiophantineResult.failure('Solver failed: ${_friendlyError(e)}');
@@ -2248,6 +2261,23 @@ class CspSolver {
       }
     }
 
+    // Round 114 (C9): collect binary `!=` edges among declared variables
+    // (explicit `x != y` lines plus `allDifferent` expansion, which both
+    // land in `constraints` as `a != b` strings). A non-empty set marks a
+    // graph-colouring problem, drawn coloured by the solved values.
+    final colorEdges = <List<String>>[];
+    final seenEdge = <String>{};
+    for (final c in constraints) {
+      final m =
+          RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*!=\s*([a-zA-Z_][a-zA-Z0-9_]*)$')
+              .firstMatch(c);
+      if (m == null) continue;
+      final a = m.group(1)!, b = m.group(2)!;
+      if (!vars.containsKey(a) || !vars.containsKey(b)) continue;
+      final key = (a.compareTo(b) < 0) ? '$a|$b' : '$b|$a';
+      if (seenEdge.add(key)) colorEdges.add([a, b]);
+    }
+
     return solveDiophantine(
       variables: vars,
       constraints: constraints,
@@ -2263,6 +2293,7 @@ class CspSolver {
       softConstraints: softConstraints,
       setVariables: setVars,
       strategyStats: strategyStats,
+      colorEdges: colorEdges,
       maxSolutions: maxSolutions,
     );
   }

@@ -629,6 +629,20 @@ class _ResultBlock extends StatelessWidget {
           const SizedBox(height: 12),
           GermanyMapView(assignment: result.solutions.first),
         ],
+        // General graph-colouring overlay: any program with binary `!=`
+        // edges (map colouring, chromatic number, scheduling conflicts)
+        // draws the network with each node filled by its solved value.
+        // Suppressed when a bespoke schematic map already handles it.
+        if (result.colorEdges.isNotEmpty &&
+            result.solutions.isNotEmpty &&
+            !AustraliaMapView.matches(result.solutions.first) &&
+            !GermanyMapView.matches(result.solutions.first)) ...[
+          const SizedBox(height: 12),
+          _ColorGraph(
+            edges: result.colorEdges,
+            assignment: result.solutions.first,
+          ),
+        ],
       ],
     );
   }
@@ -1703,6 +1717,159 @@ class _ConstraintGraphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ConstraintGraphPainter old) => old.structure != structure;
+}
+
+/// Graph-colouring render: the `!=` network drawn with each node filled
+/// by its solved value's colour. Makes "no two adjacent nodes share a
+/// colour" visible for map-colouring / chromatic-number programs. Built
+/// on the same circular layout as [_TourChart] / [_ConstraintGraph].
+class _ColorGraph extends StatelessWidget {
+  final List<List<String>> edges;
+  final DiophantineSolution assignment;
+
+  const _ColorGraph({required this.edges, required this.assignment});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context);
+    // Nodes = variables that appear in an edge, in first-seen order.
+    final nodes = <String>[];
+    for (final e in edges) {
+      for (final v in e) {
+        if (!nodes.contains(v)) nodes.add(v);
+      }
+    }
+    if (nodes.isEmpty) return const SizedBox.shrink();
+    // Distinct solved values → colour count (the chromatic number used).
+    final colours = {for (final n in nodes) assignment[n]}.length;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t.constraintsColorGraphHeader(nodes.length, colours),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: SizedBox(
+              width: 260,
+              height: 260,
+              child: CustomPaint(
+                painter: _ColorGraphPainter(
+                  nodes: nodes,
+                  edges: edges,
+                  assignment: assignment,
+                  scheme: scheme,
+                  textStyle: Theme.of(context).textTheme.bodySmall ??
+                      const TextStyle(fontSize: 12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ColorGraphPainter extends CustomPainter {
+  final List<String> nodes;
+  final List<List<String>> edges;
+  final DiophantineSolution assignment;
+  final ColorScheme scheme;
+  final TextStyle textStyle;
+
+  _ColorGraphPainter({
+    required this.nodes,
+    required this.edges,
+    required this.assignment,
+    required this.scheme,
+    required this.textStyle,
+  });
+
+  // A qualitative palette indexed by the solved value. Distinct hues so
+  // adjacent-node difference reads at a glance; cycles beyond its length.
+  static const List<Color> _palette = [
+    Color(0xFF1976D2), // blue
+    Color(0xFFE64A19), // deep orange
+    Color(0xFF388E3C), // green
+    Color(0xFFFBC02D), // yellow
+    Color(0xFF7B1FA2), // purple
+    Color(0xFF00796B), // teal
+    Color(0xFFC2185B), // pink
+    Color(0xFF5D4037), // brown
+  ];
+
+  Color _colourFor(int? value) => value == null
+      ? scheme.surfaceContainerHighest
+      : _palette[value % _palette.length];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final n = nodes.length;
+    const nodeR = 16.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final layoutR = size.shortestSide / 2 - nodeR - 8;
+    final index = {for (var i = 0; i < n; i++) nodes[i]: i};
+
+    Offset posOf(int i) {
+      if (n == 1) return center;
+      final a = -pi / 2 + i * 2 * pi / n;
+      return center + Offset(cos(a) * layoutR, sin(a) * layoutR);
+    }
+
+    final edgePaint = Paint()
+      ..color = scheme.outline
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    for (final e in edges) {
+      final a = index[e[0]], b = index[e[1]];
+      if (a == null || b == null) continue;
+      canvas.drawLine(posOf(a), posOf(b), edgePaint);
+    }
+
+    for (var i = 0; i < n; i++) {
+      final p = posOf(i);
+      final value = assignment[nodes[i]];
+      final fill = Paint()
+        ..style = PaintingStyle.fill
+        ..color = _colourFor(value);
+      final ring = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = Colors.white.withValues(alpha: 0.85);
+      canvas.drawCircle(p, nodeR, fill);
+      canvas.drawCircle(p, nodeR, ring);
+
+      final tp = TextPainter(
+        text: TextSpan(
+          text: nodes[i],
+          style: textStyle.copyWith(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: nodeR * 2 - 2);
+      tp.paint(canvas, p - Offset(tp.width / 2, tp.height / 2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ColorGraphPainter old) =>
+      old.nodes != nodes || old.edges != edges || old.assignment != assignment;
 }
 
 // === Cryptarithm tab ====================================================

@@ -309,9 +309,16 @@ display can't do justice.
   structure" button on the DSL tab renders it (synchronous, no solve).
   de/fr/es i18n + engine tests. *Future:* highlight the edge being revised
   during the propagation step-trace.
-- [ ] **Graph-colouring render** — for `nvalue`/`!=` colouring problems,
-  draw the graph with each node filled by its solved colour (the
-  `chromaticNumber` example is begging for this).
+- [x] **Graph-colouring render** — for `nvalue`/`!=` colouring problems,
+  draw the graph with each node filled by its solved colour. *Done (round
+  114, C9):* `solveDsl` collects binary `!=` edges among declared
+  variables (explicit lines + `allDifferent` expansion, de-duplicated)
+  into `DiophantineResult.colorEdges`. *Viz:* `_ColorGraph` /
+  `_ColorGraphPainter` draw the network on the circular layout with each
+  node filled by a qualitative palette colour indexed by its solved
+  value; header reports node + colour counts. Suppressed when the bespoke
+  Australia/Germany schematic maps already handle the solution. de/fr/es
+  i18n + engine tests.
 - [ ] **Propagation trace for the Diophantine + Cryptarithm tabs** — the
   step-visualizer is wired only for the DSL and Sudoku tabs today, though
   those tabs build the same model kind (`csp_solver.dart`). Thread

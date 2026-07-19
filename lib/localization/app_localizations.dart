@@ -540,6 +540,7 @@ abstract class AppLocalizations {
   String get constraintsStrategyTime;
   String get constraintsStructureButton;
   String constraintsStructureHeader(int vars, int constraints);
+  String constraintsColorGraphHeader(int nodes, int colours);
   String get constraintsTraceHeader;
   String get constraintsTraceIntro;
   String constraintsTraceStepCounter(int current, int total);
@@ -1897,6 +1898,9 @@ class EnLocalizations implements AppLocalizations {
   @override
   String constraintsStructureHeader(int vars, int constraints) =>
       'Constraint network · $vars variables · $constraints constraints';
+  @override
+  String constraintsColorGraphHeader(int nodes, int colours) =>
+      'Graph colouring · $nodes nodes · $colours colours';
   @override
   String get constraintsTraceHeader => 'Propagation trace';
   @override
@@ -3635,6 +3639,9 @@ class DeLocalizations implements AppLocalizations {
   @override
   String constraintsStructureHeader(int vars, int constraints) =>
       'Constraint-Netz · $vars Variablen · $constraints Constraints';
+  @override
+  String constraintsColorGraphHeader(int nodes, int colours) =>
+      'Graphfärbung · $nodes Knoten · $colours Farben';
   @override
   String get constraintsTraceHeader => 'Propagierungs-Verlauf';
   @override
@@ -6975,6 +6982,9 @@ class FrLocalizations implements AppLocalizations {
   String constraintsStructureHeader(int vars, int constraints) =>
       'Réseau de contraintes · $vars variables · $constraints contraintes';
   @override
+  String constraintsColorGraphHeader(int nodes, int colours) =>
+      'Coloration de graphe · $nodes nœuds · $colours couleurs';
+  @override
   String get constraintsTraceHeader => 'Trace de propagation';
   @override
   String get constraintsTraceIntro =>
@@ -10243,6 +10253,9 @@ class EsLocalizations implements AppLocalizations {
   @override
   String constraintsStructureHeader(int vars, int constraints) =>
       'Red de restricciones · $vars variables · $constraints restricciones';
+  @override
+  String constraintsColorGraphHeader(int nodes, int colours) =>
+      'Coloración de grafo · $nodes nodos · $colours colores';
   @override
   String get constraintsTraceHeader => 'Traza de propagación';
   @override

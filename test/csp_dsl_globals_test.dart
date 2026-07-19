@@ -872,4 +872,40 @@ a + b + c + d == 20
       expect(s.constraints.single.label.length, lessThanOrEqualTo(22));
     });
   });
+
+  group('graph-colouring edges', () {
+    test('explicit != lines become undirected edges', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b, c, d in 1..3
+a != b
+b != c
+c != d
+d != a
+''', maxSolutions: 5);
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.colorEdges, hasLength(4));
+      // Every edge is a declared pair.
+      for (final e in r.colorEdges) {
+        expect(e, hasLength(2));
+      }
+    }, timeout: _t);
+
+    test('allDifferent expands to a clique of edges, de-duplicated', () async {
+      final r = await CspSolver.solveDsl('''
+vars: x, y, z in 1..3
+allDifferent(x, y, z)
+''', maxSolutions: 10);
+      expect(r.ok, isTrue, reason: r.error);
+      // C(3,2) = 3 distinct edges; the reverse pair is not double-counted.
+      expect(r.colorEdges, hasLength(3));
+    }, timeout: _t);
+
+    test('a program without != has no colour edges', () async {
+      final r = await CspSolver.solveDsl('''
+vars: a, b in 1..5
+a + b == 6
+''');
+      expect(r.colorEdges, isEmpty);
+    }, timeout: _t);
+  });
 }
