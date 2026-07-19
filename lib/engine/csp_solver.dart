@@ -934,6 +934,9 @@ class CspSolver {
   /// nvalue(x, y, z; count=c)            # c = # distinct values
   /// atMostInARow(a, b, c, d; value=1; max=2)  # shift-pattern rule
   /// valuePrecedence(a, b, c; order=1,2,3)     # break value symmetry
+  /// # Relational constraints:
+  /// table(x, y; (1,2), (2,3), (3,1))    # (x,y) must match an allowed row
+  /// element(idx; list=10,20,30; value=v)      # list[idx] == v (0-based)
   /// minimize x + y      # or `maximize <linear-expr>` — at most one
   /// ```
   ///
@@ -1389,6 +1392,79 @@ class CspSolver {
               'valuePrecedence needs ≥ 2 values in `order=`.');
         }
         extraConstraints.add((p) => p.addValuePrecedence(names, order));
+        continue;
+      }
+
+      // === `table(x, y, z; (1,2,3), (4,5,6))` — the tuple
+      // `(x, y, z)` must equal one of the listed rows. The natural way
+      // to encode arbitrary relations: compatibility matrices, allowed
+      // combinations, or a logic-grid's clue table.
+      final tableMatch =
+          RegExp(r'^table\s*\(\s*([^;]*?)\s*;\s*(.+)\)$').firstMatch(line);
+      if (tableMatch != null) {
+        final names = _splitNames(tableMatch.group(1)!);
+        final err = _checkDeclared(names, vars, lineNum, 'table');
+        if (err != null) return err;
+        final tuples = <List<int>>[];
+        for (final m
+            in RegExp(r'\(([^)]*)\)').allMatches(tableMatch.group(2)!)) {
+          final parts = _splitNames(m.group(1)!);
+          if (parts.length != names.length) {
+            return DiophantineResult.failure('Line ${lineNum + 1}: table tuple '
+                '(${m.group(1)}) has ${parts.length} value(s) but there are '
+                '${names.length} variable(s).');
+          }
+          final tup = <int>[];
+          for (final part in parts) {
+            final v = int.tryParse(part);
+            if (v == null) {
+              return DiophantineResult.failure('Line ${lineNum + 1}: table '
+                  'value "$part" is not an integer.');
+            }
+            tup.add(v);
+          }
+          tuples.add(tup);
+        }
+        if (tuples.isEmpty) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: table needs at least one `(…)` tuple.');
+        }
+        extraConstraints.add((p) => p.addTable(names, tuples));
+        continue;
+      }
+
+      // === `element(idx; list=10,20,30; value=v)` — `list[idx] == v`
+      // with a 0-based [idx]. Models indirection: "the cost of the
+      // chosen option is v".
+      final elementMatch = RegExp(
+              r'^element\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*;\s*list\s*=\s*([^;]*?)\s*;\s*value\s*=\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)$')
+          .firstMatch(line);
+      if (elementMatch != null) {
+        final idxVar = elementMatch.group(1)!;
+        final valueVar = elementMatch.group(3)!;
+        if (!vars.containsKey(idxVar)) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: element index '
+              'variable "$idxVar" is not declared.');
+        }
+        if (!vars.containsKey(valueVar)) {
+          return DiophantineResult.failure('Line ${lineNum + 1}: element value '
+              'variable "$valueVar" is not declared.');
+        }
+        final list = <int>[];
+        for (final raw in elementMatch.group(2)!.split(',')) {
+          final v = int.tryParse(raw.trim());
+          if (v == null) {
+            return DiophantineResult.failure(
+                'Line ${lineNum + 1}: element list '
+                'value "${raw.trim()}" is not an integer.');
+          }
+          list.add(v);
+        }
+        if (list.isEmpty) {
+          return DiophantineResult.failure(
+              'Line ${lineNum + 1}: element `list=` is empty.');
+        }
+        extraConstraints.add((p) => p.addElement(idxVar, list, valueVar));
         continue;
       }
 

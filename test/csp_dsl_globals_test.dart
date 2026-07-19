@@ -231,6 +231,17 @@ gcc(d1, d2, d3, d4, d5; 0=2)''');
       }
     }, timeout: _t);
 
+    test('menuPairing — table lists exactly the offered combos', () async {
+      final r = await CspSolver.solveDsl(
+          '''# Café menu — only these (main, side) pairings are offered.
+# main: 1 soup / 2 salad / 3 pasta   side: 1 bread / 2 fries / 3 fruit
+vars: main, side in 1..3
+table(main, side; (1,1), (1,3), (2,2), (2,3), (3,1), (3,2))''');
+      expect(r.ok, isTrue, reason: r.error);
+      final got = {for (final s in r.solutions) '${s['main']},${s['side']}'};
+      expect(got, {'1,1', '1,3', '2,2', '2,3', '3,1', '3,2'});
+    }, timeout: _t);
+
     test('chromaticNumber — odd 5-cycle needs 3 colours', () async {
       final r = await CspSolver.solveDsl(
           '''# Fewest colours for a 5-cycle (odd cycle ⇒ 3).
@@ -248,7 +259,63 @@ minimize colors''');
     }, timeout: _t);
   });
 
+  group('relational constraints', () {
+    test('table — solutions are exactly the allowed tuples', () async {
+      final r = await CspSolver.solveDsl('''
+vars: x, y in 1..3
+table(x, y; (1,2), (2,3), (3,1))
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      final got = {for (final s in r.solutions) '${s['x']},${s['y']}'};
+      expect(got, {'1,2', '2,3', '3,1'});
+    }, timeout: _t);
+
+    test('element — list[idx] == value (0-based)', () async {
+      final r = await CspSolver.solveDsl('''
+vars: idx in 0..2
+vars: v in 10..30
+element(idx; list=10,20,30; value=v)
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.solutions, hasLength(3));
+      const list = [10, 20, 30];
+      for (final s in r.solutions) {
+        expect(s['v'], list[s['idx']!]);
+      }
+    }, timeout: _t);
+
+    test('element composes with an objective (min cost of a choice)', () async {
+      final r = await CspSolver.solveDsl('''
+vars: idx in 0..2
+vars: cost in 0..100
+element(idx; list=40,15,30; value=cost)
+minimize cost
+''');
+      expect(r.ok, isTrue, reason: r.error);
+      expect(r.objective, 15);
+      expect(r.solutions.single['idx'], 1);
+    }, timeout: _t);
+  });
+
   group('error handling', () {
+    test('table tuple length must match the variable count', () async {
+      final r = await CspSolver.solveDsl('''
+vars: x, y in 1..3
+table(x, y; (1,2,3))
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('variable'));
+    });
+
+    test('element value variable must be declared', () async {
+      final r = await CspSolver.solveDsl('''
+vars: idx in 0..1
+element(idx; list=1,2; value=ghost)
+''');
+      expect(r.ok, isFalse);
+      expect(r.error, contains('not declared'));
+    });
+
     test('condition references an undeclared variable', () async {
       final r = await CspSolver.solveDsl('''
 vars: a in 0..1

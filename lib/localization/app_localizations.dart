@@ -1808,6 +1808,8 @@ class EnLocalizations implements AppLocalizations {
         return 'Nurse rostering (shift patterns)';
       case 'chromaticNumber':
         return 'Chromatic number (fewest colors)';
+      case 'menuPairing':
+        return 'Menu pairings (table constraint)';
     }
     return id;
   }
@@ -3508,6 +3510,8 @@ class DeLocalizations implements AppLocalizations {
         return 'Dienstplan (Schichtmuster)';
       case 'chromaticNumber':
         return 'Chromatische Zahl (wenigste Farben)';
+      case 'menuPairing':
+        return 'Menü-Kombinationen (Tabelle)';
     }
     return id;
   }
@@ -6532,6 +6536,8 @@ class FrLocalizations implements AppLocalizations {
         return 'Planning d\'infirmières (motifs de gardes)';
       case 'chromaticNumber':
         return 'Nombre chromatique (moins de couleurs)';
+      case 'menuPairing':
+        return 'Combinaisons de menu (table)';
     }
     return id;
   }
@@ -9544,6 +9550,8 @@ class EsLocalizations implements AppLocalizations {
         return 'Turnos de enfermería (patrones)';
       case 'chromaticNumber':
         return 'Número cromático (menos colores)';
+      case 'menuPairing':
+        return 'Combinaciones de menú (tabla)';
     }
     return id;
   }

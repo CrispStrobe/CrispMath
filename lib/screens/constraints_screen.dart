@@ -1242,6 +1242,17 @@ e != a
 nvalue(a, b, c, d, e; count=colors)
 minimize colors''',
     ),
+    (
+      // Round 108: the `table` constraint — restrict a tuple to an
+      // explicit set of allowed rows (a compatibility matrix). Here a
+      // café only offers certain (main, side) pairings; enumerating the
+      // program lists exactly the menu.
+      id: 'menuPairing',
+      program: '''# Café menu — only these (main, side) pairings are offered.
+# main: 1 soup / 2 salad / 3 pasta   side: 1 bread / 2 fries / 3 fruit
+vars: main, side in 1..3
+table(main, side; (1,1), (1,3), (2,2), (2,3), (3,1), (3,2))''',
+    ),
   ];
 
   final _ctl = TextEditingController(text: _gallery.first.program);
