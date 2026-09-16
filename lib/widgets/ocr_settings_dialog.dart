@@ -245,6 +245,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
     final isDownloaded = _downloaded[model.id] == true;
     final isDownloading = _downloading.contains(model.id);
     final progress = _downloadProgress[model.id] ?? 0;
+    final isPaused = !isDownloading && !isDownloaded && progress > 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -289,18 +290,26 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                 ],
               ],
             ),
-            if (isDownloading)
+            if (isDownloading || isPaused)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: LinearProgressIndicator(value: progress),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  color: isPaused ? Colors.grey : null,
+                ),
               ),
           ],
         ),
         trailing: isDownloading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2))
+            ? IconButton(
+                icon: const Icon(Icons.pause, size: 20, semanticLabel: 'Pause download'),
+                onPressed: () {
+                  OcrModelManager.cancelDownload(model);
+                  setState(() {
+                    _downloading.remove(model.id);
+                  });
+                },
+              )
             : isDownloaded
                 ? IconButton(
                     icon: const Icon(Icons.delete_outline,
@@ -308,8 +317,8 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                     onPressed: () => _delete(model),
                   )
                 : IconButton(
-                    icon: const Icon(Icons.download,
-                        size: 20, semanticLabel: 'Download model'),
+                    icon: Icon(isPaused ? Icons.play_arrow : Icons.download,
+                        size: 20, semanticLabel: isPaused ? 'Resume download' : 'Download model'),
                     onPressed: () => _download(model),
                   ),
       ),

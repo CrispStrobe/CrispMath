@@ -18,6 +18,14 @@ import 'ocr_model_catalog.dart';
 
 /// Manages model download + local storage (native platforms only).
 class OcrModelManager {
+  static final Map<String, HttpClient> _activeDownloads = {};
+
+  /// Cancel an ongoing download.
+  static void cancelDownload(OcrModelVariant model) {
+    _activeDownloads[model.id]?.close(force: true);
+    _activeDownloads.remove(model.id);
+  }
+
   /// Returns the local path for a model variant, or null if not downloaded.
   static Future<String?> localPath(OcrModelVariant model) async {
     final dir = await _modelsDir();
@@ -43,6 +51,8 @@ class OcrModelManager {
 
     try {
       final client = HttpClient();
+      _activeDownloads[model.id] = client;
+      
       final tmpFile = File(tmpPath);
 
       // Resume interrupted downloads if the .tmp file exists.
@@ -77,9 +87,11 @@ class OcrModelManager {
       await sink.close();
       await File(tmpPath).rename(targetPath);
       client.close();
+      _activeDownloads.remove(model.id);
       return targetPath;
     } catch (e) {
       // Keep partial .tmp for resume on next attempt.
+      _activeDownloads.remove(model.id);
       return null;
     }
   }
