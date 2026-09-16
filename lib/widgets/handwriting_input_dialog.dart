@@ -86,10 +86,16 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final screenSize = MediaQuery.of(context).size;
+    
+    // Scale up for desktop/web, stay bounded on mobile
+    final maxWidth = (screenSize.width - 64).clamp(300.0, 800.0);
+    final canvasHeight = (screenSize.height * 0.5).clamp(200.0, 400.0);
+
     return AlertDialog(
       title: const Text('Write Math'),
       content: SizedBox(
-        width: 420,
+        width: maxWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -100,9 +106,9 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
               ),
               child: DrawingCanvas(
                 key: _canvasKey,
-                width: 400,
-                height: 200,
-                strokeWidth: 3.0,
+                width: maxWidth,
+                height: canvasHeight,
+                strokeWidth: 4.0,
                 strokeColor: cs.onSurface,
                 backgroundColor: cs.surface,
               ),
