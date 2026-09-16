@@ -42,3 +42,9 @@ jobs:
 
       - name: Unit tests
         run: flutter test --reporter expanded
+
+      - name: Start Chromedriver
+        run: chromedriver --port=4444 &
+
+      - name: Web Integration Tests (E2E OMR pipeline)
+        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/ocr_omr_web_test.dart -d web-server --browser-name=chrome

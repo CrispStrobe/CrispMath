@@ -7,7 +7,7 @@
 
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
+import 'package:image/image.dart' as img;
 
 import 'package:flutter/material.dart';
 
@@ -72,35 +72,46 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     }
   }
 
-  /// Render strokes to a raw RGBA image at the given size.
+  /// Render strokes to a raw RGBA image at the given size using package:image.
+  /// This avoids Flutter web's Picture.toImage() issues (e.g. on HTML renderer).
   Future<Uint8List?> _renderRgba(int targetWidth, int targetHeight) async {
     if (isEmpty) return null;
 
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(
-      recorder,
-      Rect.fromLTWH(0, 0, targetWidth.toDouble(), targetHeight.toDouble()),
-    );
+    final image = img.Image(width: targetWidth, height: targetHeight, numChannels: 4);
+    img.fill(image, color: img.ColorRgba8(255, 255, 255, 255));
 
-    // White background
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, targetWidth.toDouble(), targetHeight.toDouble()),
-      Paint()..color = Colors.white,
-    );
-
-    // Scale strokes to target size
     final sx = targetWidth / widget.width;
     final sy = targetHeight / widget.height;
 
     for (final stroke in _strokes) {
-      _drawStroke(canvas, stroke, sx, sy);
+      if (stroke.points.length < 2) continue;
+      
+      // Calculate color and thickness
+      final c = stroke.color;
+      final color = img.ColorRgba8(
+        (c.r * 255.0).round().clamp(0, 255),
+        (c.g * 255.0).round().clamp(0, 255),
+        (c.b * 255.0).round().clamp(0, 255),
+        (c.a * 255.0).round().clamp(0, 255),
+      );
+      final thickness = (stroke.width * min(sx, sy)).round();
+      
+      for (int i = 0; i < stroke.points.length - 1; i++) {
+        final p1 = stroke.points[i];
+        final p2 = stroke.points[i + 1];
+        
+        img.drawLine(
+          image,
+          x1: (p1.dx * sx).round(),
+          y1: (p1.dy * sy).round(),
+          x2: (p2.dx * sx).round(),
+          y2: (p2.dy * sy).round(),
+          color: color,
+          thickness: thickness > 0 ? thickness : 1,
+        );
+      }
     }
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(targetWidth, targetHeight);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (byteData == null) return null;
-    return byteData.buffer.asUint8List();
+    return image.getBytes(order: img.ChannelOrder.rgba);
   }
 
   /// Export the canvas as a grayscale image suitable for OCR.
@@ -124,23 +135,6 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   /// Useful for VLM providers that benefit from color input.
   Future<Uint8List?> toRgbaBytes(int targetWidth, int targetHeight) async {
     return _renderRgba(targetWidth, targetHeight);
-  }
-
-  void _drawStroke(Canvas canvas, Stroke stroke, double sx, double sy) {
-    if (stroke.points.length < 2) return;
-    final paint = Paint()
-      ..color = stroke.color
-      ..strokeWidth = stroke.width * min(sx, sy)
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-    path.moveTo(stroke.points[0].dx * sx, stroke.points[0].dy * sy);
-    for (int i = 1; i < stroke.points.length; i++) {
-      path.lineTo(stroke.points[i].dx * sx, stroke.points[i].dy * sy);
-    }
-    canvas.drawPath(path, paint);
   }
 
   @override
