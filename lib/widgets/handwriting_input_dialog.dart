@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../engine/ocr_provider.dart';
 import 'drawing_canvas.dart';
 import 'ocr_capture_dialog.dart';
+import 'ocr_settings_dialog.dart';
 
 /// Shows a dialog with a drawing canvas for handwritten math input.
 /// Returns the recognized expression (possibly edited by user), or
@@ -31,13 +32,38 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
   bool _recognizing = false;
   String? _error;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (OcrProviders.active == null) {
+        if (OcrProviders.available.isNotEmpty) {
+          setState(() {
+            OcrProviders.active = OcrProviders.available.first;
+          });
+        } else {
+          _promptDownload();
+        }
+      }
+    });
+  }
+
+  Future<void> _promptDownload() async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => const OcrSettingsDialog(),
+    );
+    if (mounted) setState(() {});
+  }
+
   Future<void> _recognize() async {
     final canvas = _canvasKey.currentState;
     if (canvas == null || canvas.isEmpty) return;
 
     final provider = OcrProviders.active;
     if (provider == null) {
-      setState(() => _error = 'No OCR provider configured');
+      setState(() => _error = 'No OCR provider configured. Please download one.');
+      _promptDownload();
       return;
     }
 
@@ -88,12 +114,48 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
     final cs = Theme.of(context).colorScheme;
     final screenSize = MediaQuery.of(context).size;
     
-    // Scale up for desktop/web, stay bounded on mobile
-    final maxWidth = (screenSize.width - 64).clamp(300.0, 800.0);
-    final canvasHeight = (screenSize.height * 0.5).clamp(200.0, 400.0);
+    // Scale up to 80% of screen size as requested
+    final maxWidth = screenSize.width * 0.8;
+    // Leave some room for title, buttons, and model selector
+    final canvasHeight = (screenSize.height * 0.8) - 150.0;
 
     return AlertDialog(
-      title: const Text('Write Math'),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Write Math'),
+          if (OcrProviders.available.isNotEmpty)
+            DropdownButton<OcrProvider>(
+              value: OcrProviders.available.contains(OcrProviders.active) 
+                  ? OcrProviders.active 
+                  : (OcrProviders.available.isNotEmpty ? OcrProviders.available.first : null),
+              icon: const Icon(Icons.arrow_drop_down),
+              elevation: 16,
+              style: TextStyle(color: cs.primary, fontSize: 13),
+              underline: Container(height: 1, color: cs.primary),
+              onChanged: (OcrProvider? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    OcrProviders.active = newValue;
+                  });
+                }
+              },
+              items: OcrProviders.available
+                  .map<DropdownMenuItem<OcrProvider>>((OcrProvider value) {
+                return DropdownMenuItem<OcrProvider>(
+                  value: value,
+                  child: Text(value.name),
+                );
+              }).toList(),
+            )
+          else
+            TextButton.icon(
+              icon: const Icon(Icons.download, size: 16),
+              label: const Text('Download Model'),
+              onPressed: _promptDownload,
+            ),
+        ],
+      ),
       content: SizedBox(
         width: maxWidth,
         child: Column(
@@ -107,22 +169,13 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
               child: DrawingCanvas(
                 key: _canvasKey,
                 width: maxWidth,
-                height: canvasHeight,
-                strokeWidth: 4.0,
+                height: canvasHeight > 100 ? canvasHeight : 100,
+                strokeWidth: 5.0, // Thicker stroke for much larger canvas
                 strokeColor: cs.onSurface,
                 backgroundColor: cs.surface,
               ),
             ),
             const SizedBox(height: 8),
-            if (OcrProviders.active != null && !_recognizing)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Model: ${OcrProviders.active!.name}',
-                  style: TextStyle(
-                      fontSize: 11, color: cs.onSurface.withValues(alpha: 0.5)),
-                ),
-              ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),

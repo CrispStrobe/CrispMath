@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../engine/ocr_model_manager.dart';
 import '../engine/ocr_provider.dart';
+import '../engine/ocr_providers_init.dart';
 
 class OcrSettingsDialog extends StatefulWidget {
   const OcrSettingsDialog({super.key});
@@ -87,6 +88,10 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       });
       _checkDownloaded(); // refresh disk usage
       if (path != null) {
+        // Reload providers to register the newly downloaded model natively
+        await initOcrProviders();
+        if (mounted) setState(() {});
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${model.name} downloaded')),
         );
