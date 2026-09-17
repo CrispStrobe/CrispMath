@@ -9,7 +9,7 @@ class SyncService {
 
   bool _configured = false;
   bool get isConfigured => _configured;
-  
+
   SupabaseClient get _client => Supabase.instance.client;
   User? get currentUser => isConfigured ? _client.auth.currentUser : null;
 
@@ -39,7 +39,7 @@ class SyncService {
 
   Future<void> pushState(AppState state) async {
     if (!isConfigured || currentUser == null) return;
-    
+
     final data = state.exportToJson();
     final jsonStr = jsonEncode(data);
 
@@ -64,7 +64,7 @@ class SyncService {
     }
 
     final data = jsonDecode(response['app_state'] as String);
-    state.importFromJson(data);
+    state.importFromJson(data, merge: true);
     return true;
   }
 }

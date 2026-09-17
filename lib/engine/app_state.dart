@@ -26,12 +26,7 @@ import 'scene_3d/scene_state.dart';
 
 enum HistoryEntryType { calculation, solve }
 
-enum NumberDisplayFormat {
-  integer,
-  oneDecimal,
-  twoDecimal,
-  auto,
-}
+enum NumberDisplayFormat { integer, oneDecimal, twoDecimal, auto }
 
 class CalculationEntry {
   final String expression;
@@ -44,33 +39,37 @@ class CalculationEntry {
   /// yielding `8.00000000001` instead of `8`).
   final String? rawResult;
   final HistoryEntryType type;
+  final DateTime lastModified;
 
   CalculationEntry({
     required this.expression,
     required this.result,
     this.rawResult,
     this.type = HistoryEntryType.calculation,
-  });
+    DateTime? lastModified,
+  }) : lastModified = lastModified ?? DateTime.now().toUtc();
 
   /// What `Ans` should resolve to: full precision when available.
   String get ansValue => rawResult ?? result;
 
   Map<String, dynamic> toJson() => {
-        'e': expression,
-        'r': result,
-        if (rawResult != null) 'raw': rawResult,
-        't': type.name,
-      };
+    'e': expression,
+    'r': result,
+    if (rawResult != null) 'raw': rawResult,
+    't': type.name,
+    'lm': lastModified.toIso8601String(),
+  };
 
   static CalculationEntry fromJson(Map<String, dynamic> j) => CalculationEntry(
-        expression: j['e'] as String? ?? '',
-        result: j['r'] as String? ?? '',
-        rawResult: j['raw'] as String?,
-        type: HistoryEntryType.values.firstWhere(
-          (v) => v.name == j['t'],
-          orElse: () => HistoryEntryType.calculation,
-        ),
-      );
+    expression: j['e'] as String? ?? '',
+    result: j['r'] as String? ?? '',
+    rawResult: j['raw'] as String?,
+    type: HistoryEntryType.values.firstWhere(
+      (v) => v.name == j['t'],
+      orElse: () => HistoryEntryType.calculation,
+    ),
+    lastModified: j['lm'] != null ? DateTime.tryParse(j['lm']) : null,
+  );
 }
 
 /// A named, user-defined function. Stored by AppState and inlined by
@@ -97,12 +96,16 @@ class UserFunction {
   /// Right-hand side of the definition. e.g. `x^2 + 1`.
   final String body;
 
+  final DateTime lastModified;
+
   UserFunction({
     required this.name,
     List<String>? params,
     String? paramVar,
     required this.body,
-  }) : params = params ?? [paramVar ?? 'x'];
+    DateTime? lastModified,
+  }) : params = params ?? [paramVar ?? 'x'],
+       lastModified = lastModified ?? DateTime.now().toUtc();
 
   /// First parameter — back-compat for single-arg call sites.
   String get paramVar => params.isEmpty ? 'x' : params.first;
@@ -110,17 +113,20 @@ class UserFunction {
   int get arity => params.length;
 
   Map<String, dynamic> toJson() => {
-        'n': name,
-        'p': params,
-        'b': body,
-      };
+    'n': name,
+    'p': params,
+    'b': body,
+    'lm': lastModified.toIso8601String(),
+  };
 
   static UserFunction fromJson(Map<String, dynamic> j) => UserFunction(
-        name: (j['n'] as String? ?? '').toLowerCase(),
-        params: (j['p'] as List?)?.cast<String>() ??
-            [j['v'] as String? ?? 'x'], // legacy single-param key
-        body: j['b'] as String? ?? '',
-      );
+    name: (j['n'] as String? ?? '').toLowerCase(),
+    params:
+        (j['p'] as List?)?.cast<String>() ??
+        [j['v'] as String? ?? 'x'], // legacy single-param key
+    body: j['b'] as String? ?? '',
+    lastModified: j['lm'] != null ? DateTime.tryParse(j['lm']) : null,
+  );
 }
 
 class AppState extends ChangeNotifier {
@@ -372,8 +378,9 @@ class AppState extends ChangeNotifier {
           final list = jsonDecode(notepadJson) as List<dynamic>;
           for (final raw in list) {
             if (raw is Map) {
-              final doc =
-                  NotepadDocument.fromJson(Map<String, dynamic>.from(raw));
+              final doc = NotepadDocument.fromJson(
+                Map<String, dynamic>.from(raw),
+              );
               if (doc.id.isNotEmpty) notepadDocuments[doc.id] = doc;
             }
           }
@@ -594,9 +601,9 @@ class AppState extends ChangeNotifier {
   void _persistNotepadDocs() {
     _prefs?.setString(
       _kNotepadDocs,
-      jsonEncode(notepadDocuments.values
-          .map((d) => d.toJson())
-          .toList(growable: false)),
+      jsonEncode(
+        notepadDocuments.values.map((d) => d.toJson()).toList(growable: false),
+      ),
     );
   }
 
@@ -637,8 +644,9 @@ class AppState extends ChangeNotifier {
     final removed = notepadDocuments.remove(id);
     if (removed == null) return;
     if (_currentNotepadDocId == id) {
-      _currentNotepadDocId =
-          notepadDocuments.isEmpty ? null : notepadDocuments.keys.first;
+      _currentNotepadDocId = notepadDocuments.isEmpty
+          ? null
+          : notepadDocuments.keys.first;
       _persistCurrentNotepadDoc();
     }
     _persistNotepadDocs();
@@ -689,8 +697,10 @@ class AppState extends ChangeNotifier {
     if (zoom != null) _scene3D.zoom = zoom;
     if (range != null) _scene3D.range = range;
     _scene3DPersistTimer?.cancel();
-    _scene3DPersistTimer =
-        Timer(const Duration(milliseconds: 500), _persistScene3D);
+    _scene3DPersistTimer = Timer(
+      const Duration(milliseconds: 500),
+      _persistScene3D,
+    );
     notifyListeners();
   }
 
@@ -950,18 +960,23 @@ class AppState extends ChangeNotifier {
     return s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
   }
 
-  void addHistoryEntry(String expression, String result,
-      {HistoryEntryType type = HistoryEntryType.calculation}) {
+  void addHistoryEntry(
+    String expression,
+    String result, {
+    HistoryEntryType type = HistoryEntryType.calculation,
+  }) {
     final formatted = formatNumber(result);
     history.insert(
-        0,
-        CalculationEntry(
-            expression: expression,
-            result: formatted,
-            // Keep the engine's unrounded string when formatting changed
-            // it, so `Ans` can chain at full precision.
-            rawResult: formatted == result ? null : result,
-            type: type));
+      0,
+      CalculationEntry(
+        expression: expression,
+        result: formatted,
+        // Keep the engine's unrounded string when formatting changed
+        // it, so `Ans` can chain at full precision.
+        rawResult: formatted == result ? null : result,
+        type: type,
+      ),
+    );
     while (history.length > _kHistoryCap) {
       history.removeLast();
     }
@@ -987,9 +1002,11 @@ class AppState extends ChangeNotifier {
   void _persistParameters() {
     _prefs?.setString(
       _kParameters,
-      jsonEncode(functionParameters.map(
-        (slot, params) => MapEntry(slot.toString(), params),
-      )),
+      jsonEncode(
+        functionParameters.map(
+          (slot, params) => MapEntry(slot.toString(), params),
+        ),
+      ),
     );
   }
 
@@ -1095,7 +1112,7 @@ class AppState extends ChangeNotifier {
   /// won't crash, it just leaves the unknown fields alone. Same for a
   /// payload from a newer release with extra keys we don't yet
   /// recognize.
-  String importFromJson(Map<String, dynamic> json) {
+  String importFromJson(Map<String, dynamic> json, {bool merge = false}) {
     final imported = <String>[];
 
     if (json['locale'] is String) {
@@ -1136,12 +1153,34 @@ class AppState extends ChangeNotifier {
       imported.add('exact integer mode');
     }
     if (json['history'] is List) {
-      history.clear();
+      if (!merge) {
+        history.clear();
+      }
+      final newEntries = <CalculationEntry>[];
       for (final raw in (json['history'] as List)) {
         if (raw is Map) {
-          history
-              .add(CalculationEntry.fromJson(Map<String, dynamic>.from(raw)));
+          newEntries.add(
+            CalculationEntry.fromJson(Map<String, dynamic>.from(raw)),
+          );
         }
+      }
+      if (merge) {
+        final allEntries = [...history, ...newEntries];
+        // Deduplicate by expression + result, taking newest
+        final dedup = <String, CalculationEntry>{};
+        for (final e in allEntries) {
+          final key = '${e.expression}|${e.result}';
+          if (!dedup.containsKey(key) ||
+              dedup[key]!.lastModified.isBefore(e.lastModified)) {
+            dedup[key] = e;
+          }
+        }
+        final merged = dedup.values.toList();
+        merged.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+        history.clear();
+        history.addAll(merged.take(_kHistoryCap));
+      } else {
+        history.addAll(newEntries.take(_kHistoryCap));
       }
       _persistHistory();
       imported.add('${history.length} history entries');
@@ -1169,35 +1208,55 @@ class AppState extends ChangeNotifier {
         if (slot == null || v is! Map) return;
         functionParameters[slot] = {
           for (final p in v.entries)
-            p.key.toString():
-                (p.value is num ? (p.value as num).toDouble() : 0.0)
+            p.key.toString(): (p.value is num
+                ? (p.value as num).toDouble()
+                : 0.0),
         };
       });
       _persistParameters();
       imported.add('parameters');
     }
     if (json['userFunctions'] is List) {
-      userFunctions.clear();
+      if (!merge) {
+        userFunctions.clear();
+      }
       for (final raw in (json['userFunctions'] as List)) {
         if (raw is Map) {
           final f = UserFunction.fromJson(Map<String, dynamic>.from(raw));
-          if (f.name.isNotEmpty) userFunctions[f.name] = f;
+          if (f.name.isNotEmpty) {
+            if (merge && userFunctions.containsKey(f.name)) {
+              if (userFunctions[f.name]!.lastModified.isBefore(
+                f.lastModified,
+              )) {
+                userFunctions[f.name] = f;
+              }
+            } else {
+              userFunctions[f.name] = f;
+            }
+          }
         }
       }
       _persistUserFunctions();
       imported.add('${userFunctions.length} user functions');
     }
     if (json['notepadDocuments'] is List) {
-      // Drop user docs but keep the Welcome sample (always recreated
-      // by load(); excluded from export). Import only user docs.
-      notepadDocuments.removeWhere((id, _) => id != kWelcomeNotepadDocId);
+      if (!merge) {
+        notepadDocuments.removeWhere((id, _) => id != kWelcomeNotepadDocId);
+      }
       var importedCount = 0;
       for (final raw in (json['notepadDocuments'] as List)) {
         if (raw is Map) {
           final doc = NotepadDocument.fromJson(Map<String, dynamic>.from(raw));
           if (doc.id.isEmpty || doc.id == kWelcomeNotepadDocId) continue;
-          notepadDocuments[doc.id] = doc;
-          importedCount++;
+          if (merge && notepadDocuments.containsKey(doc.id)) {
+            if (notepadDocuments[doc.id]!.updatedAt.isBefore(doc.updatedAt)) {
+              notepadDocuments[doc.id] = doc;
+              importedCount++;
+            }
+          } else {
+            notepadDocuments[doc.id] = doc;
+            importedCount++;
+          }
         }
       }
       _persistNotepadDocs();
@@ -1212,8 +1271,9 @@ class AppState extends ChangeNotifier {
     }
     if (json['scene3D'] is Map) {
       try {
-        _scene3D =
-            Scene3D.fromJson(Map<String, dynamic>.from(json['scene3D'] as Map));
+        _scene3D = Scene3D.fromJson(
+          Map<String, dynamic>.from(json['scene3D'] as Map),
+        );
         _persistScene3D();
         imported.add('3D scene');
       } catch (_) {
@@ -1238,13 +1298,15 @@ class AppState extends ChangeNotifier {
       'textScale': _textScale,
       'highContrast': _highContrast,
       'exactIntegerMode': _exactIntegerMode,
-      'userFunctions':
-          userFunctions.values.map((f) => f.toJson()).toList(growable: false),
+      'userFunctions': userFunctions.values
+          .map((f) => f.toJson())
+          .toList(growable: false),
       'history': history.map((e) => e.toJson()).toList(),
       'variables': Map<String, String>.from(userVariables),
       'functions': List<String>.from(graphFunctions),
-      'parameters': functionParameters
-          .map((slot, params) => MapEntry(slot.toString(), params)),
+      'parameters': functionParameters.map(
+        (slot, params) => MapEntry(slot.toString(), params),
+      ),
       // Notepad docs (excluding the always-recreated Welcome sample
       // — it's reseeded on import / reinstall from the static
       // constant in lib/engine/notepad.dart so its body stays in
