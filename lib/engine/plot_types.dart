@@ -152,6 +152,82 @@ class PlotTypes {
     return segs;
   }
 
+  /// Evaluates a 2D vector field [uExpr, vExpr] on a grid over the given bounding box.
+  /// Returns a list of segments representing the vector arrows.
+  static List<PlotSeg> vectorField(
+    String uExpr,
+    String vExpr, {
+    required double xMin,
+    required double xMax,
+    required double yMin,
+    required double yMax,
+    int grid = 20,
+  }) {
+    final nx = grid, ny = grid;
+    final dx = (xMax - xMin) / nx;
+    final dy = (yMax - yMin) / ny;
+    double? uEval(double x, double y) => NumericFallbackEvaluator.evalNumeric(uExpr, {'x': x, 'y': y});
+    double? vEval(double x, double y) => NumericFallbackEvaluator.evalNumeric(vExpr, {'x': x, 'y': y});
+
+    final segs = <PlotSeg>[];
+
+    // Compute max magnitude for normalization
+    double maxMag = 0.0;
+    final vectors = <({double x, double y, double u, double v, double mag})>[];
+
+    for (var i = 0; i <= nx; i++) {
+      for (var j = 0; j <= ny; j++) {
+        final x = xMin + i * dx;
+        final y = yMin + j * dy;
+        final u = uEval(x, y);
+        final v = vEval(x, y);
+        if (u != null && v != null && !u.isNaN && !v.isNaN) {
+          final mag = math.sqrt(u * u + v * v);
+          if (mag > maxMag) maxMag = mag;
+          vectors.add((x: x, y: y, u: u, v: v, mag: mag));
+        }
+      }
+    }
+
+    if (maxMag == 0) return segs;
+
+    // The maximum length of an arrow on screen in math units
+    final maxLen = math.min(dx, dy) * 0.8;
+
+    for (final vec in vectors) {
+      if (vec.mag < 1e-6) continue;
+      // Normalize and scale
+      final scale = (vec.mag / maxMag) * maxLen;
+      final du = (vec.u / vec.mag) * scale;
+      final dv = (vec.v / vec.mag) * scale;
+      
+      final x2 = vec.x + du;
+      final y2 = vec.y + dv;
+      
+      // Main arrow shaft
+      segs.add((x1: vec.x, y1: vec.y, x2: x2, y2: y2));
+      
+      // Arrow head (simple V-shape)
+      final angle = math.atan2(dv, du);
+      final headLen = scale * 0.3;
+      
+      segs.add((
+        x1: x2,
+        y1: y2,
+        x2: x2 - headLen * math.cos(angle - 0.5),
+        y2: y2 - headLen * math.sin(angle - 0.5)
+      ));
+      segs.add((
+        x1: x2,
+        y1: y2,
+        x2: x2 - headLen * math.cos(angle + 0.5),
+        y2: y2 - headLen * math.sin(angle + 0.5)
+      ));
+    }
+
+    return segs;
+  }
+
   // --- helpers ------------------------------------------------------------
 
   static double? _eval(String expr, Map<String, double> vars) =>

@@ -1,5 +1,7 @@
 PODS:
-  - crispembed (0.3.0)
+  - app_links (7.0.0):
+    - Flutter
+  - crispembed (0.17.11)
   - Flutter (1.0.0)
   - image_picker_ios (0.0.1):
     - Flutter
@@ -18,6 +20,7 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
+  - app_links (from `.symlinks/plugins/app_links/ios`)
   - crispembed (from `.symlinks/plugins/crispembed/ios`)
   - Flutter (from `Flutter`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
@@ -29,6 +32,8 @@ DEPENDENCIES:
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 EXTERNAL SOURCES:
+  app_links:
+    :path: ".symlinks/plugins/app_links/ios"
   crispembed:
     :path: ".symlinks/plugins/crispembed/ios"
   Flutter:
@@ -49,7 +54,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  crispembed: 30cb867c6487ea099d344b9d0707b2c986a3295a
+  app_links: a754cbec3c255bd4bbb4d236ecc06f28cd9a7ce8
+  crispembed: f6e1aef77b44395019e80e606e93d601c257497d
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e

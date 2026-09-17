@@ -7,7 +7,8 @@ class SyncService {
   static final SyncService instance = SyncService._();
   SyncService._();
 
-  bool get isConfigured => Supabase.instance.client.supabaseUrl != 'https://.supabase.co';
+  bool _configured = false;
+  bool get isConfigured => _configured;
   
   SupabaseClient get _client => Supabase.instance.client;
   User? get currentUser => isConfigured ? _client.auth.currentUser : null;
@@ -17,6 +18,7 @@ class SyncService {
     const key = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
     if (url.isNotEmpty && key.isNotEmpty) {
       await Supabase.initialize(url: url, anonKey: key);
+      _configured = true;
     }
   }
 

@@ -366,6 +366,16 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   /// Called whenever the input text changes.
+  Future<String> _computeLivePreviewAsync() async {
+    final text = _latexController.text;
+    if (text.isEmpty) return "";
+    try {
+      return _engine.evaluate(text);
+    } catch (_) {
+      return "";
+    }
+  }
+
   void _onInputChanged() {
     if (_justCalculated && _latexController.text.isNotEmpty) {
       final currentInput = _latexController.text.trim();
