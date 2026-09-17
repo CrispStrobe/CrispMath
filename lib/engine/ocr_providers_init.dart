@@ -17,13 +17,14 @@ import 'package:crispembed/crispembed.dart'
 
 import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
+import '../services/ocr_service.dart';
 import 'ocr_model_manager.dart';
 
 /// Adaptive thread count based on available cores.
 final int _ocrThreads = (Platform.numberOfProcessors ~/ 2).clamp(1, 8);
 
 /// Shared grayscale conversion for all on-device OCR providers.
-Float32List _toGrayscale(Uint8List imageBytes, int width, int height) {
+Float32List toGrayscaleForIsolate(Uint8List imageBytes, int width, int height) {
   final channels = imageBytes.length ~/ (width * height);
   final gray = Float32List(width * height);
   for (var i = 0; i < width * height; i++) {
@@ -42,15 +43,15 @@ Float32List _toGrayscale(Uint8List imageBytes, int width, int height) {
 
 /// Generic interface for any CrispEmbed OCR model that has
 /// recognizeGray(Float32List, int, int) → String? and dispose().
-abstract class _OcrBackend {
+abstract class OcrBackendBase {
   String? recognizeGray(Float32List pixels, int width, int height);
   void dispose();
 }
 
 /// Wraps CrispEmbedOcr (printed math — pix2tex / TrOCR).
-class _Pix2TexBackend implements _OcrBackend {
+class Pix2TexBackend implements OcrBackendBase {
   late final CrispEmbedOcr _ocr;
-  _Pix2TexBackend(String path) {
+  Pix2TexBackend(String path) {
     _ocr = CrispEmbedOcr(path, nThreads: _ocrThreads);
   }
   @override
@@ -62,9 +63,9 @@ class _Pix2TexBackend implements _OcrBackend {
 
 /// Wraps CrispEmbedOcr for handwritten math models (HMER/BTTR).
 /// The C++ layer auto-detects model architecture from the GGUF file.
-class _HandwrittenBackend implements _OcrBackend {
+class HandwrittenBackend implements OcrBackendBase {
   late final CrispEmbedOcr _ocr;
-  _HandwrittenBackend(String path) {
+  HandwrittenBackend(String path) {
     _ocr = CrispEmbedOcr(path, nThreads: _ocrThreads);
   }
   @override
@@ -79,8 +80,8 @@ class _HandwrittenBackend implements _OcrBackend {
 class _CrispEmbedProvider implements OcrProvider {
   final String _modelPath;
   final String _name;
-  final _OcrBackend Function(String path) _factory;
-  _OcrBackend? _backend;
+  final OcrBackendBase Function(String path) _factory;
+  OcrBackendBase? _backend;
 
   _CrispEmbedProvider(this._modelPath, this._name, this._factory);
 
@@ -103,11 +104,8 @@ class _CrispEmbedProvider implements OcrProvider {
     int height,
   ) async {
     try {
-      _backend ??= _tryInit();
-      if (_backend == null) return null;
-
-      final gray = _toGrayscale(imageBytes, width, height);
-      final latex = _backend!.recognizeGray(gray, width, height);
+      final op = OcrOp('math_gray', _modelPath, imageBytes, width, height);
+      final latex = await OcrService.recognizeAsync(op);
       if (latex == null || latex.isEmpty) return null;
 
       // All models output LaTeX — convert to engine syntax.
@@ -124,7 +122,7 @@ class _CrispEmbedProvider implements OcrProvider {
     }
   }
 
-  _OcrBackend? _tryInit() {
+  OcrBackendBase? _tryInit() {
     try {
       return _factory(_modelPath);
     } catch (e) {
@@ -161,11 +159,8 @@ class _CrispEmbedVlmProvider implements OcrProvider {
     int height,
   ) async {
     try {
-      _ocr ??= _tryInit();
-      if (_ocr == null) return null;
-
-      final channels = imageBytes.length ~/ (width * height);
-      final latex = _ocr!.recognizeRaw(imageBytes, width, height, channels);
+      final op = OcrOp('vlm_raw', _modelPath, imageBytes, width, height);
+      final latex = await OcrService.recognizeAsync(op);
       if (latex == null || latex.isEmpty) return null;
 
       final engineSyntax = latexToEngineSyntax(latex);
@@ -523,16 +518,16 @@ Future<void> initOcrProviders() async {
     final path = pathMap[model.id];
     if (path != null) {
       final String label;
-      final _OcrBackend Function(String) factory;
+      final OcrBackendBase Function(String) factory;
       if (model.id.startsWith('posformer-')) {
         label = 'PosFormer (handwritten, 57%)';
-        factory = (p) => _HandwrittenBackend(p);
+        factory = (p) => HandwrittenBackend(p);
       } else if (model.id.startsWith('bttr-')) {
         label = 'BTTR (handwritten, 49%)';
-        factory = (p) => _HandwrittenBackend(p);
+        factory = (p) => HandwrittenBackend(p);
       } else if (model.id.startsWith('hmer-')) {
         label = 'HMER (handwritten, 39%)';
-        factory = (p) => _HandwrittenBackend(p);
+        factory = (p) => HandwrittenBackend(p);
       } else {
         continue;
       }
@@ -548,7 +543,7 @@ Future<void> initOcrProviders() async {
       final provider = _CrispEmbedProvider(
         path,
         'PP-FormulaNet-L (printed, 181M)',
-        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
+        (p) => Pix2TexBackend(p), // same FFI — auto-detected from GGUF
       );
       OcrProviders.register(provider);
       OcrProviders.active = provider;
@@ -563,7 +558,7 @@ Future<void> initOcrProviders() async {
       final provider = _CrispEmbedProvider(
         path,
         'MixTex (Chinese+English)',
-        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
+        (p) => Pix2TexBackend(p), // same FFI — auto-detected from GGUF
       );
       OcrProviders.register(provider);
       break;
@@ -577,7 +572,7 @@ Future<void> initOcrProviders() async {
       final provider = _CrispEmbedProvider(
         path,
         'Texo (printed, BLEU 0.90)',
-        (p) => _Pix2TexBackend(p), // same FFI — auto-detected from GGUF
+        (p) => Pix2TexBackend(p), // same FFI — auto-detected from GGUF
       );
       OcrProviders.register(provider);
       OcrProviders.active = provider;
@@ -593,7 +588,7 @@ Future<void> initOcrProviders() async {
         final provider = _CrispEmbedProvider(
           path,
           'pix2tex (printed)',
-          (p) => _Pix2TexBackend(p),
+          (p) => Pix2TexBackend(p),
         );
         OcrProviders.register(provider);
         OcrProviders.active = provider;

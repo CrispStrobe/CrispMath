@@ -195,6 +195,10 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
         return t.unitDimVelocity;
       case UnitDimension.angle:
         return t.unitDimAngle;
+      case UnitDimension.area:
+        return "Area"; // No translation key needed immediately
+      case UnitDimension.volume:
+        return "Volume";
     }
   }
 }
