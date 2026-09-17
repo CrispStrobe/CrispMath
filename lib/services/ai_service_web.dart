@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+// ignore: unused_import
 import 'package:onnx_runtime_dart/onnx_runtime_dart.dart' deferred as onnx;
 import 'ai_service_interface.dart';
 
