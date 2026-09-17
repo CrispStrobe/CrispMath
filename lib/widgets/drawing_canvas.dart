@@ -139,7 +139,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return RepaintBoundary(child: GestureDetector(
       onPanStart: (d) {
         setState(() {
           _current = Stroke(
@@ -151,7 +151,10 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       },
       onPanUpdate: (d) {
         if (_current != null) {
-          setState(() => _current!.addPoint(d.localPosition));
+          final last = _current!.points.last;
+          if ((d.localPosition - last).distance > 2.0) { // Simple stroke point reduction
+            setState(() => _current!.addPoint(d.localPosition));
+          }
         }
       },
       onPanEnd: (_) {
@@ -173,7 +176,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 

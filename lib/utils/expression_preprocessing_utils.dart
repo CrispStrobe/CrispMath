@@ -86,7 +86,25 @@ class ExpressionPreprocessingUtils {
     return u >= 48 && u <= 57;
   }
 
+    static final _nativeLruCache = <String, String>{};
+  static const _maxNativeCacheSize = 200;
+
   static String preprocessNativeExpression(String expression) {
+    if (_nativeLruCache.containsKey(expression)) {
+      final cached = _nativeLruCache.remove(expression)!;
+      _nativeLruCache[expression] = cached;
+      return cached;
+    }
+
+    final result = _preprocessNativeExpressionInternal(expression);
+    _nativeLruCache[expression] = result;
+    if (_nativeLruCache.length > _maxNativeCacheSize) {
+      _nativeLruCache.remove(_nativeLruCache.keys.first);
+    }
+    return result;
+  }
+
+  static String _preprocessNativeExpressionInternal(String expression) {
     var p = expression;
 
     // Percentage operations — must run before any other rewrite because

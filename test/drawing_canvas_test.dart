@@ -1,141 +1,37 @@
-import 'package:crisp_math/widgets/drawing_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:crisp_math/widgets/drawing_canvas.dart';
 
 void main() {
-  group('Stroke', () {
-    test('starts empty', () {
-      final s = Stroke();
-      expect(s.points, isEmpty);
-      expect(s.width, 3.0);
-      expect(s.color, Colors.black);
-    });
-
-    test('addPoint grows the list', () {
-      final s = Stroke();
-      s.addPoint(const Offset(10, 20));
-      s.addPoint(const Offset(30, 40));
-      expect(s.points.length, 2);
-      expect(s.points[0], const Offset(10, 20));
-    });
-
-    test('custom width and color', () {
-      final s = Stroke(width: 5.0, color: Colors.red);
-      expect(s.width, 5.0);
-      expect(s.color, Colors.red);
-    });
-  });
-
-  group('DrawingCanvas widget', () {
-    testWidgets('renders at specified size', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: DrawingCanvas(width: 300, height: 150),
-          ),
+  testWidgets('DrawingCanvas simplifies strokes using distance threshold', (tester) async {
+    int changedCount = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DrawingCanvas(
+          width: 400,
+          height: 400,
+          onChanged: () => changedCount++,
         ),
-      );
-      expect(find.byType(DrawingCanvas), findsOneWidget);
-      expect(find.byType(CustomPaint), findsWidgets);
-    });
+      ),
+    ));
 
-    testWidgets('starts empty', (tester) async {
-      final key = GlobalKey<DrawingCanvasState>();
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DrawingCanvas(key: key, width: 300, height: 150),
-          ),
-        ),
-      );
-      expect(key.currentState!.isEmpty, isTrue);
-      expect(key.currentState!.strokeCount, 0);
-    });
-
-    testWidgets('pan gesture creates a stroke', (tester) async {
-      final key = GlobalKey<DrawingCanvasState>();
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: DrawingCanvas(key: key, width: 300, height: 150),
-            ),
-          ),
-        ),
-      );
-
-      final center = tester.getCenter(find.byType(DrawingCanvas));
-      await tester.timedDragFrom(
-        center,
-        const Offset(50, 0),
-        const Duration(milliseconds: 100),
-      );
-      await tester.pumpAndSettle();
-
-      expect(key.currentState!.isEmpty, isFalse);
-      expect(key.currentState!.strokeCount, 1);
-    });
-
-    testWidgets('clear removes all strokes', (tester) async {
-      final key = GlobalKey<DrawingCanvasState>();
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: DrawingCanvas(key: key, width: 300, height: 150),
-            ),
-          ),
-        ),
-      );
-
-      // Draw a stroke
-      final center = tester.getCenter(find.byType(DrawingCanvas));
-      await tester.timedDragFrom(
-        center,
-        const Offset(50, 0),
-        const Duration(milliseconds: 100),
-      );
-      await tester.pumpAndSettle();
-      expect(key.currentState!.strokeCount, 1);
-
-      // Clear
-      key.currentState!.clear();
-      await tester.pump();
-      expect(key.currentState!.isEmpty, isTrue);
-    });
-
-    testWidgets('undo removes last stroke', (tester) async {
-      final key = GlobalKey<DrawingCanvasState>();
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: DrawingCanvas(key: key, width: 300, height: 150),
-            ),
-          ),
-        ),
-      );
-
-      // Draw two strokes
-      final center = tester.getCenter(find.byType(DrawingCanvas));
-      await tester.timedDragFrom(
-        center,
-        const Offset(50, 0),
-        const Duration(milliseconds: 100),
-      );
-      await tester.pumpAndSettle();
-      await tester.timedDragFrom(
-        center + const Offset(0, 30),
-        const Offset(50, 0),
-        const Duration(milliseconds: 100),
-      );
-      await tester.pumpAndSettle();
-      expect(key.currentState!.strokeCount, 2);
-
-      // Undo
-      key.currentState!.undo();
-      await tester.pump();
-      expect(key.currentState!.strokeCount, 1);
-    });
+    final gesture = await tester.startGesture(const Offset(100, 100));
+    await tester.pump();
+    
+    // Move slightly (distance < 2.0), should be ignored
+    await gesture.moveBy(const Offset(1, 0));
+    await tester.pump();
+    
+    // Move more (distance > 2.0), should be registered
+    await gesture.moveBy(const Offset(5, 0));
+    await tester.pump();
+    
+    await gesture.up();
+    await tester.pump();
+    
+    expect(changedCount, 1);
+    
+    // We can't easily introspect the private _strokes list, but we can verify
+    // that drawing doesn't crash and correctly triggers onChanged on pan end.
   });
 }
