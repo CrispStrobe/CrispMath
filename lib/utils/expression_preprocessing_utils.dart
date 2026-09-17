@@ -951,6 +951,18 @@ class ExpressionPreprocessingUtils {
 
   /// Cleans up SymEngine's complex-number representation, stray operators,
   /// and Python-style exponents in numeric/symbolic results.
+  static final _reConstI = RegExp(r'(\d+)\s*\*\s*I\b');
+  static final _reBareI = RegExp(r'\bI\b');
+  static final _reSpace = RegExp(r'\s+');
+  static final _rePlus = RegExp(r'\s*\+\s*');
+  static final _reMinusBinary = RegExp(r'([\w\)\]\}])\s*-\s*(?=\S)');
+  static final _reMult = RegExp(r'\s*\*\s*');
+
+  static final _reMinusZeroI = RegExp(r'\s*\+\s*-0(\.0*)?\s*\*?\s*I\b');
+  static final _rePlusZeroI = RegExp(r'\s*\+\s*0(\.0*)?\s*\*?\s*I\b');
+  static final _reMultZeroI = RegExp(r'\s*\+\s*0\.0\s*\*\s*I\s*\*\s*\d+');
+  static final _reBareZeroI = RegExp(r'^\s*0(\.0*)?\s*\*\s*I\s*$');
+
   static String normalizeComplexResult(String result) {
     if (result.isEmpty) return result;
 
@@ -958,10 +970,10 @@ class ExpressionPreprocessingUtils {
 
     // Drop zero imaginary parts.
     normalized = normalized
-        .replaceAll(RegExp(r'\s*\+\s*-0(\.0*)?\s*\*?\s*I\b'), '')
-        .replaceAll(RegExp(r'\s*\+\s*0(\.0*)?\s*\*?\s*I\b'), '')
-        .replaceAll(RegExp(r'\s*\+\s*0\.0\s*\*\s*I\s*\*\s*\d+'), '')
-        .replaceAll(RegExp(r'^\s*0(\.0*)?\s*\*\s*I\s*$'), '0');
+        .replaceAll(_reMinusZeroI, '')
+        .replaceAll(_rePlusZeroI, '')
+        .replaceAll(_reMultZeroI, '')
+        .replaceAll(_reBareZeroI, '0');
 
     // One reading order for every symbolic result, whichever backend
     // produced it — see `cas_result_format.dart`. Runs here, after the
@@ -976,8 +988,8 @@ class ExpressionPreprocessingUtils {
     // back-references; pass-through would otherwise emit the
     // literal text `\1i` instead of the captured digits.
     normalized = normalized
-        .replaceAllMapped(RegExp(r'(\d+)\s*\*\s*I\b'), (m) => '${m.group(1)}i')
-        .replaceAll(RegExp(r'\bI\b'), 'i');
+        .replaceAllMapped(_reConstI, (m) => '${m.group(1)}i')
+        .replaceAll(_reBareI, 'i');
 
     // Normalize spacing.
     //
@@ -1003,8 +1015,8 @@ class ExpressionPreprocessingUtils {
         .replaceAllMapped(RegExp(r'(\d[eE])-(?=\d)'), (m) => '${m[1]}$eMinus');
 
     normalized = normalized
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .replaceAll(RegExp(r'\s*\+\s*'), ' + ');
+        .replaceAll(_reSpace, ' ')
+        .replaceAll(_rePlus, ' + ');
     // Use a lookahead for the trailing `\S` so it isn't consumed.
     // The old form `(\S)\s*-\s*(\S)` would gobble the right
     // operand and leave a chained `a-b-c` half-spaced as
@@ -1018,10 +1030,10 @@ class ExpressionPreprocessingUtils {
     // `(-1 + x)` as `( - 1 + x)`.
     normalized = normalized
         .replaceAllMapped(
-          RegExp(r'([\w\)\]\}])\s*-\s*(?=\S)'),
+          _reMinusBinary,
           (m) => '${m[1]} - ',
         )
-        .replaceAll(RegExp(r'\s*\*\s*'), '*')
+        .replaceAll(_reMult, '*')
         .trim();
 
     // Restore the exponent signs protected above.

@@ -244,16 +244,22 @@ class CalculatorEngine {
     }
   }
 
+  static final _reZeroI = RegExp(r'\s*[+\-]\s*0(\.0*)?\s*\*?\s*I\b');
+  static final _reImag = RegExp(r'\s*[+\-]\s*[^+\-]*I[^+\-]*');
+  static final _reSpace = RegExp(r'\s+');
+  static final _reEmptyOp = RegExp(r'^[\+\-\*\s]*$');
+  static final _reNumberExtract = RegExp(r'([+\-]?\d*\.?\d+)');
+
   String _extractRealPartForGraphing(String complexResult) {
     if (complexResult.isEmpty) return complexResult;
 
     var result = complexResult.trim();
-    result = result.replaceAll(RegExp(r'\s*[+\-]\s*0(\.0*)?\s*\*?\s*I\b'), '');
-    result = result.replaceAll(RegExp(r'\s*[+\-]\s*[^+\-]*I[^+\-]*'), '');
-    result = result.replaceAll(RegExp(r'\s+'), ' ').trim();
+    result = result.replaceAll(_reZeroI, '');
+    result = result.replaceAll(_reImag, '');
+    result = result.replaceAll(_reSpace, ' ').trim();
 
-    if (result.isEmpty || RegExp(r'^[\+\-\*\s]*$').hasMatch(result)) {
-      final match = RegExp(r'([+\-]?\d*\.?\d+)').firstMatch(complexResult);
+    if (result.isEmpty || _reEmptyOp.hasMatch(result)) {
+      final match = _reNumberExtract.firstMatch(complexResult);
       result = match?.group(1) ?? '0';
     }
     return result;
