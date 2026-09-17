@@ -31,6 +31,7 @@ import 'screens/graphing_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/notepad_screen.dart';
 import 'services/crash_reporter.dart';
+import 'services/sync_service.dart';
 import 'utils/share_link.dart';
 import 'widgets/perf_overlay.dart';
 import 'services/native_licenses.dart';
@@ -38,6 +39,7 @@ import 'widgets/export_data_dialog.dart';
 import 'widgets/import_data_dialog.dart';
 import 'widgets/onboarding_tour.dart';
 import 'widgets/user_functions_dialog.dart';
+import 'widgets/sync_dialog.dart';
 import 'widgets/function_reference_dialog.dart';
 import 'widgets/worked_examples_dialog.dart';
 import 'widgets/web_unsupported_banner.dart';
@@ -68,6 +70,7 @@ void main() async {
   CrashReporter.instance.install();
 
   await AppState().load();
+  await SyncService.instance.init();
   // Register native (SymEngine / GMP / MPFR / MPC / FLINT) license texts so
   // they appear in `showLicensePage` alongside the pub deps.
   // Fire license registration and OCR provider init in the background —
@@ -818,6 +821,22 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               if (CrashReporter.instance.hasReports) const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading:
+                      const Icon(Icons.cloud_sync, semanticLabel: 'Sync'),
+                  title: const Text('Cloud Sync'),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: 'Open'),
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => SyncDialog(appState: appState),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
               Card(
                 child: ListTile(
                   leading:
