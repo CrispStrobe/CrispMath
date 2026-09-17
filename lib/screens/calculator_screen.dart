@@ -327,13 +327,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
     if (_latexCache.length > _kLatexCacheCap) {
       _latexCache.remove(_latexCache.keys.first);
     }
-    return Math.tex(
-      latex,
-      textStyle: TextStyle(fontSize: 20, color: Colors.grey[500]),
-      onErrorFallback: (err) => Text(
-        expression,
-        style: TextStyle(fontSize: 20, color: Colors.grey[500]),
-        textAlign: TextAlign.right,
+    // Isolate Math.tex rendering trees so blinking cursors and active inputs
+    // don't force a repaint of complex history formulas.
+    return RepaintBoundary(
+      child: Math.tex(
+        latex,
+        textStyle: TextStyle(fontSize: 20, color: Colors.grey[500]),
+        onErrorFallback: (err) => Text(
+          expression,
+          style: TextStyle(fontSize: 20, color: Colors.grey[500]),
+          textAlign: TextAlign.right,
+        ),
       ),
     );
   }

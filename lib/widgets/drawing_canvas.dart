@@ -16,14 +16,29 @@ class Stroke {
   final List<Offset> points;
   final double width;
   final Color color;
+  final Path path = Path();
 
   Stroke({
     List<Offset>? points,
     this.width = 3.0,
     this.color = Colors.black,
-  }) : points = points ?? [];
+  }) : points = points ?? [] {
+    if (this.points.isNotEmpty) {
+      path.moveTo(this.points[0].dx, this.points[0].dy);
+      for (var i = 1; i < this.points.length; i++) {
+        path.lineTo(this.points[i].dx, this.points[i].dy);
+      }
+    }
+  }
 
-  void addPoint(Offset p) => points.add(p);
+  void addPoint(Offset p) {
+    if (points.isEmpty) {
+      path.moveTo(p.dx, p.dy);
+    } else {
+      path.lineTo(p.dx, p.dy);
+    }
+    points.add(p);
+  }
 }
 
 /// Drawing canvas widget. Collects pen strokes and renders them.
