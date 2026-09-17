@@ -56,6 +56,12 @@ Linux, and Windows.
 - **Export/Import:** PDF, Markdown, LaTeX, JSON (full state), CSV (history).
   Shareable URL links (`?expr=...&tab=N`).
 
+## Cloud Sync & Optional ONNX Runtime (v1.1.1)
+- **Supabase Cloud Sync:** Sync AppState (variables, history, notepad, graphs) seamlessly across devices. Features robust merging to prevent data loss.
+- **Polymorphic AI (ONNX):** Optional hardware-accelerated math NLP and Vision AI via ONNX Runtime (CoreML/NNAPI on mobile, falling back to pure-Dart `onnx_runtime_dart` on Web). The module is deferred and loaded on-demand to save app size.
+- **Advanced Graphing:** Vector Fields and plotting enhancements.
+- **Notepad PDF Export:** Print or save complete interactive math sessions to PDF.
+
 ## Architecture
 
 Three layers:
@@ -143,7 +149,7 @@ The native side lives in the `symbolic_math_bridge` plugin (separate
 repository, git-pinned in `pubspec.yaml`). See its README for the SymEngine
 build.
 
-## Platform support (v1.0.0)
+## Platform support (v1.1.1)
 
 | Platform | SymEngine bridge | Notes |
 |---|---|---|
