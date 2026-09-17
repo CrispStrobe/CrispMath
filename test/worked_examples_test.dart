@@ -53,10 +53,9 @@ void main() {
       // arithmetic, special functions, evalf). Raised to 70 for the
       // cryptarithm discovery entry (SEND+MORE=MONEY). The earlier
       // "past 60 → grow category-grouping" note is satisfied: the dialog
-      // already offers per-category filter chips + substring search, so
-      // the flat ListView no longer forces a long manual scroll.
+      // round 100+: mass generation of new examples to cover all domains.
       expect(WorkedExamples.all.length, greaterThanOrEqualTo(12));
-      expect(WorkedExamples.all.length, lessThanOrEqualTo(70));
+      expect(WorkedExamples.all.length, lessThanOrEqualTo(300));
     });
 
     test('round 69: constraints category surfaces Killer + DSL entries', () {

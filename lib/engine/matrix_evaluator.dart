@@ -31,6 +31,8 @@ class MatrixEvaluator {
     // 1. Unary calls: det / inv / transpose / rref of Matrix(...)
     for (final op in const [
       'det',
+      'trace',
+
       'inv',
       'transpose',
       'rref',
@@ -46,6 +48,11 @@ class MatrixEvaluator {
     }
 
     // 2. Binary ops at top level: Matrix(...) + Matrix(...) etc.
+    final power = _splitPower(s);
+    if (power != null) {
+      return _applyBinary(power.lhs, power.op, power.rhs, engine);
+    }
+
     final binary = _splitBinary(s);
     if (binary != null) {
       return _applyBinary(binary.lhs, binary.op, binary.rhs, engine);
@@ -68,6 +75,17 @@ class MatrixEvaluator {
   /// Find a top-level `+`, `-`, or `*` between two `Matrix(...)` literals.
   /// Returns null if no such split exists. Respects nested parens/brackets
   /// so `Matrix([[1,-2],...])` doesn't get sliced on the inner minus.
+  static _Binary? _splitPower(String s) {
+    if (!s.contains('^')) return null;
+    final idx = s.lastIndexOf('^');
+    final lhs = s.substring(0, idx).trim();
+    final rhs = s.substring(idx + 1).trim();
+    if (_looksLikeMatrix(lhs)) {
+      return _Binary(lhs, '^', rhs);
+    }
+    return null;
+  }
+
   static _Binary? _splitBinary(String s) {
     var depth = 0;
     for (var i = 0; i < s.length; i++) {
@@ -174,6 +192,9 @@ class MatrixEvaluator {
           return m.getDeterminant();
         case 'inv':
           return _format(m.inverse());
+        case 'trace':
+          return _trace(m, engine);
+
         case 'transpose':
           return _format(_transpose(m, engine));
         case 'rref':
@@ -188,9 +209,33 @@ class MatrixEvaluator {
     return 'Error: $op not implemented';
   }
 
+  static String _trace(SymEngineMatrix m, CalculatorEngine engine) {
+    if (m.rows != m.cols) return 'Error: trace requires a square matrix';
+    if (m.rows == 0) return '0';
+    String sum = m.get(0, 0);
+    for (var i = 1; i < m.rows; i++) {
+      sum = '$sum + ${m.get(i, i)}';
+    }
+    return engine.evaluate(sum);
+  }
+
   static String _applyBinary(
       String lhsLit, String op, String rhsLit, CalculatorEngine engine) {
     final a = _buildMatrix(lhsLit, engine);
+    if (op == '^') {
+      if (a == null) return 'Error: invalid matrix literal';
+      final pStr = rhsLit.replaceAll('(', '').replaceAll(')', '').trim();
+      final power = int.tryParse(pStr);
+      if (power == null) return 'Error: matrix power must be an integer';
+      try {
+        if (power == -1) return _format(a.inverse());
+        if (power == 2) return _format(a * a);
+        if (power == 3) return _format(a * a * a);
+        return 'Error: unsupported matrix power $power';
+      } catch (e) {
+        return 'Error: matrix ^ failed: $e';
+      }
+    }
     final b = _buildMatrix(rhsLit, engine);
     if (a == null || b == null) return 'Error: invalid matrix literal';
     try {

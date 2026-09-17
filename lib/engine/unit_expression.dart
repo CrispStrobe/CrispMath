@@ -444,6 +444,30 @@ class UnitExpressionEvaluator {
     'tons': 't',
     'degree': '°',
     'degrees': '°',
+    'degC': '°C',
+    'celsius': '°C',
+    'degF': '°F',
+    'fahrenheit': '°F',
+    'gallon': 'gal',
+    'gallons': 'gal',
+    'acres': 'acre',
+    'm^2': 'm²',
+    'cm^2': 'cm²',
+    'km^2': 'km²',
+    'ft^2': 'sq ft',
+    'in^2': 'sq in',
+    'mi^2': 'sq mi',
+    'm^3': 'm³',
+    'cm^3': 'cm³',
+    'ft^3': 'cu ft',
+    'in^3': 'cu in',
+
+    'litre': 'L',
+    'liters': 'L',
+    'liter': 'L',
+    'hectare': 'ha',
+    'hectares': 'ha',
+
   };
 
   static _Consumed? _consumeQuantity(List<_Token> toks, int i) {

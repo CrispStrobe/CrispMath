@@ -96,6 +96,14 @@ class ExpressionPreprocessingUtils {
     // Expand vector calls — `dot([1,2,3], [4,5,6])` → `(1*4 + 2*5 + 3*6)` etc.
     // Done first so subsequent rules see plain arithmetic, not call syntax.
     p = VectorMath.preprocess(p);
+    
+    // Support nCr and nPr combinatorics shortcuts
+    p = p.replaceAllMapped(RegExp(r'\bnCr\s*\(([^,]+),([^)]+)\)'), (m) {
+      return 'binomial(${m.group(1)}, ${m.group(2)})';
+    });
+    p = p.replaceAllMapped(RegExp(r'\bnPr\s*\(([^,]+),([^)]+)\)'), (m) {
+      return '(binomial(${m.group(1)}, ${m.group(2)}) * factorial(${m.group(2)}))';
+    });
 
     // Custom matrix format "[1,2; 3,4]" -> SymEngine "Matrix([[1, 2],[3, 4]])".
     // Spaces after commas keep the German-comma rule below from rewriting

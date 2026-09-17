@@ -14,7 +14,7 @@
 // single dimension category, which covers ~95% of homework and
 // engineering quick-conversion use cases.
 
-enum UnitDimension { length, time, mass, temperature, velocity, angle }
+enum UnitDimension { length, area, volume, time, mass, temperature, velocity, angle }
 
 /// Vector of integer exponents over the SI base dimensions we track
 /// (length, mass, time, temperature). V5 composite-dimension arithmetic
@@ -97,6 +97,10 @@ class Dimensions {
   /// Maps a single-dimension [UnitDimension] to its [Dimensions] vector.
   static Dimensions of(UnitDimension d) {
     switch (d) {
+      case UnitDimension.area:
+        return const Dimensions(length: 2);
+      case UnitDimension.volume:
+        return const Dimensions(length: 3);
       case UnitDimension.length:
         return const Dimensions(length: 1);
       case UnitDimension.mass:
@@ -340,6 +344,30 @@ class UnitCatalog {
     ],
 
     // === Time (base: second) =============================================
+    // === Area (base: m²) =================================================
+    UnitDimension.area: [
+      Unit(symbol: 'm²', name: 'square metre', dimension: UnitDimension.area, scale: 1.0),
+      Unit(symbol: 'cm²', name: 'square centimetre', dimension: UnitDimension.area, scale: 0.0001),
+      Unit(symbol: 'km²', name: 'square kilometre', dimension: UnitDimension.area, scale: 1e6),
+      Unit(symbol: 'ha', name: 'hectare', dimension: UnitDimension.area, scale: 10000.0),
+      Unit(symbol: 'acre', name: 'acre', dimension: UnitDimension.area, scale: 4046.8564224),
+      Unit(symbol: 'sq ft', name: 'square foot', dimension: UnitDimension.area, scale: 0.09290304),
+      Unit(symbol: 'sq in', name: 'square inch', dimension: UnitDimension.area, scale: 0.00064516),
+      Unit(symbol: 'sq mi', name: 'square mile', dimension: UnitDimension.area, scale: 2589988.110336),
+    ],
+    // === Volume (base: m³) ===============================================
+    UnitDimension.volume: [
+      Unit(symbol: 'm³', name: 'cubic metre', dimension: UnitDimension.volume, scale: 1.0),
+      Unit(symbol: 'cm³', name: 'cubic centimetre', dimension: UnitDimension.volume, scale: 1e-6),
+      Unit(symbol: 'L', name: 'litre', dimension: UnitDimension.volume, scale: 0.001),
+      Unit(symbol: 'mL', name: 'millilitre', dimension: UnitDimension.volume, scale: 1e-6),
+      Unit(symbol: 'gal', name: 'gallon (US)', dimension: UnitDimension.volume, scale: 0.003785411784),
+      Unit(symbol: 'qt', name: 'quart (US)', dimension: UnitDimension.volume, scale: 0.000946352946),
+      Unit(symbol: 'pt', name: 'pint (US)', dimension: UnitDimension.volume, scale: 0.000473176473),
+      Unit(symbol: 'fl oz', name: 'fluid ounce', dimension: UnitDimension.volume, scale: 0.0000295735295625),
+      Unit(symbol: 'cu ft', name: 'cubic foot', dimension: UnitDimension.volume, scale: 0.028316846592),
+      Unit(symbol: 'cu in', name: 'cubic inch', dimension: UnitDimension.volume, scale: 0.000016387064),
+    ],
     UnitDimension.time: [
       Unit(
           symbol: 's',
