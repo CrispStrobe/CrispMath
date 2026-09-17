@@ -120,12 +120,27 @@ void _workerEntry(SendPort mainSendPort) {
   CrispEmbedOcr? _ocr;
   CrispGraniteVision? _granite;
   String? _loadedModelPath;
+  Timer? _idleUnloadTimer;
+
+  void _scheduleUnload() {
+    _idleUnloadTimer?.cancel();
+    // Free the 1GB-3GB VLM models if no math has been captured for 60 seconds.
+    // This is a crucial mobile memory optimization.
+    _idleUnloadTimer = Timer(const Duration(seconds: 60), () {
+      _ocr?.dispose();
+      _ocr = null;
+      _granite?.dispose();
+      _granite = null;
+      _loadedModelPath = null;
+    });
+  }
 
   commandPort.listen((message) {
     if (message is _WorkerRequest) {
       final op = message.op;
 
       try {
+        _idleUnloadTimer?.cancel();
         // If we switch models, dispose the old one
         if (_loadedModelPath != op.modelPath) {
           _ocr?.dispose();
@@ -158,9 +173,11 @@ void _workerEntry(SendPort mainSendPort) {
         }
 
         mainSendPort.send(_WorkerResponse(message.id, result));
+        _scheduleUnload();
       } catch (e) {
         print("OCR Worker Error: \$e");
         mainSendPort.send(_WorkerResponse(message.id, null));
+        _scheduleUnload();
       }
     }
   });

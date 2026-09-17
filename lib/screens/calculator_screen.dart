@@ -93,6 +93,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   bool _historySearchOpen = false;
   String _debouncedSearchQuery = '';
   Timer? _historySearchDebounce;
+  Timer? _livePreviewDebounce;
   final TextEditingController _historySearchController =
       TextEditingController();
   // Dedicated focus node for the history search field. Without this the
@@ -152,6 +153,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   void _onHistorySearchChanged() {
     _historySearchDebounce?.cancel();
+    _livePreviewDebounce?.cancel();
     _historySearchDebounce = Timer(const Duration(milliseconds: 200), () {
       if (!mounted) return;
       setState(() {
@@ -364,14 +366,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
     if (_justCalculated && _latexController.text.isNotEmpty) {
       final currentInput = _latexController.text.trim();
 
-      // Correctly handle LaTeX operators like \cdot
-      // Define which LaTeX commands should be treated as simple operators for Auto-Ans
       final isLatexOperator = currentInput.startsWith(r'\cdot') ||
           currentInput.startsWith(r'\times') ||
           currentInput.startsWith(r'\div');
 
-      // Trigger Auto-Ans if the input is a non-LaTeX operator, OR if it's one of the approved LaTeX operators.
-      // This prevents triggering on templates like \frac{}{}
       if ((!currentInput.startsWith('\\') && _isOperator(currentInput)) ||
           isLatexOperator) {
         _latexController.removeListener(_onInputChanged);
@@ -383,13 +381,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
         return;
       }
 
-      // For any other input, clear the flag
       setState(() => _justCalculated = false);
     }
 
-    final preview = _computeLivePreview();
-    setState(() {
-      _resultPreview = preview;
+    _livePreviewDebounce?.cancel();
+    _livePreviewDebounce = Timer(const Duration(milliseconds: 150), () async {
+      final preview = await _computeLivePreviewAsync();
+      if (mounted) {
+        setState(() {
+          _resultPreview = preview;
+        });
+      }
     });
   }
 

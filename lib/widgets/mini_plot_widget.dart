@@ -55,15 +55,17 @@ class MiniPlotWidget extends StatelessWidget {
     final samples = _sample();
     return SizedBox(
       height: 80,
-      child: CustomPaint(
-        painter: _MiniPlotPainter(
-          samples: samples,
-          lineColor: Theme.of(context).colorScheme.primary,
-          axisColor: Theme.of(context).colorScheme.onSurface.withValues(
-                alpha: 0.2,
-              ),
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: _MiniPlotPainter(
+            samples: samples,
+            lineColor: Theme.of(context).colorScheme.primary,
+            axisColor: Theme.of(context).colorScheme.onSurface.withValues(
+                  alpha: 0.2,
+                ),
+          ),
+          size: Size.infinite,
         ),
-        size: Size.infinite,
       ),
     );
   }
