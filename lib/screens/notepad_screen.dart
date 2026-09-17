@@ -1601,6 +1601,18 @@ class _NotepadScreenState extends State<NotepadScreen> {
         },
       ),
       IconButton(
+        icon: const Icon(Icons.picture_as_pdf_outlined, semanticLabel: 'Export PDF'),
+        tooltip: 'Export as PDF',
+        onPressed: () async {
+          if (_currentDoc == null) return;
+          final pdf = await exportToPdf(_currentDoc!);
+          await Printing.layoutPdf(
+            onLayout: (format) async => pdf.save(),
+            name: _currentDoc!.name.isNotEmpty ? _currentDoc!.name : 'Notepad',
+          );
+        },
+      ),
+      IconButton(
         icon: const Icon(Icons.menu_book_outlined,
             semanticLabel: 'Worked examples'),
         tooltip: t.workedExamplesTitle,
