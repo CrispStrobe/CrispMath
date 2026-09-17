@@ -16,7 +16,7 @@ import '../widgets/calculator_keypad.dart';
 import '../widgets/latex_input_field.dart';
 
 /// 2D plot modes (roadmap C5.2).
-enum PlotMode { cartesian, parametric, polar, implicit }
+enum PlotMode { cartesian, parametric, polar, implicit, vectorField }
 
 class GraphingScreen extends StatefulWidget {
   const GraphingScreen({super.key});
@@ -56,11 +56,13 @@ class GraphingScreenState extends State<GraphingScreen>
   final _paramYCtrl = TextEditingController(text: 'sin(t)');
   final _polarCtrl = TextEditingController(text: '1 + cos(theta)');
   final _implicitCtrl = TextEditingController(text: 'x^2 + y^2 - 4');
+  final _vfUCtrl = TextEditingController(text: '-y');
+  final _vfVCtrl = TextEditingController(text: 'x');
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     debugPrint("DEBUG: GraphingScreen initState - Screen initialized.");
     // FIX: Removed focus logic from here to prevent it from running at app startup.
   }
@@ -102,6 +104,10 @@ class GraphingScreenState extends State<GraphingScreen>
         ]),
       PlotMode.polar => Row(children: [field(_polarCtrl, 'r(θ)')]),
       PlotMode.implicit => Row(children: [field(_implicitCtrl, 'F(x, y) = 0')]),
+      PlotMode.vectorField => Row(children: [
+          field(_vfUCtrl, 'dx/dt = u(x,y)'),
+          field(_vfVCtrl, 'dy/dt = v(x,y)'),
+        ]),
     };
 
     return Padding(
@@ -125,6 +131,8 @@ class GraphingScreenState extends State<GraphingScreen>
                 ButtonSegment(value: PlotMode.polar, label: Text('Polar')),
                 ButtonSegment(
                     value: PlotMode.implicit, label: Text('Implicit')),
+                ButtonSegment(
+                    value: PlotMode.vectorField, label: Text('Vector Field')),
               ],
               selected: {_plotMode},
               onSelectionChanged: (sel) =>
@@ -150,6 +158,8 @@ class GraphingScreenState extends State<GraphingScreen>
     _paramYCtrl.dispose();
     _polarCtrl.dispose();
     _implicitCtrl.dispose();
+    _vfUCtrl.dispose();
+    _vfVCtrl.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -564,6 +574,8 @@ class GraphingScreenState extends State<GraphingScreen>
                               parametricY: _paramYCtrl.text,
                               polarR: _polarCtrl.text,
                               implicitF: _implicitCtrl.text,
+                              vfU: _vfUCtrl.text,
+                              vfV: _vfVCtrl.text,
                               scale: _scale,
                               offset: _offset,
                               engine: _engine,
@@ -781,6 +793,8 @@ class GraphPainter extends CustomPainter {
   final String polarR;
   final double thetaMax;
   final String implicitF;
+  final String vfU;
+  final String vfV;
   final Color specialColor;
 
   GraphPainter({
@@ -800,6 +814,8 @@ class GraphPainter extends CustomPainter {
     this.polarR = '',
     this.thetaMax = 6.283185307179586,
     this.implicitF = '',
+    this.vfU = '',
+    this.vfV = '',
     this.specialColor = const Color(0xFF26A69A),
   });
 
@@ -1324,6 +1340,25 @@ class GraphPainter extends CustomPainter {
           canvas.drawLine(
               toScreen(seg.x1, seg.y1), toScreen(seg.x2, seg.y2), paint);
         }
+      case PlotMode.vectorField:
+        if (vfU.isEmpty || vfV.isEmpty) return;
+        final xMin = (-centerX) / unit;
+        final xMax = (size.width - centerX) / unit;
+        final yMin = (centerY - size.height) / unit;
+        final yMax = centerY / unit;
+        
+        final segs = PlotTypes.vectorField(vfU, vfV,
+            xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax, grid: 20);
+            
+        final vfPaint = Paint()
+          ..color = specialColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
+          
+        for (final seg in segs) {
+          canvas.drawLine(
+              toScreen(seg.x1, seg.y1), toScreen(seg.x2, seg.y2), vfPaint);
+        }
       case PlotMode.cartesian:
         break;
     }
@@ -1344,6 +1379,8 @@ class GraphPainter extends CustomPainter {
         oldDelegate.tMin != tMin ||
         oldDelegate.tMax != tMax ||
         oldDelegate.implicitF != implicitF ||
+        oldDelegate.vfU != vfU ||
+        oldDelegate.vfV != vfV ||
         !_parametersEqual(oldDelegate.parameters, parameters);
   }
 
