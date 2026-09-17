@@ -1,0 +1,16 @@
+default_platform(:android)
+
+platform :android do
+  desc "Build and deploy the release App Bundle to Google Play internal testing"
+  lane :beta do
+    # Ensure flutter is built
+    sh("cd ../.. && flutter build appbundle --release")
+    
+    upload_to_play_store(
+      track: 'internal',
+      aab: '../build/app/outputs/bundle/release/app-release.aab',
+      # Requires setting up a Google Play service account JSON
+      # json_key: 'play-store-credentials.json'
+    )
+  end
+end
