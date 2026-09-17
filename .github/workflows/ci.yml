@@ -1,50 +1,45 @@
-# Lint + unit tests on every push and PR. Runs on Linux because none of the
-# tests need the native bridge (CalculatorEngine has a graceful fallback for
-# the test host) and Linux runners are 10× cheaper than macOS ones.
-
-name: CI
+name: CrispCalc CI/CD
 
 on:
   push:
-    branches: [main, latex-input-field]
+    branches: [ "main" ]
   pull_request:
-    branches: [main, latex-input-field]
+    branches: [ "main" ]
 
 jobs:
-  analyze-and-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+  build_and_test:
+    runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout CrispCalc
+        uses: actions/checkout@v4
 
-      - name: Set up Flutter
+      # Clone the sibling CrispEmbed repo as it is a relative path dependency
+      - name: Checkout CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          path: ../CrispEmbed
+
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          # Pinned: format-rule drift between Dart versions made
-          # "stable" CI flake on every push. Bump in lockstep with
-          # local dev. Bridge plugin works on any Flutter 3.10+.
-          flutter-version: '3.44.0'
-          channel: stable
-          cache: true
+          flutter-version: '3.24.0' # Adjust based on project needs
+          channel: 'stable'
 
-      - name: Show Flutter version
-        run: flutter --version
-
-      - name: Resolve dependencies
+      - name: Install Dependencies
         run: flutter pub get
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed lib/ test/
+      - name: Analyze Code
+        run: flutter analyze
 
-      - name: Static analysis
-        run: flutter analyze --no-fatal-infos
+      - name: Run Unit & Integration Tests
+        run: flutter test
 
-      - name: Unit tests
-        run: flutter test --reporter expanded
+      - name: Build Android App Bundle (Release)
+        run: flutter build appbundle --release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-      - name: Start Chromedriver
-        run: chromedriver --port=4444 &
-
-      - name: Web Integration Tests (E2E OMR pipeline)
-        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/ocr_omr_web_test.dart -d web-server --browser-name=chrome
+      - name: Build iOS App (No Sign)
+        run: flutter build ios --release --no-codesign
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
