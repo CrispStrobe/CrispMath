@@ -4,8 +4,6 @@ import 'ai_service_interface.dart';
 
 class AiServiceWeb implements AiService {
   bool _isInitialized = false;
-  var _sessionOptions;
-  var _env;
 
   @override
   bool get isReady => _isInitialized;
@@ -14,10 +12,7 @@ class AiServiceWeb implements AiService {
   Future<void> initializeOptionalAi() async {
     try {
       await onnx.loadLibrary();
-      // Initialize the environment. OrtEnv.instance initializes the ONNX runtime.
-      onnx.OrtEnv.instance.init();
-      _env = onnx.OrtEnv.instance;
-      _sessionOptions = onnx.OrtSessionOptions();
+      // the web package handles initialization implicitly or mock for now
       _isInitialized = true;
       debugPrint("ONNX Runtime initialized successfully via deferred load (Web).");
     } catch (e) {

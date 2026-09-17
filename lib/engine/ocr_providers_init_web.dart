@@ -51,11 +51,7 @@ class _WasmOcrProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(
-    Uint8List imageBytes,
-    int width,
-    int height,
-  ) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
     try {
       if (_ocr == null && !_modelLoading) {
         _modelLoading = true;

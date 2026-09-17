@@ -61,7 +61,12 @@ abstract class OcrProvider {
   /// [imageBytes] — the raw image data (JPEG or PNG).
   /// [width], [height] — image dimensions in pixels.
   /// Returns null if recognition fails.
-  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height);
+  Future<OcrResult?> recognize(
+    Uint8List imageBytes,
+    int width,
+    int height, {
+    void Function(int totalRegions, int currentIndex, double x1, double y1, double x2, double y2)? onProgress,
+  });
 }
 
 /// Registry of available OCR providers. The UI queries this to build

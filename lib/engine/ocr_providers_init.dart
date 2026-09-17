@@ -98,11 +98,7 @@ class _CrispEmbedProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(
-    Uint8List imageBytes,
-    int width,
-    int height,
-  ) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
     try {
       final op = OcrOp('math_gray', _modelPath, imageBytes, width, height);
       final latex = await OcrService.recognizeAsync(op);
@@ -153,11 +149,7 @@ class _CrispEmbedVlmProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(
-    Uint8List imageBytes,
-    int width,
-    int height,
-  ) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
     try {
       final op = OcrOp('vlm_raw', _modelPath, imageBytes, width, height);
       final latex = await OcrService.recognizeAsync(op);
@@ -202,11 +194,7 @@ class _GraniteVisionProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(
-    Uint8List imageBytes,
-    int width,
-    int height,
-  ) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
     try {
       _model ??= _tryInit();
       if (_model == null) return null;
@@ -255,11 +243,7 @@ class _LightOnOcrProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(
-    Uint8List imageBytes,
-    int width,
-    int height,
-  ) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
     try {
       _model ??= _tryInit();
       if (_model == null) return null;
@@ -313,11 +297,7 @@ class _GeneralOcrProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(
-    Uint8List imageBytes,
-    int width,
-    int height,
-  ) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
     try {
       _pipeline ??= _tryInit();
       if (_pipeline == null) return null;
@@ -378,11 +358,7 @@ class _LayoutOcrProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(
-    Uint8List imageBytes,
-    int width,
-    int height,
-  ) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
     try {
       _layout ??= _tryInit();
       if (_layout == null) return null;
@@ -399,7 +375,9 @@ class _LayoutOcrProvider implements OcrProvider {
 
       final parts = <String>[];
 
-      for (final region in regions) {
+      for (var i = 0; i < regions.length; i++) {
+        final region = regions[i];
+        onProgress?.call(regions.length, i, region.x1, region.y1, region.x2, region.y2);
         if (_isFormulaRegion(region) && _mathProvider != null) {
           // Crop the formula region and run math OCR on it.
           final cropped = _cropRegion(

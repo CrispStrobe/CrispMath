@@ -4,8 +4,6 @@ import 'ai_service_interface.dart';
 
 class AiServiceNative implements AiService {
   bool _isInitialized = false;
-  var _sessionOptions;
-  var _env;
 
   @override
   bool get isReady => _isInitialized;
@@ -16,8 +14,6 @@ class AiServiceNative implements AiService {
       await onnx.loadLibrary();
       // Initialize the environment. OrtEnv.instance initializes the ONNX runtime.
       onnx.OrtEnv.instance.init();
-      _env = onnx.OrtEnv.instance;
-      _sessionOptions = onnx.OrtSessionOptions();
       _isInitialized = true;
       debugPrint("ONNX Runtime initialized successfully via deferred load (Native).");
     } catch (e) {

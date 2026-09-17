@@ -15,6 +15,7 @@ import '../engine/ocr_provider.dart';
 import '../engine/scan_cleanup.dart';
 import '../widgets/ocr_capture_dialog.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 
 // Widget imports
 import '../widgets/boolean_chip.dart';
@@ -91,6 +92,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
   String _busyMessage = '';
 
   bool _historySearchOpen = false;
+  bool _isDragging = false;
+  Uint8List? _ocrDroppedImage;
+  int _ocrImageWidth = 0;
+  int _ocrImageHeight = 0;
+  Rect? _ocrCurrentRegionBox;
+  bool _isOcrProcessing = false;
   String _debouncedSearchQuery = '';
   Timer? _historySearchDebounce;
   Timer? _livePreviewDebounce;
@@ -285,6 +292,81 @@ class CalculatorScreenState extends State<CalculatorScreen>
     if (expression == null || expression.isEmpty || !context.mounted) return;
 
     // Insert into the input field
+    _latexController.clear();
+    _latexController.insert(expression);
+  }
+
+  Future<void> _processDroppedFile(XFile file) async {
+    final bytes = await file.readAsBytes();
+    
+    // Choose layout provider if available, otherwise active provider
+    final layoutProvider = OcrProviders.available
+        .where((p) => p.name.contains('Layout'))
+        .firstOrNull;
+    final provider = layoutProvider ?? OcrProviders.active;
+
+    if (provider == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No OCR provider configured.')),
+      );
+      return;
+    }
+
+    final cleaned = await decodeAndCleanup(bytes);
+    final Uint8List ocrBytes;
+    final int imgWidth;
+    final int imgHeight;
+    if (cleaned != null) {
+      ocrBytes = cleaned.pixels;
+      imgWidth = cleaned.width;
+      imgHeight = cleaned.height;
+    } else {
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      imgWidth = descriptor.width;
+      imgHeight = descriptor.height;
+      descriptor.dispose();
+      buffer.dispose();
+      ocrBytes = bytes;
+    }
+
+    setState(() {
+      _ocrDroppedImage = bytes; // original bytes for display
+      _ocrImageWidth = imgWidth;
+      _ocrImageHeight = imgHeight;
+      _isOcrProcessing = true;
+      _ocrCurrentRegionBox = null;
+    });
+
+    final result = await provider.recognize(
+      ocrBytes, imgWidth, imgHeight,
+      onProgress: (total, current, x1, y1, x2, y2) {
+        if (mounted) {
+          setState(() {
+            _ocrCurrentRegionBox = Rect.fromLTRB(x1, y1, x2, y2);
+          });
+        }
+      }
+    );
+
+    if (!mounted) return;
+    
+    setState(() {
+      _isOcrProcessing = false;
+      _ocrDroppedImage = null;
+    });
+
+    if (result == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OCR failed — try a clearer image.')),
+      );
+      return;
+    }
+
+    final expression = await showOcrCaptureDialog(context, result);
+    if (expression == null || expression.isEmpty || !mounted) return;
+
     _latexController.clear();
     _latexController.insert(expression);
   }
@@ -2506,19 +2588,34 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: _calculatorFocusNode,
-      // autofocus is off on purpose: MainScreen calls requestFocus() when this
-      // becomes the active pane. Two KeyboardListener(autofocus: true) instances
-      // alive at once (calc + graph + editor in the wide split) crash the
-      // focus tree after a few clicks.
-      onKeyEvent: (KeyEvent event) {
-        final handled = _handleKeyboardInput(event);
-        if (handled) {
-          _calculatorFocusNode.requestFocus();
+    return DropTarget(
+      onDragDone: (detail) async {
+        setState(() => _isDragging = false);
+        if (detail.files.isNotEmpty) {
+          await _processDroppedFile(detail.files.first);
         }
       },
-      child: SafeArea(
+      onDragEntered: (detail) {
+        setState(() => _isDragging = true);
+      },
+      onDragExited: (detail) {
+        setState(() => _isDragging = false);
+      },
+      child: Stack(
+        children: [
+          KeyboardListener(
+            focusNode: _calculatorFocusNode,
+            // autofocus is off on purpose: MainScreen calls requestFocus() when this
+            // becomes the active pane. Two KeyboardListener(autofocus: true) instances
+            // alive at once (calc + graph + editor in the wide split) crash the
+            // focus tree after a few clicks.
+            onKeyEvent: (KeyEvent event) {
+              final handled = _handleKeyboardInput(event);
+              if (handled) {
+                _calculatorFocusNode.requestFocus();
+              }
+            },
+            child: SafeArea(
         child: Column(
           children: [
             // History display section
@@ -2882,6 +2979,49 @@ class CalculatorScreenState extends State<CalculatorScreen>
             ),
           ],
         ),
+      ),
+          ),
+          
+          if (_isDragging)
+             Positioned.fill(
+               child: Container(
+                 color: Colors.blue.withValues(alpha: 0.2),
+                 child: const Center(
+                   child: Icon(Icons.upload_file, size: 100, color: Colors.blue),
+                 ),
+               ),
+             ),
+
+          if (_isOcrProcessing && _ocrDroppedImage != null)
+             Positioned.fill(
+               child: Container(
+                 color: Colors.black.withValues(alpha: 0.8),
+                 child: Center(
+                   child: FittedBox(
+                     fit: BoxFit.contain,
+                     child: SizedBox(
+                       width: _ocrImageWidth.toDouble(),
+                       height: _ocrImageHeight.toDouble(),
+                       child: Stack(
+                         children: [
+                           Image.memory(_ocrDroppedImage!),
+                           if (_ocrCurrentRegionBox != null)
+                             Positioned.fromRect(
+                               rect: _ocrCurrentRegionBox!,
+                               child: Container(
+                                 decoration: BoxDecoration(
+                                   border: Border.all(color: Colors.greenAccent, width: 6),
+                                 ),
+                               ),
+                             ),
+                         ],
+                       ),
+                     ),
+                   ),
+                 ),
+               ),
+             ),
+        ],
       ),
     );
   }
