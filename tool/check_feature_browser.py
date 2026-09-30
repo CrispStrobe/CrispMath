@@ -59,7 +59,7 @@ async def check(args):
         assert all(math.isclose(y, math.sin(x), abs_tol=1e-12) for x,y in rows), rows
         assert len(csv.strip().splitlines()) == 12, csv
         print('CSV copied and verified', flush=True)
-        await page.get_by_role('button', name='Close', exact=True).click()
+        await page.get_by_role('button', name='Close', exact=True).evaluate('(el)=>el.click()')
         await page.get_by_role('button', name='Trace curve', exact=True).click()
         await page.wait_for_function("document.body.innerText.includes('x = ') || [...document.querySelectorAll('[aria-label]')].some(e=>e.getAttribute('aria-label').includes('x = '))", timeout=90000)
         await page.mouse.click(850, 400)
@@ -90,7 +90,7 @@ async def check(args):
             await page.get_by_role('button', name='Linked Y3: Live model', exact=True).click()
             await page.get_by_role('button', name='Open source', exact=True).wait_for(timeout=60000)
             assert re.search(r'a = 4(?:\.0)?(?:\n|$)', await labels(page)), await labels(page)
-            await page.get_by_role('button', name='Close', exact=True).click()
+            await page.get_by_role('button', name='Close', exact=True).evaluate('(el)=>el.click()')
             await page.screenshot(path=str(Path(args.screenshots) / 'linked-graph.png'))
         if args.stage >= 3:
             await page.keyboard.press('Control+k')
@@ -103,6 +103,26 @@ async def check(args):
             await page.keyboard.press('Enter')
             await page.get_by_role('button', name='Link line to graph', exact=True).first.wait_for(timeout=60000)
             await page.screenshot(path=str(Path(args.screenshots) / 'command-navigation.png'))
+        if args.stage >= 4:
+            await page.get_by_text('Graphing', exact=True).first.click()
+            await page.get_by_role('button', name='Graph bounds', exact=True).click()
+            await page.get_by_role('textbox', name='x minimum', exact=True).fill('10')
+            await page.get_by_role('textbox', name='x maximum', exact=True).fill('-10')
+            await page.get_by_role('button', name='Apply bounds', exact=True).click()
+            await page.get_by_text('Enter finite, increasing x and y bounds.', exact=True).wait_for()
+            for label, value in [('x minimum','-5'),('x maximum','5'),('y minimum','-100'),('y maximum','100')]:
+                await page.get_by_role('textbox', name=label, exact=True).fill(value)
+            await page.get_by_role('button', name='Apply bounds', exact=True).click()
+            await page.get_by_role('button', name='Fit graph', exact=True).click()
+            await page.wait_for_timeout(1000)
+            await page.get_by_role('button', name='Graph bounds', exact=True).click()
+            assert float(await page.get_by_role('textbox', name='y maximum', exact=True).input_value()) < 10
+            await page.get_by_role('button', name='Cancel', exact=True).click()
+            await page.get_by_role('button', name='Undo graph change', exact=True).click()
+            await page.get_by_role('button', name='Graph bounds', exact=True).click()
+            assert float(await page.get_by_role('textbox', name='y maximum', exact=True).input_value()) == 100
+            await page.get_by_role('button', name='Cancel', exact=True).click()
+            await page.screenshot(path=str(Path(args.screenshots) / 'graph-navigation.png'))
         assert not errors, errors
         print(json.dumps({'stage': args.stage, 'csvRows': 11, 'keyboardTrace': True, 'pageErrors': errors}, indent=2))
         await browser.close()

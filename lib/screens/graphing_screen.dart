@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../engine/graph_inspection.dart';
+import '../engine/graph_viewport.dart';
 import '../widgets/graph_value_table_dialog.dart';
 import 'dart:math' as math;
 import 'dart:async';
@@ -45,6 +46,10 @@ class GraphingScreenState extends State<GraphingScreen>
   bool _showKeypad = false;
 
   // Graph view controls
+  double _yRatio = 1;
+  Size _plotSize = const Size(600, 400);
+  final _undo = GraphUndoHistory<Map<String, dynamic>>();
+  bool _fitting = false;
   double _scale = 1.0;
   Offset _offset = Offset.zero;
   double _startScale = 1.0;
@@ -341,6 +346,7 @@ class GraphingScreenState extends State<GraphingScreen>
       (f) => f.isEmpty,
     );
     if (emptySlotIndex != -1) {
+      _recordGraph();
       _appState.updateFunction(emptySlotIndex, textToAdd);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -406,6 +412,7 @@ class GraphingScreenState extends State<GraphingScreen>
     final t = AppLocalizations.of(context);
     final index = _appState.graphFunctions.indexOf(functionToRemove);
     if (index != -1) {
+      _recordGraph();
       _appState.clearFunction(index);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -457,20 +464,148 @@ class GraphingScreenState extends State<GraphingScreen>
                 ]));
   }
 
+  void _recordGraph() {
+    _undo.record({
+      ..._appState.captureGraphWorkspace(),
+      'scale': _scale,
+      'yRatio': _yRatio,
+      'offset': _offset
+    });
+  }
+
+  void _undoGraph() {
+    final previous = _undo.undo();
+    if (previous == null) return;
+    _appState.restoreGraphWorkspace(previous);
+    setState(() {
+      _scale = previous['scale'] as double;
+      _yRatio = previous['yRatio'] as double;
+      _offset = previous['offset'] as Offset;
+    });
+  }
+
+  GraphBounds _bounds() {
+    final ux = 25 * _scale, uy = ux * _yRatio;
+    final cx = _plotSize.width / 2 + _offset.dx,
+        cy = _plotSize.height / 2 + _offset.dy;
+    return GraphBounds(-cx / ux, (_plotSize.width - cx) / ux,
+        (cy - _plotSize.height) / uy, cy / uy);
+  }
+
+  void _applyBounds(GraphBounds bounds) {
+    _recordGraph();
+    setState(() {
+      final ux = bounds.unitX(_plotSize.width),
+          uy = bounds.unitY(_plotSize.height);
+      _scale = ux / 25;
+      _yRatio = uy / ux;
+      _offset = Offset(-bounds.xMin * ux - _plotSize.width / 2,
+          bounds.yMax * uy - _plotSize.height / 2);
+    });
+  }
+
+  Future<void> _editBounds() async {
+    final current = _bounds();
+    final controllers = [current.xMin, current.xMax, current.yMin, current.yMax]
+        .map((v) => TextEditingController(text: v.toStringAsPrecision(8)))
+        .toList();
+    String? error;
+    final result = await showDialog<GraphBounds>(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+            builder: (ctx, update) => AlertDialog(
+                  title: const Text('Graph bounds'),
+                  content: SizedBox(
+                      width: 360,
+                      child: SingleChildScrollView(
+                          child:
+                              Column(mainAxisSize: MainAxisSize.min, children: [
+                        for (final entry in const [
+                          'x minimum',
+                          'x maximum',
+                          'y minimum',
+                          'y maximum'
+                        ].indexed)
+                          TextField(
+                              controller: controllers[entry.$1],
+                              decoration: InputDecoration(labelText: entry.$2)),
+                        if (error != null)
+                          Text(error!,
+                              style: TextStyle(
+                                  color: Theme.of(ctx).colorScheme.error)),
+                      ]))),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancel')),
+                    FilledButton(
+                        onPressed: () {
+                          try {
+                            final v = controllers
+                                .map((c) => double.parse(c.text))
+                                .toList();
+                            Navigator.pop(
+                                ctx, GraphBounds(v[0], v[1], v[2], v[3]));
+                          } catch (_) {
+                            update(() => error =
+                                'Enter finite, increasing x and y bounds.');
+                          }
+                        },
+                        child: const Text('Apply bounds'))
+                  ],
+                )));
+    // Wait for the route animation before releasing its text controllers.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    for (final c in controllers) {
+      c.dispose();
+    }
+    if (mounted && result != null) _applyBounds(result);
+  }
+
+  Future<void> _fitGraph() async {
+    if (_fitting) return;
+    setState(() => _fitting = true);
+    try {
+      final current = _bounds();
+      final xs = List.generate(
+          201, (i) => current.xMin + (current.xMax - current.xMin) * i / 200);
+      final values = <double?>[];
+      for (final slot
+          in _appState.graphFunctions.indexed.where((e) => e.$2.isNotEmpty)) {
+        final expression = ExpressionPreprocessingUtils.substituteParameters(
+            slot.$2, _appState.functionParameters[slot.$1] ?? {});
+        values.addAll((await GraphSamplingService.values(expression, xs))
+            .map((row) => row[1]));
+      }
+      final bounds = fittedGraphBounds(current.xMin, current.xMax, values);
+      if (mounted) _applyBounds(bounds);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not fit graph: $e')));
+    } finally {
+      if (mounted) setState(() => _fitting = false);
+    }
+  }
+
   void _resetView() {
+    _recordGraph();
     setState(() {
       _scale = 1.0;
+      _yRatio = 1;
       _offset = Offset.zero;
     });
   }
 
   void _zoomIn() {
+    _recordGraph();
     setState(() {
       _scale = (_scale * 1.4).clamp(0.1, 20.0);
     });
   }
 
   void _zoomOut() {
+    _recordGraph();
     setState(() {
       _scale = (_scale / 1.4).clamp(0.1, 20.0);
     });
@@ -490,6 +625,7 @@ class GraphingScreenState extends State<GraphingScreen>
           ),
           ElevatedButton(
             onPressed: () {
+              _recordGraph();
               for (int i = 0; i < _appState.graphFunctions.length; i++) {
                 _appState.clearFunction(i);
               }
@@ -545,81 +681,110 @@ class GraphingScreenState extends State<GraphingScreen>
                 ).graphingTitle(activeFunctions.length),
               ),
               actions: [
-                if (_plotMode == PlotMode.cartesian &&
-                    activeFunctions.isNotEmpty)
-                  IconButton(
-                      tooltip: 'Trace curve',
-                      icon: Icon(
-                          _tracing ? Icons.gps_fixed : Icons.gps_not_fixed),
-                      onPressed: () => setState(() => _tracing = !_tracing)),
-                if (_plotMode == PlotMode.cartesian &&
-                    activeFunctions.isNotEmpty)
-                  IconButton(
-                      tooltip: 'Value table',
-                      icon: const Icon(Icons.table_chart_outlined),
-                      onPressed: () => showDialog<void>(
-                          context: context,
-                          builder: (_) => GraphValueTableDialog(functions: {
-                                for (final i in activeFunctionIndices)
-                                  i: ExpressionPreprocessingUtils
-                                      .substituteParameters(
-                                          _appState.graphFunctions[i],
-                                          _appState.functionParameters[i] ??
-                                              {}),
-                              }))),
-                IconButton(
-                  onPressed: _zoomOut,
-                  icon: const Icon(Icons.zoom_out),
-                  tooltip: AppLocalizations.of(context).zoomOut,
-                ),
-                IconButton(
-                  onPressed: _zoomIn,
-                  icon: const Icon(Icons.zoom_in),
-                  tooltip: AppLocalizations.of(context).zoomIn,
-                ),
-                IconButton(
-                  onPressed: _resetView,
-                  icon: const Icon(Icons.center_focus_strong),
-                  tooltip: AppLocalizations.of(context).resetView,
-                ),
-                if (activeFunctions.isNotEmpty)
-                  IconButton(
-                    onPressed: _showAnalysisOptions,
-                    icon: const Icon(Icons.analytics),
-                    tooltip: AppLocalizations.of(context).analyzeFunctions,
-                  ),
-                if (activeFunctions.isNotEmpty)
-                  IconButton(
-                    onPressed: () =>
-                        setState(() => _showAnnotations = !_showAnnotations),
-                    icon: Icon(
-                      _showAnnotations
-                          ? Icons.bubble_chart
-                          : Icons.bubble_chart_outlined,
-                    ),
-                    tooltip: _showAnnotations
-                        ? AppLocalizations.of(context).hideAnnotations
-                        : AppLocalizations.of(context).showAnnotations,
-                  ),
-                IconButton(
-                  onPressed: () {
-                    setState(() => _showKeypad = !_showKeypad);
-                  },
-                  icon: Icon(
-                    _showKeypad
-                        ? Icons.keyboard_hide_outlined
-                        : Icons.keyboard_outlined,
-                  ),
-                  tooltip: _showKeypad
-                      ? AppLocalizations.of(context).hideKeypad
-                      : AppLocalizations.of(context).showKeypad,
-                ),
-                if (activeFunctions.isNotEmpty)
-                  IconButton(
-                    onPressed: _clearAllFunctions,
-                    icon: const Icon(Icons.clear_all),
-                    tooltip: AppLocalizations.of(context).clearAllFunctions,
-                  ),
+                SizedBox(
+                    width: MediaQuery.sizeOf(context).width < 720 ? 160 : 540,
+                    child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(children: [
+                          IconButton(
+                              tooltip: 'Graph bounds',
+                              icon: const Icon(Icons.crop_free),
+                              onPressed: _editBounds),
+                          IconButton(
+                              tooltip: 'Fit graph',
+                              icon: const Icon(Icons.fit_screen),
+                              onPressed: _plotMode == PlotMode.cartesian &&
+                                      activeFunctions.isNotEmpty &&
+                                      !_fitting
+                                  ? _fitGraph
+                                  : null),
+                          IconButton(
+                              tooltip: 'Undo graph change',
+                              icon: const Icon(Icons.undo),
+                              onPressed: _undo.canUndo ? _undoGraph : null),
+                          if (_plotMode == PlotMode.cartesian &&
+                              activeFunctions.isNotEmpty)
+                            IconButton(
+                                tooltip: 'Trace curve',
+                                icon: Icon(_tracing
+                                    ? Icons.gps_fixed
+                                    : Icons.gps_not_fixed),
+                                onPressed: () =>
+                                    setState(() => _tracing = !_tracing)),
+                          if (_plotMode == PlotMode.cartesian &&
+                              activeFunctions.isNotEmpty)
+                            IconButton(
+                                tooltip: 'Value table',
+                                icon: const Icon(Icons.table_chart_outlined),
+                                onPressed: () => showDialog<void>(
+                                    context: context,
+                                    builder: (_) =>
+                                        GraphValueTableDialog(functions: {
+                                          for (final i in activeFunctionIndices)
+                                            i: ExpressionPreprocessingUtils
+                                                .substituteParameters(
+                                                    _appState.graphFunctions[i],
+                                                    _appState.functionParameters[
+                                                            i] ??
+                                                        {}),
+                                        }))),
+                          IconButton(
+                            onPressed: _zoomOut,
+                            icon: const Icon(Icons.zoom_out),
+                            tooltip: AppLocalizations.of(context).zoomOut,
+                          ),
+                          IconButton(
+                            onPressed: _zoomIn,
+                            icon: const Icon(Icons.zoom_in),
+                            tooltip: AppLocalizations.of(context).zoomIn,
+                          ),
+                          IconButton(
+                            onPressed: _resetView,
+                            icon: const Icon(Icons.center_focus_strong),
+                            tooltip: AppLocalizations.of(context).resetView,
+                          ),
+                          if (activeFunctions.isNotEmpty)
+                            IconButton(
+                              onPressed: _showAnalysisOptions,
+                              icon: const Icon(Icons.analytics),
+                              tooltip:
+                                  AppLocalizations.of(context).analyzeFunctions,
+                            ),
+                          if (activeFunctions.isNotEmpty)
+                            IconButton(
+                              onPressed: () => setState(
+                                  () => _showAnnotations = !_showAnnotations),
+                              icon: Icon(
+                                _showAnnotations
+                                    ? Icons.bubble_chart
+                                    : Icons.bubble_chart_outlined,
+                              ),
+                              tooltip: _showAnnotations
+                                  ? AppLocalizations.of(context).hideAnnotations
+                                  : AppLocalizations.of(context)
+                                      .showAnnotations,
+                            ),
+                          IconButton(
+                            onPressed: () {
+                              setState(() => _showKeypad = !_showKeypad);
+                            },
+                            icon: Icon(
+                              _showKeypad
+                                  ? Icons.keyboard_hide_outlined
+                                  : Icons.keyboard_outlined,
+                            ),
+                            tooltip: _showKeypad
+                                ? AppLocalizations.of(context).hideKeypad
+                                : AppLocalizations.of(context).showKeypad,
+                          ),
+                          if (activeFunctions.isNotEmpty)
+                            IconButton(
+                              onPressed: _clearAllFunctions,
+                              icon: const Icon(Icons.clear_all),
+                              tooltip: AppLocalizations.of(context)
+                                  .clearAllFunctions,
+                            ),
+                        ])))
               ],
             ),
             body: SafeArea(
@@ -676,6 +841,7 @@ class GraphingScreenState extends State<GraphingScreen>
                       },
                       onScaleStart: (details) {
                         if (_tracing) return;
+                        _recordGraph();
                         setState(() => _interacting = true);
                         _focalStart = details.localFocalPoint;
                         _startScale = _scale;
@@ -702,43 +868,48 @@ class GraphingScreenState extends State<GraphingScreen>
                               width: 1,
                             ),
                           ),
-                          child: _SampledGraph(
-                            interacting: _interacting,
-                            traceIndex: _tracing &&
-                                    _plotMode == PlotMode.cartesian &&
-                                    activeFunctionIndices.isNotEmpty
-                                ? math.max(0,
-                                    activeFunctionIndices.indexOf(_traceSlot))
-                                : null,
-                            painter: GraphPainter(
-                              functions: _plotMode == PlotMode.cartesian
-                                  ? activeFunctions
-                                  : const [],
-                              functionIndices: _plotMode == PlotMode.cartesian
-                                  ? activeFunctionIndices
-                                  : const [],
-                              plotMode: _plotMode,
-                              parametricX: _paramXCtrl.text,
-                              parametricY: _paramYCtrl.text,
-                              polarR: _polarCtrl.text,
-                              implicitF: _implicitCtrl.text,
-                              vfU: _vfUCtrl.text,
-                              vfV: _vfVCtrl.text,
-                              scale: _scale,
-                              offset: _offset,
-                              getColorForFunction: _getColorForFunction,
-                              showAnnotations: _showAnnotations,
-                              parameters: {
-                                for (final i in activeFunctionIndices)
-                                  if (_appState.functionParameters[i] != null &&
-                                      _appState
-                                          .functionParameters[i]!.isNotEmpty)
-                                    i: Map<String, double>.from(
-                                      _appState.functionParameters[i]!,
-                                    ),
-                              },
-                            ),
-                          ),
+                          child: LayoutBuilder(builder: (context, constraints) {
+                            _plotSize = constraints.biggest;
+                            return _SampledGraph(
+                              interacting: _interacting,
+                              traceIndex: _tracing &&
+                                      _plotMode == PlotMode.cartesian &&
+                                      activeFunctionIndices.isNotEmpty
+                                  ? math.max(0,
+                                      activeFunctionIndices.indexOf(_traceSlot))
+                                  : null,
+                              painter: GraphPainter(
+                                functions: _plotMode == PlotMode.cartesian
+                                    ? activeFunctions
+                                    : const [],
+                                functionIndices: _plotMode == PlotMode.cartesian
+                                    ? activeFunctionIndices
+                                    : const [],
+                                plotMode: _plotMode,
+                                parametricX: _paramXCtrl.text,
+                                parametricY: _paramYCtrl.text,
+                                polarR: _polarCtrl.text,
+                                implicitF: _implicitCtrl.text,
+                                vfU: _vfUCtrl.text,
+                                vfV: _vfVCtrl.text,
+                                yRatio: _yRatio,
+                                scale: _scale,
+                                offset: _offset,
+                                getColorForFunction: _getColorForFunction,
+                                showAnnotations: _showAnnotations,
+                                parameters: {
+                                  for (final i in activeFunctionIndices)
+                                    if (_appState.functionParameters[i] !=
+                                            null &&
+                                        _appState
+                                            .functionParameters[i]!.isNotEmpty)
+                                      i: Map<String, double>.from(
+                                        _appState.functionParameters[i]!,
+                                      ),
+                                },
+                              ),
+                            );
+                          }),
                         ),
                       ),
                     ),
@@ -914,8 +1085,10 @@ class GraphingScreenState extends State<GraphingScreen>
                             name: p,
                             value: _appState.getParameter(originalIndex, p),
                             color: color,
-                            onChanged: (v) =>
-                                _appState.setParameter(originalIndex, p, v),
+                            onChanged: (v) {
+                              _recordGraph();
+                              _appState.setParameter(originalIndex, p, v);
+                            },
                           ),
                       ],
                     ),
@@ -937,6 +1110,7 @@ class GraphPainter extends CustomPainter {
   final List<String> functions;
   final List<int> functionIndices;
   final double scale;
+  final double yRatio;
   final Offset offset;
   final Color Function(int) getColorForFunction;
   final bool showAnnotations;
@@ -969,6 +1143,7 @@ class GraphPainter extends CustomPainter {
     required this.functions,
     required this.functionIndices,
     required this.scale,
+    this.yRatio = 1,
     required this.offset,
     required this.getColorForFunction,
     this.showAnnotations = false,
@@ -993,6 +1168,7 @@ class GraphPainter extends CustomPainter {
         functions: functions,
         functionIndices: functionIndices,
         scale: scale,
+        yRatio: yRatio,
         offset: offset,
         getColorForFunction: getColorForFunction,
         showAnnotations: showAnnotations,
@@ -1044,7 +1220,8 @@ class GraphPainter extends CustomPainter {
     }
     final trace = tracePoint;
     if (trace != null && trace.ok) {
-      final point = Offset(centerX + trace.x * unit, centerY - trace.y * unit);
+      final point =
+          Offset(centerX + trace.x * unit, centerY - trace.y * unit * yRatio);
       canvas.drawCircle(point, 5, Paint()..color = Colors.white);
       canvas.drawCircle(
           point,
@@ -1076,35 +1253,13 @@ class GraphPainter extends CustomPainter {
       ..color = Colors.grey.shade700
       ..strokeWidth = 0.5;
 
-    double gridSpacing = unit;
-    if (unit < 10) {
-      gridSpacing = unit * 5;
-    } else if (unit > 100) {
-      gridSpacing = unit / 2;
-    }
-
-    // Vertical lines
-    double x = centerX;
-    while (x < size.width) {
+    final sx = graphGridStep(unit) * unit;
+    final sy = graphGridStep(unit * yRatio) * unit * yRatio;
+    for (double x = centerX % sx; x < size.width; x += sx) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-      x += gridSpacing;
     }
-    x = centerX - gridSpacing;
-    while (x > 0) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-      x -= gridSpacing;
-    }
-
-    // Horizontal lines
-    double y = centerY;
-    while (y < size.height) {
+    for (double y = centerY % sy; y < size.height; y += sy) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-      y += gridSpacing;
-    }
-    y = centerY - gridSpacing;
-    while (y > 0) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-      y -= gridSpacing;
     }
   }
 
@@ -1148,7 +1303,8 @@ class GraphPainter extends CustomPainter {
     const double pixelsPerLabel = 80.0;
     final double idealStep = pixelsPerLabel / unit;
     final double step = getNiceStep(idealStep);
-    final int precision = (step < 1) ? (-math.log(step) / math.ln10).ceil() : 0;
+    final int precision =
+        ((step < 1) ? (-math.log(step) / math.ln10).ceil() : 0).clamp(0, 15);
 
     // X-axis labels
     final double startX = -centerX / unit;
@@ -1173,17 +1329,21 @@ class GraphPainter extends CustomPainter {
     }
 
     // Y-axis labels
-    final double startY = -(size.height - centerY) / unit;
-    final double endY = centerY / unit;
+    final unitY = unit * yRatio;
+    final stepY = getNiceStep(pixelsPerLabel / unitY);
+    final precisionY =
+        ((stepY < 1) ? (-math.log(stepY) / math.ln10).ceil() : 0).clamp(0, 15);
+    final double startY = -(size.height - centerY) / unitY;
+    final double endY = centerY / unitY;
 
-    for (double i = (startY / step).floor() * step; i <= endY; i += step) {
+    for (double i = (startY / stepY).floor() * stepY; i <= endY; i += stepY) {
       if (i.abs() < step / 100) continue; // Skip origin
 
-      final y = centerY - i * unit;
+      final y = centerY - i * unitY;
       if (y < 15 || y > size.height - 15) continue;
 
       textPainter.text = TextSpan(
-        text: i.toStringAsFixed(precision),
+        text: i.toStringAsFixed(precisionY),
         style: textStyle,
       );
       textPainter.layout();
@@ -1209,13 +1369,14 @@ class GraphPainter extends CustomPainter {
     var pen = false;
     double? lastY;
     for (final pt in samples.curves[index]) {
-      final sy = centerY - pt.y * unit;
+      final sy = centerY - pt.y * unit * yRatio;
       if (!pt.ok || sy < -size.height * 2 || sy > size.height * 3) {
         pen = false;
         lastY = null;
         continue;
       }
-      if (lastY != null && (pt.y - lastY).abs() > 50 / scale) pen = false;
+      if (lastY != null && (pt.y - lastY).abs() > 50 / (scale * yRatio))
+        pen = false;
       final sx = centerX + pt.x * unit;
       if (pen) {
         path.lineTo(sx, sy);
@@ -1248,7 +1409,7 @@ class GraphPainter extends CustomPainter {
 
     void drawMarker(double mx, double my, String label) {
       final sx = centerX + mx * unit;
-      final sy = centerY - my * unit;
+      final sy = centerY - my * unit * yRatio;
       if (sx < 0 || sx > size.width || sy < 0 || sy > size.height) return;
 
       canvas.drawCircle(Offset(sx, sy), 5, fillPaint);
@@ -1305,7 +1466,7 @@ class GraphPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     Offset toScreen(double mx, double my) =>
-        Offset(centerX + mx * unit, centerY - my * unit);
+        Offset(centerX + mx * unit, centerY - my * unit * yRatio);
 
     void drawPolyline(List<PlotPt> poly) {
       final path = Path();
@@ -1351,8 +1512,8 @@ class GraphPainter extends CustomPainter {
       'scale': scale,
       'xMin': -cx / unit,
       'xMax': (size.width - cx) / unit,
-      'yMin': (cy - size.height) / unit,
-      'yMax': cy / unit,
+      'yMin': (cy - size.height) / (unit * yRatio),
+      'yMax': cy / (unit * yRatio),
       'coarse': coarse,
       'annotations': showAnnotations,
       'parametricX': parametricX,
@@ -1372,6 +1533,7 @@ class GraphPainter extends CustomPainter {
     return oldDelegate.tracePoint != tracePoint ||
         !identical(oldDelegate.samples, samples) ||
         oldDelegate.scale != scale ||
+        oldDelegate.yRatio != yRatio ||
         oldDelegate.offset != offset ||
         oldDelegate.showAnnotations != showAnnotations ||
         !listEquals(oldDelegate.functions, functions) ||

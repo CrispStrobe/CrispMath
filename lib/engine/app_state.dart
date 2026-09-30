@@ -1315,6 +1315,31 @@ class AppState extends ChangeNotifier {
     if (changed || metadataChanged) _notify({AppStateDomain.graphs});
   }
 
+  Map<String, dynamic> captureGraphWorkspace() => {
+        'functions': List<String>.from(graphFunctions),
+        'parameters': {
+          for (final e in functionParameters.entries)
+            e.key: Map<String, double>.from(e.value)
+        },
+        'links': Map<int, LinkedGraphSource>.from(graphLinks),
+      };
+
+  void restoreGraphWorkspace(Map<String, dynamic> snapshot) {
+    graphFunctions.setAll(0, (snapshot['functions'] as List).cast<String>());
+    functionParameters
+      ..clear()
+      ..addAll((snapshot['parameters'] as Map).map(
+          (k, v) => MapEntry(k as int, Map<String, double>.from(v as Map))));
+    graphLinks
+      ..clear()
+      ..addAll(Map<int, LinkedGraphSource>.from(snapshot['links'] as Map));
+    _refreshLinkedGraphs();
+    _persistFunctions();
+    _persistParameters();
+    _persistGraphLinks();
+    _notify({AppStateDomain.graphs});
+  }
+
   void updateFunction(int index, String expression) {
     if (index >= 0 && index < graphFunctions.length) {
       if (graphLinks.remove(index) != null) {
