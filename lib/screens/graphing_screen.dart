@@ -222,6 +222,8 @@ class GraphingScreenState extends State<GraphingScreen>
   }
 
   bool _handleKeyboardInput(KeyEvent event) {
+    if (HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isMetaPressed) return false;
     debugPrint(
       "DEBUG: GraphingScreen _handleKeyboardInput | isFocused: $_isInputFocused",
     );

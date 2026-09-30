@@ -35,6 +35,10 @@ import 'services/crash_reporter.dart';
 import 'services/sync_service.dart';
 import 'utils/share_link.dart';
 import 'widgets/perf_overlay.dart';
+import 'widgets/command_palette.dart';
+import 'engine/command_catalog.dart';
+import 'widgets/module_navigation.dart';
+import 'widgets/unit_converter_dialog.dart';
 import 'services/native_licenses.dart';
 import 'widgets/export_data_dialog.dart';
 import 'widgets/import_data_dialog.dart';
@@ -324,7 +328,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _maybeRouteToCalculator() {
     if (!mounted) return;
     final requested = AppState().consumeRequestedTab();
-    if (requested != null) { _select(requested); return; }
+    if (requested != null) {
+      _select(requested);
+      return;
+    }
     if (AppState().pendingInsertExpression != null &&
         _selectedIndex != _kCalculator) {
       _select(_kCalculator);
@@ -352,6 +359,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Ctrl/Cmd + 1-6 switch between tabs (accessibility / power-user).
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true):
+            _openCommands,
+        const SingleActivator(LogicalKeyboardKey.keyK, meta: true):
+            _openCommands,
         const SingleActivator(LogicalKeyboardKey.digit1, control: true): () =>
             _select(0),
         const SingleActivator(LogicalKeyboardKey.digit2, control: true): () =>
@@ -398,6 +409,26 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _openCommands() async {
+    final command = await showDialog<AppCommand>(
+        context: context, builder: (_) => const CommandPalette());
+    if (!mounted || command == null) return;
+    final target = command.target;
+    if (target.startsWith('tab:')) {
+      _select(int.parse(target.substring(4)));
+    } else if (target == 'units') {
+      await showDialog<void>(
+          context: context, builder: (_) => const UnitConverterDialog());
+    } else if (target.startsWith('reference:')) {
+      await showDialog<void>(
+          context: context,
+          builder: (_) =>
+              FunctionReferenceDialog(initialSearch: target.substring(10)));
+    } else {
+      dispatchModuleSentinel(context, target);
+    }
+  }
+
   List<({IconData icon, String label})> _destinations(AppLocalizations t) {
     return [
       (icon: Icons.calculate, label: t.navCalculator),
@@ -416,6 +447,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         children: [
           if (_showPerfOverlay) const PerfOverlay(),
           const WebUnsupportedBanner(),
+          Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                  onPressed: _openCommands,
+                  icon: const Icon(Icons.search),
+                  label: const Text('Search commands'))),
           Expanded(child: body),
         ],
       );
@@ -855,8 +892,7 @@ class SettingsScreen extends StatelessWidget {
               if (CrashReporter.instance.hasReports) const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading:
-                      const Icon(Icons.cloud_sync, semanticLabel: 'Sync'),
+                  leading: const Icon(Icons.cloud_sync, semanticLabel: 'Sync'),
                   title: const Text('Cloud Sync'),
                   trailing: const Icon(Icons.arrow_forward_ios,
                       size: 16, semanticLabel: 'Open'),
@@ -1046,49 +1082,52 @@ class _OnnxSettingsCardState extends State<_OnnxSettingsCard> {
       _isLoading = true;
       _status = "Loading ONNX Runtime...";
     });
-    
+
     await ai.loadLibrary();
     final aiService = ai.aiService;
-    
+
     await aiService.initializeOptionalAi();
-    
+
     setState(() {
       _isLoading = false;
-      _status = aiService.isReady ? "Ready (CoreML / NNAPI available)" : "Failed to load";
+      _status = aiService.isReady
+          ? "Ready (CoreML / NNAPI available)"
+          : "Failed to load";
     });
   }
 
   void _showNlpDialog() {
     final ctl = TextEditingController();
     showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Test Math NLP"),
-          content: TextField(
-            controller: ctl,
-            decoration: const InputDecoration(hintText: "e.g. Integrate x squared"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Test Math NLP"),
+            content: TextField(
+              controller: ctl,
+              decoration:
+                  const InputDecoration(hintText: "e.g. Integrate x squared"),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                final aiService = ai.aiService;
-                final result = await aiService.processMathNLP(ctl.text);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result ?? '')));
-                }
-              },
-              child: const Text("Solve"),
-            )
-          ],
-        );
-      }
-    );
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final aiService = ai.aiService;
+                  final result = await aiService.processMathNLP(ctl.text);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(result ?? '')));
+                  }
+                },
+                child: const Text("Solve"),
+              )
+            ],
+          );
+        });
   }
 
   @override
@@ -1098,10 +1137,14 @@ class _OnnxSettingsCardState extends State<_OnnxSettingsCard> {
         leading: const Icon(Icons.memory, semanticLabel: 'AI Engine'),
         title: const Text('Local Math AI Engine (ONNX)'),
         subtitle: Text(_status),
-        trailing: _isLoading 
-            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+        trailing: _isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2))
             : OutlinedButton(
-                onPressed: _status.contains("Ready") ? _showNlpDialog : _loadOnnx,
+                onPressed:
+                    _status.contains("Ready") ? _showNlpDialog : _loadOnnx,
                 child: Text(_status.contains("Ready") ? 'Test' : 'Initialize'),
               ),
       ),

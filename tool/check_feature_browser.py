@@ -92,6 +92,17 @@ async def check(args):
             assert re.search(r'a = 4(?:\.0)?(?:\n|$)', await labels(page)), await labels(page)
             await page.get_by_role('button', name='Close', exact=True).click()
             await page.screenshot(path=str(Path(args.screenshots) / 'linked-graph.png'))
+        if args.stage >= 3:
+            await page.keyboard.press('Control+k')
+            await page.get_by_role('textbox', name='Find a command').fill('unit converter')
+            await page.keyboard.press('Enter')
+            await page.get_by_text('Length', exact=True).first.wait_for(timeout=60000)
+            await page.keyboard.press('Escape')
+            await page.get_by_role('button', name='Search commands', exact=True).click()
+            await page.get_by_role('textbox', name='Find a command').fill('notepad')
+            await page.keyboard.press('Enter')
+            await page.get_by_role('button', name='Link line to graph', exact=True).first.wait_for(timeout=60000)
+            await page.screenshot(path=str(Path(args.screenshots) / 'command-navigation.png'))
         assert not errors, errors
         print(json.dumps({'stage': args.stage, 'csvRows': 11, 'keyboardTrace': True, 'pageErrors': errors}, indent=2))
         await browser.close()
