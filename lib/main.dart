@@ -44,9 +44,6 @@ import 'widgets/sync_dialog.dart';
 import 'widgets/function_reference_dialog.dart';
 import 'widgets/worked_examples_dialog.dart';
 import 'widgets/web_unsupported_banner.dart';
-import 'engine/ocr_providers_init_stub.dart'
-    if (dart.library.io) 'engine/ocr_providers_init.dart'
-    if (dart.library.js_interop) 'engine/ocr_providers_init_web.dart';
 import 'widgets/ocr_settings_dialog_stub.dart'
     if (dart.library.io) 'widgets/ocr_settings_dialog.dart';
 
@@ -71,15 +68,12 @@ void main() async {
   CrashReporter.instance.install();
 
   await AppState().load();
-  await SyncService.instance.init();
   // Register native (SymEngine / GMP / MPFR / MPC / FLINT) license texts so
   // they appear in `showLicensePage` alongside the pub deps.
-  // Fire license registration and OCR provider init in the background —
-  // neither blocks the first frame. Licenses are only needed when the user
-  // opens showLicensePage; OCR providers register asynchronously and any
-  // OCR attempt before completion simply sees no active provider.
-  unawaited(registerNativeLicenses());
-  unawaited(initOcrProviders());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(SyncService.instance.init());
+    unawaited(registerNativeLicenses());
+  });
 
   // Headless self-test for CI / manual verification. Invoke with the
   // `CRISPMATH_DIAGNOSTIC=matrix|steps` environment variable set (desktop
@@ -106,7 +100,7 @@ class CrispMathApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = AppState();
     return ListenableBuilder(
-      listenable: appState,
+      listenable: appState.appearanceChanges,
       builder: (context, _) {
         return MaterialApp(
           title: 'CrispMath - CAS Calculator',
@@ -125,12 +119,9 @@ class CrispMathApp extends StatelessWidget {
             Locale('es', ''),
           ],
           themeMode: appState.themeMode,
-          theme: appState.highContrast
-              ? _buildHighContrastLightTheme()
-              : _buildLightTheme(),
-          darkTheme: appState.highContrast
-              ? _buildHighContrastDarkTheme()
-              : _buildDarkTheme(),
+          theme: appState.highContrast ? _highContrastLightTheme : _lightTheme,
+          darkTheme:
+              appState.highContrast ? _highContrastDarkTheme : _darkTheme,
           builder: (context, child) {
             final scale = appState.textScale;
             if (scale == 1.0) return child!;
@@ -148,6 +139,11 @@ class CrispMathApp extends StatelessWidget {
     );
   }
 }
+
+final _lightTheme = _buildLightTheme();
+final _darkTheme = _buildDarkTheme();
+final _highContrastLightTheme = _buildHighContrastLightTheme();
+final _highContrastDarkTheme = _buildHighContrastDarkTheme();
 
 ThemeData _buildDarkTheme() {
   return ThemeData.dark().copyWith(
@@ -242,8 +238,9 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _selectedIndex = _kCalculator;
+  final _visitedTabs = <int>{_kCalculator};
   bool _showPerfOverlay = false;
 
   final GlobalKey<CalculatorScreenState> _calculatorKey = GlobalKey();
@@ -302,13 +299,26 @@ class _MainScreenState extends State<MainScreen> {
     // Worked-examples V2: when a dialog signals "insert this into the
     // calculator", switch to the Calculator tab. The CalculatorScreen
     // itself consumes the pending expression and inserts it.
-    AppState().addListener(_maybeRouteToCalculator);
+    WidgetsBinding.instance.addObserver(this);
+    AppState().navigationChanges.addListener(_maybeRouteToCalculator);
   }
 
   @override
   void dispose() {
-    AppState().removeListener(_maybeRouteToCalculator);
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(AppState().flushPersistence());
+    AppState().navigationChanges.removeListener(_maybeRouteToCalculator);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      unawaited(AppState().flushPersistence());
+    }
   }
 
   void _maybeRouteToCalculator() {
@@ -321,7 +331,10 @@ class _MainScreenState extends State<MainScreen> {
 
   void _select(int i) {
     if (i == _selectedIndex) return;
-    setState(() => _selectedIndex = i);
+    setState(() {
+      _selectedIndex = i;
+      _visitedTabs.add(i);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (i == _kCalculator) {
         _calculatorKey.currentState?.requestFocus();
@@ -405,11 +418,25 @@ class _MainScreenState extends State<MainScreen> {
         ],
       );
 
+  /// Mount a module on its first visit, then retain its editing state.
+  /// Hidden modules also stop animation-driven work and graph sampling.
+  Widget _tabStack() => IndexedStack(
+        index: _selectedIndex,
+        children: [
+          for (var i = 0; i < _screens.length; i++)
+            TickerMode(
+              enabled: i == _selectedIndex,
+              child: _visitedTabs.contains(i)
+                  ? _screens[i]
+                  : const SizedBox.shrink(),
+            ),
+        ],
+      );
+
   Widget _buildBottomNavLayout(AppLocalizations t) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      body: _withWebBanner(
-          IndexedStack(index: _selectedIndex, children: _screens)),
+      body: _withWebBanner(_tabStack()),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: cs.surface,
@@ -449,7 +476,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           const VerticalDivider(width: 1),
           Expanded(
-            child: IndexedStack(index: _selectedIndex, children: _screens),
+            child: _tabStack(),
           ),
         ],
       )),

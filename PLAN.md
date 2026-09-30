@@ -5,6 +5,41 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Product follow-ups after the September 2026 performance work
+
+These are proposed next steps, ordered by usefulness to existing calculator,
+notepad and graphing workflows. They are not implemented by the performance
+refactor.
+
+- [ ] **Graph tracing and a value table.** Tap or drag along a curve to inspect
+  coordinates; generate values over a chosen interval and copy/export them.
+  Reuse compiled numeric expressions and sampled geometry. Undefined points
+  and discontinuities must remain explicit. Validate on touch and keyboard.
+- [ ] **Linked notepad and graph workspace.** Turn a notepad result or function
+  into a graph, keeping its variables and parameter changes connected.
+  Make the source expression and scope visible. Reuse existing documents,
+  function slots and adaptive navigation instead of adding another
+  independent storage format.
+- [ ] **Searchable actions.** A command palette for plotting, solving,
+  differentiating, unit conversion and opening modules. Build on the existing
+  localized function reference and module navigation; support keyboard
+  shortcuts and a discoverable mobile entry point.
+- [ ] **Graph navigation UX.** Fit-to-data, editable axis bounds, clearer
+  function validation and empty-range explanations. Retain plot state when
+  opening analysis and provide reversible graph edits.
+- [ ] **Finish optional AI inference before expanding its UI.**
+  `AiServiceNative.processMathNLP` and the web implementation currently return
+  hard-coded sample equations after a delay. A real model pipeline needs
+  model readiness, input-dependent inference, cancellation and an evaluation
+  corpus. Do not present the sample output as a result for arbitrary input.
+
+Measure task completion (enter → calculate → inspect/plot → save/share),
+misleading-result reports and time spent finding a function before expanding
+into more unrelated modules. Feature implementation should be scoped separately
+from the completed performance changes.
+
+---
+
 ## Strategic context (June 2026)
 
 **Five paradigms** in the 2026 calculator category: (1) OS-bundled

@@ -167,7 +167,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     super.initState();
     _lastNumberFormat = _appState.numberFormat;
     _lastDecimalPlaces = _appState.decimalPlaces;
-    _appState.addListener(_onAppStateChanged);
+    _appState.notepadChanges.addListener(_onAppStateChanged);
     // On web the SymEngine WASM bridge loads asynchronously; recompute the
     // whole doc once it becomes available so lines that fell back to the
     // pure-Dart subset (or errored) pick up the full CAS.
@@ -176,9 +176,10 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
   @override
   void dispose() {
-    _appState.removeListener(_onAppStateChanged);
+    _appState.notepadChanges.removeListener(_onAppStateChanged);
     nativeBridgeStatus.removeListener(_onBridgeStatusChanged);
     _recalcTimer?.cancel();
+    unawaited(_appState.persistNotepadNow());
     for (final c in _controllers.values) {
       c.dispose();
     }
@@ -1601,7 +1602,8 @@ class _NotepadScreenState extends State<NotepadScreen> {
         },
       ),
       IconButton(
-        icon: const Icon(Icons.picture_as_pdf_outlined, semanticLabel: 'Export PDF'),
+        icon: const Icon(Icons.picture_as_pdf_outlined,
+            semanticLabel: 'Export PDF'),
         tooltip: 'Export as PDF',
         onPressed: () async {
           if (_currentDoc == null) return;
@@ -1626,7 +1628,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       // Round 101 (P6): help-mode toggle. Mirrors the Calculator
       // AppBar control so the affordance carries across surfaces.
       ListenableBuilder(
-        listenable: _appState,
+        listenable: _appState.notepadChanges,
         builder: (context, _) {
           final on = _appState.helpMode;
           return IconButton(

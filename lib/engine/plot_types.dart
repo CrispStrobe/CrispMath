@@ -32,10 +32,12 @@ class PlotTypes {
   }) {
     final out = <PlotPt>[];
     final dt = (tMax - tMin) / steps;
+    final xFunction = _compile(xExpr);
+    final yFunction = _compile(yExpr);
     for (var i = 0; i <= steps; i++) {
       final t = tMin + i * dt;
-      final x = _eval(xExpr, {'t': t});
-      final y = _eval(yExpr, {'t': t});
+      final x = xFunction?.evaluate({'t': t});
+      final y = yFunction?.evaluate({'t': t});
       if (x == null || y == null || !x.isFinite || !y.isFinite) {
         out.add((x: 0, y: 0, ok: false));
       } else {
@@ -56,9 +58,10 @@ class PlotTypes {
     final expr = rExpr.replaceAll('θ', 'theta');
     final out = <PlotPt>[];
     final dth = (thMax - thMin) / steps;
+    final radiusFunction = _compile(expr);
     for (var i = 0; i <= steps; i++) {
       final th = thMin + i * dth;
-      final r = _eval(expr, {'theta': th, 't': th});
+      final r = radiusFunction?.evaluate({'theta': th, 't': th});
       if (r == null || !r.isFinite) {
         out.add((x: 0, y: 0, ok: false));
       } else {
@@ -79,6 +82,7 @@ class PlotTypes {
     int grid = 120,
   }) {
     final nx = grid, ny = grid;
+    final implicitFunction = _compile(fExpr);
     final dx = (xMax - xMin) / nx, dy = (yMax - yMin) / ny;
     // Sample F on the lattice once.
     final vals =
@@ -87,7 +91,7 @@ class PlotTypes {
       final x = xMin + i * dx;
       for (var j = 0; j <= ny; j++) {
         final y = yMin + j * dy;
-        final v = _eval(fExpr, {'x': x, 'y': y});
+        final v = implicitFunction?.evaluate({'x': x, 'y': y});
         vals[i][j] = (v != null && v.isFinite) ? v : double.nan;
       }
     }
@@ -166,8 +170,9 @@ class PlotTypes {
     final nx = grid, ny = grid;
     final dx = (xMax - xMin) / nx;
     final dy = (yMax - yMin) / ny;
-    double? uEval(double x, double y) => NumericFallbackEvaluator.evalNumeric(uExpr, {'x': x, 'y': y});
-    double? vEval(double x, double y) => NumericFallbackEvaluator.evalNumeric(vExpr, {'x': x, 'y': y});
+    final uFunction = _compile(uExpr), vFunction = _compile(vExpr);
+    double? uEval(double x, double y) => uFunction?.evaluate({'x': x, 'y': y});
+    double? vEval(double x, double y) => vFunction?.evaluate({'x': x, 'y': y});
 
     final segs = <PlotSeg>[];
 
@@ -200,17 +205,17 @@ class PlotTypes {
       final scale = (vec.mag / maxMag) * maxLen;
       final du = (vec.u / vec.mag) * scale;
       final dv = (vec.v / vec.mag) * scale;
-      
+
       final x2 = vec.x + du;
       final y2 = vec.y + dv;
-      
+
       // Main arrow shaft
       segs.add((x1: vec.x, y1: vec.y, x2: x2, y2: y2));
-      
+
       // Arrow head (simple V-shape)
       final angle = math.atan2(dv, du);
       final headLen = scale * 0.3;
-      
+
       segs.add((
         x1: x2,
         y1: y2,
@@ -230,9 +235,9 @@ class PlotTypes {
 
   // --- helpers ------------------------------------------------------------
 
-  static double? _eval(String expr, Map<String, double> vars) =>
-      NumericFallbackEvaluator.evalNumeric(
-          expr.replaceAll(' ', '').replaceAll('**', '^'), vars);
+  static CompiledNumericExpression? _compile(String expr) =>
+      NumericFallbackEvaluator.compile(
+          expr.replaceAll(' ', '').replaceAll('**', '^'));
 
   /// Position along [a,b] where a linear function through (a,va),(b,vb)
   /// crosses zero.

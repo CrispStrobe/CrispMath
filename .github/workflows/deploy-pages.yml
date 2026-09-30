@@ -41,6 +41,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          path: .ci/CrispEmbed
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -50,10 +56,16 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
 
       - name: Build web (release, dart2js, Pages base-href)
-        run: flutter build web --release --base-href /CrispMath/
+        run: tool/build_web.sh --release --base-href /CrispMath/
 
       - name: SPA 404 fallback
         run: cp build/web/index.html build/web/404.html

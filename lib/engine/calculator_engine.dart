@@ -5,7 +5,8 @@
 // when it isn't, every call returns a string starting with "Error" so the
 // UI can route it into the history just like any other failure.
 
-import 'package:flutter/foundation.dart';
+import 'engine_signals_worker.dart'
+    if (dart.library.ui) 'engine_signals_flutter.dart';
 import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'matrix_evaluator.dart';

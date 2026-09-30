@@ -27,7 +27,7 @@
 // CalculatorEngine (which dispatches to either the native bridge or
 // the web WASM bridge).
 
-import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart' show visibleForTesting;
 
 import 'calculator_engine.dart';
 

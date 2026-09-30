@@ -6,9 +6,11 @@
 import 'package:flutter/material.dart';
 
 import '../engine/ocr_provider.dart';
+import '../services/ocr_initialization.dart';
 import 'drawing_canvas.dart';
 import 'ocr_capture_dialog.dart';
-import 'ocr_settings_dialog.dart';
+import 'ocr_settings_dialog_stub.dart'
+    if (dart.library.io) 'ocr_settings_dialog.dart';
 
 /// Shows a dialog with a drawing canvas for handwritten math input.
 /// Returns the recognized expression (possibly edited by user), or
@@ -35,7 +37,9 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ensureOcrProviders();
+      if (!mounted) return;
       if (OcrProviders.active == null) {
         if (OcrProviders.available.isNotEmpty) {
           setState(() {

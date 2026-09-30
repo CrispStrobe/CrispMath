@@ -11,6 +11,8 @@ environment:
   flutter: ">=3.16.0"
 
 dependencies:
+  meta: ^1.18.0
+  web: ^1.1.1
   flutter:
     sdk: flutter
   flutter_localizations:

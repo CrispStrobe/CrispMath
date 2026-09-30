@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../engine/ocr_model_manager.dart';
 import '../engine/ocr_provider.dart';
+import '../services/ocr_initialization.dart';
 import '../engine/ocr_providers_init.dart';
 
 class OcrSettingsDialog extends StatefulWidget {
@@ -25,6 +26,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   @override
   void initState() {
     super.initState();
+    ensureOcrProviders().then((_) { if (mounted) setState(() {}); });
     _checkDownloaded();
   }
 

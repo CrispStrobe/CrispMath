@@ -1,9 +1,7 @@
 # Web build + Vercel deploy (PLAN P10 Path A). The browser target ships
-# the reduced-capability build: pure-Dart calculator / statistics / matrices
-# / Sudoku-CSP / units work, while the SymEngine CAS, MPFR precision, and
-# FLINT number-theory paths degrade to "Error: requires native library"
-# (no dart:ffi in the browser). The default `flutter build web` is dart2js —
-# correct everywhere; dart_csp falls back to its slower list/interval rep.
+# a WASM CAS worker alongside the pure-Dart calculator, statistics, matrices,
+# Sudoku-CSP and units. dart2js is the default browser target; dart_csp falls
+# back to its slower list/interval representation.
 #
 # Every push/PR builds the bundle and uploads it as an artifact (needs no
 # secrets). Production deploys to https://crisp-math.vercel.app happen
@@ -44,6 +42,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          path: .ci/CrispEmbed
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -54,10 +58,16 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
 
       - name: Build web (release, dart2js)
-        run: flutter build web --release
+        run: tool/build_web.sh --release
 
       - name: Add Vercel SPA-rewrite config
         run: cp vercel.json build/web/vercel.json

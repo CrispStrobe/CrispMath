@@ -12,6 +12,7 @@ import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
 import '../engine/inequality_solver.dart';
 import '../engine/ocr_provider.dart';
+import '../services/ocr_initialization.dart';
 import '../engine/scan_cleanup.dart';
 import '../widgets/ocr_capture_dialog.dart';
 import 'package:image_picker/image_picker.dart';
@@ -194,6 +195,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   /// OCR: pick image → run provider → show confirmation → insert.
   Future<void> _launchOcr(BuildContext context) async {
+    await ensureOcrProviders();
+    if (!context.mounted) return;
     var provider = OcrProviders.active;
 
     // Check if layout-aware OCR is available.
@@ -297,6 +300,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   Future<void> _processDroppedFile(XFile file) async {
+    await ensureOcrProviders();
+    if (!mounted) return;
     final bytes = await file.readAsBytes();
     
     // Choose layout provider if available, otherwise active provider
@@ -2679,7 +2684,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                         // + colored when active. Wrapping HelpTarget /
                         // popovers land in Rounds 102-104.
                         ListenableBuilder(
-                          listenable: _appState,
+                          listenable: _appState.calculatorChanges,
                           builder: (context, _) {
                             final on = _appState.helpMode;
                             final t = AppLocalizations.of(context);
@@ -2806,7 +2811,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   // History list
                   Expanded(
                     child: ListenableBuilder(
-                        listenable: _appState,
+                        listenable: _appState.calculatorChanges,
                         builder: (context, child) {
                           if (_appState.history.isEmpty) {
                             return Center(

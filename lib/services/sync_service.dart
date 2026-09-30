@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../engine/app_state.dart';
 
-class SyncService {
+enum SyncStatus { uninitialized, initializing, ready, unavailable, failed }
+
+class SyncService extends ChangeNotifier {
   static final SyncService instance = SyncService._();
   SyncService._();
 
@@ -13,13 +15,32 @@ class SyncService {
   SupabaseClient get _client => Supabase.instance.client;
   User? get currentUser => isConfigured ? _client.auth.currentUser : null;
 
-  Future<void> init() async {
+  SyncStatus _status = SyncStatus.uninitialized;
+  SyncStatus get status => _status;
+  Future<void>? _initialization;
+
+  Future<void> init() => _initialization ??= _initialize();
+
+  Future<void> _initialize() async {
+    _status = SyncStatus.initializing;
+    notifyListeners();
     const url = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
     const key = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
-    if (url.isNotEmpty && key.isNotEmpty) {
+    if (url.isEmpty || key.isEmpty) {
+      _status = SyncStatus.unavailable;
+      notifyListeners();
+      return;
+    }
+    try {
       await Supabase.initialize(url: url, anonKey: key);
       _configured = true;
+      _status = SyncStatus.ready;
+    } catch (e) {
+      _status = SyncStatus.failed;
+      _initialization = null;
+      debugPrint('Sync initialization failed: $e');
     }
+    notifyListeners();
   }
 
   Future<void> signInWithEmail(String email, String password) async {

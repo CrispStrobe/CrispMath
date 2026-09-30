@@ -25,6 +25,11 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../engine/calculator_engine.dart';
+import 'engine_op.dart';
+import 'engine_dispatch.dart';
+import 'math_worker_client_stub.dart'
+    if (dart.library.js_interop) 'math_worker_client_web.dart';
+export 'engine_op.dart';
 
 class EngineService {
   /// Heuristic: returns true when [expression] looks slow enough to
@@ -71,7 +76,7 @@ class EngineService {
   /// including error prefixes.
   static Future<String> evaluateAsync(String expression) {
     return _worker
-        .send(const EngineOp('evaluate', '_placeholder')._withArg1(expression));
+        .send(const EngineOp('evaluate', '_placeholder').withArg1(expression));
   }
 
   /// V2: generic dispatch for the specialized CalculatorEngine methods
@@ -94,38 +99,11 @@ class EngineService {
   static Future<void> shutdownForTest() => _worker.kill();
 }
 
-/// Tag + args for a generic worker dispatch. Held minimal (5 strings)
-/// so it transports cleanly across the isolate boundary.
-class EngineOp {
-  final String kind;
-  final String arg1;
-  final String? arg2;
-  final String? arg3;
-  final String? arg4;
-  const EngineOp(this.kind, this.arg1, [this.arg2, this.arg3, this.arg4]);
-
-  EngineOp _withArg1(String newArg1) =>
-      EngineOp(kind, newArg1, arg2, arg3, arg4);
-}
-
-/// Raised by [_PersistentWorker.send] when [EngineService.cancelInFlight]
-/// kills the worker while a request was pending.
-class EngineCancelled implements Exception {
-  const EngineCancelled();
-  @override
-  String toString() => 'EngineCancelled';
-}
-
 /// Owns the worker isolate. Spawns lazily on the first request;
 /// `kill()` tears it down so the next request respawns.
 class _PersistentWorker {
-  // Web has no `Isolate.spawn` (it throws `UnsupportedError`), so on web
-  // every op runs inline on the main isolate against this one engine. The
-  // WASM bridge is single-threaded anyway, so there's no thread to offload
-  // to — the cost is a (usually fast) synchronous CAS call. The shared
-  // instance lazily re-acquires the bridge once the WASM module loads, same
-  // as every other CalculatorEngine.
-  CalculatorEngine? _inlineEngine;
+  // Web owns a separate WASM instance in a persistent browser worker.
+  final _webWorker = MathWorkerClient();
 
   Isolate? _isolate;
   SendPort? _commandPort;
@@ -166,10 +144,13 @@ class _PersistentWorker {
 
   Future<String> send(EngineOp op) async {
     if (kIsWeb) {
-      // No isolate on web — run the op directly. Still async so callers'
-      // `await` + progress-overlay flow is identical to native.
-      final engine = _inlineEngine ??= CalculatorEngine();
-      return _runOp(engine, op);
+      return await _webWorker.request('engine', {
+        'kind': op.kind,
+        'arg1': op.arg1,
+        'arg2': op.arg2,
+        'arg3': op.arg3,
+        'arg4': op.arg4,
+      }) as String;
     }
     await _ensureStarted();
     final id = _nextId++;
@@ -180,6 +161,10 @@ class _PersistentWorker {
   }
 
   Future<void> kill() async {
+    if (kIsWeb) {
+      _webWorker.cancel();
+      return;
+    }
     final pending = _pending.values.toList();
     _pending.clear();
     // If we were still in the middle of starting up, fail the
@@ -237,51 +222,8 @@ void _workerEntry(SendPort mainPort) {
   final engine = CalculatorEngine();
   commands.listen((msg) {
     if (msg is _WorkerRequest) {
-      final result = _runOp(engine, msg.op);
+      final result = runEngineOp(engine, msg.op);
       mainPort.send(_WorkerResponse(msg.id, result));
     }
   });
-}
-
-String _runOp(CalculatorEngine engine, EngineOp op) {
-  try {
-    switch (op.kind) {
-      case 'evaluate':
-        return engine.evaluate(op.arg1);
-      case 'expand':
-        return engine.expand(op.arg1);
-      case 'simplify':
-        return engine.simplify(op.arg1);
-      case 'factor':
-        return engine.factor(op.arg1);
-      case 'solve':
-        return engine.solve(op.arg1, op.arg2!);
-      case 'differentiate':
-        return engine.differentiate(op.arg1, op.arg2!);
-      case 'integrate':
-        return engine.integrate(op.arg1, op.arg2!, op.arg3, op.arg4);
-      case 'limit':
-        return engine.limit(op.arg1, op.arg2!, op.arg3!);
-      case 'series':
-        return engine.series(op.arg1, op.arg2!,
-            point: op.arg3 ?? '0', order: int.tryParse(op.arg4 ?? '6') ?? 6);
-      case 'linsolve':
-        // arg1: ';'-joined equations, arg2: ','-joined symbols.
-        return engine.solveLinearSystem(
-            op.arg1.split(';').map((e) => e.trim()).toList(),
-            op.arg2!.split(',').map((e) => e.trim()).toList());
-      case 'gcd':
-        return engine.gcd(op.arg1, op.arg2!);
-      case 'lcm':
-        return engine.lcm(op.arg1, op.arg2!);
-      case 'factorial':
-        return engine.factorial(int.parse(op.arg1));
-      case 'fibonacci':
-        return engine.fibonacci(int.parse(op.arg1));
-      default:
-        return 'Error: unknown engine op ${op.kind}';
-    }
-  } catch (e) {
-    return 'Error: $e';
-  }
 }

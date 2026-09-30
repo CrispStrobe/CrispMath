@@ -830,7 +830,8 @@ class _MockProvider implements OcrProvider {
 
   @override
   Future<OcrResult?> recognize(
-      Uint8List imageBytes, int width, int height) async {
+      Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)? onProgress}) async {
     return OcrResult(
       text: 'mock result',
       rawOutput: 'mock',

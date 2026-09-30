@@ -5,6 +5,7 @@ void main() {
   setUp(() {
     PerfStats.instance.reset();
     PerfStats.instance.stop();
+    PerfStats.instance.setRefreshRate(60);
   });
 
   group('PerfStats', () {
@@ -14,6 +15,22 @@ void main() {
       expect(PerfStats.instance.worstFrame, Duration.zero);
       expect(PerfStats.instance.fps, 0);
       expect(PerfStats.instance.avgFrameMs, 0);
+    });
+
+    test('jank follows display refresh rate and separate UI/raster phases', () {
+      final stats = PerfStats.instance;
+      stats.recordFrame(
+          const Duration(milliseconds: 10), const Duration(milliseconds: 10));
+      expect(stats.jankCount, 0);
+      stats.setRefreshRate(120);
+      stats.recordFrame(
+          const Duration(milliseconds: 10), const Duration(milliseconds: 2));
+      expect(stats.jankCount, 1);
+      expect(stats.buildP95Ms, 10);
+      expect(stats.rasterP95Ms, 10);
+      stats.reset();
+      expect(stats.buildP95Ms, 0);
+      expect(stats.rasterP95Ms, 0);
     });
 
     test('reset clears all counters', () {

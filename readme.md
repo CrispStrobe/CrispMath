@@ -138,6 +138,7 @@ CrispMath/
 flutter pub get
 flutter test            # ~4018 unit tests run without the native bridge
 flutter run             # Runs the app; SymEngine bridge required for math
+tool/build_web.sh --release  # Also compiles the browser math worker
 
 # CAS regression corpus (SymPy-certified expected values):
 python3 tool/cas_corpus_verify.py                        # certify + regenerate
@@ -199,3 +200,35 @@ web-only gap is multivariate factoring (falls back to `expand`).
 
 See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
 recently.
+
+## Performance validation
+
+Modules mount on their first visit and retain their state afterward; hidden
+graphs stop scheduling samples. Graph geometry is sampled outside painting: native builds use an isolate;
+web builds use a persistent browser worker with its own SymEngine WASM
+instance. Gesture updates use coarse samples, then refine at rest. An
+8-entry viewport cache and a 128-entry numeric expression cache are bounded.
+Calculator CAS and graph sampling use separate browser workers, so cancelling
+an evaluation does not interrupt the plot. Build web through
+`tool/build_web.sh` so the compiled worker is included. For `flutter run -d
+chrome`, first run `dart compile js -O2 -Ddart.vm.product=true
+lib/services/math_worker_entry.dart -o web/math_worker.dart.js`.
+
+Use the settings performance overlay in a profile build. It reports UI and
+raster p95 work times against the display's refresh-rate budget; it does not
+claim presentation FPS. Exercise graph pan/zoom with multiple functions,
+implicit contours and parameter sliders; edit a large notepad; then compare
+cold startup with OCR unopened. Record the device and build mode with results.
+`dart run tool/benchmark_graph_sampling.dart` measures sampling CPU time only.
+
+For browser worker transport/cancellation checks, compile
+`tool/math_worker_browser_probe.dart` to `web/math_worker_probe.dart.js`, serve
+`web/` over HTTP, and run `python tool/check_math_worker.py --url
+http://localhost:8765/`. This optional check uses Python Playwright and accepts
+`--chromium` for an existing Chromium executable. The probe is a development
+artifact and is excluded from production bundles by `tool/build_web.sh`.
+
+Notepad records are stored per document. Existing `crisp.notepadDocs` blobs
+migrate automatically, retaining the old blob until migration succeeds.
+Writes are ordered, edits are batched, and lifecycle pauses flush pending
+changes. The JSON import/export format is unchanged.

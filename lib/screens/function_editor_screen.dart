@@ -305,7 +305,7 @@ class _FunctionEditorScreenState extends State<FunctionEditorScreen>
       // No autofocus — see calculator_screen.dart for the reasoning.
       onKeyEvent: _handleKeyboardInput,
       child: ListenableBuilder(
-        listenable: _appState,
+        listenable: _appState.graphChanges,
         builder: (context, child) {
           final t = AppLocalizations.of(context);
           return Scaffold(

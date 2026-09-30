@@ -237,6 +237,7 @@ void main() {
 
       final exported = s.exportToJson();
 
+      await s.flushPersistence();
       // Wipe and reload — first-launch seeding re-runs.
       SharedPreferences.setMockInitialValues({});
       await s.load(force: true);

@@ -80,6 +80,10 @@ abstract class AppLocalizations {
   String get graphErrorEmpty;
   String get graphErrorUnbalanced;
   String get graphErrorTrailingOperator;
+  String get graphSampling;
+  String get graphSamplingFailed;
+  String get graphNoRealValues;
+  String get graphRetry;
   String graphingTitle(int count);
   String functionAdded(int slot);
   String functionRemoved(int slot);
@@ -908,6 +912,14 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get historyNoMatches => 'No matching entries.';
 
+  @override
+  String get graphSampling => 'Updating graph';
+  @override
+  String get graphSamplingFailed => 'Could not update the graph.';
+  @override
+  String get graphNoRealValues => 'No real values in this range. Check the expression or try another range.';
+  @override
+  String get graphRetry => 'Retry';
   @override
   String graphingTitle(int count) => 'Graphing ($count functions)';
   @override
@@ -2653,6 +2665,14 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get historyNoMatches => 'Keine passenden Einträge.';
 
+  @override
+  String get graphSampling => 'Graph wird aktualisiert';
+  @override
+  String get graphSamplingFailed => 'Der Graph konnte nicht aktualisiert werden.';
+  @override
+  String get graphNoRealValues => 'Keine reellen Werte in diesem Bereich. Prüfe den Ausdruck oder wähle einen anderen Bereich.';
+  @override
+  String get graphRetry => 'Erneut versuchen';
   @override
   String graphingTitle(int count) => 'Graphen ($count Funktionen)';
   @override
@@ -6009,6 +6029,14 @@ class FrLocalizations implements AppLocalizations {
   String get historyNoMatches => 'Aucune entrée correspondante.';
 
   @override
+  String get graphSampling => 'Actualisation du graphe';
+  @override
+  String get graphSamplingFailed => 'Impossible d’actualiser le graphe.';
+  @override
+  String get graphNoRealValues => 'Aucune valeur réelle dans cet intervalle. Vérifiez l’expression ou essayez un autre intervalle.';
+  @override
+  String get graphRetry => 'Réessayer';
+  @override
   String graphingTitle(int count) => 'Graphes ($count fonctions)';
   @override
   String functionAdded(int slot) => 'Fonction ajoutée à Y$slot';
@@ -9302,6 +9330,14 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get historyNoMatches => 'No hay entradas coincidentes.';
 
+  @override
+  String get graphSampling => 'Actualizando gráfico';
+  @override
+  String get graphSamplingFailed => 'No se pudo actualizar el gráfico.';
+  @override
+  String get graphNoRealValues => 'No hay valores reales en este intervalo. Revisa la expresión o prueba otro intervalo.';
+  @override
+  String get graphRetry => 'Reintentar';
   @override
   String graphingTitle(int count) => 'Gráficos ($count funciones)';
   @override
