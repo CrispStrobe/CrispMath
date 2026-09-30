@@ -40,7 +40,7 @@ jobs:
       - name: Feature and optimization regression tests
         run: >-
           flutter test --concurrency=2 --reporter expanded
-          test/graph_inspection_test.dart test/graph_inspection_widget_test.dart
+          test/graph_inspection_test.dart test/graph_inspection_widget_test.dart test/graph_touch_trace_test.dart
           test/linked_graph_test.dart test/graph_parameter_cleanup_test.dart
           test/command_palette_test.dart test/graph_viewport_test.dart
           test/graph_navigation_widget_test.dart test/graph_painter_repaint_test.dart
@@ -140,10 +140,12 @@ jobs:
           python -m http.server 8766 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           python tool/ai_contract_fixture.py > /tmp/crispmath-ai-fixture.log 2>&1 &
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
+          python tool/check_mobile_trace.py --screenshots browser-results
       - name: Debug build and framework assertion checks
         run: |
           tool/build_web.sh --debug --no-wasm-dry-run
-          python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results/debug
+          python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
+          python tool/check_mobile_trace.py --screenshots browser-results/debug
       - uses: actions/upload-artifact@v4
         if: always()
         with:

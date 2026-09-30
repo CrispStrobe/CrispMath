@@ -831,6 +831,10 @@ class GraphingScreenState extends State<GraphingScreen>
                   Expanded(
                     flex: 3,
                     child: GestureDetector(
+                      // The plot's raw pointer handlers own tracing and panning.
+                      // A semantic tap button over the entire plot consumes web
+                      // touch events before they reach those handlers.
+                      excludeFromSemantics: true,
                       onTap: () {
                         if (_tracing) return;
                         debugPrint(
@@ -1657,6 +1661,19 @@ class _SampledGraphState extends State<_SampledGraph> {
   bool _noRealValues = false;
 
   @override
+  void didUpdateWidget(covariant _SampledGraph oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.traceIndex != widget.traceIndex) {
+      _traceSample = null;
+      if (widget.traceIndex != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _traceFocus.requestFocus();
+        });
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     _traceFocus.dispose();
@@ -1778,6 +1795,7 @@ class _SampledGraphState extends State<_SampledGraph> {
             fit: StackFit.expand,
             children: [
               Focus(
+                  includeSemantics: false,
                   focusNode: _traceFocus,
                   onKeyEvent: (_, event) {
                     if (event is! KeyDownEvent || index == null)

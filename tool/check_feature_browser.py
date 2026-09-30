@@ -16,8 +16,8 @@ async def labels(page):
 async def type_text(page, locator, value):
     # Flutter's semantics inputs must acquire framework focus before editing.
     await locator.click()
-    await page.keyboard.press('Control+A')
-    await page.keyboard.type(value, delay=10)
+    await page.wait_for_timeout(100)
+    await locator.fill(value)
     await expect(locator).to_have_value(value)
 
 async def check(args):
