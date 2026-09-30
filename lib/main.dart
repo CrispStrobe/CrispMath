@@ -12,7 +12,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:crisp_math/services/ai_service.dart' deferred as ai;
+import 'widgets/ai_math_dialog.dart' deferred as ai;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -870,7 +870,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 16),
-              _OnnxSettingsCard(),
+              _MathAssistantSettingsCard(),
               const SizedBox(height: 16),
               _CrispAssistSettingsCard(appState: appState),
               const SizedBox(height: 16),
@@ -1068,88 +1068,23 @@ class SettingsScreen extends StatelessWidget {
 // CrispAssist settings card
 // ---------------------------------------------------------------------------
 
-class _OnnxSettingsCard extends StatefulWidget {
+class _MathAssistantSettingsCard extends StatelessWidget {
   @override
-  State<_OnnxSettingsCard> createState() => _OnnxSettingsCardState();
-}
-
-class _OnnxSettingsCardState extends State<_OnnxSettingsCard> {
-  bool _isLoading = false;
-  String _status = "Not loaded (Optional AI)";
-
-  void _loadOnnx() async {
-    setState(() {
-      _isLoading = true;
-      _status = "Loading ONNX Runtime...";
-    });
-
-    await ai.loadLibrary();
-    final aiService = ai.aiService;
-
-    await aiService.initializeOptionalAi();
-
-    setState(() {
-      _isLoading = false;
-      _status = aiService.isReady
-          ? "Ready (CoreML / NNAPI available)"
-          : "Failed to load";
-    });
-  }
-
-  void _showNlpDialog() {
-    final ctl = TextEditingController();
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text("Test Math NLP"),
-            content: TextField(
-              controller: ctl,
-              decoration:
-                  const InputDecoration(hintText: "e.g. Integrate x squared"),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  final aiService = ai.aiService;
-                  final result = await aiService.processMathNLP(ctl.text);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(result ?? '')));
-                  }
-                },
-                child: const Text("Solve"),
-              )
-            ],
-          );
-        });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.memory, semanticLabel: 'AI Engine'),
-        title: const Text('Local Math AI Engine (ONNX)'),
-        subtitle: Text(_status),
-        trailing: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2))
-            : OutlinedButton(
-                onPressed:
-                    _status.contains("Ready") ? _showNlpDialog : _loadOnnx,
-                child: Text(_status.contains("Ready") ? 'Test' : 'Initialize'),
-              ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Card(
+          child: ListTile(
+        leading: const Icon(Icons.auto_awesome),
+        title: const Text('Math assistance'),
+        subtitle: const Text(
+            'Translate a question, review the expression, then calculate.'),
+        trailing: OutlinedButton(
+            onPressed: () async {
+              await ai.loadLibrary();
+              if (context.mounted)
+                await showDialog<void>(
+                    context: context, builder: (_) => ai.AiMathDialog());
+            },
+            child: const Text('Open assistant')),
+      ));
 }
 
 class _CrispAssistSettingsCard extends StatefulWidget {
@@ -1240,7 +1175,7 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
                             style: Theme.of(context).textTheme.titleMedium),
                         Text(
                           enabled
-                              ? 'Connected (${widget.appState.crispAssistModel})'
+                              ? 'Configured (${widget.appState.crispAssistModel})'
                               : 'Not configured',
                           style: TextStyle(
                             fontSize: 12,

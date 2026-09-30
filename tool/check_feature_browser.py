@@ -6,6 +6,7 @@ import asyncio
 import json
 import math
 import re
+import urllib.request
 from pathlib import Path
 from playwright.async_api import async_playwright
 
@@ -40,6 +41,9 @@ async def check(args):
                 localStorage.setItem('featureTestSeeded','true');
               }
             """)
+        if args.stage >= 5:
+            settings = {'crisp.copilot.apiUrl': args.ai_fixture_url + '/v1/chat/completions', 'crisp.copilot.model': 'browser-contract-fixture', 'crisp.copilot.apiKey': 'fixture-key'}
+            await page.add_init_script('for (const [k,v] of Object.entries(' + json.dumps(settings) + ')) localStorage.setItem("flutter."+k,JSON.stringify(v))')
         await page.goto(args.url, wait_until="domcontentloaded", timeout=90000)
         print('Page loaded', flush=True)
         await page.locator('canvas').first.wait_for(timeout=300000)
@@ -86,7 +90,7 @@ async def check(args):
             await page.keyboard.press('Control+A')
             await page.keyboard.type('a = 4')
             await page.wait_for_function(r"(localStorage.getItem('flutter.crisp.functions')||'').match(/\(4(?:\.0)?\)/)", timeout=60000)
-            await page.get_by_text('Graphing', exact=True).first.click()
+            await page.get_by_label(re.compile(r'^Graphing')).first.evaluate('(el)=>el.click()')
             await page.get_by_role('button', name='Linked Y3: Live model', exact=True).click()
             await page.get_by_role('button', name='Open source', exact=True).wait_for(timeout=60000)
             assert re.search(r'a = 4(?:\.0)?(?:\n|$)', await labels(page)), await labels(page)
@@ -104,7 +108,7 @@ async def check(args):
             await page.get_by_role('button', name='Link line to graph', exact=True).first.wait_for(timeout=60000)
             await page.screenshot(path=str(Path(args.screenshots) / 'command-navigation.png'))
         if args.stage >= 4:
-            await page.get_by_text('Graphing', exact=True).first.click()
+            await page.get_by_label(re.compile(r'^Graphing')).first.evaluate('(el)=>el.click()')
             await page.get_by_role('button', name='Graph bounds', exact=True).click()
             await page.get_by_role('textbox', name='x minimum', exact=True).fill('10')
             await page.get_by_role('textbox', name='x maximum', exact=True).fill('-10')
@@ -123,6 +127,35 @@ async def check(args):
             assert float(await page.get_by_role('textbox', name='y maximum', exact=True).input_value()) == 100
             await page.get_by_role('button', name='Cancel', exact=True).click()
             await page.screenshot(path=str(Path(args.screenshots) / 'graph-navigation.png'))
+        if args.stage >= 5:
+            await page.get_by_label(re.compile(r'^Settings')).first.click()
+            await page.get_by_role('button', name='Open assistant', exact=True).click()
+            question = page.get_by_role('textbox', name='Math question', exact=True)
+            await question.fill('simulate failure')
+            await page.get_by_role('button', name='Translate', exact=True).click()
+            await page.get_by_text(re.compile('HTTP 503')).wait_for(timeout=60000)
+            await question.fill('slow request')
+            await page.get_by_role('button', name='Retry', exact=True).click()
+            await page.get_by_role('button', name='Cancel request', exact=True).click()
+            await page.get_by_text('Request cancelled. You can retry.', exact=True).wait_for()
+            await question.fill('two plus two')
+            await page.get_by_role('button', name='Retry', exact=True).click()
+            expression = page.get_by_role('textbox', name='Translated expression', exact=True)
+            await expression.wait_for(timeout=60000)
+            assert await expression.input_value() == '2+2'
+            await question.fill('five plus seven')
+            await page.get_by_role('button', name='Translate', exact=True).click()
+            await expression.wait_for(timeout=60000)
+            assert await expression.input_value() == '5+7'
+            await page.screenshot(path=str(Path(args.screenshots) / 'math-assistance.png'))
+            await page.get_by_role('button', name='Use in calculator', exact=True).click()
+            await page.keyboard.press('Enter')
+            await page.wait_for_function("[...document.querySelectorAll('[aria-label]')].some(e=>/\\b12\\b/.test(e.getAttribute('aria-label'))) || /\\b12\\b/.test(document.body.innerText)", timeout=60000)
+            with urllib.request.urlopen(args.ai_fixture_url + '/requests') as response:
+                provider_requests = json.load(response)
+            assert any(r['messages'][-1]['content'] == 'two plus two' for r in provider_requests)
+            assert any(r['messages'][-1]['content'] == 'five plus seven' for r in provider_requests)
+            print('AI provider HTTP contract fixture and calculator result verified; model quality was not tested', flush=True)
         assert not errors, errors
         print(json.dumps({'stage': args.stage, 'csvRows': 11, 'keyboardTrace': True, 'pageErrors': errors}, indent=2))
         await browser.close()
@@ -132,5 +165,6 @@ if __name__ == '__main__':
     parser.add_argument('--url', default='http://127.0.0.1:8766/')
     parser.add_argument('--stage', type=int, default=1)
     parser.add_argument('--chromium')
+    parser.add_argument('--ai-fixture-url', default='http://127.0.0.1:8769')
     parser.add_argument('--screenshots', default='/tmp/crispmath-feature-screenshots')
     asyncio.run(check(parser.parse_args()))

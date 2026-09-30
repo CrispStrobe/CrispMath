@@ -9,6 +9,38 @@ concurrency:
   group: feature-validation-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  features:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Feature and optimization regression tests
+        run: >-
+          flutter test --concurrency=2 --reporter expanded
+          test/graph_inspection_test.dart test/graph_inspection_widget_test.dart
+          test/linked_graph_test.dart test/graph_parameter_cleanup_test.dart
+          test/command_palette_test.dart test/graph_viewport_test.dart
+          test/graph_navigation_widget_test.dart test/graph_painter_repaint_test.dart
+          test/graphing_plot_modes_test.dart test/graph_sampling_test.dart
+          test/ai_provider_service_test.dart test/ai_math_dialog_test.dart
+          test/notepad_screen_test.dart test/app_state_persistence_test.dart
   unit:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -70,7 +102,12 @@ jobs:
       - name: Live browser feature checks
         run: |
           python -m http.server 8766 --directory build/web > /tmp/crispmath-http.log 2>&1 &
+          python tool/ai_contract_fixture.py > /tmp/crispmath-ai-fixture.log 2>&1 &
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
+      - name: Debug build and framework assertion checks
+        run: |
+          tool/build_web.sh --debug --no-wasm-dry-run
+          python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results/debug
       - uses: actions/upload-artifact@v4
         if: always()
         with:
