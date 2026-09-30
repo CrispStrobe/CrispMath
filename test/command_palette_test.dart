@@ -43,7 +43,7 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'unit converter');
-    await tester.pump();
+    // Submit before another frame: the filtered command must be current.
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(choice?.target, 'units');

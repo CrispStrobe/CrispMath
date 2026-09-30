@@ -1,5 +1,6 @@
 import 'package:crisp_math/engine/graph_viewport.dart';
 import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/notepad.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,5 +46,22 @@ void main() {
     expect(state.graphFunctions[0], 'a*x');
     expect(state.getParameter(0, 'a'), 4);
     expect(state.graphLinks, isEmpty);
+    final doc = NotepadDocument.fresh(name: 'Undo source');
+    doc.lines
+      ..clear()
+      ..addAll([
+        NotepadLine.fresh(source: 'a = 2')..cachedResult = '2',
+        NotepadLine.fresh(source: 'f = a*x'),
+      ]);
+    state.setNotepadDocument(doc);
+    final slot = state.linkNotepadLine(doc.id, doc.lines.last.id);
+    final linked = state.captureGraphWorkspace();
+    state.clearFunction(slot);
+    doc.lines.first.cachedResult = '3';
+    state.setNotepadDocument(doc);
+    state.restoreGraphWorkspace(linked);
+    expect(state.graphLinks[slot]?.lineId, doc.lines.last.id);
+    expect(state.graphFunctions[slot], '(3)*x');
+    await state.flushPersistence();
   });
 }

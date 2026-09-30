@@ -63,8 +63,11 @@ class _CommandPaletteState extends State<CommandPalette> {
                           if (_scroll.hasClients) _scroll.jumpTo(0);
                         }),
                     onSubmitted: (_) {
-                      if (results.isNotEmpty) {
-                        Navigator.pop(context, results[selected]);
+                      // Input changes can arrive before the next build frame.
+                      final current = searchCommands(query);
+                      if (current.isNotEmpty) {
+                        Navigator.pop(context,
+                            current[selected.clamp(0, current.length - 1)]);
                       }
                     })),
             const SizedBox(height: 8),
