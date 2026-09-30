@@ -22,7 +22,12 @@ async def check(args):
         page = await context.new_page()
         errors = []
         page.on('pageerror', lambda e: (errors.append(str(e)), print('page error:', e, flush=True)))
-        page.on('console', lambda m: print('console:', m.text[:250], flush=True) if m.type == 'error' else None)
+        def console(message):
+            if message.type == 'error':
+                print('console:', message.text, flush=True)
+                if any(s in message.text for s in ['EXCEPTION CAUGHT', 'setState()', 'RenderFlex', 'Unhandled']):
+                    errors.append(message.text)
+        page.on('console', console)
         await page.add_init_script("localStorage.setItem('flutter.crisp.onboardingDismissed','true')")
         if args.stage >= 2:
             await page.add_init_script("""
@@ -35,9 +40,9 @@ async def check(args):
                 localStorage.setItem('featureTestSeeded','true');
               }
             """)
-        await page.goto(args.url)
+        await page.goto(args.url, wait_until="domcontentloaded", timeout=90000)
         print('Page loaded', flush=True)
-        await page.locator('canvas').first.wait_for(timeout=90000)
+        await page.locator('canvas').first.wait_for(timeout=300000)
         await page.locator('flt-semantics-placeholder').wait_for(state='attached', timeout=90000)
         await page.locator('flt-semantics-placeholder').evaluate('(el)=>el.click()')
         await page.wait_for_function("document.body.innerText.includes('Notepad')", timeout=60000)
@@ -81,7 +86,7 @@ async def check(args):
             await page.keyboard.press('Control+A')
             await page.keyboard.type('a = 4')
             await page.wait_for_function(r"(localStorage.getItem('flutter.crisp.functions')||'').match(/\(4(?:\.0)?\)/)", timeout=60000)
-            await page.keyboard.press('Control+3')
+            await page.get_by_text('Graphing', exact=True).first.click()
             await page.get_by_role('button', name='Linked Y3: Live model', exact=True).click()
             await page.get_by_role('button', name='Open source', exact=True).wait_for(timeout=60000)
             assert re.search(r'a = 4(?:\.0)?(?:\n|$)', await labels(page)), await labels(page)

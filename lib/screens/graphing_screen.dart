@@ -857,7 +857,13 @@ class GraphingScreenState extends State<GraphingScreen>
       );
       paramsPerSlot[activeFunctionIndices[i]] = params;
       // Drop stale slider state.
-      _appState.pruneParameters(activeFunctionIndices[i], params.toSet());
+      final slot = activeFunctionIndices[i];
+      final expression = activeFunctions[i];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _appState.graphFunctions[slot] == expression) {
+          _appState.pruneParameters(slot, params.toSet());
+        }
+      });
     }
 
     final anyParams = paramsPerSlot.values.any((p) => p.isNotEmpty);
