@@ -1667,7 +1667,11 @@ class _SampledGraphState extends State<_SampledGraph> {
       _traceSample = null;
       if (widget.traceIndex != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _traceFocus.requestFocus();
+          if (mounted &&
+              TickerMode.valuesOf(context).enabled &&
+              (ModalRoute.of(context)?.isCurrent ?? true)) {
+            _traceFocus.requestFocus();
+          }
         });
       }
     }

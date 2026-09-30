@@ -248,6 +248,9 @@ Build with `tool/build_web.sh --debug --no-wasm-dry-run` and serve `build/web`
 over HTTP. With Python Playwright installed, start
 `python tool/ai_contract_fixture.py`, then run
 `python tool/check_feature_browser.py --stage 5 --url http://localhost:8766/`.
+Run `python tool/check_mobile_trace.py` for touch tap/drag checks with
+accessibility enabled in a phone-sized viewport. This uses touch emulation,
+not a physical Android device.
 The ordered workflow checks tracing/table CSV against numeric values, linked
 source edits, command navigation, bounds/fit/undo, and provider error,
 cancellation, retry and calculator handoff. It saves screenshots and failure

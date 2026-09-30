@@ -52,4 +52,33 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
+  testWidgets(
+      'a hidden graph cannot steal focus when its traced source disappears',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'crisp.onboardingDismissed': true});
+    final state = AppState();
+    await state.load(force: true);
+    state.clearAllFunctions();
+    state.updateFunction(0, 'sin(x)');
+    state.updateFunction(1, 'x^2');
+    await tester.pumpWidget(const CrispMathApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Graphing').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Trace curve'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Trace Y1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Trace Y2').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Notepad').last);
+    await tester.pumpAndSettle();
+    final editingFocus = FocusManager.instance.primaryFocus;
+    state.clearFunction(1);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus, same(editingFocus));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
 }
