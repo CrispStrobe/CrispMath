@@ -238,7 +238,8 @@ artifact and is excluded from production bundles by `tool/build_web.sh`.
 Notepad records are stored per document. Existing `crisp.notepadDocs` blobs
 migrate automatically, retaining the old blob until migration succeeds.
 Writes are ordered, edits are batched, and lifecycle pauses flush pending
-changes. The JSON import/export format is unchanged.
+changes. JSON import/export remains compatible; linked graph source IDs are included
+in the optional `graphLinks` field.
 
 
 ## Feature validation
