@@ -1824,7 +1824,24 @@ class _NotepadScreenState extends State<NotepadScreen> {
     );
   }
 
+  void _linkLine(NotepadDocument doc, NotepadLine line) {
+    try {
+      _appState.linkNotepadLine(doc.id, line.id);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e is StateError ? e.message : e.toString())));
+    }
+  }
+
   Widget _buildDocBody(NotepadDocument doc) {
+    final requestedLine = _appState.consumeRequestedNotepadLine();
+    if (requestedLine != null)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _scrollToLineId(requestedLine);
+          _focusNodes[requestedLine]?.requestFocus();
+        }
+      });
     return LayoutBuilder(builder: (context, constraints) {
       final sideBySide = constraints.maxWidth >= _kSideBySideBreakpoint;
       // Build visible-line index list, hiding lines under collapsed
@@ -1868,6 +1885,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
             focusNode: _focusNodes[line.id]!,
             onChanged: (v) => _onLineEdited(doc, line, v, realIndex),
             onDelete: () => _deleteLine(doc, realIndex),
+            onPlot: () => _linkLine(doc, line),
             onScrollToLineId: _scrollToLineId,
             engine: _engine,
             appState: _appState,
@@ -1950,6 +1968,7 @@ class _NotepadLineRow extends StatelessWidget {
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
   final VoidCallback onDelete;
+  final VoidCallback? onPlot;
   final void Function(String lineId) onScrollToLineId;
 
   /// Round 104b (P6): used by [_showLineHelp] to wire the Show-steps
@@ -1978,6 +1997,7 @@ class _NotepadLineRow extends StatelessWidget {
     required this.focusNode,
     required this.onChanged,
     required this.onDelete,
+    this.onPlot,
     required this.onScrollToLineId,
     required this.engine,
     required this.appState,
@@ -2124,6 +2144,11 @@ class _NotepadLineRow extends StatelessWidget {
                       engine: engine,
                     ),
                   ),
+                  if (!_isBlank && onPlot != null)
+                    IconButton(
+                        tooltip: 'Link line to graph',
+                        icon: const Icon(Icons.show_chart),
+                        onPressed: onPlot),
                   _DeleteButton(onPressed: onDelete),
                 ],
               ),
@@ -2163,6 +2188,11 @@ class _NotepadLineRow extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (!_isBlank && onPlot != null)
+                  IconButton(
+                      tooltip: 'Link line to graph',
+                      icon: const Icon(Icons.show_chart),
+                      onPressed: onPlot),
                 _DeleteButton(onPressed: onDelete),
               ],
             ),

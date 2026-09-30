@@ -323,6 +323,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   void _maybeRouteToCalculator() {
     if (!mounted) return;
+    final requested = AppState().consumeRequestedTab();
+    if (requested != null) { _select(requested); return; }
     if (AppState().pendingInsertExpression != null &&
         _selectedIndex != _kCalculator) {
       _select(_kCalculator);

@@ -21,6 +21,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/exact_integer.dart';
 import 'notepad.dart';
+import 'linked_graph.dart';
 import 'scene_3d/scene_object.dart';
 import 'scene_3d/scene_state.dart';
 
@@ -209,9 +210,11 @@ class AppState extends ChangeNotifier {
   final _dirtyDocIds = <String>{};
   final _storedDocIds = <String>{};
   Future<void> _documentWrites = Future.value();
+  int _pendingDocumentWrites = 0;
   static const _kTextScale = 'crisp.textScale';
   static const _kHighContrast = 'crisp.highContrast';
   static const _kCurrentNotepadDoc = 'crisp.currentNotepadDoc';
+  static const _kGraphLinks = 'crisp.graphLinks';
   static const _kScene3D = 'crisp.scene3d';
   static const _kCrispAssistApiUrl = 'crisp.copilot.apiUrl';
   static const _kCrispAssistApiKey = 'crisp.copilot.apiKey';
@@ -327,6 +330,8 @@ class AppState extends ChangeNotifier {
     userVariables.clear();
     userFunctions.clear();
     functionParameters.clear();
+    graphLinks.clear();
+    _linkViewSignatures.clear();
     notepadDocuments.clear();
     _currentNotepadDocId = null;
     for (var i = 0; i < graphFunctions.length; i++) {
@@ -478,6 +483,22 @@ class AppState extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('STATE: failed to load prefs: $e');
+    }
+    final linksJson = _prefs?.getString(_kGraphLinks);
+    if (linksJson != null) {
+      try {
+        final map = jsonDecode(linksJson) as Map;
+        for (final entry in map.entries) {
+          final slot = int.tryParse(entry.key.toString());
+          if (slot != null && slot >= 0 && slot < graphFunctions.length) {
+            graphLinks[slot] = LinkedGraphSource.fromJson(
+                Map<String, dynamic>.from(entry.value as Map));
+          }
+        }
+        _refreshLinkedGraphs();
+      } catch (e) {
+        debugPrint('STATE: failed to restore graph links: $e');
+      }
     }
     // First-launch seed (decision #7): empty `Untitled` + the static
     // `Welcome` sample. Runs whenever there are zero notepad docs,
@@ -676,6 +697,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _persistNotepadDocs() {
+    _refreshLinkedGraphs();
     final prefs = _prefs;
     if (prefs == null) return Future.value();
     final ids = notepadDocuments.keys.toSet();
@@ -691,9 +713,17 @@ class AppState extends ChangeNotifier {
     _storedDocIds
       ..clear()
       ..addAll(ids);
+    if (changed.isEmpty && removed.isEmpty && !indexChanged) {
+      return _pendingDocumentWrites == 0
+          ? Future<void>.value()
+          : _documentWrites;
+    }
     // Snapshot content now; later edits cannot mutate a queued write. Writes
     // are serialized so an older save can never overwrite a newer edit.
-    final write = _documentWrites.then((_) async {
+    final previous =
+        _pendingDocumentWrites == 0 ? Future<void>.value() : _documentWrites;
+    _pendingDocumentWrites++;
+    final write = previous.then((_) async {
       for (final entry in changed.entries) {
         if (!await prefs.setString(_docKey(entry.key), entry.value)) {
           throw StateError('Failed to save document ${entry.key}');
@@ -713,7 +743,7 @@ class AppState extends ChangeNotifier {
       _dirtyDocIds.addAll(changed.keys);
       _storedDocIds.clear();
       debugPrint('STATE: document save failed: $error');
-    });
+    }).whenComplete(() => _pendingDocumentWrites--);
     return write;
   }
 
@@ -723,8 +753,9 @@ class AppState extends ChangeNotifier {
     if (_prefs != null) {
       await _prefs!.setString(_kScene3D, jsonEncode(_scene3D.toJson()));
     }
+    if (_pendingDocumentWrites > 0) await _documentWrites;
     await _persistNotepadDocs();
-    await _documentWrites;
+    if (_pendingDocumentWrites > 0) await _documentWrites;
   }
 
   void _persistCurrentNotepadDoc() {
@@ -746,6 +777,7 @@ class AppState extends ChangeNotifier {
   void setNotepadDocument(NotepadDocument doc, {bool notify = true}) {
     notepadDocuments[doc.id] = doc;
     _dirtyDocIds.add(doc.id);
+    _refreshLinkedGraphs();
     if (notify) {
       _persistNotepadDocs();
       _notify({AppStateDomain.documents});
@@ -762,6 +794,7 @@ class AppState extends ChangeNotifier {
   void deleteNotepadDocument(String id) {
     final removed = notepadDocuments.remove(id);
     if (removed == null) return;
+    _refreshLinkedGraphs();
     if (_currentNotepadDocId == id) {
       _currentNotepadDocId =
           notepadDocuments.isEmpty ? null : notepadDocuments.keys.first;
@@ -1174,6 +1207,7 @@ class AppState extends ChangeNotifier {
 
   void setVariable(String name, String value) {
     userVariables[name] = value;
+    _refreshLinkedGraphs();
     _persistVariables();
     _notify({AppStateDomain.variables});
   }
@@ -1183,13 +1217,110 @@ class AppState extends ChangeNotifier {
   void removeVariable(String name) {
     if (userVariables.containsKey(name)) {
       userVariables.remove(name);
+      _refreshLinkedGraphs();
       _persistVariables();
       _notify({AppStateDomain.variables});
     }
   }
 
+  final Map<int, LinkedGraphSource> graphLinks = {};
+  final Map<int, String> _linkViewSignatures = {};
+  int? _requestedTab;
+  String? _requestedNotepadLine;
+  int? consumeRequestedTab() {
+    final tab = _requestedTab;
+    _requestedTab = null;
+    return tab;
+  }
+
+  String? consumeRequestedNotepadLine() {
+    final line = _requestedNotepadLine;
+    _requestedNotepadLine = null;
+    return line;
+  }
+
+  void requestOpenNotepadSource(int slot) {
+    final link = graphLinks[slot];
+    if (link == null || !notepadDocuments.containsKey(link.documentId)) return;
+    _requestedNotepadLine = link.lineId;
+    _currentNotepadDocId = link.documentId;
+    _persistCurrentNotepadDoc();
+    _requestedTab = 1;
+    _notify({AppStateDomain.documents, AppStateDomain.navigation});
+  }
+
+  LinkedGraphResolution linkedGraphResolution(int slot) {
+    final link = graphLinks[slot]!;
+    return resolveLinkedGraph(notepadDocuments[link.documentId], link.lineId,
+        globals: userVariables);
+  }
+
+  int linkNotepadLine(String documentId, String lineId) {
+    final resolved = resolveLinkedGraph(notepadDocuments[documentId], lineId,
+        globals: userVariables);
+    if (resolved.error != null) throw StateError(resolved.error!);
+    var slot = graphLinks.entries
+        .where(
+            (e) => e.value.documentId == documentId && e.value.lineId == lineId)
+        .map((e) => e.key)
+        .firstOrNull;
+    slot ??= graphFunctions.indexWhere((f) => f.isEmpty);
+    if (slot < 0)
+      throw StateError(
+          'All graph slots are full. Clear a slot before linking.');
+    graphLinks[slot] = LinkedGraphSource(documentId, lineId);
+    functionParameters.remove(slot);
+    _persistParameters();
+    _refreshLinkedGraphs();
+    _persistGraphLinks();
+    _notify({AppStateDomain.graphs});
+    _requestedTab = 2;
+    _notify({AppStateDomain.navigation});
+    return slot;
+  }
+
+  void detachGraphSource(int slot) {
+    if (graphLinks.remove(slot) == null) return;
+    _persistGraphLinks();
+    _notify({AppStateDomain.graphs});
+  }
+
+  void _persistGraphLinks() => _prefs?.setString(
+      _kGraphLinks,
+      jsonEncode(graphLinks
+          .map((slot, link) => MapEntry(slot.toString(), link.toJson()))));
+
+  void _refreshLinkedGraphs() {
+    var changed = false, metadataChanged = false;
+    _linkViewSignatures.removeWhere((slot, _) => !graphLinks.containsKey(slot));
+    for (final entry in graphLinks.entries) {
+      final resolution = linkedGraphResolution(entry.key);
+      final expression = resolution.expression ?? '';
+      final signature = jsonEncode([
+        notepadDocuments[entry.value.documentId]?.name,
+        resolution.source,
+        resolution.scope,
+        resolution.error
+      ]);
+      if (_linkViewSignatures[entry.key] != signature) {
+        _linkViewSignatures[entry.key] = signature;
+        metadataChanged = true;
+      }
+      if (graphFunctions[entry.key] != expression) {
+        graphFunctions[entry.key] = expression;
+        changed = true;
+      }
+    }
+    if (changed) _persistFunctions();
+    if (changed || metadataChanged) _notify({AppStateDomain.graphs});
+  }
+
   void updateFunction(int index, String expression) {
     if (index >= 0 && index < graphFunctions.length) {
+      if (graphLinks.remove(index) != null) {
+        _persistGraphLinks();
+        _notify({AppStateDomain.graphs});
+      }
       if (graphFunctions[index] != expression) {
         graphFunctions[index] = expression;
         _persistFunctions();
@@ -1200,6 +1331,11 @@ class AppState extends ChangeNotifier {
 
   void clearFunction(int index) {
     if (index >= 0 && index < graphFunctions.length) {
+      final detached = graphLinks.remove(index) != null;
+      if (detached) {
+        _persistGraphLinks();
+        _notify({AppStateDomain.graphs});
+      }
       if (graphFunctions[index].isNotEmpty) {
         graphFunctions[index] = '';
         functionParameters.remove(index);
@@ -1320,6 +1456,10 @@ class AppState extends ChangeNotifier {
       imported.add('${userVariables.length} variables');
     }
     if (json['functions'] is List) {
+      if (!merge) {
+        graphLinks.clear();
+        _persistGraphLinks();
+      }
       final list = json['functions'] as List;
       for (var i = 0; i < graphFunctions.length; i++) {
         graphFunctions[i] = i < list.length ? (list[i]?.toString() ?? '') : '';
@@ -1408,6 +1548,23 @@ class AppState extends ChangeNotifier {
       }
     }
 
+    if (json['graphLinks'] is Map) {
+      if (!merge) graphLinks.clear();
+      for (final entry in (json['graphLinks'] as Map).entries) {
+        final slot = int.tryParse(entry.key.toString());
+        if (slot != null &&
+            slot >= 0 &&
+            slot < graphFunctions.length &&
+            entry.value is Map) {
+          try {
+            graphLinks[slot] = LinkedGraphSource.fromJson(
+                Map<String, dynamic>.from(entry.value));
+          } catch (_) {}
+        }
+      }
+      _persistGraphLinks();
+      _refreshLinkedGraphs();
+    }
     notifyListeners();
     return imported.isEmpty
         ? 'Nothing recognized in payload'
@@ -1429,6 +1586,8 @@ class AppState extends ChangeNotifier {
       'history': history.map((e) => e.toJson()).toList(),
       'variables': Map<String, String>.from(userVariables),
       'functions': List<String>.from(graphFunctions),
+      'graphLinks': graphLinks
+          .map((slot, link) => MapEntry(slot.toString(), link.toJson())),
       'parameters': functionParameters.map(
         (slot, params) => MapEntry(slot.toString(), params),
       ),
@@ -1447,11 +1606,14 @@ class AppState extends ChangeNotifier {
 
   void clearAllVariables() {
     userVariables.clear();
+    _refreshLinkedGraphs();
     _persistVariables();
     _notify({AppStateDomain.variables});
   }
 
   void clearAllFunctions() {
+    graphLinks.clear();
+    _persistGraphLinks();
     for (int i = 0; i < graphFunctions.length; i++) {
       graphFunctions[i] = '';
     }

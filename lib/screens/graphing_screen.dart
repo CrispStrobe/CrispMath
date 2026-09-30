@@ -414,6 +414,47 @@ class GraphingScreenState extends State<GraphingScreen>
     }
   }
 
+  void _showLinkedSource(int slot) {
+    final source = _appState.linkedGraphResolution(slot);
+    showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+                title: Text('Linked source for Y${slot + 1}'),
+                content: SizedBox(
+                    width: 420,
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SelectableText(source.source),
+                          const Text(
+                              'x is the graph variable. Other values come from the source document.'),
+                          for (final entry in source.scope.entries)
+                            Text('${entry.key} = ${entry.value}'),
+                          if (source.error != null)
+                            Text(source.error!,
+                                style: TextStyle(
+                                    color: Theme.of(ctx).colorScheme.error)),
+                        ])),
+                actions: [
+                  TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _appState.detachGraphSource(slot);
+                      },
+                      child: const Text('Detach source')),
+                  TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _appState.requestOpenNotepadSource(slot);
+                      },
+                      child: const Text('Open source')),
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Close')),
+                ]));
+  }
+
   void _resetView() {
     setState(() {
       _scale = 1.0;
@@ -582,6 +623,20 @@ class GraphingScreenState extends State<GraphingScreen>
             body: SafeArea(
               child: Column(
                 children: [
+                  if (_appState.graphLinks.isNotEmpty)
+                    SizedBox(
+                        height: 38,
+                        child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              for (final entry in _appState.graphLinks.entries)
+                                TextButton.icon(
+                                    icon: const Icon(Icons.link, size: 16),
+                                    label: Text(
+                                        'Linked Y${entry.key + 1}: ${_appState.notepadDocuments[entry.value.documentId]?.name ?? 'Missing document'}'),
+                                    onPressed: () =>
+                                        _showLinkedSource(entry.key)),
+                            ])),
                   _buildPlotModeBar(),
                   if (_tracing &&
                       activeFunctionIndices.isNotEmpty &&

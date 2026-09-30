@@ -33,6 +33,11 @@ Future<void> _bootApp(WidgetTester tester, {Size? size}) async {
     await tester.binding.setSurfaceSize(size);
   }
   await AppState().load(force: true);
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.binding.setSurfaceSize(null);
+  });
   await tester.pumpWidget(const CrispMathApp());
   await tester.pump();
   await tester.pump(const Duration(seconds: 1));

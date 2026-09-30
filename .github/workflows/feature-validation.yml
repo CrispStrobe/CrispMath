@@ -62,3 +62,18 @@ jobs:
           name: feature-web
           path: build/web
           retention-days: 7
+
+      - name: Install browser test tools
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Live browser feature checks
+        run: |
+          python -m http.server 8766 --directory build/web > /tmp/crispmath-http.log 2>&1 &
+          python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-results
+          path: browser-results
+          if-no-files-found: ignore
