@@ -22,7 +22,9 @@ GraphBounds fittedGraphBounds(
       .where((v) => v.isFinite && v.abs() <= 1e12)
       .toList()
     ..sort();
-  if (finite.isEmpty) throw StateError('No finite values in this x interval.');
+  if (finite.isEmpty) {
+    throw StateError('No finite values in this x interval.');
+  }
   final trim = finite.length >= 50 ? (finite.length * .02).floor() : 0;
   final lo = finite[trim], hi = finite[finite.length - 1 - trim];
   final padding = math.max((hi - lo) * .1, math.max(1, hi.abs()) * .01);
@@ -51,7 +53,9 @@ class GraphUndoHistory<T> {
   bool get canUndo => _entries.isNotEmpty;
   void record(T value) {
     _entries.add(value);
-    if (_entries.length > capacity) _entries.removeAt(0);
+    if (_entries.length > capacity) {
+      _entries.removeAt(0);
+    }
   }
 
   T? undo() => _entries.isEmpty ? null : _entries.removeLast();

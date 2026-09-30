@@ -11,6 +11,13 @@ class CommandPalette extends StatefulWidget {
 class _CommandPaletteState extends State<CommandPalette> {
   String query = '';
   int selected = 0;
+  final _scroll = ScrollController();
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final results = searchCommands(query);
@@ -22,16 +29,26 @@ class _CommandPaletteState extends State<CommandPalette> {
           child: Column(children: [
             Focus(
                 onKeyEvent: (_, event) {
-                  if (event is! KeyDownEvent) return KeyEventResult.ignored;
+                  if (event is! KeyDownEvent) {
+                    return KeyEventResult.ignored;
+                  }
                   final delta = event.logicalKey == LogicalKeyboardKey.arrowDown
                       ? 1
                       : event.logicalKey == LogicalKeyboardKey.arrowUp
                           ? -1
                           : 0;
-                  if (delta == 0 || results.isEmpty)
+                  if (delta == 0 || results.isEmpty) {
                     return KeyEventResult.ignored;
+                  }
                   setState(() => selected =
                       (selected + delta).clamp(0, results.length - 1));
+                  if (_scroll.hasClients) {
+                    _scroll.animateTo(
+                        (selected * 80.0)
+                            .clamp(0, _scroll.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 100),
+                        curve: Curves.easeOut);
+                  }
                   return KeyEventResult.handled;
                 },
                 child: TextField(
@@ -43,20 +60,24 @@ class _CommandPaletteState extends State<CommandPalette> {
                     onChanged: (value) => setState(() {
                           query = value;
                           selected = 0;
+                          if (_scroll.hasClients) _scroll.jumpTo(0);
                         }),
                     onSubmitted: (_) {
-                      if (results.isNotEmpty)
+                      if (results.isNotEmpty) {
                         Navigator.pop(context, results[selected]);
+                      }
                     })),
             const SizedBox(height: 8),
             Expanded(
                 child: results.isEmpty
                     ? const Center(child: Text('No commands found'))
                     : ListView.builder(
+                        controller: _scroll,
                         itemCount: results.length,
                         itemBuilder: (_, i) => ListTile(
                             selected: i == selected,
-                            title: Text(results[i].title),
+                            title: Text(results[i].title,
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
                             subtitle: Text(results[i].description,
                                 maxLines: 2, overflow: TextOverflow.ellipsis),
                             onTap: () => Navigator.pop(context, results[i])))),

@@ -600,14 +600,14 @@ class GraphingScreenState extends State<GraphingScreen>
   void _zoomIn() {
     _recordGraph();
     setState(() {
-      _scale = (_scale * 1.4).clamp(0.1, 20.0);
+      _scale = (_scale * 1.4).clamp(1e-12, 1e12);
     });
   }
 
   void _zoomOut() {
     _recordGraph();
     setState(() {
-      _scale = (_scale / 1.4).clamp(0.1, 20.0);
+      _scale = (_scale / 1.4).clamp(1e-12, 1e12);
     });
   }
 
@@ -851,8 +851,8 @@ class GraphingScreenState extends State<GraphingScreen>
                         if (_tracing) return;
                         setState(() {
                           _scale = (_startScale * details.scale).clamp(
-                            0.1,
-                            20.0,
+                            1e-12,
+                            1e12,
                           );
                           _offset = _startOffset +
                               (details.localFocalPoint - _focalStart);

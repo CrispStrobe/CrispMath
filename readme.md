@@ -29,10 +29,15 @@ Linux, and Windows.
     (pure-Dart QR algorithm with Hessenberg reduction).
 - **Interactive graphing:** Y1..Y10 function slots, pan + pinch-to-zoom, axis
   labelling, curve sketching (Kurvendiskussion), root & extrema annotations,
-  parameter sliders.
+  parameter sliders, curve tracing (tap/drag or arrow keys), value tables with
+  TSV/CSV clipboard export, editable independent axis bounds, finite-value fit
+  and a 20-change undo history. Fit uses the current x interval and trims the
+  outer 2% of samples to avoid isolated poles dominating the y range.
 - **Notepad:** Multi-line evaluator with variables, cross-references,
   subtotals, date/time arithmetic, currency conversion (44 currencies),
   inline mini-plots, collapsible sections, templates, Markdown/LaTeX export.
+  Link an expression line to a graph slot; document scope updates the graph,
+  and its source dialog opens the document or detaches the expression.
 - **Statistics:** Descriptive stats, linear/polynomial/exponential regression,
   normal/binomial distributions, 9 hypothesis tests (t-test, ANOVA,
   chi-square, Fisher's exact, sign test, Wilcoxon). Clipboard paste for data.
@@ -49,6 +54,8 @@ Linux, and Windows.
   - `720–1199 px` — side rail (tablets / narrow desktop windows).
   - `≥ 1200 px` — side rail plus a secondary pane so calculator + graph (or
     calculator + analysis) can be shown at the same time.
+- **Command search:** The global Search commands button and Ctrl/Cmd+K find
+  screens, tools and function examples. Arrow keys select; Enter opens a result.
 - **Accessibility:** High-contrast theme, configurable text scale (80%–150%),
   keyboard navigation (Ctrl+1-6), ~225 semantic labels, full keyboard input.
 - **Localization:** English, German, French, Spanish (EN/DE/FR/ES) with
@@ -56,9 +63,9 @@ Linux, and Windows.
 - **Export/Import:** PDF, Markdown, LaTeX, JSON (full state), CSV (history).
   Shareable URL links (`?expr=...&tab=N`).
 
-## Cloud Sync & Optional ONNX Runtime (v1.1.1)
+## Cloud Sync & Optional Math Assistance
 - **Supabase Cloud Sync:** Sync AppState (variables, history, notepad, graphs) seamlessly across devices. Features robust merging to prevent data loss.
-- **Polymorphic AI (ONNX):** Optional hardware-accelerated math NLP and Vision AI via ONNX Runtime (CoreML/NNAPI on mobile, falling back to pure-Dart `onnx_runtime_dart` on Web). The module is deferred and loaded on-demand to save app size.
+- **Math assistance:** Deferred provider-backed natural-language translation on native and web. Configure a full chat-completions or messages endpoint, model and API key in CrispAssist settings. The assistant supports cancellation, timeout and retry, and lets you edit the expression before sending it to the calculator. Keyless local endpoints are supported; browser endpoints must allow CORS. Configuration is not a claim that a model connection has been verified.
 - **Advanced Graphing:** Vector Fields and plotting enhancements.
 - **Notepad PDF Export:** Print or save complete interactive math sessions to PDF.
 
@@ -232,3 +239,18 @@ Notepad records are stored per document. Existing `crisp.notepadDocs` blobs
 migrate automatically, retaining the old blob until migration succeeds.
 Writes are ordered, edits are batched, and lifecycle pauses flush pending
 changes. The JSON import/export format is unchanged.
+
+
+## Feature validation
+
+Build with `tool/build_web.sh --debug --no-wasm-dry-run` and serve `build/web`
+over HTTP. With Python Playwright installed, start
+`python tool/ai_contract_fixture.py`, then run
+`python tool/check_feature_browser.py --stage 5 --url http://localhost:8766/`.
+The ordered workflow checks tracing/table CSV against numeric values, linked
+source edits, command navigation, bounds/fit/undo, and provider error,
+cancellation, retry and calculator handoff. It saves screenshots and failure
+labels. The HTTP fixture tests the provider contract, not actual model quality.
+A real provider and an evaluation corpus are still needed to assess translation
+quality. The Feature validation workflow runs focused regressions, the entire
+unit/widget suite, and live release/debug browser checks as separate jobs.

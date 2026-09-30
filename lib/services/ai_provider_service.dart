@@ -49,24 +49,30 @@ class ProviderAiService implements AiService {
   bool get isReady => config().configured;
   @override
   Future<void> initializeOptionalAi() async {
-    if (!isReady)
+    if (!isReady) {
       throw StateError(
           'Configure the provider endpoint and model in CrispAssist settings.');
+    }
   }
 
   void cancel() => _cancelActive?.call();
   @override
   Future<String> processMathNLP(String text) async {
     final settings = config();
-    if (!settings.configured)
+    if (!settings.configured) {
       throw StateError(
           'Configure the provider endpoint and model in CrispAssist settings.');
-    if (text.trim().isEmpty) throw ArgumentError('Enter a math question.');
+    }
+    if (text.trim().isEmpty) {
+      throw ArgumentError('Enter a math question.');
+    }
     cancel();
     final client = clientFactory();
     final cancelled = Completer<String>();
     void cancelThis() {
-      if (!cancelled.isCompleted) cancelled.completeError(AiRequestCancelled());
+      if (!cancelled.isCompleted) {
+        cancelled.completeError(AiRequestCancelled());
+      }
       client.close();
     }
 
@@ -93,15 +99,18 @@ class ProviderAiService implements AiService {
     Future<String> send() async {
       final response = await client.post(Uri.parse(settings.endpoint),
           headers: headers, body: jsonEncode(body));
-      if (response.statusCode < 200 || response.statusCode >= 300)
+      if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
             'Provider request failed (HTTP ${response.statusCode}). Check endpoint, credentials and model.');
+      }
       final dynamic decoded = jsonDecode(response.body);
-      if (decoded is! Map)
+      if (decoded is! Map) {
         throw const FormatException('Invalid provider response.');
+      }
       final dynamic entries = decoded[anthropic ? 'content' : 'choices'];
-      if (entries is! List || entries.isEmpty || entries.first is! Map)
+      if (entries is! List || entries.isEmpty || entries.first is! Map) {
         throw const FormatException('Provider returned no expression.');
+      }
       final Map entry = entries.first as Map;
       final dynamic message = entry['message'];
       final dynamic content = anthropic
@@ -109,16 +118,19 @@ class ProviderAiService implements AiService {
           : message is Map
               ? message['content']
               : null;
-      if (content is! String || content.trim().isEmpty)
+      if (content is! String || content.trim().isEmpty) {
         throw const FormatException('Provider returned no expression.');
+      }
       var expression = content.trim();
-      if (expression.startsWith('```'))
+      if (expression.startsWith('```')) {
         expression = expression
             .replaceFirst(RegExp(r'^```[^\n]*\n'), '')
             .replaceFirst(RegExp(r'\n?```$'), '')
             .trim();
-      if (expression.isEmpty || expression.length > 4000)
+      }
+      if (expression.isEmpty || expression.length > 4000) {
         throw const FormatException('Provider returned an invalid expression.');
+      }
       return expression;
     }
 
@@ -130,7 +142,9 @@ class ProviderAiService implements AiService {
             'Provider timed out. Retry or change the endpoint.');
       });
     } finally {
-      if (identical(_cancelActive, cancelThis)) _cancelActive = null;
+      if (identical(_cancelActive, cancelThis)) {
+        _cancelActive = null;
+      }
       client.close();
     }
   }

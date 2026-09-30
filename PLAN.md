@@ -7,31 +7,32 @@ Completed items with details are in `HISTORY.md`.
 
 ## Product follow-ups after the September 2026 performance work
 
-These are proposed next steps, ordered by usefulness to existing calculator,
-notepad and graphing workflows. They are not implemented by the performance
-refactor.
+Implemented in the requested order on `feat/graph-workspace-ux`; final browser
+validation is in progress. Provider contract tests use an explicit fixture;
+real-model translation quality has not been evaluated.
 
-- [ ] **Graph tracing and a value table.** Tap or drag along a curve to inspect
+- [~] **Graph tracing and a value table.** Tap or drag along a curve to inspect
   coordinates; generate values over a chosen interval and copy/export them.
   Reuse compiled numeric expressions and sampled geometry. Undefined points
   and discontinuities must remain explicit. Validate on touch and keyboard.
-- [ ] **Linked notepad and graph workspace.** Turn a notepad result or function
+- [~] **Linked notepad and graph workspace.** Turn a notepad result or function
   into a graph, keeping its variables and parameter changes connected.
   Make the source expression and scope visible. Reuse existing documents,
   function slots and adaptive navigation instead of adding another
   independent storage format.
-- [ ] **Searchable actions.** A command palette for plotting, solving,
+- [~] **Searchable actions.** A command palette for plotting, solving,
   differentiating, unit conversion and opening modules. Build on the existing
   localized function reference and module navigation; support keyboard
   shortcuts and a discoverable mobile entry point.
-- [ ] **Graph navigation UX.** Fit-to-data, editable axis bounds, clearer
+- [~] **Graph navigation UX.** Fit-to-data, editable axis bounds, clearer
   function validation and empty-range explanations. Retain plot state when
   opening analysis and provide reversible graph edits.
-- [ ] **Finish optional AI inference before expanding its UI.**
-  `AiServiceNative.processMathNLP` and the web implementation currently return
-  hard-coded sample equations after a delay. A real model pipeline needs
-  model readiness, input-dependent inference, cancellation and an evaluation
-  corpus. Do not present the sample output as a result for arbitrary input.
+- [~] **Finish optional AI inference before expanding its UI.**
+  Native and web now send input-dependent requests to the configured provider,
+  with cancellation, timeout, retry and an editable CAS-expression preview.
+  The canned ONNX responses and unused runtime dependencies are removed.
+  Configuration and successful response states are distinct. A real-provider
+  evaluation corpus remains follow-up work.
 
 Measure task completion (enter → calculate → inspect/plot → save/share),
 misleading-result reports and time spent finding a function before expanding

@@ -34,18 +34,22 @@ class _AiMathDialogState extends State<AiMathDialog> {
     });
     try {
       final expression = await _service.processMathNLP(_question.text);
-      if (mounted && generation == _generation)
+      if (mounted && generation == _generation) {
         setState(() {
           _expression.text = expression;
           _hasResult = true;
         });
+      }
     } catch (e) {
-      if (mounted && generation == _generation)
+      if (mounted && generation == _generation) {
         setState(() => _error = e is AiRequestCancelled
             ? 'Request cancelled. You can retry.'
             : e.toString());
+      }
     } finally {
-      if (mounted && generation == _generation) setState(() => _busy = false);
+      if (mounted && generation == _generation) {
+        setState(() => _busy = false);
+      }
     }
   }
 
@@ -112,7 +116,9 @@ class _AiMathDialogState extends State<AiMathDialog> {
         if (_hasResult && !_busy)
           FilledButton(
               onPressed: () {
-                if (_expression.text.trim().isEmpty) return;
+                if (_expression.text.trim().isEmpty) {
+                  return;
+                }
                 AppState().requestInsertExpression(_expression.text.trim());
                 Navigator.pop(context);
               },

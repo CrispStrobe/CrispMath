@@ -31,6 +31,12 @@ jobs:
               path: .ci/CrispEmbed/flutter/crispembed
           YAML
           flutter pub get
+      - name: Analyze new feature files
+        run: >-
+          flutter analyze --no-pub
+          lib/engine/command_catalog.dart lib/engine/graph_viewport.dart
+          lib/services/ai_provider_service.dart lib/widgets/command_palette.dart
+          lib/widgets/ai_math_dialog.dart
       - name: Feature and optimization regression tests
         run: >-
           flutter test --concurrency=2 --reporter expanded
@@ -65,6 +71,36 @@ jobs:
           flutter pub get
       - name: Unit and widget tests
         run: flutter test --concurrency=2 --reporter expanded
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 527aa1690057f78dee8a9cf64300de29246e0517
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Verify existing catalog and legacy failures at original main
+        run: >-
+          flutter test --concurrency=2 --reporter expanded
+          test/worked_examples_test.dart test/worked_examples_localization_test.dart
+          test/unit_catalog_test.dart test/unit_expression_test.dart
+          test/matrix_evaluator_test.dart
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 30
