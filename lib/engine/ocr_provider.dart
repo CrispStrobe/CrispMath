@@ -217,21 +217,17 @@ String _replaceCmd(String s, String cmd, String Function(String) transform) {
 
 String _normalizeOcrFractions(String source) {
   final command = RegExp(r'\\frac(?![A-Za-z])');
-  var position = 0;
-  while (position < source.length) {
-    final matches = command.allMatches(source, position);
-    if (matches.isEmpty) break;
-    final match = matches.first;
+  // Work inside out. Replacements after an earlier command do not change
+  // that command's position, and nested bare arguments are normalized first.
+  for (final match in command.allMatches(source).toList().reversed) {
     final numerator = _ocrTexArgument(source, match.end);
     final denominator =
         numerator == null ? null : _ocrTexArgument(source, numerator.$2);
     if (numerator == null || denominator == null) {
-      position = match.end;
       continue;
     }
     final replacement = r'\frac' '{${numerator.$1}}{${denominator.$1}}';
     source = source.replaceRange(match.start, denominator.$2, replacement);
-    position = match.start + replacement.length;
   }
   return source;
 }

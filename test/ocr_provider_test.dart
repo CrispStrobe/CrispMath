@@ -15,6 +15,7 @@ void main() {
     expect(latexToEngineSyntax(r'2 \sin ( x / 2 )'), '2 sin( x/2 )');
     expect(latexToEngineSyntax(r'\frac 1 2'), '(1)/(2)');
     expect(latexToEngineSyntax(r'\frac{1}{2}'), '(1)/(2)');
+    expect(latexToEngineSyntax(r'\frac{\frac 1 4}{2}'), '((1)/(4))/(2)');
   });
   // =========================================================================
   // postProcessOcrText
