@@ -8597,3 +8597,32 @@ passed signing, export and signature checks; App Store upload was skipped.
 Unit checks and live browser checks cover clean installation, legacy migration,
 damaged-index recovery, editing and reload restoration. The browser harness
 correction is in `8a577bb`; it does not alter the candidate application.
+
+### October workflow baseline
+
+Reproducible browser profiling and pure-helper tests now cover cold/warm
+startup, calculation through saved history, tracing, verified graph pans and
+editing the head of 500/2,000-row dependency chains through the saved tail.
+The numerical baseline is committed in `tool/workflow_baseline.json`; full
+reports are retained as CI artifacts. Twelve profiling/release-tool unit tests
+pass. The isolated Dart evaluator benchmark verifies initial and edited values
+for 100/500/2,000 rows, independently of browser or worker overhead.
+
+CI desktop medians: cold startup 1.95 s, warm startup 0.98 s, calculation
+105 ms and keyboard trace 33 ms. Dependent edits take 14.2 s for 500 rows
+and 63.9 s for 2,000 rows (five trials each). The 390×844 touch profile with
+4× page CDP CPU throttling takes 33.0 s for 500 rows (five trials) and
+147.1 s for 2,000 rows (one trial), with correct final results saved. This
+identifies large dependent recalculation as the primary remaining bottleneck.
+These browser/automation measurements include debounce and storage and do not
+certify physical-device performance. Worker timing is not calibrated.
+
+The desktop/touch-500 report comes from run
+[36869816911](https://github.com/CrispStrobe/CrispMath/actions/runs/36869816911),
+cancelled when its harness was superseded after those cases passed. The
+complete touch-2,000 run
+[36873971337](https://github.com/CrispStrobe/CrispMath/actions/runs/36873971337)
+passed. Input replacement waits for Flutter focus synchronization; graph
+measurements also wait for route transitions and verify each pan changes
+bounds. Dialog interaction is excluded from pan timing/frame probes. CI
+can reuse an existing validated web artifact for targeted profiles.

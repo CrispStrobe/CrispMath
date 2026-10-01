@@ -33,6 +33,9 @@ async def graph_x_min(page):
     value = float(await read_text(page.get_by_role('textbox', name='x minimum', exact=True)))
     await page.get_by_role('button', name='Cancel', exact=True).click()
     await page.get_by_role('textbox', name='x minimum', exact=True).wait_for(state='hidden')
+    # Modal hit testing persists through the Material route's closing animation,
+    # after its semantics fields disappear. Keep this settling outside pan timers.
+    await page.wait_for_timeout(350)
     await next_frames(page)
     return value
 
@@ -130,21 +133,28 @@ async def measure_profile(browser, name, profile, args, results):
         result['trace_key_ms'] = traces
         write_report(args, results)
         await page.get_by_role('button', name='Trace curve', exact=True).click()
+        await page.wait_for_function('''() => ![...document.querySelectorAll('[aria-label]')].some(element=>/x = ([^,]+), y = /.test(element.getAttribute('aria-label')))''')
         x_min_before = await graph_x_min(page)
-        await page.evaluate(FRAME_PROBE)
+        frames = []
         pans = []
         for _ in range(args.trials):
+            pan_before = await graph_x_min(page)
+            await page.evaluate(FRAME_PROBE)
             started = time.perf_counter()
             width = profile['viewport']['width']
             await page.mouse.move(width*.5, 400)
             await page.mouse.down()
+            await next_frames(page)
             await page.mouse.move(width*.5+40, 430, steps=10)
+            await next_frames(page)
             await page.mouse.up()
             await next_frames(page)
             await page.locator('[aria-label="Updating graph"]').wait_for(state='hidden')
             pans.append((time.perf_counter()-started)*1000)
+            frames.extend(await page.evaluate('() => {window.workflowFrameProbe=false;return window.workflowFrames}'))
+            pan_after = await graph_x_min(page)
+            assert pan_after != pan_before, 'Pointer pan did not change graph bounds'
         result['pan_to_idle_ms'] = pans
-        frames = await page.evaluate('() => {window.workflowFrameProbe=false;return window.workflowFrames}')
         result['pan_frame_intervals_ms'] = frames
         result['pan_frames_over_50ms'] = sum(frame>50 for frame in frames)
         x_min_after = await graph_x_min(page)
