@@ -310,13 +310,13 @@ class NotepadEvaluator {
     for (final i in order) {
       if (indices != null && !indices.contains(i)) continue;
       if (numericScope != null && !numericScope.matches(doc, externalScope)) {
-        numericScope = null;
+        numericScope = _NumericScopeIndex.tryCreate(doc, externalScope);
       }
       await _evaluateLine(
           doc, i, graph, firstCode, parseCache, numericScope?.scope);
       if (numericScope != null &&
           !numericScope.recordResult(doc, i, externalScope)) {
-        numericScope = null;
+        numericScope = _NumericScopeIndex.tryCreate(doc, externalScope);
       }
     }
     return doc;

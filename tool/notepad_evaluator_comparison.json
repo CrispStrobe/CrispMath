@@ -51,5 +51,33 @@
   "limitations": [
     "Sequential runs on the same shared VPS; host load is uncontrolled.",
     "These are evaluator timings, not application edit latency. Browser comparisons are tracked separately."
-  ]
+  ],
+  "numeric_scope_index": {
+    "source": "31be0971e6e528c8fc0bffc0325cc9504371dd3e",
+    "measurement": {
+      "measurement": "Dart JIT dependency evaluator with numeric dispatcher",
+      "includes_ui_or_worker_latency": false,
+      "documents": [
+        {
+          "rows": 100,
+          "evaluate_all_ms": 139.475,
+          "dependent_edit_ms": 44.238,
+          "last_result": "101"
+        },
+        {
+          "rows": 500,
+          "evaluate_all_ms": 203.858,
+          "dependent_edit_ms": 158.764,
+          "last_result": "501"
+        },
+        {
+          "rows": 2000,
+          "evaluate_all_ms": 631.829,
+          "dependent_edit_ms": 390.982,
+          "last_result": "2001"
+        }
+      ]
+    },
+    "qualifier": "Single local JIT run on a shared VPS; excludes UI and worker latency; prior measurements remain separate."
+  }
 }

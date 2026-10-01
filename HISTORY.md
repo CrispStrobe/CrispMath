@@ -1,3 +1,15 @@
+## 2026-10-01 — Numeric scope indexing
+
+Documents with unique numeric assignments reuse a scope index instead of
+rebuilding all bindings per row. Source identity, cached values and imports are
+checked between rows; numeric edits rebuild a fresh index, while symbolic
+results, duplicate names and FlatZinc retain full-scope behavior. Filtered scope
+construction also preserves binding precedence and live edits. Broader notepad
+regressions: 297 passed; source/cache/import mutation checks pass after index
+rebuilding. Separate local JIT 2,000-row edit: 0.39s, excluding UI and worker
+latency. Live touch validation remains required; earlier versions still exceeded
+the 200-second timeout.
+
 ## 2026-10-01 — Bounded arithmetic and final workflow checks
 
 Short integer addition/subtraction expressions reuse the numeric parser when
@@ -6,8 +18,8 @@ other operations keep existing engine routing. An 8 ms work budget yields to
 the UI without scheduling a timer for every cheap dependent row. Dispatcher,
 document and screen regression coverage: 125 passed; static analysis clean.
 The first local 500-row edit-to-saved-tail measurement was 9.5 seconds versus
-36.7 seconds before this routing change (single trials on a variable-load VPS;
-not a controlled hardware comparison). CI measures both desktop and touch.
+36.7 seconds before this routing change (single trials on a variable-load VPS,
+O2/O4 builds respectively; not a controlled comparison). CI measures both desktop and touch.
 The connected-workflow browser check now waits for the linked-source dialog
 to render before inspecting its restored value.
 

@@ -361,5 +361,11 @@ parser handles only short addition/subtraction expressions with bounded operands
 so every intermediate integer is exact. Evaluation yields between rows for UI
 responsiveness; fractions, larger integers and other operations retain engine
 routing.
+Documents with unique numeric assignments also reuse a scope index. It checks
+source identities, cached results and imports between rows; changes rebuild the
+index only if its safety conditions still hold. Symbolic results, duplicate
+assignment names and FlatZinc use the existing scope builder. A separate local
+JIT run measured a 2,000-row edit at 0.39 seconds; this still excludes UI and
+worker latency and is not an end-to-end timing.
 Native CI still validates installed OCR runtimes, and superseded platform builds
 are cancelled automatically per workflow and branch.
