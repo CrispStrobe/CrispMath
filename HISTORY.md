@@ -2,6 +2,22 @@
 
 Completed work, newest first.
 
+## 2026-10-01 — Desktop OCR packaging
+
+- Artifact inspection found that Linux and Windows builds omitted the native
+  OCR runtime. Stage the CPU release matching the CrispEmbed plugin version,
+  and bundle all shared-library dependencies through the desktop CMake rules.
+- Add three staging unit tests and actual image recognition using the final
+  packaged library in Linux/Windows CI. The model checksum is verified before
+  recognition; the calculator must evaluate recognized `5 + 7` to exactly `12`.
+- Local staging tests passed for Linux dependency aliases and Windows DLLs.
+  Recognition through the staged Linux release library passed.
+- Set the macOS deployment target to 12, matching the OCR plugin requirement.
+- At f5e6fe4 all eight workflows passed: full analysis, 5,158 unit/widget tests
+  (7 existing skips), 113 focused regressions, native OCR, release/debug live
+  browser checks, and six platform builds. macOS matrix and step-engine runtime
+  diagnostics passed. Subsequent desktop packaging checks validate this fix.
+
 ## 2026-10-01 — Pull request validation cleanup
 
 - Fixed the Flutter UI's observable native-engine status contract while retaining

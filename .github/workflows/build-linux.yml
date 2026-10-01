@@ -43,11 +43,39 @@ jobs:
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test OCR runtime staging
+        run: python -m unittest discover -s tool -p stage_ocr_runtime_test.py
+
+      - name: Stage OCR runtime libraries
+        run: python tool/stage_ocr_runtime.py --platform linux
+
       - name: Resolve dependencies
         run: flutter pub get
 
       - name: Build Linux (release)
         run: flutter build linux --release
+
+      - name: Provision OCR test model
+        shell: bash
+        run: |
+          mkdir -p .ci/ocr-model
+          curl -fL --retry 3 https://huggingface.co/cstr/pix2tex-mfr-gguf/resolve/main/pix2tex-mfr-q4_k.gguf -o .ci/ocr-model/pix2tex-mfr-q4_k.gguf
+          echo '8957d1ec5d1f5983fbdd5f6e819203d7c32079f379563eb61f518221c8c5bdd6  .ci/ocr-model/pix2tex-mfr-q4_k.gguf' | sha256sum -c -
+
+      - name: Verify bundled native dependencies
+        run: |
+          ldd build/linux/x64/release/bundle/lib/libcrispembed.so | tee .ci/ocr-dependencies.txt
+          if grep -q 'not found' .ci/ocr-dependencies.txt; then exit 1; fi
+
+      - name: Recognize an image using the packaged OCR runtime
+        env:
+          CRISPMATH_OCR_MODEL: .ci/ocr-model/pix2tex-mfr-q4_k.gguf
+          CRISPMATH_OCR_LIBRARY: build/linux/x64/release/bundle/lib/libcrispembed.so
+        run: flutter test --no-pub --reporter expanded native_test/ocr_native_test.dart
 
       - name: Tar the bundle
         run: |

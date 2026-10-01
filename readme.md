@@ -145,6 +145,8 @@ CrispMath/
 # Fetch the on-device OCR plugin into the same path used by CI.
 git clone https://github.com/CrispStrobe/CrispEmbed.git .ci/CrispEmbed
 flutter pub get
+# For desktop OCR, stage the matching release library (linux or windows):
+python3 tool/stage_ocr_runtime.py --platform linux
 flutter analyze
 flutter test            # Over 5,100 unit and widget tests; no native bridge needed
 flutter run             # Runs the app; SymEngine bridge required for math
@@ -165,7 +167,7 @@ build.
 | Platform | SymEngine bridge | Notes |
 |---|---|---|
 | **iOS** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
-| **macOS** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
+| **macOS 12+** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
 | **Android arm64-v8a** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg+NDK build (PLAN P11 R132) |
 | **Windows x86_64** | ✓ full | `symbolic_math_bridge_plugin.dll`, MSYS2/MinGW64 build (PLAN P11 R131) |
 | **Linux x86_64** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg `x64-linux` static build on ubuntu-22.04 / GLIBC 2.35 (PLAN P11 R130) |
