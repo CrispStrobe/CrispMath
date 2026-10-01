@@ -1,0 +1,71 @@
+{
+  "measured_at": "2026-10-01T15:01:01.196614Z",
+  "ai": {
+    "runtime": "Ollama 0.15.5-rc2",
+    "weights": "qwen2.5:0.5b",
+    "source_manifest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+    "profile": {
+      "num_thread": 2,
+      "num_ctx": 2048,
+      "temperature": 0
+    },
+    "cases": 14,
+    "outcomes": {
+      "invalid_expression": 5,
+      "incorrect_translation": 5,
+      "correct": 4
+    }
+  },
+  "ocr": {
+    "model_sha256": "8957d1ec5d1f5983fbdd5f6e819203d7c32079f379563eb61f518221c8c5bdd6",
+    "threads": 2,
+    "cases": 13,
+    "outcomes": {
+      "correct": 8,
+      "invalid_expression": 5
+    },
+    "handwriting_cases": [
+      {
+        "id": "handwritten-000a4e8ca49c5a1c",
+        "kind": "human-handwriting",
+        "recognized_latex": "x - y / s q ^ { + } ( z )",
+        "expression": "x-y/s q^{+} ( z )",
+        "actuals": [
+          null,
+          null
+        ],
+        "status": "invalid_expression",
+        "elapsed_ms": 2368
+      },
+      {
+        "id": "handwritten-00fcddfee1ebfee6",
+        "kind": "human-handwriting",
+        "recognized_latex": "2 \\sin ( x / z )",
+        "expression": "2 \\sin ( x/z )",
+        "actuals": [
+          null,
+          null
+        ],
+        "status": "invalid_expression",
+        "elapsed_ms": 4656
+      },
+      {
+        "id": "handwritten-0255dc5b14261907",
+        "kind": "human-handwriting",
+        "recognized_latex": "1 + x + \\frac { x ^ { 2 } } { 2 ^ { - } }",
+        "expression": "1+x+\\frac { x^{ 2 } } { 2^{-} }",
+        "actuals": [
+          null,
+          null
+        ],
+        "status": "invalid_expression",
+        "elapsed_ms": 4926
+      }
+    ]
+  },
+  "limitations": [
+    "Small CPU-only model; accuracy is a measurement, not a production quality guarantee.",
+    "Default and bounded LFM thinking model runs timed out and were interrupted; incomplete reports remain in local benchmark storage.",
+    "Printed OCR model scored on three real human handwriting samples; not a representative handwriting accuracy benchmark."
+  ]
+}

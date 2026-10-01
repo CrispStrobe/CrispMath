@@ -6,6 +6,46 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  test('truncated responses and reasoning text cannot become calculator input',
+      () async {
+    for (final choice in [
+      {
+        'message': {'content': '5+7'},
+        'finish_reason': 'length'
+      },
+      {
+        'message': {'content': '<think>unfinished reasoning'},
+        'finish_reason': 'stop'
+      },
+    ]) {
+      final service = ProviderAiService(
+          config: () => const AiProviderConfig(
+              endpoint: 'http://localhost/v1/chat/completions', model: 'model'),
+          clientFactory: () => MockClient((_) async => http.Response(
+              jsonEncode({
+                'choices': [choice]
+              }),
+              200)));
+      await expectLater(service.processMathNLP('five plus seven'),
+          throwsA(isA<FormatException>()));
+    }
+  });
+  test('Anthropic token-limit responses remain failures even with valid text',
+      () async {
+    final service = ProviderAiService(
+        config: () => const AiProviderConfig(
+            endpoint: 'http://localhost/v1/messages', model: 'model'),
+        clientFactory: () => MockClient((_) async => http.Response(
+            jsonEncode({
+              'stop_reason': 'max_tokens',
+              'content': [
+                {'text': '5+7'}
+              ],
+            }),
+            200)));
+    await expectLater(service.processMathNLP('five plus seven'),
+        throwsA(isA<FormatException>()));
+  });
   test(
       'provider sends actual input, model and credentials and never calculates',
       () async {

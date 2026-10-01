@@ -307,3 +307,32 @@ the full report with its browser artifacts.
 with a numeric dispatcher and verifies both initial and edited final results.
 Its JIT timings exclude UI and worker costs. CI retains this report alongside
 the full browser workflow measurements so regressions can be located.
+
+### Real inference quality checks
+
+Unit scoring/provider contracts: `flutter test test/inference_quality_test.dart test/ai_provider_service_test.dart`.
+Real-model checks require an actual configured endpoint; no canned responses:
+
+```sh
+CRISPMATH_AI_ENDPOINT=http://127.0.0.1:11434/v1/chat/completions \
+CRISPMATH_AI_MODEL=your-model flutter test native_test/ai_quality_test.dart
+python3 -m pip install -r tool/inference-requirements.txt
+python3 tool/provision_ocr_quality.py
+CRISPMATH_OCR_MODEL=/path/pix2tex.gguf CRISPMATH_OCR_LIBRARY=/path/libcrispembed.so \
+flutter test native_test/ocr_native_test.dart native_test/ocr_quality_test.dart
+```
+
+Reports in `.dart_tool/inference` separate availability failures from incorrect
+translations and recognition errors. The October 1 CPU baseline with Qwen2.5
+0.5B returned 4 correct translations out of 14; it is unsuitable as an automatic
+answer source. Printed pix2tex recognized 8 of 13 scored images correctly; all
+three human handwriting cases failed expression validation. Exact outcomes and
+model provenance are in `tool/inference_baseline.json`. Truncated responses and
+exposed reasoning traces are rejected before preview.
+
+OCR provisioning renders four fonts, fractions, a root, four image variations,
+and three actual human test samples from [Google MathWriting](https://github.com/google-research/google-research/tree/master/mathwriting).
+The pinned archive is checksum verified. Generated handwriting images stay in
+ignored evaluation storage with attribution and CC BY-NC-SA 4.0 notice; they
+are not application assets. CI uploads scored reports and notices. The strict
+original printed fixture must still recognize and evaluate to 12.

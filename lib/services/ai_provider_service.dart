@@ -112,6 +112,11 @@ class ProviderAiService implements AiService {
         throw const FormatException('Provider returned no expression.');
       }
       final Map entry = entries.first as Map;
+      if ((!anthropic && entry['finish_reason'] == 'length') ||
+          (anthropic && decoded['stop_reason'] == 'max_tokens')) {
+        throw const FormatException(
+            'Provider response was truncated. Retry with a shorter request or a different model.');
+      }
       final dynamic message = entry['message'];
       final dynamic content = anthropic
           ? entry['text']
@@ -122,6 +127,10 @@ class ProviderAiService implements AiService {
         throw const FormatException('Provider returned no expression.');
       }
       var expression = content.trim();
+      if (RegExp(r'</?think>', caseSensitive: false).hasMatch(expression)) {
+        throw const FormatException(
+            'Provider returned reasoning instead of an expression. Use a model that returns a final answer within the request limit.');
+      }
       if (expression.startsWith('```')) {
         expression = expression
             .replaceFirst(RegExp(r'^```[^\n]*\n'), '')

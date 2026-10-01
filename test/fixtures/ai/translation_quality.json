@@ -1,0 +1,16 @@
+[
+  {"id":"addition","input":"Write five plus seven as a math expression.","reference":"5+7","expected":12},
+  {"id":"subtraction","input":"Subtract eight from twenty.","reference":"20-8","expected":12},
+  {"id":"multiplication","input":"What is the product of six and seven?","reference":"6*7","expected":42},
+  {"id":"division","input":"Divide eighty-four by seven.","reference":"84/7","expected":12},
+  {"id":"fractions","input":"Add one half and one quarter.","reference":"1/2+1/4","expected":0.75},
+  {"id":"power","input":"Raise two to the fifth power.","reference":"2^5","expected":32},
+  {"id":"grouping","input":"Multiply the sum of three and four by five.","reference":"(3+4)*5","expected":35},
+  {"id":"percentage","input":"Find ten percent of two hundred.","reference":"200*10/100","expected":20},
+  {"id":"square-root","input":"Find the square root of eighty-one.","reference":"sqrt(81)","expected":9},
+  {"id":"absolute-value","input":"Find the absolute value of negative seven.","reference":"abs(-7)","expected":7},
+  {"id":"sine-radians","input":"Find the sine of pi divided by two, in radians.","reference":"sin(pi/2)","expected":1},
+  {"id":"natural-logarithm","input":"Find the natural logarithm of e squared.","reference":"log(e^2)","expected":2},
+  {"id":"missing-radius","input":"Find the area of the circle.","clarification":true},
+  {"id":"missing-values","input":"Calculate the average.","clarification":true}
+]
