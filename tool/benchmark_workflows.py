@@ -1,7 +1,7 @@
 """Measure actual UI workflows in desktop/phone browser profiles.
 
 Measures automation-to-observed-state latency and browser RAF intervals, not
-physical-device FPS. CPU throttling applies to the page, not its workers.
+physical-device FPS. CPU throttling is configured on the page CDP session; worker timing is not calibrated.
 """
 import argparse
 import asyncio
@@ -168,16 +168,18 @@ async def measure_profile(browser, name, profile, args, results):
             open_ms = (time.perf_counter()-started)*1000
             edits = []
             for base in range(2, 2+args.trials):
-                started = time.perf_counter()
                 await field.click()
-                await field.press('ControlOrMeta+A')
-                await field.press('Backspace')
-                await field.press_sequentially(f'v0 = {base}')
+                await expect(field).to_have_value(f'v0 = {base-1}')
+                await next_frames(page)
+                started = time.perf_counter()
+                await field.fill(f'v0 = {base}')
+                await next_frames(page)
                 await expect(field).to_have_value(f'v0 = {base}')
                 print(f'Editing {rows} rows: v0 = {base}', flush=True)
                 await page.wait_for_function('''expected=>{
                  const raw=localStorage.getItem('flutter.crisp.notepadDoc.performance-doc');if(!raw)return false;
-                 return JSON.parse(JSON.parse(raw)).l.at(-1).r===String(expected)}''', arg=rows+base-1)
+                 const document=JSON.parse(JSON.parse(raw));
+                 return document.l[0].s==='v0 = '+expected.base&&document.l.at(-1).r===String(expected.last)}''', arg={'base': base, 'last': rows+base-1})
                 edits.append((time.perf_counter()-started)*1000)
             assert not errors, errors
             result['notepad'].append({'rows': rows, 'open_ms': open_ms, 'edit_to_saved_result_ms': edits})
@@ -195,7 +197,8 @@ async def run(args):
     results = {'source': args.source, 'host': platform.platform(),
                'measured_at': datetime.now(timezone.utc).isoformat(),
                'trials': args.trials, 'startup_trials': args.startups,
-               'measurement': 'browser UI latency; not physical FPS; page-only CPU throttle', 'profiles': []}
+               'notepad_entry': 'atomic text replacement after Flutter focus synchronization',
+               'measurement': 'browser UI latency; not physical FPS; page CDP CPU throttle, worker timing not calibrated', 'profiles': []}
     async with async_playwright() as p:
         options = {'args': ['--no-sandbox', '--enable-unsafe-swiftshader']}
         if args.chromium:

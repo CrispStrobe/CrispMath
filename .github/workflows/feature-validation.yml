@@ -72,6 +72,12 @@ jobs:
         run: python -m unittest discover -s tool -p '*_test.py'
       - name: Unit and widget tests
         run: flutter test --concurrency=2 --reporter expanded
+      - name: Profile dependency evaluator separately
+        run: dart tool/benchmark_notepad.dart > notepad-evaluator-profile.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notepad-evaluator-profile
+          path: notepad-evaluator-profile.json
   native-ocr:
     runs-on: ubuntu-latest
     timeout-minutes: 30

@@ -4,12 +4,17 @@ on:
     branches: ['feat/graph-workspace-ux']
     paths:
       - '.github/workflows/workflow-performance.yml'
+      - 'tool/benchmark_workflows.py'
+      - 'tool/workflow_metrics.py'
   workflow_dispatch:
     inputs:
       artifact_run:
         description: Successful Build Web run containing crisp_math-web
         required: true
         type: string
+concurrency:
+  group: workflow-performance-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
   actions: read

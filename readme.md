@@ -297,8 +297,13 @@ the first variable in 500/2,000-row dependency chains until the final result
 is saved. Restored documents deliberately reuse their cached results; opening
 latency measures the restored editor, and editing measures recalculation.
 Desktop uses 1280×900; the touch profile uses 390×844 and 4× page CPU throttling.
-Workers are not throttled. Measurements include browser automation overhead,
+Throttling is configured through the page CDP session; worker timing is not calibrated. Measurements include browser automation overhead,
 notepad debounce and storage. RAF intervals describe browser frame scheduling
 on the measured host; they do not certify phone FPS or GPU performance. Small
 sample p95 values describe only the observed trials. Feature validation uploads
 the full report with its browser artifacts.
+
+`dart tool/benchmark_notepad.dart` measures the dependency evaluator separately
+with a numeric dispatcher and verifies both initial and edited final results.
+Its JIT timings exclude UI and worker costs. CI retains this report alongside
+the full browser workflow measurements so regressions can be located.
