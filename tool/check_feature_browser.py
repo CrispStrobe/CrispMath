@@ -97,9 +97,7 @@ async def check(args):
                 await page.get_by_role('button', name='Link line to graph', exact=True).first.wait_for(timeout=60000)
                 boxes = page.get_by_role('textbox')
                 assert await boxes.count() >= 2
-                await boxes.first.click()
-                await page.keyboard.press('Control+A')
-                await page.keyboard.type('a = 4')
+                await type_text(page, boxes.first, 'a = 4')
                 await page.wait_for_function(r"(localStorage.getItem('flutter.crisp.functions')||'').match(/\(4(?:\.0)?\)/)", timeout=60000)
                 await page.get_by_role('button', name=re.compile(r'^Graphing')).click()
                 await page.get_by_role('button', name='Linked Y3: Live model', exact=True).click()

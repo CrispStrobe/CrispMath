@@ -258,3 +258,17 @@ labels. The HTTP fixture tests the provider contract, not actual model quality.
 A real provider and an evaluation corpus are still needed to assess translation
 quality. The Feature validation workflow runs focused regressions, the entire
 unit/widget suite, and live release/debug browser checks as separate jobs.
+
+Native OCR recognition runs separately from the model-independent suite:
+
+```sh
+CRISPMATH_OCR_MODEL=/path/to/pix2tex-mfr-q4_k.gguf \
+CRISPMATH_OCR_LIBRARY=/path/to/libcrispembed.so \
+flutter test native_test/ocr_native_test.dart
+```
+
+The native check recognizes the committed `5 + 7` image and requires an exact
+calculator result of `12`. Missing libraries or models fail the check. The
+Feature validation workflow builds the library and downloads the same printed
+math model offered by the app before running it. The ordinary unit suite covers
+LaTeX conversion and evaluation without requiring native OCR assets.

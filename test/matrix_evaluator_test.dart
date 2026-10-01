@@ -49,11 +49,18 @@ void main() {
       expect(r, contains('Error'));
     });
 
-    test('unrecognized op returns null', () {
-      // 'trace' is not in the ops list
+    test('trace is recognized as a unary op', () {
       expect(
           MatrixEvaluator.tryEvaluate(
               'trace(Matrix([[1, 2], [3, 4]]))', engine),
+          isNotNull);
+    });
+
+    test('unrecognized op returns null', () {
+      // The dispatcher must leave unsupported operations to the caller.
+      expect(
+          MatrixEvaluator.tryEvaluate(
+              'unsupported(Matrix([[1, 2], [3, 4]]))', engine),
           isNull);
     });
 

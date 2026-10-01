@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 import '../engine/module_help_kind.dart';
 import '../engine/step_engine.dart' show StepNote;
+import 'worked_example_translations.dart';
 
 export '../engine/module_help_kind.dart' show ModuleHelpKind;
 
@@ -917,7 +918,8 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get graphSamplingFailed => 'Could not update the graph.';
   @override
-  String get graphNoRealValues => 'No real values in this range. Check the expression or try another range.';
+  String get graphNoRealValues =>
+      'No real values in this range. Check the expression or try another range.';
   @override
   String get graphRetry => 'Retry';
   @override
@@ -2668,9 +2670,11 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get graphSampling => 'Graph wird aktualisiert';
   @override
-  String get graphSamplingFailed => 'Der Graph konnte nicht aktualisiert werden.';
+  String get graphSamplingFailed =>
+      'Der Graph konnte nicht aktualisiert werden.';
   @override
-  String get graphNoRealValues => 'Keine reellen Werte in diesem Bereich. Prüfe den Ausdruck oder wähle einen anderen Bereich.';
+  String get graphNoRealValues =>
+      'Keine reellen Werte in diesem Bereich. Prüfe den Ausdruck oder wähle einen anderen Bereich.';
   @override
   String get graphRetry => 'Erneut versuchen';
   @override
@@ -4094,7 +4098,7 @@ class DeLocalizations implements AppLocalizations {
       case 'compositeDim':
         return 'Arithmetik mit zusammengesetzten Dimensionen';
     }
-    return null;
+    return additionalWorkedExampleTitle('de', id);
   }
 
   @override
@@ -4253,7 +4257,7 @@ class DeLocalizations implements AppLocalizations {
       case 'compositeDim':
         return '100 m / 10 s ergibt eine Geschwindigkeit in m/s — V5-Parser.';
     }
-    return null;
+    return additionalWorkedExampleDescription('de', id);
   }
 
   // Round 100: DE function-reference prose. CAS category translated
@@ -6033,7 +6037,8 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get graphSamplingFailed => 'Impossible d’actualiser le graphe.';
   @override
-  String get graphNoRealValues => 'Aucune valeur réelle dans cet intervalle. Vérifiez l’expression ou essayez un autre intervalle.';
+  String get graphNoRealValues =>
+      'Aucune valeur réelle dans cet intervalle. Vérifiez l’expression ou essayez un autre intervalle.';
   @override
   String get graphRetry => 'Réessayer';
   @override
@@ -7467,7 +7472,7 @@ class FrLocalizations implements AppLocalizations {
       case 'compositeDim':
         return 'Arithmétique à dimensions composées';
     }
-    return null;
+    return additionalWorkedExampleTitle('fr', id);
   }
 
   @override
@@ -7626,7 +7631,7 @@ class FrLocalizations implements AppLocalizations {
       case 'compositeDim':
         return '100 m / 10 s donne une vitesse en m/s — analyseur V5.';
     }
-    return null;
+    return additionalWorkedExampleDescription('fr', id);
   }
 
   // Round 100: FR function-reference prose. Double-quoted strings
@@ -9335,7 +9340,8 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get graphSamplingFailed => 'No se pudo actualizar el gráfico.';
   @override
-  String get graphNoRealValues => 'No hay valores reales en este intervalo. Revisa la expresión o prueba otro intervalo.';
+  String get graphNoRealValues =>
+      'No hay valores reales en este intervalo. Revisa la expresión o prueba otro intervalo.';
   @override
   String get graphRetry => 'Reintentar';
   @override
@@ -10764,7 +10770,7 @@ class EsLocalizations implements AppLocalizations {
       case 'compositeDim':
         return 'Aritmética con dimensiones compuestas';
     }
-    return null;
+    return additionalWorkedExampleTitle('es', id);
   }
 
   @override
@@ -10926,7 +10932,7 @@ class EsLocalizations implements AppLocalizations {
       case 'compositeDim':
         return '100 m / 10 s da una velocidad en m/s — analizador V5.';
     }
-    return null;
+    return additionalWorkedExampleDescription('es', id);
   }
 
   // Round 100: ES function-reference prose.

@@ -71,17 +71,16 @@ jobs:
           flutter pub get
       - name: Unit and widget tests
         run: flutter test --concurrency=2 --reporter expanded
-  baseline:
+  native-ocr:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: 527aa1690057f78dee8a9cf64300de29246e0517
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
           path: .ci/CrispEmbed
+          submodules: recursive
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.0'
@@ -95,12 +94,19 @@ jobs:
               path: .ci/CrispEmbed/flutter/crispembed
           YAML
           flutter pub get
-      - name: Verify existing catalog and legacy failures at original main
-        run: >-
-          flutter test --concurrency=2 --reporter expanded
-          test/worked_examples_test.dart test/worked_examples_localization_test.dart
-          test/unit_catalog_test.dart test/unit_expression_test.dart
-          test/matrix_evaluator_test.dart
+      - name: Build native OCR library
+        run: |
+          cmake -S .ci/CrispEmbed -B .ci/ocr-build -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=ON -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build .ci/ocr-build --target crispembed-shared --parallel 2
+      - name: Provision printed math model
+        run: |
+          curl --fail --location --retry 3 https://huggingface.co/cstr/pix2tex-mfr-gguf/resolve/main/pix2tex-mfr-q4_k.gguf --output .ci/pix2tex-mfr-q4_k.gguf
+          echo "8957d1ec5d1f5983fbdd5f6e819203d7c32079f379563eb61f518221c8c5bdd6  .ci/pix2tex-mfr-q4_k.gguf" | sha256sum --check
+      - name: Recognize committed image and evaluate exactly
+        run: |
+          export CRISPMATH_OCR_MODEL="$PWD/.ci/pix2tex-mfr-q4_k.gguf"
+          export CRISPMATH_OCR_LIBRARY="$PWD/.ci/ocr-build/libcrispembed.so"
+          flutter test --reporter expanded native_test/ocr_native_test.dart
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 30
