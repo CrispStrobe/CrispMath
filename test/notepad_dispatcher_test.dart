@@ -3,6 +3,47 @@ import 'package:crisp_math/services/engine_op.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('bounded integer sums are exact, formatted and yield between rows',
+      () async {
+    final dispatcher = NotepadDispatcher(
+        formatNumber: (value) => 'formatted:$value',
+        evaluateExpression: (_) async => throw StateError('unexpected worker'));
+    var yielded = false;
+    Future<void>.delayed(Duration.zero, () => yielded = true);
+    expect(await dispatcher.evaluate('2147483647 + (2147483647 - 1)'),
+        'formatted:4294967293');
+    expect(yielded, isTrue);
+    expect(await dispatcher.evaluate('-(7 + 5) + 2'), 'formatted:-10');
+    expect(await dispatcher.evaluate('(2)+(-3)'), 'formatted:-1');
+  });
+
+  test('fractions, implicit products and unsafe sums retain engine routing',
+      () async {
+    final routed = <String>[];
+    final dispatcher = NotepadDispatcher(
+        formatNumber: (value) => value,
+        evaluateExpression: (source) async {
+          routed.add(source);
+          return '123456';
+        });
+    for (final source in [
+      '2147483648+1',
+      '9007199254740993+1',
+      '1/3',
+      '1.5+2',
+      '2^3',
+      '2(3)',
+      '(2)(3)',
+      '(2)3',
+      '1 2+3',
+      'sin(2)',
+      '1+',
+      List.filled(41, '1').join('+'),
+    ]) {
+      expect(await dispatcher.evaluate(source), '123456', reason: source);
+    }
+    expect(routed, hasLength(12));
+  });
   test(
       'exact literals and precision calls bypass the worker and retain formatting',
       () async {

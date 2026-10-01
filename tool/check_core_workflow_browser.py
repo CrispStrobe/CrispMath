@@ -50,9 +50,16 @@ async def check(args):
             await next_frames(page)
             await parameter.fill('a = 3')
             await expect(parameter).to_have_value('a = 3')
-            await page.wait_for_function("(localStorage.getItem('flutter.crisp.functions')||'').includes('(3)*sin(x)')")
+            await page.wait_for_function("""() => {
+              const raw=localStorage.getItem('flutter.crisp.notepadDoc.core-workflow');
+              if(!raw)return false;
+              const doc=JSON.parse(JSON.parse(raw));
+              return doc.l.some(line=>line.i==='parameter'&&line.s==='a = 3'&&line.r==='3') &&
+                (localStorage.getItem('flutter.crisp.functions')||'').includes('(3)*sin(x)');
+            }""")
             await page.get_by_role('button', name=re.compile(r'^Graphing')).click()
             await linked.click()
+            await page.get_by_role('button', name='Edit a', exact=True).wait_for()
             assert re.search(r'a = 3(?:\.0)?(?:\n|$)', await labels(page))
             await page.get_by_role('button', name='Close', exact=True).click()
             await page.get_by_role('button', name='Trace curve', exact=True).click()
@@ -63,6 +70,7 @@ async def check(args):
             await page.locator('flt-semantics-placeholder').evaluate('(e)=>e.click()')
             await page.keyboard.press('Control+3')
             await linked.click()
+            await page.get_by_role('button', name='Edit a', exact=True).wait_for()
             assert re.search(r'a = 3(?:\.0)?(?:\n|$)', await labels(page))
             assert not errors, errors
             report = {'mobileTextEntry': True, 'submitResult': 35, 'previewKeyboardResult': 36, 'variableDefinitionFocused': True,

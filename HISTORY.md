@@ -1,3 +1,16 @@
+## 2026-10-01 — Bounded arithmetic and final workflow checks
+
+Short integer addition/subtraction expressions reuse the numeric parser when
+all intermediate values are provably exact. Larger integers, fractions and
+other operations keep existing engine routing. An 8 ms work budget yields to
+the UI without scheduling a timer for every cheap dependent row. Dispatcher,
+document and screen regression coverage: 125 passed; static analysis clean.
+The first local 500-row edit-to-saved-tail measurement was 9.5 seconds versus
+36.7 seconds before this routing change (single trials on a variable-load VPS;
+not a controlled hardware comparison). CI measures both desktop and touch.
+The connected-workflow browser check now waits for the linked-source dialog
+to render before inspecting its restored value.
+
 ## 2026-10-01 — Maintenance and measured evaluator optimization
 
 Extracted notepad worker dispatch and syntax/scope primitives from large screen

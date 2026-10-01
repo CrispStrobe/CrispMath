@@ -22,8 +22,10 @@ Execute in this order, with unit and live validation at each stage:
 ## Product follow-ups after the September 2026 performance work
 
 Implemented in the requested order on `feat/graph-workspace-ux`; unit tests
-and individual live browser checks have passed for all five features. Provider contract tests use an explicit fixture;
-real-model translation quality has not been evaluated.
+and individual live browser checks have passed for all five features. Provider
+contract tests use an explicit fixture. Real-model scoring is recorded above and
+in `tool/inference_baseline.json`: the tested small AI model and printed OCR
+model do not establish reliable automatic answers or handwriting recognition.
 
 - [x] **Graph tracing and a value table.** Tap or drag along a curve to inspect
   coordinates; generate values over a chosen interval and copy/export them.

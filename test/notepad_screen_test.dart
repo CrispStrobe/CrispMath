@@ -380,14 +380,15 @@ void main() {
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField).last, '2 + 3');
+      // Fractions still require the asynchronous engine worker.
+      await tester.enterText(find.byType(TextField).last, '2 / 3');
       // Stale cache is cleared synchronously inside _onLineEdited
       // — no wait needed.
       final line = AppState()
           .notepadDocuments[AppState().currentNotepadDocId!]!
           .lines
           .firstWhere((l) => l.id == 'p5-eval');
-      expect(line.source, '2 + 3');
+      expect(line.source, '2 / 3');
       expect(line.cachedResult, isNull);
       expect(line.cachedError, isNull);
 
@@ -404,7 +405,7 @@ void main() {
       await _bootApp(tester, size: const Size(1280, 800));
       await _gotoNotepad(tester);
       final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
-      doc.lines.add(NotepadLine(id: 'p5-recalc-all', source: '1 + 1'));
+      doc.lines.add(NotepadLine(id: 'p5-recalc-all', source: '1 / 3'));
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
 
@@ -418,6 +419,23 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       expect(find.byType(CircularProgressIndicator), findsWidgets,
           reason: 'Recalculate all should flip the row into pending state');
+    });
+
+    testWidgets('small sums complete after debounce and update cached results',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final line = NotepadLine(id: 'small-sum', source: '');
+      doc.lines.add(line);
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '2 + 3');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(line.cachedResult, '5');
+      expect(line.cachedError, isNull);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     });
   });
 

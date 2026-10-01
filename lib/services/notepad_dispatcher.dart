@@ -3,6 +3,7 @@ import '../engine/calculator_engine.dart';
 import '../engine/currency_evaluator.dart';
 import '../engine/date_time_evaluator.dart';
 import '../engine/notepad_evaluator.dart';
+import '../engine/numeric_fallback.dart';
 import '../engine/unit_expression.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/latex_conversion_utils.dart';
@@ -23,6 +24,7 @@ class NotepadDispatcher {
   final String Function(String) formatNumber;
   final Future<String> Function(String) evaluateExpression;
   final Future<String> Function(EngineOp) runOperation;
+  final Stopwatch _localWorkBudget = Stopwatch();
 
   /// Engine dispatcher injected into [NotepadEvaluator]. Receives a
   /// notepad-preprocessed body (scope names + Ans already
@@ -55,6 +57,20 @@ class NotepadDispatcher {
     var preNative = ExpressionPreprocessingUtils.preprocessLogicalOperators(
         LatexConversionUtils.fromLatex(preprocessed).replaceAllMapped(
             RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}('));
+
+    final integerSum = _smallIntegerSum(preNative);
+    if (integerSum != null) {
+      // Bound main-thread work while avoiding a browser timer per cheap row.
+      // The budget includes scope construction between dispatcher calls.
+      if (!_localWorkBudget.isRunning ||
+          _localWorkBudget.elapsedMilliseconds >= 8) {
+        await Future<void>.delayed(Duration.zero);
+        _localWorkBudget
+          ..reset()
+          ..start();
+      }
+      return formatNumber(integerSum);
+    }
 
     // Round 111b (P7): fold `if(cond, then, else)` when the
     // condition evaluates to a known boolean. Routes the
@@ -146,6 +162,25 @@ class NotepadDispatcher {
     } catch (e) {
       return 'Error: $e';
     }
+  }
+
+  /// Reuse the numeric parser only where IEEE doubles are provably exact.
+  /// At most 40 operands fit in 80 characters; each is <= 2^31 - 1.
+  /// Addition/subtraction intermediate results therefore stay well below 2^53.
+  /// All other arithmetic continues through the existing engine dispatcher.
+  static String? _smallIntegerSum(String source) {
+    if (source.length > 80 ||
+        !RegExp(r'^[\d\s()+-]+$').hasMatch(source) ||
+        RegExp(r'\d\s+\d|\)\s*[\d(]|\d\s*\(').hasMatch(source)) {
+      return null;
+    }
+    for (final token in RegExp(r'\d+').allMatches(source)) {
+      final value = int.tryParse(token.group(0)!);
+      if (value == null || value > 2147483647) return null;
+    }
+    final value = NumericFallbackEvaluator.evalNumeric(source);
+    if (value == null || !value.isFinite) return null;
+    return value.toInt().toString();
   }
 
   /// FlatZinc dispatcher for `fzn:` lines (Round E.4). Calls

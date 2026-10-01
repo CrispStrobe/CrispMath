@@ -356,5 +356,10 @@ observes source edits; numeric substitution scans only the expression while
 symbolic bindings retain ordered replacement. In sequential JIT runs on this
 shared VPS, a 2,000-row dependent edit changed from 13.4 to 2.7 seconds. See
 `tool/notepad_evaluator_comparison.json`; this excludes UI and worker latency.
+Small integer sums also avoid per-row worker messages: the existing numeric
+parser handles only short addition/subtraction expressions with bounded operands,
+so every intermediate integer is exact. Evaluation yields between rows for UI
+responsiveness; fractions, larger integers and other operations retain engine
+routing.
 Native CI still validates installed OCR runtimes, and superseded platform builds
 are cancelled automatically per workflow and branch.
