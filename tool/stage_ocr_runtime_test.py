@@ -1,3 +1,4 @@
+import hashlib
 import io
 from pathlib import Path
 import tarfile
@@ -5,7 +6,7 @@ import tempfile
 import unittest
 import zipfile
 
-from stage_ocr_runtime import stage
+from stage_ocr_runtime import stage, verify_archive
 
 
 class StageOcrRuntimeTest(unittest.TestCase):
@@ -29,7 +30,7 @@ class StageOcrRuntimeTest(unittest.TestCase):
             alias.type = tarfile.SYMTYPE
             alias.linkname = 'libggml.so.0.17.0'
             bundle.addfile(alias)
-        stage(self.plugin, 'linux', archive)
+        stage(self.plugin, 'linux', archive, hashlib.sha256(archive.read_bytes()).hexdigest())
         libraries = self.plugin / 'linux/lib'
         self.assertEqual((libraries / 'libcrispembed.so').read_bytes(), b'ocr')
         self.assertEqual((libraries / 'libggml.so.0').read_bytes(), b'cpu')
@@ -41,17 +42,29 @@ class StageOcrRuntimeTest(unittest.TestCase):
             bundle.writestr('release/crispembed.dll', b'ocr')
             bundle.writestr('release/ggml-cpu.dll', b'cpu')
             bundle.writestr('release/server.exe', b'not bundled')
-        stage(self.plugin, 'windows', archive)
+        stage(self.plugin, 'windows', archive, hashlib.sha256(archive.read_bytes()).hexdigest())
         libraries = self.plugin / 'windows/lib'
         self.assertEqual(sorted(p.name for p in libraries.iterdir()),
                          ['crispembed.dll', 'ggml-cpu.dll'])
+
+    def test_checksum_failure_prevents_extraction(self):
+        archive = self.root / 'modified.zip'
+        archive.write_bytes(b'altered release')
+        with self.assertRaisesRegex(ValueError, 'Checksum mismatch'):
+            stage(self.plugin, 'windows', archive)
+        self.assertFalse((self.plugin / 'windows/lib').exists())
+
+    def test_checksum_accepts_the_exact_contents(self):
+        archive = self.root / 'runtime.zip'
+        archive.write_bytes(b'verified release')
+        verify_archive(archive, hashlib.sha256(archive.read_bytes()).hexdigest())
 
     def test_missing_primary_library_fails_before_staging(self):
         archive = self.root / 'runtime.zip'
         with zipfile.ZipFile(archive, 'w') as bundle:
             bundle.writestr('ggml.dll', b'cpu')
         with self.assertRaisesRegex(ValueError, 'does not contain crispembed.dll'):
-            stage(self.plugin, 'windows', archive)
+            stage(self.plugin, 'windows', archive, hashlib.sha256(archive.read_bytes()).hexdigest())
         self.assertFalse((self.plugin / 'windows/lib').exists())
 
 

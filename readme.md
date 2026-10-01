@@ -41,7 +41,7 @@ Linux, and Windows.
 - **Statistics:** Descriptive stats, linear/polynomial/exponential regression,
   normal/binomial distributions, 9 hypothesis tests (t-test, ANOVA,
   chi-square, Fisher's exact, sign test, Wilcoxon). Clipboard paste for data.
-- **Unit conversion:** 6 base dimensions + 5 derived SI units (N, J, W, Pa, Hz),
+- **Unit conversion:** built-in dimensions and derived SI units (N, J, W, Pa, Hz),
   composite-dimension arithmetic (`100 m / 10 s → 10 m/s`), SI prefix system.
 - **Constraint solver:** FlatZinc parser + solver (Sudoku, N-queens, boolean
   SAT). Notepad `fzn:` prefix for inline constraint problems.
@@ -144,6 +144,7 @@ CrispMath/
 ```bash
 # Fetch the on-device OCR plugin into the same path used by CI.
 git clone https://github.com/CrispStrobe/CrispEmbed.git .ci/CrispEmbed
+git -C .ci/CrispEmbed checkout --detach 11e6d598521976f38081934106b55095b46b40e3
 flutter pub get
 # For desktop OCR, stage the matching release library (linux or windows):
 python3 tool/stage_ocr_runtime.py --platform linux
@@ -162,7 +163,7 @@ The native side lives in the `symbolic_math_bridge` plugin (separate
 repository, git-pinned in `pubspec.yaml`). See its README for the SymEngine
 build.
 
-## Platform support (v1.1.1)
+## Platform support (1.2.0 candidate)
 
 | Platform | SymEngine bridge | Notes |
 |---|---|---|

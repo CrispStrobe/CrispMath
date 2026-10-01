@@ -5,6 +5,20 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## October release and workflow improvements
+
+Execute in this order, with unit and live validation at each stage:
+
+1. [~] Release candidate: review PR, pin dependencies, validate clean installation,
+   legacy-data upgrade and saved-document restoration; produce candidate artifacts.
+2. [ ] Measure startup, calculation, graph interaction and large-notepad edits
+   across representative browser profiles, retaining reproducible reports.
+3. [ ] Score a real configured AI model and broaden OCR image/font/fraction tests.
+4. [ ] Improve mobile entry, linked-variable editing, loading/error recovery,
+   and accessibility through the complete enter → graph → inspect → save flow.
+5. [ ] Extract focused components from large state/screens, enforce translation
+   coverage and retain packaged-runtime regression checks.
+
 ## Product follow-ups after the September 2026 performance work
 
 Implemented in the requested order on `feat/graph-workspace-ux`; unit tests

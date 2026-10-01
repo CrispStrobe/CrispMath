@@ -2,6 +2,23 @@
 
 Completed work, newest first.
 
+## 2026-10-01 — Release candidate readiness
+
+- Prepare version 1.2.0 build 11 as candidate v1.2.0-rc.1. Pin CrispEmbed and
+  the symbolic bridge to complete commit revisions, Flutter to 3.44.0 and the
+  browser test runner to Playwright 1.61.0. Record dependency/native hashes.
+- Verify native OCR archives before staging on all five native platforms.
+  Repair dependency setup in tag-release and signed iOS build workflows.
+- Manual candidate runs produce artifacts and a source/dependency manifest;
+  publishing requires a tag event and all platform builds to succeed.
+- Test clean install, legacy upgrade and edited-document restoration in a live
+  browser. Repair recovery from a damaged document index and stale active ID,
+  retaining newer records when a legacy backup also exists.
+- Upgrade/persistence/link regression tests: 81 passed. Staging and candidate
+  metadata unit tests: 8 passed. Actionlint validates every workflow.
+- Replace obsolete ONNX and unmeasured frame-rate release claims with the
+  current candidate behavior and explicit validation scope.
+
 ## 2026-10-01 — Resolve installed OCR libraries
 
 - Resolve OCR libraries relative to the installed desktop executable. macOS

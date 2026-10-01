@@ -28,6 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
 
       - name: Set up Flutter
@@ -36,6 +37,12 @@ jobs:
           flutter-version: '3.44.0'
           channel: stable
           cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Stage verified OCR runtime libraries
+        run: python tool/stage_ocr_runtime.py --platform macos
 
       - name: Resolve dependencies
         run: flutter pub get
@@ -60,13 +67,13 @@ jobs:
           APP="build/macos/Build/Products/Release/crisp_math.app"
           ls -la "$APP/Contents/MacOS"
           TOTAL=0
-          for bin in $(find "$APP" -type f -perm -u+x); do
+          while IFS= read -r -d '' bin; do
             count=$(nm "$bin" 2>/dev/null | grep -c flutter_symengine || true)
             if [ "$count" -gt 0 ]; then
               echo "  $bin: $count"
               TOTAL=$((TOTAL + count))
             fi
-          done
+          done < <(find "$APP" -type f -perm -u+x -print0)
           echo "Total SymEngine symbols across bundle: $TOTAL"
           if [ "$TOTAL" -lt 30 ]; then
             echo "::error::Expected >= 30 SymEngine symbols across bundle, found $TOTAL"

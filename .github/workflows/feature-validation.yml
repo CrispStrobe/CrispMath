@@ -17,6 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
       - uses: subosito/flutter-action@v2
         with:
@@ -52,6 +53,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
       - uses: subosito/flutter-action@v2
         with:
@@ -76,6 +78,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
           submodules: recursive
       - uses: subosito/flutter-action@v2
@@ -112,6 +115,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
       - uses: subosito/flutter-action@v2
         with:
@@ -136,7 +140,7 @@ jobs:
 
       - name: Install browser test tools
         run: |
-          python -m pip install playwright
+          python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
       - name: Live browser feature checks
         run: |
@@ -145,6 +149,7 @@ jobs:
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
           python tool/check_mobile_trace.py --screenshots browser-results
           python tool/check_catalog_browser.py --screenshots browser-results
+          python tool/check_release_browser.py --results browser-results/release
       - name: Debug build and framework assertion checks
         run: |
           tool/build_web.sh --debug --no-wasm-dry-run

@@ -437,9 +437,27 @@ class AppState extends ChangeNotifier {
         }
       }
       final indexJson = _prefs!.getString(_kNotepadIndex);
+      var recoverIndex = false;
+      List<String>? ids;
       if (indexJson != null) {
-        final ids = (jsonDecode(indexJson) as List).cast<String>();
-        _storedDocIds.addAll(ids);
+        try {
+          ids = (jsonDecode(indexJson) as List).cast<String>().toList();
+          _storedDocIds.addAll(ids);
+        } catch (e) {
+          // Individual records remain recoverable if the index was damaged.
+          recoverIndex = true;
+          ids = [];
+          for (final key in _prefs!.getKeys()) {
+            if (!key.startsWith('crisp.notepadDoc.')) continue;
+            try {
+              ids.add(Uri.decodeComponent(
+                  key.substring('crisp.notepadDoc.'.length)));
+            } catch (_) {
+              // Ignore malformed keys without discarding valid records.
+            }
+          }
+          debugPrint('STATE: recovering document index: $e');
+        }
         for (final id in ids) {
           try {
             final raw = _prefs!.getString(_docKey(id));
@@ -451,14 +469,17 @@ class AppState extends ChangeNotifier {
             debugPrint('STATE: failed to restore document $id: $e');
           }
         }
-      } else {
+      }
+      if (indexJson == null || recoverIndex) {
         final legacy = _prefs!.getString(_kNotepadDocs);
         if (legacy != null) {
           try {
             for (final raw in jsonDecode(legacy) as List) {
               final doc =
                   NotepadDocument.fromJson(Map<String, dynamic>.from(raw));
-              if (doc.id.isNotEmpty) notepadDocuments[doc.id] = doc;
+              if (doc.id.isNotEmpty) {
+                notepadDocuments.putIfAbsent(doc.id, () => doc);
+              }
             }
             _dirtyDocIds.addAll(notepadDocuments.keys);
             await _persistNotepadDocs();
@@ -467,9 +488,17 @@ class AppState extends ChangeNotifier {
           } catch (e) {
             debugPrint('STATE: failed to migrate notepad documents: $e');
           }
+        } else if (recoverIndex && notepadDocuments.isNotEmpty) {
+          _dirtyDocIds.addAll(notepadDocuments.keys);
+          await _persistNotepadDocs();
         }
       }
       _currentNotepadDocId = _prefs!.getString(_kCurrentNotepadDoc);
+      if (notepadDocuments.isNotEmpty &&
+          !notepadDocuments.containsKey(_currentNotepadDocId)) {
+        _currentNotepadDocId = notepadDocuments.keys.first;
+        _persistCurrentNotepadDoc();
+      }
       final sceneJson = _prefs!.getString(_kScene3D);
       if (sceneJson != null) {
         try {
