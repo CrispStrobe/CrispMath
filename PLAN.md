@@ -16,7 +16,7 @@ Execute in this order, with unit and live validation at each stage:
 3. [x] Score a real configured AI model and broaden OCR image/font/fraction tests.
 4. [x] Improve mobile entry, linked-variable editing, loading/error recovery,
    and accessibility through the complete enter → graph → inspect → save flow.
-5. [~] Extract focused components from large state/screens, enforce translation
+5. [x] Extract focused components from large state/screens, enforce translation
    coverage and retain packaged-runtime regression checks.
 
 ## Product follow-ups after the September 2026 performance work

@@ -11,10 +11,149 @@
     },
     "cases": 14,
     "outcomes": {
+      "incorrect_translation": 4,
+      "invalid_expression": 8,
+      "correct": 2
+    },
+    "previous_contract_outcomes": {
       "invalid_expression": 5,
       "incorrect_translation": 5,
       "correct": 4
-    }
+    },
+    "measured_at": "2026-10-01T15:44:29.658116Z",
+    "prompt_source_revision": "ef58025b5ac24d162cd42149e190f0221e5a45e4",
+    "cases_scored": [
+      {
+        "id": "addition",
+        "input": "Write five plus seven as a math expression.",
+        "expression": "5 + 7 * 0",
+        "result": "5",
+        "status": "incorrect_translation",
+        "expected": 12.0,
+        "actual": 5.0,
+        "elapsed_ms": 36801
+      },
+      {
+        "id": "subtraction",
+        "input": "Subtract eight from twenty.",
+        "expression": "-8 * 20 / -1",
+        "result": "160",
+        "status": "incorrect_translation",
+        "expected": 12.0,
+        "actual": 160.0,
+        "elapsed_ms": 6885
+      },
+      {
+        "id": "multiplication",
+        "input": "What is the product of six and seven?",
+        "expression": "6 * 7 = 42",
+        "result": "Error: evaluate requires native library",
+        "status": "invalid_expression",
+        "expected": 42.0,
+        "elapsed_ms": 7126
+      },
+      {
+        "id": "division",
+        "input": "Divide eighty-four by seven.",
+        "expression": "84 / 7",
+        "result": "12",
+        "status": "correct",
+        "expected": 12.0,
+        "actual": 12.0,
+        "elapsed_ms": 5884
+      },
+      {
+        "id": "fractions",
+        "input": "Add one half and one quarter.",
+        "expression": "1/2 + 1/4 = 3/4",
+        "result": "Error: evaluate requires native library",
+        "status": "invalid_expression",
+        "expected": 0.75,
+        "elapsed_ms": 9098
+      },
+      {
+        "id": "power",
+        "input": "Raise two to the fifth power.",
+        "expression": "2^5 = 32",
+        "result": "Error: evaluate requires native library",
+        "status": "invalid_expression",
+        "expected": 32.0,
+        "elapsed_ms": 5950
+      },
+      {
+        "id": "grouping",
+        "input": "Multiply the sum of three and four by five.",
+        "expression": "3 * 4 + 5 = 17",
+        "result": "Error: evaluate requires native library",
+        "status": "invalid_expression",
+        "expected": 35.0,
+        "elapsed_ms": 8598
+      },
+      {
+        "id": "percentage",
+        "input": "Find ten percent of two hundred.",
+        "expression": "10/100 * 200 = 20",
+        "result": "Error: evaluate requires native library",
+        "status": "invalid_expression",
+        "expected": 20.0,
+        "elapsed_ms": 9471
+      },
+      {
+        "id": "square-root",
+        "input": "Find the square root of eighty-one.",
+        "expression": "sqrt(81) = 9",
+        "result": "Error: evaluate requires native library",
+        "status": "invalid_expression",
+        "expected": 9.0,
+        "elapsed_ms": 6935
+      },
+      {
+        "id": "absolute-value",
+        "input": "Find the absolute value of negative seven.",
+        "expression": "|sin(-7)| * / * - 1 + sin(x) is one or more C's without explanations.",
+        "result": "Error: parse failed",
+        "status": "invalid_expression",
+        "expected": 7.0,
+        "elapsed_ms": 13169
+      },
+      {
+        "id": "sine-radians",
+        "input": "Find the sine of pi divided by two, in radians.",
+        "expression": "sin(pi/2)",
+        "result": "1",
+        "status": "correct",
+        "expected": 1.0,
+        "actual": 1.0,
+        "elapsed_ms": 6597
+      },
+      {
+        "id": "natural-logarithm",
+        "input": "Find the natural logarithm of e squared.",
+        "expression": "ln(e\u00b2)",
+        "result": "Error: parse failed",
+        "status": "invalid_expression",
+        "expected": 2.0,
+        "elapsed_ms": 5160
+      },
+      {
+        "id": "missing-radius",
+        "input": "Find the area of the circle.",
+        "expression": "area(sqrt(x)^2)",
+        "result": "",
+        "status": "incorrect_translation",
+        "reason": "Invented an expression for an underspecified question.",
+        "elapsed_ms": 5154
+      },
+      {
+        "id": "missing-values",
+        "input": "Calculate the average.",
+        "expression": "avg(a,b)",
+        "result": "",
+        "status": "incorrect_translation",
+        "reason": "Invented an expression for an underspecified question.",
+        "elapsed_ms": 4413
+      }
+    ]
   },
   "ocr": {
     "model_sha256": "8957d1ec5d1f5983fbdd5f6e819203d7c32079f379563eb61f518221c8c5bdd6",

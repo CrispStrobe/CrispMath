@@ -324,7 +324,7 @@ flutter test native_test/ocr_native_test.dart native_test/ocr_quality_test.dart
 
 Reports in `.dart_tool/inference` separate availability failures from incorrect
 translations and recognition errors. The October 1 CPU baseline with Qwen2.5
-0.5B returned 4 correct translations out of 14; it is unsuitable as an automatic
+0.5B returned 2 correct translations out of 14; it is unsuitable as an automatic
 answer source. Printed pix2tex recognized 10 of 13 scored images correctly; all
 three human handwriting cases failed expression validation. Exact outcomes and
 model provenance are in `tool/inference_baseline.json`. Truncated responses and

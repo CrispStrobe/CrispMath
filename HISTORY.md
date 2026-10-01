@@ -26,7 +26,7 @@ unit/widget tests pass; connected mobile browser checks added to CI.
 
 Added strict real-provider scoring for 14 translations and scored native OCR
 for 13 reproducible images including actual MathWriting human ink. Reports keep
-wrong answers separate from transport failures. Local Qwen2.5 0.5B: 4/14 correct;
+wrong answers separate from transport failures. Local Qwen2.5 0.5B: 2/14 correct;
 pix2tex: 10/13 correct, all three handwriting samples failed validation. Added
 provider safeguards for truncated responses and reasoning markup, with unit
 coverage. Corpus downloads verify a pinned SHA256 and preserve attribution;
