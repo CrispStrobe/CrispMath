@@ -9,9 +9,9 @@ Completed items with details are in `HISTORY.md`.
 
 Execute in this order, with unit and live validation at each stage:
 
-1. [~] Release candidate: review PR, pin dependencies, validate clean installation,
+1. [x] Release candidate: review PR, pin dependencies, validate clean installation,
    legacy-data upgrade and saved-document restoration; produce candidate artifacts.
-2. [ ] Measure startup, calculation, graph interaction and large-notepad edits
+2. [~] Measure startup, calculation, graph interaction and large-notepad edits
    across representative browser profiles, retaining reproducible reports.
 3. [ ] Score a real configured AI model and broaden OCR image/font/fraction tests.
 4. [ ] Improve mobile entry, linked-variable editing, loading/error recovery,

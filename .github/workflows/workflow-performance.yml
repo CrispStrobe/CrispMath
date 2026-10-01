@@ -1,0 +1,45 @@
+name: Workflow performance
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run:
+        description: Successful Build Web run containing crisp_math-web
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify profiling helpers
+        run: python -m unittest discover -s tool -p '*_test.py'
+      - name: Identify application source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_RUN: ${{ inputs.artifact_run }}
+        run: |
+          gh run view "$ARTIFACT_RUN" --json headSha --jq '.headSha' > /tmp/application-source
+      - uses: actions/download-artifact@v4
+        with:
+          name: crisp_math-web
+          path: performance-web
+          run-id: ${{ inputs.artifact_run }}
+          github-token: ${{ github.token }}
+      - name: Install browser tools
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Measure release workflows
+        run: |
+          python -m http.server 8766 --directory performance-web > /tmp/performance-http.log 2>&1 &
+          python tool/benchmark_workflows.py --source "$(cat /tmp/application-source)" --output browser-results/workflow-performance.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workflow-performance
+          path: browser-results
+          if-no-files-found: error

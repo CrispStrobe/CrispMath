@@ -280,3 +280,25 @@ calculator result of `12`. Missing libraries or models fail the check. The
 Feature validation workflow builds the library and downloads the same printed
 math model offered by the app before running it. The ordinary unit suite covers
 LaTeX conversion and evaluation without requiring native OCR assets.
+
+### Workflow measurements
+
+After serving a release bundle at `http://127.0.0.1:8766/`, run:
+
+```sh
+python -m pip install -r tool/browser-requirements.txt
+python -m playwright install chromium
+python tool/benchmark_workflows.py --source YOUR_COMMIT
+```
+
+The report in `browser-results/workflow-performance.json` records cold/warm
+startup, calculation-to-saved-history, keyboard trace, pointer pan and editing
+the first variable in 500/2,000-row dependency chains until the final result
+is saved. Restored documents deliberately reuse their cached results; opening
+latency measures the restored editor, and editing measures recalculation.
+Desktop uses 1280×900; the touch profile uses 390×844 and 4× page CPU throttling.
+Workers are not throttled. Measurements include browser automation overhead,
+notepad debounce and storage. RAF intervals describe browser frame scheduling
+on the measured host; they do not certify phone FPS or GPU performance. Small
+sample p95 values describe only the observed trials. Feature validation uploads
+the full report with its browser artifacts.

@@ -8584,3 +8584,16 @@ macOS Release.
 
 ### Static analysis
 - 210 issues (1 error) → 19 info-only hints by the end of this round.
+
+### October release candidate validation
+
+Candidate `v1.2.0-rc.1` (`1.2.0+11`, source `72a1791`) built successfully
+for Linux, Windows, macOS, Android, iOS and web in Release run
+[36864508436](https://github.com/CrispStrobe/CrispMath/actions/runs/36864508436).
+The manifest records full dependency revisions and verified native-library
+checksums. Publishing was skipped for this manual candidate build. Signed iOS
+dry run [36864512187](https://github.com/CrispStrobe/CrispMath/actions/runs/36864512187)
+passed signing, export and signature checks; App Store upload was skipped.
+Unit checks and live browser checks cover clean installation, legacy migration,
+damaged-index recovery, editing and reload restoration. The browser harness
+correction is in `8a577bb`; it does not alter the candidate application.

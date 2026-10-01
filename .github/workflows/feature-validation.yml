@@ -68,6 +68,8 @@ jobs:
               path: .ci/CrispEmbed/flutter/crispembed
           YAML
           flutter pub get
+      - name: Profiling and release-tool unit tests
+        run: python -m unittest discover -s tool -p '*_test.py'
       - name: Unit and widget tests
         run: flutter test --concurrency=2 --reporter expanded
   native-ocr:
@@ -150,6 +152,7 @@ jobs:
           python tool/check_mobile_trace.py --screenshots browser-results
           python tool/check_catalog_browser.py --screenshots browser-results
           python tool/check_release_browser.py --results browser-results/release
+          python tool/benchmark_workflows.py --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
       - name: Debug build and framework assertion checks
         run: |
           tool/build_web.sh --debug --no-wasm-dry-run
