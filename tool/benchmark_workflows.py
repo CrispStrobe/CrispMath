@@ -179,7 +179,7 @@ async def measure_profile(browser, name, profile, args, results):
                 await page.wait_for_function('''expected=>{
                  const raw=localStorage.getItem('flutter.crisp.notepadDoc.performance-doc');if(!raw)return false;
                  const document=JSON.parse(JSON.parse(raw));
-                 return document.l[0].s==='v0 = '+expected.base&&document.l.at(-1).r===String(expected.last)}''', arg={'base': base, 'last': rows+base-1})
+                 return document.l[0].s==='v0 = '+expected.base&&document.l.at(-1).r===String(expected.last)}''', arg={'base': base, 'last': rows+base-1}, timeout=max(120000, rows*100))
                 edits.append((time.perf_counter()-started)*1000)
             assert not errors, errors
             result['notepad'].append({'rows': rows, 'open_ms': open_ms, 'edit_to_saved_result_ms': edits})

@@ -12,8 +12,25 @@ on:
         description: Successful Build Web run containing crisp_math-web
         required: true
         type: string
+      profiles:
+        description: Browser profiles
+        type: choice
+        default: both
+        options: [both, desktop, phone]
+      rows:
+        description: Space-separated document sizes
+        type: string
+        default: '500 2000'
+      trials:
+        description: Edit/interaction trials per document
+        type: string
+        default: '3'
+      startups:
+        description: Startup trials
+        type: string
+        default: '3'
 concurrency:
-  group: workflow-performance-${{ github.ref }}
+  group: workflow-performance-${{ github.ref }}-${{ inputs.profiles || 'both' }}
   cancel-in-progress: true
 permissions:
   contents: read
@@ -45,9 +62,17 @@ jobs:
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
       - name: Measure release workflows
+        env:
+          PERFORMANCE_PROFILES: ${{ inputs.profiles || 'both' }}
+          PERFORMANCE_ROWS: ${{ inputs.rows || '500 2000' }}
+          PERFORMANCE_TRIALS: ${{ inputs.trials || '3' }}
+          PERFORMANCE_STARTUPS: ${{ inputs.startups || '3' }}
         run: |
           python -m http.server 8766 --directory performance-web > /tmp/performance-http.log 2>&1 &
-          python tool/benchmark_workflows.py --source "$(cat /tmp/application-source)" --output browser-results/workflow-performance.json
+          read -r -a document_rows <<< "$PERFORMANCE_ROWS"
+          profiles=(desktop phone)
+          if [[ "$PERFORMANCE_PROFILES" != both ]]; then profiles=("$PERFORMANCE_PROFILES"); fi
+          python tool/benchmark_workflows.py --profiles "${profiles[@]}" --rows "${document_rows[@]}" --trials "$PERFORMANCE_TRIALS" --startups "$PERFORMANCE_STARTUPS" --source "$(cat /tmp/application-source)" --output browser-results/workflow-performance.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
