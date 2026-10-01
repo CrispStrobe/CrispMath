@@ -14,6 +14,9 @@ Completed work, newest first.
 - Test clean install, legacy upgrade and edited-document restoration in a live
   browser. Repair recovery from a damaged document index and stale active ID,
   retaining newer records when a legacy backup also exists.
+- Live clean-install, legacy-upgrade and damaged-index restoration checks passed
+  with zero framework errors. Signed iOS dry-run build and signature validation
+  passed, and App Store upload was skipped.
 - Upgrade/persistence/link regression tests: 81 passed. Staging and candidate
   metadata unit tests: 8 passed. Actionlint validates every workflow.
 - Replace obsolete ONNX and unmeasured frame-rate release claims with the

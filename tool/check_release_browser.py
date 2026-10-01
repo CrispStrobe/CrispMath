@@ -27,6 +27,11 @@ async def check(args):
                 page.set_default_timeout(60000)
                 errors = []
                 page.on('pageerror', lambda error: errors.append(str(error)))
+                def console(message):
+                    if message.type == 'error' and any(token in message.text for token in
+                            ['EXCEPTION CAUGHT', 'setState()', 'RenderFlex', 'Unhandled']):
+                        errors.append(message.text)
+                page.on('console', console)
                 preferences = {'crisp.onboardingDismissed': True, 'crisp.locale': 'en'}
                 if scenario != 'clean':
                     preferences['crisp.currentNotepadDoc'] = DOCUMENT['i']
@@ -45,7 +50,8 @@ async def check(args):
                     await page.locator('canvas').first.wait_for(timeout=300000)
                     await page.locator('flt-semantics-placeholder').evaluate('(element)=>element.click()')
                     await page.get_by_role('button', name=re.compile('^Notepad')).click()
-                    await page.get_by_role('button', name='Link line to graph', exact=True).first.wait_for()
+                    print(f'{scenario}: opened notepad', flush=True)
+                    await page.get_by_role('button', name=re.compile(r'^Add line\b')).wait_for()
 
                 await page.goto(args.url, wait_until='domcontentloaded')
                 await open_notepad()
