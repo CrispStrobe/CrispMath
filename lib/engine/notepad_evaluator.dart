@@ -306,9 +306,18 @@ class NotepadEvaluator {
 
     // Process the Kahn-acyclic part in dependency order.
     _scopeKeysCache = null; // force rebuild on first blocked line
+    var numericScope = _NumericScopeIndex.tryCreate(doc, externalScope);
     for (final i in order) {
       if (indices != null && !indices.contains(i)) continue;
-      await _evaluateLine(doc, i, graph, firstCode, parseCache);
+      if (numericScope != null && !numericScope.matches(doc, externalScope)) {
+        numericScope = null;
+      }
+      await _evaluateLine(
+          doc, i, graph, firstCode, parseCache, numericScope?.scope);
+      if (numericScope != null &&
+          !numericScope.recordResult(doc, i, externalScope)) {
+        numericScope = null;
+      }
     }
     return doc;
   }
@@ -320,6 +329,7 @@ class NotepadEvaluator {
     NotepadDependencyGraph graph,
     int firstCode,
     NotepadLineParseCache parseCache,
+    Map<String, String>? indexedScope,
   ) async {
     final line = doc.lines[lineIndex];
     final parsed = classifyNotepadLine(line.source,
@@ -394,8 +404,26 @@ class NotepadEvaluator {
     }
 
     // Build the line's scope view + free vars.
-    final scope = buildNotepadScope(doc,
-        externalScope: externalScope, parseCache: parseCache);
+    final body = parsed.body ?? '';
+    final referencedNames = {
+      ...identifierWordsIn(body),
+      ..._scopeIdentifierRegex.allMatches(body).map((match) => match[0]!),
+    };
+    var scope = indexedScope == null
+        ? buildNotepadScope(doc,
+            externalScope: externalScope,
+            parseCache: parseCache,
+            names: referencedNames)
+        : {
+            for (final name in referencedNames)
+              if (indexedScope.containsKey(name)) name: indexedScope[name]!,
+          };
+    // Numeric replacements cannot introduce more identifiers. Symbolic values
+    // retain the complete scope and the existing ordered substitution behavior.
+    if (scope.values.any((value) => !_scalarScopeValue.hasMatch(value))) {
+      scope = buildNotepadScope(doc,
+          externalScope: externalScope, parseCache: parseCache);
+    }
     final scopeKeys = scope.keys.toSet();
     final freeVars = freeVariablesOfLine(parsed, scopeKeys).toList()..sort();
 

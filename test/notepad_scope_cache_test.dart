@@ -1,8 +1,97 @@
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  Future<NotepadDocument> evaluate(List<String> sources,
+      {Map<String, String> external = const {},
+      String? Function(NotepadDocument, String, int)? intercept}) async {
+    final doc = NotepadDocument.fresh(name: 'Indexed');
+    doc.lines
+      ..clear()
+      ..addAll(sources.map((source) => NotepadLine.fresh(source: source)));
+    var calls = 0;
+    await NotepadEvaluator(
+        externalScope: external,
+        dispatcher: (source) async {
+          final overridden = intercept?.call(doc, source, calls++);
+          return overridden ??
+              NumericFallbackEvaluator.evalNumeric(source)!.toInt().toString();
+        }).evaluateAll(doc);
+    return doc;
+  }
+
+  test('numeric scope observes source edits during dispatch', () async {
+    final doc = await evaluate(['a = 1', 'b = 2', 'c = a + b'],
+        intercept: (doc, source, call) {
+      if (call == 0) doc.lines[1].source = 'b = 5';
+      return null;
+    });
+    expect(doc.lines.last.cachedResult, '6');
+  });
+
+  test('numeric scope observes cache and import changes during dispatch',
+      () async {
+    final external = {'p': '2'};
+    final doc = await evaluate(['a = 1', 'b = 2', 'c = a + p'],
+        external: external, intercept: (doc, source, call) {
+      if (call == 1) {
+        doc.lines.first.cachedResult = '7';
+        external['p'] = '4';
+      }
+      return null;
+    });
+    expect(doc.lines.last.cachedResult, '11');
+  });
+
+  test('symbolic results and duplicate names preserve full-scope behavior',
+      () async {
+    final symbolic = await evaluate(['a = 1', 'b = 2', 'c = a'],
+        intercept: (doc, source, call) => call == 0 ? 'b+1' : null);
+    expect(symbolic.lines.last.cachedResult, '3');
+    final duplicates = await evaluate(['a = 1', 'a = 2', 'c = a + 1']);
+    expect(duplicates.lines.last.cachedResult, '3');
+  });
+
+  test('filtered scopes preserve effective bindings, aliases and live edits',
+      () {
+    final doc = NotepadDocument.fresh(name: 'Filtered');
+    doc.lines
+      ..clear()
+      ..addAll([
+        NotepadLine.fresh(source: 'a = 2')..cachedResult = '2',
+        NotepadLine.fresh(source: 'a = 3')..cachedResult = '3',
+        NotepadLine.fresh(source: 'fzn: exports')
+          ..cachedResult = 'output'
+          ..cachedExports = {'b': '4', 'a': '5'},
+        NotepadLine.fresh(source: 'a = 6')..cachedResult = '6',
+      ]);
+    final cache = NotepadLineParseCache();
+    const external = {'a': '1', 'imported': '7', 'unused': '8'};
+    void check() {
+      final full = buildNotepadScope(doc, externalScope: external);
+      for (final names in [
+        <String>{},
+        {'a'},
+        {'b', 'imported', 'unknown'},
+        {'line1', 'line3', 'a'},
+      ]) {
+        expect(
+            buildNotepadScope(doc,
+                externalScope: external, parseCache: cache, names: names),
+            Map.fromEntries(full.entries.where((e) => names.contains(e.key))));
+      }
+    }
+
+    check();
+    doc.lines.last.cachedResult = null;
+    check();
+    doc.lines[1].source = 'c = 3';
+    check();
+    doc.lines.removeAt(0);
+    check();
+  });
   test('classification cache observes edits, positions and directive changes',
       () {
     final cache = NotepadLineParseCache();

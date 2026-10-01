@@ -26,6 +26,100 @@ final _scopeIdentifierRegex =
     RegExp(r'(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])');
 final _scalarScopeValue = RegExp(r'^[+-]?\d+(?:\.\d+)?$');
 
+/// Incremental bindings only for documents with unambiguous numeric ownership.
+/// Checks source, identity and cached values between rows, so external edits
+/// disable the index rather than allowing it to serve stale bindings.
+class _NumericScopeIndex {
+  _NumericScopeIndex(
+      NotepadDocument doc, Map<String, String> externalScope, this.names)
+      : lines = List.of(doc.lines),
+        sources = doc.lines.map((line) => line.source).toList(),
+        results = doc.lines.map((line) => line.cachedResult).toList(),
+        external = Map.of(externalScope),
+        scope = buildNotepadScope(doc, externalScope: externalScope);
+
+  final List<NotepadLine> lines;
+  final List<String> sources;
+  final List<String?> results;
+  final List<String?> names;
+  final Map<String, String> external;
+  final Map<String, String> scope;
+
+  static _NumericScopeIndex? tryCreate(
+      NotepadDocument doc, Map<String, String> external) {
+    if (external.values.any((value) => !_scalarScopeValue.hasMatch(value))) {
+      return null;
+    }
+    final names = <String?>[];
+    final seen = <String>{};
+    final firstCode = firstCodeLineIndexOf(doc);
+    for (var i = 0; i < doc.lines.length; i++) {
+      final line = doc.lines[i];
+      final parsed = classifyNotepadLine(line.source,
+          lineIndex: i, firstCodeLineIndex: firstCode);
+      if (parsed.kind == NotepadLineKind.flatzinc ||
+          parsed.kind == NotepadLineKind.plot ||
+          (line.cachedResult != null &&
+              !_scalarScopeValue.hasMatch(line.cachedResult!))) {
+        return null;
+      }
+      final name =
+          parsed.kind == NotepadLineKind.assignment ? parsed.name : null;
+      if (name != null &&
+          (!seen.add(name) || RegExp(r'^line\d+$').hasMatch(name))) {
+        return null;
+      }
+      names.add(name);
+    }
+    return _NumericScopeIndex(doc, external, names);
+  }
+
+  bool matches(NotepadDocument doc, Map<String, String> externalScope) {
+    if (doc.lines.length != lines.length ||
+        externalScope.length != external.length) return false;
+    for (var i = 0; i < lines.length; i++) {
+      final line = doc.lines[i];
+      if (!identical(line, lines[i]) ||
+          line.source != sources[i] ||
+          line.cachedResult != results[i]) return false;
+    }
+    for (final entry in external.entries) {
+      if (externalScope[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
+
+  bool recordResult(
+      NotepadDocument doc, int index, Map<String, String> externalScope) {
+    if (doc.lines.length != lines.length ||
+        !identical(doc.lines[index], lines[index])) return false;
+    final result = doc.lines[index].cachedResult;
+    results[index] = result;
+    if (!matches(doc, externalScope) ||
+        (result != null && !_scalarScopeValue.hasMatch(result))) return false;
+    void update(String key) {
+      final value = result ?? external[key];
+      if (value == null) {
+        scope.remove(key);
+      } else {
+        scope[key] = value;
+      }
+    }
+
+    // Non-code rows never contribute an alias to buildNotepadScope.
+    final parsed = classifyNotepadLine(sources[index],
+        lineIndex: index, firstCodeLineIndex: firstCodeLineIndexOf(doc));
+    if (parsed.kind != NotepadLineKind.blank &&
+        parsed.kind != NotepadLineKind.comment &&
+        parsed.kind != NotepadLineKind.useDirective) {
+      update('line${index + 1}');
+    }
+    final name = names[index];
+    if (name != null) update(name);
+    return true;
+  }
+}
+
 /// Cached word-boundary RegExp patterns for scope name substitution.
 final _wordBoundaryCache = <String, RegExp>{};
 RegExp _wordBoundaryPattern(String name) => _wordBoundaryCache.putIfAbsent(
@@ -340,6 +434,9 @@ int firstCodeLineIndexOf(NotepadDocument doc) {
 /// contribute their explicit LHS. [externalScope] (typically
 /// populated by Phase 6 from the doc's `use` imports) is seeded
 /// first, so any in-doc assignment of the same name shadows it.
+/// [names] limits the returned bindings without changing precedence. Callers
+/// substituting symbolic values must retain the full scope because replacement
+/// can introduce identifiers that weren't present in the original expression.
 ///
 /// Callers that need to preprocess a *specific* line should remove
 /// that line's own contributions from the returned scope before
@@ -350,9 +447,16 @@ Map<String, String> buildNotepadScope(
   NotepadDocument doc, {
   Map<String, String> externalScope = const {},
   NotepadLineParseCache? parseCache,
+  Set<String>? names,
 }) {
   final scope = <String, String>{};
-  scope.addAll(externalScope);
+  if (names != null && names.isEmpty) return scope;
+  bool wanted(String name) => names == null || names.contains(name);
+  for (final entry in externalScope.entries) {
+    if (wanted(entry.key)) scope[entry.key] = entry.value;
+  }
+  final includeAliases =
+      names == null || names.any((name) => RegExp(r'^line\d+$').hasMatch(name));
 
   final firstCode = firstCodeLineIndexOf(doc);
   for (var i = 0; i < doc.lines.length; i++) {
@@ -372,18 +476,20 @@ Map<String, String> buildNotepadScope(
     // pre-seeded external import.
     if (parsed.kind == NotepadLineKind.flatzinc) {
       final cached = line.cachedResult;
-      if (cached != null) {
+      if (cached != null && includeAliases && wanted('line${i + 1}')) {
         scope['line${i + 1}'] = cached;
       }
       for (final entry in line.cachedExports.entries) {
-        scope[entry.key] = entry.value;
+        if (wanted(entry.key)) scope[entry.key] = entry.value;
       }
       continue;
     }
     final cached = line.cachedResult;
     if (cached == null) continue;
-    scope['line${i + 1}'] = cached;
-    if (parsed.kind == NotepadLineKind.assignment) {
+    if (includeAliases && wanted('line${i + 1}')) {
+      scope['line${i + 1}'] = cached;
+    }
+    if (parsed.kind == NotepadLineKind.assignment && wanted(parsed.name!)) {
       scope[parsed.name!] = cached;
     }
   }
