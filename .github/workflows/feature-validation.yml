@@ -36,7 +36,7 @@ jobs:
       - name: Feature and optimization regression tests
         run: >-
           flutter test --concurrency=2 --reporter expanded
-          test/native_bridge_wiring_test.dart
+          test/native_bridge_wiring_test.dart test/ocr_library_path_test.dart
           test/graph_inspection_test.dart test/graph_inspection_widget_test.dart test/graph_touch_trace_test.dart
           test/linked_graph_test.dart test/graph_parameter_cleanup_test.dart
           test/command_palette_test.dart test/graph_viewport_test.dart

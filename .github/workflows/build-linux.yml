@@ -73,6 +73,7 @@ jobs:
 
       - name: Recognize an image using the packaged OCR runtime
         env:
+          CRISPMATH_OCR_APP_EXECUTABLE: build/linux/x64/release/bundle/crisp_math
           CRISPMATH_OCR_MODEL: .ci/ocr-model/pix2tex-mfr-q4_k.gguf
           CRISPMATH_OCR_LIBRARY: build/linux/x64/release/bundle/lib/libcrispembed.so
         run: flutter test --no-pub --reporter expanded native_test/ocr_native_test.dart

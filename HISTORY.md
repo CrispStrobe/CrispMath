@@ -2,6 +2,19 @@
 
 Completed work, newest first.
 
+## 2026-10-01 — Resolve installed OCR libraries
+
+- Resolve OCR libraries relative to the installed desktop executable. macOS
+  CocoaPods embeds `libcrispembed.0.dylib`, so asking for the unversioned default
+  prevented OCR from loading despite the native library being present.
+- Use the resolved path in all native OCR providers and the persistent worker;
+  preserve default plugin lookup for mobile and development installations.
+- Nine path-resolution tests plus OCR provider/worker regressions passed (43
+  total). Changed files analyzed cleanly. Actual recognition passed using the
+  downloaded, corrected Linux build artifact and its resolved runtime path.
+- Desktop native recognition checks now verify the app resolves the packaged
+  file, with the same check added to the macOS workflow.
+
 ## 2026-10-01 — Desktop OCR packaging
 
 - Artifact inspection found that Linux and Windows builds omitted the native

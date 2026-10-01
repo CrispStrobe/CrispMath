@@ -94,6 +94,19 @@ jobs:
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
           CRISPMATH_DIAGNOSTIC=steps "$BIN"
 
+      - name: Provision OCR test model
+        run: |
+          mkdir -p .ci/ocr-model
+          curl -fL --retry 3 https://huggingface.co/cstr/pix2tex-mfr-gguf/resolve/main/pix2tex-mfr-q4_k.gguf -o .ci/ocr-model/pix2tex-mfr-q4_k.gguf
+          echo '8957d1ec5d1f5983fbdd5f6e819203d7c32079f379563eb61f518221c8c5bdd6  .ci/ocr-model/pix2tex-mfr-q4_k.gguf' | shasum -a 256 -c -
+
+      - name: Recognize an image using the packaged OCR runtime
+        env:
+          CRISPMATH_OCR_APP_EXECUTABLE: build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math
+          CRISPMATH_OCR_MODEL: .ci/ocr-model/pix2tex-mfr-q4_k.gguf
+          CRISPMATH_OCR_LIBRARY: build/macos/Build/Products/Release/crisp_math.app/Contents/Frameworks/libcrispembed.0.dylib
+        run: flutter test --no-pub --reporter expanded native_test/ocr_native_test.dart
+
       - name: Zip the .app for download
         run: |
           cd build/macos/Build/Products/Release

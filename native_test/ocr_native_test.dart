@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/ocr_providers_init.dart';
 import 'package:crisp_math/utils/latex_conversion_utils.dart';
+import 'package:crisp_math/services/ocr_library_path.dart';
 
 void main() {
   test('native printed math recognition and calculator handoff', () {
@@ -23,7 +24,20 @@ void main() {
     final image = img.decodePng(
         File('test/fixtures/ocr/five_plus_seven.png').readAsBytesSync())!;
     final pixels = image.getBytes(order: img.ChannelOrder.rgba);
-    final ocr = CrispEmbedOcr(modelPath, libPath: libraryPath, nThreads: 2);
+    final application = Platform.environment['CRISPMATH_OCR_APP_EXECUTABLE'];
+    String? bundledLibrary;
+    if (application != null) {
+      expect(File(application).existsSync(), isTrue);
+      bundledLibrary =
+          findBundledOcrLibrary(executable: File(application).absolute.path);
+      expect(bundledLibrary, isNotNull,
+          reason:
+              'The installed application must resolve its bundled OCR runtime.');
+      expect(
+          FileSystemEntity.identicalSync(bundledLibrary!, libraryPath), isTrue);
+    }
+    final ocr = CrispEmbedOcr(modelPath,
+        libPath: bundledLibrary ?? libraryPath, nThreads: 2);
     try {
       final latex = ocr.recognizeGray(
           toGrayscaleForIsolate(pixels, image.width, image.height),

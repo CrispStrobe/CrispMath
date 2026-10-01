@@ -18,6 +18,7 @@ import 'package:crispembed/crispembed.dart'
 import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
 import '../services/ocr_service.dart';
+import '../services/ocr_library_path.dart';
 import 'ocr_model_manager.dart';
 
 /// Adaptive thread count based on available cores.
@@ -52,7 +53,8 @@ abstract class OcrBackendBase {
 class Pix2TexBackend implements OcrBackendBase {
   late final CrispEmbedOcr _ocr;
   Pix2TexBackend(String path) {
-    _ocr = CrispEmbedOcr(path, nThreads: _ocrThreads);
+    _ocr = CrispEmbedOcr(path,
+        nThreads: _ocrThreads, libPath: bundledOcrLibraryPath);
   }
   @override
   String? recognizeGray(Float32List p, int w, int h) =>
@@ -66,7 +68,8 @@ class Pix2TexBackend implements OcrBackendBase {
 class HandwrittenBackend implements OcrBackendBase {
   late final CrispEmbedOcr _ocr;
   HandwrittenBackend(String path) {
-    _ocr = CrispEmbedOcr(path, nThreads: _ocrThreads);
+    _ocr = CrispEmbedOcr(path,
+        nThreads: _ocrThreads, libPath: bundledOcrLibraryPath);
   }
   @override
   String? recognizeGray(Float32List p, int w, int h) =>
@@ -204,7 +207,8 @@ class _GraniteVisionProvider implements OcrProvider {
 
   CrispGraniteVision? _tryInit() {
     try {
-      return CrispGraniteVision(_modelPath, nThreads: _ocrThreads);
+      return CrispGraniteVision(_modelPath,
+          nThreads: _ocrThreads, libPath: bundledOcrLibraryPath);
     } catch (e) {
       return null;
     }
@@ -255,7 +259,8 @@ class _LightOnOcrProvider implements OcrProvider {
 
   CrispLightOnOcr? _tryInit() {
     try {
-      return CrispLightOnOcr(_modelPath, nThreads: _ocrThreads);
+      return CrispLightOnOcr(_modelPath,
+          nThreads: _ocrThreads, libPath: bundledOcrLibraryPath);
     } catch (e) {
       return null;
     }
@@ -318,7 +323,8 @@ class _GeneralOcrProvider implements OcrProvider {
 
   CrispOcrPipeline? _tryInit() {
     try {
-      return CrispOcrPipeline(_detPath, _recPath, nThreads: _ocrThreads);
+      return CrispOcrPipeline(_detPath, _recPath,
+          nThreads: _ocrThreads, libPath: bundledOcrLibraryPath);
     } catch (e) {
       return null;
     }
@@ -416,7 +422,8 @@ class _LayoutOcrProvider implements OcrProvider {
 
   CrispLayout? _tryInit() {
     try {
-      return CrispLayout(_layoutPath, nThreads: _ocrThreads);
+      return CrispLayout(_layoutPath,
+          nThreads: _ocrThreads, libPath: bundledOcrLibraryPath);
     } catch (e) {
       return null;
     }

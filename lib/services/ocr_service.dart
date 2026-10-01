@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:crispembed/crispembed.dart';
 
 import '../engine/ocr_providers_init.dart' as p;
+import 'ocr_library_path.dart';
 
 class OcrOp {
   final String type; // 'math_gray', 'vlm_raw', 'granite_raw'
@@ -149,9 +150,11 @@ void _workerEntry(SendPort mainSendPort) {
           granite = null;
 
           if (op.type == 'math_gray' || op.type == 'vlm_raw') {
-            ocr = CrispEmbedOcr(op.modelPath, nThreads: 4);
+            ocr = CrispEmbedOcr(op.modelPath,
+                nThreads: 4, libPath: bundledOcrLibraryPath);
           } else if (op.type == 'granite_raw') {
-            granite = CrispGraniteVision(op.modelPath, nThreads: 4);
+            granite = CrispGraniteVision(op.modelPath,
+                nThreads: 4, libPath: bundledOcrLibraryPath);
           }
 
           loadedModelPath = op.modelPath;
