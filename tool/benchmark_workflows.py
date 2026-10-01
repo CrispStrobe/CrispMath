@@ -35,7 +35,7 @@ async def graph_x_min(page):
     await page.get_by_role('textbox', name='x minimum', exact=True).wait_for(state='hidden')
     # Modal hit testing persists through the Material route's closing animation,
     # after its semantics fields disappear. Keep this settling outside pan timers.
-    await page.wait_for_timeout(350)
+    await page.wait_for_timeout(1500)
     await next_frames(page)
     return value
 
