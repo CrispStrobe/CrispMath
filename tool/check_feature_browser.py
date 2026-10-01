@@ -20,6 +20,12 @@ async def type_text(page, locator, value):
     await locator.fill(value)
     await expect(locator).to_have_value(value)
 
+async def read_text(locator):
+    await locator.click()
+    # Flutter populates the DOM editing value only after focus is processed.
+    await expect(locator).to_have_value(re.compile(r'.+'), timeout=60000)
+    return await locator.input_value()
+
 async def check(args):
     async with async_playwright() as p:
         opts = {'args': ['--no-sandbox', '--enable-unsafe-swiftshader']}
@@ -135,13 +141,11 @@ async def check(args):
                 await page.wait_for_timeout(200)
                 await expect(page.get_by_role('button', name=re.compile(r'^Fit graph\b'))).to_be_enabled(timeout=90000)
                 await page.get_by_role('button', name=re.compile(r'^Graph bounds\b')).click()
-                await page.get_by_role('textbox', name='y maximum', exact=True).click()
-                assert float(await page.get_by_role('textbox', name='y maximum', exact=True).input_value()) < 100
+                assert float(await read_text(page.get_by_role('textbox', name='y maximum', exact=True))) < 100
                 await page.get_by_role('button', name='Cancel', exact=True).click()
                 await page.get_by_role('button', name=re.compile(r'^Undo graph change\b')).click()
                 await page.get_by_role('button', name=re.compile(r'^Graph bounds\b')).click()
-                await page.get_by_role('textbox', name='y maximum', exact=True).click()
-                assert float(await page.get_by_role('textbox', name='y maximum', exact=True).input_value()) == 100
+                assert float(await read_text(page.get_by_role('textbox', name='y maximum', exact=True))) == 100
                 await page.get_by_role('button', name='Cancel', exact=True).click()
                 await page.screenshot(path=str(Path(args.screenshots) / 'graph-navigation.png'))
                 print('Graph bounds, fit and undo verified', flush=True)

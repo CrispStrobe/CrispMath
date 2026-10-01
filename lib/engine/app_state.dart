@@ -3,7 +3,7 @@
 // Singleton app state with a small persistence layer on top of
 // shared_preferences. Everything that should survive a relaunch is saved
 // the moment it changes:
-//   - locale (en/de)
+//   - locale (en/de/fr/es)
 //   - number display format
 //   - theme mode (system/light/dark)
 //   - calculation history (capped at 200 entries)
@@ -344,7 +344,7 @@ class AppState extends ChangeNotifier {
     try {
       _prefs = await SharedPreferences.getInstance();
       final lang = _prefs!.getString(_kLocale);
-      if (lang != null && (lang == 'en' || lang == 'de')) {
+      if (lang != null && const {'en', 'de', 'fr', 'es'}.contains(lang)) {
         _locale = Locale(lang);
       }
       final formatName = _prefs!.getString(_kNumberFormat);

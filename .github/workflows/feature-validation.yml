@@ -147,11 +147,13 @@ jobs:
           python tool/ai_contract_fixture.py > /tmp/crispmath-ai-fixture.log 2>&1 &
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
           python tool/check_mobile_trace.py --screenshots browser-results
+          python tool/check_catalog_browser.py --screenshots browser-results
       - name: Debug build and framework assertion checks
         run: |
           tool/build_web.sh --debug --no-wasm-dry-run
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
           python tool/check_mobile_trace.py --screenshots browser-results/debug
+          python tool/check_catalog_browser.py --screenshots browser-results/debug
       - uses: actions/upload-artifact@v4
         if: always()
         with:

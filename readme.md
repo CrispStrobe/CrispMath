@@ -251,6 +251,8 @@ over HTTP. With Python Playwright installed, start
 Run `python tool/check_mobile_trace.py` for touch tap/drag checks with
 accessibility enabled in a phone-sized viewport. This uses touch emulation,
 not a physical Android device.
+Run `python tool/check_catalog_browser.py` to verify translated example titles,
+descriptions and unique search results in German, French and Spanish.
 The ordered workflow checks tracing/table CSV against numeric values, linked
 source edits, command navigation, bounds/fit/undo, and provider error,
 cancellation, retry and calculator handoff. It saves screenshots and failure

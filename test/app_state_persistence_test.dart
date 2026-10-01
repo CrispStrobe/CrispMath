@@ -23,12 +23,14 @@ void main() {
     expect(s.numberFormat, NumberDisplayFormat.auto);
   });
 
-  test('load() picks up stored locale', () async {
-    SharedPreferences.setMockInitialValues({'crisp.locale': 'de'});
-    final s = AppState();
-    await s.load(force: true);
-    expect(s.locale.languageCode, 'de');
-  });
+  for (final locale in ['en', 'de', 'fr', 'es']) {
+    test('load() restores stored $locale locale', () async {
+      SharedPreferences.setMockInitialValues({'crisp.locale': locale});
+      final s = AppState();
+      await s.load(force: true);
+      expect(s.locale.languageCode, locale);
+    });
+  }
 
   test('load() picks up stored number format', () async {
     SharedPreferences.setMockInitialValues(
