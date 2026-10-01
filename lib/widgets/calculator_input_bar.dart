@@ -16,8 +16,9 @@ import 'package:flutter/material.dart';
 
 import '../controllers/latex_controller.dart';
 import 'latex_input_field.dart';
+import '../localization/workflow_localizations.dart';
 
-class CalculatorInputBar extends StatelessWidget {
+class CalculatorInputBar extends StatefulWidget {
   const CalculatorInputBar({
     super.key,
     required this.controller,
@@ -44,44 +45,113 @@ class CalculatorInputBar extends StatelessWidget {
   final double stackBelowWidth;
 
   @override
+  State<CalculatorInputBar> createState() => _CalculatorInputBarState();
+}
+
+class _CalculatorInputBarState extends State<CalculatorInputBar> {
+  late final TextEditingController _editor;
+  final _editorFocus = FocusNode();
+  bool _plain = false;
+  bool _syncing = false;
+  LatexController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _editor = TextEditingController();
+    _syncFromMath();
+    controller.addListener(_syncFromMath);
+    _editor.addListener(_syncToMath);
+  }
+
+  void _syncFromMath() {
+    if (_syncing) return;
+    _syncing = true;
+    _editor.value = TextEditingValue(
+        text: controller.text, selection: controller.selection);
+    _syncing = false;
+  }
+
+  void _syncToMath() {
+    if (_syncing) return;
+    _syncing = true;
+    controller.setEditingValue(_editor.value);
+    _syncing = false;
+  }
+
+  @override
+  void didUpdateWidget(CalculatorInputBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != controller) {
+      oldWidget.controller.removeListener(_syncFromMath);
+      controller.addListener(_syncFromMath);
+      _syncFromMath();
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.removeListener(_syncFromMath);
+    _editor.removeListener(_syncToMath);
+    _editor.dispose();
+    _editorFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final t = WorkflowLocalizations.of(context);
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final stack = constraints.maxWidth < stackBelowWidth;
+        final stack = constraints.maxWidth < widget.stackBelowWidth;
         final actions = <Widget>[
           IconButton(
-            icon: const Icon(Icons.refresh,
-                semanticLabel: 'Reset keyboard focus'),
-            tooltip: 'Reset keyboard focus',
-            onPressed: onResetFocus,
+            icon: Icon(_plain ? Icons.functions : Icons.edit_outlined),
+            tooltip: t.text(_plain
+                ? WorkflowLabel.mathPreview
+                : WorkflowLabel.editExpression),
+            onPressed: () {
+              setState(() => _plain = !_plain);
+              if (_plain) {
+                _editorFocus.requestFocus();
+              } else {
+                _editorFocus.unfocus();
+              }
+            },
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
-            icon: const Icon(Icons.backspace_outlined,
-                semanticLabel: 'Backspace'),
-            tooltip: 'Backspace',
+            icon: const Icon(Icons.refresh),
+            tooltip: t.text(WorkflowLabel.resetFocus),
+            onPressed: widget.onResetFocus,
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            icon: const Icon(Icons.backspace_outlined),
+            tooltip: t.text(WorkflowLabel.backspace),
             onPressed: controller.backspace,
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_left,
-                semanticLabel: 'Move cursor left'),
-            tooltip: 'Move cursor left',
+            icon: const Icon(Icons.chevron_left),
+            tooltip: t.text(WorkflowLabel.cursorLeft),
             onPressed: () => controller.moveCursor(-1),
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right,
-                semanticLabel: 'Move cursor right'),
-            tooltip: 'Move cursor right',
+            icon: const Icon(Icons.chevron_right),
+            tooltip: t.text(WorkflowLabel.cursorRight),
             onPressed: () => controller.moveCursor(1),
             visualDensity: VisualDensity.compact,
           ),
           FilledButton.icon(
-            icon: const Icon(Icons.keyboard_return,
-                size: 18, semanticLabel: 'Evaluate'),
-            label: const Text('='),
-            onPressed: onEvaluate,
+            icon: const Icon(Icons.keyboard_return, size: 18),
+            label: Semantics(
+                label: t.text(WorkflowLabel.evaluate),
+                excludeSemantics: true,
+                child: const Text('=')),
+            onPressed: widget.onEvaluate,
             style: FilledButton.styleFrom(
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -92,19 +162,31 @@ class CalculatorInputBar extends StatelessWidget {
         final field = Container(
           alignment: Alignment.centerRight,
           constraints: const BoxConstraints(minHeight: 60),
-          child: SingleChildScrollView(
-            reverse: true,
-            scrollDirection: Axis.horizontal,
-            child: LatexInputField(controller: controller),
-          ),
+          child: _plain
+              ? TextField(
+                  controller: _editor,
+                  focusNode: _editorFocus,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => widget.onEvaluate(),
+                  decoration: InputDecoration(
+                      labelText: t.text(WorkflowLabel.expression)),
+                )
+              : SingleChildScrollView(
+                  reverse: true,
+                  scrollDirection: Axis.horizontal,
+                  child: LatexInputField(controller: controller),
+                ),
         );
 
-        final preview = resultPreview.isEmpty
+        final preview = widget.resultPreview.isEmpty
             ? null
             : Container(
                 height: 28,
                 alignment: Alignment.centerRight,
-                child: Text('= $resultPreview',
+                child: Text('= ${widget.resultPreview}',
                     style: TextStyle(fontSize: 20, color: Colors.grey[600])),
               );
 

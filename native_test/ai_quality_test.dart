@@ -50,6 +50,9 @@ void main() {
       try {
         expression = await service.processMathNLP(example['input'] as String);
         record = {};
+      } on AiClarificationRequired catch (error) {
+        expression = error.question;
+        record = {};
       } catch (error) {
         record = {
           'id': example['id'],

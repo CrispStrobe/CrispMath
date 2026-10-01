@@ -7,6 +7,32 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  testWidgets(
+      'clarification remains a question and cannot be inserted into calculator',
+      (tester) async {
+    final service = ProviderAiService(
+        config: () => const AiProviderConfig(
+            endpoint: 'http://localhost/v1/chat/completions',
+            model: 'test-model'),
+        clientFactory: () => MockClient((_) async => http.Response(
+            jsonEncode({
+              'choices': [
+                {
+                  'message': {'content': 'CLARIFY: What is the radius?'}
+                }
+              ]
+            }),
+            200)));
+    await tester.pumpWidget(
+        MaterialApp(home: Scaffold(body: AiMathDialog(service: service))));
+    await tester.enterText(find.byType(TextField).first, 'circle area');
+    await tester.tap(find.text('Translate'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('What is the radius?'), findsOneWidget);
+    expect(find.text('Use in calculator'), findsNothing);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('Translate'), findsOneWidget);
+  });
   testWidgets('provider error supports retry and translation stays editable',
       (tester) async {
     var calls = 0;

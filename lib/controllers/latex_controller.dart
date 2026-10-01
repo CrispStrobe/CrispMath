@@ -19,6 +19,17 @@ class LatexController extends ChangeNotifier {
     return _text;
   }
 
+  /// Update from a native text editor, preserving its selection for keypad edits.
+  void setEditingValue(TextEditingValue value) {
+    final start = value.selection.baseOffset.clamp(0, value.text.length);
+    final end = value.selection.extentOffset.clamp(0, value.text.length);
+    final selection = TextSelection(baseOffset: start, extentOffset: end);
+    if (_text == value.text && _selection == selection) return;
+    _text = value.text;
+    _selection = selection;
+    notifyListeners();
+  }
+
   /// Inserts text and optionally positions the cursor relative to the end of the insertion.
   void insert(String textToInsert, {int? cursorOffsetFromEnd}) {
     if (!_selection.isValid) return;

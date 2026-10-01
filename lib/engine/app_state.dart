@@ -1268,10 +1268,15 @@ class AppState extends ChangeNotifier {
     return line;
   }
 
-  void requestOpenNotepadSource(int slot) {
+  void requestOpenNotepadSource(int slot, {String? variable}) {
     final link = graphLinks[slot];
     if (link == null || !notepadDocuments.containsKey(link.documentId)) return;
-    _requestedNotepadLine = link.lineId;
+    final document = notepadDocuments[link.documentId]!;
+    final target =
+        variable == null ? link.lineId : linkedVariableLine(document, variable);
+    if (target == null || !document.lines.any((line) => line.id == target))
+      return;
+    _requestedNotepadLine = target;
     _currentNotepadDocId = link.documentId;
     _persistCurrentNotepadDoc();
     _requestedTab = 1;

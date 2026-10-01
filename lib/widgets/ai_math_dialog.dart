@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../engine/app_state.dart';
 import '../services/ai_provider_service.dart';
+import '../localization/workflow_localizations.dart';
 
 class AiMathDialog extends StatefulWidget {
   final ProviderAiService? service;
@@ -16,6 +17,7 @@ class _AiMathDialogState extends State<AiMathDialog> {
   bool _busy = false, _hasResult = false;
   int _generation = 0;
   String? _error;
+  String? _clarification;
   @override
   void dispose() {
     _generation++;
@@ -30,6 +32,7 @@ class _AiMathDialogState extends State<AiMathDialog> {
     setState(() {
       _busy = true;
       _error = null;
+      _clarification = null;
       _hasResult = false;
     });
     try {
@@ -40,10 +43,14 @@ class _AiMathDialogState extends State<AiMathDialog> {
           _hasResult = true;
         });
       }
+    } on AiClarificationRequired catch (e) {
+      if (mounted && generation == _generation) {
+        setState(() => _clarification = e.question);
+      }
     } catch (e) {
       if (mounted && generation == _generation) {
         setState(() => _error = e is AiRequestCancelled
-            ? 'Request cancelled. You can retry.'
+            ? WorkflowLocalizations.of(context).text(WorkflowLabel.cancelled)
             : e.toString());
       }
     } finally {
@@ -56,8 +63,9 @@ class _AiMathDialogState extends State<AiMathDialog> {
   @override
   Widget build(BuildContext context) {
     final config = _service.config();
+    final t = WorkflowLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Math assistance'),
+      title: Text(t.text(WorkflowLabel.mathAssistance)),
       content: SizedBox(
           width: 520,
           child: SingleChildScrollView(
@@ -66,53 +74,65 @@ class _AiMathDialogState extends State<AiMathDialog> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                 Text(config.configured
-                    ? 'Configured: ${config.model}. Connection is verified after a successful request.'
-                    : 'Configure a provider endpoint and model in CrispAssist settings.'),
+                    ? t.text(WorkflowLabel.configured, config.model)
+                    : t.text(WorkflowLabel.configureProvider)),
                 const SizedBox(height: 12),
                 TextField(
                     controller: _question,
                     minLines: 2,
                     maxLines: 4,
                     enabled: !_busy,
-                    decoration: const InputDecoration(
-                        labelText: 'Math question',
-                        hintText: 'e.g. Integrate x squared')),
+                    decoration: InputDecoration(
+                        labelText: t.text(WorkflowLabel.mathQuestion),
+                        hintText: t.text(WorkflowLabel.questionHint))),
                 const SizedBox(height: 12),
-                const Text(
-                    'This sends your question to the configured provider. Review its translation; the calculator computes the result.'),
+                Text(t.text(WorkflowLabel.providerNotice)),
                 if (_busy)
                   const Padding(
                       padding: EdgeInsets.all(12),
                       child: LinearProgressIndicator()),
+                if (_clarification != null)
+                  Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Semantics(
+                          liveRegion: true,
+                          child: Text(t.text(
+                              WorkflowLabel.clarification, _clarification!)))),
                 if (_error != null)
                   Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(_error!,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.error))),
+                      child: Semantics(
+                          liveRegion: true,
+                          child: Text(_error!,
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.error)))),
                 if (_hasResult) ...[
                   const SizedBox(height: 12),
-                  const Text(
-                      'Provider responded. Review or edit this expression:'),
+                  Text(t.text(WorkflowLabel.reviewExpression)),
                   TextField(
                       controller: _expression,
                       maxLines: 3,
                       minLines: 1,
-                      decoration: const InputDecoration(
-                          labelText: 'Translated expression')),
+                      decoration: InputDecoration(
+                          labelText:
+                              t.text(WorkflowLabel.translatedExpression))),
                 ],
               ]))),
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close')),
+            child: Text(t.text(WorkflowLabel.close))),
         if (_busy)
           TextButton(
-              onPressed: _service.cancel, child: const Text('Cancel request')),
+              onPressed: _service.cancel,
+              child: Text(t.text(WorkflowLabel.cancelRequest))),
         if (!_busy)
           FilledButton(
               onPressed: config.configured ? _translate : null,
-              child: Text(_error == null ? 'Translate' : 'Retry')),
+              child: Text(t.text(_error == null
+                  ? WorkflowLabel.translate
+                  : WorkflowLabel.retry))),
         if (_hasResult && !_busy)
           FilledButton(
               onPressed: () {
@@ -122,7 +142,7 @@ class _AiMathDialogState extends State<AiMathDialog> {
                 AppState().requestInsertExpression(_expression.text.trim());
                 Navigator.pop(context);
               },
-              child: const Text('Use in calculator')),
+              child: Text(t.text(WorkflowLabel.useCalculator))),
       ],
     );
   }

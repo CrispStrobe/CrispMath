@@ -18,6 +18,28 @@ NotepadDocument sample() {
 }
 
 void main() {
+  test(
+      'variable navigation selects the effective assignment and ignores imports',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final state = AppState();
+    await state.load(force: true);
+    final doc = sample();
+    final later = NotepadLine.fresh(source: 'a = 3')..cachedResult = '3';
+    doc.lines.add(later);
+    state.setNotepadDocument(doc);
+    final slot = state.linkNotepadLine(doc.id, doc.lines[1].id);
+    state.consumeRequestedTab();
+    state.requestOpenNotepadSource(slot, variable: 'a');
+    expect(state.consumeRequestedNotepadLine(), later.id);
+    expect(state.consumeRequestedTab(), 1);
+    state.requestOpenNotepadSource(slot, variable: 'missing');
+    expect(state.consumeRequestedNotepadLine(), isNull);
+    expect(state.consumeRequestedTab(), isNull);
+    expect(linkedVariableLine(doc, 'line1'), isNull);
+    doc.lines.remove(later);
+    expect(linkedVariableLine(doc, 'a'), doc.lines.first.id);
+  });
   test('scope binding leaves graph variable free and reports missing values',
       () {
     final doc = sample();

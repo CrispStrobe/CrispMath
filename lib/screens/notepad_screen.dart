@@ -19,6 +19,7 @@
 // them into `AppLocalizations` across en/de/fr/es with the locale
 // non-emptiness test as the guardrail.
 
+import '../widgets/notepad_activity.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 
@@ -145,6 +146,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
   /// forever. Serialization side-steps that entirely: one request
   /// in flight, no concurrent kill races.
   Future<void>? _activeRecalc;
+  bool _recalcFailed = false;
 
   /// Snapshot of the global number-format settings we last
   /// evaluated against. When `_onAppStateChanged` sees either
@@ -1359,6 +1361,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       indices.addAll(downstreamFrom(startIndex, graph));
     }
     setState(() {
+      _recalcFailed = false;
       _pendingLineIds.clear();
       for (final i in indices) {
         if (i < doc.lines.length) {
@@ -1373,7 +1376,9 @@ class _NotepadScreenState extends State<NotepadScreen> {
       } else if (startIndex >= 0 && startIndex < doc.lines.length) {
         await evaluator.evaluateFrom(doc, startIndex);
       }
-    } catch (_) {/* dispatcher swallows errors into the cache */}
+    } catch (_) {
+      _recalcFailed = true;
+    }
 
     if (!mounted) return;
 
@@ -1519,6 +1524,11 @@ class _NotepadScreenState extends State<NotepadScreen> {
                   ? _buildEmptyState()
                   : Column(
                       children: [
+                        if (_pendingLineIds.isNotEmpty || _recalcFailed)
+                          NotepadActivity(
+                              busy: _pendingLineIds.isNotEmpty,
+                              failed: _recalcFailed,
+                              onRetry: _recalculateAll),
                         if (_searchOpen) _buildSearchBar(doc),
                         Expanded(child: _buildDocBody(doc)),
                       ],
@@ -1645,7 +1655,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       ),
       if (doc != null)
         IconButton(
-          icon: const Icon(Icons.add, semanticLabel: 'Add line'),
+          icon: const Icon(Icons.add),
           tooltip: t.notepadAddLine,
           onPressed: () => _appendLine(doc),
         ),

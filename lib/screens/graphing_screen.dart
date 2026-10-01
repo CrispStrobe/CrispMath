@@ -1,5 +1,7 @@
 // lib/screens/graphing_screen.dart - with LaTeX Input & Keypad
 
+import '../widgets/linked_source_dialog.dart';
+import '../engine/linked_graph.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -427,43 +429,22 @@ class GraphingScreenState extends State<GraphingScreen>
 
   void _showLinkedSource(int slot) {
     final source = _appState.linkedGraphResolution(slot);
+    final document =
+        _appState.notepadDocuments[_appState.graphLinks[slot]!.documentId];
     showDialog<void>(
         context: context,
-        builder: (ctx) => AlertDialog(
-                title: Text('Linked source for Y${slot + 1}'),
-                content: SizedBox(
-                    width: 420,
-                    child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText(source.source),
-                          const Text(
-                              'x is the graph variable. Other values come from the source document.'),
-                          for (final entry in source.scope.entries)
-                            Text('${entry.key} = ${entry.value}'),
-                          if (source.error != null)
-                            Text(source.error!,
-                                style: TextStyle(
-                                    color: Theme.of(ctx).colorScheme.error)),
-                        ])),
-                actions: [
-                  TextButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _appState.detachGraphSource(slot);
-                      },
-                      child: const Text('Detach source')),
-                  TextButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _appState.requestOpenNotepadSource(slot);
-                      },
-                      child: const Text('Open source')),
-                  TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Close')),
-                ]));
+        builder: (_) => LinkedSourceDialog(
+              slot: slot,
+              source: source,
+              editableVariables: {
+                for (final name in source.scope.keys)
+                  if (linkedVariableLine(document, name) != null) name
+              },
+              onEditVariable: (name) =>
+                  _appState.requestOpenNotepadSource(slot, variable: name),
+              onOpenSource: () => _appState.requestOpenNotepadSource(slot),
+              onDetach: () => _appState.detachGraphSource(slot),
+            ));
   }
 
   void _recordGraph() {

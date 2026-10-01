@@ -34,6 +34,13 @@ class AiRequestCancelled implements Exception {
   String toString() => 'Request cancelled';
 }
 
+class AiClarificationRequired implements Exception {
+  const AiClarificationRequired(this.question);
+  final String question;
+  @override
+  String toString() => question;
+}
+
 /// Uses the configured provider to translate language into a reviewable CAS
 /// expression. The calculator, rather than the language model, computes it.
 class ProviderAiService implements AiService {
@@ -78,7 +85,7 @@ class ProviderAiService implements AiService {
 
     _cancelActive = cancelThis;
     const prompt =
-        'Translate the user request into ONE CrispMath CAS expression. Return only the expression, without prose or Markdown. Do not compute its result. Syntax: + - * / ^, sin(x), cos(x), sqrt(x), log(x), integrate(expression,x), diff(expression,x), solve(equation,x). If the request is ambiguous, ask for clarification instead of inventing an expression.';
+        'Translate the user request into ONE CrispMath CAS expression. Return only the expression, without prose or Markdown. Do not compute its result. Syntax: + - * / ^, sin(x), cos(x), sqrt(x), log(x), integrate(expression,x), diff(expression,x), solve(equation,x). If the request is ambiguous, return CLARIFY: followed by the missing information question instead of inventing an expression.';
     final anthropic = Uri.parse(settings.endpoint).path.endsWith('/messages');
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -139,6 +146,14 @@ class ProviderAiService implements AiService {
       }
       if (expression.isEmpty || expression.length > 4000) {
         throw const FormatException('Provider returned an invalid expression.');
+      }
+      if (expression.startsWith('CLARIFY:') ||
+          (expression.endsWith('?') &&
+              RegExp(r'^(what|which|how|please|can|could|provide|specify)\b',
+                      caseSensitive: false)
+                  .hasMatch(expression))) {
+        throw AiClarificationRequired(
+            expression.replaceFirst(RegExp(r'^CLARIFY:\s*'), ''));
       }
       return expression;
     }

@@ -169,6 +169,7 @@ jobs:
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
           python tool/check_mobile_trace.py --screenshots browser-results
           python tool/check_catalog_browser.py --screenshots browser-results
+          python tool/check_core_workflow_browser.py
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
       - name: Debug build and framework assertion checks

@@ -1,3 +1,14 @@
+## 2026-10-01 — Core workflow UX
+
+Calculator entry now offers a native text editor for typing, selection and
+paste, with synchronized keypad edits and Enter submission. Linked-source
+inspection can navigate directly to the effective variable assignment, including
+forward definitions. Clarification requests remain questions instead of being
+inserted into calculator input. Notepad recalculation announces progress and
+unexpected failures offer retry. Extracted the source dialog and activity UI;
+new workflow labels have exhaustive en/de/fr/es coverage. Seventeen focused
+unit/widget tests pass; connected mobile browser checks added to CI.
+
 ## 2026-10-01 — Real inference corpus
 
 Added strict real-provider scoring for 14 translations and scored native OCR

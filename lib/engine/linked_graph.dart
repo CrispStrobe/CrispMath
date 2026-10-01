@@ -106,3 +106,18 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
   }
   return LinkedGraphResolution(line.source, expression, bound, null);
 }
+
+/// Return the effective document assignment, including forward definitions.
+/// Imports and automatic aliases have no editable assignment in this document.
+String? linkedVariableLine(NotepadDocument? document, String variable) {
+  if (document == null) return null;
+  final first = firstCodeLineIndexOf(document);
+  for (var i = document.lines.length - 1; i >= 0; i--) {
+    final line = document.lines[i];
+    final parsed = classifyNotepadLine(line.source,
+        lineIndex: i, firstCodeLineIndex: first);
+    if (parsed.kind == NotepadLineKind.assignment && parsed.name == variable)
+      return line.id;
+  }
+  return null;
+}

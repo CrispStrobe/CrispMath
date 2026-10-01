@@ -37,6 +37,31 @@ Future<void> _pump(WidgetTester tester, Size size,
 }
 
 void main() {
+  testWidgets(
+      'phone text entry preserves selections, keypad edits and submission',
+      (tester) async {
+    final controller = LatexController();
+    addTearDown(controller.dispose);
+    var submitted = '';
+    await _pump(tester, const Size(375, 812),
+        controller: controller, onEvaluate: () => submitted = controller.text);
+    await tester.tap(find.byTooltip('Edit expression'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '(3+4)*5');
+    expect(controller.text, '(3+4)*5');
+    controller.moveCursor(-1);
+    controller.insert('2');
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        '(3+4)*25');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    expect(submitted, '(3+4)*25');
+    await tester.tap(find.byTooltip('Math preview'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(controller.text, submitted);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('phone width: field stacks above the toolbar, no overflow',
       (tester) async {
     final controller = LatexController();
