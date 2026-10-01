@@ -32,6 +32,8 @@ async def graph_x_min(page):
     await page.get_by_role('button', name=re.compile(r'^Graph bounds\b')).click()
     value = float(await read_text(page.get_by_role('textbox', name='x minimum', exact=True)))
     await page.get_by_role('button', name='Cancel', exact=True).click()
+    await page.get_by_role('textbox', name='x minimum', exact=True).wait_for(state='hidden')
+    await next_frames(page)
     return value
 
 
