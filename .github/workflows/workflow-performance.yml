@@ -1,5 +1,9 @@
 name: Workflow performance
 on:
+  push:
+    branches: ['feat/graph-workspace-ux']
+    paths:
+      - '.github/workflows/workflow-performance.yml'
   workflow_dispatch:
     inputs:
       artifact_run:
@@ -22,12 +26,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT_RUN: ${{ inputs.artifact_run }}
         run: |
-          gh run view "$ARTIFACT_RUN" --json headSha --jq '.headSha' > /tmp/application-source
+          run_id="${ARTIFACT_RUN:-36865790063}"
+          gh run view "$run_id" --json headSha --jq '.headSha' > /tmp/application-source
+          echo "PERFORMANCE_ARTIFACT_RUN=$run_id" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v4
         with:
           name: crisp_math-web
           path: performance-web
-          run-id: ${{ inputs.artifact_run }}
+          run-id: ${{ env.PERFORMANCE_ARTIFACT_RUN }}
           github-token: ${{ github.token }}
       - name: Install browser tools
         run: |
