@@ -31,15 +31,12 @@ jobs:
               path: .ci/CrispEmbed/flutter/crispembed
           YAML
           flutter pub get
-      - name: Analyze new feature files
-        run: >-
-          flutter analyze --no-pub
-          lib/engine/command_catalog.dart lib/engine/graph_viewport.dart
-          lib/services/ai_provider_service.dart lib/widgets/command_palette.dart
-          lib/widgets/ai_math_dialog.dart
+      - name: Analyze entire application
+        run: flutter analyze --no-pub
       - name: Feature and optimization regression tests
         run: >-
           flutter test --concurrency=2 --reporter expanded
+          test/native_bridge_wiring_test.dart
           test/graph_inspection_test.dart test/graph_inspection_widget_test.dart test/graph_touch_trace_test.dart
           test/linked_graph_test.dart test/graph_parameter_cleanup_test.dart
           test/command_palette_test.dart test/graph_viewport_test.dart

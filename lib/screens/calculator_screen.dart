@@ -10,6 +10,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 // Engine imports
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
+import '../widgets/native_bridge_status_listenable.dart';
 import '../engine/inequality_solver.dart';
 import '../engine/ocr_provider.dart';
 import '../services/ocr_initialization.dart';
@@ -125,7 +126,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // so availability-dependent chrome stays consistent. (History is a log
     // of past calculations and is intentionally not rewritten; new
     // calculations pick up the live bridge automatically.)
-    nativeBridgeStatus.addListener(_onBridgeStatusChanged);
+    nativeBridgeStatusListenable.addListener(_onBridgeStatusChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculatorFocusNode.requestFocus();
@@ -182,7 +183,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   void dispose() {
     appRouteObserver.unsubscribe(this);
     _appState.removeListener(_consumePendingInsert);
-    nativeBridgeStatus.removeListener(_onBridgeStatusChanged);
+    nativeBridgeStatusListenable.removeListener(_onBridgeStatusChanged);
     _tabController.dispose();
     _latexController.removeListener(_onInputChanged);
     _latexController.dispose();
@@ -494,50 +495,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
         });
       }
     });
-  }
-
-  /// Compute the live preview string without calling setState.
-  String _computeLivePreview() {
-    String currentText = _latexController.text.trim();
-
-    if (currentText.isEmpty ||
-        currentText.toLowerCase().startsWith('solve') ||
-        currentText.contains('=') ||
-        currentText.length < 2 ||
-        RegExp(r'^[a-zA-Z]+$').hasMatch(currentText)) {
-      return '';
-    }
-
-    if (!RegExp(r'[\d\+\-\*/\^\(\)\.\,\\]').hasMatch(currentText)) {
-      return '';
-    }
-
-    try {
-      final convertedExpression = LatexConversionUtils.fromLatex(currentText);
-      final substituted = ExpressionPreprocessingUtils.substituteVariables(
-          convertedExpression, _appState);
-      final preprocessed =
-          ExpressionPreprocessingUtils.preprocessNativeExpression(
-              ExpressionPreprocessingUtils.preprocessExpression(
-                  substituted, _appState));
-      final rawResult = _engine.evaluate(preprocessed);
-
-      final normalizedResult =
-          ExpressionPreprocessingUtils.normalizeComplexResult(rawResult);
-
-      if (normalizedResult != "Error" &&
-          normalizedResult != currentText &&
-          normalizedResult != preprocessed) {
-        if (normalizedResult.contains('Error')) return '';
-        // Same display rounding the history entry will get, so the
-        // preview never flashes 15-digit float noise.
-        return _appState.formatNumber(normalizedResult);
-      } else {
-        return '';
-      }
-    } catch (e) {
-      return '';
-    }
   }
 
   /// Recover from a stuck HardwareKeyboard state. Hot reload, a brief

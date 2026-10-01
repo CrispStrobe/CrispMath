@@ -32,7 +32,7 @@ class SyncService extends ChangeNotifier {
       return;
     }
     try {
-      await Supabase.initialize(url: url, anonKey: key);
+      await Supabase.initialize(url: url, publishableKey: key);
       _configured = true;
       _status = SyncStatus.ready;
     } catch (e) {

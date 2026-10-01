@@ -40,10 +40,11 @@ class _GraphValueTableDialogState extends State<GraphValueTableDialog> {
           await GraphSamplingService.values(widget.functions[_slot]!, xs);
       if (mounted) setState(() => _rows = rows);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = e is ArgumentError
             ? e.message.toString()
             : 'Could not generate values. Check the interval and expression.');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -119,9 +120,10 @@ class _GraphValueTableDialogState extends State<GraphValueTableDialog> {
                     : () async {
                         await Clipboard.setData(ClipboardData(
                             text: graphValuesText(_rows!, separator: '\t')));
-                        if (context.mounted)
+                        if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Table copied')));
+                        }
                       },
                 child: const Text('Copy table')),
             TextButton(
@@ -130,9 +132,10 @@ class _GraphValueTableDialogState extends State<GraphValueTableDialog> {
                     : () async {
                         await Clipboard.setData(
                             ClipboardData(text: graphValuesText(_rows!)));
-                        if (context.mounted)
+                        if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('CSV copied')));
+                        }
                       },
                 child: const Text('Copy CSV')),
           ]);

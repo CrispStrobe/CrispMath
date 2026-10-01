@@ -38,8 +38,12 @@ List<List<double?>> sampleGraphValues(Map<String, dynamic> request,
 
 /// Snap to a sampled point. An invalid point stays invalid at discontinuities.
 int? traceSampleIndex(List<PlotPt> points, double x) {
-  if (points.isEmpty || !x.isFinite || x < points.first.x || x > points.last.x)
+  if (points.isEmpty ||
+      !x.isFinite ||
+      x < points.first.x ||
+      x > points.last.x) {
     return null;
+  }
   var lo = 0, hi = points.length - 1;
   while (lo < hi) {
     final mid = (lo + hi) ~/ 2;

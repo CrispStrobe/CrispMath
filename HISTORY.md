@@ -2,6 +2,22 @@
 
 Completed work, newest first.
 
+## 2026-10-01 — Pull request validation cleanup
+
+- Fixed the Flutter UI's observable native-engine status contract while retaining
+  the plain Dart worker implementation. Added a listener transition/removal test.
+- Removed obsolete synchronous preview and unused OCR model initialization;
+  retained recognition through the persistent worker. Guarded async download and
+  sync notifications against disposed contexts, and updated Supabase's key API.
+- Corrected analyzer findings throughout the application and command-line tools.
+  Feature CI now analyzes the whole repository rather than selected new files.
+- Added the missing CrispEmbed checkout to Android, iOS, Linux, macOS and Windows
+  build workflows, aligned them on Flutter 3.44, and made the dependency path
+  consistent with CI. Documented the corresponding local checkout.
+- Focused engine status and OCR handoff checks: 9 passed. Actual native OCR and
+  persistent worker error handling: 2 passed. Browser worker compilation passed.
+
+
 ## 2026-07-04 (cont. 17) — Distribution prep
 
 Config audit toward App Store / Mac App Store / Play submission (the

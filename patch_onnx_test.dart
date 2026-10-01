@@ -3,9 +3,9 @@ import 'dart:io';
 void main() {
   final file = File('lib/main.dart');
   var content = file.readAsStringSync();
-  
+
   if (!content.contains('_showNlpDialog')) {
-    final methodCode = '''
+    const methodCode = '''
   void _showNlpDialog() {
     final ctl = TextEditingController();
     showDialog(
@@ -39,27 +39,25 @@ void main() {
 ''';
 
     // Insert method inside _OnnxSettingsCardState
-    content = content.replaceFirst('  @override\n  Widget build(BuildContext context) {', methodCode + '\n  @override\n  Widget build(BuildContext context) {');
-    
+    content = content.replaceFirst(
+        '  @override\n  Widget build(BuildContext context) {',
+        '$methodCode\n  @override\n  Widget build(BuildContext context) {');
+
     // Replace the trailing button to show "Test" if ready
     content = content.replaceFirst(
-      "onPressed: _status.contains(\"Ready\") ? null : _loadOnnx,",
-      "onPressed: _status.contains(\"Ready\") ? _showNlpDialog : _loadOnnx,"
-    );
-    content = content.replaceFirst(
-      "child: const Text('Initialize'),",
-      "child: Text(_status.contains(\"Ready\") ? 'Test' : 'Initialize'),"
-    );
-    
+        "onPressed: _status.contains(\"Ready\") ? null : _loadOnnx,",
+        "onPressed: _status.contains(\"Ready\") ? _showNlpDialog : _loadOnnx,");
+    content = content.replaceFirst("child: const Text('Initialize'),",
+        "child: Text(_status.contains(\"Ready\") ? 'Test' : 'Initialize'),");
+
     // Fix the duplicate import syntax issue again in the dialog
     content = content.replaceAll(
-      "final aiService = (await import('package:crisp_math/services/ai_service.dart' deferred as ai)).aiService;",
-      "final aiService = ai.aiService;"
-    );
-    
+        "final aiService = (await import('package:crisp_math/services/ai_service.dart' deferred as ai)).aiService;",
+        "final aiService = ai.aiService;");
+
     file.writeAsStringSync(content);
-    print("Patched lib/main.dart with test dialog");
+    stdout.writeln("Patched lib/main.dart with test dialog");
   } else {
-    print("Already patched.");
+    stdout.writeln("Already patched.");
   }
 }

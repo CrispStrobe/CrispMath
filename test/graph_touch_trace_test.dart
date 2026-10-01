@@ -26,7 +26,9 @@ void main() {
       if ((tester.widget<CustomPaint>(paint).painter! as GraphPainter)
           .samples
           .curves
-          .isNotEmpty) break;
+          .isNotEmpty) {
+        break;
+      }
     }
     expect(
         (tester.widget<CustomPaint>(paint).painter! as GraphPainter)

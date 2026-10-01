@@ -30,6 +30,7 @@ import 'package:printing/printing.dart';
 
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
+import '../widgets/native_bridge_status_listenable.dart';
 import '../engine/currency_evaluator.dart';
 import '../engine/date_time_evaluator.dart';
 import '../engine/notepad.dart';
@@ -171,13 +172,13 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // On web the SymEngine WASM bridge loads asynchronously; recompute the
     // whole doc once it becomes available so lines that fell back to the
     // pure-Dart subset (or errored) pick up the full CAS.
-    nativeBridgeStatus.addListener(_onBridgeStatusChanged);
+    nativeBridgeStatusListenable.addListener(_onBridgeStatusChanged);
   }
 
   @override
   void dispose() {
     _appState.notepadChanges.removeListener(_onAppStateChanged);
-    nativeBridgeStatus.removeListener(_onBridgeStatusChanged);
+    nativeBridgeStatusListenable.removeListener(_onBridgeStatusChanged);
     _recalcTimer?.cancel();
     unawaited(_appState.persistNotepadNow());
     for (final c in _controllers.values) {
@@ -1835,13 +1836,14 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
   Widget _buildDocBody(NotepadDocument doc) {
     final requestedLine = _appState.consumeRequestedNotepadLine();
-    if (requestedLine != null)
+    if (requestedLine != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _scrollToLineId(requestedLine);
           _focusNodes[requestedLine]?.requestFocus();
         }
       });
+    }
     return LayoutBuilder(builder: (context, constraints) {
       final sideBySide = constraints.maxWidth >= _kSideBySideBreakpoint;
       // Build visible-line index list, hiding lines under collapsed

@@ -142,8 +142,11 @@ CrispMath/
 ## Building and running
 
 ```bash
+# Fetch the on-device OCR plugin into the same path used by CI.
+git clone https://github.com/CrispStrobe/CrispEmbed.git .ci/CrispEmbed
 flutter pub get
-flutter test            # ~4018 unit tests run without the native bridge
+flutter analyze
+flutter test            # Over 5,100 unit and widget tests; no native bridge needed
 flutter run             # Runs the app; SymEngine bridge required for math
 tool/build_web.sh --release  # Also compiles the browser math worker
 

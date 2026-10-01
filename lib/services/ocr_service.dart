@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:crispembed/crispembed.dart';
 
 import '../engine/ocr_providers_init.dart' as p;
@@ -117,21 +117,21 @@ void _workerEntry(SendPort mainSendPort) {
   mainSendPort.send(commandPort.sendPort);
 
   // We cache the model so we don't reload it every stroke! (Pre-warming)
-  CrispEmbedOcr? _ocr;
-  CrispGraniteVision? _granite;
-  String? _loadedModelPath;
-  Timer? _idleUnloadTimer;
+  CrispEmbedOcr? ocr;
+  CrispGraniteVision? granite;
+  String? loadedModelPath;
+  Timer? idleUnloadTimer;
 
-  void _scheduleUnload() {
-    _idleUnloadTimer?.cancel();
+  void scheduleUnload() {
+    idleUnloadTimer?.cancel();
     // Free the 1GB-3GB VLM models if no math has been captured for 60 seconds.
     // This is a crucial mobile memory optimization.
-    _idleUnloadTimer = Timer(const Duration(seconds: 60), () {
-      _ocr?.dispose();
-      _ocr = null;
-      _granite?.dispose();
-      _granite = null;
-      _loadedModelPath = null;
+    idleUnloadTimer = Timer(const Duration(seconds: 60), () {
+      ocr?.dispose();
+      ocr = null;
+      granite?.dispose();
+      granite = null;
+      loadedModelPath = null;
     });
   }
 
@@ -140,44 +140,44 @@ void _workerEntry(SendPort mainSendPort) {
       final op = message.op;
 
       try {
-        _idleUnloadTimer?.cancel();
+        idleUnloadTimer?.cancel();
         // If we switch models, dispose the old one
-        if (_loadedModelPath != op.modelPath) {
-          _ocr?.dispose();
-          _ocr = null;
-          _granite?.dispose();
-          _granite = null;
+        if (loadedModelPath != op.modelPath) {
+          ocr?.dispose();
+          ocr = null;
+          granite?.dispose();
+          granite = null;
 
           if (op.type == 'math_gray' || op.type == 'vlm_raw') {
-            _ocr = CrispEmbedOcr(op.modelPath, nThreads: 4);
+            ocr = CrispEmbedOcr(op.modelPath, nThreads: 4);
           } else if (op.type == 'granite_raw') {
-            _granite = CrispGraniteVision(op.modelPath, nThreads: 4);
+            granite = CrispGraniteVision(op.modelPath, nThreads: 4);
           }
 
-          _loadedModelPath = op.modelPath;
+          loadedModelPath = op.modelPath;
         }
 
         String? result;
-        if (op.type == 'math_gray' && _ocr != null) {
+        if (op.type == 'math_gray' && ocr != null) {
           final gray =
               p.toGrayscaleForIsolate(op.imageBytes, op.width, op.height);
-          result = _ocr!.recognizeGray(gray, op.width, op.height);
-        } else if (op.type == 'vlm_raw' && _ocr != null) {
+          result = ocr!.recognizeGray(gray, op.width, op.height);
+        } else if (op.type == 'vlm_raw' && ocr != null) {
           final channels = op.imageBytes.length ~/ (op.width * op.height);
           result =
-              _ocr!.recognizeRaw(op.imageBytes, op.width, op.height, channels);
-        } else if (op.type == 'granite_raw' && _granite != null) {
+              ocr!.recognizeRaw(op.imageBytes, op.width, op.height, channels);
+        } else if (op.type == 'granite_raw' && granite != null) {
           final channels = op.imageBytes.length ~/ (op.width * op.height);
-          result = _granite!.recognize(op.imageBytes, op.width, op.height,
+          result = granite!.recognize(op.imageBytes, op.width, op.height,
               channels: channels);
         }
 
         mainSendPort.send(_WorkerResponse(message.id, result));
-        _scheduleUnload();
+        scheduleUnload();
       } catch (e) {
-        print("OCR Worker Error: \$e");
+        debugPrint('OCR Worker Error: $e');
         mainSendPort.send(_WorkerResponse(message.id, null));
-        _scheduleUnload();
+        scheduleUnload();
       }
     }
   });

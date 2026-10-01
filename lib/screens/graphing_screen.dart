@@ -228,7 +228,9 @@ class GraphingScreenState extends State<GraphingScreen>
 
   bool _handleKeyboardInput(KeyEvent event) {
     if (HardwareKeyboard.instance.isControlPressed ||
-        HardwareKeyboard.instance.isMetaPressed) return false;
+        HardwareKeyboard.instance.isMetaPressed) {
+      return false;
+    }
     debugPrint(
       "DEBUG: GraphingScreen _handleKeyboardInput | isFocused: $_isInputFocused",
     );
@@ -580,9 +582,10 @@ class GraphingScreenState extends State<GraphingScreen>
       final bounds = fittedGraphBounds(current.xMin, current.xMax, values);
       if (mounted) _applyBounds(bounds);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Could not fit graph: $e')));
+      }
     } finally {
       if (mounted) setState(() => _fitting = false);
     }
@@ -1379,8 +1382,9 @@ class GraphPainter extends CustomPainter {
         lastY = null;
         continue;
       }
-      if (lastY != null && (pt.y - lastY).abs() > 50 / (scale * yRatio))
+      if (lastY != null && (pt.y - lastY).abs() > 50 / (scale * yRatio)) {
         pen = false;
+      }
       final sx = centerX + pt.x * unit;
       if (pen) {
         path.lineTo(sx, sy);
@@ -1802,8 +1806,9 @@ class _SampledGraphState extends State<_SampledGraph> {
                   includeSemantics: false,
                   focusNode: _traceFocus,
                   onKeyEvent: (_, event) {
-                    if (event is! KeyDownEvent || index == null)
+                    if (event is! KeyDownEvent || index == null) {
                       return KeyEventResult.ignored;
+                    }
                     final delta =
                         event.logicalKey == LogicalKeyboardKey.arrowRight
                             ? 1

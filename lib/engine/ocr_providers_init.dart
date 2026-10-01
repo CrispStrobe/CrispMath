@@ -76,14 +76,12 @@ class HandwrittenBackend implements OcrBackendBase {
 }
 
 /// On-device OCR provider backed by CrispEmbed. Works for all model types
-/// (pix2tex, HMER, BTTR) — the correct FFI backend is selected by [_factory].
+/// (pix2tex, HMER, BTTR). The persistent worker auto-detects the GGUF model.
 class _CrispEmbedProvider implements OcrProvider {
   final String _modelPath;
   final String _name;
-  final OcrBackendBase Function(String path) _factory;
-  OcrBackendBase? _backend;
 
-  _CrispEmbedProvider(this._modelPath, this._name, this._factory);
+  _CrispEmbedProvider(this._modelPath, this._name);
 
   @override
   String get name => _name;
@@ -98,7 +96,9 @@ class _CrispEmbedProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)?
+          onProgress}) async {
     try {
       final op = OcrOp('math_gray', _modelPath, imageBytes, width, height);
       final latex = await OcrService.recognizeAsync(op);
@@ -117,14 +117,6 @@ class _CrispEmbedProvider implements OcrProvider {
       return null;
     }
   }
-
-  OcrBackendBase? _tryInit() {
-    try {
-      return _factory(_modelPath);
-    } catch (e) {
-      return null;
-    }
-  }
 }
 
 /// On-device VLM provider that sends color images directly (no grayscale
@@ -132,7 +124,6 @@ class _CrispEmbedProvider implements OcrProvider {
 class _CrispEmbedVlmProvider implements OcrProvider {
   final String _modelPath;
   final String _name;
-  CrispEmbedOcr? _ocr;
 
   _CrispEmbedVlmProvider(this._modelPath, this._name);
 
@@ -149,7 +140,9 @@ class _CrispEmbedVlmProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)?
+          onProgress}) async {
     try {
       final op = OcrOp('vlm_raw', _modelPath, imageBytes, width, height);
       final latex = await OcrService.recognizeAsync(op);
@@ -161,14 +154,6 @@ class _CrispEmbedVlmProvider implements OcrProvider {
         rawOutput: latex.replaceAll('\u0120', ' ').trim(),
         providerName: name,
       );
-    } catch (e) {
-      return null;
-    }
-  }
-
-  CrispEmbedOcr? _tryInit() {
-    try {
-      return CrispEmbedOcr(_modelPath, nThreads: _ocrThreads);
     } catch (e) {
       return null;
     }
@@ -194,7 +179,9 @@ class _GraniteVisionProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)?
+          onProgress}) async {
     try {
       _model ??= _tryInit();
       if (_model == null) return null;
@@ -243,7 +230,9 @@ class _LightOnOcrProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)?
+          onProgress}) async {
     try {
       _model ??= _tryInit();
       if (_model == null) return null;
@@ -297,7 +286,9 @@ class _GeneralOcrProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)?
+          onProgress}) async {
     try {
       _pipeline ??= _tryInit();
       if (_pipeline == null) return null;
@@ -358,7 +349,9 @@ class _LayoutOcrProvider implements OcrProvider {
   bool get requiresApiKey => false;
 
   @override
-  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height, {void Function(int, int, double, double, double, double)? onProgress}) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)?
+          onProgress}) async {
     try {
       _layout ??= _tryInit();
       if (_layout == null) return null;
@@ -377,7 +370,8 @@ class _LayoutOcrProvider implements OcrProvider {
 
       for (var i = 0; i < regions.length; i++) {
         final region = regions[i];
-        onProgress?.call(regions.length, i, region.x1, region.y1, region.x2, region.y2);
+        onProgress?.call(
+            regions.length, i, region.x1, region.y1, region.x2, region.y2);
         if (_isFormulaRegion(region) && _mathProvider != null) {
           // Crop the formula region and run math OCR on it.
           final cropped = _cropRegion(
@@ -496,20 +490,16 @@ Future<void> initOcrProviders() async {
     final path = pathMap[model.id];
     if (path != null) {
       final String label;
-      final OcrBackendBase Function(String) factory;
       if (model.id.startsWith('posformer-')) {
         label = 'PosFormer (handwritten, 57%)';
-        factory = (p) => HandwrittenBackend(p);
       } else if (model.id.startsWith('bttr-')) {
         label = 'BTTR (handwritten, 49%)';
-        factory = (p) => HandwrittenBackend(p);
       } else if (model.id.startsWith('hmer-')) {
         label = 'HMER (handwritten, 39%)';
-        factory = (p) => HandwrittenBackend(p);
       } else {
         continue;
       }
-      OcrProviders.register(_CrispEmbedProvider(path, label, factory));
+      OcrProviders.register(_CrispEmbedProvider(path, label));
       break; // use first available handwritten model
     }
   }
@@ -521,7 +511,6 @@ Future<void> initOcrProviders() async {
       final provider = _CrispEmbedProvider(
         path,
         'PP-FormulaNet-L (printed, 181M)',
-        (p) => Pix2TexBackend(p), // same FFI — auto-detected from GGUF
       );
       OcrProviders.register(provider);
       OcrProviders.active = provider;
@@ -536,7 +525,6 @@ Future<void> initOcrProviders() async {
       final provider = _CrispEmbedProvider(
         path,
         'MixTex (Chinese+English)',
-        (p) => Pix2TexBackend(p), // same FFI — auto-detected from GGUF
       );
       OcrProviders.register(provider);
       break;
@@ -550,7 +538,6 @@ Future<void> initOcrProviders() async {
       final provider = _CrispEmbedProvider(
         path,
         'Texo (printed, BLEU 0.90)',
-        (p) => Pix2TexBackend(p), // same FFI — auto-detected from GGUF
       );
       OcrProviders.register(provider);
       OcrProviders.active = provider;
@@ -566,7 +553,6 @@ Future<void> initOcrProviders() async {
         final provider = _CrispEmbedProvider(
           path,
           'pix2tex (printed)',
-          (p) => Pix2TexBackend(p),
         );
         OcrProviders.register(provider);
         OcrProviders.active = provider;

@@ -36,7 +36,7 @@ class _SyncDialogState extends State<SyncDialog> {
       } else {
         await SyncService.instance.pullState(widget.appState);
       }
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
@@ -44,7 +44,7 @@ class _SyncDialogState extends State<SyncDialog> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
@@ -63,7 +63,7 @@ class _SyncDialogState extends State<SyncDialog> {
         await SyncService.instance
             .signInWithEmail(_emailCtl.text, _passwordCtl.text);
       }
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
@@ -71,7 +71,7 @@ class _SyncDialogState extends State<SyncDialog> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Auth Error: $e')),
         );

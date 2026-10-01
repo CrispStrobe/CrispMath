@@ -1,7 +1,8 @@
+import 'dart:io';
 // Run with dart run tool/benchmark_graph_sampling.dart. This CPU microbenchmark
 // complements profile-mode frame traces; it does not measure presentation FPS.
-import '../lib/engine/graph_sampling.dart';
-import '../lib/engine/numeric_fallback.dart';
+import 'package:crisp_math/engine/graph_sampling.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
 
 void main() {
   const expression = 'sin(x)*cos(x)+exp(-x^2/10)';
@@ -36,7 +37,7 @@ void main() {
       times.add(timer.elapsedMicroseconds);
     }
     times.sort();
-    print(
+    stdout.writeln(
         '$mode sampling: median ${(times[15] / 1000).toStringAsFixed(2)}ms, p95 ${(times[28] / 1000).toStringAsFixed(2)}ms');
   }
 }

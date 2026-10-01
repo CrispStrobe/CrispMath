@@ -26,7 +26,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   @override
   void initState() {
     super.initState();
-    ensureOcrProviders().then((_) { if (mounted) setState(() {}); });
+    ensureOcrProviders().then((_) {
+      if (mounted) setState(() {});
+    });
     _checkDownloaded();
   }
 
@@ -92,8 +94,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       if (path != null) {
         // Reload providers to register the newly downloaded model natively
         await initOcrProviders();
-        if (mounted) setState(() {});
-        
+        if (!mounted) return;
+        setState(() {});
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${model.name} downloaded')),
         );
@@ -309,7 +312,8 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
         ),
         trailing: isDownloading
             ? IconButton(
-                icon: const Icon(Icons.pause, size: 20, semanticLabel: 'Pause download'),
+                icon: const Icon(Icons.pause,
+                    size: 20, semanticLabel: 'Pause download'),
                 onPressed: () {
                   OcrModelManager.cancelDownload(model);
                   setState(() {
@@ -325,7 +329,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                   )
                 : IconButton(
                     icon: Icon(isPaused ? Icons.play_arrow : Icons.download,
-                        size: 20, semanticLabel: isPaused ? 'Resume download' : 'Download model'),
+                        size: 20,
+                        semanticLabel:
+                            isPaused ? 'Resume download' : 'Download model'),
                     onPressed: () => _download(model),
                   ),
       ),

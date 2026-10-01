@@ -1265,9 +1265,10 @@ class AppState extends ChangeNotifier {
         .map((e) => e.key)
         .firstOrNull;
     slot ??= graphFunctions.indexWhere((f) => f.isEmpty);
-    if (slot < 0)
+    if (slot < 0) {
       throw StateError(
           'All graph slots are full. Clear a slot before linking.');
+    }
     graphLinks[slot] = LinkedGraphSource(documentId, lineId);
     functionParameters.remove(slot);
     _persistParameters();

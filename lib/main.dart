@@ -1079,9 +1079,10 @@ class _MathAssistantSettingsCard extends StatelessWidget {
         trailing: OutlinedButton(
             onPressed: () async {
               await ai.loadLibrary();
-              if (context.mounted)
+              if (context.mounted) {
                 await showDialog<void>(
                     context: context, builder: (_) => ai.AiMathDialog());
+              }
             },
             child: const Text('Open assistant')),
       ));

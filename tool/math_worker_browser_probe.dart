@@ -3,9 +3,9 @@
 import 'dart:convert';
 import 'dart:js_interop';
 
-import '../lib/services/math_worker_client_web.dart';
-import '../lib/services/engine_op.dart';
-import '../lib/engine/ocr_wasm_bridge.dart';
+import 'package:crisp_math/services/math_worker_client_web.dart';
+import 'package:crisp_math/services/engine_op.dart';
+import 'package:crisp_math/engine/ocr_wasm_bridge.dart';
 
 @JS('mathWorkerProbeResult')
 external set _result(JSString value);

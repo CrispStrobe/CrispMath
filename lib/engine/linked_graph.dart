@@ -21,12 +21,14 @@ class LinkedGraphResolution {
 
 LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
     {Map<String, String> globals = const {}}) {
-  if (doc == null)
+  if (doc == null) {
     return const LinkedGraphResolution(
         '', null, {}, 'Source document is missing.');
+  }
   final index = doc.lines.indexWhere((l) => l.id == lineId);
-  if (index < 0)
+  if (index < 0) {
     return const LinkedGraphResolution('', null, {}, 'Source line is missing.');
+  }
   final line = doc.lines[index];
   final first = firstCodeLineIndexOf(doc);
   final parsed = classifyNotepadLine(line.source,
@@ -39,9 +41,10 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
     return LinkedGraphResolution(line.source, null, {},
         'Choose an expression, assignment or plot line.');
   }
-  if (line.cachedError != null)
+  if (line.cachedError != null) {
     return LinkedGraphResolution(
         line.source, null, {}, 'Fix the source line before plotting.');
+  }
   final imports = <String, String>{};
   if (first >= 0) {
     final use = classifyNotepadLine(doc.lines[first].source,
@@ -74,9 +77,10 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
   final variable =
       parsed.kind == NotepadLineKind.plot ? parsed.name ?? 'x' : 'x';
   final body = parsed.body ?? '';
-  if (body.trim().isEmpty)
+  if (body.trim().isEmpty) {
     return LinkedGraphResolution(
         line.source, null, {}, 'The source expression is empty.');
+  }
   final bound = <String, String>{};
   String? missing;
   final expression =
@@ -91,11 +95,14 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
     if (!kReservedNotepadNames.contains(name) &&
         !tail.startsWith('(') &&
         name != 'I' &&
-        name != 'oo') missing ??= name;
+        name != 'oo') {
+      missing ??= name;
+    }
     return name;
   });
-  if (missing != null)
+  if (missing != null) {
     return LinkedGraphResolution(line.source, null, bound,
         'Define $missing in this document or import it with use.');
+  }
   return LinkedGraphResolution(line.source, expression, bound, null);
 }

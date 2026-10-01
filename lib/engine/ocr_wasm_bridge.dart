@@ -155,8 +155,9 @@ class CrispEmbedOcrWasm {
         if (!loaded.isCompleted) loaded.complete();
       }).toJS;
       script.onerror = ((web.Event _) {
-        if (!loaded.isCompleted)
+        if (!loaded.isCompleted) {
           loaded.completeError(StateError('OCR loader failed'));
+        }
       }).toJS;
       web.document.head!.appendChild(script);
       try {
