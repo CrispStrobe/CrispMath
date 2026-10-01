@@ -1274,8 +1274,9 @@ class AppState extends ChangeNotifier {
     final document = notepadDocuments[link.documentId]!;
     final target =
         variable == null ? link.lineId : linkedVariableLine(document, variable);
-    if (target == null || !document.lines.any((line) => line.id == target))
+    if (target == null || !document.lines.any((line) => line.id == target)) {
       return;
+    }
     _requestedNotepadLine = target;
     _currentNotepadDocId = link.documentId;
     _persistCurrentNotepadDoc();

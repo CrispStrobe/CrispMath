@@ -21,47 +21,49 @@
     "threads": 2,
     "cases": 13,
     "outcomes": {
-      "correct": 8,
-      "invalid_expression": 5
+      "correct": 10,
+      "invalid_expression": 3
     },
     "handwriting_cases": [
       {
         "id": "handwritten-000a4e8ca49c5a1c",
         "kind": "human-handwriting",
         "recognized_latex": "x - y / s q ^ { + } ( z )",
-        "expression": "x-y/s q^{+} ( z )",
+        "expression": "x-y/s q^(+)( z )",
         "actuals": [
           null,
           null
         ],
         "status": "invalid_expression",
-        "elapsed_ms": 2368
+        "elapsed_ms": 6041
       },
       {
         "id": "handwritten-00fcddfee1ebfee6",
         "kind": "human-handwriting",
         "recognized_latex": "2 \\sin ( x / z )",
-        "expression": "2 \\sin ( x/z )",
+        "expression": "2 sin( x/z )",
         "actuals": [
           null,
           null
         ],
         "status": "invalid_expression",
-        "elapsed_ms": 4656
+        "elapsed_ms": 5216
       },
       {
         "id": "handwritten-0255dc5b14261907",
         "kind": "human-handwriting",
         "recognized_latex": "1 + x + \\frac { x ^ { 2 } } { 2 ^ { - } }",
-        "expression": "1+x+\\frac { x^{ 2 } } { 2^{-} }",
+        "expression": "1+x+(x^2)/(2^(-))",
         "actuals": [
           null,
           null
         ],
         "status": "invalid_expression",
-        "elapsed_ms": 4926
+        "elapsed_ms": 4448
       }
-    ]
+    ],
+    "converter": "production latexToEngineSyntax",
+    "measured_at": "2026-10-01T15:41:33.493242Z"
   },
   "limitations": [
     "Small CPU-only model; accuracy is a measurement, not a production quality guarantee.",

@@ -86,7 +86,7 @@ class ExpressionPreprocessingUtils {
     return u >= 48 && u <= 57;
   }
 
-    static final _nativeLruCache = <String, String>{};
+  static final _nativeLruCache = <String, String>{};
   static const _maxNativeCacheSize = 200;
 
   static String preprocessNativeExpression(String expression) {
@@ -114,7 +114,7 @@ class ExpressionPreprocessingUtils {
     // Expand vector calls — `dot([1,2,3], [4,5,6])` → `(1*4 + 2*5 + 3*6)` etc.
     // Done first so subsequent rules see plain arithmetic, not call syntax.
     p = VectorMath.preprocess(p);
-    
+
     // Support nCr and nPr combinatorics shortcuts
     p = p.replaceAllMapped(RegExp(r'\bnCr\s*\(([^,]+),([^)]+)\)'), (m) {
       return 'binomial(${m.group(1)}, ${m.group(2)})';
@@ -1014,9 +1014,8 @@ class ExpressionPreprocessingUtils {
         .replaceAllMapped(RegExp(r'(\d[eE])\+(?=\d)'), (m) => '${m[1]}$ePlus')
         .replaceAllMapped(RegExp(r'(\d[eE])-(?=\d)'), (m) => '${m[1]}$eMinus');
 
-    normalized = normalized
-        .replaceAll(_reSpace, ' ')
-        .replaceAll(_rePlus, ' + ');
+    normalized =
+        normalized.replaceAll(_reSpace, ' ').replaceAll(_rePlus, ' + ');
     // Use a lookahead for the trailing `\S` so it isn't consumed.
     // The old form `(\S)\s*-\s*(\S)` would gobble the right
     // operand and leave a chained `a-b-c` half-spaced as

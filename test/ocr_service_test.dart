@@ -8,13 +8,13 @@ void main() {
     // so we expect it to fail gracefully without crashing the isolate.
     final dummyPixels = Uint8List(4); // tiny 1x1 image, 4 channels
     final op = OcrOp('math_gray', 'dummy/path.gguf', dummyPixels, 1, 1);
-    
+
     final result = await OcrService.recognizeAsync(op);
-    
+
     // We expect null because 'dummy/path.gguf' doesn't exist and native lib isn't loaded.
     // The key is that the isolate didn't crash and returned the handled error.
     expect(result, isNull);
-    
+
     await OcrService.kill();
   });
 }

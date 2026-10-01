@@ -25,7 +25,7 @@ void main() {
             reason: entry.key);
       }
     }
-    expect(
-        WorkflowLocalizations('it').text(WorkflowLabel.evaluate), 'Evaluate');
+    expect(const WorkflowLocalizations('it').text(WorkflowLabel.evaluate),
+        'Evaluate');
   });
 }

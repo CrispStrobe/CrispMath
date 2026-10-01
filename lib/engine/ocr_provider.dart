@@ -65,7 +65,9 @@ abstract class OcrProvider {
     Uint8List imageBytes,
     int width,
     int height, {
-    void Function(int totalRegions, int currentIndex, double x1, double y1, double x2, double y2)? onProgress,
+    void Function(int totalRegions, int currentIndex, double x1, double y1,
+            double x2, double y2)?
+        onProgress,
   });
 }
 
@@ -197,6 +199,43 @@ String _replaceCmd(String s, String cmd, String Function(String) transform) {
   return buf.toString();
 }
 
+/// A TeX argument is a balanced group, a command, or one character.
+/// Expand bare fraction arguments before joining OCR-separated digit tokens.
+(String, int)? _ocrTexArgument(String source, int start) {
+  while (start < source.length && source[start].trim().isEmpty) {
+    start++;
+  }
+  if (start >= source.length) return null;
+  if (source[start] == '{') return _extractBraceGroup(source, start);
+  if (source[start] == r'\') {
+    final command = RegExp(r'\\[A-Za-z]+').matchAsPrefix(source, start);
+    return command == null ? null : (command[0]!, command.end);
+  }
+  if ('}+-*/=()'.contains(source[start])) return null;
+  return (source[start], start + 1);
+}
+
+String _normalizeOcrFractions(String source) {
+  final command = RegExp(r'\\frac(?![A-Za-z])');
+  var position = 0;
+  while (position < source.length) {
+    final matches = command.allMatches(source, position);
+    if (matches.isEmpty) break;
+    final match = matches.first;
+    final numerator = _ocrTexArgument(source, match.end);
+    final denominator =
+        numerator == null ? null : _ocrTexArgument(source, numerator.$2);
+    if (numerator == null || denominator == null) {
+      position = match.end;
+      continue;
+    }
+    final replacement = r'\frac' '{${numerator.$1}}{${denominator.$1}}';
+    source = source.replaceRange(match.start, denominator.$2, replacement);
+    position = match.start + replacement.length;
+  }
+  return source;
+}
+
 /// Normalize OCR LaTeX output into compact form suitable for
 /// [LatexConversionUtils.fromLatex].
 ///
@@ -226,6 +265,13 @@ String latexToEngineSyntax(String latex) {
   // Restore spaces between tokens that aren't brace-adjacent.
   // "a}+{b" is fine, but "a}b" needs no space (it's inside braces).
   // The main case: "}{" between frac groups must stay collapsed.
+
+  s = _normalizeOcrFractions(s);
+  // TeX math ignores spaces between digit tokens. Keep fraction arguments
+  // grouped first so "\\frac 1 4" remains one quarter, not fourteen.
+  s = s.replaceAll(RegExp(r'(?<=\d)\s+(?=\d)'), '');
+  s = s.replaceAllMapped(
+      RegExp(r'(\\[A-Za-z]+)\s+(?=[({\[])'), (match) => match[1]!);
 
   // --- OCR-specific preprocessing (not needed for keypad input) ---
 

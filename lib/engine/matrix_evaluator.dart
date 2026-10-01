@@ -32,7 +32,6 @@ class MatrixEvaluator {
     for (final op in const [
       'det',
       'trace',
-
       'inv',
       'transpose',
       'rref',

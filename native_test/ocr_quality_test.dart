@@ -6,7 +6,7 @@ import 'package:crispembed/crispembed.dart';
 import 'package:image/image.dart' as img;
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/ocr_providers_init.dart';
-import 'package:crisp_math/utils/latex_conversion_utils.dart';
+import 'package:crisp_math/engine/ocr_provider.dart';
 import '../tool/inference_quality.dart';
 
 void main() {
@@ -45,7 +45,7 @@ void main() {
                   image.width,
                   image.height) ??
               '';
-          final expression = LatexConversionUtils.fromLatex(latex);
+          final expression = latexToEngineSyntax(latex);
           record = scoreOcr(example, latex, expression,
               calculatorResult: example['probes'] == null
                   ? CalculatorEngine().evaluate(expression)

@@ -66,7 +66,8 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
 
     final provider = OcrProviders.active;
     if (provider == null) {
-      setState(() => _error = 'No OCR provider configured. Please download one.');
+      setState(
+          () => _error = 'No OCR provider configured. Please download one.');
       _promptDownload();
       return;
     }
@@ -117,7 +118,7 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final screenSize = MediaQuery.of(context).size;
-    
+
     // Scale up to 80% of screen size as requested
     final maxWidth = screenSize.width * 0.8;
     // Leave some room for title, buttons, and model selector
@@ -130,9 +131,11 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
           const Text('Write Math'),
           if (OcrProviders.available.isNotEmpty)
             DropdownButton<OcrProvider>(
-              value: OcrProviders.available.contains(OcrProviders.active) 
-                  ? OcrProviders.active 
-                  : (OcrProviders.available.isNotEmpty ? OcrProviders.available.first : null),
+              value: OcrProviders.available.contains(OcrProviders.active)
+                  ? OcrProviders.active
+                  : (OcrProviders.available.isNotEmpty
+                      ? OcrProviders.available.first
+                      : null),
               icon: const Icon(Icons.arrow_drop_down),
               elevation: 16,
               style: TextStyle(color: cs.primary, fontSize: 13),

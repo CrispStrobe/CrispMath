@@ -1,3 +1,16 @@
+## 2026-10-01 — Maintenance and measured evaluator optimization
+
+Extracted notepad worker dispatch and syntax/scope primitives from large screen
+and evaluator files. Added classification reuse keyed by source/position/directive
+position, plus one-scan numeric binding substitution with the original symbolic
+replacement fallback. Regression coverage includes duplicates, forward references,
+cycles, FlatZinc, aggregates, partial input, cache invalidation and CAS routing.
+196 focused tests pass. Sequential same-host JIT 2,000-row edit: 13.4s → 2.7s;
+application latency remains separately measured. CI cancels superseded native
+builds while retaining installed-runtime checks and exhaustive workflow translation
+coverage. Real OCR scoring also exposed spaced-token conversion gaps; production
+OCR conversion now preserves bare fraction arguments and digit/function spacing.
+
 ## 2026-10-01 — Core workflow UX
 
 Calculator entry now offers a native text editor for typing, selection and
@@ -14,7 +27,7 @@ unit/widget tests pass; connected mobile browser checks added to CI.
 Added strict real-provider scoring for 14 translations and scored native OCR
 for 13 reproducible images including actual MathWriting human ink. Reports keep
 wrong answers separate from transport failures. Local Qwen2.5 0.5B: 4/14 correct;
-pix2tex: 8/13 correct, all three handwriting samples failed validation. Added
+pix2tex: 10/13 correct, all three handwriting samples failed validation. Added
 provider safeguards for truncated responses and reasoning markup, with unit
 coverage. Corpus downloads verify a pinned SHA256 and preserve attribution;
 handwriting raster assets are confined to ignored evaluation storage.

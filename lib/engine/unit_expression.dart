@@ -461,13 +461,11 @@ class UnitExpressionEvaluator {
     'cm^3': 'cm³',
     'ft^3': 'cu ft',
     'in^3': 'cu in',
-
     'litre': 'L',
     'liters': 'L',
     'liter': 'L',
     'hectare': 'ha',
     'hectares': 'ha',
-
   };
 
   static _Consumed? _consumeQuantity(List<_Token> toks, int i) {

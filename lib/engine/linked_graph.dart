@@ -116,8 +116,9 @@ String? linkedVariableLine(NotepadDocument? document, String variable) {
     final line = document.lines[i];
     final parsed = classifyNotepadLine(line.source,
         lineIndex: i, firstCodeLineIndex: first);
-    if (parsed.kind == NotepadLineKind.assignment && parsed.name == variable)
+    if (parsed.kind == NotepadLineKind.assignment && parsed.name == variable) {
       return line.id;
+    }
   }
   return null;
 }

@@ -8,7 +8,7 @@ import 'package:crispembed/crispembed.dart';
 import 'package:image/image.dart' as img;
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/ocr_providers_init.dart';
-import 'package:crisp_math/utils/latex_conversion_utils.dart';
+import 'package:crisp_math/engine/ocr_provider.dart';
 import 'package:crisp_math/services/ocr_library_path.dart';
 
 void main() {
@@ -45,7 +45,7 @@ void main() {
           image.height);
       expect(latex, isNotNull);
       expect(latex!.trim(), isNotEmpty);
-      final expression = LatexConversionUtils.fromLatex(latex);
+      final expression = latexToEngineSyntax(latex);
       expect(CalculatorEngine().evaluate(expression), '12',
           reason: 'Fixture is 5 + 7; recognized LaTeX was $latex.');
     } finally {

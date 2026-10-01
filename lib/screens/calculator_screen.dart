@@ -304,7 +304,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     await ensureOcrProviders();
     if (!mounted) return;
     final bytes = await file.readAsBytes();
-    
+
     // Choose layout provider if available, otherwise active provider
     final layoutProvider = OcrProviders.available
         .where((p) => p.name.contains('Layout'))
@@ -345,19 +345,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
       _ocrCurrentRegionBox = null;
     });
 
-    final result = await provider.recognize(
-      ocrBytes, imgWidth, imgHeight,
-      onProgress: (total, current, x1, y1, x2, y2) {
-        if (mounted) {
-          setState(() {
-            _ocrCurrentRegionBox = Rect.fromLTRB(x1, y1, x2, y2);
-          });
-        }
+    final result = await provider.recognize(ocrBytes, imgWidth, imgHeight,
+        onProgress: (total, current, x1, y1, x2, y2) {
+      if (mounted) {
+        setState(() {
+          _ocrCurrentRegionBox = Rect.fromLTRB(x1, y1, x2, y2);
+        });
       }
-    );
+    });
 
     if (!mounted) return;
-    
+
     setState(() {
       _isOcrProcessing = false;
       _ocrDroppedImage = null;
@@ -2578,411 +2576,445 @@ class CalculatorScreenState extends State<CalculatorScreen>
               }
             },
             child: SafeArea(
-        child: Column(
-          children: [
-            // History display section
-            Expanded(
-              flex: 3,
               child: Column(
                 children: [
-                  // Top toolbar. Round 93 (P6): the worked-examples
-                  // `(?)` icon lives here and is **always** visible,
-                  // so the container renders unconditionally now. The
-                  // history-specific controls (LaTeX/Plain toggle,
-                  // search, clear) only render once there's history
-                  // to act on.
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    // Round 108: a plain Row overflowed (~90px) on
-                    // narrow phones once the history controls (LaTeX/Plain
-                    // toggle, search, clear) appeared alongside the four
-                    // always-on action icons. Wrap keeps everything on one
-                    // right-aligned line on wide layouts (tablet/desktop)
-                    // and gracefully wraps the extras to a second line on
-                    // narrow ones instead of clipping.
-                    child: Wrap(
-                      alignment: WrapAlignment.end,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      runSpacing: 4,
+                  // History display section
+                  Expanded(
+                    flex: 3,
+                    child: Column(
                       children: [
-                        // OCR camera button
-                        IconButton(
-                          icon: const Icon(Icons.camera_alt_outlined,
-                              size: 20, semanticLabel: 'Scan math'),
-                          tooltip: 'Scan math',
-                          onPressed: () => _launchOcr(context),
-                        ),
-                        // Handwriting input
-                        IconButton(
-                          icon: const Icon(Icons.draw_outlined,
-                              size: 20, semanticLabel: 'Write math'),
-                          tooltip: 'Write math',
-                          onPressed: () async {
-                            final expr =
-                                await showHandwritingInputDialog(context);
-                            if (expr != null && expr.isNotEmpty) {
-                              _latexController.clear();
-                              _latexController.insert(expr);
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.menu_book_outlined,
-                              size: 20, semanticLabel: 'Worked examples'),
-                          tooltip:
-                              AppLocalizations.of(context).workedExamplesTitle,
-                          onPressed: () => showDialog<void>(
-                            context: context,
-                            builder: (_) => const WorkedExamplesDialog(),
-                          ),
-                        ),
-                        // Round 101 (P6): help-mode toggle. Filled icon
-                        // + colored when active. Wrapping HelpTarget /
-                        // popovers land in Rounds 102-104.
-                        ListenableBuilder(
-                          listenable: _appState.calculatorChanges,
-                          builder: (context, _) {
-                            final on = _appState.helpMode;
-                            final t = AppLocalizations.of(context);
-                            return IconButton(
-                              icon: Icon(
-                                on ? Icons.help : Icons.help_outline,
-                                size: 20,
-                                semanticLabel:
-                                    on ? 'Disable help mode' : 'Help mode',
-                                color: on
-                                    ? Theme.of(context).colorScheme.primary
-                                    : null,
+                        // Top toolbar. Round 93 (P6): the worked-examples
+                        // `(?)` icon lives here and is **always** visible,
+                        // so the container renders unconditionally now. The
+                        // history-specific controls (LaTeX/Plain toggle,
+                        // search, clear) only render once there's history
+                        // to act on.
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          // Round 108: a plain Row overflowed (~90px) on
+                          // narrow phones once the history controls (LaTeX/Plain
+                          // toggle, search, clear) appeared alongside the four
+                          // always-on action icons. Wrap keeps everything on one
+                          // right-aligned line on wide layouts (tablet/desktop)
+                          // and gracefully wraps the extras to a second line on
+                          // narrow ones instead of clipping.
+                          child: Wrap(
+                            alignment: WrapAlignment.end,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            runSpacing: 4,
+                            children: [
+                              // OCR camera button
+                              IconButton(
+                                icon: const Icon(Icons.camera_alt_outlined,
+                                    size: 20, semanticLabel: 'Scan math'),
+                                tooltip: 'Scan math',
+                                onPressed: () => _launchOcr(context),
                               ),
-                              tooltip: on
-                                  ? t.helpModeDisableTooltip
-                                  : t.helpModeEnableTooltip,
-                              onPressed: _appState.toggleHelpMode,
-                            );
-                          },
-                        ),
-                        if (_appState.history.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Text(
-                            AppLocalizations.of(context).historyLabel,
-                            style: TextStyle(
-                                fontSize: 12, color: Colors.grey[600]),
-                          ),
-                          const SizedBox(width: 8),
-                          SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment<bool>(
-                                value: false,
-                                icon: Icon(Icons.text_fields,
-                                    size: 16, semanticLabel: 'Plain text'),
-                              ),
-                              ButtonSegment<bool>(
-                                value: true,
-                                icon: Icon(Icons.functions,
-                                    size: 16, semanticLabel: 'LaTeX'),
-                              ),
-                            ],
-                            selected: {_showLatexHistory},
-                            onSelectionChanged: (Set<bool> newSelection) {
-                              setState(() {
-                                _showLatexHistory = newSelection.first;
-                              });
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: Icon(
-                              _historySearchOpen
-                                  ? Icons.search_off
-                                  : Icons.search,
-                              size: 20,
-                              semanticLabel: 'Search history',
-                            ),
-                            tooltip: AppLocalizations.of(context).searchHistory,
-                            onPressed: () {
-                              setState(() {
-                                _historySearchOpen = !_historySearchOpen;
-                                if (!_historySearchOpen) {
-                                  _historySearchController.clear();
-                                }
-                              });
-                              // Hand focus to the search field when opening.
-                              // Without this the calculator's KeyboardListener
-                              // (focusNode: _calculatorFocusNode) keeps the
-                              // primary focus and the TextField never gets to
-                              // see keystrokes.
-                              if (_historySearchOpen) {
-                                FocusManager.instance.primaryFocus?.unfocus();
-                                WidgetsBinding.instance
-                                    .addPostFrameCallback((_) {
-                                  if (mounted) {
-                                    _historySearchFocusNode.requestFocus();
+                              // Handwriting input
+                              IconButton(
+                                icon: const Icon(Icons.draw_outlined,
+                                    size: 20, semanticLabel: 'Write math'),
+                                tooltip: 'Write math',
+                                onPressed: () async {
+                                  final expr =
+                                      await showHandwritingInputDialog(context);
+                                  if (expr != null && expr.isNotEmpty) {
+                                    _latexController.clear();
+                                    _latexController.insert(expr);
                                   }
-                                });
-                              } else {
-                                // Closed: hand focus back to the calculator.
-                                _calculatorFocusNode.requestFocus();
-                              }
-                            },
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.menu_book_outlined,
+                                    size: 20, semanticLabel: 'Worked examples'),
+                                tooltip: AppLocalizations.of(context)
+                                    .workedExamplesTitle,
+                                onPressed: () => showDialog<void>(
+                                  context: context,
+                                  builder: (_) => const WorkedExamplesDialog(),
+                                ),
+                              ),
+                              // Round 101 (P6): help-mode toggle. Filled icon
+                              // + colored when active. Wrapping HelpTarget /
+                              // popovers land in Rounds 102-104.
+                              ListenableBuilder(
+                                listenable: _appState.calculatorChanges,
+                                builder: (context, _) {
+                                  final on = _appState.helpMode;
+                                  final t = AppLocalizations.of(context);
+                                  return IconButton(
+                                    icon: Icon(
+                                      on ? Icons.help : Icons.help_outline,
+                                      size: 20,
+                                      semanticLabel: on
+                                          ? 'Disable help mode'
+                                          : 'Help mode',
+                                      color: on
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : null,
+                                    ),
+                                    tooltip: on
+                                        ? t.helpModeDisableTooltip
+                                        : t.helpModeEnableTooltip,
+                                    onPressed: _appState.toggleHelpMode,
+                                  );
+                                },
+                              ),
+                              if (_appState.history.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppLocalizations.of(context).historyLabel,
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey[600]),
+                                ),
+                                const SizedBox(width: 8),
+                                SegmentedButton<bool>(
+                                  segments: const [
+                                    ButtonSegment<bool>(
+                                      value: false,
+                                      icon: Icon(Icons.text_fields,
+                                          size: 16,
+                                          semanticLabel: 'Plain text'),
+                                    ),
+                                    ButtonSegment<bool>(
+                                      value: true,
+                                      icon: Icon(Icons.functions,
+                                          size: 16, semanticLabel: 'LaTeX'),
+                                    ),
+                                  ],
+                                  selected: {_showLatexHistory},
+                                  onSelectionChanged: (Set<bool> newSelection) {
+                                    setState(() {
+                                      _showLatexHistory = newSelection.first;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: Icon(
+                                    _historySearchOpen
+                                        ? Icons.search_off
+                                        : Icons.search,
+                                    size: 20,
+                                    semanticLabel: 'Search history',
+                                  ),
+                                  tooltip: AppLocalizations.of(context)
+                                      .searchHistory,
+                                  onPressed: () {
+                                    setState(() {
+                                      _historySearchOpen = !_historySearchOpen;
+                                      if (!_historySearchOpen) {
+                                        _historySearchController.clear();
+                                      }
+                                    });
+                                    // Hand focus to the search field when opening.
+                                    // Without this the calculator's KeyboardListener
+                                    // (focusNode: _calculatorFocusNode) keeps the
+                                    // primary focus and the TextField never gets to
+                                    // see keystrokes.
+                                    if (_historySearchOpen) {
+                                      FocusManager.instance.primaryFocus
+                                          ?.unfocus();
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                        if (mounted) {
+                                          _historySearchFocusNode
+                                              .requestFocus();
+                                        }
+                                      });
+                                    } else {
+                                      // Closed: hand focus back to the calculator.
+                                      _calculatorFocusNode.requestFocus();
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_sweep,
+                                      size: 20, semanticLabel: 'Clear history'),
+                                  tooltip:
+                                      AppLocalizations.of(context).clearHistory,
+                                  onPressed: _confirmClearHistory,
+                                ),
+                              ],
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_sweep,
-                                size: 20, semanticLabel: 'Clear history'),
-                            tooltip: AppLocalizations.of(context).clearHistory,
-                            onPressed: _confirmClearHistory,
+                        ),
+
+                        if (_historySearchOpen && _appState.history.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                            child: TextField(
+                              controller: _historySearchController,
+                              focusNode: _historySearchFocusNode,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                prefixIcon: const Icon(Icons.search,
+                                    size: 18, semanticLabel: 'Search'),
+                                hintText: AppLocalizations.of(context)
+                                    .searchHistoryHint,
+                                border: const OutlineInputBorder(),
+                                suffixIcon: _historySearchController
+                                        .text.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        icon: const Icon(Icons.clear,
+                                            size: 18,
+                                            semanticLabel: 'Clear search'),
+                                        tooltip: AppLocalizations.of(context)
+                                            .clearSearchTooltip,
+                                        onPressed: () {
+                                          _historySearchController.clear();
+                                        },
+                                      ),
+                              ),
+                            ),
                           ),
-                        ],
+
+                        // History list
+                        Expanded(
+                          child: ListenableBuilder(
+                              listenable: _appState.calculatorChanges,
+                              builder: (context, child) {
+                                if (_appState.history.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      AppLocalizations.of(context).historyHere,
+                                      style:
+                                          const TextStyle(color: Colors.grey),
+                                    ),
+                                  );
+                                }
+
+                                final q =
+                                    _debouncedSearchQuery.trim().toLowerCase();
+                                final entries = q.isEmpty
+                                    ? _appState.history
+                                    : _appState.history
+                                        .where((e) =>
+                                            e.expression
+                                                .toLowerCase()
+                                                .contains(q) ||
+                                            e.result.toLowerCase().contains(q))
+                                        .toList();
+
+                                if (entries.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      AppLocalizations.of(context)
+                                          .historyNoMatches,
+                                      style:
+                                          const TextStyle(color: Colors.grey),
+                                    ),
+                                  );
+                                }
+
+                                return ListView.builder(
+                                  itemCount: entries.length,
+                                  reverse: true,
+                                  itemBuilder: (context, index) {
+                                    final entry = entries[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 8),
+                                      child: Builder(builder: (context) {
+                                        final tt = AppLocalizations.of(context);
+                                        final display =
+                                            EngineErrorFormatter.format(
+                                                entry.result, tt);
+                                        final isError =
+                                            EngineErrorFormatter.isError(
+                                                entry.result);
+                                        // Arbitrary-precision integer results (e.g.
+                                        // 100! = 158 digits) get a digit-count
+                                        // badge and tap-to-copy. We abbreviate the
+                                        // middle for display past ~60 digits to
+                                        // keep the row from dominating the screen,
+                                        // but the clipboard always gets the full
+                                        // value from entry.result.
+                                        final digitCount = isError
+                                            ? 0
+                                            : ExactInteger.digitCount(
+                                                entry.result);
+                                        final isBigInt = digitCount > 20;
+                                        // Round 110 (P7 kickoff): boolean-literal
+                                        // results render as a colored chip below.
+                                        // Detection is on the trimmed raw result so
+                                        // formatter-applied padding doesn't hide it.
+                                        final trimmedRaw = entry.result.trim();
+                                        final boolChip = trimmedRaw == 'true'
+                                            ? true
+                                            : (trimmedRaw == 'false'
+                                                ? false
+                                                : null);
+                                        final shownResult = isBigInt
+                                            ? ExactInteger.abbreviate(
+                                                entry.result)
+                                            : display;
+                                        return HelpTarget(
+                                          onHelpTap: () =>
+                                              _showHistoryHelpModal(
+                                                  context, entry),
+                                          child: GestureDetector(
+                                            onTap: isBigInt
+                                                ? () =>
+                                                    _copyBigIntegerToClipboard(
+                                                        context, entry.result)
+                                                : null,
+                                            onLongPress: () =>
+                                                _showHistoryEntryMenu(
+                                                    context, entry),
+                                            onSecondaryTap: () =>
+                                                _showHistoryEntryMenu(
+                                                    context, entry),
+                                            behavior: HitTestBehavior.opaque,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                _buildExpressionDisplay(
+                                                    entry.expression),
+                                                const SizedBox(height: 4),
+                                                if (boolChip != null &&
+                                                    !isError)
+                                                  _buildBooleanChip(
+                                                      context, boolChip)
+                                                else
+                                                  Text(
+                                                    isError
+                                                        ? display
+                                                        : '= $shownResult',
+                                                    style: TextStyle(
+                                                      fontSize: isError
+                                                          ? 16
+                                                          : (isBigInt
+                                                              ? 18
+                                                              : 28),
+                                                      color: isError
+                                                          ? Theme.of(context)
+                                                              .colorScheme
+                                                              .error
+                                                          : Colors.blue[300],
+                                                      fontStyle: isError
+                                                          ? FontStyle.italic
+                                                          : FontStyle.normal,
+                                                    ),
+                                                    textAlign: TextAlign.right,
+                                                    softWrap: true,
+                                                  ),
+                                                if (isBigInt)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            top: 2),
+                                                    child: Text(
+                                                      '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface
+                                                            .withValues(
+                                                                alpha: 0.6),
+                                                        fontStyle:
+                                                            FontStyle.italic,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.right,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    );
+                                  },
+                                );
+                              }),
+                        ),
                       ],
                     ),
                   ),
 
-                  if (_historySearchOpen && _appState.history.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: TextField(
-                        controller: _historySearchController,
-                        focusNode: _historySearchFocusNode,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          prefixIcon: const Icon(Icons.search,
-                              size: 18, semanticLabel: 'Search'),
-                          hintText:
-                              AppLocalizations.of(context).searchHistoryHint,
-                          border: const OutlineInputBorder(),
-                          suffixIcon: _historySearchController.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      size: 18, semanticLabel: 'Clear search'),
-                                  tooltip: AppLocalizations.of(context)
-                                      .clearSearchTooltip,
-                                  onPressed: () {
-                                    _historySearchController.clear();
-                                  },
-                                ),
-                        ),
-                      ),
-                    ),
+                  const Divider(height: 1),
 
-                  // History list
+                  // LaTeX input field + always-visible action row (reset focus,
+                  // backspace, ◀/▶, =/EXE) so the user never has to hunt for a
+                  // submit button across keypad tabs and can always recover from
+                  // a stuck focus state by tapping the refresh icon.
+                  // Round 108: responsive input area — see CalculatorInputBar.
+                  // Wide layouts keep the toolbar left of the field; phone
+                  // widths stack the field full-width above the toolbar so long
+                  // numbers have room.
+                  CalculatorInputBar(
+                    controller: _latexController,
+                    onResetFocus: _resetFocus,
+                    onEvaluate: () => _onButtonPressed('EXE'),
+                    resultPreview: _resultPreview,
+                  ),
+
+                  // Keypad - Use the existing CalculatorKeypad widget
                   Expanded(
-                    child: ListenableBuilder(
-                        listenable: _appState.calculatorChanges,
-                        builder: (context, child) {
-                          if (_appState.history.isEmpty) {
-                            return Center(
-                              child: Text(
-                                AppLocalizations.of(context).historyHere,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            );
-                          }
-
-                          final q = _debouncedSearchQuery.trim().toLowerCase();
-                          final entries = q.isEmpty
-                              ? _appState.history
-                              : _appState.history
-                                  .where((e) =>
-                                      e.expression.toLowerCase().contains(q) ||
-                                      e.result.toLowerCase().contains(q))
-                                  .toList();
-
-                          if (entries.isEmpty) {
-                            return Center(
-                              child: Text(
-                                AppLocalizations.of(context).historyNoMatches,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            );
-                          }
-
-                          return ListView.builder(
-                            itemCount: entries.length,
-                            reverse: true,
-                            itemBuilder: (context, index) {
-                              final entry = entries[index];
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 8),
-                                child: Builder(builder: (context) {
-                                  final tt = AppLocalizations.of(context);
-                                  final display = EngineErrorFormatter.format(
-                                      entry.result, tt);
-                                  final isError = EngineErrorFormatter.isError(
-                                      entry.result);
-                                  // Arbitrary-precision integer results (e.g.
-                                  // 100! = 158 digits) get a digit-count
-                                  // badge and tap-to-copy. We abbreviate the
-                                  // middle for display past ~60 digits to
-                                  // keep the row from dominating the screen,
-                                  // but the clipboard always gets the full
-                                  // value from entry.result.
-                                  final digitCount = isError
-                                      ? 0
-                                      : ExactInteger.digitCount(entry.result);
-                                  final isBigInt = digitCount > 20;
-                                  // Round 110 (P7 kickoff): boolean-literal
-                                  // results render as a colored chip below.
-                                  // Detection is on the trimmed raw result so
-                                  // formatter-applied padding doesn't hide it.
-                                  final trimmedRaw = entry.result.trim();
-                                  final boolChip = trimmedRaw == 'true'
-                                      ? true
-                                      : (trimmedRaw == 'false' ? false : null);
-                                  final shownResult = isBigInt
-                                      ? ExactInteger.abbreviate(entry.result)
-                                      : display;
-                                  return HelpTarget(
-                                    onHelpTap: () =>
-                                        _showHistoryHelpModal(context, entry),
-                                    child: GestureDetector(
-                                      onTap: isBigInt
-                                          ? () => _copyBigIntegerToClipboard(
-                                              context, entry.result)
-                                          : null,
-                                      onLongPress: () =>
-                                          _showHistoryEntryMenu(context, entry),
-                                      onSecondaryTap: () =>
-                                          _showHistoryEntryMenu(context, entry),
-                                      behavior: HitTestBehavior.opaque,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          _buildExpressionDisplay(
-                                              entry.expression),
-                                          const SizedBox(height: 4),
-                                          if (boolChip != null && !isError)
-                                            _buildBooleanChip(context, boolChip)
-                                          else
-                                            Text(
-                                              isError
-                                                  ? display
-                                                  : '= $shownResult',
-                                              style: TextStyle(
-                                                fontSize: isError
-                                                    ? 16
-                                                    : (isBigInt ? 18 : 28),
-                                                color: isError
-                                                    ? Theme.of(context)
-                                                        .colorScheme
-                                                        .error
-                                                    : Colors.blue[300],
-                                                fontStyle: isError
-                                                    ? FontStyle.italic
-                                                    : FontStyle.normal,
-                                              ),
-                                              textAlign: TextAlign.right,
-                                              softWrap: true,
-                                            ),
-                                          if (isBigInt)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.only(top: 2),
-                                              child: Text(
-                                                '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface
-                                                      .withValues(alpha: 0.6),
-                                                  fontStyle: FontStyle.italic,
-                                                ),
-                                                textAlign: TextAlign.right,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }),
-                              );
-                            },
-                          );
-                        }),
+                    flex: 5,
+                    child: CalculatorKeypad(
+                      tabController: _tabController,
+                      onButtonPressed: _onButtonPressed,
+                      localizations: AppLocalizations.of(context),
+                      appState: _appState,
+                      onVariableTap: (name) => _latexController.insert(name),
+                      memory: _memory, // Pass memory
+                      onMemoryAction:
+                          _handleMemoryAction, // Pass button handler
+                      onGoToGraphing: widget.onGoToGraphing,
+                      onGoToAnalysis: widget.onGoToAnalysis,
+                    ),
                   ),
                 ],
               ),
             ),
-
-            const Divider(height: 1),
-
-            // LaTeX input field + always-visible action row (reset focus,
-            // backspace, ◀/▶, =/EXE) so the user never has to hunt for a
-            // submit button across keypad tabs and can always recover from
-            // a stuck focus state by tapping the refresh icon.
-            // Round 108: responsive input area — see CalculatorInputBar.
-            // Wide layouts keep the toolbar left of the field; phone
-            // widths stack the field full-width above the toolbar so long
-            // numbers have room.
-            CalculatorInputBar(
-              controller: _latexController,
-              onResetFocus: _resetFocus,
-              onEvaluate: () => _onButtonPressed('EXE'),
-              resultPreview: _resultPreview,
-            ),
-
-            // Keypad - Use the existing CalculatorKeypad widget
-            Expanded(
-              flex: 5,
-              child: CalculatorKeypad(
-                tabController: _tabController,
-                onButtonPressed: _onButtonPressed,
-                localizations: AppLocalizations.of(context),
-                appState: _appState,
-                onVariableTap: (name) => _latexController.insert(name),
-                memory: _memory, // Pass memory
-                onMemoryAction: _handleMemoryAction, // Pass button handler
-                onGoToGraphing: widget.onGoToGraphing,
-                onGoToAnalysis: widget.onGoToAnalysis,
+          ),
+          if (_isDragging)
+            Positioned.fill(
+              child: Container(
+                color: Colors.blue.withValues(alpha: 0.2),
+                child: const Center(
+                  child: Icon(Icons.upload_file, size: 100, color: Colors.blue),
+                ),
               ),
             ),
-          ],
-        ),
-      ),
-          ),
-          
-          if (_isDragging)
-             Positioned.fill(
-               child: Container(
-                 color: Colors.blue.withValues(alpha: 0.2),
-                 child: const Center(
-                   child: Icon(Icons.upload_file, size: 100, color: Colors.blue),
-                 ),
-               ),
-             ),
-
           if (_isOcrProcessing && _ocrDroppedImage != null)
-             Positioned.fill(
-               child: Container(
-                 color: Colors.black.withValues(alpha: 0.8),
-                 child: Center(
-                   child: FittedBox(
-                     fit: BoxFit.contain,
-                     child: SizedBox(
-                       width: _ocrImageWidth.toDouble(),
-                       height: _ocrImageHeight.toDouble(),
-                       child: Stack(
-                         children: [
-                           Image.memory(_ocrDroppedImage!),
-                           if (_ocrCurrentRegionBox != null)
-                             Positioned.fromRect(
-                               rect: _ocrCurrentRegionBox!,
-                               child: Container(
-                                 decoration: BoxDecoration(
-                                   border: Border.all(color: Colors.greenAccent, width: 6),
-                                 ),
-                               ),
-                             ),
-                         ],
-                       ),
-                     ),
-                   ),
-                 ),
-               ),
-             ),
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.8),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: SizedBox(
+                      width: _ocrImageWidth.toDouble(),
+                      height: _ocrImageHeight.toDouble(),
+                      child: Stack(
+                        children: [
+                          Image.memory(_ocrDroppedImage!),
+                          if (_ocrCurrentRegionBox != null)
+                            Positioned.fromRect(
+                              rect: _ocrCurrentRegionBox!,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: Colors.greenAccent, width: 6),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -25,7 +25,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   @override
   void initState() {
     super.initState();
-    ensureOcrProviders().then((_) { if (mounted) setState(() {}); });
+    ensureOcrProviders().then((_) {
+      if (mounted) setState(() {});
+    });
     _checkDownloaded();
   }
 

@@ -325,7 +325,7 @@ flutter test native_test/ocr_native_test.dart native_test/ocr_quality_test.dart
 Reports in `.dart_tool/inference` separate availability failures from incorrect
 translations and recognition errors. The October 1 CPU baseline with Qwen2.5
 0.5B returned 4 correct translations out of 14; it is unsuitable as an automatic
-answer source. Printed pix2tex recognized 8 of 13 scored images correctly; all
+answer source. Printed pix2tex recognized 10 of 13 scored images correctly; all
 three human handwriting cases failed expression validation. Exact outcomes and
 model provenance are in `tool/inference_baseline.json`. Truncated responses and
 exposed reasoning traces are rejected before preview.
@@ -336,3 +336,25 @@ The pinned archive is checksum verified. Generated handwriting images stay in
 ignored evaluation storage with attribution and CC BY-NC-SA 4.0 notice; they
 are not application assets. CI uploads scored reports and notices. The strict
 original printed fixture must still recognize and evaluate to 12.
+
+### Core workflow and maintenance checks
+
+On mobile, **Edit expression** opens a text field that supports typing, paste,
+selection and Enter submission; **Math preview** returns to rendered notation.
+Inspecting a linked graph offers **Edit a** (or another bound variable) when its
+assignment belongs to the source document. That action focuses the effective
+assignment, including a definition later in the document. Imported values keep
+their source ownership. AI clarification questions request more input; they are
+never inserted as calculator expressions. Recalculation shows progress and
+unexpected document failures offer retry.
+
+`tool/check_core_workflow_browser.py` verifies mobile entry, calculation,
+linked-variable editing, tracing and reload persistence against a built app.
+Workflow labels have exhaustive en/de/fr/es coverage. Notepad syntax/scope and
+worker dispatch now live in focused components. A per-run classification cache
+observes source edits; numeric substitution scans only the expression while
+symbolic bindings retain ordered replacement. In sequential JIT runs on this
+shared VPS, a 2,000-row dependent edit changed from 13.4 to 2.7 seconds. See
+`tool/notepad_evaluator_comparison.json`; this excludes UI and worker latency.
+Native CI still validates installed OCR runtimes, and superseded platform builds
+are cancelled automatically per workflow and branch.

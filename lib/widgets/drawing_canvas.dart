@@ -92,7 +92,8 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   Future<Uint8List?> _renderRgba(int targetWidth, int targetHeight) async {
     if (isEmpty) return null;
 
-    final image = img.Image(width: targetWidth, height: targetHeight, numChannels: 4);
+    final image =
+        img.Image(width: targetWidth, height: targetHeight, numChannels: 4);
     img.fill(image, color: img.ColorRgba8(255, 255, 255, 255));
 
     final sx = targetWidth / widget.width;
@@ -100,7 +101,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
 
     for (final stroke in _strokes) {
       if (stroke.points.length < 2) continue;
-      
+
       // Calculate color and thickness
       final c = stroke.color;
       final color = img.ColorRgba8(
@@ -110,11 +111,11 @@ class DrawingCanvasState extends State<DrawingCanvas> {
         (c.a * 255.0).round().clamp(0, 255),
       );
       final thickness = (stroke.width * min(sx, sy)).round();
-      
+
       for (int i = 0; i < stroke.points.length - 1; i++) {
         final p1 = stroke.points[i];
         final p2 = stroke.points[i + 1];
-        
+
         img.drawLine(
           image,
           x1: (p1.dx * sx).round(),
@@ -154,7 +155,8 @@ class DrawingCanvasState extends State<DrawingCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(child: GestureDetector(
+    return RepaintBoundary(
+        child: GestureDetector(
       onPanStart: (d) {
         setState(() {
           _current = Stroke(
@@ -167,7 +169,8 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       onPanUpdate: (d) {
         if (_current != null) {
           final last = _current!.points.last;
-          if ((d.localPosition - last).distance > 2.0) { // Simple stroke point reduction
+          if ((d.localPosition - last).distance > 2.0) {
+            // Simple stroke point reduction
             setState(() => _current!.addPoint(d.localPosition));
           }
         }
