@@ -1,11 +1,5 @@
 name: Workflow performance
 on:
-  push:
-    branches: ['feat/graph-workspace-ux']
-    paths:
-      - '.github/workflows/workflow-performance.yml'
-      - 'tool/benchmark_workflows.py'
-      - 'tool/workflow_metrics.py'
   workflow_dispatch:
     inputs:
       artifact_run:

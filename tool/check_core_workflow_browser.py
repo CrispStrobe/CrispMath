@@ -33,6 +33,11 @@ async def check(args):
             await editor.press('Enter')
             await page.wait_for_function("JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0].r==='35'")
             await page.get_by_role('button', name='Math preview', exact=True).click()
+            await next_frames(page)
+            await page.keyboard.type('31+5', delay=50)
+            await next_frames(page)
+            await page.get_by_role('button', name='Evaluate', exact=True).click()
+            await page.wait_for_function("JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0].r==='36'")
             await page.keyboard.press('Control+2')
             await page.get_by_role('button', name='Link line to graph', exact=True).last.click()
             linked = page.get_by_role('button', name='Linked Y3: Core workflow', exact=True)
@@ -60,7 +65,7 @@ async def check(args):
             await linked.click()
             assert re.search(r'a = 3(?:\.0)?(?:\n|$)', await labels(page))
             assert not errors, errors
-            report = {'mobileTextEntry': True, 'submitResult': 35, 'variableDefinitionFocused': True,
+            report = {'mobileTextEntry': True, 'submitResult': 35, 'previewKeyboardResult': 36, 'variableDefinitionFocused': True,
                       'linkedGraphUpdated': True, 'traceInspected': True, 'savedReloadRestored': True,
                       'pageErrors': errors}
             (output/'core-workflow.json').write_text(json.dumps(report, indent=2)+'\n')

@@ -117,6 +117,7 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                 _editorFocus.requestFocus();
               } else {
                 _editorFocus.unfocus();
+                widget.onResetFocus();
               }
             },
             visualDensity: VisualDensity.compact,

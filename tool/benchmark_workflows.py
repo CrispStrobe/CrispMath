@@ -28,6 +28,39 @@ async def next_frames(page):
     await page.evaluate('() => new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
 
 
+async def pan_graph(page, profile):
+    """Give Flutter a frame between samples so CPU throttling cannot coalesce
+    the entire drag into the scale recognizer's first accepted pointer event.
+    Use actual touch input for the phone profile.
+    """
+    x = profile['viewport']['width']*.5
+    y = 400
+    session = await page.context.new_cdp_session(page) if profile.get('has_touch') else None
+    try:
+        if session:
+            await session.send('Input.dispatchTouchEvent', {'type': 'touchStart',
+                'touchPoints': [{'x': x, 'y': y}]})
+        else:
+            await page.mouse.move(x, y)
+            await page.mouse.down()
+        await next_frames(page)
+        for step in range(1, 11):
+            if session:
+                await session.send('Input.dispatchTouchEvent', {'type': 'touchMove',
+                    'touchPoints': [{'x': x+4*step, 'y': y+3*step}]})
+            else:
+                await page.mouse.move(x+4*step, y+3*step)
+            await next_frames(page)
+        if session:
+            await session.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+        else:
+            await page.mouse.up()
+        await next_frames(page)
+    finally:
+        if session:
+            await session.detach()
+
+
 async def graph_x_min(page):
     await page.get_by_role('button', name=re.compile(r'^Graph bounds\b')).click()
     value = float(await read_text(page.get_by_role('textbox', name='x minimum', exact=True)))
@@ -105,13 +138,16 @@ async def measure_profile(browser, name, profile, args, results):
         for index in range(args.trials):
             expression = f'{31+index}+37'
             await page.get_by_role('button', name='clear', exact=True).click()
-            await page.keyboard.type(expression)
+            await next_frames(page)
+            await page.keyboard.type(expression, delay=50)
+            await next_frames(page)
             started = time.perf_counter()
             await page.get_by_role('button', name=re.compile('Evaluate')).click()
             await page.wait_for_function('''expected=>{
               const raw=localStorage.getItem('flutter.crisp.history');
               if(!raw)return false;try{return JSON.parse(JSON.parse(raw))[0].r===expected}catch{return false}}''', arg=str(68+index), timeout=15000)
             calculations.append((time.perf_counter()-started)*1000)
+        result['calculator_entry_method'] = 'custom keyboard; focus settled two RAFs; 50ms between keys'
         result['calculate_ms'] = calculations
         write_report(args, results)
         print('Graph interaction', flush=True)
@@ -137,22 +173,19 @@ async def measure_profile(browser, name, profile, args, results):
         x_min_before = await graph_x_min(page)
         frames = []
         pans = []
+        result['pan_input_method'] = '10 samples separated by two browser RAFs; touch on phone, mouse on desktop'
+        result['pan_checks'] = []
         for _ in range(args.trials):
             pan_before = await graph_x_min(page)
             await page.evaluate(FRAME_PROBE)
             started = time.perf_counter()
-            width = profile['viewport']['width']
-            await page.mouse.move(width*.5, 400)
-            await page.mouse.down()
-            await next_frames(page)
-            await page.mouse.move(width*.5+40, 430, steps=10)
-            await next_frames(page)
-            await page.mouse.up()
-            await next_frames(page)
+            await pan_graph(page, profile)
             await page.locator('[aria-label="Updating graph"]').wait_for(state='hidden')
             pans.append((time.perf_counter()-started)*1000)
             frames.extend(await page.evaluate('() => {window.workflowFrameProbe=false;return window.workflowFrames}'))
             pan_after = await graph_x_min(page)
+            result['pan_checks'].append({'before': pan_before, 'after': pan_after})
+            write_report(args, results)
             assert pan_after != pan_before, 'Pointer pan did not change graph bounds'
         result['pan_to_idle_ms'] = pans
         result['pan_frame_intervals_ms'] = frames

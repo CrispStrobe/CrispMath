@@ -43,8 +43,11 @@ void main() {
     final controller = LatexController();
     addTearDown(controller.dispose);
     var submitted = '';
+    var restoredFocus = 0;
     await _pump(tester, const Size(375, 812),
-        controller: controller, onEvaluate: () => submitted = controller.text);
+        controller: controller,
+        onEvaluate: () => submitted = controller.text,
+        onResetFocus: () => restoredFocus++);
     await tester.tap(find.byTooltip('Edit expression'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '(3+4)*5');
@@ -60,6 +63,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNothing);
     expect(controller.text, submitted);
+    expect(restoredFocus, 1);
     expect(tester.takeException(), isNull);
   });
   testWidgets('phone width: field stacks above the toolbar, no overflow',
