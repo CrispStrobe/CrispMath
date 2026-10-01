@@ -47,8 +47,8 @@ model do not establish reliable automatic answers or handwriting recognition.
   Native and web now send input-dependent requests to the configured provider,
   with cancellation, timeout, retry and an editable CAS-expression preview.
   The canned ONNX responses and unused runtime dependencies are removed.
-  Configuration and successful response states are distinct. A real-provider
-  evaluation corpus remains follow-up work.
+  Configuration and successful response states are distinct. The real-provider
+  corpus and its measured limitations are recorded in `tool/inference_baseline.json`.
 
 Measure task completion (enter → calculate → inspect/plot → save/share),
 misleading-result reports and time spent finding a function before expanding

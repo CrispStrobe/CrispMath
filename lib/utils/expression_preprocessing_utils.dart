@@ -501,7 +501,8 @@ class ExpressionPreprocessingUtils {
   /// isn't an `if(...)` shape, when arg-count isn't 3, or when the
   /// condition stays symbolic — the caller should leave the
   /// original expression in place and let downstream surface the
-  /// error.
+  /// error. [preprocessCondition] can normalize math syntax while leaving
+  /// whitespace in the chosen branch intact.
   ///
   /// SymEngine's text parser has no `Piecewise` entry, so the
   /// PLAN's original lowering target (`Piecewise((t, cond),
@@ -509,8 +510,9 @@ class ExpressionPreprocessingUtils {
   /// practical replacement.
   static Future<String?> tryFoldIfConditional(
     String input,
-    Future<String> Function(String) evaluator,
-  ) async {
+    Future<String> Function(String) evaluator, {
+    String Function(String)? preprocessCondition,
+  }) async {
     final trimmed = input.trim();
     if (!trimmed.startsWith('if(') || !trimmed.endsWith(')')) return null;
     // Walk parens from the opening `(` to be sure the closing `)`
@@ -533,7 +535,9 @@ class ExpressionPreprocessingUtils {
     if (matchedEnd != trimmed.length - 1) return null;
     final args = _splitTopLevelByComma(trimmed.substring(3, matchedEnd));
     if (args.length != 3) return null;
-    final pre = preprocessNativeExpression(args[0].trim());
+    final condition = args[0].trim();
+    final pre = preprocessNativeExpression(
+        preprocessCondition?.call(condition) ?? condition);
     final raw = await evaluator(pre);
     final normalized = normalizeBooleanResult(raw).trim();
     if (normalized == 'true') return args[1].trim();

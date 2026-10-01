@@ -73,20 +73,22 @@ class NotepadDispatcher {
     // Also collapse whitespace between a function name and its
     // `(` so `solve (x, y)` matches the CAS dispatch the same as
     // `solve(x, y)`.
-    var preNative = ExpressionPreprocessingUtils.preprocessLogicalOperators(
-        LatexConversionUtils.fromLatex(preprocessed).replaceAllMapped(
-            RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}('));
-
-    // Round 111b (P7): fold `if(cond, then, else)` when the
-    // condition evaluates to a known boolean. Routes the
-    // condition through the worker isolate.
+    final normalized = _normalize(preprocessed);
+    // Preserve spaces in selected calendar branches. Only the condition needs
+    // math normalization before folding; normalize the chosen branch afterward.
+    final rawCall = preprocessed
+        .trim()
+        .replaceAllMapped(RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}(');
     final ifFolded = await ExpressionPreprocessingUtils.tryFoldIfConditional(
-      preNative,
-      (cond) async => await evaluateExpression(cond),
+      rawCall.startsWith('if(') ? rawCall : normalized,
+      evaluateExpression,
+      preprocessCondition: rawCall.startsWith('if(') ? _normalize : null,
     );
     if (ifFolded != null) {
-      preNative = ifFolded;
+      final calendarBranch = DateTimeEvaluator.tryEvaluate(ifFolded);
+      if (calendarBranch != null) return calendarBranch;
     }
+    final preNative = ifFolded == null ? normalized : _normalize(ifFolded);
 
     // Round 91 (P6): precision-arc top-level calls — `pi(100)`,
     // `factorint(360)`, `isprime(2027)`, etc. Runs before the unit
@@ -168,6 +170,11 @@ class NotepadDispatcher {
       return 'Error: $e';
     }
   }
+
+  static String _normalize(String source) =>
+      ExpressionPreprocessingUtils.preprocessLogicalOperators(
+          LatexConversionUtils.fromLatex(source).replaceAllMapped(
+              RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}('));
 
   /// Reuse the numeric parser only where IEEE doubles are provably exact.
   /// At most 40 operands fit in 80 characters; each is <= 2^31 - 1.

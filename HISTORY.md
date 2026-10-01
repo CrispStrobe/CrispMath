@@ -1,3 +1,11 @@
+## 2026-10-01 — Calendar arithmetic in conditional branches
+
+- Preserve the selected `if(...)` branch before LaTeX whitespace normalization,
+  while normalizing only its condition for worker evaluation. Date differences
+  and duration offsets now work inside true and false branches.
+- Add dispatcher regressions for both branches, LaTeX conditions and selected
+  math expressions; extend release/debug live entry-and-save calendar checks.
+
 ## 2026-10-01 — Calendar routing regression
 
 Calendar input is recognized before LaTeX whitespace normalization and bounded

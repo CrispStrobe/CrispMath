@@ -40,6 +40,50 @@ void main() {
     expect(conditions, hasLength(1));
   });
 
+  test('conditional calendar arithmetic preserves selected branch spacing',
+      () async {
+    final conditions = <String>[];
+    var verdict = 'true';
+    final dispatcher = NotepadDispatcher(
+        formatNumber: (value) => value,
+        evaluateExpression: (condition) async {
+          conditions.add(condition);
+          return verdict;
+        });
+    expect(
+        await dispatcher
+            .evaluate('if (2 > 1, 2026-10-01 + 2 days, 2026-10-01 - 2 days)'),
+        '2026-10-03');
+    verdict = 'false';
+    expect(
+        await dispatcher
+            .evaluate('if(true, 2026-10-01, 2026-10-01 - 2026-09-30)'),
+        '1 days');
+    expect(conditions, hasLength(2));
+  });
+
+  test('conditional math normalization applies only to the selected branch',
+      () async {
+    final conditions = <String>[];
+    final dispatcher = NotepadDispatcher(
+        formatNumber: (value) => value,
+        evaluateExpression: (source) async {
+          conditions.add(source);
+          return source == 'true' || source.startsWith('Gt(') ? 'true' : '3';
+        });
+    expect(
+        await dispatcher
+            .evaluate(r'if(\frac{4}{2} > 1, 2026-10-01 + 2 days, invalid())'),
+        '2026-10-03');
+    expect(conditions, hasLength(1));
+    expect(conditions.single, contains('Gt('));
+    expect(conditions.single, isNot(contains(r'\frac')));
+    expect(await dispatcher.evaluate(r'if(true, \frac{6}{2}, invalid())'), '3');
+    expect(conditions, hasLength(3));
+    expect(conditions.last, contains('6'));
+    expect(conditions.last, isNot(contains(r'\frac')));
+  });
+
   test('fractions, implicit products and unsafe sums retain engine routing',
       () async {
     final routed = <String>[];
