@@ -3,6 +3,16 @@ import 'package:crisp_math/services/engine_op.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('calendar literals and differences retain priority over integer sums',
+      () async {
+    final dispatcher = NotepadDispatcher(
+        formatNumber: (value) => 'formatted:$value',
+        evaluateExpression: (_) async => throw StateError('unexpected worker'));
+    expect(await dispatcher.evaluate('2026-10-01'), 'Thursday, 1 October 2026');
+    expect(await dispatcher.evaluate('2026-10-01 - 2026-09-30'), '1 days');
+    expect(await dispatcher.evaluate('2026-10-01 + 2 days'), '2026-10-03');
+    expect(await dispatcher.evaluate('2026 - 10 - 1'), 'formatted:2015');
+  });
   test('bounded integer sums are exact, formatted and yield between rows',
       () async {
     final dispatcher = NotepadDispatcher(
@@ -15,6 +25,19 @@ void main() {
     expect(yielded, isTrue);
     expect(await dispatcher.evaluate('-(7 + 5) + 2'), 'formatted:-10');
     expect(await dispatcher.evaluate('(2)+(-3)'), 'formatted:-1');
+  });
+
+  test('conditional calendar branches retain date handling', () async {
+    final conditions = <String>[];
+    final dispatcher = NotepadDispatcher(
+        formatNumber: (value) => 'formatted:$value',
+        evaluateExpression: (condition) async {
+          conditions.add(condition);
+          return 'true';
+        });
+    expect(await dispatcher.evaluate('if(true, 2026-10-01, 2026-09-30)'),
+        'Thursday, 1 October 2026');
+    expect(conditions, hasLength(1));
   });
 
   test('fractions, implicit products and unsafe sums retain engine routing',

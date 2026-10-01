@@ -46,19 +46,12 @@ class NotepadDispatcher {
   Future<String> evaluate(String preprocessed) async {
     if (preprocessed.trim().isEmpty) return '';
 
-    // LaTeX-friendly input — convert `x^{3}`, `\cdot`, `\frac{a}{b}`,
-    // etc. into engine syntax. The calculator screen runs the same
-    // pass before evaluating; without it, anyone pasting or typing
-    // LaTeX (e.g. `diff(x^{3} - 4\cdot x + 7, x)`) gets a parse
-    // failure that SymEngine can't recover from.
-    // Also collapse whitespace between a function name and its
-    // `(` so `solve (x, y)` matches the CAS dispatch the same as
-    // `solve(x, y)`.
-    var preNative = ExpressionPreprocessingUtils.preprocessLogicalOperators(
-        LatexConversionUtils.fromLatex(preprocessed).replaceAllMapped(
-            RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}('));
+    // Calendar operators depend on whitespace that LaTeX normalization
+    // removes. Recognize them before interpreting digit/minus-only input.
+    final calendar = DateTimeEvaluator.tryEvaluate(preprocessed);
+    if (calendar != null) return calendar;
 
-    final integerSum = _smallIntegerSum(preNative);
+    final integerSum = _smallIntegerSum(preprocessed);
     if (integerSum != null) {
       // Bound main-thread work while avoiding a browser timer per cheap row.
       // The budget includes scope construction between dispatcher calls.
@@ -71,6 +64,18 @@ class NotepadDispatcher {
       }
       return formatNumber(integerSum);
     }
+
+    // LaTeX-friendly input — convert `x^{3}`, `\cdot`, `\frac{a}{b}`,
+    // etc. into engine syntax. The calculator screen runs the same
+    // pass before evaluating; without it, anyone pasting or typing
+    // LaTeX (e.g. `diff(x^{3} - 4\cdot x + 7, x)`) gets a parse
+    // failure that SymEngine can't recover from.
+    // Also collapse whitespace between a function name and its
+    // `(` so `solve (x, y)` matches the CAS dispatch the same as
+    // `solve(x, y)`.
+    var preNative = ExpressionPreprocessingUtils.preprocessLogicalOperators(
+        LatexConversionUtils.fromLatex(preprocessed).replaceAllMapped(
+            RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}('));
 
     // Round 111b (P7): fold `if(cond, then, else)` when the
     // condition evaluates to a known boolean. Routes the

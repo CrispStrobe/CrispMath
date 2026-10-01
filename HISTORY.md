@@ -1,3 +1,11 @@
+## 2026-10-01 — Calendar routing regression
+
+Calendar input is recognized before LaTeX whitespace normalization and bounded
+integer arithmetic. Bare ISO dates, date differences and duration offsets keep
+their calendar meaning; explicitly spaced subtraction remains arithmetic.
+Conditional date branches retain their existing handling. Added unit coverage
+and real document-entry/save checks in both release and debug browser CI.
+
 ## 2026-10-01 — Numeric scope indexing
 
 Documents with unique numeric assignments reuse a scope index instead of
