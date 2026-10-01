@@ -76,12 +76,16 @@ class _NumericScopeIndex {
 
   bool matches(NotepadDocument doc, Map<String, String> externalScope) {
     if (doc.lines.length != lines.length ||
-        externalScope.length != external.length) return false;
+        externalScope.length != external.length) {
+      return false;
+    }
     for (var i = 0; i < lines.length; i++) {
       final line = doc.lines[i];
       if (!identical(line, lines[i]) ||
           line.source != sources[i] ||
-          line.cachedResult != results[i]) return false;
+          line.cachedResult != results[i]) {
+        return false;
+      }
     }
     for (final entry in external.entries) {
       if (externalScope[entry.key] != entry.value) return false;
@@ -92,11 +96,15 @@ class _NumericScopeIndex {
   bool recordResult(
       NotepadDocument doc, int index, Map<String, String> externalScope) {
     if (doc.lines.length != lines.length ||
-        !identical(doc.lines[index], lines[index])) return false;
+        !identical(doc.lines[index], lines[index])) {
+      return false;
+    }
     final result = doc.lines[index].cachedResult;
     results[index] = result;
     if (!matches(doc, externalScope) ||
-        (result != null && !_scalarScopeValue.hasMatch(result))) return false;
+        (result != null && !_scalarScopeValue.hasMatch(result))) {
+      return false;
+    }
     void update(String key) {
       final value = result ?? external[key];
       if (value == null) {
