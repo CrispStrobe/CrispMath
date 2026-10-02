@@ -42,6 +42,10 @@
       "expectedFreeVars": [
         [],
         []
+      ],
+      "expectedAccuracy": [
+        "exact",
+        "exact"
       ]
     },
     {

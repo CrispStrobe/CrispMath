@@ -3,6 +3,7 @@ import 'package:crisp_math/engine/definite_antiderivative.dart';
 import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:crisp_math/engine/rational_integral_domain.dart';
 import 'package:crisp_math/engine/result_evidence.dart';
+import 'package:crisp_math/engine/symbolic_web.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
@@ -191,6 +192,16 @@ void main() {
     await evaluator.evaluateFrom(doc, 0);
     expect(doc.lines.last.cachedResult, '8/3');
     expect(doc.lines.last.cachedFreeVars, isEmpty);
+  });
+
+  test('polynomial integrals retain exact wrapped and rational-expression bounds',
+      () {
+    expect(SymbolicWeb.definiteIntegral('x^2', 'x', '0', '(5)'), '125/3');
+    expect(SymbolicWeb.definiteIntegral('x^2', 'x', '0', '((2))'), '8/3');
+    expect(SymbolicWeb.definiteIntegral('x', 'x', '(1/2)', '(3/2)'), '1');
+    expect(SymbolicWeb.definiteIntegral('x', 'x', '1+1', 'abs(-3)'), '5/2');
+    expect(SymbolicWeb.definiteIntegral('x^2', 'x', '0', 'pi'), isNull);
+    expect(SymbolicWeb.definiteIntegral('x^2', 'x', '0', '1/0'), isNull);
   });
 
   test('function captures use document scope while dummy arguments stay local',

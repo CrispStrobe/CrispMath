@@ -794,8 +794,12 @@ Map<int, ({int end, String name})> _definiteIntegralBindings(String source) {
     if (callRanges.length == 2) {
       var start = declaration.start;
       var finish = declaration.end;
-      while (source[start].trim().isEmpty) start++;
-      while (source[finish - 1].trim().isEmpty) finish--;
+      while (source[start].trim().isEmpty) {
+        start++;
+      }
+      while (source[finish - 1].trim().isEmpty) {
+        finish--;
+      }
       declaration = ranges(start + 1, finish - 1).first;
     }
     final tokens = RegExp(

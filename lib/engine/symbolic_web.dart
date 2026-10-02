@@ -31,6 +31,7 @@
 
 import 'polynomial.dart';
 import 'multivariate_poly.dart';
+import 'exact_constant.dart';
 
 class SymbolicWeb {
   /// Expand [input] (parentheses, products, integer powers) into a
@@ -143,7 +144,11 @@ class SymbolicWeb {
   }
 
   static Rational? _parseBound(String s) {
-    final t = s.trim();
+    // Worksheet substitution wraps document values in parentheses. These are
+    // still exact rational bounds; use the bounded constant parser rather than
+    // silently forcing a polynomial integral onto approximate evaluation.
+    final t = ExactConstantEvaluator.evaluate(s);
+    if (t == null) return null;
     final frac = RegExp(r'^(-?\d+)/(\d+)$').firstMatch(t);
     if (frac != null) {
       return Rational(
