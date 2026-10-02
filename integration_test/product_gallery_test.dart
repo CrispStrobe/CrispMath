@@ -116,7 +116,8 @@ void main() {
     await populatedGraph();
     await screenshot('linked-function-graph');
     state.updateFunction(1, 'x^2-2');
-    state.updateFunction(2, 'cos(x)');
+    // Preserve the worksheet-linked slot when adding comparison curves.
+    state.updateFunction(0, 'cos(x)');
     await settle();
     await populatedGraph(minimumCurves: 3);
     await screenshot('multiple-function-graph');
@@ -203,6 +204,8 @@ void main() {
       await settle();
     }
 
+    expect(state.graphLinks.values.any((link) => link.documentId == doc.id),
+        isTrue, reason: 'Export must retain the worksheet graph link');
     await menu('Worksheet export preview');
     expect(find.text('Save HTML'), findsOneWidget);
     await tester.drag(find.byType(ListView).last, const Offset(0, -120));
