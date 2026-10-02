@@ -5,6 +5,24 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Additional mathematical audit
+
+- [x] Independently draft and exercise 100 further problems; preserve references,
+  initial failures and an explicit unsupported reactive-reassignment request.
+- [x] Fix precision, rational solving, limits, signed units, repeated CSP factors,
+  power precedence, domain/provenance and exact-fallback coefficient bounds.
+- [x] Validate 200 runtime checks each on Linux CLI, WASM and packaged macOS;
+  pass full analysis and 5,367 unit/widget tests. Eleven actual worksheet problems
+  pass desktop/phone entry and reload checks, retaining eight screenshots.
+- [x] Pages/Vercel pass all 200 runtime checks, desktop/phone worksheet controls,
+  handwriting, import/export, recovery/history and galleries.
+- [x] Pass broader release/debug browser/performance/gallery checks after correcting capture
+  geometry, host-specific dialog selectors and fixture-server readiness.
+
+See [the complete audit and limitations](docs/new-math-audit-100.md).
+These changes are later than the submitted TestFlight build 13; physical Apple
+checks remain deferred.
+
 ## October follow-up release and workspace improvements
 
 Execute in the requested order, with unit and live CI validation at every stage.

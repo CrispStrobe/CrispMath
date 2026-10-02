@@ -1,3 +1,34 @@
+## 2026-10-02 — Additional independent 100-case math audit
+
+- Draft 40 algebra/calculus/complex, 40 arithmetic/statistics/units/constraints
+  and 20 worksheet/graph/export problems with two agents and independent
+  references. Preserve the initial 87/100 packaged-app findings.
+- Fix bounded exact integer/rational cancellation, negative quantities and
+  temperatures, repeated CSP factors, rational equations with original poles,
+  symbolic removable limits, additive integration-constant domain evidence,
+  chained-power precedence and final-operation provenance. Bound coefficient
+  cost before exact polynomial powers/products and safely decline zero division.
+- Tighten comparisons for independent symbols, full complex residuals, root
+  multiplicity, undefined answers and rational coefficient notation. Preserve
+  the unsupported imperative reassignment request and verify its circular-error
+  policy; a separate reactive `next=n+1` calculation/edit regression passes.
+- Add eleven actual worksheet-entry controls on desktop and phone, provenance
+  assertions, reload checks and eight screenshots. Repair host-specific browser
+  selectors and moving handwriting crops without weakening their assertions.
+
+The new corpus contains 99 positive calculation/workflow cases and one expected
+feature rejection. Linux CLI, browser WASM and the sandboxed packaged macOS app
+pass this corpus and both preceding 50-problem sets (200 runtime checks each).
+Full analysis and 5,367 unit/widget tests pass, with eight explicitly skipped
+checks; real native/WASM execution separately covers native bridge behavior.
+Pages and Vercel also pass all 200 runtime checks and desktop/phone UI controls.
+The broader release/debug browser checks, performance gates and 12-scene gallery
+also pass on hosted Linux. Sources,
+CI links, commands and the feature boundary are recorded in
+[the audit](docs/new-math-audit-100.md). All heavy workloads run on hosted CI;
+the idle task-owned local SDK was removed to reclaim 1.1 GiB. Physical device
+checks remain deferred. These math changes are later than TestFlight build 13.
+
 ## 2026-10-02 — Apple worksheet workflows, portable recovery and fresh audit
 
 - Add bounded source-only worksheet Files import/export, native workflow URLs,

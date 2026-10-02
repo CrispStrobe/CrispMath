@@ -46,22 +46,48 @@ recalculates after an edit. The revised corpus therefore contains **99 positive
 calculation/workflow cases and one explicit expected feature rejection**.
 Reports record expected rejections and feature gaps separately from pass counts.
 
-## Verification in progress
+## Verification
 
-[Packaged macOS source 2cda5e1](https://github.com/CrispStrobe/CrispMath/actions/runs/37037728989)
-passed all 100 new checks (40/40 algebra, 40/40 numeric, 20/20 workflow), but the
-older antiderivative comparison still failed. That domain-inspection issue is
-fixed subsequently and remains subject to the final original/fresh corpus rerun.
-[Packaged macOS source fba2c5a](https://github.com/CrispStrobe/CrispMath/actions/runs/37038745156)
-now passes the original 50/50, fresh 50/50 and all 100 additional checks, plus
-packaged native CAS/series/OCR gates. [Linux native source fba2c5a](https://github.com/CrispStrobe/CrispMath/actions/runs/37038737342)
-also passes the additional 40/40, 40/40 and 20/20 runtime corpora; its unit
-gate exposed a test substitute that omitted its native-capability override.
-That fixture is fixed and additionally asserts both L’Hopital derivative rounds.
-The full suite at this source passed 5,360 tests with eight skips and this single
-fixture failure; the fixed full-suite and final WASM/deployed checks are pending.
-All compilation, large test suites and browser execution run on hosted CI;
-local work is limited to small edits, formatting and report inspection.
+Application changes are complete at `aa71c7f`; `c7df009` adds CI preview-server
+readiness checks and `9090082` changes only browser capture tooling/workflows.
+
+- [Linux CLI and browser WASM](https://github.com/CrispStrobe/CrispMath/actions/runs/37042076931)
+  both pass 50/50 original, 50/50 fresh, 40/40 algebra, 40/40 numeric and 20/20
+  workflow checks. Native corpus/comparison/engine/document/evidence unit gates
+  and the ten forced native Taylor compatibility cases pass. WASM also passes
+  all 11 actual worksheet problems on desktop and phone (22 entries), correct
+  limit/solve evidence, reload persistence and no page errors. Eight screenshots
+  retain the real results, with source provenance in `report.json`.
+- [Packaged sandboxed macOS](https://github.com/CrispStrobe/CrispMath/actions/runs/37041845547)
+  passes the same 200 runtime checks, linked native CAS/series assertions and OCR.
+- [Full analysis and unit validation](https://github.com/CrispStrobe/CrispMath/actions/runs/37042080538):
+  analysis, focused feature/tooling checks and **5,367 unit/widget tests** pass
+  with eight skips (existing disabled/opt-in checks and unavailable native
+  bridge in the macOS unit process). The broader browser job exposed an existing host-
+  dependent Alert-label selector; the actual HTTP 503 error was visibly correct.
+  The selector now asserts the visible message on all platforms.
+- [Pages](https://github.com/CrispStrobe/CrispMath/actions/runs/37045709723) and
+  [Vercel](https://github.com/CrispStrobe/CrispMath/actions/runs/37043229968)
+  pass all 200 runtime checks, all 11 desktop/phone worksheet controls,
+  ink/undo/clear, worksheet import/export, recovery/history and the gallery.
+- [Broader release/debug browser checks](https://github.com/CrispStrobe/CrispMath/actions/runs/37047382645)
+  pass release and debug UI checks, performance gates and the 12-scene gallery
+  on hosted Linux. The earlier macOS checks exposed a host-
+  dependent Alert label, duplicate accessibility-announcement text and delayed
+  local fixture-port readiness; these test/infrastructure issues were corrected
+  while preserving the actual HTTP 503/retry/cancellation assertions. Handwriting
+  crops now require stable geometry and retain coordinates and crop PNGs. Phone
+  entry waits for its compact toolbar menu instead of selecting a transient
+  desktop semantics node. All strict ink assertions remain unchanged.
+
+Initial packaged output passed 87/100; follow-up native/WASM execution confirms
+these fixes against the real engine rather than only mocked operations. The
+original imperative reassignment request remains recorded as a feature gap.
+All compilation, large suites and browser execution use hosted CI. Local work
+is limited to small edits and evidence review. The idle task-owned temporary
+Flutter SDK was removed to recover 1.1 GiB; no other project's files/processes
+were touched. Physical iPhone/iPad checks remain deferred. The new math changes
+are later than the previously submitted TestFlight build 13.
 
 ## Follow-up edge review
 
@@ -74,4 +100,4 @@ before multiplication or powers; degree-zero constants alone do not bound
 BigInt growth. A 16,384-bit budget retains the ordinary large-integer corpus.
 Completed symbolic limits and checked rational roots now replace intermediate
 operation metadata with their actual provenance. Unit and live checks assert
-these labels. Final follow-up source verification is pending CI.
+these labels; all 11 live worksheet controls pass on both screen sizes.
