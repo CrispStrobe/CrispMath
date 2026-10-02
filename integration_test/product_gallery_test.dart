@@ -133,7 +133,9 @@ void main() {
     for (var i = 0; i < 100; i++) {
       await tester.pump(const Duration(milliseconds: 100));
       if (tester.widgetList<SelectableText>(find.byType(SelectableText))
-          .any((text) => (text.data ?? '').contains('\t'))) break;
+          .any((text) => (text.data ?? '').contains('\t'))) {
+        break;
+      }
     }
     expect(tester.widgetList<SelectableText>(find.byType(SelectableText))
         .any((text) => (text.data ?? '').split('\n').length >= 10), isTrue);

@@ -4,6 +4,10 @@ on:
     branches: ['feat/graph-workspace-ux']
   workflow_dispatch:
     inputs:
+      checks_only:
+        description: 'Run analysis and focused regressions; use separate unit/browser runs'
+        type: boolean
+        default: false
       browser_only:
         description: 'Run browser and gallery checks without repeating unchanged unit suites'
         type: boolean
@@ -38,7 +42,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: feature-validation-${{ github.ref }}-${{ inputs.browser_only && 'browser-only' || inputs.probe_build_run_id || 'full' }}
+  group: feature-validation-${{ github.ref }}-${{ inputs.checks_only && 'checks-only' || inputs.browser_only && 'browser-only' || inputs.probe_build_run_id || 'full' }}
   cancel-in-progress: true
 jobs:
   features:
@@ -86,7 +90,7 @@ jobs:
           test/notepad_functions_test.dart test/notepad_batch_test.dart test/notepad_scope_cache_test.dart test/notepad_activity_test.dart
           test/selected_listenable_builder_test.dart test/notepad_dispatcher_test.dart
   unit:
-    if: ${{ !inputs.probe_build_run_id && !inputs.browser_only }}
+    if: ${{ !inputs.probe_build_run_id && !inputs.browser_only && !inputs.checks_only }}
     runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
@@ -123,7 +127,7 @@ jobs:
           name: notepad-evaluator-profile
           path: notepad-evaluator-profile.json
   native-ocr:
-    if: ${{ !inputs.probe_build_run_id && !inputs.browser_only && inputs.math_audit != true }}
+    if: ${{ !inputs.probe_build_run_id && !inputs.browser_only && !inputs.checks_only && inputs.math_audit != true }}
     runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
@@ -176,7 +180,7 @@ jobs:
             .dart_tool/inference/ocr-corpus/NOTICE.txt
           retention-days: 14
   browser:
-    if: ${{ !inputs.probe_build_run_id }}
+    if: ${{ !inputs.probe_build_run_id && !inputs.checks_only }}
     runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
