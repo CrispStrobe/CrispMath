@@ -20,7 +20,7 @@ async def check(args):
         if args.chromium:
             options['executable_path'] = args.chromium
         browser = await p.chromium.launch(**options)
-        context, page, errors = await context_for(browser, {'viewport': {'width': 1280, 'height': 900}}, document)
+        context, page, errors = await context_for(browser, {'viewport': {'width': 1280, 'height': 900}, 'cpu': 1}, document)
         report = {'url': args.url, 'calculator': [], 'pageErrors': errors}
         try:
             await bootstrap(page, args.url)

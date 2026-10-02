@@ -7,6 +7,7 @@ import html
 import json
 import re
 from pathlib import Path
+from urllib.parse import urljoin
 from playwright.async_api import async_playwright
 from benchmark_workflows import bootstrap, context_for, next_frames
 
@@ -38,6 +39,9 @@ async def capture(args):
                 context, page, errors = await context_for(browser, profile, DOCUMENT)
                 try:
                     await bootstrap(page, args.url)
+                    deployed = await context.request.get(urljoin(args.url, 'build-info.json'))
+                    observed_source = (await deployed.json())['source']
+                    assert observed_source == args.source, f'Gallery source mismatch: {observed_source}'
                     await page.get_by_role('button', name='Edit expression', exact=True).click()
                     editor = page.get_by_role('textbox', name='Expression', exact=True)
                     for expression, result in [('integrate(x^2,(x,0,1))', '1/3')]:
@@ -59,7 +63,7 @@ async def capture(args):
                     await shot('calculator')
                     await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
                     await page.get_by_role('button', name='Document menu', exact=True).click()
-                    await page.get_by_text('Recalculate all', exact=True).click()
+                    await page.locator('[aria-label="Recalculate all"]').click()
                     await page.wait_for_function("""() => {
                         const raw=localStorage.getItem('flutter.crisp.notepadDoc.gallery');
                         if(!raw)return false;
@@ -85,6 +89,7 @@ async def capture(args):
                     manifest['profiles'].append({'name': name, **profile, 'passed': True})
                 except Exception as error:
                     manifest['profiles'].append({'name': name, **profile, 'passed': False, 'error': str(error)})
+                    manifest['failureState'] = await page.evaluate("({savedDocument:localStorage.getItem('flutter.crisp.notepadDoc.gallery'), labels:[...document.querySelectorAll('[aria-label]')].map(e=>e.getAttribute('aria-label'))})")
                     await page.screenshot(path=str(output/f'{name}-failure.png'))
                     raise
                 finally:
