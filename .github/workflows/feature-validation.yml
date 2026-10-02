@@ -46,7 +46,7 @@ jobs:
           test/ai_provider_service_test.dart test/ai_math_dialog_test.dart
           test/notepad_screen_test.dart test/app_state_persistence_test.dart
           test/result_evidence_test.dart test/workflow_tasks_test.dart test/integral_arguments_test.dart
-          test/notepad_batch_test.dart test/notepad_scope_cache_test.dart
+          test/notepad_batch_test.dart test/notepad_scope_cache_test.dart test/notepad_activity_test.dart
   unit:
     runs-on: ubuntu-latest
     timeout-minutes: 30

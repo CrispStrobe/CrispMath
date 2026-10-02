@@ -11,7 +11,9 @@
   preserves completed rows and clears stale pending caches. Keep worker commands
   serialized: cancellation does not terminate an individual native operation.
 - Show localized row progress, Cancel calculation and Retry; yield between row
-  batches and throttle progress rebuilds. No persisted-schema change.
+  batches and rebuild only activity/visible rows for progress, leaving document
+  indexes and controllers intact. Limit live-region announcements to status
+  text so cancellation keeps an independent accessible hit target. No persisted-schema change.
 - Add unit regressions and a 2,000-row phone-profile Playwright cancel/retry test,
   plus rapid independent edits, to feature CI and Pages/Vercel post-deploy checks.
   Full-suite, live and performance evidence is collected in GitHub CI.

@@ -24,8 +24,13 @@ async def check(args):
         rapid['i'] = 'rapid-edits'
         rapid['l'] = [{'i': str(i), 's': source, 'r': result} for i, (source, result) in enumerate([
             ('a = 1', '1'), ('b = 2', '2'), ('a + 10', '11'), ('b + 20', '22'), ('99', '99')])]
+        batch = large_document(2000)
+        # Use real CAS worker round trips for the cancellation test. The integer
+        # fast path is measured separately by benchmark_workflows.py.
+        for i, row in enumerate(batch['l'][1:], 1):
+            row['s'] = f'v{i} = v{i-1} + sqrt(1)'
         for document, profile in [(rapid, {'viewport': {'width': 1280, 'height': 900}, 'cpu': 1}),
-                (large_document(2000), {'viewport': {'width': 390, 'height': 844}, 'cpu': 4, 'has_touch': True})]:
+                (batch, {'viewport': {'width': 390, 'height': 844}, 'cpu': 4, 'has_touch': True})]:
             context, page, errors = await context_for(browser, profile, document)
             try:
                 await bootstrap(page, args.url)
@@ -61,7 +66,10 @@ async def check(args):
                     await page.get_by_role('button', name='Document menu', exact=True).click()
                     await page.locator('[aria-label="Recalculate all"]').click()
                     cancel = page.get_by_role('button', name='Cancel calculation', exact=True)
-                    await cancel.click()
+                    await cancel.wait_for()
+                    report['cancelButtonBounds'] = await cancel.bounding_box()
+                    assert report['cancelButtonBounds']['y'] >= 56, report['cancelButtonBounds']
+                    await cancel.click(timeout=15000)
                     await expect(page.get_by_role('button', name='Retry', exact=True)).to_be_visible()
                     # A late worker answer must not bring back the cancelled tail.
                     await page.wait_for_timeout(1000)

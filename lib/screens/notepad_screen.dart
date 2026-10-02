@@ -139,6 +139,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
   final Map<String, Set<String>> _dirtyLineIds = {};
   int _recalcGeneration = 0;
   int _recalcCompleted = 0, _recalcTotal = 0;
+  final ChangeNotifier _recalcProgress = ChangeNotifier();
   bool _recalcFailed = false;
   bool _recalcCancelled = false;
 
@@ -218,6 +219,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     _renameController?.dispose();
     _renameFocus?.dispose();
     _listScrollController.dispose();
+    _recalcProgress.dispose();
     super.dispose();
   }
 
@@ -1166,7 +1168,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
         _recalcCompleted = completed;
         _recalcTotal = total;
         if (completed == total || progressClock.elapsedMilliseconds >= 50) {
-          setState(() {});
+          _recalcProgress.notifyListeners();
           progressClock.reset();
         }
       },
@@ -1363,14 +1365,24 @@ class _NotepadScreenState extends State<NotepadScreen> {
                         if (_pendingLineIds.isNotEmpty ||
                             _recalcFailed ||
                             _recalcCancelled)
-                          NotepadActivity(
-                              busy: _pendingLineIds.isNotEmpty,
-                              failed: _recalcFailed,
-                              cancelled: _recalcCancelled,
-                              completed: _recalcCompleted,
-                              total: _recalcTotal,
-                              onCancel: _cancelRecalc,
-                              onRetry: _recalculateAll),
+                          ListenableBuilder(
+                            listenable: _recalcProgress,
+                            builder: (context, _) {
+                              if (_pendingLineIds.isEmpty &&
+                                  !_recalcFailed &&
+                                  !_recalcCancelled) {
+                                return const SizedBox.shrink();
+                              }
+                              return NotepadActivity(
+                                  busy: _pendingLineIds.isNotEmpty,
+                                  failed: _recalcFailed,
+                                  cancelled: _recalcCancelled,
+                                  completed: _recalcCompleted,
+                                  total: _recalcTotal,
+                                  onCancel: _cancelRecalc,
+                                  onRetry: _recalculateAll);
+                            },
+                          ),
                         if (_searchOpen) _buildSearchBar(doc),
                         Expanded(child: _buildDocBody(doc)),
                       ],
@@ -1729,27 +1741,31 @@ class _NotepadScreenState extends State<NotepadScreen> {
           // Count hidden lines for the collapse chip.
           final hiddenCount =
               isHeading && isCollapsed ? _hiddenLinesUnder(doc, realIndex) : 0;
-          return _NotepadLineRow(
+          return ListenableBuilder(
             key: ValueKey(line.id),
-            line: line,
-            index: realIndex,
-            sideBySide: sideBySide,
-            isPending: _pendingLineIds.contains(line.id),
-            controller: _controllers[line.id]!,
-            focusNode: _focusNodes[line.id]!,
-            onChanged: (v) => _onLineEdited(doc, line, v, realIndex),
-            onDelete: () => _deleteLine(doc, realIndex),
-            onPlot: () => _linkLine(doc, line),
-            onScrollToLineId: _scrollToLineId,
-            engine: _engine,
-            appState: _appState,
-            onFormatCycle: () => _cycleLineFormat(doc, line),
-            scopeNames: _docScopeNames(doc),
-            isCollapsedHeading: isHeading && isCollapsed,
-            hiddenLineCount: hiddenCount,
-            highlightSearch: _lineMatchesSearch(line),
-            useLatexInput: doc.useLatexInput,
-            onToggleCollapse: isHeading ? () => _toggleCollapse(line.id) : null,
+            listenable: _recalcProgress,
+            builder: (context, _) => _NotepadLineRow(
+              line: line,
+              index: realIndex,
+              sideBySide: sideBySide,
+              isPending: _pendingLineIds.contains(line.id),
+              controller: _controllers[line.id]!,
+              focusNode: _focusNodes[line.id]!,
+              onChanged: (v) => _onLineEdited(doc, line, v, realIndex),
+              onDelete: () => _deleteLine(doc, realIndex),
+              onPlot: () => _linkLine(doc, line),
+              onScrollToLineId: _scrollToLineId,
+              engine: _engine,
+              appState: _appState,
+              onFormatCycle: () => _cycleLineFormat(doc, line),
+              scopeNames: _docScopeNames(doc),
+              isCollapsedHeading: isHeading && isCollapsed,
+              hiddenLineCount: hiddenCount,
+              highlightSearch: _lineMatchesSearch(line),
+              useLatexInput: doc.useLatexInput,
+              onToggleCollapse:
+                  isHeading ? () => _toggleCollapse(line.id) : null,
+            ),
           );
         },
       );
@@ -1759,45 +1775,50 @@ class _NotepadScreenState extends State<NotepadScreen> {
       // Show pinned lines in a non-scrolling section at the top.
       return Column(
         children: [
-          Container(
-            color: Theme.of(context)
-                .colorScheme
-                .primaryContainer
-                .withValues(alpha: 0.3),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final pi in pinnedIndices)
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.push_pin,
-                            size: 14, semanticLabel: 'Pinned'),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            doc.lines[pi].source,
-                            style: const TextStyle(
-                                fontFamily: 'monospace', fontSize: 13),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+          ListenableBuilder(
+            listenable: _recalcProgress,
+            builder: (context, _) => Container(
+              color: Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withValues(alpha: 0.3),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final pi in pinnedIndices)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 2),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.push_pin,
+                              size: 14, semanticLabel: 'Pinned'),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              doc.lines[pi].source,
+                              style: const TextStyle(
+                                  fontFamily: 'monospace', fontSize: 13),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          doc.lines[pi].cachedResult ?? '',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(width: 8),
+                          Text(
+                            _pendingLineIds.contains(doc.lines[pi].id)
+                                ? '…'
+                                : doc.lines[pi].cachedResult ?? '',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
           Expanded(child: listView),
