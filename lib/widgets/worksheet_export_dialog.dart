@@ -56,21 +56,25 @@ class _WorksheetExportDialogState extends State<WorksheetExportDialog> {
                 bundle.graphs.length +
                 (_error == null ? 0 : 1),
             itemBuilder: (context, index) {
-              if (index == 0)
+              if (index == 0) {
                 return Text(bundle.document.name,
                     style: Theme.of(context).textTheme.titleLarge);
-              if (index == 1)
+              }
+              if (index == 1) {
                 return const Text(
                     'Snapshot of calculations and linked graphs. Graph x/y range: -5 to 5; table x range: -5 to 5.');
+              }
               index -= 2;
-              if (index < bundle.warnings.length)
+              if (index < bundle.warnings.length) {
                 return Text(bundle.warnings[index]);
+              }
               index -= bundle.warnings.length;
-              if (index < bundle.document.lines.length)
+              if (index < bundle.document.lines.length) {
                 return ListTile(
                     title: Text(bundle.document.lines[index].source),
                     subtitle: Text(bundle.resultAt(index)),
                     dense: true);
+              }
               index -= bundle.document.lines.length;
               if (index < bundle.graphs.length) {
                 final graph = bundle.graphs[index];

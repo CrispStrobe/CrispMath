@@ -49,7 +49,8 @@ async def check(args):
                         assert 'Undefined' in text and '4' in text, text
                         if format == 'HTML':
                             assert '<svg' in text and '&lt;worksheet&gt;' in text
-                            assert '<td>0.0</td><td>Undefined</td>' in text
+                            rows = {float(x): y for x, y in re.findall(r'<td>([-+.\de]+)</td><td>([^<]+)</td>', text)}
+                            assert rows[0] == 'Undefined' and float(rows[2]) == 1.5, rows
                         if format == 'TEX':
                             assert text.startswith('\\documentclass'), text
                 assert not errors, errors
