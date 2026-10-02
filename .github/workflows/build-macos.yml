@@ -105,6 +105,19 @@ jobs:
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
           CRISPMATH_DIAGNOSTIC=steps "$BIN"
 
+      - name: Run strict 50-task audit against the packaged native app
+        run: |
+          set -eu
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASK_REPORT=task-results/macos.json "$BIN"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workflow-tasks-macos
+          path: task-results
+          if-no-files-found: ignore
+
       - name: Provision OCR test model
         run: |
           mkdir -p .ci/ocr-model

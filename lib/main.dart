@@ -80,11 +80,11 @@ void main() async {
   });
 
   // Headless self-test for CI / manual verification. Invoke with the
-  // `CRISPMATH_DIAGNOSTIC=matrix|steps` environment variable set (desktop
+  // `CRISPMATH_DIAGNOSTIC=matrix|steps|workflows` environment variable set (desktop
   // only). Runs the matrix / step battery against the native bridge,
   // prints PASS/FAIL lines, and exits non-zero on any failure. On web this
   // is a no-op (the conditional import resolves to the stub).
-  runDiagnosticsIfRequested();
+  await runDiagnosticsIfRequested();
 
   // The SymEngine bridge loads synchronously on native, but on web the WASM
   // module (web/symengine.js + symengine.wasm) resolves asynchronously after
