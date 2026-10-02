@@ -1,3 +1,49 @@
+## 2026-10-02 — Apple worksheet workflows, portable recovery and fresh audit
+
+- Add bounded source-only worksheet Files import/export, native workflow URLs,
+  iOS Shortcuts intents, keyboard navigation and responsive tablet/phone layouts.
+  Imports discard cached answers and recalculate after switching documents.
+- Export one captured worksheet, linked plots and sampled values to HTML,
+  Markdown, LaTeX and PDF, with an actual preview and bundled licensed PDF font.
+  Preserve undefined points, discontinuities, original-domain warnings and errors.
+- Add retained source checkpoints, comparisons, pre-restore checkpoints, portable
+  SHA-256 backups, conflict-preserving imports and previous-workspace recovery.
+  Surface quota/persistence failures. Cloud setup accepts public HTTPS credentials;
+  server revision checks reject stale writes and the migration enforces owner RLS.
+  The PostgreSQL contract CI passes; no real project credentials were supplied.
+- Repair live ink repainting, decimal dots and dark-theme normalization. Select
+  compatible handwriting providers without changing the photo provider, require
+  network/model-term consent and review transcription before inserting it.
+  Three real models on 50 human drawings give 7/50, 0/50 and 0/50 exact answers;
+  recognition remains experimental, with no reliability claim.
+- Draft 50 independent problems, derive references with SymPy/SciPy/calendar and
+  exhaustive constraint enumeration, then run actual native/WASM/module paths.
+  Fix exact large integers, numeric-cell eigenvalues, rational source-domain
+  evidence, Student-t tails, arithmetic not-equal constraints, a pinned upstream
+  dart2js CSP allocation fix and exact linear systems on older Apple libraries.
+  Tighten the comparator to reject error strings before assignment equivalence.
+- Fix an empty Flutter web overlay semantics leaf blocking worksheet clicks
+  after dialogs close. The real backup round trip is a regression control.
+
+Validation for `34bb88f`: 5,293 unit/widget tests pass with seven opt-in skips,
+22 Python tooling tests and 237 focused feature checks pass, and analysis has
+no issues. Native OCR, release/debug Playwright, performance and both galleries
+pass. Linux CLI, packaged sandboxed macOS, Pages WASM and Vercel WASM each pass
+both corpora (50/50 original and 50/50 fresh). Deployed UI checks verify import,
+export, checkpoint recovery, conflict preservation, visible ink, exact integer,
+eigenvalues, original-domain details and reload without injected fixes.
+The galleries retain 12 browser scenes and 14 actual iPhone/iPad simulator
+captures, source/dimensions and native CAS assertions. The 500/2,000-row edit
+medians are 0.59s/0.98s desktop and 2.43s/5.66s with 4× browser CPU throttling,
+versus baseline 0.65s/1.63s and 4.31s/20.84s. All platform builds pass.
+
+Build 12 is prepared with the same application code and a version-only metadata
+bump. Its release pipeline adds five unit controls and verifies VALID processing
+and membership in the existing internal TestFlight group. Actual upload status
+is recorded after that pipeline completes. Physical iPhone/iPad, Siri/Files
+provider checks, better handwriting weights, a real sync backend and Apple's
+4.3(a) review decision remain pending.
+
 ## 2026-10-02 — Native CAS parity and inline worksheet functions
 
 - Restore the Linux C++ CAS wrapper and ship its CI-built library: FLINT

@@ -15,11 +15,12 @@ def manifest(root, label):
     if not re.fullmatch(r'v' + re.escape(version) + r'(?:-rc\.[1-9]\d*)?', label):
         raise ValueError('Release label must match pubspec version, optionally with -rc.N')
     lock = json.loads((root / 'tool/dependency_lock.json').read_text())
-    for name in ['crispembed', 'symbolic_math_bridge']:
+    for name in ['crispembed', 'symbolic_math_bridge', 'dart_csp']:
         if not re.fullmatch(r'[0-9a-f]{40}', lock[name]['revision']):
             raise ValueError(f'{name} requires a full commit revision')
-    if lock['symbolic_math_bridge']['revision'] not in (root / 'pubspec.yaml').read_text():
-        raise ValueError('Symbolic bridge revision differs from the dependency lock')
+    for name in ['symbolic_math_bridge', 'dart_csp']:
+        if lock[name]['revision'] not in (root / 'pubspec.yaml').read_text():
+            raise ValueError(f'{name} revision differs from the dependency lock')
     checksums = json.loads((root / 'tool/ocr_runtime_checksums.json').read_text())
     if lock['crispembed']['version'] not in checksums:
         raise ValueError('Native OCR release checksums are missing')
