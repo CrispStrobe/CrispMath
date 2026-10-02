@@ -19,9 +19,9 @@ Physical iPhone/iPad testing is deferred to a separate session.
 2. [x] Large documents: incremental recalculation, cancellable batches and
    clear progress; 500/2,000-row comparisons, release/debug CI and deployed
    Pages/Vercel Playwright passed for `911f035`.
-3. [ ] Apple workflows: iPad keyboard/navigation and multitasking layouts,
+3. [~] Apple workflows: iPad keyboard/navigation and multitasking layouts,
    Files document integration and Shortcuts.
-4. [ ] Shared worksheets: export calculations, graphs and value tables with
+4. [~] Shared worksheets: export calculations, graphs and value tables with
    consistent layouts and an export preview.
 5. [ ] Document history: checkpoints, comparisons, restore and portable
    backups, followed by cross-device sync.

@@ -38,6 +38,8 @@ import '../widgets/native_bridge_status_listenable.dart';
 import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
 import '../engine/notepad_export.dart';
+import '../engine/worksheet_bundle.dart';
+import '../widgets/worksheet_export_dialog.dart';
 import '../services/crisp_assist_service_stub.dart'
     if (dart.library.io) '../services/crisp_assist_service.dart';
 import '../widgets/crisp_assist_dialog.dart';
@@ -1050,6 +1052,27 @@ class NotepadScreenState extends State<NotepadScreen> {
     );
   }
 
+  void _previewExport() {
+    final doc = _currentDoc;
+    if (doc == null) return;
+    final expressions = <String>[];
+    final warnings = <String>[];
+    for (final entry in _appState.graphLinks.entries) {
+      if (entry.value.documentId != doc.id) continue;
+      final resolved = _appState.linkedGraphResolution(entry.key);
+      if (resolved.error != null) {
+        warnings.add('${resolved.source}: ${resolved.error}');
+      } else if (resolved.expression != null) {
+        expressions.add(resolved.expression!);
+      }
+    }
+    final bundle = WorksheetBundle.capture(doc,
+        expressions: expressions, warnings: warnings);
+    showDialog<void>(
+        context: context,
+        builder: (_) => WorksheetExportDialog(bundle: bundle));
+  }
+
   Future<void> _exportPdf() async {
     final doc = _currentDoc;
     if (doc == null) return;
@@ -1662,6 +1685,10 @@ class NotepadScreenState extends State<NotepadScreen> {
               child: Text(t.notepadCopyAsMarkdown),
             ));
             items.add(const PopupMenuItem(
+              value: 'export-preview',
+              child: Text('Worksheet export preview'),
+            ));
+            items.add(const PopupMenuItem(
               value: 'export-pdf',
               child: Text('Export PDF'),
             ));
@@ -1743,6 +1770,8 @@ class NotepadScreenState extends State<NotepadScreen> {
       _duplicateCurrent();
     } else if (value == 'copy-markdown') {
       _copyAsMarkdown();
+    } else if (value == 'export-preview') {
+      _previewExport();
     } else if (value == 'export-pdf') {
       _exportPdf();
     } else if (value == 'ai-translate') {
