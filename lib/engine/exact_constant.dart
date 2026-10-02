@@ -91,7 +91,9 @@ class _ConstantParser {
       if (op == '%') {
         if (value.denominator != BigInt.one ||
             rhs.denominator != BigInt.one ||
-            rhs.numerator == BigInt.zero) throw _Decline();
+            rhs.numerator == BigInt.zero) {
+          throw _Decline();
+        }
         value = checked(Rational(value.numerator % rhs.numerator, BigInt.one));
       } else if (op == '*') {
         productBudget(value.numerator, rhs.numerator);
@@ -130,7 +132,9 @@ class _ConstantParser {
     final n = exponent.numerator.toInt();
     if (n < 0 && base.numerator == BigInt.zero) throw _Decline();
     if (base.numerator.bitLength * n.abs() > maxBits ||
-        base.denominator.bitLength * n.abs() > maxBits) throw _Decline();
+        base.denominator.bitLength * n.abs() > maxBits) {
+      throw _Decline();
+    }
     final num = base.numerator.pow(n.abs());
     final den = base.denominator.pow(n.abs());
     return checked(n < 0 ? Rational(den, num) : Rational(num, den));

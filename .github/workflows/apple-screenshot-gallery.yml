@@ -10,6 +10,8 @@ on:
       - 'ios/Runner/Info.plist'
       - 'lib/services/apple_workflow.dart'
       - 'test_driver/product_gallery_driver.dart'
+      - 'macos/Runner/MainFlutterWindow.swift'
+      - 'tool/verify_native_gallery.py'
 permissions:
   contents: read
 jobs:
@@ -84,38 +86,47 @@ jobs:
             xcrun simctl shutdown "$simulator"
           done
       - name: Verify native images and record pixel dimensions
-        run: |
-          python3 - <<'PY'
-          import json, struct
-          from pathlib import Path
-          root=Path('native-gallery')
-          manifest=json.loads((root/'manifest.json').read_text())
-          images=[]
-          for profile in ['iphone','ipad']:
-            files=sorted((root/profile).glob('*.png'))
-            assert len(files)==7, (profile,files)
-            evidence=json.loads((root/profile/'native-evidence.json').read_text())
-            assert evidence['nativeWorkflowUrl'] is True
-            assert evidence['exportPreview'] is True
-            assert evidence['historyCheckpoint'] is True
-            assert evidence['handwritingInput'] is True
-            assert evidence['nativeBridge'] is True
-            assert evidence['nativeDerivative']=='cos(x)'
-            assert evidence['integral']['value']=='1/3'
-            for file in files:
-              data=file.read_bytes()
-              assert data[:8]==b'\x89PNG\r\n\x1a\n'
-              assert data[25]==2, 'App Store screenshot must be RGB without alpha'
-              width,height=struct.unpack('>II',data[16:24])
-              assert height>width and width>=1200, (file,width,height)
-              images.append({'file':str(file.relative_to(root)), 'width':width,'height':height})
-          manifest['screenshots']=images
-          manifest['passed']=True
-          (root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
-          PY
+        run: python3 tool/verify_native_gallery.py native-gallery iphone ipad
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: native-apple-screenshot-gallery
+          path: native-gallery
+          retention-days: 14
+  macos-gallery:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Stage verified native OCR runtime
+        run: python tool/stage_ocr_runtime.py --platform macos
+      - name: Resolve native desktop dependencies
+        run: flutter pub get
+      - name: Capture actual macOS application views
+        run: |
+          unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
+          mkdir -p native-gallery/macos
+          CRISPMATH_GALLERY_OUTPUT=native-gallery/macos flutter drive \
+            --driver=test_driver/product_gallery_driver.dart \
+            --target=integration_test/product_gallery_test.dart -d macos
+      - name: Verify real desktop images and source provenance
+        run: python tool/verify_native_gallery.py native-gallery macos
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-macos-screenshot-gallery
           path: native-gallery
           retention-days: 14

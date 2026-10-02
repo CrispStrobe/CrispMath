@@ -738,7 +738,9 @@ class UnitCatalog {
       final time = bySymbolWithPrefixes(quotient[1]);
       if (length == null || time == null ||
           length.dimension != UnitDimension.length ||
-          time.dimension != UnitDimension.time) return null;
+          time.dimension != UnitDimension.time) {
+        return null;
+      }
       return Unit(
           symbol: symbol,
           name: '${length.name} per ${time.name}',

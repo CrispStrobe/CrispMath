@@ -27,6 +27,24 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
+    #if DEBUG
+    // CI drives the real desktop window at a readable gallery size. This
+    // channel is absent from release builds and grants no filesystem access.
+    let galleryChannel = FlutterMethodChannel(
+      name: "crispmath/native_gallery",
+      binaryMessenger: flutterViewController.engine.binaryMessenger)
+    galleryChannel.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "sizeWindow", let window = self else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      window.setContentSize(NSSize(width: 1280, height: 900))
+      window.center()
+      window.makeKeyAndOrderFront(nil)
+      result(true)
+    }
+    #endif
+
     super.awakeFromNib()
   }
 }
