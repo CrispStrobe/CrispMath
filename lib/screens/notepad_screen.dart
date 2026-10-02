@@ -2137,6 +2137,9 @@ class _NotepadLineRow extends StatelessWidget {
   Widget _buildInputField(BuildContext context,
       {bool dense = false, bool heading = false}) {
     final textField = TextField(
+      // Blank, normal and heading rows place the editor under different
+      // parents. Keep its editing connection and focus through those changes.
+      key: GlobalObjectKey(controller),
       controller: controller,
       focusNode: focusNode,
       onChanged: onChanged,

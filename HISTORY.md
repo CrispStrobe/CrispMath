@@ -10,6 +10,9 @@
 - Add batch cancellation that discards late results and constraint exports,
   preserves completed rows and clears stale pending caches. Keep worker commands
   serialized: cancellation does not terminate an individual native operation.
+- Preserve the editing connection and focus when blank/heading/expression
+  layouts change, using a stable editor key. A widget negative control
+  reproduced the replaced editor behind the calendar live-test failure.
 - Give the batch evaluator sole ownership of cooperative scheduling; retain
   dispatcher yielding for standalone calls so two wall-clock budgets cannot
   repeatedly trigger one another.

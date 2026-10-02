@@ -12,6 +12,10 @@ on:
         description: 'Diagnostic only: inject semantic-label clipping into that older bundle'
         type: boolean
         default: false
+      probe_performance:
+        description: 'Also benchmark the immutable bundle and apply the release latency gate'
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -268,12 +272,18 @@ jobs:
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           CLIP_LABELS: ${{ inputs.probe_clip_labels }}
+          PROBE_PERFORMANCE: ${{ inputs.probe_performance }}
         run: |
           python -m http.server 8766 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           python tool/check_deployed_bundle.py --url http://localhost:8766/ --source "$APP_SOURCE"
           PROBE_ARGS=()
           if [ "$CLIP_LABELS" = "true" ]; then PROBE_ARGS+=(--label-clip-probe); fi
           python tool/check_notepad_batch_browser.py "${PROBE_ARGS[@]}" --output browser-results/batch-probe
+          if [ "$PROBE_PERFORMANCE" = "true" ]; then
+            if [ "$CLIP_LABELS" = "true" ]; then echo "Performance requires an unmodified app bundle" >&2; exit 1; fi
+            python tool/benchmark_workflows.py --trials 3 --source "$APP_SOURCE" --output browser-results/workflow-performance.json
+            python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

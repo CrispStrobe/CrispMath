@@ -359,6 +359,26 @@ void main() {
   });
 
   group('NotepadScreen — Phase 5 recalc', () {
+    testWidgets('blank row keeps editor focus when its layout expands',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      doc.lines.clear();
+      doc.lines.add(NotepadLine.fresh(source: ''));
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      final editor = find.byType(TextField).first;
+      await tester.tap(editor);
+      await tester.enterText(editor, '2026-10-01');
+      final before = tester.state(find.byType(EditableText).first);
+      await tester.pump();
+      expect(tester.state(find.byType(EditableText).first), same(before));
+      expect(tester.widget<TextField>(editor).focusNode!.hasFocus, isTrue);
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+      await tester.enterText(editor, '2026-10-01 + 2 days');
+      expect(doc.lines.first.source, '2026-10-01 + 2 days');
+    });
     // Widget tests run on FakeAsync; the engine worker isolate runs
     // on real wall-clock, so we can't drive a full dispatcher round-
     // trip from a fake-clock pump. What we *can* verify is that the
