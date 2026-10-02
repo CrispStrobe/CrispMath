@@ -21,6 +21,9 @@ void main() {
     final engine = CalculatorEngine();
     expect(engine.isNativeAvailable, isTrue,
         reason: 'Native CAS must actually link');
+    final nativeDerivative = engine.differentiate('sin(x)', 'x');
+    expect(nativeDerivative, 'cos(x)',
+        reason: 'Exercise a native transcendental CAS operation');
     final integral = runEngineOpDetailed(
         engine, const EngineOp('integrate', 'x^2', 'x', '0', '1'));
     expect(integral.value, '1/3');
@@ -65,6 +68,7 @@ void main() {
     await binding.takeScreenshot('linked-function-graph');
     binding.reportData ??= {};
     binding.reportData!['nativeBridge'] = engine.isNativeAvailable;
+    binding.reportData!['nativeDerivative'] = nativeDerivative;
     binding.reportData!['integral'] = integral.toJson();
     binding.reportData!['document'] = doc.toJson();
   });
