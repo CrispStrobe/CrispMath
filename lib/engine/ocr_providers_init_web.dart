@@ -31,7 +31,13 @@ Float32List _toGrayscale(Uint8List imageBytes, int width, int height) {
 }
 
 /// WASM-backed OCR provider for web.
-class _WasmOcrProvider implements OcrProvider {
+class _WasmOcrProvider implements OcrProvider, HandwritingOcrProvider {
+  @override
+  bool get supportsHandwriting =>
+      OcrModelCatalog.handwrittenMath.any((m) => m.id == _model.id);
+  @override
+  String? get licenseToAccept =>
+      _model.requiresLicenseAcceptance ? _model.license : null;
   final OcrModelVariant _model;
   CrispEmbedOcrWasm? _ocr;
   bool _modelLoading = false;

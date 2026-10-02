@@ -187,12 +187,12 @@ class OcrModelCatalog {
   static const List<OcrModelVariant> handwrittenMath = [
     OcrModelVariant(
       id: 'posformer-crohme-q8',
-      name: 'PosFormer (best handwritten)',
+      name: 'PosFormer (handwritten)',
       filename: 'posformer-crohme-q8_0.gguf',
       url: '$_hfPosformerUrl/posformer-crohme-q8_0.gguf',
       sizeBytes: 12 * 1024 * 1024,
-      description: 'Best handwritten math (DenseNet+Transformer+ARM). '
-          '12 MB Q8_0. ~57% on CROHME 2014.',
+      description: 'Handwritten math (DenseNet+Transformer+ARM). '
+          '12 MB Q8_0. Review recognized expressions before inserting.',
       license: 'CC BY-NC-SA 3.0',
     ),
     OcrModelVariant(
@@ -202,7 +202,7 @@ class OcrModelCatalog {
       url: '$_hfPosformerUrl/posformer-crohme-q4_k.gguf',
       sizeBytes: 10 * 1024 * 1024,
       description: 'Handwritten math (DenseNet+Transformer+ARM). '
-          '10 MB Q4_K. Smallest high-accuracy model.',
+          '10 MB Q4_K. Review recognized expressions before inserting.',
       license: 'CC BY-NC-SA 3.0',
     ),
     OcrModelVariant(
@@ -212,7 +212,7 @@ class OcrModelCatalog {
       url: '$_hfBttrUrl/bttr-hw-q8_0.gguf',
       sizeBytes: 13 * 1024 * 1024,
       description: 'Handwritten math (DenseNet+Transformer). '
-          '13 MB Q8_0. 49% on CROHME.',
+          '13 MB Q8_0. Review recognized expressions before inserting.',
       license: 'CC BY-NC-SA 3.0',
     ),
     OcrModelVariant(

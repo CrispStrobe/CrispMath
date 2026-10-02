@@ -80,11 +80,17 @@ class HandwrittenBackend implements OcrBackendBase {
 
 /// On-device OCR provider backed by CrispEmbed. Works for all model types
 /// (pix2tex, HMER, BTTR). The persistent worker auto-detects the GGUF model.
-class _CrispEmbedProvider implements OcrProvider {
+class _CrispEmbedProvider implements OcrProvider, HandwritingOcrProvider {
   final String _modelPath;
   final String _name;
 
-  _CrispEmbedProvider(this._modelPath, this._name);
+  @override
+  final bool supportsHandwriting;
+  @override
+  String? get licenseToAccept =>
+      null; // native models are gated when downloaded
+  _CrispEmbedProvider(this._modelPath, this._name,
+      {this.supportsHandwriting = false});
 
   @override
   String get name => _name;
@@ -498,16 +504,18 @@ Future<void> initOcrProviders() async {
     if (path != null) {
       final String label;
       if (model.id.startsWith('posformer-')) {
-        label = 'PosFormer (handwritten, 57%)';
+        label = 'PosFormer (handwriting)';
       } else if (model.id.startsWith('bttr-')) {
-        label = 'BTTR (handwritten, 49%)';
+        label = 'BTTR (handwriting)';
       } else if (model.id.startsWith('hmer-')) {
-        label = 'HMER (handwritten, 39%)';
+        label = 'HMER (handwriting)';
       } else {
         continue;
       }
-      OcrProviders.register(_CrispEmbedProvider(path, label));
-      break; // use first available handwritten model
+      OcrProviders.register(_CrispEmbedProvider(
+          path, '$label — ${model.sizeLabel}',
+          supportsHandwriting: true));
+      // Every downloaded variant remains selectable for handwriting.
     }
   }
 

@@ -37,6 +37,17 @@ async def check(args):
                     await field.click()
                     await next_frames(page)
                     await field.fill(source)
+                async def backups():
+                    await page.get_by_role('button', name=re.compile(r'^Settings')).click()
+                    target = page.get_by_role('button', name=re.compile('Workspace backups'))
+                    for _ in range(12):
+                        if await target.count() and await target.first.is_visible():
+                            await target.first.click()
+                            return
+                        await page.mouse.move(width * .6, height * .5)
+                        await page.mouse.wheel(0, 500)
+                        await next_frames(page)
+                    raise AssertionError('Workspace backups action was not reachable by scrolling')
                 await menu('Recalculate all')
                 await result('19')
                 await menu('Document history')
@@ -55,8 +66,7 @@ async def check(args):
                   const raw=localStorage.getItem('flutter.crisp.documentCheckpoints');
                   return raw && JSON.parse(JSON.parse(raw)).some(c=>c.label==='Before restore');
                 }''')
-                await page.get_by_role('button', name=re.compile(r'^Settings')).click()
-                await page.locator('[aria-label^="Workspace backups"]').click()
+                await backups()
                 async with page.expect_download() as info:
                     await page.get_by_role('button', name='Save backup', exact=True).click()
                 download = await info.value
@@ -69,8 +79,7 @@ async def check(args):
                 await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
                 await edit('a=7')
                 await result('23')
-                await page.get_by_role('button', name=re.compile(r'^Settings')).click()
-                await page.locator('[aria-label^="Workspace backups"]').click()
+                await backups()
                 async with page.expect_file_chooser() as info:
                     await page.get_by_role('button', name='Open backup', exact=True).click()
                 chooser = await info.value

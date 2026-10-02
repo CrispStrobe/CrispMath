@@ -43,7 +43,11 @@ void _injectFetchHelpers() {
 }
 
 /// Cloud LLM OCR provider for web — uses browser fetch() API.
-class CloudLlmOcrProviderWeb implements OcrProvider {
+class CloudLlmOcrProviderWeb implements OcrProvider, HandwritingOcrProvider {
+  @override
+  bool get supportsHandwriting => true;
+  @override
+  String? get licenseToAccept => null;
   @override
   String get name => 'Cloud LLM (handwritten + printed)';
 

@@ -17,7 +17,11 @@ import '../engine/app_state.dart';
 
 /// OCR provider that sends images to a cloud LLM (Claude/GPT-4V)
 /// for math equation recognition.
-class CloudLlmOcrProvider implements OcrProvider {
+class CloudLlmOcrProvider implements OcrProvider, HandwritingOcrProvider {
+  @override
+  bool get supportsHandwriting => true;
+  @override
+  String? get licenseToAccept => null;
   @override
   String get name => 'Cloud LLM (handwritten + printed)';
 

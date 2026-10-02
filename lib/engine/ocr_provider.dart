@@ -71,6 +71,31 @@ abstract class OcrProvider {
   });
 }
 
+/// Explicit capability; printed-only providers are never auto-selected for ink.
+abstract interface class HandwritingOcrProvider {
+  bool get supportsHandwriting;
+  String? get licenseToAccept;
+}
+
+List<OcrProvider> handwritingProviders(
+        Iterable<OcrProvider> providers) =>
+    providers
+        .where((p) =>
+            p.isAvailable &&
+            p is HandwritingOcrProvider &&
+            (p as HandwritingOcrProvider).supportsHandwriting)
+        .toList();
+
+OcrProvider? selectHandwritingProvider(Iterable<OcrProvider> providers,
+    {OcrProvider? preferred}) {
+  final compatible = handwritingProviders(providers);
+  if (compatible.contains(preferred) && !preferred!.requiresNetwork) {
+    return preferred;
+  }
+  return compatible.where((p) => !p.requiresNetwork).firstOrNull ??
+      (compatible.contains(preferred) ? preferred : compatible.firstOrNull);
+}
+
 /// Registry of available OCR providers. The UI queries this to build
 /// the provider picker in Settings.
 class OcrProviders {
