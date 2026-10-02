@@ -128,4 +128,19 @@ void main() {
     expect(report['failed'], 2);
     expect(report['passed'], 0);
   });
+  test('export rejects wrong source results before claiming a PDF pass',
+      () async {
+    final report = await WorkflowTasks(FixtureEngine()).run([
+      {
+        'id': 'wrong-export',
+        'kind': 'export',
+        'format': 'pdf',
+        'lines': ['3'],
+        'expectedResults': ['4']
+      }
+    ]);
+    expect(report['failed'], 1);
+    expect((report['results'] as List).single['error'],
+        contains('source calculations'));
+  });
 }

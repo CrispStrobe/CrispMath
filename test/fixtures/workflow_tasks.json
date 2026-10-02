@@ -208,7 +208,8 @@
         "0",
         "1"
       ],
-      "expected": "1/3"
+      "expected": "1/3",
+      "call": "integrate(x^2,x,0,1)"
     },
     {
       "id": "task-21",
@@ -221,7 +222,8 @@
         "2",
         "0"
       ],
-      "expected": "-2"
+      "expected": "-2",
+      "call": "integrate(x,(x,2,0))"
     },
     {
       "id": "task-22",

@@ -6,6 +6,7 @@ import '../engine/notepad_export.dart';
 import '../engine/numeric_fallback.dart';
 import '../services/engine_dispatch.dart';
 import '../services/engine_op.dart';
+import '../services/integral_arguments.dart';
 
 /// Runs app code with explicit expectations, without touching saved documents.
 class WorkflowTasks {
@@ -47,7 +48,7 @@ class WorkflowTasks {
       }
     }
     return {
-      'schemaVersion': 1,
+      'schemaVersion': 2,
       'nativeBridge': nativeBridgeReady,
       'total': results.length,
       for (final status in ['passed', 'failed', 'unsupported'])
@@ -59,7 +60,10 @@ class WorkflowTasks {
   Future<Map<String, dynamic>> _execute(Map<String, dynamic> task) async {
     switch (task['kind']) {
       case 'engine':
-        final args = (task['args'] as List).cast<String>();
+        final args = task['call'] != null && task['operation'] == 'integrate'
+            ? parseIntegralArguments(task['call'] as String) ??
+                (throw const FormatException('Invalid integral call'))
+            : (task['args'] as List).cast<String>();
         final result = runEngineOpDetailed(
             engine,
             EngineOp(

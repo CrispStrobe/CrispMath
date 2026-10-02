@@ -29,7 +29,10 @@ async def capture(args):
     manifest = {'source': args.source, 'url': args.url, 'kind': 'web-browser',
                 'profiles': [], 'screenshots': [], 'pageErrors': []}
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(args=['--no-sandbox', '--enable-unsafe-swiftshader'])
+        options = {'args': ['--no-sandbox', '--enable-unsafe-swiftshader']}
+        if args.chromium:
+            options['executable_path'] = args.chromium
+        browser = await pw.chromium.launch(**options)
         try:
             for name, profile in PROFILES:
                 context, page, errors = await context_for(browser, profile, DOCUMENT)
@@ -37,7 +40,7 @@ async def capture(args):
                     await bootstrap(page, args.url)
                     await page.get_by_role('button', name='Edit expression', exact=True).click()
                     editor = page.get_by_role('textbox', name='Expression', exact=True)
-                    for expression, result in [('(3+4)*5', '35'), ('2^10', '1024')]:
+                    for expression, result in [('integrate(x^2,(x,0,1))', '1/3')]:
                         await editor.click()
                         await next_frames(page)
                         await editor.fill(expression)
@@ -45,14 +48,18 @@ async def capture(args):
                         await page.wait_for_function("expected=>JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0].r===expected", arg=result)
                     await page.get_by_role('button', name='Math preview', exact=True).click()
                     await page.evaluate('document.activeElement.blur()')
-                    await next_frames(page, 4)
+                    await page.mouse.move(1, 1)
+                    await page.wait_for_timeout(500)
+                    await next_frames(page)
                     async def shot(scene):
                         file = f'{name}-{scene}.png'
                         await page.screenshot(path=str(output/file), animations='disabled')
                         manifest['screenshots'].append({'profile': name, 'scene': scene, 'file': file,
                             'width': profile['viewport']['width'], 'height': profile['viewport']['height']})
                     await shot('calculator')
-                    await page.keyboard.press('Control+2')
+                    await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
+                    await page.get_by_role('button', name='Document menu', exact=True).click()
+                    await page.get_by_text('Recalculate all', exact=True).click()
                     await page.wait_for_function("""() => {
                         const raw=localStorage.getItem('flutter.crisp.notepadDoc.gallery');
                         if(!raw)return false;
@@ -62,13 +69,13 @@ async def capture(args):
                     }""", timeout=150000)
                     await page.get_by_role('button', name='Link line to graph', exact=True).nth(1).click()
                     await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
-                    await next_frames(page, 4)
+                    await next_frames(page)
                     await shot('worksheet')
                     await page.get_by_role('button', name=re.compile(r'^Graphing')).click()
                     await page.locator('[aria-label="Updating graph"]').wait_for(state='hidden')
                     await page.get_by_role('button', name='Trace curve', exact=True).click()
                     await page.wait_for_function("[...document.querySelectorAll('[aria-label]')].some(e=>e.getAttribute('aria-label').includes('x = '))")
-                    await next_frames(page, 4)
+                    await next_frames(page)
                     await shot('graph-trace')
                     linked = page.get_by_role('button', name='Linked Y3: A connected math worksheet', exact=True)
                     await linked.click()
@@ -76,10 +83,15 @@ async def capture(args):
                     await shot('linked-source')
                     assert not errors, errors
                     manifest['profiles'].append({'name': name, **profile, 'passed': True})
+                except Exception as error:
+                    manifest['profiles'].append({'name': name, **profile, 'passed': False, 'error': str(error)})
+                    await page.screenshot(path=str(output/f'{name}-failure.png'))
+                    raise
                 finally:
                     manifest['pageErrors'].extend(errors)
                     await context.close()
         finally:
+            (output/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
             await browser.close()
     (output/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     cards = ''.join(f'<figure><a href="{html.escape(s["file"])}"><img loading="lazy" src="{html.escape(s["file"])}" alt="{html.escape(s["profile"]+" "+s["scene"])}"></a><figcaption>{html.escape(s["profile"]+" · "+s["scene"])}</figcaption></figure>' for s in manifest['screenshots'])
@@ -90,5 +102,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--url', default='http://127.0.0.1:8766/')
     parser.add_argument('--source', required=True)
+    parser.add_argument('--chromium')
     parser.add_argument('--output', default='browser-results/gallery')
     asyncio.run(capture(parser.parse_args()))

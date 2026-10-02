@@ -35,6 +35,7 @@ async def check(args):
             if task['status'] != 'passed':
                 print(task['id'], task['status'], task.get('error', task.get('actual')))
         await browser.close()
+        assert result['schemaVersion'] == 2, 'Deployed audit runner is stale; result-form checks require version 2'
         assert result['nativeBridge'], 'WASM CAS unavailable'
         assert result['failed'] == 0 and result['unsupported'] == 0, 'See task report for gaps'
 

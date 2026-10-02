@@ -1,0 +1,112 @@
+name: Native Apple screenshot gallery
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/graph-workspace-ux']
+    paths:
+      - '.github/workflows/apple-screenshot-gallery.yml'
+      - 'integration_test/product_gallery_test.dart'
+      - 'test_driver/product_gallery_driver.dart'
+permissions:
+  contents: read
+jobs:
+  gallery:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+          submodules: recursive
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Build real OCR library for the simulator SDK
+        run: |
+          cmake -S .ci/CrispEmbed -B .ci/simulator-build \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
+            -DCMAKE_OSX_ARCHITECTURES="$(uname -m)" \
+            -DCMAKE_OSX_SYSROOT="$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+            -DCMAKE_C_COMPILER="$(xcrun --sdk iphonesimulator -f clang)" \
+            -DCMAKE_CXX_COMPILER="$(xcrun --sdk iphonesimulator -f clang++)" \
+            -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=OFF \
+            -DGGML_NATIVE=OFF -DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON
+          cmake --build .ci/simulator-build --target crispembed --parallel 3
+          mkdir -p .ci/CrispEmbed/flutter/crispembed/ios/Libs
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+          archives=sorted(Path('.ci/simulator-build').rglob('*.a'))
+          assert archives, 'Simulator static libraries missing'
+          subprocess.run(['xcrun','libtool','-static','-o', '.ci/CrispEmbed/flutter/crispembed/ios/Libs/libcrispembed-static.a', *map(str,archives)],check=True)
+          PY
+      - name: Resolve simulator dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Select actual iPhone and iPad simulators
+        run: |
+          mkdir -p native-gallery
+          xcrun simctl list devices available --json > native-gallery/simulators.json
+          python3 - <<'PY'
+          import json, os
+          data=json.load(open('native-gallery/simulators.json'))
+          devices=[d for runtime,items in data['devices'].items() if 'iOS' in runtime for d in items if d.get('isAvailable')]
+          phone=next(d for d in devices if 'iPhone' in d['name'] and ('Pro Max' in d['name'] or 'Plus' in d['name']))
+          tablet=next(d for d in devices if 'iPad' in d['name'] and ('13-inch' in d['name'] or '12.9-inch' in d['name']))
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+            f.write('GALLERY_IPHONE='+phone['udid']+'\nGALLERY_IPAD='+tablet['udid']+'\n')
+          json.dump({'source':os.environ['GITHUB_SHA'],'kind':'native-ios-simulator','iphone':phone,'ipad':tablet,'physicalDeviceTest':False},open('native-gallery/manifest.json','w'),indent=2)
+          PY
+      - name: Capture iPhone and iPad with real native CAS assertions
+        run: |
+          unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
+          for profile in iphone ipad; do
+            if [ "$profile" = iphone ]; then simulator="$GALLERY_IPHONE"; else simulator="$GALLERY_IPAD"; fi
+            xcrun simctl boot "$simulator" || true
+            xcrun simctl bootstatus "$simulator" -b
+            xcrun simctl status_bar "$simulator" override --time '9:41' --batteryState charged --batteryLevel 100 --wifiBars 3
+            CRISPMATH_GALLERY_OUTPUT="native-gallery/$profile" flutter drive \
+              --driver=test_driver/product_gallery_driver.dart \
+              --target=integration_test/product_gallery_test.dart -d "$simulator"
+            xcrun simctl shutdown "$simulator"
+          done
+      - name: Verify native images and record pixel dimensions
+        run: |
+          python3 - <<'PY'
+          import json, struct
+          from pathlib import Path
+          root=Path('native-gallery')
+          manifest=json.loads((root/'manifest.json').read_text())
+          images=[]
+          for profile in ['iphone','ipad']:
+            files=sorted((root/profile).glob('*.png'))
+            assert len(files)==3, (profile,files)
+            evidence=json.loads((root/profile/'native-evidence.json').read_text())
+            assert evidence['nativeBridge'] is True
+            assert evidence['integral']['value']=='1/3'
+            for file in files:
+              data=file.read_bytes()
+              assert data[:8]==b'\x89PNG\r\n\x1a\n'
+              width,height=struct.unpack('>II',data[16:24])
+              assert height>width and width>=1200, (file,width,height)
+              images.append({'file':str(file.relative_to(root)), 'width':width,'height':height})
+          manifest['screenshots']=images
+          manifest['passed']=True
+          (root/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-apple-screenshot-gallery
+          path: native-gallery
+          retention-days: 14

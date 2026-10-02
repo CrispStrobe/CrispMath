@@ -1,5 +1,6 @@
 import '../engine/result_evidence.dart';
 import '../services/engine_dispatch.dart';
+import '../services/integral_arguments.dart';
 import '../widgets/result_evidence_badge.dart';
 // lib/screens/calculator_screen.dart
 
@@ -1816,44 +1817,21 @@ class CalculatorScreenState extends State<CalculatorScreen>
     }
   }
 
-  /// integrate(expr, var) or integrate(expr, (var, lower, upper))
+  /// Accept both flat and tuple bounds, matching the worksheet dispatcher.
   Future<String> _handleIntegrateFunction(String expression) async {
-    try {
-      final content = expression.substring(10, expression.length - 1).trim();
-      // Split into expression and the rest at the first comma at depth 0.
-      final firstComma = _findTopLevelComma(content);
-      if (firstComma < 0) return 'Error: integrate() needs at least a variable';
-
-      final exprPart = content.substring(0, firstComma).trim();
-      final rest = content.substring(firstComma + 1).trim();
-
-      final preprocessedExpr =
-          ExpressionPreprocessingUtils.preprocessNativeExpression(
-        ExpressionPreprocessingUtils.preprocessExpression(exprPart, _appState),
-      );
-
-      // (var, a, b) form — definite integral
-      if (rest.startsWith('(') && rest.endsWith(')')) {
-        final inner = rest.substring(1, rest.length - 1);
-        final parts = inner.split(',').map((s) => s.trim()).toList();
-        if (parts.length == 3) {
-          return _runEngineOpMaybeAsync('integrate', preprocessedExpr,
-              arg2: parts[0],
-              arg3: parts[1],
-              arg4: parts[2],
-              fallback: () => _engine.integrate(
-                  preprocessedExpr, parts[0], parts[1], parts[2]));
-        }
-        return 'Error: integrate(expr, (var, lower, upper)) expected';
-      }
-
-      // Just a variable — indefinite integral
-      return _runEngineOpMaybeAsync('integrate', preprocessedExpr,
-          arg2: rest,
-          fallback: () => _engine.integrate(preprocessedExpr, rest));
-    } catch (e) {
-      return 'Error: Invalid integrate() syntax';
+    final args = parseIntegralArguments(expression);
+    if (args == null) {
+      return 'Error: integrate(expr, var), integrate(expr, var, lower, upper) or integrate(expr, (var, lower, upper)) expected';
     }
+    final body = ExpressionPreprocessingUtils.preprocessNativeExpression(
+        ExpressionPreprocessingUtils.preprocessExpression(args[0], _appState));
+    final lower = args.length == 4 ? args[2] : null;
+    final upper = args.length == 4 ? args[3] : null;
+    return _runEngineOpMaybeAsync('integrate', body,
+        arg2: args[1],
+        arg3: lower,
+        arg4: upper,
+        fallback: () => _engine.integrate(body, args[1], lower, upper));
   }
 
   /// limit(expr, var, point)
@@ -2548,18 +2526,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
         ],
       ),
     );
-  }
-
-  /// Returns the index of the first top-level (depth 0) comma in `s`, or -1.
-  int _findTopLevelComma(String s) {
-    var depth = 0;
-    for (var i = 0; i < s.length; i++) {
-      final c = s[i];
-      if (c == '(' || c == '[' || c == '{') depth++;
-      if (c == ')' || c == ']' || c == '}') depth--;
-      if (c == ',' && depth == 0) return i;
-    }
-    return -1;
   }
 
   @override

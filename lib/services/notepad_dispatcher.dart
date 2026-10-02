@@ -9,6 +9,7 @@ import '../engine/unit_expression.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/latex_conversion_utils.dart';
 import 'engine_service.dart';
+import 'integral_arguments.dart';
 
 /// Shared routing/formatting for document evaluation, independent of screen UI.
 /// Worker callbacks are injectable so CAS routing is testable without native FFI.
@@ -270,8 +271,10 @@ class NotepadDispatcher {
       if (args.length != 2) return null;
       op = EngineOp('differentiate', _native(args[0]), args[1].trim());
     } else if (_isCasCall(trimmed, 'integrate')) {
-      final args = _splitCasArgs(trimmed);
-      if (args.length < 2 || args.length > 4) return null;
+      final args = parseIntegralArguments(trimmed);
+      if (args == null) {
+        return const ComputedResult('Error: invalid integrate arguments', null);
+      }
       op = EngineOp(
         'integrate',
         _native(args[0]),

@@ -45,7 +45,7 @@ jobs:
           test/graphing_plot_modes_test.dart test/graph_sampling_test.dart
           test/ai_provider_service_test.dart test/ai_math_dialog_test.dart
           test/notepad_screen_test.dart test/app_state_persistence_test.dart
-          test/result_evidence_test.dart test/workflow_tasks_test.dart
+          test/result_evidence_test.dart test/workflow_tasks_test.dart test/integral_arguments_test.dart
   unit:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -173,6 +173,7 @@ jobs:
           python tool/check_core_workflow_browser.py
           python tool/check_notepad_calendar_browser.py
           python tool/check_result_evidence_browser.py
+          python tool/check_integral_syntax_browser.py
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
       - name: Debug build and framework assertion checks
@@ -183,6 +184,7 @@ jobs:
           python tool/check_catalog_browser.py --screenshots browser-results/debug
           python tool/check_notepad_calendar_browser.py --output browser-results/debug/calendar-routing.json
           python tool/check_result_evidence_browser.py --output browser-results/debug/provenance
+          python tool/check_integral_syntax_browser.py --output browser-results/debug/integral-syntax
       - uses: actions/upload-artifact@v4
         if: always()
         with:
