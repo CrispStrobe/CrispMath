@@ -32,7 +32,9 @@ void main() {
         ['23.0 + 1.0*I', '23'],
         ['x^2+1', 'x^2+2'],
         ['4', '5'],
-        ['x+C', 'x']
+        ['x+C', 'x'],
+        ['Error: x = 2', 'x = 2'],
+        ['x = 2, y = 9', 'x = 2']
       ])
         {
           'id': '${pair[0]}:${pair[1]}',
@@ -42,8 +44,17 @@ void main() {
           'expected': pair[1]
         }
     ]);
-    expect((report['results'] as List).map((r) => r['status']),
-        ['passed', 'passed', 'passed', 'failed', 'failed', 'failed', 'failed']);
+    expect((report['results'] as List).map((r) => r['status']), [
+      'passed',
+      'passed',
+      'passed',
+      'failed',
+      'failed',
+      'failed',
+      'failed',
+      'failed',
+      'failed'
+    ]);
   });
   test('duplicate IDs and unknown routes fail before execution', () async {
     final runner = WorkflowTasks(FixtureEngine());

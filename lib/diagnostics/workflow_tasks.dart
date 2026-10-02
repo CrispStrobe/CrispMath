@@ -263,6 +263,8 @@ class WorkflowTasks {
       throw const FormatException('Expected result must be a string');
     }
     if (actual == expected) return true;
+    if (actual.startsWith('Error') || actual.contains('Error:')) return false;
+
     if (actual.startsWith('Matrix(') && expected.startsWith('Matrix(')) {
       return actual.replaceAll(RegExp(r'\s+'), '') ==
           expected.replaceAll(RegExp(r'\s+'), '');
@@ -294,7 +296,6 @@ class WorkflowTasks {
       return a.length == b.length &&
           List.generate(a.length, (i) => _matches(a[i], b[i])).every((v) => v);
     }
-    if (actual.startsWith('Error') || actual.contains('Error:')) return false;
     String normalize(String value) {
       var v = value.trim().replaceAll('**', '^');
       final complex =
