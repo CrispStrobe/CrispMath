@@ -19,12 +19,23 @@ Physical iPhone/iPad testing is deferred to a separate session.
 2. [x] Large documents: incremental recalculation, cancellable batches and
    clear progress; 500/2,000-row comparisons, release/debug CI and deployed
    Pages/Vercel Playwright passed for `911f035`.
-3. [~] Apple workflows: iPad keyboard/navigation and multitasking layouts,
+3. [x] Apple workflows: iPad keyboard/navigation and multitasking layouts,
    Files document integration and Shortcuts.
-4. [~] Shared worksheets: export calculations, graphs and value tables with
+4. [x] Shared worksheets: export calculations, graphs and value tables with
    consistent layouts and an export preview.
 5. [~] Document history: checkpoints, comparisons, restore and portable
-   backups, followed by cross-device sync.
+   backups pass unit and desktop/phone live checks. Runtime cloud setup,
+   revision conflict checks and database owner isolation are implemented/tested;
+   a real Supabase project and two-device account round trip await credentials.
+6. [~] Handwriting: visible ink/dots, provider selection, consent and editable
+   review pass unit/live checks. The real 50-human-sample benchmark gives only
+   7/50 exact PosFormer transcriptions, 0/50 for BTTR/HMER. Better trained
+   weights/GPU work remains pending; reliable recognition is not established.
+7. [x] Fresh independent 50-problem audit: close exact-integer, matrix,
+   rational-domain, Student-t, CSP/web and older-Apple linear-system gaps.
+   Both original and fresh corpora pass 50/50 on Linux, packaged macOS and
+   deployed WASM on Pages/Vercel for `34bb88f`. See
+   `docs/fresh-workflow-audit-50.md`.
 
 Additional validation: all four 50-task audit gaps are closed. Native Linux and
 browser WASM each pass 50/50 with zero failures or unsupported cases in
@@ -34,8 +45,9 @@ The pinned Linux bridge provides real factoring, rational cancellation and
 series; older Apple libraries compute exact Taylor coefficients through native
 symbolic differentiation. Worksheets support inline functions with dependency-aware calls and
 linked graphs. Pages and Vercel also enforce this strict audit after deployment.
-See `docs/workflow-task-audit.md`. Remaining ordered feature stages 3–5 above
-are separate from these resolved audit gaps.
+See `docs/workflow-task-audit.md`. The later independent fresh corpus and
+ordered feature work are tracked above. Physical iPhone/iPad, actual Siri/Files
+provider checks, a real sync backend and Apple's 4.3(a) decision remain open.
 
 ## October release and workflow improvements
 

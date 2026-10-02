@@ -56,9 +56,8 @@ adapter must be distinguished from a missing application capability.
 49. Solve the Boolean constraints (a or b), (not a or c), and (not b or not c); verify every clause.
 50. Solve a 4x4 Sudoku with rows [1,0,0,4], [0,4,1,0], [0,1,4,0], [4,0,0,1], checking rows, columns and 2x2 boxes.
 
-Status: drafted; not scored yet. Unit, CLI/runtime and live UI coverage will be
-recorded separately, with source SHA and CI run links. No pass count is claimed
-from this draft.
+The list above was fixed before inspecting the existing corpus. Runtime scores
+and subsequent fixes are recorded below; the original draft is retained in git.
 
 ## Reproducible references and execution
 
@@ -93,3 +92,23 @@ native CI passed. Packaged macOS exposed a missing older-library `linsolve`
 entry point; the app now provides bounded exact rational Gaussian elimination
 for that syntax. Its tests distinguish unique, inconsistent, underdetermined
 and nonlinear systems, including pivoting and redundant equations.
+
+## Final automated evidence
+
+Source `34bb88f` passes the original **50/50** and fresh **50/50**, with zero
+failed or unsupported tasks, in each runtime:
+
+- [Linux CLI](https://github.com/CrispStrobe/CrispMath/actions/runs/37020628565).
+- [Sandboxed packaged macOS release app](https://github.com/CrispStrobe/CrispMath/actions/runs/37020563184).
+- [Deployed Pages WASM](https://github.com/CrispStrobe/CrispMath/actions/runs/37020555588).
+- [Deployed Vercel WASM](https://github.com/CrispStrobe/CrispMath/actions/runs/37020931036).
+
+[Feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/37020555120)
+passes 5,293 unit/widget tests (seven opt-in skips), 237 focused checks, analysis,
+native OCR, and release/debug Playwright. The actual worksheet UI on desktop
+and phone verifies exact `2^100`, numeric eigenvalues, visible original-domain
+details and reload. Backup round trips verify conflict preservation, recovery
+restore and reload; ink checks inspect real painted pixels for dots, strokes,
+undo and clear. Deployed checks use the actual app without injected fixes.
+The original-domain parser intentionally covers only its documented bounded
+univariate quotient grammar; this corpus does not establish arbitrary CAS depth.

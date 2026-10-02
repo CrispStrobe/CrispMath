@@ -24,8 +24,8 @@ retains CAS assertions (the derivative of sin(x) is cos(x); the integral of
 x² from zero to one is 1/3). It adds the export preview, history and handwriting
 input to the prior calculator, worksheet, graph and workflow-link scenes.
 The 14-image native gallery passed in
-[run 37014414495](https://github.com/CrispStrobe/CrispMath/actions/runs/37014414495)
-for source `d899cc2`. Its manifest records the source revision, actual dimensions
+[run 37020555224](https://github.com/CrispStrobe/CrispMath/actions/runs/37020555224)
+for source `34bb88f`. Its manifest records the source revision, actual dimensions
 and simulator identity. Original captures are retained. The upload images preserve their RGB
 pixels, remove redundant alpha and follow
 [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/).
