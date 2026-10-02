@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/linked_graph.dart';
 import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,47 @@ NotepadDocument sample() {
 }
 
 void main() {
+  test('local function definitions map their lexical parameter to graph x',
+      () async {
+    final doc = NotepadDocument.fresh(name: 'Function graph')
+      ..lines.clear()
+      ..lines.addAll(['t=100', 'a=2', 'f(t)=t^2+a', 'f(x)+1']
+          .map((s) => NotepadLine.fresh(source: s)));
+    final evaluator = NotepadEvaluator(
+        dispatcher: (s) async =>
+            NumericFallbackEvaluator.evalNumeric(s)?.toString() ?? s);
+    await evaluator.evaluateAll(doc);
+    final definition = resolveLinkedGraph(doc, doc.lines[2].id);
+    expect(definition.error, isNull);
+    expect(definition.scope, {'a': '2.0'});
+    expect(
+        NumericFallbackEvaluator.evalNumeric(definition.expression!, {'x': 3}),
+        11);
+    final call = resolveLinkedGraph(doc, doc.lines[3].id);
+    expect(call.error, isNull);
+    expect(
+        NumericFallbackEvaluator.evalNumeric(call.expression!, {'x': 3}), 12);
+    doc.lines[1].source = 'a=5';
+    await evaluator.evaluateChanged(doc, {1});
+    expect(
+        NumericFallbackEvaluator.evalNumeric(
+            resolveLinkedGraph(doc, doc.lines[3].id).expression!, {'x': 3}),
+        15);
+  });
+  test('multiple-parameter function calls allow a fixed argument for graphs',
+      () async {
+    final doc = NotepadDocument.fresh(name: 'Function graph')
+      ..lines.clear()
+      ..lines.addAll(
+          ['g(t,y)=t*y', 'g(x,2)'].map((s) => NotepadLine.fresh(source: s)));
+    await NotepadEvaluator(dispatcher: (s) async => s).evaluateAll(doc);
+    expect(resolveLinkedGraph(doc, doc.lines.first.id).error,
+        contains('one parameter'));
+    final call = resolveLinkedGraph(doc, doc.lines.last.id);
+    expect(call.error, isNull);
+    expect(NumericFallbackEvaluator.evalNumeric(call.expression!, {'x': 3}), 6);
+  });
+
   test(
       'variable navigation selects the effective assignment and ignores imports',
       () async {

@@ -87,4 +87,32 @@ void main() {
     expect(doc.lines.last.cachedError, contains('exceeds its limit'));
     expect(doc.lines.last.cachedResult, isNull);
   });
+  test('the latest function definition owns calls and dependency edges',
+      () async {
+    final doc = document(['f(x)=x+1', 'f(x)=x+2', 'f(3)']);
+    await evaluator.evaluateAll(doc);
+    expect(doc.lines.last.cachedResult, '5');
+    expect(buildDependencyGraph(doc).dependsOn[2], {1});
+    doc.lines.first.source = 'f(x)=x+100';
+    await evaluator.evaluateChanged(doc, {0});
+    expect(doc.lines.last.cachedResult, '5');
+    doc.lines[1].source = 'f(x)=x*2';
+    await evaluator.evaluateChanged(doc, {1});
+    expect(doc.lines.last.cachedResult, '6');
+  });
+  test('a function definition removes an older scalar binding of its name',
+      () async {
+    final doc = document(['f=100', 'f(x)=x+1', 'f(3)']);
+    await evaluator.evaluateAll(doc);
+    expect(buildNotepadScope(doc), isNot(contains('f')));
+    expect(doc.lines.last.cachedResult, '4');
+  });
+  test('CAS names and mathematical constants cannot become local functions',
+      () {
+    for (final name in ['sin', 'series', 'taylor', 'linsolve', 'I']) {
+      final parsed = classifyNotepadLine('$name(x)=x+1',
+          lineIndex: 0, firstCodeLineIndex: 0);
+      expect(parsed.isFunction, isFalse, reason: name);
+    }
+  });
 }

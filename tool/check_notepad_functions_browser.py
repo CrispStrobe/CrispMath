@@ -64,9 +64,14 @@ async def check(args):
                 }''')
                 await edit(3, 'g(3,2)')
                 await result('19')
+                await edit(1, 'f(t)=t^3+a')
+                await result('19')
+                await page.get_by_role('button', name='Link line to graph', exact=True).nth(1).click()
+                await page.wait_for_function("(localStorage.getItem('flutter.crisp.functions')||'').includes('x^3+(5)')")
+                await page.screenshot(path=str(output/f"function-graph-{profile['viewport']['width']}.png"))
                 assert not errors, errors
                 report['checks'].append({'viewport': profile['viewport'], 'nestedCalls': True,
-                    'bodyAndCaptureEdits': True, 'transcendentalCall': True, 'reload': True, 'arityRecovery': True})
+                    'bodyAndCaptureEdits': True, 'transcendentalCall': True, 'reload': True, 'arityRecovery': True, 'linkedFunctionGraph': True})
             except Exception as error:
                 report['error'] = str(error)
                 report['savedDocument'] = await read_document(page, document['i'])

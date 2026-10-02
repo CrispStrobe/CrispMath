@@ -74,9 +74,22 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
         classifyNotepadLine(l.source, lineIndex: i, firstCodeLineIndex: first);
     if (p.kind == NotepadLineKind.assignment) scope.remove(p.name);
   }
-  final variable =
-      parsed.kind == NotepadLineKind.plot ? parsed.name ?? 'x' : 'x';
-  final body = parsed.body ?? '';
+  if (parsed.isFunction && parsed.parameters!.length != 1) {
+    return LinkedGraphResolution(line.source, null, {},
+        'Choose a function with one parameter or plot a call with fixed arguments.');
+  }
+  final variable = parsed.isFunction
+      ? parsed.parameters!.single
+      : parsed.kind == NotepadLineKind.plot
+          ? parsed.name ?? 'x'
+          : 'x';
+  String body;
+  try {
+    body = expandNotepadFunctionCalls(parsed.body ?? '', doc);
+  } on FormatException catch (error) {
+    return LinkedGraphResolution(
+        line.source, null, {}, error.message.toString());
+  }
   if (body.trim().isEmpty) {
     return LinkedGraphResolution(
         line.source, null, {}, 'The source expression is empty.');

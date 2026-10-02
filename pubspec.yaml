@@ -32,7 +32,7 @@ dependencies:
   symbolic_math_bridge:
     git:
       url: https://github.com/CrispStrobe/symbolic_math_bridge.git
-      ref: "d5ff0b48c44e94d2f175e977e7ef6da4ed3c068a"   # bridge v1.5.0 + clarified bundled native library notices
+      ref: "4d2cdfaf9290601f918d42be345c71df0d233d0b"   # bridge v1.5.0 + clarified bundled native library notices
 
   # Constraint Satisfaction Problem solver — pure Dart, no native
   # deps. Powers the Analysis-hub "Constraints" module (Diophantine

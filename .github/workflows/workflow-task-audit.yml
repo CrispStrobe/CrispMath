@@ -3,6 +3,8 @@ on:
   push:
     branches: ['feat/graph-workspace-ux']
     paths:
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
       - 'lib/diagnostics/**'
       - 'lib/engine/**'
       - 'lib/services/engine_dispatch.dart'

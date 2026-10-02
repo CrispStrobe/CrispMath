@@ -303,10 +303,12 @@ const Set<String> kReservedNotepadNames = {
   'beta', 'lowergamma', 'uppergamma', 'polygamma',
   // Calculus / CAS ops
   'integrate', 'diff', 'limit', 'solve', 'expand', 'simplify', 'subst',
+  'series', 'taylor', 'linsolve', 'eigenvalues', 'eigenvectors',
+  'besselj', 'bessely', 'plot',
   // Matrix / linear algebra
   'Matrix', 'det', 'inv', 'transpose', 'rref',
   // Constants (commonly typed)
-  'pi', 'Pi', 'PI', 'e', 'E', 'euler', 'EulerGamma', 'gamma',
+  'pi', 'Pi', 'PI', 'e', 'E', 'I', 'inf', 'oo', 'euler', 'EulerGamma', 'gamma',
   // Stats-ish
   'min', 'max', 'mean', 'median', 'sum', 'mod',
   // Notepad aggregates
@@ -494,8 +496,11 @@ Map<String, String> buildNotepadScope(
             lineIndex: i, firstCodeLineIndex: firstCode) ??
         classifyNotepadLine(line.source,
             lineIndex: i, firstCodeLineIndex: firstCode);
-    if (parsed.isFunction ||
-        parsed.kind == NotepadLineKind.blank ||
+    if (parsed.isFunction) {
+      scope.remove(parsed.name);
+      continue;
+    }
+    if (parsed.kind == NotepadLineKind.blank ||
         parsed.kind == NotepadLineKind.comment ||
         parsed.kind == NotepadLineKind.useDirective) {
       continue;
@@ -581,7 +586,7 @@ String? preprocessNotepadLine(
 }) {
   if (parsed.body == null) return null;
   var out = parsed.body!;
-  out = _expandNotepadFunctions(out, doc);
+  out = expandNotepadFunctionCalls(out, doc);
 
   // Resolve cross-document references before anything else.
   if (allDocs != null && out.contains('{doc:')) {
@@ -801,7 +806,7 @@ bool _mayCallNotepadFunction(String input) => _notepadCallPattern
     .allMatches(input)
     .any((m) => !kReservedNotepadNames.contains(m[1]));
 
-String _expandNotepadFunctions(String input, NotepadDocument doc) {
+String expandNotepadFunctionCalls(String input, NotepadDocument doc) {
   if (!_mayCallNotepadFunction(input)) return input;
   final definitions =
       <String, ({ParsedNotepadLine parsed, NotepadLine line})>{};
@@ -811,6 +816,8 @@ String _expandNotepadFunctions(String input, NotepadDocument doc) {
         lineIndex: i, firstCodeLineIndex: first);
     if (parsed.isFunction) {
       definitions[parsed.name!] = (parsed: parsed, line: doc.lines[i]);
+    } else if (parsed.kind == NotepadLineKind.assignment) {
+      definitions.remove(parsed.name);
     }
   }
   String expand(String source, int depth) {
