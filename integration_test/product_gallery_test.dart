@@ -97,6 +97,7 @@ void main() {
     Future<void> menu(String label) async {
       await tester.tap(find.byTooltip('Document menu'));
       await settle();
+      await tester.ensureVisible(find.text(label).last);
       await tester.tap(find.text(label).last);
       await settle();
     }

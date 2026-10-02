@@ -201,6 +201,7 @@ jobs:
           python tool/check_worksheet_export_browser.py
           python tool/check_document_history_browser.py
           python tool/check_handwriting_browser.py
+          python tool/check_fresh_calculations_browser.py
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
           python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
@@ -219,6 +220,7 @@ jobs:
           python tool/check_worksheet_export_browser.py --output browser-results/debug/worksheet-export
           python tool/check_document_history_browser.py --output browser-results/debug/document-history
           python tool/check_handwriting_browser.py --output browser-results/debug/handwriting
+          python tool/check_fresh_calculations_browser.py --output browser-results/debug/fresh-calculations
       - uses: actions/upload-artifact@v4
         if: always()
         with:
