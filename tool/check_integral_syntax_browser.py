@@ -27,7 +27,10 @@ async def check(args):
             await page.get_by_role('button', name='Edit expression', exact=True).click()
             for source in CASES:
                 editor = page.get_by_role('textbox', name='Expression', exact=True)
+                await editor.click()
+                await next_frames(page)
                 await editor.fill(source)
+                await next_frames(page)
                 await editor.press('Enter')
                 await page.wait_for_function('''() => {
                     const raw=localStorage.getItem('flutter.crisp.history');
@@ -38,7 +41,10 @@ async def check(args):
                 report['calculator'].append({'source': source, 'result': '1/3'})
                 # Require the next result to be a new history entry, not the prior pass.
                 if source != CASES[-1]:
+                    await editor.click()
+                    await next_frames(page)
                     await editor.fill('2+2')
+                    await next_frames(page)
                     await editor.press('Enter')
                     await page.wait_for_function("JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0].r==='4'")
             await page.get_by_role('button', name=re.compile(r'^Notepad')).click()

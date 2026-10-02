@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../tool/screenshot_png.dart';
 import 'package:integration_test/integration_test_driver_extended.dart';
 
 Future<void> main() async {
@@ -6,7 +7,10 @@ Future<void> main() async {
       Platform.environment['CRISPMATH_GALLERY_OUTPUT'] ?? 'native-gallery');
   await directory.create(recursive: true);
   await integrationDriver(onScreenshot: (name, bytes, [args]) async {
-    await File('${directory.path}/$name.png').writeAsBytes(bytes);
+    await Directory('${directory.path}/raw').create(recursive: true);
+    await File('${directory.path}/raw/$name.png').writeAsBytes(bytes);
+    await File('${directory.path}/$name.png')
+        .writeAsBytes(encodeOpaqueScreenshot(bytes));
     return bytes.isNotEmpty;
   }, responseDataCallback: (data) async {
     await writeResponseData(

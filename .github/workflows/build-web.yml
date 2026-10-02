@@ -107,7 +107,13 @@ jobs:
             FLAGS+=(--prod)
           fi
           URL=$(npx --yes vercel@54.11.1 deploy build/web --yes --archive=tgz "${FLAGS[@]}" --token="$VERCEL_TOKEN")
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=$URL" >> "$GITHUB_OUTPUT"
+          if [ "${{ inputs.production }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
+            # Generated deployment URLs retain protection; the production alias is public.
+            echo "url=https://crisp-math.vercel.app" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=$URL" >> "$GITHUB_OUTPUT"
+          fi
           echo "Deployed: $URL"
       - name: Verify published Vercel workflows
         if: steps.vercel.outputs.url != ''

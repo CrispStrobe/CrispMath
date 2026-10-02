@@ -97,6 +97,7 @@ jobs:
             for file in files:
               data=file.read_bytes()
               assert data[:8]==b'\x89PNG\r\n\x1a\n'
+              assert data[25]==2, 'App Store screenshot must be RGB without alpha'
               width,height=struct.unpack('>II',data[16:24])
               assert height>width and width>=1200, (file,width,height)
               images.append({'file':str(file.relative_to(root)), 'width':width,'height':height})
