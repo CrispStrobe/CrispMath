@@ -90,14 +90,19 @@ struct CreateWorksheetIntent: AppIntent {
   @Parameter(title: "Worksheet name", default: "Shortcut worksheet") var name: String
   @Parameter(title: "Expressions, one per line", default: "") var expressions: String
 
-  func perform() async throws -> some IntentResult & OpensIntent {
+  @MainActor
+  func perform() async throws -> some IntentResult {
     var components = URLComponents()
     components.scheme = "crispmath"
     components.host = "worksheet"
     components.queryItems = [URLQueryItem(name: "name", value: name),
                             URLQueryItem(name: "lines", value: expressions)]
     guard let url = components.url else { throw URLError(.badURL) }
-    return .result(opensIntent: OpenURLIntent(url))
+    guard let delegate = UIApplication.shared.delegate as? AppDelegate else {
+      throw CocoaError(.coderInvalidValue)
+    }
+    delegate.receiveWorkflowURL(url)
+    return .result()
   }
 }
 
@@ -108,13 +113,18 @@ struct OpenCalculationIntent: AppIntent {
   static var openAppWhenRun: Bool = true
   @Parameter(title: "Expression", default: "") var expression: String
 
-  func perform() async throws -> some IntentResult & OpensIntent {
+  @MainActor
+  func perform() async throws -> some IntentResult {
     var components = URLComponents()
     components.scheme = "crispmath"
     components.host = "calculate"
     components.queryItems = [URLQueryItem(name: "expression", value: expression)]
     guard let url = components.url else { throw URLError(.badURL) }
-    return .result(opensIntent: OpenURLIntent(url))
+    guard let delegate = UIApplication.shared.delegate as? AppDelegate else {
+      throw CocoaError(.coderInvalidValue)
+    }
+    delegate.receiveWorkflowURL(url)
+    return .result()
   }
 }
 

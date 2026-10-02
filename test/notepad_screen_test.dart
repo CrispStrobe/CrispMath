@@ -83,7 +83,11 @@ void main() {
       await _bootApp(tester, size: const Size(1280, 800));
       expect(find.text('Notepad'), findsWidgets);
       await _gotoNotepad(tester);
-      expect(find.text('Untitled'), findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byType(AppBar), matching: find.text('Untitled')),
+          findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Untitled'), findsOneWidget);
     });
   });
 
@@ -184,7 +188,8 @@ void main() {
 
       await tester.tap(find.byTooltip('Document menu'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('New document'));
+      await tester
+          .tap(find.widgetWithText(PopupMenuItem<String>, 'New document'));
       await tester.pumpAndSettle();
 
       // Sequential naming (decision #8): `Untitled` is taken by the
@@ -239,7 +244,8 @@ void main() {
       // Create a doc we can safely delete.
       await tester.tap(find.byTooltip('Document menu'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('New document'));
+      await tester
+          .tap(find.widgetWithText(PopupMenuItem<String>, 'New document'));
       await tester.pumpAndSettle();
       final state = AppState();
       final victimId = state.currentNotepadDocId!;
