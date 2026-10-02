@@ -91,6 +91,8 @@ void main() {
     expect(RationalEquationSolver.solve('x/(2^100)-1', 'x'),
         isNull); // Exponent 100 remains outside this solver's degree-8 grammar.
     expect(RationalEquationSolver.solve('x/(2^8)-1', 'x'), ['256']);
+    expect(SymbolicWeb.expand('1/0'), isNull);
+    expect(SymbolicWeb.expand('1/(2-2)'), isNull);
   });
 
   for (final entry in <String, List<String>>{

@@ -506,7 +506,9 @@ class _PolyExprParser {
       } else if (c == '/') {
         _pos++;
         final divisor = _parseFactor();
-        if (divisor.degree != 0) throw _PolyBail(); // rational function
+        if (divisor.degree != 0 || divisor.isZero) {
+          throw _PolyBail(); // rational function or undefined division
+        }
         if (_coefficientCost(value) + _coefficientCost(divisor) >
             _maxCoefficientBits) {
           throw _PolyBail();
