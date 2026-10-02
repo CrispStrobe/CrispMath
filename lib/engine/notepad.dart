@@ -11,6 +11,7 @@ import 'result_evidence.dart';
 // known results without an immediate re-eval.
 
 import 'dart:math';
+import 'dart:collection';
 
 /// Per-line result display format. `auto` defers to the global
 /// `AppState.numberFormat`; the others override it for this line only.
@@ -107,7 +108,12 @@ class NotepadDocument {
   String name;
   final DateTime createdAt;
   DateTime updatedAt;
-  final List<NotepadLine> lines;
+  late final List<NotepadLine> lines;
+
+  /// Changes to scope inputs, including direct edits and list mutations.
+  /// Transient and deliberately excluded from persisted document data.
+  int _scopeRevision = 0;
+  int get scopeRevision => _scopeRevision;
 
   /// Notepad V2: when true, input fields render inline LaTeX via
   /// `LatexController` instead of plain monospace text. Persisted
@@ -119,9 +125,11 @@ class NotepadDocument {
     required this.name,
     required this.createdAt,
     required this.updatedAt,
-    required this.lines,
+    required List<NotepadLine> lines,
     this.useLatexInput = false,
-  });
+  }) {
+    this.lines = _DocumentLines(lines, () => _scopeRevision++);
+  }
 
   /// Mint a fresh document with a generated id, current timestamps,
   /// and a single empty line. Used by the "+ New document" action
@@ -164,12 +172,30 @@ class NotepadDocument {
 
 class NotepadLine {
   final String id;
-  String source;
+  String _source;
+  final _scopeListeners = <void Function()>{};
+  String get source => _source;
+  set source(String value) {
+    if (_source == value) return;
+    _source = value;
+    for (final listener in _scopeListeners.toList()) {
+      listener();
+    }
+  }
+
   ResultEvidence? resultEvidence;
 
   /// Last engine result for this line's source. Cleared on edit and
   /// repopulated when evaluation finishes (Phase 5).
-  String? cachedResult;
+  String? _cachedResult;
+  String? get cachedResult => _cachedResult;
+  set cachedResult(String? value) {
+    if (_cachedResult == value) return;
+    _cachedResult = value;
+    for (final listener in _scopeListeners.toList()) {
+      listener();
+    }
+  }
 
   /// Last engine error (raw, formatter-ready). Mutually exclusive
   /// with [cachedResult] in steady state.
@@ -196,15 +222,17 @@ class NotepadLine {
 
   NotepadLine({
     required this.id,
-    required this.source,
-    this.cachedResult,
+    required String source,
+    String? cachedResult,
     this.resultEvidence,
     this.cachedError,
     List<String>? cachedFreeVars,
     Map<String, String>? cachedExports,
     this.resultFormat = LineResultFormat.auto,
     this.pinned = false,
-  })  : cachedFreeVars = cachedFreeVars ?? <String>[],
+  })  : _source = source,
+        _cachedResult = cachedResult,
+        cachedFreeVars = cachedFreeVars ?? <String>[],
         cachedExports = cachedExports ?? <String, String>{};
 
   factory NotepadLine.fresh({required String source}) => NotepadLine(
@@ -327,4 +355,117 @@ NotepadDocument buildWelcomeNotepadDocument({String locale = 'en'}) {
       NotepadLine.fresh(source: comment2),
     ],
   );
+}
+
+/// Owns the list structure while observing scope changes on its member rows.
+/// Reference counts support repeated rows and rows shared between documents.
+class _DocumentLines extends ListBase<NotepadLine> {
+  _DocumentLines(Iterable<NotepadLine> initial, this.changed)
+      : _items = List.of(initial) {
+    for (final line in _items) {
+      _attach(line);
+    }
+  }
+  final List<NotepadLine> _items;
+  final void Function() changed;
+  final _references = HashMap<NotepadLine, int>.identity();
+  void _attach(NotepadLine line) {
+    final count = _references[line] ?? 0;
+    if (count == 0) line._scopeListeners.add(changed);
+    _references[line] = count + 1;
+  }
+
+  void _detach(NotepadLine line) {
+    final count = _references[line]!;
+    if (count == 1) {
+      _references.remove(line);
+      line._scopeListeners.remove(changed);
+    } else {
+      _references[line] = count - 1;
+    }
+  }
+
+  @override
+  int get length => _items.length;
+  @override
+  set length(int value) {
+    if (value < 0 || value > length) {
+      throw RangeError.range(value, 0, length, 'length');
+    }
+    removeRange(value, length);
+  }
+
+  @override
+  NotepadLine operator [](int index) => _items[index];
+  @override
+  void operator []=(int index, NotepadLine value) {
+    final old = _items[index];
+    if (identical(old, value)) return;
+    _items[index] = value;
+    _detach(old);
+    _attach(value);
+    changed();
+  }
+
+  @override
+  void add(NotepadLine value) {
+    _items.add(value);
+    _attach(value);
+    changed();
+  }
+
+  @override
+  void addAll(Iterable<NotepadLine> values) {
+    final copy = List<NotepadLine>.of(values);
+    if (copy.isEmpty) return;
+    _items.addAll(copy);
+    for (final line in copy) {
+      _attach(line);
+    }
+    changed();
+  }
+
+  @override
+  void insert(int index, NotepadLine value) {
+    _items.insert(index, value);
+    _attach(value);
+    changed();
+  }
+
+  @override
+  void insertAll(int index, Iterable<NotepadLine> values) {
+    final copy = List<NotepadLine>.of(values);
+    _items.insertAll(index, copy);
+    for (final line in copy) {
+      _attach(line);
+    }
+    if (copy.isNotEmpty) changed();
+  }
+
+  @override
+  bool remove(Object? value) {
+    if (value is! NotepadLine) return false;
+    final index = _items.indexOf(value);
+    if (index < 0) return false;
+    removeAt(index);
+    return true;
+  }
+
+  @override
+  NotepadLine removeAt(int index) {
+    final old = _items.removeAt(index);
+    _detach(old);
+    changed();
+    return old;
+  }
+
+  @override
+  void removeRange(int start, int end) {
+    final removed = _items.sublist(start, end);
+    _items.removeRange(start, end);
+    for (final line in removed) {
+      _detach(line);
+    }
+    if (removed.isNotEmpty) changed();
+  }
 }

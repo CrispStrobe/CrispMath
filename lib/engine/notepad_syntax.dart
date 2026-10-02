@@ -36,8 +36,10 @@ class _NumericScopeIndex {
         sources = doc.lines.map((line) => line.source).toList(),
         results = doc.lines.map((line) => line.cachedResult).toList(),
         external = Map.of(externalScope),
-        scope = buildNotepadScope(doc, externalScope: externalScope);
+        scope = buildNotepadScope(doc, externalScope: externalScope),
+        revision = doc.scopeRevision;
 
+  int revision;
   final List<NotepadLine> lines;
   final List<String> sources;
   final List<String?> results;
@@ -79,14 +81,7 @@ class _NumericScopeIndex {
         externalScope.length != external.length) {
       return false;
     }
-    for (var i = 0; i < lines.length; i++) {
-      final line = doc.lines[i];
-      if (!identical(line, lines[i]) ||
-          line.source != sources[i] ||
-          line.cachedResult != results[i]) {
-        return false;
-      }
-    }
+    if (doc.scopeRevision != revision) return false;
     for (final entry in external.entries) {
       if (externalScope[entry.key] != entry.value) return false;
     }
@@ -100,6 +95,9 @@ class _NumericScopeIndex {
       return false;
     }
     final result = doc.lines[index].cachedResult;
+    final ownChanges = result == results[index] ? 0 : 1;
+    if (doc.scopeRevision != revision + ownChanges) return false;
+    revision = doc.scopeRevision;
     results[index] = result;
     if (!matches(doc, externalScope) ||
         (result != null && !_scalarScopeValue.hasMatch(result))) {

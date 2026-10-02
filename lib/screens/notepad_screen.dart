@@ -133,16 +133,45 @@ class _NotepadScreenState extends State<NotepadScreen> {
   /// "pending" visual.
   final Set<String> _pendingLineIds = {};
 
-  /// Tail of the active-recalc chain — new requests `await` this so
-  /// at most one `_runRecalc` runs at a time. Pre-Phase-5 we tried
-  /// to cancel the in-flight engine call with `cancelInFlight()`;
-  /// the kill was async and the next `send()` raced against it,
-  /// leaving the worker dead but `_commandPort` still pointing at
-  /// the dead isolate's port — every dispatcher call then hung
-  /// forever. Serialization side-steps that entirely: one request
-  /// in flight, no concurrent kill races.
+  // Serialize individual engine commands, but cancel obsolete row batches.
   Future<void>? _activeRecalc;
+  NotepadEvaluationCancellation? _recalcCancellation;
+  final Map<String, Set<String>> _dirtyLineIds = {};
+  int _recalcGeneration = 0;
+  int _recalcCompleted = 0, _recalcTotal = 0;
   bool _recalcFailed = false;
+  bool _recalcCancelled = false;
+
+  void _interruptRecalc(NotepadDocument? doc) {
+    _recalcGeneration++;
+    _recalcCancellation?.cancel();
+    if (doc != null) {
+      _dirtyLineIds.putIfAbsent(doc.id, () => {}).addAll(_pendingLineIds);
+      if (_pendingLineIds.isNotEmpty) {
+        for (final line in doc.lines) {
+          if (!_pendingLineIds.contains(line.id)) continue;
+          line.cachedResult = null;
+          line.cachedError = null;
+          line.resultEvidence = null;
+          line.cachedExports = {};
+        }
+      }
+    }
+  }
+
+  void _cancelRecalc() {
+    final doc = _currentDoc;
+    _recalcTimer?.cancel();
+    _interruptRecalc(doc);
+    if (doc != null) {
+      _persistDoc(doc);
+    }
+    setState(() {
+      _pendingLineIds.clear();
+      _recalcFailed = false;
+      _recalcCancelled = true;
+    });
+  }
 
   /// Snapshot of the global number-format settings we last
   /// evaluated against. When `_onAppStateChanged` sees either
@@ -178,6 +207,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     _appState.notepadChanges.removeListener(_onAppStateChanged);
     nativeBridgeStatusListenable.removeListener(_onBridgeStatusChanged);
     _recalcTimer?.cancel();
+    _interruptRecalc(_currentDoc);
     unawaited(_appState.persistNotepadNow());
     for (final c in _controllers.values) {
       c.dispose();
@@ -237,11 +267,14 @@ class _NotepadScreenState extends State<NotepadScreen> {
       }
       _controllers.clear();
       _focusNodes.clear();
+      final previousDoc = _appState.notepadDocuments[_activeControllerDocId];
+      _interruptRecalc(previousDoc);
       _activeControllerDocId = docId;
       // Phase 5: drop any in-flight recalc tied to the old doc, and
       // re-arm the "initial full-eval on open" trigger for the new doc.
       _recalcTimer?.cancel();
       _pendingLineIds.clear();
+      _recalcCancelled = false;
     }
     if (doc == null) return;
 
@@ -327,8 +360,19 @@ class _NotepadScreenState extends State<NotepadScreen> {
       [int? knownIndex]) {
     if (line.source == value) return;
     final prev = line.source;
-    line.source = value;
     final index = knownIndex ?? doc.lines.indexOf(line);
+    final firstCode = firstCodeLineIndexOf(doc);
+    final oldParsed = classifyNotepadLine(prev,
+        lineIndex: index, firstCodeLineIndex: firstCode);
+    final newParsed = classifyNotepadLine(value,
+        lineIndex: index, firstCodeLineIndex: firstCode);
+    if (oldParsed.name != newParsed.name || oldParsed.kind != newParsed.kind) {
+      final graph = buildDependencyGraph(doc);
+      _dirtyLineIds
+          .putIfAbsent(doc.id, () => {})
+          .addAll(downstreamFrom(index, graph).map((i) => doc.lines[i].id));
+    }
+    line.source = value;
     _undoFor(doc).record(undo.UndoOp(
       kind: undo.UndoOpKind.edit,
       index: index,
@@ -344,7 +388,12 @@ class _NotepadScreenState extends State<NotepadScreen> {
     line.cachedFreeVars = [];
     // In-memory only — disk persist deferred to recalc timer.
     _persistDocLazy(doc);
-    _scheduleRecalc(doc, index);
+    if (oldParsed.kind == NotepadLineKind.useDirective ||
+        newParsed.kind == NotepadLineKind.useDirective) {
+      _scheduleFullRecalc(doc);
+    } else {
+      _scheduleRecalc(doc, index);
+    }
   }
 
   void _appendLine(NotepadDocument doc) {
@@ -371,7 +420,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       _syncControllersFor(doc);
       _persistDoc(doc);
       setState(() {});
-      _scheduleRecalc(doc, 0);
+      _scheduleFullRecalc(doc);
     }
   }
 
@@ -383,7 +432,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       _syncControllersFor(doc);
       _persistDoc(doc);
       setState(() {});
-      _scheduleRecalc(doc, 0);
+      _scheduleFullRecalc(doc);
     }
   }
 
@@ -583,8 +632,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // downstream — recompute from the spot where the line used to live.
     // No-op when the doc is now empty (no recalc target).
     if (doc.lines.isNotEmpty) {
-      final clamped = index < doc.lines.length ? index : doc.lines.length - 1;
-      _scheduleRecalc(doc, clamped);
+      _scheduleFullRecalc(doc);
     }
     _showUndoSnackbar(
       label: AppLocalizations.of(context).notepadLineDeleted,
@@ -596,7 +644,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
         final lineIdx = pending.lineIndex!.clamp(0, pending.doc.lines.length);
         pending.doc.lines.insert(lineIdx, pending.line!);
         _persistDoc(pending.doc);
-        _scheduleRecalc(pending.doc, lineIdx);
+        _scheduleFullRecalc(pending.doc);
         _pendingDeletion = null;
       },
     );
@@ -616,7 +664,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // Positional aliases (`lineN`) shift on reorder; assignment names
     // follow the line. Either way, the safe thing is a full recompute
     // from the lowest affected index.
-    _scheduleRecalc(doc, oldIndex < newIndex ? oldIndex : newIndex);
+    _scheduleFullRecalc(doc);
   }
 
   Future<void> _launchNotepadOcr(BuildContext context) async {
@@ -1017,10 +1065,23 @@ class _NotepadScreenState extends State<NotepadScreen> {
     );
   }
 
+  void _scheduleFullRecalc(NotepadDocument doc) {
+    _interruptRecalc(doc);
+    _dirtyLineIds
+        .putIfAbsent(doc.id, () => {})
+        .addAll(doc.lines.map((line) => line.id));
+    _recalcTimer?.cancel();
+    _recalcTimer = Timer(const Duration(milliseconds: 300), () {
+      _runRecalc(doc);
+    });
+  }
+
   /// Debounce a recalc starting from [startIndex]. Each fresh
   /// keystroke pushes the firing 300 ms further out.
   void _scheduleRecalc(NotepadDocument doc, int startIndex) {
-    if (startIndex < 0) return;
+    if (startIndex < 0 || startIndex >= doc.lines.length) return;
+    _interruptRecalc(doc);
+    _dirtyLineIds.putIfAbsent(doc.id, () => {}).add(doc.lines[startIndex].id);
     _recalcTimer?.cancel();
     _recalcTimer = Timer(const Duration(milliseconds: 300), () {
       // Flush deferred persistence before recalc.
@@ -1029,44 +1090,46 @@ class _NotepadScreenState extends State<NotepadScreen> {
     });
   }
 
-  /// Run the evaluator for the given starting line (or the whole doc
-  /// when [startIndex] is null). Cancels any in-flight engine call,
-  /// marks downstream lines as pending so the UI greys their
-  /// previous results, then awaits the evaluator. Stale completions
-  /// (seq mismatch) get discarded.
+  /// Wait for the current command, then run the accumulated edits. Cancelling
+  /// the token prevents an obsolete command from committing its late result.
   Future<void> _runRecalc(
     NotepadDocument doc, {
     int? startIndex,
   }) async {
     if (!mounted) return;
-    // Chain after any previous run so we never have two evaluators
-    // (and two engine dispatchers) racing on the same doc.
+    _interruptRecalc(doc);
+    if (startIndex != null && startIndex < doc.lines.length) {
+      _dirtyLineIds.putIfAbsent(doc.id, () => {}).add(doc.lines[startIndex].id);
+    }
+    final generation = _recalcGeneration;
     final previous = _activeRecalc;
     final completer = Completer<void>();
     _activeRecalc = completer.future;
-    if (previous != null) {
-      try {
-        await previous;
-      } catch (_) {/* previous run swallowed its own errors */}
-      if (!mounted) {
-        completer.complete();
-        return;
-      }
-    }
-
     try {
-      await _runRecalcBody(doc, startIndex: startIndex);
+      if (previous != null) await previous;
+      if (!mounted || generation != _recalcGeneration) return;
+      final cancellation = NotepadEvaluationCancellation();
+      _recalcCancellation = cancellation;
+      final dirty = _dirtyLineIds.remove(doc.id) ?? <String>{};
+      final changed = startIndex == null
+          ? null
+          : <int>{
+              for (var i = 0; i < doc.lines.length; i++)
+                if (dirty.contains(doc.lines[i].id)) i,
+            };
+      await _runRecalcBody(doc,
+          changed: changed, cancellation: cancellation, generation: generation);
     } finally {
       completer.complete();
-      if (identical(_activeRecalc, completer.future)) {
-        _activeRecalc = null;
-      }
+      if (identical(_activeRecalc, completer.future)) _activeRecalc = null;
     }
   }
 
   Future<void> _runRecalcBody(
     NotepadDocument doc, {
-    required int? startIndex,
+    required Set<int>? changed,
+    required NotepadEvaluationCancellation cancellation,
+    required int generation,
   }) async {
     if (!mounted) return;
 
@@ -1094,7 +1157,19 @@ class _NotepadScreenState extends State<NotepadScreen> {
       }
     }
 
+    final progressClock = Stopwatch()..start();
     final evaluator = NotepadEvaluator(
+      cancellation: cancellation,
+      onProgress: (completed, total, lineId) {
+        if (!mounted || generation != _recalcGeneration) return;
+        _pendingLineIds.remove(lineId);
+        _recalcCompleted = completed;
+        _recalcTotal = total;
+        if (completed == total || progressClock.elapsedMilliseconds >= 50) {
+          setState(() {});
+          progressClock.reset();
+        }
+      },
       dispatcher: _notepadDispatcher.evaluate,
       detailedDispatcher: _notepadDispatcher.evaluateDetailed,
       flatzincDispatcher: _notepadDispatcher.solveFlatZinc,
@@ -1102,19 +1177,24 @@ class _NotepadScreenState extends State<NotepadScreen> {
     );
 
     final indices = <int>{};
-    if (startIndex == null) {
+    if (changed == null) {
       for (var i = 0; i < doc.lines.length; i++) {
         indices.add(i);
       }
-    } else if (startIndex >= 0 && startIndex < doc.lines.length) {
+    } else {
       final graph = buildDependencyGraph(
         doc,
         externalScope: useResolution.externalScope,
       );
-      indices.addAll(downstreamFrom(startIndex, graph));
+      for (final index in changed) {
+        indices.addAll(downstreamFrom(index, graph));
+      }
     }
     setState(() {
       _recalcFailed = false;
+      _recalcCancelled = false;
+      _recalcCompleted = 0;
+      _recalcTotal = indices.length;
       _pendingLineIds.clear();
       for (final i in indices) {
         if (i < doc.lines.length) {
@@ -1124,16 +1204,19 @@ class _NotepadScreenState extends State<NotepadScreen> {
     });
 
     try {
-      if (startIndex == null) {
+      if (changed == null) {
         await evaluator.evaluateAll(doc);
-      } else if (startIndex >= 0 && startIndex < doc.lines.length) {
-        await evaluator.evaluateFrom(doc, startIndex);
+      } else {
+        await evaluator.evaluateChanged(doc, changed);
       }
+    } on NotepadEvaluationCancelled {
+      // A replacement request owns pending rows and persistence now.
+      return;
     } catch (_) {
       _recalcFailed = true;
     }
 
-    if (!mounted) return;
+    if (!mounted || generation != _recalcGeneration) return;
 
     _invalidateScopeCache();
     setState(() {
@@ -1277,10 +1360,16 @@ class _NotepadScreenState extends State<NotepadScreen> {
                   ? _buildEmptyState()
                   : Column(
                       children: [
-                        if (_pendingLineIds.isNotEmpty || _recalcFailed)
+                        if (_pendingLineIds.isNotEmpty ||
+                            _recalcFailed ||
+                            _recalcCancelled)
                           NotepadActivity(
                               busy: _pendingLineIds.isNotEmpty,
                               failed: _recalcFailed,
+                              cancelled: _recalcCancelled,
+                              completed: _recalcCompleted,
+                              total: _recalcTotal,
+                              onCancel: _cancelRecalc,
                               onRetry: _recalculateAll),
                         if (_searchOpen) _buildSearchBar(doc),
                         Expanded(child: _buildDocBody(doc)),

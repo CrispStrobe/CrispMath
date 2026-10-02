@@ -14,9 +14,9 @@ Physical iPhone/iPad testing is deferred to a separate session.
 0. [~] Apple: validated 1.2.0 build 11 uploaded, processed VALID and assigned
    to Internal Testers. Address the prior 4.3(a) rejection with truthful review evidence;
    final App Review follows the improvements and separate device tests.
-1. [~] Result provenance: identify exact/approximate results and computation
+1. [x] Result provenance: identify exact/approximate results and computation
    methods, explain unsupported or unchanged transformations, retain AI review.
-2. [ ] Large documents: incremental recalculation, cancellable batches and
+2. [~] Large documents: incremental recalculation, cancellable batches and
    clear progress; compare 500/2,000-row workflows against current baselines.
 3. [ ] Apple workflows: iPad keyboard/navigation and multitasking layouts,
    Files document integration and Shortcuts.

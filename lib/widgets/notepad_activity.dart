@@ -6,24 +6,40 @@ class NotepadActivity extends StatelessWidget {
       {super.key,
       required this.busy,
       required this.failed,
-      required this.onRetry});
+      required this.onRetry,
+      this.onCancel,
+      this.cancelled = false,
+      this.completed = 0,
+      this.total = 0});
   final bool busy, failed;
   final VoidCallback onRetry;
+  final VoidCallback? onCancel;
+  final bool cancelled;
+  final int completed, total;
   @override
   Widget build(BuildContext context) {
     final t = WorkflowLocalizations.of(context);
     return Semantics(
         liveRegion: true,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (busy) const LinearProgressIndicator(),
+          if (busy)
+            LinearProgressIndicator(
+                value: total > 0 ? completed / total : null),
           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               child: Row(children: [
                 Expanded(
-                    child: Text(t.text(busy
-                        ? WorkflowLabel.updatingResults
-                        : WorkflowLabel.resultsFailed))),
-                if (failed && !busy)
+                    child: Text(busy
+                        ? t.text(WorkflowLabel.calculationProgress,
+                            '$completed / $total')
+                        : t.text(cancelled
+                            ? WorkflowLabel.calculationStopped
+                            : WorkflowLabel.resultsFailed))),
+                if (busy && onCancel != null)
+                  TextButton(
+                      onPressed: onCancel,
+                      child: Text(t.text(WorkflowLabel.cancelCalculation))),
+                if ((failed || cancelled) && !busy)
                   TextButton(
                       onPressed: onRetry,
                       child: Text(t.text(WorkflowLabel.retry))),

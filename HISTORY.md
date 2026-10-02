@@ -1,3 +1,21 @@
+## 2026-10-02 — Cancellable incremental document batches
+
+- Observe source/cache/list mutations through a transient document revision;
+  replace per-row whole-document guard scans with constant-time revision checks.
+  Imports and unsafe symbolic/duplicate bindings retain guarded fallbacks.
+- Union rapid edits and interrupted pending rows; retain old-name dependents on
+  rename and recalculate all rows after structural changes or import edits.
+- Include implicit `Ans`, aggregate inputs and aggregate aliases in dependencies;
+  avoid repeated graph ordering and shifting the topological queue.
+- Add batch cancellation that discards late results and constraint exports,
+  preserves completed rows and clears stale pending caches. Keep worker commands
+  serialized: cancellation does not terminate an individual native operation.
+- Show localized row progress, Cancel calculation and Retry; yield between row
+  batches and throttle progress rebuilds. No persisted-schema change.
+- Add unit regressions and a 2,000-row phone-profile Playwright cancel/retry test,
+  plus rapid independent edits, to feature CI and Pages/Vercel post-deploy checks.
+  Full-suite, live and performance evidence is collected in GitHub CI.
+
 ## 2026-10-01 — Calendar arithmetic in conditional branches
 
 - Preserve the selected `if(...)` branch before LaTeX whitespace normalization,

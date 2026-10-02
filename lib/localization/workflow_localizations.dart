@@ -54,6 +54,9 @@ enum WorkflowLabel {
   clarification,
   updatingResults,
   resultsFailed,
+  calculationProgress,
+  cancelCalculation,
+  calculationStopped,
 }
 
 class WorkflowLocalizations {
@@ -67,6 +70,10 @@ class WorkflowLocalizations {
 
   static const translations = <String, Map<WorkflowLabel, String>>{
     'en': {
+      WorkflowLabel.calculationProgress: 'Updating results: {value}',
+      WorkflowLabel.cancelCalculation: 'Cancel calculation',
+      WorkflowLabel.calculationStopped:
+          'Calculation stopped. Completed results are kept.',
       WorkflowLabel.methodExpansionFallback:
           'Polynomial expansion fallback; full simplification unavailable',
       WorkflowLabel.resultDetails: 'Result details',
@@ -128,6 +135,11 @@ class WorkflowLocalizations {
       WorkflowLabel.clarification: 'More information needed: {value}',
     },
     'de': {
+      WorkflowLabel.calculationProgress:
+          'Ergebnisse werden aktualisiert: {value}',
+      WorkflowLabel.cancelCalculation: 'Berechnung abbrechen',
+      WorkflowLabel.calculationStopped:
+          'Berechnung angehalten. Fertige Ergebnisse bleiben erhalten.',
       WorkflowLabel.methodExpansionFallback:
           'Polynomentwicklung als Ersatz; vollständige Vereinfachung nicht verfügbar',
       WorkflowLabel.resultDetails: 'Ergebnisdetails',
@@ -191,6 +203,10 @@ class WorkflowLocalizations {
       WorkflowLabel.clarification: 'Weitere Angaben nötig: {value}',
     },
     'fr': {
+      WorkflowLabel.calculationProgress: 'Mise à jour des résultats : {value}',
+      WorkflowLabel.cancelCalculation: 'Annuler le calcul',
+      WorkflowLabel.calculationStopped:
+          'Calcul arrêté. Les résultats terminés sont conservés.',
       WorkflowLabel.methodExpansionFallback:
           'Développement polynomial de secours ; simplification complète indisponible',
       WorkflowLabel.resultDetails: 'Détails du résultat',
@@ -254,6 +270,10 @@ class WorkflowLocalizations {
           'Informations supplémentaires nécessaires : {value}',
     },
     'es': {
+      WorkflowLabel.calculationProgress: 'Actualizando resultados: {value}',
+      WorkflowLabel.cancelCalculation: 'Cancelar cálculo',
+      WorkflowLabel.calculationStopped:
+          'Cálculo detenido. Se conservan los resultados completados.',
       WorkflowLabel.methodExpansionFallback:
           'Desarrollo polinómico alternativo; simplificación completa no disponible',
       WorkflowLabel.resultDetails: 'Detalles del resultado',

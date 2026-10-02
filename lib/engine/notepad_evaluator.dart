@@ -59,6 +59,7 @@ NotepadDependencyGraph buildDependencyGraph(
         nameToLine[parsed.name!] = i;
         nameToLine['line${i + 1}'] = i;
         break;
+      case NotepadLineKind.aggregate:
       case NotepadLineKind.expression:
         nameToLine['line${i + 1}'] = i;
         break;
@@ -74,7 +75,6 @@ NotepadDependencyGraph buildDependencyGraph(
       case NotepadLineKind.blank:
       case NotepadLineKind.comment:
       case NotepadLineKind.useDirective:
-      case NotepadLineKind.aggregate:
       case NotepadLineKind.heading:
       case NotepadLineKind.divider:
       case NotepadLineKind.plot:
@@ -95,6 +95,35 @@ NotepadDependencyGraph buildDependencyGraph(
 
   for (var i = 0; i < doc.lines.length; i++) {
     final parsed = parsedLines[i]!;
+    void addDependency(int target) {
+      dependsOn[i]!.add(target);
+      dependents[target]!.add(i);
+    }
+
+    // These inputs are implicit in preprocessing and aggregate evaluation;
+    // omitting them leaves stale answers after an incremental edit.
+    if (parsed.kind == NotepadLineKind.aggregate) {
+      for (var prior = i - 1; prior >= 0; prior--) {
+        final kind = parsedLines[prior]!.kind;
+        if (kind == NotepadLineKind.aggregate) {
+          if (parsed.name != 'total') break;
+          continue;
+        }
+        if (kind == NotepadLineKind.assignment ||
+            kind == NotepadLineKind.expression ||
+            kind == NotepadLineKind.flatzinc) {
+          addDependency(prior);
+        }
+      }
+    } else if (parsed.kind != NotepadLineKind.flatzinc &&
+        _ansPattern.hasMatch(parsed.body ?? '')) {
+      for (var prior = i - 1; prior >= 0; prior--) {
+        if (_stripComment(doc.lines[prior].source).trim().isNotEmpty) {
+          addDependency(prior);
+          break;
+        }
+      }
+    }
     final refs = dependenciesOfLine(parsed, inDocScopeKeys);
     for (final name in refs) {
       // Ignore external-scope names (they have no in-doc node).
@@ -131,8 +160,9 @@ List<int> kahnTopologicalOrder(NotepadDependencyGraph graph) {
       if (entry.value.isEmpty) entry.key,
   ]..sort();
   final order = <int>[];
-  while (queue.isNotEmpty) {
-    final node = queue.removeAt(0);
+  var cursor = 0;
+  while (cursor < queue.length) {
+    final node = queue[cursor++];
     order.add(node);
     final children = graph.dependents[node] ?? const <int>{};
     final newlyReady = <int>[];
@@ -240,7 +270,24 @@ typedef NotepadFlatZincDispatcher = Future<NotepadFlatZincResult> Function(
 ///
 /// Engine calls are funnelled through [dispatcher] so the
 /// evaluator stays testable without a real `SymEngine` bridge.
+class NotepadEvaluationCancelled implements Exception {
+  const NotepadEvaluationCancelled();
+}
+
+/// Stops a batch between rows and discards results returning after cancellation.
+/// Does not kill the shared engine worker or race its next command.
+class NotepadEvaluationCancellation {
+  bool _cancelled = false;
+  bool get isCancelled => _cancelled;
+  void cancel() => _cancelled = true;
+  void check() {
+    if (_cancelled) throw const NotepadEvaluationCancelled();
+  }
+}
+
 class NotepadEvaluator {
+  final NotepadEvaluationCancellation? cancellation;
+  final void Function(int completed, int total, String lineId)? onProgress;
   final NotepadEngineDispatcher dispatcher;
   final Future<ComputedResult> Function(String)? detailedDispatcher;
 
@@ -260,6 +307,8 @@ class NotepadEvaluator {
 
   NotepadEvaluator({
     required this.dispatcher,
+    this.cancellation,
+    this.onProgress,
     this.detailedDispatcher,
     this.flatzincDispatcher,
     this.externalScope = const {},
@@ -278,9 +327,21 @@ class NotepadEvaluator {
     NotepadDocument doc,
     int startLineIndex,
   ) async {
+    return evaluateChanged(doc, {startLineIndex});
+  }
+
+  /// Recalculate the union of all edited rows and their dependents. Multiple
+  /// edits in one debounce window must not drop the earlier edit's subgraph.
+  Future<NotepadDocument> evaluateChanged(
+      NotepadDocument doc, Set<int> changed) async {
     final graph = buildDependencyGraph(doc, externalScope: externalScope);
-    final subset = downstreamFrom(startLineIndex, graph);
-    return _evaluateSubset(doc, indices: subset);
+    final subset = <int>{};
+    for (final index in changed) {
+      if (index >= 0 && index < doc.lines.length) {
+        subset.addAll(downstreamFrom(index, graph));
+      }
+    }
+    return _evaluateSubset(doc, indices: subset, dependencyGraph: graph);
   }
 
   /// Core driver. If [indices] is null, every line is in scope;
@@ -289,10 +350,21 @@ class NotepadEvaluator {
   Future<NotepadDocument> _evaluateSubset(
     NotepadDocument doc, {
     required Set<int>? indices,
+    NotepadDependencyGraph? dependencyGraph,
   }) async {
-    final graph = buildDependencyGraph(doc, externalScope: externalScope);
-    final cycleNodes = findCycleParticipants(graph);
+    cancellation?.check();
+    final graph = dependencyGraph ??
+        buildDependencyGraph(doc, externalScope: externalScope);
     final order = kahnTopologicalOrder(graph);
+    final ordered = order.toSet();
+    final cycleNodes = graph.dependsOn.keys.where((i) => !ordered.contains(i));
+    final total = indices?.length ?? doc.lines.length;
+    var completed = 0;
+    final slice = Stopwatch()..start();
+    onProgress?.call(0, total, '');
+    void progress(int index) {
+      onProgress?.call(++completed, total, doc.lines[index].id);
+    }
 
     final firstCode = firstCodeLineIndexOf(doc);
     final parseCache = NotepadLineParseCache();
@@ -301,11 +373,13 @@ class NotepadEvaluator {
     // downstream gets blockedBy via the standard path below.
     for (final i in cycleNodes) {
       if (indices != null && !indices.contains(i)) continue;
+      cancellation?.check();
       final cyclePath = _cycleNamePath(i, graph, doc, firstCode);
       doc.lines[i].cachedResult = null;
       doc.lines[i].cachedError = NotepadErrorPrefix.circular(cyclePath);
       doc.lines[i].resultEvidence = null;
       doc.lines[i].cachedFreeVars = [];
+      progress(i);
     }
 
     // Process the Kahn-acyclic part in dependency order.
@@ -313,6 +387,12 @@ class NotepadEvaluator {
     var numericScope = _NumericScopeIndex.tryCreate(doc, externalScope);
     for (final i in order) {
       if (indices != null && !indices.contains(i)) continue;
+      cancellation?.check();
+      if (slice.elapsedMilliseconds >= 8) {
+        await Future<void>.delayed(Duration.zero);
+        cancellation?.check();
+        slice.reset();
+      }
       if (numericScope != null && !numericScope.matches(doc, externalScope)) {
         numericScope = _NumericScopeIndex.tryCreate(doc, externalScope);
       }
@@ -322,6 +402,7 @@ class NotepadEvaluator {
           !numericScope.recordResult(doc, i, externalScope)) {
         numericScope = _NumericScopeIndex.tryCreate(doc, externalScope);
       }
+      progress(i);
     }
     return doc;
   }
@@ -468,12 +549,14 @@ class NotepadEvaluator {
       return;
     }
 
+    final dispatchedSource = line.source;
     String result;
+    ResultEvidence? evidence;
     try {
       if (detailedDispatcher != null) {
         final computed = await detailedDispatcher!(preprocessed);
         result = computed.value;
-        line.resultEvidence = computed.evidence;
+        evidence = computed.evidence;
       } else {
         result = await dispatcher(preprocessed);
       }
@@ -481,6 +564,11 @@ class NotepadEvaluator {
       result = 'Error: dispatcher threw: $e';
     }
 
+    cancellation?.check();
+    if (line.source != dispatchedSource) {
+      throw const NotepadEvaluationCancelled();
+    }
+    line.resultEvidence = evidence;
     if (result.startsWith('Error')) {
       line.cachedResult = null;
       line.cachedError = NotepadErrorPrefix.fromEngine(result);
@@ -581,6 +669,7 @@ class NotepadEvaluator {
     ParsedNotepadLine parsed,
   ) async {
     final body = parsed.body ?? '';
+    final dispatchedSource = line.source;
     if (body.trim().isEmpty) {
       line.cachedResult = null;
       line.cachedError =
@@ -600,6 +689,10 @@ class NotepadEvaluator {
     }
     try {
       final result = await dispatch(body);
+      cancellation?.check();
+      if (line.source != dispatchedSource) {
+        throw const NotepadEvaluationCancelled();
+      }
       // Treat a UNSATISFIABLE marker as an error so dependents
       // block correctly — there is no value to substitute.
       if (result.formatted.contains('=====UNSATISFIABLE=====')) {
@@ -614,7 +707,10 @@ class NotepadEvaluator {
       line.cachedError = null;
       line.cachedFreeVars = [];
       line.cachedExports = Map<String, String>.from(result.scalarBindings);
+    } on NotepadEvaluationCancelled {
+      rethrow;
     } catch (e) {
+      cancellation?.check();
       line.cachedResult = null;
       line.cachedError = '${NotepadErrorPrefix.evaluation}Error: $e';
       line.cachedFreeVars = [];
