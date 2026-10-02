@@ -26,18 +26,24 @@ Future<void> runDiagnosticsIfRequested() async {
   }
   if (diag == 'workflows') {
     try {
-      final input = jsonDecode(await File(
-              Platform.environment['CRISPMATH_TASKS_FILE'] ??
-                  'test/fixtures/workflow_tasks.json')
-          .readAsString()) as Map;
+      final inputPath = Platform.environment['CRISPMATH_TASKS_FILE'] ??
+          'test/fixtures/workflow_tasks.json';
+      final inputText = inputPath == '-'
+          ? await stdin.transform(utf8.decoder).join()
+          : await File(inputPath).readAsString();
+      final input = jsonDecode(inputText) as Map;
       final report =
           await WorkflowTasks(CalculatorEngine()).run(input['tasks'] as List);
       final path = Platform.environment['CRISPMATH_TASK_REPORT'];
-      if (path != null) {
+      final json = const JsonEncoder.withIndent('  ').convert(report);
+      if (path == '-') {
+        stdout.writeln('CRISPMATH_WORKFLOW_REPORT_BEGIN');
+        stdout.writeln(json);
+        stdout.writeln('CRISPMATH_WORKFLOW_REPORT_END');
+      } else if (path != null) {
         final file = File(path);
         await file.parent.create(recursive: true);
-        await file.writeAsString(
-            '${const JsonEncoder.withIndent('  ').convert(report)}\n');
+        await file.writeAsString('$json\n');
       }
       stdout.writeln(
           '${report['passed']} of ${report['total']} workflow tasks passed; '

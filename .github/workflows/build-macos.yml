@@ -106,12 +106,19 @@ jobs:
           CRISPMATH_DIAGNOSTIC=steps "$BIN"
 
       - name: Run strict 50-task audit against the packaged native app
+        # The release app keeps its sandbox: use inherited pipes rather than
+        # granting it access to arbitrary files in the runner's workspace.
         run: |
-          set -eu
+          set -euo pipefail
+          mkdir -p task-results
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
-          CRISPMATH_DIAGNOSTIC=workflows \
-            CRISPMATH_TASKS_FILE="$PWD/test/fixtures/workflow_tasks.json" \
-            CRISPMATH_TASK_REPORT="$PWD/task-results/macos.json" "$BIN"
+          cat test/fixtures/workflow_tasks.json | \
+            CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+            CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee task-results/macos.log
+
+      - name: Extract and verify the packaged-app audit report
+        if: always()
+        run: python tool/extract_workflow_report.py --log task-results/macos.log --output task-results/macos.json
 
       - uses: actions/upload-artifact@v4
         if: always()
