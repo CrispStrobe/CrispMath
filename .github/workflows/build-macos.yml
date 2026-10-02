@@ -135,6 +135,23 @@ jobs:
             CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee task-results/macos-fresh.log
           python tool/extract_workflow_report.py --log task-results/macos-fresh.log --output task-results/macos-fresh.json
 
+      - name: Run the 100 additional problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric workflow; do
+            count=40
+            if [ "$area" = workflow ]; then count=20; fi
+            cat "test/fixtures/new_math_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-new-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-new-${area}.log" --output "task-results/macos-new-${area}.json" --expected-count "$count" || status=1
+          done
+          exit "$status"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

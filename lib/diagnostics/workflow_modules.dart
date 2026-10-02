@@ -16,6 +16,21 @@ Future<dynamic> runWorkflowModule(
   List<double> numbers(String key) =>
       (task[key] as List).map((n) => (n as num).toDouble()).toList();
   switch (task['operation']) {
+    case 'differentiateAt':
+      final variable = task['variable'] as String? ?? 'x';
+      final derivative = engine.differentiate(task['expression'], variable);
+      if (derivative.startsWith('Error')) return derivative;
+      return engine
+          .evaluate(engine.substitute(derivative, variable, task['point']));
+    case 'normalCdf':
+      return Normal(
+              mean: (task['mean'] as num).toDouble(),
+              stddev: (task['stddev'] as num).toDouble())
+          .cdf((task['x'] as num).toDouble());
+    case 'tInterval':
+      final distribution = TDistribution(df: (task['df'] as num).toInt());
+      return distribution.cdf((task['upper'] as num).toDouble()) -
+          distribution.cdf((task['lower'] as num).toDouble());
     case 'rationalDomain':
       final domain = RationalDomain.inspect(task['expression'],
           variable: task['variable']);

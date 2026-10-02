@@ -1,0 +1,504 @@
+{
+  "schemaVersion": 1,
+  "reference": "Fresh challenges drafted before corpus inspection. Independent exact arithmetic, sample variance definitions, normal symmetry, exponential survival identity, binomial coefficients, Cauchy arctangent CDF, dimensional conversion and finite constraint enumeration.",
+  "tasks": [
+    {
+      "id": "numeric-01",
+      "title": "Exact binary cancellation",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(2^80+1)-2^80"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "numeric-02",
+      "title": "Three rational denominators",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "1/6+1/10+1/15"
+      ],
+      "expected": "1/3",
+      "exact": true
+    },
+    {
+      "id": "numeric-03",
+      "title": "Root absolute value and factorial",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(144)+abs(-17)-5!"
+      ],
+      "expected": "-91"
+    },
+    {
+      "id": "numeric-04",
+      "title": "Trigonometric norm",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sin(pi/6)^2+cos(pi/6)^2"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "numeric-05",
+      "title": "Log exponential inverse",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "log(exp(3/2))"
+      ],
+      "expected": "3/2"
+    },
+    {
+      "id": "numeric-06",
+      "title": "Negative integer powers",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "2^(-3)+4^(-2)"
+      ],
+      "expected": "3/16",
+      "exact": true
+    },
+    {
+      "id": "numeric-07",
+      "title": "Absolute rational quotient",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "abs(-3/7)/(9/14)"
+      ],
+      "expected": "2/3",
+      "exact": true
+    },
+    {
+      "id": "numeric-08",
+      "title": "Four term geometric sum",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "1+1/3+1/9+1/27"
+      ],
+      "expected": "40/27",
+      "exact": true
+    },
+    {
+      "id": "numeric-09",
+      "title": "Angles cancel",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "cos(pi)+sin(pi/2)"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "numeric-10",
+      "title": "Exact decimal cancellation",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "10^30+7-10^30"
+      ],
+      "expected": "7",
+      "exact": true
+    },
+    {
+      "id": "numeric-11",
+      "title": "Mean of separated values",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        2,
+        4,
+        8,
+        10
+      ],
+      "expected": {
+        "mean": 6,
+        "median": 6,
+        "sampleStddev": 3.6514837167011076
+      }
+    },
+    {
+      "id": "numeric-12",
+      "title": "Constant sample dispersion",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "expected": {
+        "mean": 3,
+        "median": 3,
+        "sampleStddev": 0
+      }
+    },
+    {
+      "id": "numeric-13",
+      "title": "Sample variance four via standard deviation two",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        1,
+        3,
+        5
+      ],
+      "expected": {
+        "mean": 3,
+        "median": 3,
+        "sampleStddev": 2
+      }
+    },
+    {
+      "id": "numeric-14",
+      "title": "Even unsorted median",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        9,
+        1,
+        7,
+        3
+      ],
+      "expected": {
+        "mean": 5,
+        "median": 5,
+        "sampleStddev": 3.6514837167011076
+      }
+    },
+    {
+      "id": "numeric-15",
+      "title": "Normal CDF at shifted mean",
+      "kind": "module",
+      "operation": "normalCdf",
+      "mean": 12,
+      "stddev": 4,
+      "x": 12,
+      "expected": 0.5
+    },
+    {
+      "id": "numeric-16",
+      "title": "Exponential survival at mean lifetime",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "exp(-1)"
+      ],
+      "expected": "0.36787944117144233"
+    },
+    {
+      "id": "numeric-17",
+      "title": "Fair four trial binomial central mass",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 4,
+      "p": 0.5,
+      "k": 2,
+      "expected": 0.375
+    },
+    {
+      "id": "numeric-18",
+      "title": "Cauchy central half probability",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 1,
+      "lower": -1,
+      "upper": 1,
+      "expected": 0.5
+    },
+    {
+      "id": "numeric-19",
+      "title": "Millimetres to metres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "2500 mm in m",
+      "expected": "2.5 m"
+    },
+    {
+      "id": "numeric-20",
+      "title": "Hours to seconds",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "3 h in s",
+      "expected": "10800 s"
+    },
+    {
+      "id": "numeric-21",
+      "title": "Road speed to SI",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "72 km/h in m/s",
+      "expected": "20 m/s"
+    },
+    {
+      "id": "numeric-22",
+      "title": "Area exponent conversion",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 km^2 in m^2",
+      "expected": "1000000 m²"
+    },
+    {
+      "id": "numeric-23",
+      "title": "Litres to cubic metres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 L in m^3",
+      "expected": "0.001 m³"
+    },
+    {
+      "id": "numeric-24",
+      "title": "Temperature scale intersection",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "-40 °C in °F",
+      "expected": "-40 °F"
+    },
+    {
+      "id": "numeric-25",
+      "title": "Kelvin freezing point",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "273.15 K in °C",
+      "expected": "0 °C"
+    },
+    {
+      "id": "numeric-26",
+      "title": "Milligrams to grams",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "2500 mg in g",
+      "expected": "2.5 g"
+    },
+    {
+      "id": "numeric-27",
+      "title": "Triangular determinant",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[2,1,0],[0,3,1],[0,0,4]]))"
+      ],
+      "expected": "24"
+    },
+    {
+      "id": "numeric-28",
+      "title": "Unimodular matrix inverse",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "inv(Matrix([[1,2],[3,5]]))"
+      ],
+      "expected": "Matrix([[-5,2],[3,-1]])"
+    },
+    {
+      "id": "numeric-29",
+      "title": "Singular determinant",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[1,2],[2,4]]))"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "numeric-30",
+      "title": "Rotation complex eigenvalues",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "eigenvalues(Matrix([[0,-1],[1,0]]))"
+      ],
+      "expected": "{-I,I}"
+    },
+    {
+      "id": "numeric-31",
+      "title": "Rank one rectangular RREF",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "rref(Matrix([[1,2,3],[2,4,6]]))"
+      ],
+      "expected": "Matrix([[1,2,3],[0,0,0]])"
+    },
+    {
+      "id": "numeric-32",
+      "title": "Swap matrix columns",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "Matrix([[1,2],[3,4]])*Matrix([[0,1],[1,0]])"
+      ],
+      "expected": "Matrix([[2,1],[4,3]])"
+    },
+    {
+      "id": "numeric-33",
+      "title": "Three item permutations",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: a, b, c in 1..3\nallDifferent(a,b,c)",
+      "expected": [
+        {
+          "a": 1,
+          "b": 2,
+          "c": 3
+        },
+        {
+          "a": 1,
+          "b": 3,
+          "c": 2
+        },
+        {
+          "a": 2,
+          "b": 1,
+          "c": 3
+        },
+        {
+          "a": 2,
+          "b": 3,
+          "c": 1
+        },
+        {
+          "a": 3,
+          "b": 1,
+          "c": 2
+        },
+        {
+          "a": 3,
+          "b": 2,
+          "c": 1
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "numeric-34",
+      "title": "Ordered sum partitions",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 0..4\nx + y == 4\nx < y",
+      "expected": [
+        {
+          "x": 0,
+          "y": 4
+        },
+        {
+          "x": 1,
+          "y": 3
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "numeric-35",
+      "title": "Four queen arrangements",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: q1, q2, q3, q4 in 1..4\nallDifferent(q1,q2,q3,q4)\nq1 - q2 != 1\nq1 - q2 != -1\nq1 - q3 != 2\nq1 - q3 != -2\nq1 - q4 != 3\nq1 - q4 != -3\nq2 - q3 != 1\nq2 - q3 != -1\nq2 - q4 != 2\nq2 - q4 != -2\nq3 - q4 != 1\nq3 - q4 != -1",
+      "expected": [
+        {
+          "q1": 2,
+          "q2": 4,
+          "q3": 1,
+          "q4": 3
+        },
+        {
+          "q1": 3,
+          "q2": 1,
+          "q3": 4,
+          "q4": 2
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "numeric-36",
+      "title": "Binary count with inequality",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: a, b, c in 0..1\na + b + c == 2\na != b",
+      "expected": [
+        {
+          "a": 0,
+          "b": 1,
+          "c": 1
+        },
+        {
+          "a": 1,
+          "b": 0,
+          "c": 1
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "numeric-37",
+      "title": "Bounded product six",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 1..4\nx * y == 6",
+      "expected": [
+        {
+          "x": 2,
+          "y": 3
+        },
+        {
+          "x": 3,
+          "y": 2
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "numeric-38",
+      "title": "Signed square roots",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -3..3\nx * x == 4",
+      "expected": [
+        {
+          "x": -2
+        },
+        {
+          "x": 2
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "numeric-39",
+      "title": "Pigeonhole infeasibility",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: a, b, c in 0..1\nallDifferent(a,b,c)",
+      "expected": [],
+      "unordered": true
+    },
+    {
+      "id": "numeric-40",
+      "title": "Weighted bounded partitions",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 0..3\nx + 2 * y == 5",
+      "expected": [
+        {
+          "x": 1,
+          "y": 2
+        },
+        {
+          "x": 3,
+          "y": 1
+        }
+      ],
+      "unordered": true
+    }
+  ]
+}

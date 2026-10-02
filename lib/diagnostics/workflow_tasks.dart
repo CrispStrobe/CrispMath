@@ -5,6 +5,7 @@ import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
 import '../engine/notepad_export.dart';
 import '../engine/numeric_fallback.dart';
+import '../engine/rational_domain.dart';
 import '../services/engine_dispatch.dart';
 import '../services/engine_op.dart';
 import '../services/integral_arguments.dart';
@@ -262,8 +263,19 @@ class WorkflowTasks {
     if (expected is! String) {
       throw const FormatException('Expected result must be a string');
     }
-    if (actual == expected) return true;
-    if (actual.startsWith('Error') || actual.contains('Error:')) return false;
+    // Error text and undefined values must never pass by exact-string equality
+    // or by an assignment embedded inside an error message.
+    final invalid = RegExp(r'\b(?:Error|NaN|Infinity|Inf|zoo|undefined|null)\b',
+        caseSensitive: false);
+    if (invalid.hasMatch(actual) || invalid.hasMatch(expected)) return false;
+    if (actual == expected) {
+      // Identical arithmetic strings such as 0/0 still represent no answer.
+      if (RegExp(r'^[0-9eE.+*/()^\s-]+$').hasMatch(actual)) {
+        final value = NumericFallbackEvaluator.evalNumeric(actual);
+        return value != null && value.isFinite;
+      }
+      return true;
+    }
 
     if (actual.startsWith('Matrix(') && expected.startsWith('Matrix(')) {
       return actual.replaceAll(RegExp(r'\s+'), '') ==
@@ -310,26 +322,57 @@ class WorkflowTasks {
       return v;
     }
 
-    final a = NumericFallbackEvaluator.compile(normalize(actual));
-    final b = NumericFallbackEvaluator.compile(normalize(expected));
-    if (a == null || b == null) return false;
-    for (final x in [-1.73, -0.41, 0.23, 1.37, 2.61, 4.19]) {
-      final scope = {
-        'x': x,
-        'y': x * x + 0.37,
-        't': x * x + 0.73,
-        'C': x * x * x + 0.91
+    final normalizedActual = normalize(actual);
+    final normalizedExpected = normalize(expected);
+    // CAS cancellation proves an identity only on its common domain. Preserve
+    // the bounded rational-domain evidence the app can actually establish.
+    final actualDomain = RationalDomain.inspect(normalizedActual);
+    final expectedDomain = RationalDomain.inspect(normalizedExpected);
+    final actualExcluded = actualDomain?.excluded.toSet() ?? <String>{};
+    final expectedExcluded = expectedDomain?.excluded.toSet() ?? <String>{};
+    if (actualExcluded.length != expectedExcluded.length ||
+        !actualExcluded.containsAll(expectedExcluded)) return false;
+
+    final a = NumericFallbackEvaluator.compile(normalizedActual);
+    final b = NumericFallbackEvaluator.compile(normalizedExpected);
+    if (a == null || b == null) {
+      // This path includes complex results. Never project onto the real part:
+      // the full symbolic difference must be exactly zero, including I and C.
+      if (!engine.isNativeAvailable) return false;
+      final difference =
+          engine.simplify('($normalizedActual)-($normalizedExpected)');
+      return !invalid.hasMatch(difference) &&
+          RegExp(r'^0(?:\.0+)?$').hasMatch(difference.trim());
+    }
+    final identifiers = RegExp(r'[A-Za-z_][A-Za-z_0-9]*')
+        .allMatches('$normalizedActual $normalizedExpected')
+        .map((m) => m[0]!)
+        .toSet()
+        .toList()
+      ..sort();
+    var finiteChecks = 0;
+    final probes = [0.0, 1.0, -1.0, 2.0, -1.73, -0.41, 0.23, 1.37, 2.61, 4.19];
+    for (var probe = 0; probe < probes.length; probe++) {
+      final x = probes[probe];
+      // Shared zero/one anchors catch common holes. Subsequent coordinates are
+      // independent, so u/v or missing integration C cannot alias accidentally.
+      final scope = <String, double>{
+        for (var i = 0; i < identifiers.length; i++)
+          identifiers[i]: probe < 3 ? x : x + i * 0.379 + i * i * 0.113
       };
       final av = a.evaluate(scope);
       final bv = b.evaluate(scope);
-      if (av == null ||
-          bv == null ||
-          !av.isFinite ||
-          !bv.isFinite ||
-          (av - bv).abs() > 1e-8 * (1 + bv.abs())) {
+      final aFinite = av != null && av.isFinite;
+      final bFinite = bv != null && bv.isFinite;
+      if (!aFinite || !bFinite) {
+        if (aFinite != bFinite) return false;
+        continue;
+      }
+      finiteChecks++;
+      if ((av! - bv!).abs() > 1e-8 * (1 + bv.abs())) {
         return false;
       }
     }
-    return true;
+    return finiteChecks >= 3;
   }
 }
