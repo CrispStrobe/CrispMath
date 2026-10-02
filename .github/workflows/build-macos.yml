@@ -105,6 +105,12 @@ jobs:
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
           CRISPMATH_DIAGNOSTIC=steps "$BIN"
 
+      - name: Verify exact Taylor compatibility against the release binary
+        run: |
+          set -eu
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          CRISPMATH_DIAGNOSTIC=series "$BIN"
+
       - name: Run strict 50-task audit against the packaged native app
         # The release app keeps its sandbox: use inherited pipes rather than
         # granting it access to arbitrary files in the runner's workspace.

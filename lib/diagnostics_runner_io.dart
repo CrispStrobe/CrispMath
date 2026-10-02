@@ -1,6 +1,6 @@
 // Native (dart:io) implementation of the headless diagnostic self-test.
 //
-// Invoked with CRISPMATH_DIAGNOSTIC=matrix|steps|workflows on a desktop binary: it
+// Invoked with CRISPMATH_DIAGNOSTIC=matrix|steps|workflows|series on a desktop binary: it
 // runs the matrix / step battery against the native bridge, prints
 // PASS/FAIL lines, and exits with a non-zero code on any failure (so CI
 // can assert on it). Selected by the conditional import in main.dart on
@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'diagnostics/workflow_tasks.dart';
+import 'diagnostics/taylor_compatibility.dart';
 
 import 'engine/calculator_engine.dart';
 import 'engine/matrix_diagnostics.dart';
@@ -64,6 +65,11 @@ Future<void> runDiagnosticsIfRequested() async {
       stderr.writeln('CrispMath workflow audit: $error');
       exit(2);
     }
+  }
+  if (diag == 'series') {
+    final report = checkTaylorCompatibility(CalculatorEngine());
+    stdout.writeln(const JsonEncoder.withIndent('  ').convert(report));
+    exit(report['passed'] == true ? 0 : 1);
   }
   if (diag == 'matrix') {
     final results = MatrixDiagnostics.run(CalculatorEngine());

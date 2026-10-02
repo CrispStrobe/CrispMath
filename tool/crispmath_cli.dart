@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:crisp_math/diagnostics/workflow_tasks.dart';
+import 'package:crisp_math/diagnostics/taylor_compatibility.dart';
 import 'package:crisp_math/engine/calculator_engine.dart';
 
 Future<void> main(List<String> args) async {
@@ -18,13 +19,24 @@ Future<void> main(List<String> args) async {
       if (['--tasks', '--report', '--task'].contains(args[i])) {
         option(args[i]);
         i++;
-      } else if (!['--list', '--require-native', '--help'].contains(args[i])) {
+      } else if (![
+        '--list',
+        '--require-native',
+        '--help',
+        '--check-series-compatibility'
+      ].contains(args[i])) {
         throw FormatException('Unknown option: ${args[i]}');
       }
     }
     if (args.contains('--help')) {
       stdout.writeln(
-          'dart run tool/crispmath_cli.dart [--tasks FILE] [--task ID] [--list] [--report FILE] [--require-native]');
+          'dart run tool/crispmath_cli.dart [--tasks FILE] [--task ID] [--list] [--report FILE] [--require-native] [--check-series-compatibility]');
+      return;
+    }
+    if (args.contains('--check-series-compatibility')) {
+      final report = checkTaylorCompatibility(CalculatorEngine());
+      stdout.writeln(const JsonEncoder.withIndent('  ').convert(report));
+      exitCode = report['passed'] == true ? 0 : 1;
       return;
     }
     final input = jsonDecode(

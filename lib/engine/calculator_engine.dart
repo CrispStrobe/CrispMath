@@ -21,6 +21,7 @@ import 'polynomial_mod.dart';
 import 'step_engine.dart';
 import 'symbolic_expr.dart';
 import 'symbolic_limit.dart';
+import 'symbolic_taylor.dart';
 import 'symbolic_web.dart';
 import 'unit_expression.dart';
 
@@ -1177,17 +1178,22 @@ class CalculatorEngine {
       InequalitySolver.solve(this, inequality, variable);
 
   /// Taylor/Maclaurin series of [expression] in [variable] about [point],
-  /// truncated at [order] terms (roadmap C2). Native-only: SymEngine C++
-  /// series() via bridge >= 1.4.0; older libs surface the capability error.
+  /// truncated at [order] terms. Uses SymEngine series() where available;
+  /// older native libraries compute exact coefficients by differentiation.
   String series(String expression, String variable,
       {String point = '0', int order = 6}) {
     final bridge = _liveBridge;
     if (bridge == null) return 'Error: series requires native library';
-    if (!bridge.hasSeries) {
-      return 'Error: series requires a newer native library build';
-    }
     if (order < 1 || order > 64) return 'Error: order must be in 1..64';
     try {
+      if (!bridge.hasSeries) {
+        return symbolicTaylorSeries(expression, variable,
+            point: point,
+            order: order,
+            simplify: bridge.simplify,
+            differentiate: bridge.differentiate,
+            substitute: bridge.substitute);
+      }
       return bridge.series(expression, variable, point: point, order: order);
     } catch (e) {
       _log('series error: $e');

@@ -47,6 +47,8 @@ jobs:
         run: flutter test --no-pub test/workflow_tasks_test.dart
       - name: Run every task against native app engine (strict)
         run: tool/crispmath_cli.sh --require-native --report task-results/native.json
+      - name: Verify exact Taylor compatibility with the native CAS
+        run: tool/crispmath_cli.sh --check-series-compatibility
       - uses: actions/upload-artifact@v4
         if: always()
         with:
