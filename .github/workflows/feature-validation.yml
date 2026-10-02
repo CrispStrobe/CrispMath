@@ -3,13 +3,24 @@ on:
   push:
     branches: ['feat/graph-workspace-ux']
   workflow_dispatch:
+    inputs:
+      probe_build_run_id:
+        description: 'Optional existing feature-web run ID: run only the fast batch browser probe'
+        type: string
+        default: ''
+      probe_clip_labels:
+        description: 'Diagnostic only: inject semantic-label clipping into that older bundle'
+        type: boolean
+        default: false
 permissions:
   contents: read
+  actions: read
 concurrency:
-  group: feature-validation-${{ github.ref }}
+  group: feature-validation-${{ github.ref }}-${{ inputs.probe_build_run_id || 'full' }}
   cancel-in-progress: true
 jobs:
   features:
+    if: ${{ !inputs.probe_build_run_id }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -48,6 +59,7 @@ jobs:
           test/result_evidence_test.dart test/workflow_tasks_test.dart test/integral_arguments_test.dart
           test/notepad_batch_test.dart test/notepad_scope_cache_test.dart test/notepad_activity_test.dart
   unit:
+    if: ${{ !inputs.probe_build_run_id }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -81,6 +93,7 @@ jobs:
           name: notepad-evaluator-profile
           path: notepad-evaluator-profile.json
   native-ocr:
+    if: ${{ !inputs.probe_build_run_id }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -130,6 +143,7 @@ jobs:
             .dart_tool/inference/ocr-corpus/NOTICE.txt
           retention-days: 14
   browser:
+    if: ${{ !inputs.probe_build_run_id }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -222,3 +236,45 @@ jobs:
           name: product-gallery
           path: product-gallery
           retention-days: 14
+
+  batch-probe:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.probe_build_run_id != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Identify immutable app source
+        id: app-source
+        env:
+          BUILD_RUN_ID: ${{ inputs.probe_build_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$BUILD_RUN_ID" =~ ^[0-9]+$ ]]
+          APP_SOURCE=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" --jq .head_sha)
+          echo "source=$APP_SOURCE" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          name: feature-web
+          run-id: ${{ inputs.probe_build_run_id }}
+          github-token: ${{ github.token }}
+          path: build/web
+      - name: Install browser test tools
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Probe actual batch UI
+        env:
+          APP_SOURCE: ${{ steps.app-source.outputs.source }}
+          CLIP_LABELS: ${{ inputs.probe_clip_labels }}
+        run: |
+          python -m http.server 8766 --directory build/web > /tmp/crispmath-http.log 2>&1 &
+          python tool/check_deployed_bundle.py --url http://localhost:8766/ --source "$APP_SOURCE"
+          PROBE_ARGS=()
+          if [ "$CLIP_LABELS" = "true" ]; then PROBE_ARGS+=(--label-clip-probe); fi
+          python tool/check_notepad_batch_browser.py "${PROBE_ARGS[@]}" --output browser-results/batch-probe
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: batch-probe-results
+          path: browser-results
+          retention-days: 7

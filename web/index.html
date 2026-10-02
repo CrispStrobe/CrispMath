@@ -32,6 +32,15 @@
   <title>CrispMath</title>
   <link rel="manifest" href="manifest.json">
 
+  <!-- Flutter's transparent DOM button labels can wrap beyond their native
+       hit rectangles and intercept adjacent controls. Clip their paint/hit
+       overflow while preserving the complete labels for assistive technology. -->
+  <style>
+    flt-semantics[role="button"], flt-semantics[role="link"] {
+      overflow: hidden !important;
+    }
+  </style>
+
   <!-- Preload WASM binaries so the browser fetches them in parallel with
        HTML parsing, before the JS loaders request them. -->
   <link rel="preload" href="symengine.wasm" as="fetch" crossorigin>

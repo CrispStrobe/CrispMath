@@ -17,7 +17,8 @@ async def read_document(page, doc_id):
 async def check(args):
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
-    report = {'url': args.url, 'passed': False, 'checks': []}
+    report = {'url': args.url, 'passed': False, 'checks': [],
+              'injectedSemanticLabelClipping': args.label_clip_probe}
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(args=['--no-sandbox', '--enable-unsafe-swiftshader'])
         rapid = large_document(5)
@@ -28,7 +29,8 @@ async def check(args):
         # Use real CAS worker round trips for the cancellation test. The integer
         # fast path is measured separately by benchmark_workflows.py.
         for i, row in enumerate(batch['l'][1:], 1):
-            row['s'] = f'v{i} = v{i-1} + sqrt(1)'
+            if i % 40 == 0:
+                row['s'] = f'v{i} = v{i-1} + sqrt(1)'
         for document, profile in [(rapid, {'viewport': {'width': 1280, 'height': 900}, 'cpu': 1}),
                 (batch, {'viewport': {'width': 390, 'height': 844}, 'cpu': 4, 'has_touch': True})]:
             context, page, errors = await context_for(browser, profile, document)
@@ -69,6 +71,18 @@ async def check(args):
                     await cancel.wait_for()
                     report['cancelButtonBounds'] = await cancel.bounding_box()
                     assert report['cancelButtonBounds']['y'] >= 56, report['cancelButtonBounds']
+                    async def hit_target():
+                        box = await cancel.bounding_box()
+                        return await page.evaluate("""point => document.elementsFromPoint(point.x, point.y).slice(0, 5).map(el => ({
+                          tag:el.tagName, id:el.id, role:el.getAttribute('role'), text:el.textContent.slice(0,150),
+                          overflow:getComputedStyle(el).overflow, bounds:el.getBoundingClientRect().toJSON()}))""",
+                          {'x': box['x']+box['width']/2, 'y': box['y']+box['height']/2})
+                    report['cancelHitTargetsBefore'] = await hit_target()
+                    if args.label_clip_probe:
+                        assert 'Help mode' in report['cancelHitTargetsBefore'][0]['text'], report['cancelHitTargetsBefore']
+                        await page.add_style_tag(content='flt-semantics[role="button"], flt-semantics[role="link"] {overflow: hidden !important}')
+                        report['cancelHitTargetsAfter'] = await hit_target()
+                        assert report['cancelHitTargetsAfter'][0]['text'] == 'Cancel calculation', report['cancelHitTargetsAfter']
                     await cancel.click(timeout=15000)
                     await expect(page.get_by_role('button', name='Retry', exact=True)).to_be_visible()
                     # A late worker answer must not bring back the cancelled tail.
@@ -105,4 +119,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--url', default='http://localhost:8766/')
     parser.add_argument('--output', default='browser-results/notepad-batch')
+    parser.add_argument('--label-clip-probe', action='store_true', help='Diagnostic only: inject clipping into an older bundle; report marks this explicitly')
     asyncio.run(check(parser.parse_args()))
