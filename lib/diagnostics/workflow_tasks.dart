@@ -297,16 +297,21 @@ class WorkflowTasks {
           .substring(1, actual.length - 1)
           .split(',')
           .map((s) => s.trim())
-          .toList()
-        ..sort();
+          .toList();
       final b = expected
           .substring(1, expected.length - 1)
           .split(',')
           .map((s) => s.trim())
-          .toList()
-        ..sort();
-      return a.length == b.length &&
-          List.generate(a.length, (i) => _matches(a[i], b[i])).every((v) => v);
+          .toList();
+      if (a.length != b.length) return false;
+      // Printed order is not a mathematical order, particularly for complex
+      // roots. Match each equivalent element once, preserving multiplicity.
+      for (final value in a) {
+        final index = b.indexWhere((candidate) => _matches(value, candidate));
+        if (index < 0) return false;
+        b.removeAt(index);
+      }
+      return b.isEmpty;
     }
     String normalize(String value) {
       var v = value.trim().replaceAll('**', '^');

@@ -28,6 +28,17 @@ Future<List<String>> comparePairs(
 }
 
 void main() {
+  test('unordered roots match by value while preserving multiplicity',
+      () async {
+    expect(
+        await comparePairs(ComparisonEchoEngine(), [
+          ['{2.0,1.0}', '{1,2}'],
+          ['{1,1}', '{1,2}'],
+          ['{I,-I}', '{-I,I}'],
+          ['{I,I}', '{-I,I}'],
+        ]),
+        ['passed', 'failed', 'passed', 'failed']);
+  });
   test('independent coordinates compare arbitrary symbols and integration C',
       () async {
     expect(
