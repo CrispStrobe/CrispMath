@@ -26,7 +26,7 @@
   labels remain complete.
 - Add unit regressions and a 2,000-row release phone-profile Playwright cancel/retry test,
   plus rapid independent edits, to feature CI and Pages/Vercel post-deploy checks.
-  Debug correctness uses 200 rows; release performance retains 500/2,000 rows.
+  Debug correctness uses 200 rows with real CAS calls on each row; release performance retains 500/2,000 rows.
   Full-suite, live and performance evidence is collected in GitHub CI.
 
 ## 2026-10-01 — Calendar arithmetic in conditional branches

@@ -207,7 +207,7 @@ jobs:
           python tool/check_notepad_calendar_browser.py --output browser-results/debug/calendar-routing.json
           python tool/check_result_evidence_browser.py --output browser-results/debug/provenance
           python tool/check_integral_syntax_browser.py --output browser-results/debug/integral-syntax
-          python tool/check_notepad_batch_browser.py --rows 200 --output browser-results/debug/notepad-batch
+          python tool/check_notepad_batch_browser.py --rows 200 --cas-every 1 --output browser-results/debug/notepad-batch
       - uses: actions/upload-artifact@v4
         if: always()
         with:

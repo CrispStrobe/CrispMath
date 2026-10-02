@@ -41,5 +41,6 @@ case, and recomputes medians from raw samples. It rejects medians above twice
 the baseline plus 300 ms; this allows runner noise while catching sustained
 regressions. This is a broad regression threshold, not an improvement target
 or a physical-device performance claim. A negative control using the slower
-6718c6c build fails all four cases. Debug cancellation correctness uses 200 rows;
+6718c6c build fails all four cases. Debug cancellation correctness uses 200 rows with a real CAS operation on every
+row, keeping the batch active long enough to click Cancel;
 release and deployed cancellation checks retain 2,000 rows.

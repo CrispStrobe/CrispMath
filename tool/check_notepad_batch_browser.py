@@ -17,7 +17,7 @@ async def read_document(page, doc_id):
 async def check(args):
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
-    report = {'url': args.url, 'rows': args.rows, 'passed': False, 'checks': [],
+    report = {'url': args.url, 'rows': args.rows, 'casEvery': args.cas_every, 'passed': False, 'checks': [],
               'injectedSemanticLabelClipping': args.label_clip_probe}
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(args=['--no-sandbox', '--enable-unsafe-swiftshader'])
@@ -29,7 +29,7 @@ async def check(args):
         # Use real CAS worker round trips for the cancellation test. The integer
         # fast path is measured separately by benchmark_workflows.py.
         for i, row in enumerate(batch['l'][1:], 1):
-            if i % 40 == 0:
+            if i % args.cas_every == 0:
                 row['s'] = f'v{i} = v{i-1} + sqrt(1)'
         for document, profile in [(rapid, {'viewport': {'width': 1280, 'height': 900}, 'cpu': 1}),
                 (batch, {'viewport': {'width': 390, 'height': 844}, 'cpu': 4, 'has_touch': True})]:
@@ -118,7 +118,11 @@ async def check(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--rows', type=int, default=2000)
+    parser.add_argument('--cas-every', type=int, default=40, help='Use a real CAS worker operation at this row interval')
     parser.add_argument('--url', default='http://localhost:8766/')
     parser.add_argument('--output', default='browser-results/notepad-batch')
     parser.add_argument('--label-clip-probe', action='store_true', help='Diagnostic only: inject clipping into an older bundle; report marks this explicitly')
-    asyncio.run(check(parser.parse_args()))
+    args = parser.parse_args()
+    if args.rows < 2 or args.cas_every < 1:
+        parser.error('--rows must be at least 2 and --cas-every must be positive')
+    asyncio.run(check(args))
