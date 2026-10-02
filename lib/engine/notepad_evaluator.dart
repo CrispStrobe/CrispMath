@@ -510,7 +510,10 @@ class NotepadEvaluator {
       scope = buildNotepadScope(doc,
           externalScope: externalScope, parseCache: parseCache);
     }
-    final scopeKeys = scope.keys.toSet();
+    final scopeKeys = {...scope.keys};
+    if (parsed.isFunction || _mayCallNotepadFunction(body)) {
+      scopeKeys.addAll(_scopeKeysFor(doc, firstCode));
+    }
     final freeVars = freeVariablesOfLine(parsed, scopeKeys).toList()..sort();
 
     // Strip this line's own contributions to avoid self-substitution
@@ -523,8 +526,28 @@ class NotepadEvaluator {
       scope.remove(parsed.name!);
     }
 
-    final preprocessed = preprocessNotepadLine(parsed,
-        doc: doc, lineIndex: lineIndex, scope: scope);
+    for (final parameter in parsed.parameters ?? const <String>[]) {
+      scope.remove(parameter);
+    }
+    String? preprocessed;
+    try {
+      preprocessed = preprocessNotepadLine(parsed,
+          doc: doc, lineIndex: lineIndex, scope: scope);
+    } on FormatException catch (error) {
+      line.cachedResult = null;
+      line.cachedError =
+          NotepadErrorPrefix.fromEngine('Error: ${error.message}');
+      line.cachedFreeVars = freeVars;
+      return;
+    }
+    if (parsed.isFunction) {
+      line.cachedResult = preprocessed;
+      line.cachedError = null;
+      line.cachedFreeVars = freeVars;
+      line.resultEvidence = const ResultEvidence(
+          ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      return;
+    }
     if (preprocessed == null) {
       // Shouldn't happen for assignment/expression, but be defensive.
       line.cachedResult = null;
@@ -768,6 +791,6 @@ class NotepadEvaluator {
 
   Set<String> _scopeKeysFor(NotepadDocument doc, int firstCode) {
     return _scopeKeysCache ??=
-        buildNotepadScope(doc, externalScope: externalScope).keys.toSet();
+        notepadScopeNames(doc, externalScope: externalScope);
   }
 }

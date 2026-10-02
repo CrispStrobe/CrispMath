@@ -195,6 +195,7 @@ jobs:
           python tool/check_result_evidence_browser.py
           python tool/check_integral_syntax_browser.py
           python tool/check_notepad_batch_browser.py
+          python tool/check_notepad_functions_browser.py
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
           python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
@@ -208,6 +209,7 @@ jobs:
           python tool/check_result_evidence_browser.py --output browser-results/debug/provenance
           python tool/check_integral_syntax_browser.py --output browser-results/debug/integral-syntax
           python tool/check_notepad_batch_browser.py --rows 200 --cas-every 1 --output browser-results/debug/notepad-batch
+          python tool/check_notepad_functions_browser.py --output browser-results/debug/notepad-functions
       - uses: actions/upload-artifact@v4
         if: always()
         with:

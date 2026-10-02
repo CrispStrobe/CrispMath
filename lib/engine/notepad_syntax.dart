@@ -59,7 +59,8 @@ class _NumericScopeIndex {
       final line = doc.lines[i];
       final parsed = classifyNotepadLine(line.source,
           lineIndex: i, firstCodeLineIndex: firstCode);
-      if (parsed.kind == NotepadLineKind.flatzinc ||
+      if (parsed.isFunction ||
+          parsed.kind == NotepadLineKind.flatzinc ||
           parsed.kind == NotepadLineKind.plot ||
           (line.cachedResult != null &&
               !_scalarScopeValue.hasMatch(line.cachedResult!))) {
@@ -187,6 +188,10 @@ class ParsedNotepadLine {
   /// For `assignment`: the LHS identifier (case-sensitive).
   final String? name;
 
+  /// Lexical parameters; null denotes an ordinary scalar assignment.
+  final List<String>? parameters;
+  bool get isFunction => parameters != null;
+
   /// For `assignment` and `expression`: the post-comment-strip
   /// body. `null` for blank, comment, and useDirective.
   final String? body;
@@ -203,6 +208,7 @@ class ParsedNotepadLine {
   const ParsedNotepadLine._({
     required this.kind,
     this.name,
+    this.parameters,
     this.body,
     this.imports = const [],
     this.directiveError,
@@ -222,9 +228,11 @@ class ParsedNotepadLine {
         directiveError: error,
       );
 
-  factory ParsedNotepadLine.assignment(String name, String body) =>
+  factory ParsedNotepadLine.assignment(String name, String body,
+          {List<String>? parameters}) =>
       ParsedNotepadLine._(
         kind: NotepadLineKind.assignment,
+        parameters: parameters,
         name: name,
         body: body,
       );
@@ -408,6 +416,21 @@ ParsedNotepadLine classifyNotepadLine(
     return ParsedNotepadLine.aggregate(lowerStripped);
   }
 
+  final function =
+      RegExp(r'^([A-Za-z_][A-Za-z0-9_]*)\s*\(([^()]*)\)\s*=(?!=)\s*(.+)$')
+          .firstMatch(stripped);
+  if (function != null && !kReservedNotepadNames.contains(function[1])) {
+    final parameters = function[2]!.trim().isEmpty
+        ? <String>[]
+        : function[2]!.split(',').map((p) => p.trim()).toList();
+    if (parameters.toSet().length == parameters.length &&
+        parameters.every((p) =>
+            RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(p) &&
+            !kReservedNotepadNames.contains(p))) {
+      return ParsedNotepadLine.assignment(function[1]!, function[3]!.trim(),
+          parameters: List.unmodifiable(parameters));
+    }
+  }
   final asgMatch = _assignmentRegex.firstMatch(stripped);
   if (asgMatch != null) {
     final name = asgMatch.group(1)!;
@@ -471,7 +494,8 @@ Map<String, String> buildNotepadScope(
             lineIndex: i, firstCodeLineIndex: firstCode) ??
         classifyNotepadLine(line.source,
             lineIndex: i, firstCodeLineIndex: firstCode);
-    if (parsed.kind == NotepadLineKind.blank ||
+    if (parsed.isFunction ||
+        parsed.kind == NotepadLineKind.blank ||
         parsed.kind == NotepadLineKind.comment ||
         parsed.kind == NotepadLineKind.useDirective) {
       continue;
@@ -557,6 +581,7 @@ String? preprocessNotepadLine(
 }) {
   if (parsed.body == null) return null;
   var out = parsed.body!;
+  out = _expandNotepadFunctions(out, doc);
 
   // Resolve cross-document references before anything else.
   if (allDocs != null && out.contains('{doc:')) {
@@ -734,7 +759,11 @@ Set<String> dependenciesOfLine(
   final body = parsed.body;
   if (body == null) return const {};
   final words = identifierWordsIn(body);
-  return words.where(scopeKeys.contains).toSet();
+  return words
+      .where((word) =>
+          scopeKeys.contains(word) &&
+          !(parsed.parameters?.contains(word) ?? false))
+      .toSet();
 }
 
 /// Identifiers in [parsed]'s body that don't resolve to anything —
@@ -759,6 +788,104 @@ Set<String> freeVariablesOfLine(
       .where((id) =>
           !scopeKeys.contains(id) &&
           !kReservedNotepadNames.contains(id) &&
-          id != 'Ans')
+          id != 'Ans' &&
+          !(parsed.parameters?.contains(id) ?? false))
       .toSet();
+}
+
+/// Expand balanced calls with simultaneous lexical substitution. Definitions
+/// already have their captured document bindings resolved by the dependency
+/// walker. A function is never entered into the scalar substitution scope.
+final _notepadCallPattern = RegExp(r'([A-Za-z_][A-Za-z0-9_]*)\s*\(');
+bool _mayCallNotepadFunction(String input) => _notepadCallPattern
+    .allMatches(input)
+    .any((m) => !kReservedNotepadNames.contains(m[1]));
+
+String _expandNotepadFunctions(String input, NotepadDocument doc) {
+  if (!_mayCallNotepadFunction(input)) return input;
+  final definitions =
+      <String, ({ParsedNotepadLine parsed, NotepadLine line})>{};
+  final first = firstCodeLineIndexOf(doc);
+  for (var i = 0; i < doc.lines.length; i++) {
+    final parsed = classifyNotepadLine(doc.lines[i].source,
+        lineIndex: i, firstCodeLineIndex: first);
+    if (parsed.isFunction)
+      definitions[parsed.name!] = (parsed: parsed, line: doc.lines[i]);
+  }
+  String expand(String source, int depth) {
+    if (depth > 32 || source.length > 100000) {
+      throw const FormatException('Function expansion exceeds its limit');
+    }
+    final output = StringBuffer();
+    var cursor = 0;
+    for (final match in _scopeIdentifierRegex.allMatches(source)) {
+      if (match.start < cursor) continue;
+      final definition = definitions[match[0]];
+      if (definition == null) continue;
+      var open = match.end;
+      while (open < source.length && source[open].trim().isEmpty) {
+        open++;
+      }
+      if (open >= source.length || source[open] != '(') continue;
+      var nesting = 1;
+      var start = open + 1;
+      var end = start;
+      final arguments = <String>[];
+      for (; end < source.length; end++) {
+        final char = source[end];
+        if (char == '(' || char == '[') nesting++;
+        if (char == ')' || char == ']') nesting--;
+        if (nesting == 0) {
+          if (end > start || arguments.isNotEmpty)
+            arguments.add(source.substring(start, end));
+          break;
+        }
+        if (char == ',' && nesting == 1) {
+          arguments.add(source.substring(start, end));
+          start = end + 1;
+        }
+      }
+      if (nesting != 0) throw FormatException('Unclosed call to ${match[0]}');
+      final parameters = definition.parsed.parameters!;
+      if (arguments.length != parameters.length ||
+          arguments.any((a) => a.trim().isEmpty)) {
+        throw FormatException(
+            '${match[0]} expects ${parameters.length} arguments');
+      }
+      final template = definition.line.cachedResult;
+      if (template == null || definition.line.cachedError != null) {
+        throw FormatException('Function ${match[0]} is unavailable');
+      }
+      final bindings = <String, String>{
+        for (var i = 0; i < parameters.length; i++)
+          parameters[i]: expand(arguments[i], depth + 1),
+      };
+      final body = template.replaceAllMapped(_scopeIdentifierRegex,
+          (m) => bindings.containsKey(m[0]) ? '(${bindings[m[0]]})' : m[0]!);
+      output.write(source.substring(cursor, match.start));
+      output.write('(${expand(body, depth + 1)})');
+      cursor = end + 1;
+    }
+    output.write(source.substring(cursor));
+    final result = output.toString();
+    if (result.length > 100000)
+      throw const FormatException('Function expansion exceeds its limit');
+    return result;
+  }
+
+  return expand(input, 0);
+}
+
+/// Scalar and function names available to dependency/free-variable UI helpers.
+Set<String> notepadScopeNames(NotepadDocument doc,
+    {Map<String, String> externalScope = const {}}) {
+  final names =
+      buildNotepadScope(doc, externalScope: externalScope).keys.toSet();
+  final firstCode = firstCodeLineIndexOf(doc);
+  for (var i = 0; i < doc.lines.length; i++) {
+    final parsed = classifyNotepadLine(doc.lines[i].source,
+        lineIndex: i, firstCodeLineIndex: firstCode);
+    if (parsed.isFunction) names.add(parsed.name!);
+  }
+  return names;
 }

@@ -91,6 +91,7 @@ jobs:
           python tool/check_result_evidence_browser.py --url "$APP_URL" --output deployed-results/provenance
           python tool/check_integral_syntax_browser.py --url "$APP_URL" --output deployed-results/integral-syntax
           python tool/check_notepad_batch_browser.py --url "$APP_URL" --output deployed-results/notepad-batch
+          python tool/check_notepad_functions_browser.py --url "$APP_URL" --output deployed-results/notepad-functions
           python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery
       - uses: actions/upload-artifact@v4
         if: always()

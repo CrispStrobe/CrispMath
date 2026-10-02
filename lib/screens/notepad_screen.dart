@@ -603,7 +603,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
       return _cachedScopeNames!;
     }
     _scopeNamesCacheDocId = doc.id;
-    _cachedScopeNames = buildNotepadScope(doc).keys.toSet();
+    _cachedScopeNames = notepadScopeNames(doc);
     return _cachedScopeNames!;
   }
 

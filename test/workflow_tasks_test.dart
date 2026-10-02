@@ -92,7 +92,7 @@ void main() {
     expect(report['passed'], 5);
     expect(report['failed'], 0);
   });
-  test('inline document function gap stays a failed scenario in the audit',
+  test('inline document functions pass through the actual app engine',
       () async {
     final corpus =
         jsonDecode(File('test/fixtures/workflow_tasks.json').readAsStringSync())
@@ -100,9 +100,9 @@ void main() {
     final task =
         (corpus['tasks'] as List).singleWhere((t) => t['id'] == 'task-39');
     final report = await WorkflowTasks(CalculatorEngine()).run([task]);
-    expect(report['failed'], 1);
-    expect(report['passed'], 0);
-    expect((report['results'] as List).single['expected'], [null, '10']);
+    expect(report['failed'], 0);
+    expect(report['passed'], 1);
+    expect((report['results'] as List).single['actual'], ['x^2+1', '10']);
   });
   test(
       'equivalent but unchanged expressions fail requested transformation checks',
