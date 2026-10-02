@@ -3,12 +3,42 @@ import 'package:crisp_math/engine/definite_antiderivative.dart';
 import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:crisp_math/engine/rational_integral_domain.dart';
 import 'package:crisp_math/engine/result_evidence.dart';
+import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/services/engine_dispatch.dart';
+import 'package:crisp_math/services/engine_op.dart';
+import 'package:crisp_math/services/notepad_dispatcher.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class RejectNativeRoutingEngine extends CalculatorEngine {
   @override
   bool get isNativeAvailable => throw StateError('Native route reached');
 }
+
+class NativeLessBindingEngine extends CalculatorEngine {
+  @override
+  bool get isNativeAvailable => false;
+}
+
+NotepadEvaluator integralBindingEvaluator() {
+  final engine = NativeLessBindingEngine();
+  final dispatcher = NotepadDispatcher(
+      engine: engine,
+      formatNumber: (value) => value,
+      runOperation: (op) async => runEngineOp(engine, op),
+      runDetailedOperation: (op) async => runEngineOpDetailed(engine, op),
+      evaluateExpression: (source) async => engine.evaluate(source),
+      evaluateDetailedExpression: (source) async =>
+          runEngineOpDetailed(engine, EngineOp('evaluate', source)));
+  return NotepadEvaluator(
+      dispatcher: dispatcher.evaluate,
+      detailedDispatcher: dispatcher.evaluateDetailed);
+}
+
+NotepadDocument integralBindingDocument(List<String> sources) =>
+    NotepadDocument.fresh(name: 'Bound integral variables')
+      ..lines.clear()
+      ..lines.addAll(sources.map((source) => NotepadLine.fresh(source: source)));
 
 void main() {
   test('substitution keeps identifier boundaries, precedence and numeric tokens',
@@ -110,5 +140,65 @@ void main() {
     expect(() => engine.evaluate('ln(abs(x))'), throwsStateError);
     expect(() => engine.evaluate('ln(abs(-2))+q'), throwsStateError);
     expect(() => engine.evaluate('ln(abs(-2))+I'), throwsStateError);
+  });
+
+  test('definite integral dummy variables do not become free chips', () {
+    Set<String> free(String source) => freeVariablesOfLine(
+        classifyNotepadLine(source, lineIndex: 0, firstCodeLineIndex: 0), {});
+    expect(free('integrate(x^2,x,0,1)'), isEmpty);
+    expect(free('integrate(x^2,(x,0,1))'), isEmpty);
+    expect(free('integrate(x^2,x,a,b)'), {'a', 'b'});
+    expect(free('integrate(x^2,x,0,x)'), {'x'});
+    expect(free('integrate(x+y,x,0,1)+x'), {'x', 'y'});
+    expect(free('integrate(integrate(x*y,y,0,x),x,0,1)'), isEmpty);
+    expect(free('integrate(x^2,x)'), {'x'});
+    expect(free('diff(x^2,x)'), {'x'});
+    expect(free('integrate(x^2,x,0)'), {'x'});
+  });
+
+  test('actual worksheet dispatcher preserves dummy shadowing and exact result',
+      () async {
+    for (final call in ['integrate(x^2,x,0,1)', 'integrate(x^2,(x,0,1))']) {
+      final doc = integralBindingDocument(['x=5', call]);
+      final evaluator = integralBindingEvaluator();
+      expect(buildDependencyGraph(doc).dependsOn[1], isEmpty);
+      await evaluator.evaluateAll(doc);
+      expect(doc.lines.last.cachedError, isNull);
+      expect(doc.lines.last.cachedResult, '1/3');
+      expect(doc.lines.last.cachedFreeVars, isEmpty);
+      expect(doc.lines.last.resultEvidence?.accuracy, ResultAccuracy.exact);
+      doc.lines.first.source = 'x=8';
+      await evaluator.evaluateFrom(doc, 0);
+      expect(doc.lines.last.cachedResult, '1/3');
+      await evaluator.evaluateAll(doc);
+      expect(doc.lines.last.cachedResult, '1/3');
+    }
+    final selfNamed = integralBindingDocument(['x=integrate(x^2,x,0,1)']);
+    expect(buildDependencyGraph(selfNamed).dependsOn[0], isEmpty);
+    await integralBindingEvaluator().evaluateAll(selfNamed);
+    expect(selfNamed.lines.single.cachedError, isNull);
+    expect(selfNamed.lines.single.cachedResult, '1/3');
+  });
+
+  test('document-valued bounds remain reactive while the integrand stays bound',
+      () async {
+    final doc = integralBindingDocument(['x=5', 'integrate(x^2,x,0,x)']);
+    final evaluator = integralBindingEvaluator();
+    expect(buildDependencyGraph(doc).dependsOn[1], {0});
+    await evaluator.evaluateAll(doc);
+    expect(doc.lines.last.cachedResult, '125/3');
+    doc.lines.first.source = 'x=2';
+    await evaluator.evaluateFrom(doc, 0);
+    expect(doc.lines.last.cachedResult, '8/3');
+    expect(doc.lines.last.cachedFreeVars, isEmpty);
+  });
+
+  test('function captures use document scope while dummy arguments stay local',
+      () async {
+    final doc = integralBindingDocument(['x=5', 'f(t)=t*x', 'integrate(f(x),x,0,1)']);
+    await integralBindingEvaluator().evaluateAll(doc);
+    expect(doc.lines.last.cachedError, isNull);
+    expect(doc.lines.last.cachedResult, '5/2');
+    expect(doc.lines.last.cachedFreeVars, isEmpty);
   });
 }

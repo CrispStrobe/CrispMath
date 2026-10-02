@@ -22,6 +22,9 @@ controls.CASES = [
     ('pi-source', 'a=pi', None),
     ('uncertain-product', 'b=5*a', None),
     ('uncertain-quotient', 'b/5', None),
+    ('global-integral-symbol', 'x=5', '5'),
+    ('bound-integral', 'integrate(x^2,x,0,1)', '1/3'),
+    ('global-symbol-after-integral', 'x+1', '6'),
 ]
 
 base_validate = controls.validate_result
@@ -31,7 +34,11 @@ def validate_result(case, line):
     references = {'pi-source': math.pi, 'uncertain-product': 5 * math.pi,
                   'uncertain-quotient': math.pi}
     if case[0] not in references:
-        return base_validate(case, line)
+        base_validate(case, line)
+        if case[0] == 'bound-integral':
+            assert not line.get('f'), (case, line)
+            assert (line.get('evidence') or {}).get('accuracy') == 'exact', (case, line)
+        return
     assert line.get('s') == case[1] and not line.get('e'), (case, line)
     result = line.get('r', '')
     assert re.fullmatch(r'-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?', result), (case, line)

@@ -33,6 +33,9 @@ def main():
             assert evidence[key] is True, (profile, key)
         assert evidence['nativeDerivative'] == 'cos(x)'
         assert evidence['integral']['value'] == '1/3'
+        document = evidence['document']['l']
+        assert document[3].get('f', []) == [], 'Definite integral must bind x'
+        assert 'x' in document[2]['f'], 'Linked sine function must retain x'
         if profile != 'macos':
             assert evidence['nativeWorkflowUrl'] is True
             assert evidence['nativeWorkflowUrlSupported'] is True

@@ -57,6 +57,10 @@ void main() {
         .evaluateAll(doc);
     expect(doc.lines[1].cachedResult, '3');
     expect(doc.lines[3].cachedResult, '1/3');
+    expect(doc.lines[3].cachedFreeVars, isEmpty,
+        reason: 'The definite integral binds x and returns a constant');
+    expect(doc.lines[2].cachedFreeVars, contains('x'),
+        reason: 'The linked sine function still depends on x');
     expect(doc.lines.any((l) => l.cachedError != null), isFalse);
     state.setNotepadDocument(doc);
     state.setCurrentNotepadDoc(doc.id);

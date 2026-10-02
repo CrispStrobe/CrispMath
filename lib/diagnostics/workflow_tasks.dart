@@ -129,8 +129,14 @@ class WorkflowTasks {
             dispatcher: documentDispatcher ?? (s) async => engine.evaluate(s),
             detailedDispatcher: documentDispatcher == null
                 ? (source) async {
-                    final computed =
-                        runEngineOpDetailed(engine, EngineOp('evaluate', source));
+                    final integral = parseIntegralArguments(source.trim());
+                    final computed = runEngineOpDetailed(
+                        engine,
+                        integral == null
+                            ? EngineOp('evaluate', source)
+                            : EngineOp('integrate', integral[0], integral[1],
+                                integral.length == 4 ? integral[2] : null,
+                                integral.length == 4 ? integral[3] : null));
                     final raw = computed.value;
                     // The UI removes a purely zero imaginary suffix before
                     // caching scalar values. Keep this CLI path pure Dart.
@@ -154,7 +160,14 @@ class WorkflowTasks {
           final expectedErrors = task['expectedErrorContains'] as List?;
           final expectedAccuracy = task['expectedAccuracy'] as List?;
           final expectedPatterns = task['expectedResultPatterns'] as List?;
-          final pass = expected.length == actual.length &&
+          final expectedFreeVars = task['expectedFreeVars'] as List?;
+          final freeVars = doc.lines.map((line) {
+            final names = line.cachedFreeVars.toList()..sort();
+            return names;
+          }).toList();
+          final pass = (expectedFreeVars == null ||
+                  _structuredMatches(freeVars, expectedFreeVars)) &&
+              expected.length == actual.length &&
               List.generate(
                       expected.length,
                       (i) => expectedErrors != null && expectedErrors[i] != null
@@ -186,6 +199,10 @@ class WorkflowTasks {
             'actual': actual,
             'expected': expected,
             'evidence': doc.lines.map((line) => line.resultEvidence?.toJson()).toList(),
+            if (expectedFreeVars != null) ...{
+              'freeVars': freeVars,
+              'expectedFreeVars': expectedFreeVars,
+            },
             if (expectedAccuracy != null) 'expectedAccuracy': expectedAccuracy,
             if (expectedPatterns != null) 'expectedResultPatterns': expectedPatterns,
             if (expectedErrors != null) 'expectedErrorContains': expectedErrors,

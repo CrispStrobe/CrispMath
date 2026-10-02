@@ -585,7 +585,11 @@ String? preprocessNotepadLine(
   Map<String, NotepadDocument>? allDocs,
 }) {
   if (parsed.body == null) return null;
-  var out = parsed.body!;
+  // Definite-integral dummy variables are lexical bindings, not document
+  // values. Protect them before function expansion and scalar substitution;
+  // bounds and occurrences outside the integral still use document scope.
+  final protected = _protectDefiniteIntegralBindings(parsed.body!, scope);
+  var out = protected.source;
   out = expandNotepadFunctionCalls(out, doc);
 
   // Resolve cross-document references before anything else.
@@ -607,10 +611,11 @@ String? preprocessNotepadLine(
   if (matches.every((match) =>
       scope[match[0]] == null ||
       _scalarScopeValue.hasMatch(scope[match[0]]!))) {
-    return out.replaceAllMapped(_scopeIdentifierRegex, (match) {
+    final substituted = out.replaceAllMapped(_scopeIdentifierRegex, (match) {
       final value = scope[match[0]];
       return value == null ? match[0]! : '($value)';
     });
+    return protected.restore(substituted);
   }
   final names = scope.keys.toList()
     ..sort((a, b) => b.length.compareTo(a.length));
@@ -619,7 +624,7 @@ String? preprocessNotepadLine(
     final pattern = _wordBoundaryPattern(name);
     out = out.replaceAll(pattern, '(${scope[name]!})');
   }
-  return out;
+  return protected.restore(out);
 }
 
 /// Walk backward from [lineIndex] to the first non-blank,
@@ -748,6 +753,112 @@ Set<String> identifierWordsIn(String source) {
   return out;
 }
 
+/// Word spans bound by a definite integrate(expr,var,lo,hi) or tuple call.
+/// Invalid/indefinite calls do not bind away identifiers. Positions let the
+/// same name remain free when used in a bound or outside the integral.
+Map<int, ({int end, String name})> _definiteIntegralBindings(String source) {
+  final bindings = <int, ({int end, String name})>{};
+  if (!source.contains('integrate')) return bindings;
+  for (final call in _notepadCallPattern.allMatches(source)) {
+    if (call[1] != 'integrate') continue;
+    final open = call.end - 1;
+    var depth = 1;
+    var end = open + 1;
+    for (; end < source.length; end++) {
+      if (source[end] == '(') depth++;
+      if (source[end] == ')') depth--;
+      if (depth == 0) break;
+    }
+    if (depth != 0) continue;
+    final args = parseIntegralArguments('integrate${source.substring(open, end + 1)}');
+    if (args == null || args.length != 4) continue;
+    List<({int start, int end})> ranges(int start, int finish) {
+      var position = start;
+      final result = <({int start, int end})>[];
+      var nesting = 0;
+      for (var i = start; i < finish; i++) {
+        if ('([{'.contains(source[i])) nesting++;
+        if (')]}'.contains(source[i])) nesting--;
+        if (source[i] == ',' && nesting == 0) {
+          result.add((start: position, end: i));
+          position = i + 1;
+        }
+      }
+      result.add((start: position, end: finish));
+      return result;
+    }
+
+    final callRanges = ranges(open + 1, end);
+    final integrand = callRanges.first;
+    var declaration = callRanges[1];
+    if (callRanges.length == 2) {
+      var start = declaration.start;
+      var finish = declaration.end;
+      while (source[start].trim().isEmpty) start++;
+      while (source[finish - 1].trim().isEmpty) finish--;
+      declaration = ranges(start + 1, finish - 1).first;
+    }
+    final tokens = RegExp(
+        r'[A-Za-z_][A-Za-z_0-9]*|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?');
+    for (final range in [integrand, declaration]) {
+      for (final token
+          in tokens.allMatches(source.substring(range.start, range.end))) {
+        if (token[0] != args[1]) continue;
+        bindings[range.start + token.start] =
+            (end: range.start + token.end, name: args[1]);
+      }
+    }
+  }
+  return bindings;
+}
+
+Set<String> _unboundIdentifierWords(String source) {
+  final bindings = _definiteIntegralBindings(source);
+  return {
+    for (final word in _identifierWordRegex.allMatches(source))
+      if (!bindings.containsKey(word.start)) word[0]!
+  };
+}
+
+class _ProtectedIntegralBindings {
+  const _ProtectedIntegralBindings(this.source, this.replacements);
+  final String source;
+  final Map<String, String> replacements;
+  String restore(String value) {
+    for (final replacement in replacements.entries) {
+      value = value.replaceAll(replacement.key, replacement.value);
+    }
+    return value;
+  }
+}
+
+_ProtectedIntegralBindings _protectDefiniteIntegralBindings(
+    String source, Map<String, String> scope) {
+  final bindings = _definiteIntegralBindings(source);
+  if (bindings.isEmpty) return _ProtectedIntegralBindings(source, const {});
+  final starts = bindings.keys.toList()..sort();
+  final output = StringBuffer();
+  final replacements = <String, String>{};
+  var cursor = 0;
+  var sequence = 0;
+  for (final start in starts) {
+    final binding = bindings[start]!;
+    String token;
+    do {
+      // Private-use characters cannot be a scalar/function identifier, so
+      // these markers cannot pick up a document binding during expansion.
+      token = '\uE000${sequence++}\uE001';
+    } while (source.contains(token) ||
+        scope.values.any((value) => value.contains(token)));
+    output.write(source.substring(cursor, start));
+    output.write(token);
+    replacements[token] = binding.name;
+    cursor = binding.end;
+  }
+  output.write(source.substring(cursor));
+  return _ProtectedIntegralBindings(output.toString(), replacements);
+}
+
 /// In-document dependencies for a parsed line: the subset of
 /// [scopeKeys] that appears as an identifier in [parsed]'s body.
 /// `Ans` is handled separately by the evaluator and isn't a scope
@@ -763,7 +874,7 @@ Set<String> dependenciesOfLine(
   if (parsed.kind == NotepadLineKind.flatzinc) return const {};
   final body = parsed.body;
   if (body == null) return const {};
-  final words = identifierWordsIn(body);
+  final words = _unboundIdentifierWords(body);
   return words
       .where((word) =>
           scopeKeys.contains(word) &&
@@ -788,7 +899,7 @@ Set<String> freeVariablesOfLine(
   if (parsed.kind == NotepadLineKind.flatzinc) return const {};
   final body = parsed.body;
   if (body == null) return const {};
-  final words = identifierWordsIn(body);
+  final words = _unboundIdentifierWords(body);
   return words
       .where((id) =>
           !scopeKeys.contains(id) &&

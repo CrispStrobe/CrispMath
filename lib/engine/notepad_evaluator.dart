@@ -13,6 +13,7 @@ import 'result_evidence.dart';
 import 'notepad.dart';
 import 'numeric_fallback.dart';
 import 'symbolic_expr.dart';
+import '../services/integral_arguments.dart';
 
 part 'notepad_syntax.dart';
 
