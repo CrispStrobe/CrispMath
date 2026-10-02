@@ -60,6 +60,12 @@ abstract class AppLocalizations {
   String get notepadManageNotepads;
   String get notepadOpenDocument;
   String get notepadExportAsJson;
+  String get notepadOpenFile;
+  String get notepadSaveFile;
+  String get notepadFileSaved;
+  String get notepadFileOpenFailed;
+  String get notepadFileSaveFailed;
+
   String get notepadImportFromJson;
   String get notepadImport;
   String get notepadImportJsonHint;
@@ -863,6 +869,16 @@ class EnLocalizations implements AppLocalizations {
   String get notepadManageNotepads => 'Manage notepads…';
   @override
   String get notepadOpenDocument => 'Open';
+  @override
+  String get notepadOpenFile => 'Open worksheet file';
+  @override
+  String get notepadSaveFile => 'Save worksheet file';
+  @override
+  String get notepadFileSaved => 'Worksheet saved';
+  @override
+  String get notepadFileOpenFailed => 'Could not open worksheet';
+  @override
+  String get notepadFileSaveFailed => 'Could not save worksheet';
   @override
   String get notepadExportAsJson => 'Export as JSON';
   @override
@@ -2616,6 +2632,18 @@ class DeLocalizations implements AppLocalizations {
   String get notepadManageNotepads => 'Rechenblöcke verwalten…';
   @override
   String get notepadOpenDocument => 'Öffnen';
+  @override
+  String get notepadOpenFile => 'Arbeitsblattdatei öffnen';
+  @override
+  String get notepadSaveFile => 'Arbeitsblattdatei speichern';
+  @override
+  String get notepadFileSaved => 'Arbeitsblatt gespeichert';
+  @override
+  String get notepadFileOpenFailed =>
+      'Arbeitsblatt konnte nicht geöffnet werden';
+  @override
+  String get notepadFileSaveFailed =>
+      'Arbeitsblatt konnte nicht gespeichert werden';
   @override
   String get notepadExportAsJson => 'Als JSON exportieren';
   @override
@@ -5982,6 +6010,18 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get notepadOpenDocument => 'Ouvrir';
   @override
+  String get notepadOpenFile => 'Ouvrir un fichier de feuille de calcul';
+  @override
+  String get notepadSaveFile => 'Enregistrer la feuille de calcul';
+  @override
+  String get notepadFileSaved => 'Feuille de calcul enregistrée';
+  @override
+  String get notepadFileOpenFailed =>
+      'Impossible d’ouvrir la feuille de calcul';
+  @override
+  String get notepadFileSaveFailed =>
+      'Impossible d’enregistrer la feuille de calcul';
+  @override
   String get notepadExportAsJson => 'Exporter en JSON';
   @override
   String get notepadImportFromJson => 'Importer depuis JSON';
@@ -9285,6 +9325,16 @@ class EsLocalizations implements AppLocalizations {
   String get notepadManageNotepads => 'Gestionar notas…';
   @override
   String get notepadOpenDocument => 'Abrir';
+  @override
+  String get notepadOpenFile => 'Abrir archivo de hoja de cálculo';
+  @override
+  String get notepadSaveFile => 'Guardar archivo de hoja de cálculo';
+  @override
+  String get notepadFileSaved => 'Hoja de cálculo guardada';
+  @override
+  String get notepadFileOpenFailed => 'No se pudo abrir la hoja de cálculo';
+  @override
+  String get notepadFileSaveFailed => 'No se pudo guardar la hoja de cálculo';
   @override
   String get notepadExportAsJson => 'Exportar como JSON';
   @override

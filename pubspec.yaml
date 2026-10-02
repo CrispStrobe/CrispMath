@@ -69,6 +69,7 @@ dependencies:
   image: ^4.10.1
   supabase_flutter: ^2.17.2
   desktop_drop: ^0.8.4
+  file_picker: 11.0.3
 
 dev_dependencies:
   flutter_test:

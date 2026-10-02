@@ -23,6 +23,7 @@ import '../widgets/result_evidence_badge.dart';
 import '../widgets/notepad_activity.dart';
 import '../widgets/selected_listenable_builder.dart';
 import '../services/notepad_dispatcher.dart';
+import '../services/worksheet_file.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 
@@ -72,10 +73,10 @@ class NotepadScreen extends StatefulWidget {
   const NotepadScreen({super.key});
 
   @override
-  State<NotepadScreen> createState() => _NotepadScreenState();
+  State<NotepadScreen> createState() => NotepadScreenState();
 }
 
-class _NotepadScreenState extends State<NotepadScreen> {
+class NotepadScreenState extends State<NotepadScreen> {
   final AppState _appState = AppState();
   // Round 91: a main-isolate CalculatorEngine purely for the
   // precision-arc pre-pass (pi/e/EulerGamma/sqrt2 with precision,
@@ -905,11 +906,53 @@ class _NotepadScreenState extends State<NotepadScreen> {
     }
   }
 
+  void recalculateAll() => _recalculateAll();
+
   void _newDocument() {
     final base = AppLocalizations.of(context).notepadDefaultDocName;
     final doc = NotepadDocument.fresh(name: _nextUntitledName(base));
     _appState.setNotepadDocument(doc);
     _appState.setCurrentNotepadDoc(doc.id);
+  }
+
+  Future<void> _openWorksheetFile() async {
+    try {
+      final doc = await WorksheetFileService.open();
+      if (doc == null || !mounted) return;
+      _appState.setNotepadDocument(doc);
+      _appState.setCurrentNotepadDoc(doc.id);
+      _scheduleFullRecalc(doc);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              '${AppLocalizations.of(context).notepadFileOpenFailed}: $error')));
+    }
+  }
+
+  Future<void> _saveWorksheetFile() async {
+    final doc = _currentDoc;
+    if (doc == null) return;
+    try {
+      final saved = await WorksheetFileService.save(doc);
+      if (!mounted || !saved) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context).notepadFileSaved)));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              '${AppLocalizations.of(context).notepadFileSaveFailed}: $error')));
+    }
+  }
+
+  void _moveLineFocus(NotepadDocument? doc, int offset) {
+    if (doc == null || doc.lines.isEmpty) return;
+    final current =
+        doc.lines.indexWhere((l) => _focusNodes[l.id]?.hasFocus == true);
+    final next =
+        (current < 0 ? 0 : current + offset).clamp(0, doc.lines.length - 1);
+    _focusNodes[doc.lines[next].id]?.requestFocus();
   }
 
   void _openDocument(String id) {
@@ -1330,6 +1373,24 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
+        for (final meta in [true, false]) ...{
+          SingleActivator(LogicalKeyboardKey.keyN, meta: meta, control: !meta):
+              _newDocument,
+          SingleActivator(LogicalKeyboardKey.keyO, meta: meta, control: !meta):
+              () => unawaited(_openWorksheetFile()),
+          SingleActivator(LogicalKeyboardKey.keyS, meta: meta, control: !meta):
+              () => unawaited(_saveWorksheetFile()),
+          SingleActivator(LogicalKeyboardKey.enter, meta: meta, control: !meta):
+              _recalculateAll,
+          SingleActivator(LogicalKeyboardKey.enter,
+              meta: meta, control: !meta, shift: true): () {
+            if (doc != null) _appendLine(doc);
+          },
+        },
+        const SingleActivator(LogicalKeyboardKey.arrowDown, alt: true): () =>
+            _moveLineFocus(doc, 1),
+        const SingleActivator(LogicalKeyboardKey.arrowUp, alt: true): () =>
+            _moveLineFocus(doc, -1),
         const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): () {
           if (doc != null) _performUndo(doc);
         },
@@ -1354,58 +1415,60 @@ class _NotepadScreenState extends State<NotepadScreen> {
       },
       child: Focus(
         autofocus: true,
-        child: Scaffold(
-          appBar: AppBar(
-            title: _buildTitle(doc),
-            actions: _buildActions(doc),
-          ),
-          body: LayoutBuilder(
-            builder: (context, constraints) {
-              final wideEnough = constraints.maxWidth >= 1200;
-              final docBody = doc == null
-                  ? _buildEmptyState()
-                  : Column(
-                      children: [
-                        if (_pendingLineIds.isNotEmpty ||
-                            _recalcFailed ||
-                            _recalcCancelled)
-                          ListenableBuilder(
-                            listenable: _recalcProgress,
-                            builder: (context, _) {
-                              if (_pendingLineIds.isEmpty &&
-                                  !_recalcFailed &&
-                                  !_recalcCancelled) {
-                                return const SizedBox.shrink();
-                              }
-                              return NotepadActivity(
-                                  busy: _pendingLineIds.isNotEmpty,
-                                  failed: _recalcFailed,
-                                  cancelled: _recalcCancelled,
-                                  completed: _recalcCompleted,
-                                  total: _recalcTotal,
-                                  onCancel: _cancelRecalc,
-                                  onRetry: _recalculateAll);
-                            },
-                          ),
-                        if (_searchOpen) _buildSearchBar(doc),
-                        Expanded(child: _buildDocBody(doc)),
-                      ],
-                    );
-              if (!wideEnough) return docBody;
-              // Wide layout: left-rail document list + main doc.
-              return Row(
-                children: [
-                  SizedBox(
-                    width: 240,
-                    child: _buildDocSidebar(),
+        child: LayoutBuilder(
+            builder: (context, screenConstraints) => Scaffold(
+                  appBar: AppBar(
+                    title: _buildTitle(doc),
+                    actions: _buildActions(doc,
+                        compact: screenConstraints.maxWidth < 600),
                   ),
-                  const VerticalDivider(width: 1),
-                  Expanded(child: docBody),
-                ],
-              );
-            },
-          ),
-        ),
+                  body: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wideEnough = constraints.maxWidth >= 1000;
+                      final docBody = doc == null
+                          ? _buildEmptyState()
+                          : Column(
+                              children: [
+                                if (_pendingLineIds.isNotEmpty ||
+                                    _recalcFailed ||
+                                    _recalcCancelled)
+                                  ListenableBuilder(
+                                    listenable: _recalcProgress,
+                                    builder: (context, _) {
+                                      if (_pendingLineIds.isEmpty &&
+                                          !_recalcFailed &&
+                                          !_recalcCancelled) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return NotepadActivity(
+                                          busy: _pendingLineIds.isNotEmpty,
+                                          failed: _recalcFailed,
+                                          cancelled: _recalcCancelled,
+                                          completed: _recalcCompleted,
+                                          total: _recalcTotal,
+                                          onCancel: _cancelRecalc,
+                                          onRetry: _recalculateAll);
+                                    },
+                                  ),
+                                if (_searchOpen) _buildSearchBar(doc),
+                                Expanded(child: _buildDocBody(doc)),
+                              ],
+                            );
+                      if (!wideEnough) return docBody;
+                      // Wide layout: left-rail document list + main doc.
+                      return Row(
+                        children: [
+                          SizedBox(
+                            width: 240,
+                            child: _buildDocSidebar(),
+                          ),
+                          const VerticalDivider(width: 1),
+                          Expanded(child: docBody),
+                        ],
+                      );
+                    },
+                  ),
+                )),
       ),
     );
   }
@@ -1436,7 +1499,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     );
   }
 
-  List<Widget> _buildActions(NotepadDocument? doc) {
+  List<Widget> _buildActions(NotepadDocument? doc, {bool compact = false}) {
     final t = AppLocalizations.of(context);
     return [
       // Round 108: module help — explains the live-formula model and the
@@ -1449,51 +1512,57 @@ class _NotepadScreenState extends State<NotepadScreen> {
       // categories (constraints / sudoku / statistics / units) are
       // hidden from the filter row.
       // OCR camera button
-      IconButton(
-        icon: const Icon(Icons.camera_alt_outlined, semanticLabel: 'Scan math'),
-        tooltip: 'Scan math',
-        onPressed: () => _launchNotepadOcr(context),
-      ),
+      if (!compact)
+        IconButton(
+          icon:
+              const Icon(Icons.camera_alt_outlined, semanticLabel: 'Scan math'),
+          tooltip: 'Scan math',
+          onPressed: () => _launchNotepadOcr(context),
+        ),
       // Handwriting input
-      IconButton(
-        icon: const Icon(Icons.draw_outlined, semanticLabel: 'Write math'),
-        tooltip: 'Write math',
-        onPressed: () async {
-          final expr = await showHandwritingInputDialog(context);
-          if (expr == null || expr.isEmpty || !mounted) return;
-          final doc = _currentDoc;
-          if (doc != null) {
-            final line = NotepadLine.fresh(source: expr);
-            doc.lines.add(line);
-            _persistDoc(doc);
-            _scheduleRecalc(doc, doc.lines.length - 1);
-          }
-        },
-      ),
-      IconButton(
-        icon: const Icon(Icons.picture_as_pdf_outlined,
-            semanticLabel: 'Export PDF'),
-        tooltip: 'Export as PDF',
-        onPressed: () async {
-          if (_currentDoc == null) return;
-          final pdf = await exportToPdf(_currentDoc!);
-          await Printing.layoutPdf(
-            onLayout: (format) async => pdf.save(),
-            name: _currentDoc!.name.isNotEmpty ? _currentDoc!.name : 'Notepad',
-          );
-        },
-      ),
-      IconButton(
-        icon: const Icon(Icons.menu_book_outlined,
-            semanticLabel: 'Worked examples'),
-        tooltip: t.workedExamplesTitle,
-        onPressed: () => showDialog<void>(
-          context: context,
-          builder: (_) => const WorkedExamplesDialog(
-            surface: WorkedExamplesSurface.notepad,
+      if (!compact)
+        IconButton(
+          icon: const Icon(Icons.draw_outlined, semanticLabel: 'Write math'),
+          tooltip: 'Write math',
+          onPressed: () async {
+            final expr = await showHandwritingInputDialog(context);
+            if (expr == null || expr.isEmpty || !mounted) return;
+            final doc = _currentDoc;
+            if (doc != null) {
+              final line = NotepadLine.fresh(source: expr);
+              doc.lines.add(line);
+              _persistDoc(doc);
+              _scheduleRecalc(doc, doc.lines.length - 1);
+            }
+          },
+        ),
+      if (!compact)
+        IconButton(
+          icon: const Icon(Icons.picture_as_pdf_outlined,
+              semanticLabel: 'Export PDF'),
+          tooltip: 'Export as PDF',
+          onPressed: () async {
+            if (_currentDoc == null) return;
+            final pdf = await exportToPdf(_currentDoc!);
+            await Printing.layoutPdf(
+              onLayout: (format) async => pdf.save(),
+              name:
+                  _currentDoc!.name.isNotEmpty ? _currentDoc!.name : 'Notepad',
+            );
+          },
+        ),
+      if (!compact)
+        IconButton(
+          icon: const Icon(Icons.menu_book_outlined,
+              semanticLabel: 'Worked examples'),
+          tooltip: t.workedExamplesTitle,
+          onPressed: () => showDialog<void>(
+            context: context,
+            builder: (_) => const WorkedExamplesDialog(
+              surface: WorkedExamplesSurface.notepad,
+            ),
           ),
         ),
-      ),
       // Round 101 (P6): help-mode toggle. Mirrors the Calculator
       // AppBar control so the affordance carries across surfaces.
       ListenableBuilder(
@@ -1523,6 +1592,15 @@ class _NotepadScreenState extends State<NotepadScreen> {
         itemBuilder: (context) {
           final items = <PopupMenuEntry<String>>[
             PopupMenuItem(value: 'new', child: Text(t.notepadNewDocument)),
+            PopupMenuItem(value: 'open-file', child: Text(t.notepadOpenFile)),
+            if (doc != null)
+              PopupMenuItem(value: 'save-file', child: Text(t.notepadSaveFile)),
+            if (compact) ...[
+              const PopupMenuItem(value: 'scan', child: Text('Scan math')),
+              const PopupMenuItem(value: 'write', child: Text('Write math')),
+              const PopupMenuItem(
+                  value: 'examples', child: Text('Worked examples')),
+            ],
             // Template picker sub-items.
             for (final tmpl in NotepadTemplates.all)
               PopupMenuItem(
@@ -1610,7 +1688,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     ];
   }
 
-  void _onMenuSelected(String value) {
+  void _onMenuSelected(String value) async {
     if (value.startsWith('template:')) {
       final id = value.substring('template:'.length);
       final tmpl = NotepadTemplates.all.firstWhere(
@@ -1624,6 +1702,26 @@ class _NotepadScreenState extends State<NotepadScreen> {
     }
     if (value == 'new') {
       _newDocument();
+    } else if (value == 'open-file') {
+      unawaited(_openWorksheetFile());
+    } else if (value == 'save-file') {
+      unawaited(_saveWorksheetFile());
+    } else if (value == 'scan') {
+      _launchNotepadOcr(context);
+    } else if (value == 'write') {
+      final source = await showHandwritingInputDialog(context);
+      if (source == null || source.isEmpty || !mounted || _currentDoc == null) {
+        return;
+      }
+      final doc = _currentDoc!;
+      doc.lines.add(NotepadLine.fresh(source: source));
+      _persistDoc(doc);
+      _scheduleRecalc(doc, doc.lines.length - 1);
+    } else if (value == 'examples') {
+      showDialog<void>(
+          context: context,
+          builder: (_) => const WorkedExamplesDialog(
+              surface: WorkedExamplesSurface.notepad));
     } else if (value == 'open-welcome') {
       _openWelcomeSample();
     } else if (value == 'manage') {

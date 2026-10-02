@@ -9,6 +9,7 @@ import 'package:crisp_math/services/notepad_dispatcher.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -66,10 +67,34 @@ void main() {
     await tester.tap(find.text('Graphing').first);
     await settle();
     await binding.takeScreenshot('linked-function-graph');
+    final workflow = Uri(
+        scheme: 'crispmath',
+        host: 'worksheet',
+        queryParameters: {
+          'name': 'Shortcuts worksheet',
+          'lines': 'a=3\nf(t)=t^2+a\nf(4)'
+        });
+    expect(await launchUrl(workflow, mode: LaunchMode.externalApplication),
+        isTrue);
+    var workflowPassed = false;
+    for (var i = 0; i < 150; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      final current = state.notepadDocuments[state.currentNotepadDocId];
+      if (current?.name == 'Shortcuts worksheet' &&
+          current!.lines.last.cachedResult == '19') {
+        workflowPassed = true;
+        break;
+      }
+    }
+    expect(workflowPassed, isTrue,
+        reason: 'Native URL must reach Flutter and calculate the worksheet');
+    expect(tester.takeException(), isNull);
+    await binding.takeScreenshot('shortcuts-created-worksheet');
     binding.reportData ??= {};
     binding.reportData!['nativeBridge'] = engine.isNativeAvailable;
     binding.reportData!['nativeDerivative'] = nativeDerivative;
     binding.reportData!['integral'] = integral.toJson();
     binding.reportData!['document'] = doc.toJson();
+    binding.reportData!['nativeWorkflowUrl'] = workflowPassed;
   });
 }

@@ -33,6 +33,7 @@ import 'screens/help_screen.dart';
 import 'screens/notepad_screen.dart';
 import 'services/crash_reporter.dart';
 import 'services/sync_service.dart';
+import 'services/apple_workflow.dart';
 import 'utils/share_link.dart';
 import 'widgets/perf_overlay.dart';
 import 'widgets/command_palette.dart';
@@ -249,6 +250,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   final GlobalKey<CalculatorScreenState> _calculatorKey = GlobalKey();
   final GlobalKey<GraphingScreenState> _graphingKey = GlobalKey();
+  final GlobalKey<NotepadScreenState> _notepadKey = GlobalKey();
 
   late final List<Widget> _screens;
 
@@ -261,7 +263,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         onGoToGraphing: () => _select(_kGraphing),
         onGoToAnalysis: () => _select(_kAnalysis),
       ),
-      const NotepadScreen(),
+      NotepadScreen(key: _notepadKey),
       GraphingScreen(key: _graphingKey),
       FunctionEditorScreen(
         onSwitchToGraphing: (_) => _select(_kGraphing),
@@ -299,6 +301,29 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           _calculatorKey.currentState?.insertExpression(share.expression!);
         }
       }
+      unawaited(AppleWorkflowBridge.listen((action) async {
+        if (!mounted) return;
+        if (action.expression != null) {
+          _select(_kCalculator);
+          _calculatorKey.currentState?.insertExpression(action.expression!);
+        }
+        final doc = action.document;
+        if (doc != null) {
+          final state = AppState();
+          state.setNotepadDocument(doc);
+          state.setCurrentNotepadDoc(doc.id);
+          _select(_kNotepad);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && state.currentNotepadDocId == doc.id) {
+              _notepadKey.currentState?.recalculateAll();
+            }
+          });
+        }
+      }, (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not open workflow: $error')));
+      }));
     });
     // Worked-examples V2: when a dialog signals "insert this into the
     // calculator", switch to the Calculator tab. The CalculatorScreen
@@ -309,6 +334,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    AppleWorkflowBridge.stop();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(AppState().flushPersistence());
     AppState().navigationChanges.removeListener(_maybeRouteToCalculator);
