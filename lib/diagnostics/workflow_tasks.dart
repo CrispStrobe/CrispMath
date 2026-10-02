@@ -54,6 +54,12 @@ class WorkflowTasks {
       'schemaVersion': 2,
       'nativeBridge': nativeBridgeReady,
       'total': results.length,
+      'expectedRejections': results
+          .where((r) =>
+              r['status'] == 'passed' && r['expectedErrorContains'] != null)
+          .length,
+      'featureGaps':
+          results.where((r) => r['unsupportedReason'] != null).length,
       for (final status in ['passed', 'failed', 'unsupported'])
         status: results.where((r) => r['status'] == status).length,
       'results': results
