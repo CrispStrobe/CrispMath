@@ -44,6 +44,11 @@ on:
         description: 'Retry metadata and internal assignment without building or uploading'
         type: boolean
         default: false
+      api_runner:
+        description: 'Hosted runner for metadata-only checks'
+        type: choice
+        options: [ubuntu-latest, macos-latest]
+        default: ubuntu-latest
       external_testflight:
         description: 'Inspect external beta requirements (requires verify_only)'
         type: boolean
@@ -263,7 +268,7 @@ jobs:
 
   verify-upload:
     if: ${{ inputs.verify_only == true }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.api_runner || 'ubuntu-latest' }}
     timeout-minutes: 20
     env:
       ASC_APP_ID: ${{ secrets.ASC_APP_ID }}

@@ -33,7 +33,7 @@ class AppleApi:
         from cryptography.hazmat.primitives import serialization
         self.key = serialization.load_pem_private_key(key_file.read_bytes(), password=None)
 
-    def request(self, path, data=None):
+    def request(self, path, data=None, method=None):
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import ec
         from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
@@ -50,6 +50,7 @@ class AppleApi:
         token = (message + b'.' + encoded(r.to_bytes(32, 'big') + s.to_bytes(32, 'big'))).decode()
         request = Request('https://api.appstoreconnect.apple.com' + path,
                           data=json.dumps(data).encode() if data is not None else None,
+                          method=method,
                           headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
         with urlopen(request, timeout=40) as response:
             raw = response.read()
