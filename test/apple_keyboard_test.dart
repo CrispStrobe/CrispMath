@@ -1,6 +1,7 @@
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/main.dart';
+import 'package:crisp_math/screens/notepad_screen.dart';
 import 'package:crisp_math/services/engine_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -60,6 +61,24 @@ void main() {
     await chord(tester, LogicalKeyboardKey.keyN);
     expect(AppState().currentNotepadDocId, isNot(doc.id));
     expect(AppState().notepadDocuments[doc.id]!.lines.length, 3);
+  });
+
+  testWidgets('imported worksheet calculates after switching controllers',
+      (tester) async {
+    final old = await boot(tester, const Size(1032, 1376));
+    final imported = NotepadDocument.fresh(name: 'Imported');
+    imported.lines.clear();
+    imported.lines.add(NotepadLine.fresh(source: '2+3'));
+    tester
+        .state<NotepadScreenState>(find.byType(NotepadScreen))
+        .openImportedWorksheet(imported);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(AppState().currentNotepadDocId, imported.id);
+    expect(imported.lines.single.cachedResult, '5');
+    expect(imported.lines.single.cachedError, isNull);
+    expect(AppState().notepadDocuments, contains(old.id));
   });
 
   testWidgets('narrow toolbar offers file and capture actions without overflow',
