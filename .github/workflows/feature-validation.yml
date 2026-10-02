@@ -4,6 +4,11 @@ on:
     branches: ['feat/graph-workspace-ux']
   workflow_dispatch:
     inputs:
+      linux_runner:
+        description: 'GitHub-hosted Linux runner (explicit image for queue fallback)'
+        type: choice
+        options: [ubuntu-latest, ubuntu-24.04]
+        default: ubuntu-latest
       probe_build_run_id:
         description: 'Optional existing feature-web run ID: run only the fast batch browser probe'
         type: string
@@ -25,7 +30,7 @@ concurrency:
 jobs:
   features:
     if: ${{ !inputs.probe_build_run_id }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +71,7 @@ jobs:
           test/selected_listenable_builder_test.dart test/notepad_dispatcher_test.dart
   unit:
     if: ${{ !inputs.probe_build_run_id }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -100,7 +105,7 @@ jobs:
           path: notepad-evaluator-profile.json
   native-ocr:
     if: ${{ !inputs.probe_build_run_id }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -150,7 +155,7 @@ jobs:
           retention-days: 14
   browser:
     if: ${{ !inputs.probe_build_run_id }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -230,7 +235,7 @@ jobs:
 
   gallery:
     needs: browser
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -258,7 +263,7 @@ jobs:
 
   batch-probe:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.probe_build_run_id != '' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4

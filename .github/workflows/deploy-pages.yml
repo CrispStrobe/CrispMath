@@ -18,6 +18,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      linux_runner:
+        description: 'GitHub-hosted Linux runner (explicit image for queue fallback)'
+        type: choice
+        options: [ubuntu-latest, ubuntu-24.04]
+        default: ubuntu-latest
 
 # The deploy-pages action needs these to mint the Pages OIDC token.
 permissions:
@@ -32,7 +38,7 @@ concurrency:
 
 jobs:
   build-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 20
     environment:
       name: github-pages

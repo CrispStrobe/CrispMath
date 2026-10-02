@@ -27,6 +27,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      linux_runner:
+        description: 'GitHub-hosted Linux runner (explicit image for queue fallback)'
+        type: choice
+        options: [ubuntu-latest, ubuntu-24.04]
+        default: ubuntu-latest
       deploy:
         description: 'Deploy the validated bundle to Vercel and run live checks'
         type: boolean
@@ -42,7 +47,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 20
 
     # Job-level env so the deploy step's `if:` can test for a configured
