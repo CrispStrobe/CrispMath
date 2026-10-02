@@ -1,5 +1,6 @@
 """Verify native CI screenshots and calculator evidence without app bundles."""
 import json
+import math
 import os
 from pathlib import Path
 import struct
@@ -41,6 +42,13 @@ def main():
         engineering = evidence['engineeringWorksheet']['l']
         assert engineering[2]['r'] == '5'
         assert engineering[4].get('r') and not engineering[4].get('e')
+        assert '/' not in engineering[4]['r']
+        assert abs(float(engineering[4]['r']) - 45 * math.pi) < 1e-7
+        assert abs(float(engineering[5]['r']) - 45 * math.pi / 1000) < 1e-9
+        assert all(line['evidence']['accuracy'] in {'unknown', 'approximate'}
+                   for line in engineering[3:])
+        assert all(line['evidence']['accuracy'] == 'exact'
+                   for line in engineering[1:3])
         evidence_by_profile[profile] = evidence
         for file in files:
             data = file.read_bytes()

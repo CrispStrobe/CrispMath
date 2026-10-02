@@ -1,5 +1,6 @@
 import 'workflow_modules.dart';
 import '../engine/calculator_engine.dart';
+import '../engine/result_evidence.dart';
 import '../engine/graph_sampling.dart';
 import '../engine/notepad.dart';
 import '../engine/notepad_evaluator.dart';
@@ -125,7 +126,19 @@ class WorkflowTasks {
             .cast<String>()
             .map((s) => NotepadLine.fresh(source: s)));
         final evaluator = NotepadEvaluator(
-            dispatcher: documentDispatcher ?? (s) async => engine.evaluate(s));
+            dispatcher: documentDispatcher ?? (s) async => engine.evaluate(s),
+            detailedDispatcher: documentDispatcher == null
+                ? (source) async {
+                    final raw = engine.evaluate(source);
+                    // The UI removes a purely zero imaginary suffix before
+                    // caching scalar values. Keep this CLI path pure Dart.
+                    final scalar = task['normalizeRealScalars'] == true
+                        ? RegExp(r'^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*[+-]\s*0(?:\.0*)?\s*\*?\s*I\s*$')
+                            .firstMatch(raw)
+                        : null;
+                    return ComputedResult(scalar?[1] ?? raw, engine.lastResultEvidence);
+                  }
+                : null);
         await evaluator.evaluateAll(doc);
         if (task['edit'] != null) {
           final edit = task['edit'] as Map;
@@ -137,6 +150,8 @@ class WorkflowTasks {
           final actual =
               doc.lines.map((l) => l.cachedError ?? l.cachedResult).toList();
           final expectedErrors = task['expectedErrorContains'] as List?;
+          final expectedAccuracy = task['expectedAccuracy'] as List?;
+          final expectedPatterns = task['expectedResultPatterns'] as List?;
           final pass = expected.length == actual.length &&
               List.generate(
                       expected.length,
@@ -147,11 +162,30 @@ class WorkflowTasks {
                           : expected[i] == null
                               ? actual[i] == null
                               : _matches(actual[i] ?? '', expected[i]))
-                  .every((v) => v);
+                  .every((v) => v) &&
+              (expectedAccuracy == null ||
+                  (expectedAccuracy.length == doc.lines.length &&
+                      List.generate(doc.lines.length, (i) {
+                        final allowed = expectedAccuracy[i];
+                        final accuracy = doc.lines[i].resultEvidence?.accuracy.name;
+                        return allowed is List
+                            ? allowed.contains(accuracy)
+                            : allowed == accuracy;
+                      }).every((v) => v))) &&
+              (expectedPatterns == null ||
+                  (expectedPatterns.length == doc.lines.length &&
+                      List.generate(doc.lines.length, (i) =>
+                          expectedPatterns[i] == null ||
+                          RegExp(expectedPatterns[i] as String)
+                              .hasMatch(doc.lines[i].cachedResult ?? ''))
+                          .every((v) => v)));
           return {
             'status': pass ? 'passed' : 'failed',
             'actual': actual,
             'expected': expected,
+            'evidence': doc.lines.map((line) => line.resultEvidence?.toJson()).toList(),
+            if (expectedAccuracy != null) 'expectedAccuracy': expectedAccuracy,
+            if (expectedPatterns != null) 'expectedResultPatterns': expectedPatterns,
             if (expectedErrors != null) 'expectedErrorContains': expectedErrors,
             if (task['unsupportedReason'] != null)
               'unsupportedReason': task['unsupportedReason'],

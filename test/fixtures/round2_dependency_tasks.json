@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent tank-volume/linear-function arithmetic with exact pi and literal rational coefficients; desired downstream metadata must retain source uncertainty.",
+  "tasks": [
+    {
+      "id": "round2-dependency-01",
+      "kind": "document",
+      "title": "Pi-derived volume retains numerical uncertainty",
+      "lines": [
+        "r=3",
+        "h=5",
+        "area=pi*r^2",
+        "volume=area*h"
+      ],
+      "expected": [
+        "3",
+        "5",
+        "9*pi",
+        "45*pi"
+      ],
+      "expectedAccuracy": [
+        "exact",
+        "exact",
+        [
+          "unknown",
+          "approximate"
+        ],
+        [
+          "unknown",
+          "approximate"
+        ]
+      ],
+      "expectedResultPatterns": [
+        null,
+        null,
+        null,
+        "^-?\\d+\\.\\d+(?:[eE][+-]?\\d+)?$"
+      ],
+      "normalizeRealScalars": true
+    },
+    {
+      "id": "round2-dependency-02",
+      "kind": "document",
+      "title": "Captured approximate coefficient stays uncertain through function call",
+      "lines": [
+        "a=pi",
+        "f(t)=a*t",
+        "f(5)"
+      ],
+      "expected": [
+        "pi",
+        "pi*t",
+        "5*pi"
+      ],
+      "expectedAccuracy": [
+        [
+          "unknown",
+          "approximate"
+        ],
+        [
+          "unknown",
+          "approximate"
+        ],
+        [
+          "unknown",
+          "approximate"
+        ]
+      ],
+      "expectedResultPatterns": [
+        null,
+        null,
+        "^-?\\d+\\.\\d+(?:[eE][+-]?\\d+)?$"
+      ],
+      "normalizeRealScalars": true
+    },
+    {
+      "id": "round2-dependency-03",
+      "kind": "document",
+      "title": "Literal decimal coefficients remain exactly rational",
+      "lines": [
+        "a=0.2",
+        "f(t)=a*t",
+        "f(0.3)"
+      ],
+      "expected": [
+        "1/5",
+        "t/5",
+        "3/50"
+      ],
+      "expectedAccuracy": [
+        "exact",
+        "symbolic",
+        "exact"
+      ],
+      "normalizeRealScalars": true
+    }
+  ]
+}

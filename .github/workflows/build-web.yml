@@ -142,7 +142,7 @@ jobs:
           for area in algebra numeric workflow; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/new_math_${area}_tasks.json" --output "deployed-results/new-math-${area}.json"
           done
-          for area in algebra numeric workflow native_safety; do
+          for area in algebra numeric workflow native_safety dependency; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round2_${area}_tasks.json" --output "deployed-results/round2-${area}.json"
           done
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows

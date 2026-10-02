@@ -68,7 +68,7 @@ jobs:
           YAML
           flutter pub get
       - name: Corpus and comparison unit regressions
-        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart test/round2_graph_regressions_test.dart test/round2_exact_constant_test.dart test/round2_numeric_regressions_test.dart test/round2_algebra_regressions_test.dart
+        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart test/round2_graph_regressions_test.dart test/round2_exact_constant_test.dart test/round2_numeric_regressions_test.dart test/round2_algebra_regressions_test.dart test/worksheet_numeric_provenance_test.dart
       - name: Run every task against native app engine (strict)
         run: tool/crispmath_cli.sh --require-native --report task-results/native.json
       - name: Run the fresh independent 50 problems (strict)
@@ -85,7 +85,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           status=0
-          for area in algebra numeric workflow native_safety; do
+          for area in algebra numeric workflow native_safety dependency; do
             tool/crispmath_cli.sh --tasks "test/fixtures/round2_${area}_tasks.json" --require-native --report "task-results/native-round2-${area}.json" || status=1
           done
           exit "$status"
@@ -145,7 +145,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           status=0
-          for area in algebra numeric workflow native_safety; do
+          for area in algebra numeric workflow native_safety dependency; do
             python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round2_${area}_tasks.json" --output "task-results/browser-round2-${area}.json" || status=1
           done
           exit "$status"

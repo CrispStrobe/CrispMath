@@ -11,6 +11,7 @@ import 'result_evidence.dart';
 // global namespaces.
 
 import 'notepad.dart';
+import 'numeric_fallback.dart';
 import 'symbolic_expr.dart';
 
 part 'notepad_syntax.dart';
@@ -529,6 +530,8 @@ class NotepadEvaluator {
     for (final parameter in parsed.parameters ?? const <String>[]) {
       scope.remove(parameter);
     }
+    final inputAccuracy =
+        _dependencyAccuracy(doc, lineIndex, graph, scope, referencedNames, firstCode);
     String? preprocessed;
     try {
       preprocessed = preprocessNotepadLine(parsed,
@@ -553,8 +556,9 @@ class NotepadEvaluator {
       line.cachedResult = preprocessed;
       line.cachedError = null;
       line.cachedFreeVars = freeVars;
-      line.resultEvidence = const ResultEvidence(
-          ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      line.resultEvidence = ResultEvidence(
+          inputAccuracy ?? ResultAccuracy.symbolic,
+          ComputationMethod.symbolicEvaluation);
       return;
     }
     if (preprocessed == null) {
@@ -600,6 +604,34 @@ class NotepadEvaluator {
     if (line.source != dispatchedSource) {
       throw const NotepadEvaluationCancelled();
     }
+    if (!result.startsWith('Error') && inputAccuracy != null) {
+      // Substituting a rounded upstream decimal into exact arithmetic does
+      // not recover its lost precision. Keep that uncertainty through aliases
+      // and captured functions, rather than labelling a decimal-derived
+      // rational as an exact answer.
+      final accuracy = inputAccuracy == ResultAccuracy.approximate ||
+              evidence?.accuracy == ResultAccuracy.approximate
+          ? ResultAccuracy.approximate
+          : ResultAccuracy.unknown;
+      evidence = ResultEvidence(
+          accuracy,
+          evidence?.method == ComputationMethod.integerArithmetic
+              ? ComputationMethod.numericFallback
+              : evidence?.method ?? ComputationMethod.symbolicEvaluation,
+          unchanged: evidence?.unchanged ?? false,
+          sourceDomain: evidence?.sourceDomain);
+      if (_cachedNumericValue(result)) {
+        final numeric = NumericFallbackEvaluator.evalNumeric(result);
+        if (numeric != null && numeric.isFinite) {
+          // toString keeps enough digits to round-trip a double. Display
+          // rounding belongs to the UI; downstream caches keep those digits.
+          result = numeric.toString();
+          if (result.endsWith('.0')) {
+            result = result.substring(0, result.length - 2);
+          }
+        }
+      }
+    }
     line.resultEvidence = evidence;
     if (result.startsWith('Error')) {
       line.cachedResult = null;
@@ -610,6 +642,52 @@ class NotepadEvaluator {
       line.cachedError = null;
       line.cachedFreeVars = freeVars;
     }
+  }
+
+  static bool _cachedNumericValue(String value) => RegExp(
+          r'^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?(?:/[+-]?\d+)?$')
+      .hasMatch(value.replaceAll(RegExp(r'\s+'), ''));
+
+  ResultAccuracy? _dependencyAccuracy(
+      NotepadDocument doc,
+      int index,
+      NotepadDependencyGraph graph,
+      Map<String, String> scope,
+      Set<String> referencedNames,
+      int firstCode) {
+    ResultAccuracy? uncertainty;
+    final localNames = <String>{};
+    for (final dependency in graph.dependsOn[index] ?? const <int>{}) {
+      final upstream = doc.lines[dependency];
+      final parsed = classifyNotepadLine(upstream.source,
+          lineIndex: dependency, firstCodeLineIndex: firstCode);
+      localNames.add('line${dependency + 1}');
+      if (parsed.name != null) localNames.add(parsed.name!);
+      localNames.addAll(upstream.cachedExports.keys);
+      final accuracy = upstream.resultEvidence?.accuracy;
+      if (accuracy == ResultAccuracy.approximate) {
+        return ResultAccuracy.approximate;
+      }
+      if (accuracy == ResultAccuracy.unknown ||
+          (accuracy == null && upstream.cachedResult != null) ||
+          (accuracy == ResultAccuracy.symbolic &&
+              !parsed.isFunction &&
+              upstream.cachedResult != null &&
+              _cachedNumericValue(upstream.cachedResult!))) {
+        uncertainty = ResultAccuracy.unknown;
+      }
+    }
+    // Imported values have no precision metadata. A numerical import cannot
+    // become exact solely because its cached spelling is a decimal literal.
+    for (final name in referencedNames) {
+      if (!localNames.contains(name) &&
+          externalScope.containsKey(name) &&
+          scope.containsKey(name) &&
+          _cachedNumericValue(scope[name]!)) {
+        uncertainty = ResultAccuracy.unknown;
+      }
+    }
+    return uncertainty;
   }
 
   /// Evaluate a `total`/`subtotal`/`average`/`count` aggregate line.

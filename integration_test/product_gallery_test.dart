@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/result_evidence.dart';
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/widgets/drawing_canvas.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
@@ -121,12 +123,16 @@ void main() {
     await settle();
     await populatedGraph(minimumCurves: 3);
     await screenshot('multiple-function-graph');
+    await tester.ensureVisible(find.byTooltip('Trace curve'));
+    await settle();
     await tester.tap(find.byTooltip('Trace curve'));
     await settle();
     await populatedGraph();
     expect(find.textContaining('x = '), findsWidgets);
     expect(find.text('Trace: waiting for samples'), findsNothing);
     await screenshot('graph-curve-trace');
+    await tester.ensureVisible(find.byTooltip('Value table'));
+    await settle();
     await tester.tap(find.byTooltip('Value table'));
     await settle();
     await tester.tap(find.text('Generate table'));
@@ -192,6 +198,19 @@ void main() {
     expect(engineering.lines.any((line) => line.cachedError != null), isFalse);
     expect(engineering.lines[2].cachedResult, '5');
     expect(engineering.lines[4].cachedResult, isNotEmpty);
+    expect(engineering.lines[4].cachedResult, isNot(contains('/')),
+        reason: 'Computed tank volume should retain readable numeric form');
+    expect(double.parse(engineering.lines[4].cachedResult!),
+        closeTo(45 * math.pi, 1e-7));
+    expect(double.parse(engineering.lines[5].cachedResult!),
+        closeTo(45 * math.pi / 1000, 1e-9));
+    for (final line in engineering.lines.skip(3)) {
+      expect(line.resultEvidence?.accuracy,
+          anyOf(ResultAccuracy.unknown, ResultAccuracy.approximate),
+          reason: 'A computed pi dependency must never become exact');
+    }
+    expect(engineering.lines[1].resultEvidence?.accuracy, ResultAccuracy.exact);
+    expect(engineering.lines[2].resultEvidence?.accuracy, ResultAccuracy.exact);
     state.setNotepadDocument(engineering);
     state.setCurrentNotepadDoc(engineering.id);
     await settle();
@@ -236,9 +255,14 @@ void main() {
       Offset position(Offset point) => rect.topLeft +
           Offset(rect.width * point.dx, rect.height * point.dy);
       final gesture = await tester.startGesture(position(points.first));
-      for (final point in points.skip(1)) {
-        await gesture.moveTo(position(point));
-        await tester.pump(const Duration(milliseconds: 40));
+      for (var i = 1; i < points.length; i++) {
+        // Several move events are essential: a two-point drag may only begin
+        // the pan recognizer at its endpoint, leaving a dot instead of a line.
+        for (var step = 1; step <= 12; step++) {
+          final point = Offset.lerp(points[i - 1], points[i], step / 12)!;
+          await gesture.moveTo(position(point));
+          await tester.pump(const Duration(milliseconds: 15));
+        }
       }
       await gesture.up();
     }

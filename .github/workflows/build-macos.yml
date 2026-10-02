@@ -159,10 +159,11 @@ jobs:
           mkdir -p task-results
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
           status=0
-          for area in algebra numeric workflow native_safety; do
+          for area in algebra numeric workflow native_safety dependency; do
             count=40
             if [ "$area" = workflow ]; then count=20; fi
             if [ "$area" = native_safety ]; then count=4; fi
+            if [ "$area" = dependency ]; then count=3; fi
             cat "test/fixtures/round2_${area}_tasks.json" | \
               CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
               CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round2-${area}.log" || status=1
