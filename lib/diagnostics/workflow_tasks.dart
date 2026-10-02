@@ -129,14 +129,16 @@ class WorkflowTasks {
             dispatcher: documentDispatcher ?? (s) async => engine.evaluate(s),
             detailedDispatcher: documentDispatcher == null
                 ? (source) async {
-                    final raw = engine.evaluate(source);
+                    final computed =
+                        runEngineOpDetailed(engine, EngineOp('evaluate', source));
+                    final raw = computed.value;
                     // The UI removes a purely zero imaginary suffix before
                     // caching scalar values. Keep this CLI path pure Dart.
                     final scalar = task['normalizeRealScalars'] == true
                         ? RegExp(r'^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*[+-]\s*0(?:\.0*)?\s*\*?\s*I\s*$')
                             .firstMatch(raw)
                         : null;
-                    return ComputedResult(scalar?[1] ?? raw, engine.lastResultEvidence);
+                    return ComputedResult(scalar?[1] ?? raw, computed.evidence);
                   }
                 : null);
         await evaluator.evaluateAll(doc);
