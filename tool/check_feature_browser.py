@@ -163,12 +163,13 @@ async def check(args):
                 await type_text(page, question, 'simulate failure')
                 await page.get_by_role('button', name='Translate', exact=True).click()
                 # Flutter omits the default Alert label on macOS/iOS; assert the
-                # actual visible error text on every host platform.
-                await page.get_by_text(re.compile('HTTP 503')).wait_for(timeout=60000)
+                # actual widget text on every host platform, excluding the duplicate
+                # off-screen accessibility announcement.
+                await page.locator('flt-semantics-host').get_by_text(re.compile('HTTP 503')).wait_for(timeout=60000)
                 await type_text(page, question, 'slow request')
                 await page.get_by_role('button', name='Retry', exact=True).click()
                 await page.get_by_role('button', name='Cancel request', exact=True).click()
-                await page.get_by_text('Request cancelled. You can retry.', exact=True).wait_for()
+                await page.locator('flt-semantics-host').get_by_text('Request cancelled. You can retry.', exact=True).wait_for()
                 await type_text(page, question, 'two plus two')
                 await page.get_by_role('button', name='Retry', exact=True).click()
                 expression = page.get_by_role('textbox', name='Translated expression', exact=True)
