@@ -7,6 +7,13 @@ import 'package:crisp_math/engine/symbolic_limit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class ComplexFormattedLimitEngine extends CalculatorEngine {
+  // This controlled bridge substitute implements every operation exercised by
+  // the test. Expose that capability even when CI has no native shared library.
+  @override
+  bool get isNativeAvailable => true;
+
+  final differentiated = <String>[];
+
   @override
   String evaluate(String expression) {
     final value = NumericFallbackEvaluator.evalNumeric(expression);
@@ -19,14 +26,16 @@ class ComplexFormattedLimitEngine extends CalculatorEngine {
           RegExp('\\b${RegExp.escape(variable)}\\b'), '($value)');
 
   @override
-  String differentiate(String expression, String variable) =>
-      {
-        '1-cos(x)': 'sin(x)',
-        'sin(x)': 'cos(x)',
-        'x^2': '2*x',
-        '2*x': '2'
-      }[expression] ??
-      'Error: unsupported test derivative';
+  String differentiate(String expression, String variable) {
+    differentiated.add(expression);
+    return {
+          '1-cos(x)': 'sin(x)',
+          'sin(x)': 'cos(x)',
+          'x^2': '2*x',
+          '2*x': '2'
+        }[expression] ??
+        'Error: unsupported test derivative';
+  }
 }
 
 void main() {
@@ -84,12 +93,14 @@ void main() {
     }
   });
   test('native zero imaginary formatting permits both LHopital steps', () {
+    final engine = ComplexFormattedLimitEngine();
     final result = SymbolicLimit.compute(
-        engine: ComplexFormattedLimitEngine(),
+        engine: engine,
         expression: '(1-cos(x))/x^2',
         variable: 'x',
         point: '0');
     expect(result?.method, 'lhopital');
     expect(double.parse(result!.value), closeTo(0.5, 1e-14));
+    expect(engine.differentiated, ['1-cos(x)', 'x^2', 'sin(x)', '2*x']);
   });
 }

@@ -147,6 +147,7 @@ jobs:
           python tool/check_document_history_browser.py --url "$APP_URL" --output deployed-results/document-history
           python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
           python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations
+          python tool/check_new_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/new-math-ui
           python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery
       - uses: actions/upload-artifact@v4
         if: always()

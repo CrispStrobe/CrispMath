@@ -228,6 +228,7 @@ jobs:
           python tool/check_document_history_browser.py
           python tool/check_handwriting_browser.py
           python tool/check_fresh_calculations_browser.py
+          python tool/check_new_math_browser.py
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
           python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
@@ -247,6 +248,7 @@ jobs:
           python tool/check_document_history_browser.py --output browser-results/debug/document-history
           python tool/check_handwriting_browser.py --output browser-results/debug/handwriting
           python tool/check_fresh_calculations_browser.py --output browser-results/debug/fresh-calculations
+          python tool/check_new_math_browser.py --output browser-results/debug/new-math
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -256,7 +258,7 @@ jobs:
 
   gallery:
     needs: browser
-    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4

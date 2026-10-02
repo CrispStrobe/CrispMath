@@ -130,6 +130,9 @@ jobs:
             python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/new_math_${area}_tasks.json" --output "task-results/browser-new-${area}.json" || status=1
           done
           exit "$status"
+      - name: Enter repaired calculations through desktop and phone UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_new_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/new-math-ui
       - uses: actions/upload-artifact@v4
         if: always()
         with:
