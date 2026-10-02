@@ -4,6 +4,15 @@ on:
     branches: ['feat/graph-workspace-ux']
   workflow_dispatch:
     inputs:
+      desktop_runner:
+        description: 'Hosted runner for unit, analysis and browser validation'
+        type: choice
+        options: [auto, macos-latest]
+        default: auto
+      math_audit:
+        description: 'Validate math changes; skip the unchanged OCR model benchmark'
+        type: boolean
+        default: false
       linux_runner:
         description: 'GitHub-hosted Linux runner (explicit image for queue fallback)'
         type: choice
@@ -30,7 +39,7 @@ concurrency:
 jobs:
   features:
     if: ${{ !inputs.probe_build_run_id }}
-    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +48,9 @@ jobs:
           repository: CrispStrobe/CrispEmbed
           ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.0'
@@ -71,7 +83,7 @@ jobs:
           test/selected_listenable_builder_test.dart test/notepad_dispatcher_test.dart
   unit:
     if: ${{ !inputs.probe_build_run_id }}
-    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +92,9 @@ jobs:
           repository: CrispStrobe/CrispEmbed
           ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.0'
@@ -104,7 +119,7 @@ jobs:
           name: notepad-evaluator-profile
           path: notepad-evaluator-profile.json
   native-ocr:
-    if: ${{ !inputs.probe_build_run_id }}
+    if: ${{ !inputs.probe_build_run_id && inputs.math_audit != true }}
     runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
@@ -115,6 +130,9 @@ jobs:
           ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
           submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.0'
@@ -155,7 +173,7 @@ jobs:
           retention-days: 14
   browser:
     if: ${{ !inputs.probe_build_run_id }}
-    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -164,6 +182,9 @@ jobs:
           repository: CrispStrobe/CrispEmbed
           ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.0'

@@ -21,6 +21,15 @@ on:
       - '.github/workflows/workflow-task-audit.yml'
   workflow_dispatch:
     inputs:
+      browser_runner:
+        description: 'Hosted runner for the WASM audit'
+        type: choice
+        options: [auto, macos-latest]
+        default: auto
+      browser_only:
+        description: 'Run WASM only; native CLI is covered by a separate run'
+        type: boolean
+        default: false
       linux_runner:
         description: 'GitHub-hosted Linux runner (explicit image for queue fallback)'
         type: choice
@@ -30,6 +39,7 @@ permissions:
   contents: read
 jobs:
   native:
+    if: ${{ inputs.browser_only != true }}
     runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
@@ -39,6 +49,9 @@ jobs:
           repository: CrispStrobe/CrispEmbed
           ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.0'
@@ -75,7 +88,7 @@ jobs:
           path: task-results
           retention-days: 14
   browser:
-    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.browser_runner != 'auto' && inputs.browser_runner || inputs.linux_runner || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -84,6 +97,9 @@ jobs:
           repository: CrispStrobe/CrispEmbed
           ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.0'

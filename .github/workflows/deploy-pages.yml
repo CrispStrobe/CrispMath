@@ -20,9 +20,9 @@ on:
   workflow_dispatch:
     inputs:
       linux_runner:
-        description: 'GitHub-hosted Linux runner (explicit image for queue fallback)'
+        description: 'GitHub-hosted build runner (queue fallback)'
         type: choice
-        options: [ubuntu-latest, ubuntu-24.04]
+        options: [ubuntu-latest, ubuntu-24.04, macos-latest]
         default: ubuntu-latest
 
 # The deploy-pages action needs these to mint the Pages OIDC token.
@@ -53,6 +53,10 @@ jobs:
           repository: CrispStrobe/CrispEmbed
           ref: 11e6d598521976f38081934106b55095b46b40e3
           path: .ci/CrispEmbed
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
