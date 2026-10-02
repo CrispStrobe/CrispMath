@@ -12,7 +12,8 @@
   serialized: cancellation does not terminate an individual native operation.
 - Preserve the editing connection and focus when blank/heading/expression
   layouts change, using a stable editor key. A widget negative control
-  reproduced the replaced editor behind the calendar live-test failure.
+  reproduced the replaced editor behind the calendar live-test failure. Keep
+  blank/expression editor ancestry stable for the browser editing element too.
 - Give the batch evaluator sole ownership of cooperative scheduling; retain
   dispatcher yielding for standalone calls so two wall-clock budgets cannot
   repeatedly trigger one another.

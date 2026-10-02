@@ -1919,24 +1919,8 @@ class _NotepadLineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Decision #12: blank rows collapse to a small height. We still
-    // render a TextField so the user can type into the empty row,
-    // but skip the result column and tighten the padding.
-    if (_isBlank) {
-      return Padding(
-        key: ValueKey('row-${line.id}'),
-        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _DragHandle(index: index),
-            Expanded(child: _buildInputField(context, dense: true)),
-            _DeleteButton(onPressed: onDelete),
-          ],
-        ),
-      );
-    }
-
+    // Empty and expression rows keep the same editor ancestry. Reparenting
+    // the editor can reset the browser editing element during the input event.
     // Section headings: `## text` — larger, bold, theme-colored.
     // Fold/unfold toggle + hidden-line-count chip when collapsed.
     if (_lineKind == NotepadLineKind.heading) {
@@ -2008,7 +1992,8 @@ class _NotepadLineRow extends StatelessWidget {
       return _maybeHighlight(
           Padding(
             key: ValueKey('row-${line.id}'),
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            padding:
+                EdgeInsets.symmetric(vertical: _isBlank ? 2 : 4, horizontal: 8),
             child: HelpTarget(
               onHelpTap: () => _showLineHelp(context),
               child: Row(
@@ -2047,7 +2032,8 @@ class _NotepadLineRow extends StatelessWidget {
     return _maybeHighlight(
         Padding(
           key: ValueKey('row-${line.id}'),
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          padding:
+              EdgeInsets.symmetric(vertical: _isBlank ? 2 : 4, horizontal: 8),
           child: HelpTarget(
             onHelpTap: () => _showLineHelp(context),
             child: Row(
@@ -2302,6 +2288,7 @@ class _NotepadResultColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (line.source.trim().isEmpty) return const SizedBox.shrink();
     final cs = Theme.of(context).colorScheme;
     final align = alignStart ? Alignment.centerLeft : Alignment.centerRight;
     final textAlign = alignStart ? TextAlign.left : TextAlign.right;
