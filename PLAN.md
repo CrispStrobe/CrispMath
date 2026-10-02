@@ -5,6 +5,22 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Second independent mathematical audit and native screenshots
+
+- [x] Draft another 100 independent references using two agents, plus four crash, three provenance
+  and three integral-binding controls; retain initial 93/100 WASM findings and both native crash reports.
+- [x] Fix exact remainders/powers, singleton sample deviation, derived/compound
+  units and safe substitution/FTC/logarithm evaluation with honest provenance.
+- [x] Preserve uncertainty through worksheet dependencies and keep definite
+  integral variables local, with exact reactive rational bounds.
+- [x] Pass 310 accumulated checks on Linux CLI, WASM and packaged macOS, and
+  5,446 unit/widget tests; fifteen further real UI controls pass desktop/phone.
+- [x] Complete focused analysis, release/debug browser, performance and Pages/Vercel checks.
+- [x] Capture and verify 11 populated native scenes each for iPhone, iPad and macOS.
+
+See [round-two evidence](docs/round2-math-audit-100.md). Physical checks are
+still deferred, and these changes are later than submitted TestFlight build 13.
+
 ## Additional mathematical audit
 
 - [x] Independently draft and exercise 100 further problems; preserve references,

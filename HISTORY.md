@@ -1,3 +1,30 @@
+## 2026-10-02 — Second independent audit and populated native galleries
+
+Draft another 100 problems with independent algebra/calculus, numeric/statistics/
+units/constraints and worksheet/graph/export references. Initial WASM execution
+passes 93/100; native integration exposes two unrecoverable FFI crashes. Fix exact
+remainders and nested/negative powers, undefined singleton sample statistics,
+watt-hours and compound unit targets, scalar substitution and finite real FTC
+endpoint evaluation. Preserve truthful approximate evidence for numeric methods.
+
+Native screenshot review additionally catches false exact evidence in derived
+cached decimals and global substitution of definite-integral dummy variables.
+Preserve source uncertainty through dependent values/functions, bind integration
+variables locally, retain reactive bounds and evaluate rational expression bounds
+exactly with bounded cost. Add four crash, three provenance and three integral
+binding runtime controls, actual dispatcher regressions and fifteen desktop/phone
+worksheet entry controls.
+
+Linux CLI, browser WASM and the packaged sandboxed macOS app each pass all 310
+accumulated runtime checks. The full unit/widget suite passes 5,446 tests with
+eight documented skips. Analysis, focused regressions, release/debug browser
+checks, performance gates, Pages/Vercel live validation, 12 web gallery scenes
+and 33 populated native screenshots pass in CI;
+see [the second-round audit](docs/round2-math-audit-100.md) and
+[native Apple gallery](docs/native-apple-gallery.md). All heavy work runs remotely.
+Physical iPhone/iPad checks remain deferred, and these changes are later than
+submitted TestFlight build 13.
+
 ## 2026-10-02 — Additional independent 100-case math audit
 
 - Draft 40 algebra/calculus/complex, 40 arithmetic/statistics/units/constraints
