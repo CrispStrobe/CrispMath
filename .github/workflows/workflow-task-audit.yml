@@ -13,6 +13,8 @@ on:
       - 'web/workflow_tasks_worker.js'
       - 'test/fixtures/*workflow_tasks.json'
       - 'test/fixtures/new_math_*_tasks.json'
+      - 'test/fixtures/round2_*_tasks.json'
+      - 'test/round2_*_test.dart'
       - 'test/new_math_*_test.dart'
       - 'test/fresh_workflow_tasks_test.dart'
       - 'test/workflow_tasks_test.dart'
@@ -66,7 +68,7 @@ jobs:
           YAML
           flutter pub get
       - name: Corpus and comparison unit regressions
-        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart
+        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart
       - name: Run every task against native app engine (strict)
         run: tool/crispmath_cli.sh --require-native --report task-results/native.json
       - name: Run the fresh independent 50 problems (strict)
@@ -77,6 +79,14 @@ jobs:
           status=0
           for area in algebra numeric workflow; do
             tool/crispmath_cli.sh --tasks "test/fixtures/new_math_${area}_tasks.json" --require-native --report "task-results/native-new-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run round two independent 100 problems against native engine
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric workflow; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round2_${area}_tasks.json" --require-native --report "task-results/native-round2-${area}.json" || status=1
           done
           exit "$status"
       - name: Verify exact Taylor compatibility with the native CAS
@@ -131,9 +141,20 @@ jobs:
             python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/new_math_${area}_tasks.json" --output "task-results/browser-new-${area}.json" || status=1
           done
           exit "$status"
+      - name: Run round two independent 100 problems against actual WASM worker
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric workflow; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round2_${area}_tasks.json" --output "task-results/browser-round2-${area}.json" || status=1
+          done
+          exit "$status"
       - name: Enter repaired calculations through desktop and phone UI
         if: ${{ !cancelled() }}
         run: python tool/check_new_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/new-math-ui
+      - name: Enter round two independent arithmetic controls through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round2_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round2-math-ui
       - uses: actions/upload-artifact@v4
         if: always()
         with:

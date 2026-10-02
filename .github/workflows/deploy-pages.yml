@@ -107,10 +107,14 @@ jobs:
           for area in algebra numeric workflow; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/new_math_${area}_tasks.json" --output "deployed-results/new-math-${area}.json"
           done
+          for area in algebra numeric workflow; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round2_${area}_tasks.json" --output "deployed-results/round2-${area}.json"
+          done
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
           python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export
           python tool/check_document_history_browser.py --url "$APP_URL" --output deployed-results/document-history
           python tool/check_new_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/new-math-ui
+          python tool/check_round2_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round2-math-ui
           python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
           python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations
           python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery

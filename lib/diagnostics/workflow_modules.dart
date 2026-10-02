@@ -88,6 +88,15 @@ Future<dynamic> runWorkflowModule(
     case 'binomial':
       return Binomial(n: task['n'], p: (task['p'] as num).toDouble())
           .pmf(task['k']);
+    case 'constraintObjective':
+      final result = await CspSolver.solveDsl(task['program']);
+      if (!result.ok) {
+        throw StateError(result.error ?? 'Constraint optimization failed');
+      }
+      if (result.objective == null || result.solutions.isEmpty) {
+        throw StateError('Constraint optimization produced no proven optimum');
+      }
+      return result.objective;
     case 'constraint':
       final result =
           await CspSolver.solveDsl(task['program'], maxSolutions: 100);
