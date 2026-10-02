@@ -29,7 +29,8 @@ Map<String, Object> checkTaylorCompatibility(CalculatorEngine engine) {
       // Independent numeric parser samples the returned polynomial, not the
       // original function (a truncated series deliberately differs from it).
       for (final x in [-1.7, -0.4, 0.0, 0.8, 2.3]) {
-        final value = NumericFallbackEvaluator.evalNumeric(actual, {'x': x});
+        final value = NumericFallbackEvaluator.evalNumeric(
+            actual.replaceAll('**', '^'), {'x': x});
         final target = NumericFallbackEvaluator.evalNumeric(expected, {'x': x});
         passed = passed &&
             value != null &&
