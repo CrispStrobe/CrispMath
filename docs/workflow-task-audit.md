@@ -33,3 +33,13 @@ The audit also exposed an integration-call inconsistency between UI surfaces. Th
 Screenshot CI provides a web gallery and a separate `Native Apple screenshot gallery` workflow. The latter builds simulator OCR archives from the pinned source, verifies native CAS results, captures iPhone/iPad app screens and records actual PNG dimensions. Simulator captures do not claim physical-device validation.
 
 Native gallery CI passed for iPhone 15 Pro Max and iPad Pro 13-inch (M4), producing six captures at 1290×2796 and 2048×2732. The RGB encoder rejects transparent pixels and preserves dimensions and RGB values while removing the redundant alpha channel. Original captures remain in `raw/`. These dimensions and the no-alpha requirement match [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/).
+
+Large-document performance is also checked against the recorded 48f0190 release
+CI baseline in `tool/notepad_performance_baseline.json`. The gate requires
+three valid trials for each matching desktop/phone CPU profile and 500/2,000-row
+case, and recomputes medians from raw samples. It rejects medians above twice
+the baseline plus 300 ms; this allows runner noise while catching sustained
+regressions. This is a broad regression threshold, not an improvement target
+or a physical-device performance claim. A negative control using the slower
+6718c6c build fails all four cases. Debug cancellation correctness uses 200 rows;
+release and deployed cancellation checks retain 2,000 rows.
