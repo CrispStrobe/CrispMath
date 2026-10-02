@@ -73,11 +73,14 @@ async def check(args):
                 await bootstrap(page, args.url)
                 await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
                 write = page.get_by_role('button', name=re.compile(r'^Write math'))
-                if await write.count():
-                    await write.click()
-                else:
+                # A phone's compact toolbar exposes handwriting in its menu.
+                # Do not choose from a transient desktop semantics node while
+                # the first responsive layout is still replacing that toolbar.
+                if width < 600:
                     await page.get_by_role('button', name='Document menu', exact=True).click()
                     await page.locator('[aria-label="Write math"]').click()
+                else:
+                    await write.click()
                 paper = page.get_by_role('button', name='Handwriting canvas', exact=True)
                 await paper.wait_for()
                 await next_frames(page)
