@@ -541,6 +541,15 @@ class NotepadEvaluator {
       return;
     }
     if (parsed.isFunction) {
+      final diagnosis = SymbolicExpressionEvaluator.diagnose(preprocessed!);
+      final error = engineErrorForDiagnosis(diagnosis);
+      if (diagnosis.isIncomplete || error != null) {
+        line.cachedResult = null;
+        line.cachedError =
+            error == null ? null : NotepadErrorPrefix.fromEngine(error);
+        line.cachedFreeVars = freeVars;
+        return;
+      }
       line.cachedResult = preprocessed;
       line.cachedError = null;
       line.cachedFreeVars = freeVars;

@@ -63,8 +63,28 @@ void main() {
     expect(doc.lines.every((l) => l.cachedError != null), isTrue);
   });
   test('zero-argument functions and prefix-safe names', () async {
-    final doc = document(['f()=2', 'foo(x)=x+1', 'foo(f())']);
+    final doc = document(['f()=2', 'foo(x)=x+1', 'foo(f( ))']);
     await evaluator.evaluateAll(doc);
     expect(doc.lines.last.cachedResult, '3');
+  });
+  test('invalid definitions fail before calls and never retain old results',
+      () async {
+    final doc = document(['f(x)=x+1', 'f(2)']);
+    await evaluator.evaluateAll(doc);
+    expect(doc.lines.last.cachedResult, '3');
+    doc.lines.first.source = 'f(x)=sin(x,x)';
+    await evaluator.evaluateChanged(doc, {0});
+    expect(doc.lines.first.cachedError, contains('wrong number of arguments'));
+    expect(doc.lines.last.cachedError, isNotNull);
+    expect(doc.lines.last.cachedResult, isNull);
+    doc.lines.first.source = 'f(x)=x+2';
+    await evaluator.evaluateChanged(doc, {0});
+    expect(doc.lines.last.cachedResult, '4');
+  });
+  test('large expansions stop before allocating an unbounded body', () async {
+    final doc = document(['f(x)=x+x+x', 'f(${'1+' * 20000}1)']);
+    await evaluator.evaluateAll(doc);
+    expect(doc.lines.last.cachedError, contains('exceeds its limit'));
+    expect(doc.lines.last.cachedResult, isNull);
   });
 }

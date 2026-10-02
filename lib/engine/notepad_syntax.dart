@@ -809,8 +809,9 @@ String _expandNotepadFunctions(String input, NotepadDocument doc) {
   for (var i = 0; i < doc.lines.length; i++) {
     final parsed = classifyNotepadLine(doc.lines[i].source,
         lineIndex: i, firstCodeLineIndex: first);
-    if (parsed.isFunction)
+    if (parsed.isFunction) {
       definitions[parsed.name!] = (parsed: parsed, line: doc.lines[i]);
+    }
   }
   String expand(String source, int depth) {
     if (depth > 32 || source.length > 100000) {
@@ -836,8 +837,10 @@ String _expandNotepadFunctions(String input, NotepadDocument doc) {
         if (char == '(' || char == '[') nesting++;
         if (char == ')' || char == ']') nesting--;
         if (nesting == 0) {
-          if (end > start || arguments.isNotEmpty)
+          if (source.substring(start, end).trim().isNotEmpty ||
+              arguments.isNotEmpty) {
             arguments.add(source.substring(start, end));
+          }
           break;
         }
         if (char == ',' && nesting == 1) {
@@ -860,16 +863,28 @@ String _expandNotepadFunctions(String input, NotepadDocument doc) {
         for (var i = 0; i < parameters.length; i++)
           parameters[i]: expand(arguments[i], depth + 1),
       };
-      final body = template.replaceAllMapped(_scopeIdentifierRegex,
-          (m) => bindings.containsKey(m[0]) ? '(${bindings[m[0]]})' : m[0]!);
+      var expandedLength = template.length;
+      final body = template.replaceAllMapped(_scopeIdentifierRegex, (m) {
+        final value = bindings[m[0]];
+        if (value == null) return m[0]!;
+        expandedLength += value.length + 2 - m[0]!.length;
+        if (expandedLength > 100000) {
+          throw const FormatException('Function expansion exceeds its limit');
+        }
+        return '($value)';
+      });
       output.write(source.substring(cursor, match.start));
       output.write('(${expand(body, depth + 1)})');
+      if (output.length > 100000) {
+        throw const FormatException('Function expansion exceeds its limit');
+      }
       cursor = end + 1;
     }
     output.write(source.substring(cursor));
     final result = output.toString();
-    if (result.length > 100000)
+    if (result.length > 100000) {
       throw const FormatException('Function expansion exceeds its limit');
+    }
     return result;
   }
 
