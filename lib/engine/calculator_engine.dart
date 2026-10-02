@@ -17,6 +17,7 @@ import 'inequality_solver.dart';
 import 'rational_integrator.dart';
 import 'rational_integral_domain.dart';
 import 'exact_constant.dart';
+import 'definite_antiderivative.dart';
 import 'function_reference.dart';
 import 'numeric_fallback.dart';
 import 'ode_solver.dart';
@@ -192,6 +193,36 @@ class CalculatorEngine {
               ? ComputationMethod.symbolicEvaluation
               : ComputationMethod.integerArithmetic);
       return exact;
+    }
+    // Native evaluation can crash on composed logarithm/absolute-value
+    // constants. Only this bounded, supported real grammar bypasses the CAS;
+    // free symbols and complex expressions retain their normal routing.
+    if (expression.length <= 512 &&
+        RegExp(r'\b(?:ln|log|log2|log10|lg)\s*\(').hasMatch(expression) &&
+        RegExp(r'\babs\s*\(').hasMatch(expression)) {
+      const realConstants = {'pi', 'PI', 'e', 'E', 'tau'};
+      final names = RegExp(
+          r'[A-Za-z_][A-Za-z_0-9]*|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?');
+      final hasFreeSymbol = names.allMatches(expression).any((token) {
+        final name = token[0]!;
+        if (!RegExp(r'^[A-Za-z_]').hasMatch(name)) return false;
+        return !realConstants.contains(name) &&
+            !expression.substring(token.end).trimLeft().startsWith('(');
+      });
+      final compiled = hasFreeSymbol
+          ? null
+          : NumericFallbackEvaluator.compile(expression);
+      if (compiled != null) {
+        final value = compiled.evaluate(const {});
+        if (value == null || !value.isFinite) {
+          lastResultEvidence = null;
+          return 'Error: logarithm/absolute-value expression is undefined '
+              'or nonfinite';
+        }
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+        return NumericFallbackEvaluator.tryEvaluate(expression)!;
+      }
     }
     // Matrix expressions can't go through SymEngine's text parser — it
     // doesn't recognize `Matrix([[...]])` literals. Route them through the
@@ -1464,16 +1495,17 @@ class CalculatorEngine {
           ComputationMethod.polynomialIntegration);
       return polyDef;
     }
-    // 2. FTC via a StepEngine antiderivative evaluated at the bounds
-    //    (needs the bridge to substitute + evaluate the result).
+    // 2. FTC via a StepEngine antiderivative evaluated at the bounds.
+    //    Finite real endpoints use Dart arithmetic to avoid native crashes
+    //    evaluating composed logarithm/absolute-value antiderivatives.
     if (bridge != null) {
       final anti = StepEngine.antiderivative(expression, variable, this);
       if (anti != null) {
-        final ftc = _definiteFromAntiderivativeString(
-            bridge, anti, variable, lower, upper);
+        final ftc =
+            _definiteFromAntiderivativeString(anti, variable, lower, upper);
         if (ftc != null) {
           lastResultEvidence = const ResultEvidence(
-              ResultAccuracy.unknown, ComputationMethod.fundamentalTheorem);
+              ResultAccuracy.approximate, ComputationMethod.fundamentalTheorem);
           return ftc;
         }
       }
@@ -1483,27 +1515,21 @@ class CalculatorEngine {
     return 'Error: integrate requires native library';
   }
 
-  /// FTC for a known antiderivative string: F(upper) − F(lower) via the
-  /// bridge's substitute + evaluate. Returns null on any parse/eval failure
-  /// so the caller can fall back to numerical integration.
-  String? _definiteFromAntiderivativeString(SymbolicMathBridge bridge,
+  /// FTC for a known antiderivative string: finite real F(upper) − F(lower).
+  /// Returns null on unsupported grammar or nonfinite values so the caller
+  /// can fall back to numerical integration.
+  String? _definiteFromAntiderivativeString(
       String antiderivative, String variable, String lower, String upper) {
-    try {
-      // StepEngine renders products with "·"; SymEngine wants "*".
-      final f = antiderivative.replaceAll('·', '*');
-      final atUpper = substitute(f, variable, '($upper)');
-      final atLower = substitute(f, variable, '($lower)');
-      final diff = bridge.evaluate('($atUpper) - ($atLower)');
-      if (diff.startsWith('Error')) return null;
-      return diff;
-    } catch (_) {
-      return null;
-    }
+    final difference =
+        DefiniteAntiderivative.evaluate(antiderivative, variable, lower, upper);
+    return difference == null ? null : _formatReal(difference);
   }
 
   String _definiteNumerical(SymbolicMathBridge bridge, String expression,
       String variable, String lower, String upper) {
     double? evalNumeric(String expr) {
+      final numeric = NumericFallbackEvaluator.evalNumeric(expr);
+      if (numeric != null && numeric.isFinite) return numeric;
       try {
         return _parseReal(bridge.evaluate(expr));
       } catch (_) {
@@ -1517,7 +1543,12 @@ class CalculatorEngine {
       return 'Error: integration bounds must evaluate to numbers';
     }
 
+    final compiled = NumericFallbackEvaluator.compile(expression);
     double fAt(double x) {
+      if (compiled != null) {
+        final value = compiled.evaluate({variable: x});
+        return value != null && value.isFinite ? value : double.nan;
+      }
       try {
         final substituted =
             substitute(expression, variable, _formatReal(x));

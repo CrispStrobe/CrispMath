@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent real logarithm identities: ln(2)/3 for the cubic-substitution FTC endpoints, ln(2) for abs(-2), and undefined ln(0). These supplement the unchanged 100-task round-two audit.",
+  "tasks": [
+    {
+      "id": "round2-native-safety-01",
+      "kind": "engine",
+      "title": "Composed cubic-substitution endpoint expression avoids native crash",
+      "operation": "evaluate",
+      "args": ["((1/3)*ln(abs(1+1^3)))-((1/3)*ln(abs(1+0^3)))"],
+      "expected": "ln(2)/3"
+    },
+    {
+      "id": "round2-native-safety-02",
+      "kind": "engine",
+      "title": "Absolute-value natural logarithm constant",
+      "operation": "evaluate",
+      "args": ["ln(abs(-2))"],
+      "expected": "ln(2)"
+    },
+    {
+      "id": "round2-native-safety-03",
+      "kind": "engine",
+      "title": "Absolute-value logarithm alias constant",
+      "operation": "evaluate",
+      "args": ["log(abs(-2))"],
+      "expected": "ln(2)"
+    },
+    {
+      "id": "round2-native-safety-04",
+      "kind": "engine",
+      "title": "Undefined absolute-value logarithm avoids native crash",
+      "operation": "evaluate",
+      "args": ["ln(abs(0))"],
+      "errorContains": "undefined or nonfinite"
+    }
+  ]
+}
