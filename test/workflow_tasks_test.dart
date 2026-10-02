@@ -31,7 +31,8 @@ void main() {
         ['9.0 - 2.20436423846524e-15*I', '9'],
         ['23.0 + 1.0*I', '23'],
         ['x^2+1', 'x^2+2'],
-        ['4', '5']
+        ['4', '5'],
+        ['x+C', 'x']
       ])
         {
           'id': '${pair[0]}:${pair[1]}',
@@ -42,7 +43,7 @@ void main() {
         }
     ]);
     expect((report['results'] as List).map((r) => r['status']),
-        ['passed', 'passed', 'passed', 'failed', 'failed', 'failed']);
+        ['passed', 'passed', 'passed', 'failed', 'failed', 'failed', 'failed']);
   });
   test('duplicate IDs and unknown routes fail before execution', () async {
     final runner = WorkflowTasks(FixtureEngine());
@@ -102,5 +103,29 @@ void main() {
     expect(report['failed'], 1);
     expect(report['passed'], 0);
     expect((report['results'] as List).single['expected'], [null, '10']);
+  });
+  test(
+      'equivalent but unchanged expressions fail requested transformation checks',
+      () async {
+    final report = await WorkflowTasks(FixtureEngine()).run([
+      {
+        'id': 'factor-shape',
+        'kind': 'engine',
+        'operation': 'evaluate',
+        'args': ['x^2-9'],
+        'expected': '(x-3)*(x+3)',
+        'resultPattern': r'\([^)]*\)\s*\*?\s*\('
+      },
+      {
+        'id': 'cancel-shape',
+        'kind': 'engine',
+        'operation': 'evaluate',
+        'args': ['(x^2-1)/(x-1)'],
+        'expected': 'x+1',
+        'resultPattern': r'^x\s*\+\s*1$'
+      }
+    ]);
+    expect(report['failed'], 2);
+    expect(report['passed'], 0);
   });
 }

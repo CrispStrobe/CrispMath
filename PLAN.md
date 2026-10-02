@@ -25,9 +25,10 @@ Physical iPhone/iPad testing is deferred to a separate session.
 5. [ ] Document history: checkpoints, comparisons, restore and portable
    backups, followed by cross-device sync.
 
-Additional validation: 50-task CLI/WASM audit implemented; native 48 passed,
-1 failed and 1 unsupported; browser 49 passed and 1 failed. Keep task 25
-(series-capable Linux bridge) and task 39 (inline document functions) visible
+Additional validation: 50-task CLI/WASM audit implemented; native 46 passed,
+3 failed and 1 unsupported; browser 49 passed and 1 failed. Keep tasks 14/15
+(Linux factoring/cancellation), 25 (series-capable Linux bridge) and 39
+(inline document functions) visible
 in strict CI reports. See `docs/workflow-task-audit.md`.
 
 ## October release and workflow improvements

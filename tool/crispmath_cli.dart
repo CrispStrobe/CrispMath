@@ -32,8 +32,9 @@ Future<void> main(List<String> args) async {
             .readAsString()) as Map;
     var tasks = input['tasks'] as List;
     final selected = option('--task');
-    if (selected != null)
+    if (selected != null) {
       tasks = tasks.where((t) => t['id'] == selected).toList();
+    }
     if (tasks.isEmpty) throw const FormatException('No matching tasks');
     if (args.contains('--list')) {
       for (final task in tasks) {
@@ -53,8 +54,9 @@ Future<void> main(List<String> args) async {
     stdout.writeln(output);
     if (report['failed'] != 0 ||
         report['unsupported'] != 0 ||
-        (args.contains('--require-native') && report['nativeBridge'] != true))
+        (args.contains('--require-native') && report['nativeBridge'] != true)) {
       exitCode = 1;
+    }
   } catch (e) {
     stderr.writeln('CrispMath batch: $e');
     exitCode = 2;

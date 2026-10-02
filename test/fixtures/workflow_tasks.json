@@ -139,7 +139,8 @@
       "args": [
         "x^2-9"
       ],
-      "expected": "(x-3)*(x+3)"
+      "expected": "(x-3)*(x+3)",
+      "resultPattern": "\\([^)]*\\)\\s*\\*?\\s*\\("
     },
     {
       "id": "task-15",
@@ -149,7 +150,8 @@
       "args": [
         "(x^2-1)/(x-1)"
       ],
-      "expected": "x+1"
+      "expected": "x+1",
+      "resultPattern": "^(?:x\\s*\\+\\s*1|1\\s*\\+\\s*x)$"
     },
     {
       "id": "task-16",
@@ -566,6 +568,10 @@
         "`a=3`",
         "`a*4`",
         "12"
+      ],
+      "expectedResults": [
+        "3",
+        "12"
       ]
     },
     {
@@ -582,6 +588,10 @@
         "\\begin{document}",
         "12",
         "\\end{document}"
+      ],
+      "expectedResults": [
+        "3",
+        "12"
       ]
     },
     {
@@ -596,6 +606,10 @@
       ],
       "contains": [
         "Budget\\_2026\\&cost"
+      ],
+      "expectedResults": [
+        "3",
+        "12"
       ]
     },
     {
@@ -608,7 +622,11 @@
         "a=3",
         "a*4"
       ],
-      "contains": []
+      "contains": [],
+      "expectedResults": [
+        "3",
+        "12"
+      ]
     },
     {
       "id": "task-50",
@@ -620,7 +638,11 @@
         "a=3",
         "a*4"
       ],
-      "contains": []
+      "contains": [],
+      "expectedResults": [
+        "3",
+        "12"
+      ]
     }
   ]
 }

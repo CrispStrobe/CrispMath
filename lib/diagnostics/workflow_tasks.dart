@@ -72,10 +72,14 @@ class WorkflowTasks {
                 r'requires (?:a newer )?native|not available|not implemented',
                 caseSensitive: false)
             .hasMatch(result.value);
-        final pass = task['errorContains'] != null
+        var pass = task['errorContains'] != null
             ? result.value.startsWith('Error') &&
                 result.value.contains(task['errorContains'])
             : _matches(result.value, task['expected']);
+        if (task['resultPattern'] != null) {
+          pass = pass &&
+              RegExp(task['resultPattern'] as String).hasMatch(result.value);
+        }
         return {
           'status': unsupported
               ? 'unsupported'
@@ -116,6 +120,22 @@ class WorkflowTasks {
             'status': pass ? 'passed' : 'failed',
             'actual': actual,
             'expected': expected
+          };
+        }
+        final expectedResults = task['expectedResults'] as List?;
+        if (doc.lines.any((line) => line.cachedError != null) ||
+            (expectedResults != null &&
+                (expectedResults.length != doc.lines.length ||
+                    !List.generate(
+                        doc.lines.length,
+                        (i) => _matches(doc.lines[i].cachedResult ?? '',
+                            expectedResults[i])).every((v) => v)))) {
+          return {
+            'status': 'failed',
+            'actual':
+                doc.lines.map((l) => l.cachedError ?? l.cachedResult).toList(),
+            'expected': expectedResults,
+            'error': 'Export source calculations did not match expectations'
           };
         }
         final format = task['format'];
@@ -183,8 +203,9 @@ class WorkflowTasks {
   }
 
   bool _matches(String actual, dynamic expected) {
-    if (expected is! String)
+    if (expected is! String) {
       throw const FormatException('Expected result must be a string');
+    }
     if (actual == expected) return true;
     if (actual.startsWith('Error') || actual.contains('Error:')) return false;
     String normalize(String value) {
@@ -193,8 +214,9 @@ class WorkflowTasks {
           RegExp(r'^(.+?)\s*([+-])\s*([0-9.eE+-]+)\*I$').firstMatch(v);
       if (complex != null) {
         final imaginary = double.tryParse(complex[3]!);
-        if (imaginary != null && imaginary.abs() < 1e-12)
+        if (imaginary != null && imaginary.abs() < 1e-12) {
           v = complex[1]!.trim();
+        }
       }
       return v;
     }
@@ -203,13 +225,15 @@ class WorkflowTasks {
     final b = NumericFallbackEvaluator.compile(normalize(expected));
     if (a == null || b == null) return false;
     for (final x in [-1.73, -0.41, 0.23, 1.37, 2.61, 4.19]) {
-      final av = a.evaluate({'x': x, 'y': x + 0.37, 'C': 0});
-      final bv = b.evaluate({'x': x, 'y': x + 0.37, 'C': 0});
+      final av = a.evaluate({'x': x, 'y': x * x + 0.37, 'C': x * x * x + 0.91});
+      final bv = b.evaluate({'x': x, 'y': x * x + 0.37, 'C': x * x * x + 0.91});
       if (av == null ||
           bv == null ||
           !av.isFinite ||
           !bv.isFinite ||
-          (av - bv).abs() > 1e-8 * (1 + bv.abs())) return false;
+          (av - bv).abs() > 1e-8 * (1 + bv.abs())) {
+        return false;
+      }
     }
     return true;
   }
