@@ -188,7 +188,14 @@ class CalculatorEngine {
               '(${BigInt.parse(m[1]!).abs()}/${BigInt.parse(m[2] ?? '1').abs()})');
       arithmetic = arithmetic.replaceAllMapped(
           RegExp(r'(\d+)\s*\^\s*\(\s*-(\d+)\s*\)'),
-          (m) => '(1/(${m[1]}^${m[2]}))');
+          (m) {
+        // Powers associate to the right: 2^(-3)^2 means 2^((-3)^2),
+        // not (2^(-3))^2. Leave a chained exponent to the normal parser.
+        if (arithmetic.substring(m.end).trimLeft().startsWith('^')) {
+          return m[0]!;
+        }
+        return '(1/(${m[1]}^${m[2]}))';
+      });
       final exact = RegExp(r'^[0-9\s()/+*^\-]+$').hasMatch(arithmetic)
           ? SymbolicWeb.expand(arithmetic)
           : null;
@@ -304,8 +311,11 @@ class CalculatorEngine {
   }
 
   String solve(String expression, String symbol) {
+    lastResultEvidence = null;
     final rational = RationalEquationSolver.solve(expression, symbol);
     if (rational != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
       if (rational.isEmpty) return '$symbol = (no solutions)';
       return rational.length == 1
           ? '$symbol = ${rational.single}'
@@ -1300,10 +1310,7 @@ class CalculatorEngine {
   ///
   /// Pass `oo` / `inf` / `\infty` for +∞; `-oo` / `-inf` for −∞.
   String limit(String expression, String variable, String point) {
-    final bridge = _liveBridge;
-    if (bridge == null) {
-      return 'Error: limit requires native library';
-    }
+    lastResultEvidence = null;
 
     // Tier 1+2: try the symbolic limit engine.
     final symbolic = SymbolicLimit.compute(
@@ -1312,7 +1319,19 @@ class CalculatorEngine {
       variable: variable,
       point: point,
     );
-    if (symbolic != null) return symbolic.value;
+    if (symbolic != null) {
+      // Nested evaluations describe intermediate numerator/denominator
+      // arithmetic. They are not the provenance of the completed limit.
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      return symbolic.value;
+    }
+
+    lastResultEvidence = null;
+    final bridge = _liveBridge;
+    if (bridge == null) {
+      return 'Error: limit requires native library';
+    }
 
     // Tier 3: numerical fallback.
     double evalAt(double x) {
@@ -1329,12 +1348,20 @@ class CalculatorEngine {
     final pt = point.trim();
     if (pt == 'oo' || pt == 'inf' || pt == 'infinity' || pt == r'\infty') {
       final v = limitAtInfinity(evalAt);
+      if (v != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+      }
       return v != null
           ? _formatReal(v)
           : 'Error: limit at infinity does not converge';
     }
     if (pt == '-oo' || pt == '-inf') {
       final v = limitAtInfinity((x) => evalAt(-x));
+      if (v != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+      }
       return v != null
           ? _formatReal(v)
           : 'Error: limit at -infinity does not converge';
@@ -1354,6 +1381,8 @@ class CalculatorEngine {
       return 'Error: left and right limits differ '
           '(left=${_formatReal(l)}, right=${_formatReal(r)})';
     }
+    lastResultEvidence = const ResultEvidence(
+        ResultAccuracy.approximate, ComputationMethod.numericFallback);
     return _formatReal(v);
   }
 

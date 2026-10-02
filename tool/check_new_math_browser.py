@@ -24,6 +24,8 @@ CASES = [
     ('rational-equation', 'solve((x-1)/(x+2)-2,x)', None),
     ('negative-temperature', '-40 °C in °F', '-40 °F'),
     ('additive-constant-domain', 'simplify(x^3/3+C)', None),
+    ('right-associative-negative-power', '2^(-3)^2', '512'),
+    ('parenthesized-negative-power', '(2^(-3))^2', '1/64'),
 ]
 
 
@@ -39,11 +41,17 @@ def validate_result(case, line):
         assert result == expected, (case_id, result, expected)
     elif case_id == 'cosine-removable-limit':
         assert abs(float(Fraction(result.strip())) - 0.5) < 1e-9, (case_id, result)
+        evidence = line.get('evidence') or {}
+        assert evidence.get('accuracy') == 'symbolic', (case_id, line)
+        assert evidence.get('method') == 'symbolicEvaluation', (case_id, line)
     elif case_id == 'rational-equation':
         root = re.fullmatch(
             r'x\s*=\s*\{?\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\}?',
             result.strip())
         assert root is not None and float(root[1]) == -5, (case_id, result)
+        evidence = line.get('evidence') or {}
+        assert evidence.get('accuracy') == 'exact', (case_id, line)
+        assert evidence.get('method') == 'symbolicEvaluation', (case_id, line)
     elif case_id == 'additive-constant-domain':
         expression = re.sub(r'\s+', '', result).replace('**', '^').replace('³', '^3')
         # Accept parentheses only around the known coefficient/monomial;

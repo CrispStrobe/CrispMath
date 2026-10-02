@@ -448,7 +448,7 @@ class WorkflowTasks {
         continue;
       }
       finiteChecks++;
-      if ((av! - bv!).abs() > 1e-8 * (1 + bv.abs())) {
+      if ((av - bv).abs() > 1e-8 * (1 + bv.abs())) {
         return false;
       }
     }

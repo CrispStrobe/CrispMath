@@ -66,7 +66,7 @@ jobs:
           YAML
           flutter pub get
       - name: Corpus and comparison unit regressions
-        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart
+        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart
       - name: Run every task against native app engine (strict)
         run: tool/crispmath_cli.sh --require-native --report task-results/native.json
       - name: Run the fresh independent 50 problems (strict)

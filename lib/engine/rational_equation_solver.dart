@@ -4,6 +4,21 @@ import 'symbolic_web.dart';
 
 /// Bounded exact rational equations; preserves original denominator conditions.
 class RationalEquationSolver {
+  static const _maxCoefficientBits = 16384;
+
+  // Bound rational coefficients independently of polynomial degree. A constant
+  // has degree zero even after a nested power grows its BigInt exponentially.
+  static int _coefficientCost(Polynomial polynomial) {
+    var numeratorBits = 0;
+    var denominatorBits = 0;
+    for (final coefficient in polynomial.coeffs) {
+      final bits = coefficient.numerator.abs().bitLength;
+      if (bits > numeratorBits) numeratorBits = bits;
+      denominatorBits += coefficient.denominator.bitLength;
+    }
+    return numeratorBits + denominatorBits + polynomial.coeffs.length.bitLength;
+  }
+
   static List<String>? solve(String source, String variable) {
     if (source.length > 512 || !source.contains('/')) return null;
     try {
@@ -16,7 +31,8 @@ class RationalEquationSolver {
       Polynomial constant(Rational value) =>
           Polynomial.fromCoeffs([value], variable);
       Polynomial multiply(Polynomial a, Polynomial b) {
-        if (a.degree + b.degree > 8) {
+        if (a.degree + b.degree > 8 ||
+            _coefficientCost(a) + _coefficientCost(b) > _maxCoefficientBits) {
           throw const FormatException('Degree bound');
         }
         return a * b;
@@ -58,7 +74,10 @@ class RationalEquationSolver {
           }
           final (n, d) = walk(node.base, depth + 1);
           final power = exp.value.numerator.toInt();
-          if (n.degree * power.abs() > 8 || d.degree * power.abs() > 8) {
+          if (n.degree * power.abs() > 8 ||
+              d.degree * power.abs() > 8 ||
+              _coefficientCost(n) * power.abs() > _maxCoefficientBits ||
+              _coefficientCost(d) * power.abs() > _maxCoefficientBits) {
             throw const FormatException('Degree bound');
           }
           if (power < 0) {

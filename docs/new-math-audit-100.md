@@ -52,6 +52,26 @@ Reports record expected rejections and feature gaps separately from pass counts.
 passed all 100 new checks (40/40 algebra, 40/40 numeric, 20/20 workflow), but the
 older antiderivative comparison still failed. That domain-inspection issue is
 fixed subsequently and remains subject to the final original/fresh corpus rerun.
-Final source and native/WASM/deployed validation will be recorded after CI.
+[Packaged macOS source fba2c5a](https://github.com/CrispStrobe/CrispMath/actions/runs/37038745156)
+now passes the original 50/50, fresh 50/50 and all 100 additional checks, plus
+packaged native CAS/series/OCR gates. [Linux native source fba2c5a](https://github.com/CrispStrobe/CrispMath/actions/runs/37038737342)
+also passes the additional 40/40, 40/40 and 20/20 runtime corpora; its unit
+gate exposed a test substitute that omitted its native-capability override.
+That fixture is fixed and additionally asserts both L’Hopital derivative rounds.
+The full suite at this source passed 5,360 tests with eight skips and this single
+fixture failure; the fixed full-suite and final WASM/deployed checks are pending.
 All compilation, large test suites and browser execution run on hosted CI;
 local work is limited to small edits, formatting and report inspection.
+
+## Follow-up edge review
+
+Two power-chain controls were independently derived: `2^(-3)^2 = 512`
+(right-associative exponentiation) and `(2^(-3))^2 = 1/64`. The negative-power
+preprocessor now preserves that distinction. Both are added to live worksheet
+entry checks, bringing the UI batch to 11 problems on desktop and phone.
+Exact polynomial and rational-equation arithmetic also bounds coefficient cost
+before multiplication or powers; degree-zero constants alone do not bound
+BigInt growth. A 16,384-bit budget retains the ordinary large-integer corpus.
+Completed symbolic limits and checked rational roots now replace intermediate
+operation metadata with their actual provenance. Unit and live checks assert
+these labels. Final follow-up source verification is pending CI.

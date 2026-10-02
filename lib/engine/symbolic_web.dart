@@ -432,6 +432,20 @@ class _PolyExprParser {
   // `x^999999`, `x^200 12` (space-strip → `x^20012`), long multiply chains, and
   // dense high powers alike.
   static const int _maxDegree = 256;
+  static const int _maxCoefficientBits = 16384;
+
+  // A common-denominator upper bound prevents degree-zero nested powers from
+  // allocating enormous BigInts. Include the term count for coefficient sums.
+  int _coefficientCost(Polynomial polynomial) {
+    var numeratorBits = 0;
+    var denominatorBits = 0;
+    for (final coefficient in polynomial.coeffs) {
+      final bits = coefficient.numerator.abs().bitLength;
+      if (bits > numeratorBits) numeratorBits = bits;
+      denominatorBits += coefficient.denominator.bitLength;
+    }
+    return numeratorBits + denominatorBits + polynomial.coeffs.length.bitLength;
+  }
 
   // Bound recursion so deeply nested parens (`((((…` or `x^(((…`) surface as a
   // clean bail instead of a StackOverflowError, which _parsePolynomial's
@@ -493,6 +507,10 @@ class _PolyExprParser {
         _pos++;
         final divisor = _parseFactor();
         if (divisor.degree != 0) throw _PolyBail(); // rational function
+        if (_coefficientCost(value) + _coefficientCost(divisor) >
+            _maxCoefficientBits) {
+          throw _PolyBail();
+        }
         value = value.scale(Rational.one / divisor.coeffs[0]);
       } else if (_startsFactor(c)) {
         // Implicit multiplication: 2x, x(x+1), (x+1)(x-1).
@@ -508,7 +526,10 @@ class _PolyExprParser {
   // `x^2000 x^2000 x^2000 …` that no single exponent bounds).
   Polynomial _multiply(Polynomial a, Polynomial b) {
     // GUARD:degcost >>>
-    if (a.degree + b.degree > _maxDegree) throw _PolyBail();
+    if (a.degree + b.degree > _maxDegree ||
+        _coefficientCost(a) + _coefficientCost(b) > _maxCoefficientBits) {
+      throw _PolyBail();
+    }
     // GUARD:degcost <<<
     return a * b;
   }
@@ -528,7 +549,9 @@ class _PolyExprParser {
       // exponent alone, which bounds `constant^exp` bignum growth) blows the
       // cap. The division form avoids overflowing the product.
       // GUARD:degcost >>>
-      if (exp > _maxDegree || (exp > 0 && base.degree > _maxDegree ~/ exp)) {
+      if (exp > _maxDegree ||
+          (exp > 0 && base.degree > _maxDegree ~/ exp) ||
+          _coefficientCost(base) * exp > _maxCoefficientBits) {
         throw _PolyBail();
       }
       // GUARD:degcost <<<
