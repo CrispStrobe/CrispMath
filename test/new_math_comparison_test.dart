@@ -78,8 +78,20 @@ void main() {
           ['23+I', '23'],
           ['3+4*I', '3-4*I'],
           ['3+4*I', '3+5*I'],
+          ['I', '1'],
+          ['I^2', '-1'],
+          ['I^2', 'I*I'],
         ]),
-        ['passed', 'passed', 'failed', 'failed', 'failed']);
+        [
+          'passed',
+          'passed',
+          'failed',
+          'failed',
+          'failed',
+          'failed',
+          'failed',
+          'failed'
+        ]);
   });
 
   final nativeEngine = CalculatorEngine();
@@ -90,10 +102,23 @@ void main() {
           ['(3+4*I)/(3-4*I)', '-7/25+24*I/25'],
           ['sqrt(-16)', '4*I'],
           ['ln(-1)', 'pi*I'],
+          // Expected expression is deliberately unreduced, so the comparator
+          // must prove a complex identity rather than match canonical strings.
+          ['-7/25+24*I/25', '(3+4*I)/(3-4*I)'],
+          ['-1', 'I^2'],
           ['(3+4*I)/(3-4*I)', '-7/25-24*I/25'],
           ['sqrt(-16)', '5*I'],
           ['ln(-1)', '-pi*I'],
         ]),
-        ['passed', 'passed', 'passed', 'failed', 'failed', 'failed']);
+        [
+          'passed',
+          'passed',
+          'passed',
+          'passed',
+          'passed',
+          'failed',
+          'failed',
+          'failed'
+        ]);
   }, skip: !nativeEngine.isNativeAvailable);
 }

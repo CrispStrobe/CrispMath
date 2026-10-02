@@ -335,7 +335,12 @@ class WorkflowTasks {
 
     final a = NumericFallbackEvaluator.compile(normalizedActual);
     final b = NumericFallbackEvaluator.compile(normalizedExpected);
-    if (a == null || b == null) {
+    // The real parser accepts unknown identifiers, including I, as variables.
+    // Explicitly reserve I for complex arithmetic instead of binding it to a
+    // real probe coordinate and accidentally testing a different expression.
+    final hasImaginaryUnit =
+        RegExp(r'\bI\b').hasMatch('$normalizedActual $normalizedExpected');
+    if (hasImaginaryUnit || a == null || b == null) {
       // This path includes complex results. Never project onto the real part:
       // the full symbolic difference must be exactly zero, including I and C.
       if (!engine.isNativeAvailable) return false;
