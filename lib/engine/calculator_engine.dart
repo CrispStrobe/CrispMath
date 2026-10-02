@@ -11,6 +11,7 @@ import 'engine_signals_worker.dart'
 import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'matrix_evaluator.dart';
+import 'linear_system_solver.dart';
 import 'inequality_solver.dart';
 import 'rational_integrator.dart';
 import 'numeric_fallback.dart';
@@ -1215,12 +1216,20 @@ class CalculatorEngine {
 
   /// Symbolic linear-system solve (roadmap C2): SymEngine linsolve() via
   /// bridge >= 1.4.0. Returns "x = v1, y = v2" in [symbols] order, or an
-  /// error for non-linear input / no unique solution. Native-only.
+  /// error for non-linear input / no unique solution. Older libraries and
+  /// native-less platforms use bounded exact rational Gaussian elimination.
   String solveLinearSystem(List<String> equations, List<String> symbols) {
     final bridge = _liveBridge;
-    if (bridge == null) return 'Error: linsolve requires native library';
-    if (!bridge.hasLinsolve) {
-      return 'Error: linsolve requires a newer native library build';
+    if (bridge == null || !bridge.hasLinsolve) {
+      final exact = LinearSystemSolver.solve(equations, symbols);
+      if (exact != null) {
+        if (!exact.startsWith('Error')) {
+          lastResultEvidence = const ResultEvidence(
+              ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+        }
+        return exact;
+      }
+      return 'Error: linsolve requires a newer native library for this syntax';
     }
     try {
       final raw = bridge.linsolve(equations, symbols); // "[v1, v2, ...]"

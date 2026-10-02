@@ -13,6 +13,15 @@ import 'polynomial.dart';
 /// Stored as a map from exponent vectors to coefficients.
 /// The exponent vector is ordered according to [variables].
 class MultivariatePolynomial {
+  /// Parse the existing bounded polynomial grammar with exact coefficients.
+  static MultivariatePolynomial? tryParse(String input) {
+    try {
+      return _MultiPolyParser(input).parse();
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Ordered variable names.
   final List<String> variables;
 

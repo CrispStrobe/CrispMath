@@ -59,3 +59,37 @@ adapter must be distinguished from a missing application capability.
 Status: drafted; not scored yet. Unit, CLI/runtime and live UI coverage will be
 recorded separately, with source SHA and CI run links. No pass count is claimed
 from this draft.
+
+## Reproducible references and execution
+
+The committed reference corpus is `test/fixtures/fresh_workflow_tasks.json`.
+`tool/draft_fresh_workflow_tasks.py` derives reference calculations using SymPy,
+SciPy, Gregorian calendar arithmetic and independent exhaustive Python
+constraint enumeration; it never imports the app or reads its results.
+Rational cancellation in problem 13 gives `(x-3)/(x-2)` with the original
+excluded inputs **-3 and 2**. A prime factorization and matrix reference is
+checked without numerical-expression equivalence alone.
+
+Run `tool/crispmath_cli.sh --tasks test/fixtures/fresh_workflow_tasks.json
+--require-native --report fresh.json`. The same corpus runs in the actual WASM
+worker through `tool/check_workflow_tasks_browser.py --tasks
+ test/fixtures/fresh_workflow_tasks.json`, including after Pages/Vercel deploys.
+The packaged macOS application also reads the corpus through inherited pipes.
+Normal CI tests use the committed references and need neither SciPy nor SymPy.
+
+The first native run passed 35/50. Comparison/adapter issues were separated
+from production gaps: exact large integers, numeric matrix eigenvalues,
+original rational-domain conditions, heavy Student-t tails and arithmetic
+not-equal CSP constraints. A subsequent native CI run passed 49/50, with only
+an expansion notation check remaining (`**` versus `^`). Final runtime and
+live UI evidence is recorded after the strict rerun, rather than inferred from
+unit mocks or a compilation result.
+
+The WASM audit also reproduced a dart2js `Uint64List` allocation crash while
+pruning queens constraints. CrispMath now pins the already merged upstream
+[dart_csp web fix](https://github.com/CrispStrobe/dart_csp/pull/1) at
+`ce10138a4bc857847429b9cfa3d4071854a5bbca`; its browser domain regressions and
+native CI passed. Packaged macOS exposed a missing older-library `linsolve`
+entry point; the app now provides bounded exact rational Gaussian elimination
+for that syntax. Its tests distinguish unique, inconsistent, underdetermined
+and nonlinear systems, including pivoting and redundant equations.

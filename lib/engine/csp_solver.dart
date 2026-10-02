@@ -704,7 +704,9 @@ class CspSolver {
         // `addLinearLeq` / `addLinearGeq` API which uses the same
         // bounds-consistency propagator the linear-arithmetic test
         // in the README exercises.
-        if (_addLinearNotEquals(problem, c, knownVars)) continue;
+        if (_addLinearNotEquals(problem, c, knownVars)) {
+          continue;
+        }
         final linear = _tryParseLinear(c, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;
@@ -2606,7 +2608,9 @@ class CspSolver {
         -objConst,
       );
       for (final c in constraints) {
-        if (_addLinearNotEquals(problem, c, knownVars)) continue;
+        if (_addLinearNotEquals(problem, c, knownVars)) {
+          continue;
+        }
         final linear = _tryParseLinear(c, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;
@@ -2729,7 +2733,9 @@ class CspSolver {
       for (var i = 0; i < constraints.length; i++) {
         final c = constraints[i];
         final label = 'C${i + 1}: $c';
-        if (_addLinearNotEquals(problem, c, knownVars, label: label)) continue;
+        if (_addLinearNotEquals(problem, c, knownVars, label: label)) {
+          continue;
+        }
         final linear = _tryParseLinear(c, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;
@@ -2790,8 +2796,9 @@ class CspSolver {
       final knownVars = parsed.variables.keys.toSet();
       for (final c in parsed.constraints) {
         final label = c.label;
-        if (_addLinearNotEquals(problem, c.text, knownVars, label: label))
+        if (_addLinearNotEquals(problem, c.text, knownVars, label: label)) {
           continue;
+        }
         final linear = _tryParseLinear(c.text, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;
@@ -2947,8 +2954,9 @@ class CspSolver {
       final knownVars = parsed.variables.keys.toSet();
       for (final c in parsed.constraints) {
         final label = c.label;
-        if (_addLinearNotEquals(problem, c.text, knownVars, label: label))
+        if (_addLinearNotEquals(problem, c.text, knownVars, label: label)) {
           continue;
+        }
         final linear = _tryParseLinear(c.text, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:crisp_math/diagnostics/workflow_tasks.dart';
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/distributions.dart';
+import 'package:crisp_math/engine/linear_system_solver.dart';
 import 'package:crisp_math/engine/rational_domain.dart';
 import 'package:crisp_math/engine/result_evidence.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
@@ -40,6 +41,20 @@ void main() {
     final report = await WorkflowTasks(CalculatorEngine()).run(modules);
     expect(report['failed'], 0, reason: jsonEncode(report['results']));
     expect(report['passed'], modules.length);
+  });
+  test(
+      'exact linear systems pivot, distinguish inconsistency and decline nonlinear syntax',
+      () {
+    expect(LinearSystemSolver.solve(['2*x+3*y=7', '4*x-y=5'], ['x', 'y']),
+        'x = 11/7, y = 9/7');
+    expect(LinearSystemSolver.solve(['y=2', 'x+y=3', '2*x+2*y=6'], ['x', 'y']),
+        'x = 1, y = 2');
+    expect(LinearSystemSolver.solve(['x+y=3', '2*x+2*y=7'], ['x', 'y']),
+        contains('no solutions'));
+    expect(LinearSystemSolver.solve(['x+y=3'], ['x', 'y']),
+        contains('no unique solution'));
+    expect(LinearSystemSolver.solve(['x*x=2'], ['x']), isNull);
+    expect(LinearSystemSolver.solve(['x=2'], ['x', 'x']), startsWith('Error:'));
   });
   test('large integer powers retain every digit and exact evidence', () {
     final result = runEngineOpDetailed(

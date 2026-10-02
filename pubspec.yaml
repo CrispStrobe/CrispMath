@@ -39,7 +39,10 @@ dependencies:
   # equations, cryptarithms in V1; Sudoku and a generic mini-DSL in
   # follow-up rounds). Now published on pub.dev; bump the version
   # constraint when CSP-engine features we depend on grow.
-  dart_csp: ^2.2.0
+  dart_csp:
+    git:
+      url: https://github.com/CrispStrobe/dart_csp.git
+      ref: ce10138a4bc857847429b9cfa3d4071854a5bbca
 
   # Math rendering
   flutter_math_fork: ^0.7.2

@@ -147,11 +147,12 @@ packages:
   dart_csp:
     dependency: "direct main"
     description:
-      name: dart_csp
-      sha256: "19a62dbb3f8ed04b8d48a03113a87a3e09c8584a852e40030a9a282bdef1c0d5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.0"
+      path: "."
+      ref: ce10138a4bc857847429b9cfa3d4071854a5bbca
+      resolved-ref: ce10138a4bc857847429b9cfa3d4071854a5bbca
+      url: "https://github.com/CrispStrobe/dart_csp.git"
+    source: git
+    version: "2.3.0"
   dart_jsonwebtoken:
     dependency: transitive
     description:
