@@ -61,7 +61,8 @@ class InternalTestFlightTests(unittest.TestCase):
     def test_assignment_is_idempotent(self):
         api = ApiFixture()
         api.assigned = True
-        with patch.dict('os.environ', {'GITHUB_SHA': 'tested-source'}):
+        with patch.dict('os.environ', {'GITHUB_SHA': 'verifier-source', 'BUILD_SOURCE': 'uploaded-source'}):
             result = prepare(api, 'app', '12', '1.2.0', wait_seconds=0)
-        self.assertEqual(result['source'], 'tested-source')
+        self.assertEqual(result['source'], 'uploaded-source')
+        self.assertEqual(result['verificationSource'], 'verifier-source')
         self.assertEqual(api.writes, [])

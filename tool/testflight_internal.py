@@ -78,7 +78,9 @@ def prepare(api, app, number, version, wait_seconds=900):
                 break
         if time.monotonic() >= deadline:
             raise TimeoutError('Uploaded build has not completed valid processing')
-        print('Waiting for the uploaded iOS build to finish processing', flush=True)
+        print('Waiting for valid processing: ' + json.dumps(
+            {'matchingBuilds': len(candidates),
+             'states': [item['attributes']['processingState'] for item in candidates]}), flush=True)
         time.sleep(30)
     group = internal_group(api.request(f'/v1/apps/{app}/betaGroups?limit=200')['data'])
     path = f'/v1/betaGroups/{group["id"]}'
@@ -88,7 +90,8 @@ def prepare(api, app, number, version, wait_seconds=900):
     verified = api.request(path + '/builds?limit=200')['data']
     if not any(item['id'] == build['id'] for item in verified):
         raise ValueError('Internal TestFlight assignment was not confirmed')
-    return {'source': os.environ.get('GITHUB_SHA'), 'version': version, 'build': number,
+    return {'source': os.environ.get('BUILD_SOURCE', os.environ.get('GITHUB_SHA')),
+            'verificationSource': os.environ.get('GITHUB_SHA'), 'version': version, 'build': number,
             'processingState': 'VALID', 'internalGroup': group['attributes']['name'],
             'internalGroupAssigned': True, 'physicalDeviceTest': False,
             'appReviewSubmitted': False}
@@ -97,10 +100,26 @@ def prepare(api, app, number, version, wait_seconds=900):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--key-file', type=Path, required=True)
-    parser.add_argument('--version', required=True)
-    parser.add_argument('--build', required=True)
+    parser.add_argument('--version')
+    parser.add_argument('--build')
+    parser.add_argument('--inspect-only', action='store_true')
     parser.add_argument('--output', type=Path, default=Path('testflight-evidence.json'))
     args = parser.parse_args()
-    evidence = prepare(AppleApi(args.key_file), os.environ['ASC_APP_ID'], args.build, args.version)
+    api = AppleApi(args.key_file)
+    app = os.environ['ASC_APP_ID']
+    if args.inspect_only:
+        if api.request(f'/v1/apps/{app}')['data']['attributes']['bundleId'] != 'com.crispstrobe.crispmath':
+            raise ValueError('App ID does not identify CrispMath')
+        query = urlencode({'filter[app]': app, 'limit': '25', 'sort': '-uploadedDate'})
+        evidence = {'builds': []}
+        for build in api.request('/v1/builds?' + query)['data']:
+            prerelease = api.request(f'/v1/builds/{build["id"]}/preReleaseVersion')['data']['attributes']
+            evidence['builds'].append({'build': build['attributes']['version'],
+                'version': prerelease['version'], 'platform': prerelease['platform'],
+                'processingState': build['attributes']['processingState']})
+    else:
+        if not args.version or not args.build:
+            parser.error('--version and --build are required for assignment')
+        evidence = prepare(api, app, args.build, args.version)
     args.output.write_text(json.dumps(evidence, indent=2) + '\n')
     print(json.dumps(evidence), flush=True)
