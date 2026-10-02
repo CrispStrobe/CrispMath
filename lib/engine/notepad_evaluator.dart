@@ -1,3 +1,4 @@
+import 'result_evidence.dart';
 // lib/engine/notepad_evaluator.dart
 //
 // Per-line classification + document-scope construction + scope
@@ -241,6 +242,7 @@ typedef NotepadFlatZincDispatcher = Future<NotepadFlatZincResult> Function(
 /// evaluator stays testable without a real `SymEngine` bridge.
 class NotepadEvaluator {
   final NotepadEngineDispatcher dispatcher;
+  final Future<ComputedResult> Function(String)? detailedDispatcher;
 
   /// Optional FlatZinc dispatcher. When null, `fzn:` lines fail
   /// with a "FlatZinc dispatcher not wired" error — useful in
@@ -258,6 +260,7 @@ class NotepadEvaluator {
 
   NotepadEvaluator({
     required this.dispatcher,
+    this.detailedDispatcher,
     this.flatzincDispatcher,
     this.externalScope = const {},
   });
@@ -301,6 +304,7 @@ class NotepadEvaluator {
       final cyclePath = _cycleNamePath(i, graph, doc, firstCode);
       doc.lines[i].cachedResult = null;
       doc.lines[i].cachedError = NotepadErrorPrefix.circular(cyclePath);
+      doc.lines[i].resultEvidence = null;
       doc.lines[i].cachedFreeVars = [];
     }
 
@@ -332,6 +336,7 @@ class NotepadEvaluator {
     Map<String, String>? indexedScope,
   ) async {
     final line = doc.lines[lineIndex];
+    line.resultEvidence = null;
     final parsed = classifyNotepadLine(line.source,
         lineIndex: lineIndex, firstCodeLineIndex: firstCode);
 
@@ -465,7 +470,13 @@ class NotepadEvaluator {
 
     String result;
     try {
-      result = await dispatcher(preprocessed);
+      if (detailedDispatcher != null) {
+        final computed = await detailedDispatcher!(preprocessed);
+        result = computed.value;
+        line.resultEvidence = computed.evidence;
+      } else {
+        result = await dispatcher(preprocessed);
+      }
     } catch (e) {
       result = 'Error: dispatcher threw: $e';
     }

@@ -1,7 +1,45 @@
+import 'dart:convert';
+import '../engine/result_evidence.dart';
 import '../engine/calculator_engine.dart';
 import 'engine_op.dart';
 
+ComputedResult runEngineOpDetailed(CalculatorEngine engine, EngineOp op) {
+  engine.lastResultEvidence = null;
+  final value = runEngineOp(engine, op);
+  return describeEngineResult(engine, op, value);
+}
+
+ComputedResult describeEngineResult(
+    CalculatorEngine engine, EngineOp op, String value) {
+  final method = op.kind == 'simplify'
+      ? ComputationMethod.simplification
+      : ComputationMethod.symbolicEvaluation;
+  final unsupported = value.startsWith('Error') &&
+      RegExp(r'requires native|not available|not implemented|no matching rule|unknown engine op',
+              caseSensitive: false)
+          .hasMatch(value);
+  final evidence = unsupported
+      ? ResultEvidence(ResultAccuracy.unsupported, method)
+      : value.startsWith('Error')
+          ? null
+          : engine.lastResultEvidence ??
+              ResultEvidence(
+                  op.kind == 'simplify'
+                      ? ResultAccuracy.symbolic
+                      : ResultAccuracy.unknown,
+                  method,
+                  unchanged: op.kind == 'simplify' &&
+                      value.replaceAll(RegExp(r'\s+'), '') ==
+                          op.arg1.replaceAll(RegExp(r'\s+'), ''));
+  return ComputedResult(value, evidence);
+}
+
 String runEngineOp(CalculatorEngine engine, EngineOp op) {
+  if (op.kind.startsWith('details:')) {
+    return jsonEncode(runEngineOpDetailed(engine,
+            EngineOp(op.kind.substring(8), op.arg1, op.arg2, op.arg3, op.arg4))
+        .toJson());
+  }
   try {
     switch (op.kind) {
       case 'evaluate':

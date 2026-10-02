@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../engine/result_evidence.dart';
 // lib/services/engine_service.dart
 //
 // Long-evaluation off-main-thread wrapper. The native SymEngine bridge
@@ -85,6 +87,12 @@ class EngineService {
   /// call routed through the persistent worker.
   static Future<String> runOpAsync(EngineOp op) {
     return _worker.send(op);
+  }
+
+  static Future<ComputedResult> runOpDetailedAsync(EngineOp op) async {
+    final encoded = await _worker.send(
+        EngineOp('details:${op.kind}', op.arg1, op.arg2, op.arg3, op.arg4));
+    return ComputedResult.fromJson(jsonDecode(encoded) as Map<String, dynamic>);
   }
 
   /// V3: kill the worker (cancels all in-flight requests). The next

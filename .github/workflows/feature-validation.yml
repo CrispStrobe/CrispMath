@@ -45,6 +45,7 @@ jobs:
           test/graphing_plot_modes_test.dart test/graph_sampling_test.dart
           test/ai_provider_service_test.dart test/ai_math_dialog_test.dart
           test/notepad_screen_test.dart test/app_state_persistence_test.dart
+          test/result_evidence_test.dart test/workflow_tasks_test.dart
   unit:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -171,6 +172,7 @@ jobs:
           python tool/check_catalog_browser.py --screenshots browser-results
           python tool/check_core_workflow_browser.py
           python tool/check_notepad_calendar_browser.py
+          python tool/check_result_evidence_browser.py
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
       - name: Debug build and framework assertion checks
@@ -180,9 +182,38 @@ jobs:
           python tool/check_mobile_trace.py --screenshots browser-results/debug
           python tool/check_catalog_browser.py --screenshots browser-results/debug
           python tool/check_notepad_calendar_browser.py --output browser-results/debug/calendar-routing.json
+          python tool/check_result_evidence_browser.py --output browser-results/debug/provenance
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: browser-results
           path: browser-results
           if-no-files-found: ignore
+
+  gallery:
+    needs: browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: feature-web
+          path: gallery-web
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install screenshot tools
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Capture verified workflow gallery
+        run: |
+          python -m http.server 8766 --directory gallery-web > /tmp/gallery-http.log 2>&1 &
+          python tool/capture_product_gallery.py --source "$GITHUB_SHA" --output product-gallery
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: product-gallery
+          path: product-gallery
+          retention-days: 14

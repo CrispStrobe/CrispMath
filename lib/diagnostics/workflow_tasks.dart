@@ -1,0 +1,216 @@
+import '../engine/calculator_engine.dart';
+import '../engine/graph_sampling.dart';
+import '../engine/notepad.dart';
+import '../engine/notepad_evaluator.dart';
+import '../engine/notepad_export.dart';
+import '../engine/numeric_fallback.dart';
+import '../services/engine_dispatch.dart';
+import '../services/engine_op.dart';
+
+/// Runs app code with explicit expectations, without touching saved documents.
+class WorkflowTasks {
+  WorkflowTasks(this.engine, {this.documentDispatcher});
+  final CalculatorEngine engine;
+  final Future<String> Function(String)? documentDispatcher;
+
+  Future<Map<String, dynamic>> run(List<dynamic> tasks) async {
+    final ids = <String>{};
+    for (final raw in tasks) {
+      if (raw is! Map || raw['id'] is! String || !ids.add(raw['id'])) {
+        throw const FormatException('Tasks need unique string IDs');
+      }
+      if (!['engine', 'document', 'graph', 'export'].contains(raw['kind'])) {
+        throw FormatException('Unknown task kind: ${raw['kind']}');
+      }
+    }
+    final results = <Map<String, dynamic>>[];
+    for (final raw in tasks) {
+      final task = Map<String, dynamic>.from(raw as Map);
+      final timer = Stopwatch()..start();
+      try {
+        final actual = await _execute(task);
+        results.add({
+          'id': task['id'],
+          'kind': task['kind'],
+          'title': task['title'],
+          ...actual,
+          'milliseconds': timer.elapsedMicroseconds / 1000
+        });
+      } catch (e) {
+        results.add({
+          'id': task['id'],
+          'kind': task['kind'],
+          'status': 'failed',
+          'error': e.toString(),
+          'milliseconds': timer.elapsedMicroseconds / 1000
+        });
+      }
+    }
+    return {
+      'schemaVersion': 1,
+      'nativeBridge': nativeBridgeReady,
+      'total': results.length,
+      for (final status in ['passed', 'failed', 'unsupported'])
+        status: results.where((r) => r['status'] == status).length,
+      'results': results
+    };
+  }
+
+  Future<Map<String, dynamic>> _execute(Map<String, dynamic> task) async {
+    switch (task['kind']) {
+      case 'engine':
+        final args = (task['args'] as List).cast<String>();
+        final result = runEngineOpDetailed(
+            engine,
+            EngineOp(
+                task['operation'],
+                args[0],
+                args.length > 1 ? args[1] : null,
+                args.length > 2 ? args[2] : null,
+                args.length > 3 ? args[3] : null));
+        final unsupported = RegExp(
+                r'requires (?:a newer )?native|not available|not implemented',
+                caseSensitive: false)
+            .hasMatch(result.value);
+        final pass = task['errorContains'] != null
+            ? result.value.startsWith('Error') &&
+                result.value.contains(task['errorContains'])
+            : _matches(result.value, task['expected']);
+        return {
+          'status': unsupported
+              ? 'unsupported'
+              : pass
+                  ? 'passed'
+                  : 'failed',
+          'actual': result.value,
+          'expected': task['expected'] ?? task['errorContains'],
+          if (result.evidence != null) 'evidence': result.evidence!.toJson()
+        };
+      case 'document':
+      case 'export':
+        final doc =
+            NotepadDocument.fresh(name: task['name'] ?? 'CLI worksheet');
+        doc.lines.clear();
+        doc.lines.addAll((task['lines'] as List)
+            .cast<String>()
+            .map((s) => NotepadLine.fresh(source: s)));
+        final evaluator = NotepadEvaluator(
+            dispatcher: documentDispatcher ?? (s) async => engine.evaluate(s));
+        await evaluator.evaluateAll(doc);
+        if (task['edit'] != null) {
+          final edit = task['edit'] as Map;
+          doc.lines[edit['index'] as int].source = edit['source'] as String;
+          await evaluator.evaluateFrom(doc, edit['index'] as int);
+        }
+        if (task['kind'] == 'document') {
+          final expected = (task['expected'] as List).cast<String?>();
+          final actual =
+              doc.lines.map((l) => l.cachedError ?? l.cachedResult).toList();
+          final pass = expected.length == actual.length &&
+              List.generate(
+                  expected.length,
+                  (i) => expected[i] == null
+                      ? actual[i] == null
+                      : _matches(actual[i] ?? '', expected[i])).every((v) => v);
+          return {
+            'status': pass ? 'passed' : 'failed',
+            'actual': actual,
+            'expected': expected
+          };
+        }
+        final format = task['format'];
+        if (!['markdown', 'latex', 'json', 'pdf'].contains(format)) {
+          throw FormatException('Unknown export format: $format');
+        }
+        if (format == 'pdf') {
+          final bytes = await (await exportToPdf(doc)).save();
+          final pass = String.fromCharCodes(bytes.take(5)) == '%PDF-' &&
+              bytes.length > 500;
+          return {
+            'status': pass ? 'passed' : 'failed',
+            'actual': {'bytes': bytes.length}
+          };
+        }
+        if (format == 'json') {
+          final restored = NotepadDocument.fromJson(doc.toJson());
+          final pass =
+              restored.lines.last.cachedResult == doc.lines.last.cachedResult &&
+                  restored.lines.last.source == doc.lines.last.source;
+          return {
+            'status': pass ? 'passed' : 'failed',
+            'actual': restored.lines.last.cachedResult
+          };
+        }
+        final value =
+            format == 'latex' ? exportToLatex(doc) : exportToMarkdown(doc);
+        final pass =
+            (task['contains'] as List).cast<String>().every(value.contains);
+        return {
+          'status': pass ? 'passed' : 'failed',
+          'actual': value,
+          'expected': task['contains']
+        };
+      case 'graph':
+        final samples = sampleGraph({
+          'mode': 'cartesian',
+          'functions': [task['expression']],
+          'width': 100,
+          'scale': 1,
+          'xMin': -2,
+          'xMax': 2,
+          'yMin': -10,
+          'yMax': 10,
+          'annotations': false,
+          'coarse': false
+        });
+        final points = samples.curves.single;
+        var pass = true;
+        for (final check in (task['checks'] as List)) {
+          final p = points.reduce((a, b) =>
+              (a.x - check['x']).abs() < (b.x - check['x']).abs() ? a : b);
+          pass = pass &&
+              (check['y'] == null
+                  ? !p.ok
+                  : p.ok && (p.y - check['y']).abs() < 1e-8);
+        }
+        return {
+          'status': pass ? 'passed' : 'failed',
+          'actual': samples.toJson(),
+          'expected': task['checks']
+        };
+    }
+    throw StateError('Unhandled task');
+  }
+
+  bool _matches(String actual, dynamic expected) {
+    if (expected is! String)
+      throw const FormatException('Expected result must be a string');
+    if (actual == expected) return true;
+    if (actual.startsWith('Error') || actual.contains('Error:')) return false;
+    String normalize(String value) {
+      var v = value.trim().replaceAll('**', '^');
+      final complex =
+          RegExp(r'^(.+?)\s*([+-])\s*([0-9.eE+-]+)\*I$').firstMatch(v);
+      if (complex != null) {
+        final imaginary = double.tryParse(complex[3]!);
+        if (imaginary != null && imaginary.abs() < 1e-12)
+          v = complex[1]!.trim();
+      }
+      return v;
+    }
+
+    final a = NumericFallbackEvaluator.compile(normalize(actual));
+    final b = NumericFallbackEvaluator.compile(normalize(expected));
+    if (a == null || b == null) return false;
+    for (final x in [-1.73, -0.41, 0.23, 1.37, 2.61, 4.19]) {
+      final av = a.evaluate({'x': x, 'y': x + 0.37, 'C': 0});
+      final bv = b.evaluate({'x': x, 'y': x + 0.37, 'C': 0});
+      if (av == null ||
+          bv == null ||
+          !av.isFinite ||
+          !bv.isFinite ||
+          (av - bv).abs() > 1e-8 * (1 + bv.abs())) return false;
+    }
+    return true;
+  }
+}

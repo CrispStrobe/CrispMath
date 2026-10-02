@@ -1,3 +1,4 @@
+import 'result_evidence.dart';
 // lib/engine/calculator_engine.dart
 //
 // Dart-side facade for the native symbolic-math bridge. The UI calls these
@@ -80,6 +81,8 @@ Future<void> pollForNativeBridge({
 }
 
 class CalculatorEngine {
+  ResultEvidence? lastResultEvidence;
+
   CalculatorEngine() {
     _acquireBridge();
   }
@@ -188,7 +191,11 @@ class CalculatorEngine {
     // "needs the native app" message.
     if (!isNativeAvailable) {
       final numeric = NumericFallbackEvaluator.tryEvaluate(expression);
-      if (numeric != null) return numeric;
+      if (numeric != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+        return numeric;
+      }
     }
     final result = _bridgeCall('evaluate', (b) => b.evaluate(expression));
     // If the WASM bridge crashed (RuntimeError / Aborted), try the
@@ -196,7 +203,11 @@ class CalculatorEngine {
     // when the WASM module hits an assertion on certain inputs.
     if (result.startsWith('Error:')) {
       final numeric = NumericFallbackEvaluator.tryEvaluate(expression);
-      if (numeric != null) return numeric;
+      if (numeric != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+        return numeric;
+      }
       // Try pure-Dart symbolic evaluation for polynomial expressions
       final symbolic = SymbolicWeb.expand(expression);
       if (symbolic != null) return symbolic;
@@ -332,7 +343,11 @@ class CalculatorEngine {
     // can only expand the polynomial subset in Dart.
     if (!isNativeAvailable) {
       final web = SymbolicWeb.expand(expression);
-      if (web != null) return web;
+      if (web != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.polynomialExpansion);
+        return web;
+      }
     }
     return _bridgeCall('simplify', (b) => b.simplify(expression));
   }
@@ -1308,6 +1323,7 @@ class CalculatorEngine {
   ///     rule with 200 subintervals.
   String integrate(String expression, String variable,
       [String? lower, String? upper]) {
+    lastResultEvidence = null;
     final bridge = _liveBridge;
     final indefinite = lower == null || upper == null;
 
@@ -1322,18 +1338,30 @@ class CalculatorEngine {
       // 1. Exact polynomial antiderivative (consistent format, no engine
       //    round-trips) — reliable on every platform.
       final poly = SymbolicWeb.integrate(expression, variable);
-      if (poly != null) return '$poly + C';
+      if (poly != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.polynomialIntegration);
+        return '$poly + C';
+      }
       // 2. Complete rational-function integrator (roadmap C3): polynomial
       //    part + Hermite-style power reduction + exact log/atan terms
       //    over linear and quadratic irreducible factors. Pure Dart,
       //    exact ℚ arithmetic; uses native FLINT factoring when loaded.
       final rational = RationalIntegrator.integrate(this, expression, variable);
-      if (rational != null) return '$rational + C';
+      if (rational != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.rationalIntegration);
+        return '$rational + C';
+      }
       // 3. Broad textbook integrator (trig/exp/IBP/u-sub/partial fractions).
       //    Resolves on native; on web it handles only what SymbolicWeb can
       //    back its differentiate/simplify checks with.
       final anti = StepEngine.antiderivative(expression, variable, this);
-      if (anti != null) return '$anti + C';
+      if (anti != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.integrationRules);
+        return '$anti + C';
+      }
       return bridge == null
           ? 'Error: integrate requires native library'
           : 'Error: could not integrate (no matching rule)';
@@ -1343,7 +1371,14 @@ class CalculatorEngine {
     // 1. Exact Dart polynomial definite integral.
     final polyDef =
         SymbolicWeb.definiteIntegral(expression, variable, lower, upper);
-    if (polyDef != null) return polyDef;
+    if (polyDef != null) {
+      lastResultEvidence = ResultEvidence(
+          RegExp(r'^[+-]?\d+(?:/\d+)?$').hasMatch(polyDef.trim())
+              ? ResultAccuracy.exact
+              : ResultAccuracy.unknown,
+          ComputationMethod.polynomialIntegration);
+      return polyDef;
+    }
     // 2. FTC via a StepEngine antiderivative evaluated at the bounds
     //    (needs the bridge to substitute + evaluate the result).
     if (bridge != null) {
@@ -1351,7 +1386,11 @@ class CalculatorEngine {
       if (anti != null) {
         final ftc = _definiteFromAntiderivativeString(
             bridge, anti, variable, lower, upper);
-        if (ftc != null) return ftc;
+        if (ftc != null) {
+          lastResultEvidence = const ResultEvidence(
+              ResultAccuracy.unknown, ComputationMethod.fundamentalTheorem);
+          return ftc;
+        }
       }
       // 3. Numerical Simpson fallback.
       return _definiteNumerical(bridge, expression, variable, lower, upper);
@@ -1407,6 +1446,8 @@ class CalculatorEngine {
     if (result == null) {
       return 'Error: integrand evaluation failed at some sample point';
     }
+    lastResultEvidence = const ResultEvidence(
+        ResultAccuracy.approximate, ComputationMethod.simpsonIntegration);
     return _formatReal(result);
   }
 

@@ -66,7 +66,7 @@ jobs:
           flutter pub get
 
       - name: Build web (release, dart2js, Pages base-href)
-        run: tool/build_web.sh --release --base-href /CrispMath/
+        run: tool/build_web.sh --release --no-wasm-dry-run -O2 --base-href /CrispMath/
 
       - name: SPA 404 fallback
         run: cp build/web/index.html build/web/404.html
@@ -79,3 +79,21 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published Pages workflows
+        env:
+          APP_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+          python tool/check_deployed_bundle.py --url "$APP_URL" --source "$GITHUB_SHA"
+          python tool/check_notepad_calendar_browser.py --url "$APP_URL" --output deployed-results/calendar.json
+          python tool/check_result_evidence_browser.py --url "$APP_URL" --output deployed-results/provenance
+          python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pages-live-results
+          path: deployed-results
+          if-no-files-found: ignore
+          retention-days: 14

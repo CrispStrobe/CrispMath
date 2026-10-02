@@ -1,3 +1,4 @@
+import '../widgets/result_evidence_badge.dart';
 // lib/screens/notepad_screen.dart
 //
 // Phases 4 + 5 of the Notepad V1 plan: UI skeleton (Phase 4) +
@@ -338,6 +339,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     // value during the 300 ms debounce window. The recalc below
     // re-populates it.
     line.cachedResult = null;
+    line.resultEvidence = null;
     line.cachedError = null;
     line.cachedFreeVars = [];
     // In-memory only — disk persist deferred to recalc timer.
@@ -885,6 +887,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
                 id: generateNotepadId(),
                 source: l.source,
                 cachedResult: l.cachedResult,
+                resultEvidence: l.resultEvidence,
                 cachedError: l.cachedError,
                 cachedFreeVars: List<String>.from(l.cachedFreeVars),
               ))
@@ -1093,6 +1096,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
 
     final evaluator = NotepadEvaluator(
       dispatcher: _notepadDispatcher.evaluate,
+      detailedDispatcher: _notepadDispatcher.evaluateDetailed,
       flatzincDispatcher: _notepadDispatcher.solveFlatZinc,
       externalScope: useResolution.externalScope,
     );
@@ -2190,7 +2194,11 @@ class _NotepadResultColumn extends StatelessWidget {
     if (line.cachedError != null) {
       return Align(
         alignment: align,
-        child: _buildErrorWidget(context, line.cachedError!, textAlign),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          _buildErrorWidget(context, line.cachedError!, textAlign),
+          if (line.resultEvidence != null)
+            ResultEvidenceBadge(evidence: line.resultEvidence!),
+        ]),
       );
     }
 
@@ -2202,6 +2210,9 @@ class _NotepadResultColumn extends StatelessWidget {
     final children = <Widget>[];
     if (res != null && res.isNotEmpty) {
       children.add(_buildResult(context, res, textAlign));
+      if (line.resultEvidence != null) {
+        children.add(ResultEvidenceBadge(evidence: line.resultEvidence!));
+      }
     }
     // Show a small format indicator when a non-auto format is active.
     if (rawRes != null &&

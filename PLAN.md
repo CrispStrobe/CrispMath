@@ -5,6 +5,31 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## October follow-up release and workspace improvements
+
+Execute in the requested order, with unit and live CI validation at every stage.
+Deploy previews to GitHub Pages and Vercel and test both with Playwright.
+Physical iPhone/iPad testing is deferred to a separate session.
+
+0. [~] Apple: validated 1.2.0 build 11 uploaded, processed VALID and assigned
+   to Internal Testers. Address the prior 4.3(a) rejection with truthful review evidence;
+   final App Review follows the improvements and separate device tests.
+1. [~] Result provenance: identify exact/approximate results and computation
+   methods, explain unsupported or unchanged transformations, retain AI review.
+2. [ ] Large documents: incremental recalculation, cancellable batches and
+   clear progress; compare 500/2,000-row workflows against current baselines.
+3. [ ] Apple workflows: iPad keyboard/navigation and multitasking layouts,
+   Files document integration and Shortcuts.
+4. [ ] Shared worksheets: export calculations, graphs and value tables with
+   consistent layouts and an export preview.
+5. [ ] Document history: checkpoints, comparisons, restore and portable
+   backups, followed by cross-device sync.
+
+Additional validation: 50-task CLI/WASM audit implemented; native 48 passed,
+1 failed and 1 unsupported; browser 49 passed and 1 failed. Keep task 25
+(series-capable Linux bridge) and task 39 (inline document functions) visible
+in strict CI reports. See `docs/workflow-task-audit.md`.
+
 ## October release and workflow improvements
 
 Execute in this order, with unit and live validation at each stage:

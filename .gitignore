@@ -70,3 +70,5 @@ handover-prompts/
 
 # CI dependency checkout
 /.ci/
+
+/web/workflow_tasks_worker.dart.js*

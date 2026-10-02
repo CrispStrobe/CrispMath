@@ -1,3 +1,4 @@
+import 'result_evidence.dart';
 // lib/engine/app_state.dart
 //
 // Singleton app state with a small persistence layer on top of
@@ -43,6 +44,7 @@ enum NumberDisplayFormat { integer, oneDecimal, twoDecimal, auto }
 class CalculationEntry {
   final String expression;
   final String result;
+  final ResultEvidence? resultEvidence;
 
   /// The engine's unrounded result string, kept only when display
   /// formatting changed it. `Ans` substitutes this instead of the
@@ -57,6 +59,7 @@ class CalculationEntry {
     required this.expression,
     required this.result,
     this.rawResult,
+    this.resultEvidence,
     this.type = HistoryEntryType.calculation,
     DateTime? lastModified,
   }) : lastModified = lastModified ?? DateTime.now().toUtc();
@@ -67,6 +70,7 @@ class CalculationEntry {
   Map<String, dynamic> toJson() => {
         'e': expression,
         'r': result,
+        if (resultEvidence != null) 'evidence': resultEvidence!.toJson(),
         if (rawResult != null) 'raw': rawResult,
         't': type.name,
         'lm': lastModified.toIso8601String(),
@@ -76,6 +80,7 @@ class CalculationEntry {
         expression: j['e'] as String? ?? '',
         result: j['r'] as String? ?? '',
         rawResult: j['raw'] as String?,
+        resultEvidence: ResultEvidence.fromJson(j['evidence']),
         type: HistoryEntryType.values.firstWhere(
           (v) => v.name == j['t'],
           orElse: () => HistoryEntryType.calculation,
@@ -1144,6 +1149,7 @@ class AppState extends ChangeNotifier {
     String expression,
     String result, {
     HistoryEntryType type = HistoryEntryType.calculation,
+    ResultEvidence? resultEvidence,
   }) {
     final formatted = formatNumber(result);
     history.insert(
@@ -1151,6 +1157,7 @@ class AppState extends ChangeNotifier {
       CalculationEntry(
         expression: expression,
         result: formatted,
+        resultEvidence: resultEvidence,
         // Keep the engine's unrounded string when formatting changed
         // it, so `Ans` can chain at full precision.
         rawResult: formatted == result ? null : result,

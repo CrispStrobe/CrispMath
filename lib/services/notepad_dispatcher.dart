@@ -1,3 +1,4 @@
+import '../engine/result_evidence.dart';
 import 'package:dart_csp/dart_csp.dart';
 import '../engine/calculator_engine.dart';
 import '../engine/currency_evaluator.dart';
@@ -16,14 +17,25 @@ class NotepadDispatcher {
       {required this.formatNumber,
       CalculatorEngine? engine,
       Future<String> Function(String)? evaluateExpression,
-      Future<String> Function(EngineOp)? runOperation})
+      Future<String> Function(EngineOp)? runOperation,
+      Future<ComputedResult> Function(EngineOp)? runDetailedOperation,
+      Future<ComputedResult> Function(String)? evaluateDetailedExpression})
       : _engine = engine ?? CalculatorEngine(),
         evaluateExpression = evaluateExpression ?? EngineService.evaluateAsync,
-        runOperation = runOperation ?? EngineService.runOpAsync;
+        runOperation = runOperation ?? EngineService.runOpAsync,
+        runDetailedOperation = runDetailedOperation ??
+            (runOperation == null ? EngineService.runOpDetailedAsync : null),
+        evaluateDetailedExpression = evaluateDetailedExpression ??
+            (evaluateExpression == null
+                ? (source) => EngineService.runOpDetailedAsync(
+                    EngineOp('evaluate', source))
+                : null);
   final CalculatorEngine _engine;
   final String Function(String) formatNumber;
   final Future<String> Function(String) evaluateExpression;
   final Future<String> Function(EngineOp) runOperation;
+  final Future<ComputedResult> Function(EngineOp)? runDetailedOperation;
+  final Future<ComputedResult> Function(String)? evaluateDetailedExpression;
   final Stopwatch _localWorkBudget = Stopwatch();
 
   /// Engine dispatcher injected into [NotepadEvaluator]. Receives a
@@ -43,13 +55,21 @@ class NotepadDispatcher {
   ///     so the global `NumberDisplayFormat` setting (decision #19)
   ///     applies consistently — same display semantics as the
   ///     calculator's history rows.
-  Future<String> evaluate(String preprocessed) async {
-    if (preprocessed.trim().isEmpty) return '';
+  Future<String> evaluate(String preprocessed) async =>
+      (await evaluateDetailed(preprocessed)).value;
+
+  Future<ComputedResult> evaluateDetailed(String preprocessed) async {
+    if (preprocessed.trim().isEmpty) return const ComputedResult('', null);
 
     // Calendar operators depend on whitespace that LaTeX normalization
     // removes. Recognize them before interpreting digit/minus-only input.
     final calendar = DateTimeEvaluator.tryEvaluate(preprocessed);
-    if (calendar != null) return calendar;
+    if (calendar != null) {
+      return ComputedResult(
+          calendar,
+          const ResultEvidence(
+              ResultAccuracy.unknown, ComputationMethod.calendar));
+    }
 
     final integerSum = _smallIntegerSum(preprocessed);
     if (integerSum != null) {
@@ -62,7 +82,10 @@ class NotepadDispatcher {
           ..reset()
           ..start();
       }
-      return formatNumber(integerSum);
+      return ComputedResult(
+          formatNumber(integerSum),
+          const ResultEvidence(
+              ResultAccuracy.exact, ComputationMethod.integerArithmetic));
     }
 
     // LaTeX-friendly input — convert `x^{3}`, `\cdot`, `\frac{a}{b}`,
@@ -86,7 +109,12 @@ class NotepadDispatcher {
     );
     if (ifFolded != null) {
       final calendarBranch = DateTimeEvaluator.tryEvaluate(ifFolded);
-      if (calendarBranch != null) return calendarBranch;
+      if (calendarBranch != null) {
+        return ComputedResult(
+            calendarBranch,
+            const ResultEvidence(
+                ResultAccuracy.unknown, ComputationMethod.calendar));
+      }
     }
     final preNative = ifFolded == null ? normalized : _normalize(ifFolded);
 
@@ -97,15 +125,22 @@ class NotepadDispatcher {
     // before the CAS dispatcher since `factorint` isn't a CAS
     // function name. Bypasses SymEngine entirely.
     final precisionResult = _engine.tryEvaluatePrecisionCall(preNative);
-    if (precisionResult != null) return formatNumber(precisionResult);
+    if (precisionResult != null) {
+      return ComputedResult(formatNumber(precisionResult), null);
+    }
 
     // Notepad V2: date/time arithmetic.
     final dateResult = DateTimeEvaluator.tryEvaluate(preNative);
-    if (dateResult != null) return dateResult;
+    if (dateResult != null) {
+      return ComputedResult(
+          dateResult,
+          const ResultEvidence(
+              ResultAccuracy.unknown, ComputationMethod.calendar));
+    }
 
     // Notepad V2 Tier C: currency conversion.
     final currencyResult = CurrencyEvaluator.tryEvaluate(preNative);
-    if (currencyResult != null) return currencyResult;
+    if (currencyResult != null) return ComputedResult(currencyResult, null);
 
     // Try the unit evaluator first against the LaTeX-stripped
     // body and again with all parens stripped — Phase 2's Ans
@@ -120,7 +155,12 @@ class NotepadDispatcher {
       final stripped = preNative.replaceAll('(', '').replaceAll(')', '');
       unitResult = UnitExpressionEvaluator.tryEvaluate(stripped);
     }
-    if (unitResult != null) return formatNumber(unitResult);
+    if (unitResult != null) {
+      return ComputedResult(
+          formatNumber(unitResult),
+          const ResultEvidence(
+              ResultAccuracy.unknown, ComputationMethod.unitConversion));
+    }
 
     // CAS function calls — route to the dedicated specialized
     // handlers in the worker isolate (engine_service.dart's
@@ -142,12 +182,18 @@ class NotepadDispatcher {
     // Return the literal as-is; exact-integer-mode display picks it
     // up via the digit-count guard in `AppState.formatNumber`.
     if (RegExp(r'^[+-]?\d+$').hasMatch(native.trim())) {
-      return formatNumber(native.trim());
+      return ComputedResult(
+          formatNumber(native.trim()),
+          const ResultEvidence(
+              ResultAccuracy.exact, ComputationMethod.integerArithmetic));
     }
 
     try {
-      final raw = await evaluateExpression(native);
-      if (raw.startsWith('Error')) return raw;
+      final computed = evaluateDetailedExpression != null
+          ? await evaluateDetailedExpression!(native)
+          : ComputedResult(await evaluateExpression(native), null);
+      final raw = computed.value;
+      if (raw.startsWith('Error')) return computed;
       var normalized = ExpressionPreprocessingUtils.normalizeBooleanResult(
           ExpressionPreprocessingUtils.normalizeComplexResult(raw));
       // normalizeComplexResult inserts spaces around `-` for binary
@@ -163,11 +209,11 @@ class NotepadDispatcher {
                   normalized.codeUnitAt(2) <= 0x39))) {
         normalized = '-${normalized.substring(2)}';
       }
-      return formatNumber(normalized);
+      return ComputedResult(formatNumber(normalized), computed.evidence);
     } on EngineCancelled {
-      return 'Error: cancelled';
+      return const ComputedResult('Error: cancelled', null);
     } catch (e) {
-      return 'Error: $e';
+      return ComputedResult('Error: $e', null);
     }
   }
 
@@ -215,7 +261,7 @@ class NotepadDispatcher {
   /// when [src] isn't a recognized CAS function so the dispatcher
   /// can fall through to generic `evaluate`. Mirrors the dispatch
   /// table in `calculator_screen.dart:756-795`.
-  Future<String?> _maybeDispatchCas(String src) async {
+  Future<ComputedResult?> _maybeDispatchCas(String src) async {
     final trimmed = src.trim();
     EngineOp? op;
 
@@ -274,15 +320,18 @@ class NotepadDispatcher {
 
     if (op == null) return null;
     try {
-      final raw = await runOperation(op);
-      if (raw.startsWith('Error')) return raw;
+      final computed = runDetailedOperation != null
+          ? await runDetailedOperation!(op)
+          : ComputedResult(await runOperation(op), null);
+      final raw = computed.value;
+      if (raw.startsWith('Error')) return computed;
       final normalized =
           ExpressionPreprocessingUtils.normalizeComplexResult(raw);
-      return formatNumber(normalized);
+      return ComputedResult(formatNumber(normalized), computed.evidence);
     } on EngineCancelled {
-      return 'Error: cancelled';
+      return const ComputedResult('Error: cancelled', null);
     } catch (e) {
-      return 'Error: $e';
+      return ComputedResult('Error: $e', null);
     }
   }
 

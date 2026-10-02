@@ -1,3 +1,6 @@
+import '../engine/result_evidence.dart';
+import '../services/engine_dispatch.dart';
+import '../widgets/result_evidence_badge.dart';
 // lib/screens/calculator_screen.dart
 
 import 'dart:async';
@@ -85,6 +88,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   final FocusNode _calculatorFocusNode = FocusNode(); // Dedicated focus node
 
   String _resultPreview = '';
+  ResultEvidence? _resultEvidence;
   bool _justCalculated = false;
   bool _showLatexHistory = false; // History display toggle
 
@@ -1104,6 +1108,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   Future<void> _calculate(String expression) async {
+    _resultEvidence = null;
     if (kDebugMode) debugPrint('CALC: "$expression"');
     try {
       final trimmed = expression.trim();
@@ -1310,6 +1315,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
         // mode. Just return the literal directly.
         if (RegExp(r'^[+-]?\d+$').hasMatch(preprocessed.trim())) {
           result = preprocessed.trim();
+          _resultEvidence = const ResultEvidence(
+              ResultAccuracy.exact, ComputationMethod.integerArithmetic);
         } else {
           // Big expressions (integrate, factor, simplify, matrix, long
           // factorials) get offloaded to a worker isolate via
@@ -1326,7 +1333,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
       setState(() {
         _appState.addHistoryEntry(
-            LatexConversionUtils.latexToReadable(expression), result);
+            LatexConversionUtils.latexToReadable(expression), result,
+            resultEvidence: _resultEvidence);
         _resultPreview = '';
         _justCalculated = true;
         _latexController.clear();
@@ -2491,12 +2499,20 @@ class CalculatorScreenState extends State<CalculatorScreen>
     String? arg4,
     required String Function() fallback,
   }) async {
-    if (!EngineService.shouldRunAsync(arg1)) return fallback();
+    final operation = EngineOp(op, arg1, arg2, arg3, arg4);
+    if (!EngineService.shouldRunAsync(arg1)) {
+      _engine.lastResultEvidence = null;
+      final computed = describeEngineResult(_engine, operation, fallback());
+      _resultEvidence = computed.evidence;
+      return computed.value;
+    }
     try {
-      return await _runWithProgress(
+      final computed = await _runWithProgress(
         AppLocalizations.of(context).calculating,
-        () => EngineService.runOpAsync(EngineOp(op, arg1, arg2, arg3, arg4)),
+        () => EngineService.runOpDetailedAsync(operation),
       );
+      _resultEvidence = computed.evidence;
+      return computed.value;
     } on _CancelledByUserException {
       return 'Error: cancelled';
     }
@@ -2904,6 +2920,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                                     textAlign: TextAlign.right,
                                                     softWrap: true,
                                                   ),
+                                                if (entry.resultEvidence !=
+                                                    null)
+                                                  ResultEvidenceBadge(
+                                                      evidence: entry
+                                                          .resultEvidence!),
                                                 if (isBigInt)
                                                   Padding(
                                                     padding:

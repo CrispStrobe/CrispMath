@@ -3,6 +3,27 @@ import 'package:flutter/material.dart';
 /// Strings for the connected entry, graph and provider workflows.
 /// Keep every locale exhaustive; coverage is enforced by unit tests.
 enum WorkflowLabel {
+  resultDetails,
+  resultExact,
+  resultApproximate,
+  resultSymbolic,
+  resultComputed,
+  resultUnsupported,
+  resultUnchanged,
+  resultUnknownPrecision,
+  methodInteger,
+  methodPolynomial,
+  methodExpansionFallback,
+  methodRational,
+  methodRules,
+  methodFundamental,
+  methodSimpson,
+  methodNumeric,
+  methodSymbolic,
+  methodSimplification,
+  methodCalendar,
+  methodUnits,
+
   editExpression,
   mathPreview,
   expression,
@@ -46,6 +67,29 @@ class WorkflowLocalizations {
 
   static const translations = <String, Map<WorkflowLabel, String>>{
     'en': {
+      WorkflowLabel.methodExpansionFallback:
+          'Polynomial expansion fallback; full simplification unavailable',
+      WorkflowLabel.resultDetails: 'Result details',
+      WorkflowLabel.resultExact: 'Exact',
+      WorkflowLabel.resultApproximate: 'Approximate',
+      WorkflowLabel.resultSymbolic: 'Symbolic',
+      WorkflowLabel.resultComputed: 'Computed',
+      WorkflowLabel.resultUnsupported: 'Unsupported',
+      WorkflowLabel.resultUnchanged:
+          'No change was produced. This does not prove the expression cannot simplify further.',
+      WorkflowLabel.resultUnknownPrecision:
+          'This operation did not report its precision.',
+      WorkflowLabel.methodInteger: 'Integer arithmetic',
+      WorkflowLabel.methodPolynomial: 'Exact polynomial integration',
+      WorkflowLabel.methodRational: 'Rational-function integration',
+      WorkflowLabel.methodRules: 'Symbolic integration rules',
+      WorkflowLabel.methodFundamental: 'Antiderivative evaluated at the bounds',
+      WorkflowLabel.methodSimpson: 'Numerical integration (Simpson’s rule)',
+      WorkflowLabel.methodNumeric: 'Floating-point evaluation',
+      WorkflowLabel.methodSymbolic: 'Expression evaluation',
+      WorkflowLabel.methodSimplification: 'Simplification',
+      WorkflowLabel.methodCalendar: 'Calendar arithmetic',
+      WorkflowLabel.methodUnits: 'Unit conversion',
       WorkflowLabel.updatingResults: 'Updating results. You can keep editing.',
       WorkflowLabel.resultsFailed:
           'Could not update all results. Retry the calculation.',
@@ -84,6 +128,30 @@ class WorkflowLocalizations {
       WorkflowLabel.clarification: 'More information needed: {value}',
     },
     'de': {
+      WorkflowLabel.methodExpansionFallback:
+          'Polynomentwicklung als Ersatz; vollständige Vereinfachung nicht verfügbar',
+      WorkflowLabel.resultDetails: 'Ergebnisdetails',
+      WorkflowLabel.resultExact: 'Exakt',
+      WorkflowLabel.resultApproximate: 'Näherung',
+      WorkflowLabel.resultSymbolic: 'Symbolisch',
+      WorkflowLabel.resultComputed: 'Berechnet',
+      WorkflowLabel.resultUnsupported: 'Nicht unterstützt',
+      WorkflowLabel.resultUnchanged:
+          'Kein verändertes Ergebnis. Der Ausdruck könnte sich dennoch weiter vereinfachen lassen.',
+      WorkflowLabel.resultUnknownPrecision:
+          'Diese Operation hat keine Genauigkeit angegeben.',
+      WorkflowLabel.methodInteger: 'Ganzzahlarithmetik',
+      WorkflowLabel.methodPolynomial: 'Exakte Polynomintegration',
+      WorkflowLabel.methodRational: 'Integration rationaler Funktionen',
+      WorkflowLabel.methodRules: 'Symbolische Integrationsregeln',
+      WorkflowLabel.methodFundamental:
+          'Stammfunktion an den Grenzen ausgewertet',
+      WorkflowLabel.methodSimpson: 'Numerische Integration (Simpson-Regel)',
+      WorkflowLabel.methodNumeric: 'Gleitkommaberechnung',
+      WorkflowLabel.methodSymbolic: 'Ausdrucksauswertung',
+      WorkflowLabel.methodSimplification: 'Vereinfachung',
+      WorkflowLabel.methodCalendar: 'Datumsrechnung',
+      WorkflowLabel.methodUnits: 'Einheitenumrechnung',
       WorkflowLabel.updatingResults:
           'Ergebnisse werden aktualisiert. Weitere Eingaben sind möglich.',
       WorkflowLabel.resultsFailed:
@@ -123,6 +191,29 @@ class WorkflowLocalizations {
       WorkflowLabel.clarification: 'Weitere Angaben nötig: {value}',
     },
     'fr': {
+      WorkflowLabel.methodExpansionFallback:
+          'Développement polynomial de secours ; simplification complète indisponible',
+      WorkflowLabel.resultDetails: 'Détails du résultat',
+      WorkflowLabel.resultExact: 'Exact',
+      WorkflowLabel.resultApproximate: 'Approximatif',
+      WorkflowLabel.resultSymbolic: 'Symbolique',
+      WorkflowLabel.resultComputed: 'Calculé',
+      WorkflowLabel.resultUnsupported: 'Non pris en charge',
+      WorkflowLabel.resultUnchanged:
+          'Aucun changement produit. Cela ne prouve pas que l’expression ne peut plus être simplifiée.',
+      WorkflowLabel.resultUnknownPrecision:
+          'Cette opération n’a pas indiqué sa précision.',
+      WorkflowLabel.methodInteger: 'Arithmétique entière',
+      WorkflowLabel.methodPolynomial: 'Intégration polynomiale exacte',
+      WorkflowLabel.methodRational: 'Intégration de fonctions rationnelles',
+      WorkflowLabel.methodRules: 'Règles d’intégration symbolique',
+      WorkflowLabel.methodFundamental: 'Primitive évaluée aux bornes',
+      WorkflowLabel.methodSimpson: 'Intégration numérique (règle de Simpson)',
+      WorkflowLabel.methodNumeric: 'Calcul en virgule flottante',
+      WorkflowLabel.methodSymbolic: 'Évaluation d’expression',
+      WorkflowLabel.methodSimplification: 'Simplification',
+      WorkflowLabel.methodCalendar: 'Calcul de dates',
+      WorkflowLabel.methodUnits: 'Conversion d’unités',
       WorkflowLabel.updatingResults:
           'Mise à jour des résultats. Vous pouvez continuer à modifier.',
       WorkflowLabel.resultsFailed:
@@ -163,6 +254,29 @@ class WorkflowLocalizations {
           'Informations supplémentaires nécessaires : {value}',
     },
     'es': {
+      WorkflowLabel.methodExpansionFallback:
+          'Desarrollo polinómico alternativo; simplificación completa no disponible',
+      WorkflowLabel.resultDetails: 'Detalles del resultado',
+      WorkflowLabel.resultExact: 'Exacto',
+      WorkflowLabel.resultApproximate: 'Aproximado',
+      WorkflowLabel.resultSymbolic: 'Simbólico',
+      WorkflowLabel.resultComputed: 'Calculado',
+      WorkflowLabel.resultUnsupported: 'No compatible',
+      WorkflowLabel.resultUnchanged:
+          'No se produjo ningún cambio. Esto no demuestra que la expresión no pueda simplificarse más.',
+      WorkflowLabel.resultUnknownPrecision:
+          'Esta operación no indicó su precisión.',
+      WorkflowLabel.methodInteger: 'Aritmética entera',
+      WorkflowLabel.methodPolynomial: 'Integración polinómica exacta',
+      WorkflowLabel.methodRational: 'Integración de funciones racionales',
+      WorkflowLabel.methodRules: 'Reglas de integración simbólica',
+      WorkflowLabel.methodFundamental: 'Primitiva evaluada en los límites',
+      WorkflowLabel.methodSimpson: 'Integración numérica (regla de Simpson)',
+      WorkflowLabel.methodNumeric: 'Cálculo en coma flotante',
+      WorkflowLabel.methodSymbolic: 'Evaluación de expresiones',
+      WorkflowLabel.methodSimplification: 'Simplificación',
+      WorkflowLabel.methodCalendar: 'Cálculo de fechas',
+      WorkflowLabel.methodUnits: 'Conversión de unidades',
       WorkflowLabel.updatingResults:
           'Actualizando resultados. Puedes seguir editando.',
       WorkflowLabel.resultsFailed:

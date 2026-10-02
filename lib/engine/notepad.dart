@@ -1,3 +1,4 @@
+import 'result_evidence.dart';
 // lib/engine/notepad.dart
 //
 // Data model for the Notepad / document mode (P5 strategic next).
@@ -164,6 +165,7 @@ class NotepadDocument {
 class NotepadLine {
   final String id;
   String source;
+  ResultEvidence? resultEvidence;
 
   /// Last engine result for this line's source. Cleared on edit and
   /// repopulated when evaluation finishes (Phase 5).
@@ -196,6 +198,7 @@ class NotepadLine {
     required this.id,
     required this.source,
     this.cachedResult,
+    this.resultEvidence,
     this.cachedError,
     List<String>? cachedFreeVars,
     Map<String, String>? cachedExports,
@@ -215,6 +218,7 @@ class NotepadLine {
       's': source,
     };
     if (cachedResult != null) map['r'] = cachedResult;
+    if (resultEvidence != null) map['evidence'] = resultEvidence!.toJson();
     if (cachedError != null) map['e'] = cachedError;
     if (cachedFreeVars.isNotEmpty) map['f'] = cachedFreeVars;
     if (cachedExports.isNotEmpty) map['x'] = cachedExports;
@@ -229,6 +233,7 @@ class NotepadLine {
         id: (j['i'] as String?) ?? generateNotepadId(),
         source: (j['s'] as String?) ?? '',
         cachedResult: j['r'] as String?,
+        resultEvidence: ResultEvidence.fromJson(j['evidence']),
         cachedError: j['e'] as String?,
         cachedFreeVars: (j['f'] as List<dynamic>? ?? const [])
             .map((v) => v.toString())
