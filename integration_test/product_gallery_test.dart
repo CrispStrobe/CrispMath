@@ -103,6 +103,8 @@ void main() {
 
     await menu('Worksheet export preview');
     expect(find.text('Save HTML'), findsOneWidget);
+    await tester.drag(find.byType(ListView).last, const Offset(0, -120));
+    await settle();
     await binding.takeScreenshot('worksheet-graph-export-preview');
     await tester.tap(find.text('Close').last);
     await settle();

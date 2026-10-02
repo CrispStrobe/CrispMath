@@ -55,7 +55,8 @@ class _DocumentHistoryDialogState extends State<DocumentHistoryDialog> {
               title: const Text('Compare checkpoint'),
               content: SizedBox(
                   width: 520,
-                  height: 320,
+                  height:
+                      (128 + changes.length * 30).clamp(160, 320).toDouble(),
                   child: ListView(children: [
                     const Text('Changes since this checkpoint:'),
                     if (changes.isEmpty) const Text('No source changes'),
@@ -94,7 +95,8 @@ class _DocumentHistoryDialogState extends State<DocumentHistoryDialog> {
         title: const Text('Document history'),
         content: SizedBox(
             width: 600,
-            height: 400,
+            height:
+                (140 + (_entries?.length ?? 1) * 76).clamp(180, 400).toDouble(),
             child: Column(children: [
               const Text(
                   'Up to 20 checkpoints per document, 100 in total, within 1 MB. Older checkpoints expire as the limit is reached.'),
@@ -104,19 +106,27 @@ class _DocumentHistoryDialogState extends State<DocumentHistoryDialog> {
                       ? (_error == null
                           ? const Center(child: CircularProgressIndicator())
                           : const SizedBox.shrink())
-                      : ListView.builder(
-                          itemCount: _entries!.length,
-                          itemBuilder: (context, index) {
-                            final entry = _entries![index];
-                            return ListTile(
-                                title: Text(entry.label),
-                                subtitle:
-                                    Text(entry.createdAt.toLocal().toString()),
-                                trailing: TextButton(
-                                    onPressed:
-                                        _busy ? null : () => _compare(entry),
-                                    child: const Text('Compare')));
-                          })),
+                      : _entries!.isEmpty
+                          ? const Center(
+                              child: Text(
+                                  'No checkpoints yet. Save one to keep a version of this worksheet.'))
+                          : ListView.builder(
+                              itemCount: _entries!.length,
+                              itemBuilder: (context, index) {
+                                final entry = _entries![index];
+                                return ListTile(
+                                    title: Text(entry.label),
+                                    subtitle: Text(entry.createdAt
+                                        .toLocal()
+                                        .toString()
+                                        .split('.')
+                                        .first),
+                                    trailing: TextButton(
+                                        onPressed: _busy
+                                            ? null
+                                            : () => _compare(entry),
+                                        child: const Text('Compare')));
+                              })),
             ])),
         actions: [
           TextButton(

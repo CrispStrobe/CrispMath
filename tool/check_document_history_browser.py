@@ -23,7 +23,8 @@ async def check(args):
             context, page, errors = await context_for(browser, {'viewport': {'width': width, 'height': height}, 'cpu': 1}, doc)
             try:
                 await bootstrap(page, args.url)
-                await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
+                await page.keyboard.press('Control+2')
+                await page.get_by_role('textbox').first.wait_for()
                 async def menu(label):
                     await page.get_by_role('button', name='Document menu', exact=True).click()
                     await page.locator('[aria-label=' + json.dumps(label) + ']').click()
@@ -38,7 +39,8 @@ async def check(args):
                     await next_frames(page)
                     await field.fill(source)
                 async def backups():
-                    await page.get_by_role('button', name=re.compile(r'^Settings')).click()
+                    await page.keyboard.press('Control+6')
+                    await next_frames(page)
                     target = page.get_by_role('button', name=re.compile('Workspace backups'))
                     for _ in range(12):
                         if await target.count():
@@ -81,7 +83,8 @@ async def check(args):
                 assert payload['format'] == 'crispmath.backup' and len(payload['checkpoints']) >= 2
                 assert 'r' not in payload['state']['notepadDocuments'][0]['l'][0]
                 await page.get_by_role('button', name='Close', exact=True).click()
-                await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
+                await page.keyboard.press('Control+2')
+                await page.get_by_role('textbox').first.wait_for()
                 await edit('a=7')
                 await result('23')
                 await backups()
@@ -106,12 +109,14 @@ async def check(args):
                 await page.screenshot(path=str(output / f'recovery-preview-{width}.png'))
                 await page.get_by_role('button', name='Replace workspace', exact=True).click()
                 await page.get_by_role('button', name='Close', exact=True).click()
-                await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
+                await page.keyboard.press('Control+2')
+                await page.get_by_role('textbox').first.wait_for()
                 await result('23')
                 await page.reload(wait_until='domcontentloaded')
                 await page.locator('canvas').first.wait_for()
                 await page.locator('flt-semantics-placeholder').evaluate('(el)=>el.click()')
-                await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
+                await page.keyboard.press('Control+2')
+                await page.get_by_role('textbox').first.wait_for()
                 await result('23')
                 assert not errors, errors
                 report['checks'].append({'width': width, 'checkpointRestore': True, 'rowIdsPreserved': True,

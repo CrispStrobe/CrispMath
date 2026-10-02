@@ -95,13 +95,22 @@ class _WorksheetExportDialogState extends State<WorksheetExportDialog> {
             },
           )),
       actions: [
-        TextButton(
-            onPressed: _busy ? null : () => Navigator.pop(context),
-            child: const Text('Close')),
-        for (final format in ['html', 'md', 'tex', 'pdf'])
-          TextButton(
-              onPressed: _busy ? null : () => _save(format),
-              child: Text('Save ${format.toUpperCase()}')),
+        SizedBox(
+          width: 720,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 4,
+            children: [
+              TextButton(
+                  onPressed: _busy ? null : () => Navigator.pop(context),
+                  child: const Text('Close')),
+              for (final format in ['html', 'md', 'tex', 'pdf'])
+                TextButton(
+                    onPressed: _busy ? null : () => _save(format),
+                    child: Text('Save ${format.toUpperCase()}')),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -112,6 +121,13 @@ class _GraphPainter extends CustomPainter {
   _GraphPainter(this.graph);
   @override
   void paint(Canvas canvas, Size size) {
+    final axes = Paint()
+      ..color = Colors.grey
+      ..strokeWidth = .7;
+    canvas.drawLine(
+        Offset(0, size.height / 2), Offset(size.width, size.height / 2), axes);
+    canvas.drawLine(
+        Offset(size.width / 2, 0), Offset(size.width / 2, size.height), axes);
     // Render the exact path captured for the SVG, avoiding a second evaluation.
     final path = Path();
     for (final match
