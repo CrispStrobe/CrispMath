@@ -40,6 +40,18 @@ on:
         description: 'Build & sign only, do NOT upload'
         type: boolean
         default: true
+      verify_only:
+        description: 'Retry metadata and internal assignment without building or uploading'
+        type: boolean
+        default: false
+      verify_build:
+        description: 'Optional uploaded build number; empty uses pubspec'
+        type: string
+        default: ''
+      uploaded_source:
+        description: 'Full SHA of the successful upload, required for verify_only'
+        type: string
+        default: ''
 
 env:
   BUNDLE_ID: com.crispstrobe.crispmath
@@ -48,6 +60,7 @@ env:
 
 jobs:
   build-upload:
+    if: ${{ inputs.verify_only != true }}
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -189,6 +202,13 @@ jobs:
           unzip -qo "$IPA" -d /tmp/ipa_check
           codesign --verify --deep --strict --verbose=2 /tmp/ipa_check/Payload/Runner.app 2>&1 | tail -2
 
+      - name: Validate purpose strings in the signed application bundle
+        run: |
+          VER=$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)
+          BUILD=$(sed -n 's/^version: .*+//p' pubspec.yaml)
+          python tool/validate_ios_privacy.py /tmp/ipa_check/Payload/Runner.app/Info.plist \
+            --version "$VER" --build "$BUILD"
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
@@ -232,3 +252,50 @@ jobs:
           name: internal-testflight-evidence
           path: testflight-evidence.json
           if-no-files-found: error
+
+  verify-upload:
+    if: ${{ inputs.verify_only == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      BUILD_SOURCE: ${{ inputs.uploaded_source }}
+      VERIFY_BUILD: ${{ inputs.verify_build }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependencies and release-tool unit checks
+        run: |
+          test "${#BUILD_SOURCE}" -eq 40
+          python -m pip install cryptography
+          python -m unittest discover -s tool -p '*_test.py'
+      - name: Prepare temporary private API key
+        env:
+          KEY_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
+        run: |
+          umask 077
+          echo "$KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/cm-testflight.p8"
+      - name: Read actual processing state
+        run: python tool/testflight_internal.py --key-file "$RUNNER_TEMP/cm-testflight.p8" --inspect-only --output processing-state.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: testflight-processing-snapshot
+          path: processing-state.json
+      - name: Retry internal assignment
+        run: |
+          VER=$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)
+          BUILD="${VERIFY_BUILD:-$(sed -n 's/^version: .*+//p' pubspec.yaml)}"
+          python tool/testflight_internal.py --key-file "$RUNNER_TEMP/cm-testflight.p8" \
+            --version "$VER" --build "$BUILD"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: internal-testflight-status
+          path: testflight-evidence.json
+      - name: Remove temporary key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/cm-testflight.p8"

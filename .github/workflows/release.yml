@@ -15,7 +15,7 @@ on:
     inputs:
       candidate:
         description: 'Artifact label for the release candidate'
-        default: 'v1.2.0-rc.2'
+        default: 'v1.2.0-rc.3'
         type: string
 
 env:

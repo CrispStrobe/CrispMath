@@ -2,7 +2,9 @@
 
 This document is preparation for a future submission, not a message sent to App
 Review. The September 14 rejection of 1.0.3 (7), guideline 4.3(a), remains open.
-The uploaded internal TestFlight 1.2.0 (11) predates the current improvements.
+Build 12 was rejected at delivery for ITMS-90683 (missing photo-library purpose).
+Replacement 1.2.0 (13) adds photo-library/camera explanations and a signed-bundle
+privacy gate; its upload and processing are being verified in CI.
 Physical iPhone/iPad checks are explicitly deferred to another session.
 
 Apple asks for distinct functionality and accurate metadata in its

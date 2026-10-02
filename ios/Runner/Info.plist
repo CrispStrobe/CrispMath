@@ -28,6 +28,10 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CrispMath uses your photo library to import photos of mathematical formulas for recognition in your calculator or worksheets.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>CrispMath uses the camera to photograph mathematical formulas for recognition in your calculator or worksheets.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -37,12 +37,14 @@ captures, source/dimensions and native CAS assertions. The 500/2,000-row edit
 medians are 0.59s/0.98s desktop and 2.43s/5.66s with 4× browser CPU throttling,
 versus baseline 0.65s/1.63s and 4.31s/20.84s. All platform builds pass.
 
-Build 12 is prepared with the same application code and a version-only metadata
-bump. Its release pipeline adds five unit controls and verifies VALID processing
-and membership in the existing internal TestFlight group. Actual upload status
-is recorded after that pipeline completes. Physical iPhone/iPad, Siri/Files
-provider checks, better handwriting weights, a real sync backend and Apple's
-4.3(a) review decision remain pending.
+Apple rejected delivery 1.2.0 (12) with ITMS-90683 because the photo-library
+purpose string was absent. Replacement build 13 adds clear photo-library and
+camera explanations for formula recognition in the calculator and worksheets.
+The release pipeline checks both strings and version/build in the signed app
+before upload. All 32 release-tool unit checks pass, including missing-purpose
+negative controls. Upload and processing status will be recorded after CI.
+Physical iPhone/iPad, Siri/Files provider checks, better handwriting weights,
+a real sync backend and Apple's 4.3(a) review decision remain pending.
 
 ## 2026-10-02 — Native CAS parity and inline worksheet functions
 
