@@ -16,9 +16,14 @@ import 'package:flutter/services.dart';
 String buildShareUrl(String expression, {int tab = 0, Uri? baseUri}) {
   final base = baseUri ??
       (kIsWeb ? Uri.base : Uri.parse('https://crisp-math.vercel.app/'));
-  return base.replace(
-      queryParameters: {'expr': expression, if (tab != 0) 'tab': '$tab'},
-      fragment: '').toString();
+  return base
+      .replace(
+        query:
+            'expr=${Uri.encodeComponent(expression)}${tab != 0 ? '&tab=$tab' : ''}',
+        fragment: '',
+      )
+      .removeFragment()
+      .toString();
 }
 
 /// Copy a shareable link to the clipboard. Returns the URL.

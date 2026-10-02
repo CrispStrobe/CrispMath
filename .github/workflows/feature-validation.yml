@@ -52,7 +52,7 @@ jobs:
       - name: Feature and optimization regression tests
         run: >-
           flutter test --concurrency=2 --reporter expanded
-          test/apple_workflow_test.dart test/apple_keyboard_test.dart test/worksheet_bundle_test.dart
+          test/apple_workflow_test.dart test/apple_keyboard_test.dart test/worksheet_bundle_test.dart test/document_history_test.dart test/cloud_backup_store_test.dart
           test/native_bridge_wiring_test.dart test/ocr_library_path_test.dart
           test/graph_inspection_test.dart test/graph_inspection_widget_test.dart test/graph_touch_trace_test.dart
           test/linked_graph_test.dart test/graph_parameter_cleanup_test.dart
@@ -199,6 +199,7 @@ jobs:
           python tool/check_notepad_functions_browser.py
           python tool/check_apple_workflows_browser.py
           python tool/check_worksheet_export_browser.py
+          python tool/check_document_history_browser.py
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
           python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
@@ -215,6 +216,7 @@ jobs:
           python tool/check_notepad_functions_browser.py --output browser-results/debug/notepad-functions
           python tool/check_apple_workflows_browser.py --output browser-results/debug/apple-workflows
           python tool/check_worksheet_export_browser.py --output browser-results/debug/worksheet-export
+          python tool/check_document_history_browser.py --output browser-results/debug/document-history
       - uses: actions/upload-artifact@v4
         if: always()
         with:

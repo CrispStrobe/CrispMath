@@ -1,0 +1,44 @@
+name: Sync database contract
+on:
+  push:
+    branches: ['feat/graph-workspace-ux']
+    paths:
+      - 'supabase/**'
+      - 'tool/sync_contract/**'
+      - 'lib/services/cloud_backup_store.dart'
+      - '.github/workflows/sync-backend-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sync-contract-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-password
+          POSTGRES_DB: crispmath_contract
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: crispmath_contract
+      PGUSER: postgres
+      PGPASSWORD: fixture-password
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check actual row policies and concurrent-write guards
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tool/sync_contract/bootstrap.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261002_user_sync_data.sql
+          psql -v ON_ERROR_STOP=1 -f tool/sync_contract/assertions.sql

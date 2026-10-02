@@ -23,7 +23,7 @@ Physical iPhone/iPad testing is deferred to a separate session.
    Files document integration and Shortcuts.
 4. [~] Shared worksheets: export calculations, graphs and value tables with
    consistent layouts and an export preview.
-5. [ ] Document history: checkpoints, comparisons, restore and portable
+5. [~] Document history: checkpoints, comparisons, restore and portable
    backups, followed by cross-device sync.
 
 Additional validation: all four 50-task audit gaps are closed. Native Linux and

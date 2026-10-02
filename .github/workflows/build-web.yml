@@ -131,6 +131,7 @@ jobs:
           python tool/check_workflow_tasks_browser.py --url "$APP_URL" --output deployed-results/workflow-tasks.json
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
           python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export
+          python tool/check_document_history_browser.py --url "$APP_URL" --output deployed-results/document-history
           python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery
       - uses: actions/upload-artifact@v4
         if: always()

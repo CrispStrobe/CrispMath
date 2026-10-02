@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../engine/app_state.dart';
+import 'cloud_backup_store.dart';
 
 enum SyncStatus { uninitialized, initializing, ready, unavailable, failed }
 
@@ -24,8 +26,16 @@ class SyncService extends ChangeNotifier {
   Future<void> _initialize() async {
     _status = SyncStatus.initializing;
     notifyListeners();
-    const url = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
-    const key = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
+    final prefs = await SharedPreferences.getInstance();
+    const buildUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+    const buildKey =
+        String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
+    final url = buildUrl.isNotEmpty
+        ? buildUrl
+        : prefs.getString('crisp.syncProjectUrl') ?? '';
+    final key = buildKey.isNotEmpty
+        ? buildKey
+        : prefs.getString('crisp.syncPublicKey') ?? '';
     if (url.isEmpty || key.isEmpty) {
       _status = SyncStatus.unavailable;
       notifyListeners();
@@ -43,6 +53,54 @@ class SyncService extends ChangeNotifier {
     notifyListeners();
   }
 
+  static void validatePublicConfiguration(String url, String key) {
+    final uri = Uri.tryParse(url);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment) {
+      throw const FormatException('Enter an HTTPS project URL');
+    }
+    if (key.startsWith('sb_publishable_') && key.length > 20) return;
+    try {
+      final parts = key.split('.');
+      if (parts.length == 3 &&
+          jsonDecode(utf8.decode(
+                  base64Url.decode(base64Url.normalize(parts[1]))))['role'] ==
+              'anon') {
+        return;
+      }
+    } catch (_) {}
+    throw const FormatException('Use the public publishable or anon key');
+  }
+
+  Future<void> configure(String url, String publicKey) async {
+    if (isConfigured) throw StateError('Cloud sync is already configured');
+    url = url.trim();
+    publicKey = publicKey.trim();
+    validatePublicConfiguration(url, publicKey);
+    _status = SyncStatus.initializing;
+    notifyListeners();
+    try {
+      await Supabase.initialize(url: url, publishableKey: publicKey);
+      _configured = true;
+      _status = SyncStatus.ready;
+      final prefs = await SharedPreferences.getInstance();
+      if (!await prefs.setString('crisp.syncProjectUrl', url) ||
+          !await prefs.setString('crisp.syncPublicKey', publicKey)) {
+        throw StateError(
+            'Cloud settings could not be saved for the next launch');
+      }
+    } catch (_) {
+      if (!_configured) _status = SyncStatus.failed;
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
+  }
+
   Future<void> signInWithEmail(String email, String password) async {
     if (!isConfigured) throw Exception('Supabase not configured');
     await _client.auth.signInWithPassword(email: email, password: password);
@@ -58,34 +116,19 @@ class SyncService extends ChangeNotifier {
     await _client.auth.signOut();
   }
 
+  CloudBackupStore _store() {
+    if (!isConfigured) throw StateError('Cloud sync is not configured');
+    final user = currentUser;
+    if (user == null) throw StateError('Sign in before syncing');
+    return SupabaseBackupStore(_client, user.id);
+  }
+
   Future<void> pushState(AppState state) async {
-    if (!isConfigured || currentUser == null) return;
-
-    final data = state.exportToJson();
-    final jsonStr = jsonEncode(data);
-
-    await _client.from('user_sync_data').upsert({
-      'user_id': currentUser!.id,
-      'app_state': jsonStr,
-      'updated_at': DateTime.now().toIso8601String(),
-    });
+    final store = _store();
+    final current = await store.read();
+    await store.write(state.exportToJson(),
+        expectedRevision: current?.revision);
   }
 
-  Future<bool> pullState(AppState state) async {
-    if (!isConfigured || currentUser == null) return false;
-
-    final response = await _client
-        .from('user_sync_data')
-        .select()
-        .eq('user_id', currentUser!.id)
-        .maybeSingle();
-
-    if (response == null || response['app_state'] == null) {
-      return false;
-    }
-
-    final data = jsonDecode(response['app_state'] as String);
-    state.importFromJson(data, merge: true);
-    return true;
-  }
+  Future<CloudBackupSnapshot?> readBackup() async => _store().read();
 }

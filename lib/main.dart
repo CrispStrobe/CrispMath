@@ -21,6 +21,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'diagnostics_runner_stub.dart'
     if (dart.library.io) 'diagnostics_runner_io.dart';
 import 'engine/app_state.dart';
+import 'widgets/workspace_backup_dialog.dart';
 import 'engine/calculator_engine.dart';
 import 'engine/matrix_diagnostics.dart';
 import 'localization/app_localizations.dart';
@@ -269,7 +270,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         onSwitchToGraphing: (_) => _select(_kGraphing),
       ),
       const AnalysisHubScreen(),
-      const SettingsScreen(),
+      SettingsScreen(onWorkspaceRestored: () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _notepadKey.currentState?.recalculateAll();
+        });
+      }),
     ];
     // First-launch onboarding tour. Skipped if the user has already
     // dismissed it (persisted) or — pragmatically — when running
@@ -550,7 +555,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 }
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final VoidCallback? onWorkspaceRestored;
+  const SettingsScreen({super.key, this.onWorkspaceRestored});
 
   @override
   Widget build(BuildContext context) {
@@ -856,6 +862,19 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              Card(
+                  child: ListTile(
+                leading:
+                    const Icon(Icons.backup_outlined, semanticLabel: 'Backup'),
+                title: const Text('Workspace backups'),
+                subtitle:
+                    const Text('Files, restore and transfer between devices'),
+                onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) =>
+                        WorkspaceBackupDialog(onRestored: onWorkspaceRestored)),
+              )),
               // OCR model management
               const SizedBox(height: 16),
               Card(
@@ -925,7 +944,8 @@ class SettingsScreen extends StatelessWidget {
                   onTap: () {
                     showDialog(
                       context: context,
-                      builder: (_) => SyncDialog(appState: appState),
+                      builder: (_) => SyncDialog(
+                          appState: appState, onRestored: onWorkspaceRestored),
                     );
                   },
                 ),

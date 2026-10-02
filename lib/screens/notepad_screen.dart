@@ -40,6 +40,7 @@ import '../engine/notepad_evaluator.dart';
 import '../engine/notepad_export.dart';
 import '../engine/worksheet_bundle.dart';
 import '../widgets/worksheet_export_dialog.dart';
+import '../widgets/document_history_dialog.dart';
 import '../services/crisp_assist_service_stub.dart'
     if (dart.library.io) '../services/crisp_assist_service.dart';
 import '../widgets/crisp_assist_dialog.dart';
@@ -919,6 +920,10 @@ class NotepadScreenState extends State<NotepadScreen> {
 
   /// Adopt validated source and evaluate after the controller switch completes.
   void openImportedWorksheet(NotepadDocument doc) {
+    _recalcTimer?.cancel();
+    _interruptRecalc(_currentDoc);
+    FocusScope.of(context).unfocus();
+    _undoHistories.remove(doc.id);
     _appState.setNotepadDocument(doc);
     _appState.setCurrentNotepadDoc(doc.id);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -966,6 +971,25 @@ class NotepadScreenState extends State<NotepadScreen> {
 
   void _openDocument(String id) {
     _appState.setCurrentNotepadDoc(id);
+    final doc = _appState.notepadDocuments[id];
+    if (doc == null) return;
+    final first = firstCodeLineIndexOf(doc);
+    final missing = doc.lines.indexed.any((entry) =>
+        entry.$2.cachedResult == null &&
+        entry.$2.cachedError == null &&
+        const {
+          NotepadLineKind.expression,
+          NotepadLineKind.assignment,
+          NotepadLineKind.aggregate,
+          NotepadLineKind.plot
+        }.contains(classifyNotepadLine(entry.$2.source,
+                lineIndex: entry.$1, firstCodeLineIndex: first)
+            .kind));
+    if (missing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _currentDoc?.id == doc.id) _scheduleFullRecalc(doc);
+      });
+    }
   }
 
   void _openWelcomeSample() {
@@ -1685,6 +1709,10 @@ class NotepadScreenState extends State<NotepadScreen> {
               child: Text(t.notepadCopyAsMarkdown),
             ));
             items.add(const PopupMenuItem(
+              value: 'document-history',
+              child: Text('Document history'),
+            ));
+            items.add(const PopupMenuItem(
               value: 'export-preview',
               child: Text('Worksheet export preview'),
             ));
@@ -1770,6 +1798,14 @@ class NotepadScreenState extends State<NotepadScreen> {
       _duplicateCurrent();
     } else if (value == 'copy-markdown') {
       _copyAsMarkdown();
+    } else if (value == 'document-history') {
+      if (_currentDoc != null) {
+        showDialog<void>(
+            context: context,
+            builder: (_) => DocumentHistoryDialog(
+                currentDocument: () => _currentDoc!,
+                onRestore: openImportedWorksheet));
+      }
     } else if (value == 'export-preview') {
       _previewExport();
     } else if (value == 'export-pdf') {
