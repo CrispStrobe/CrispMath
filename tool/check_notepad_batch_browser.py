@@ -34,9 +34,20 @@ async def check(args):
                     first, second = page.get_by_role('textbox').nth(0), page.get_by_role('textbox').nth(1)
                     await first.click()
                     await next_frames(page)
+                    await page.evaluate("() => {window.batchInputTimes=[]; document.addEventListener('input', () => window.batchInputTimes.push(performance.now()), true)}")
                     await first.fill('a = 4')
-                    # Fill both in one debounce window; settling a full debounce would hide the bug.
+                    await next_frames(page)
+                    # Flutter's native editor must change focus before fill reaches
+                    # the second controller. A DOM-only fill can silently do nothing.
+                    await second.click()
+                    await next_frames(page)
                     await second.fill('b = 5')
+                    input_times = await page.evaluate('window.batchInputTimes')
+                    assert len(input_times) >= 2, input_times
+                    interval = input_times[-1] - input_times[-2]
+                    assert interval < 300, f'Edits missed debounce window: {interval}ms'
+                    report['rapidInputIntervalMs'] = interval
+                    await next_frames(page)
                     await page.wait_for_function('''() => {
                         const raw=localStorage.getItem('flutter.crisp.notepadDoc.rapid-edits');
                         if(!raw)return false;
