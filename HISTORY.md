@@ -49,6 +49,22 @@ existing Internal Testers group is confirmed. No App Review submission was made.
 Physical iPhone/iPad, Siri/Files provider checks, better handwriting weights,
 a real sync backend and Apple's 4.3(a) review decision remain pending.
 
+## 2026-10-02 — External TestFlight submission for build 13
+
+- Submitted 1.2.0 (13), binary source `7247074`, to TestFlight beta review at
+  16:17 UTC. Apple reports WAITING_FOR_REVIEW / WAITING_FOR_BETA_REVIEW.
+- Assigned the build to the existing Public Beta group and preserved its link:
+  https://testflight.apple.com/join/E6HdVhTx. External availability awaits approval.
+- Added worksheet, graph/export, checkpoint, Files and formula-photo test notes,
+  explicitly identifying handwriting transcription as experimental. Existing
+  review contacts and app descriptions were retained.
+- [API-only CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37032322549) passed all 37 release-tool tests and
+  verified the submission and group assignment by reading them back from Apple.
+  Guards cover wrong app/build, internal-only builds, missing review metadata,
+  ambiguous groups and repeat submissions. No App Store review was submitted.
+- Used a GitHub macOS runner after the Ubuntu metadata check remained queued;
+  no local build or browser workload ran.
+
 ## 2026-10-02 — Native CAS parity and inline worksheet functions
 
 - Restore the Linux C++ CAS wrapper and ship its CI-built library: FLINT

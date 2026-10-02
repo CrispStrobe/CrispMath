@@ -7,7 +7,11 @@ Replacement 1.2.0 (13) adds photo-library/camera explanations and a signed-bundl
 privacy gate. [Release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37028331142) verifies the signed
 bundle and successful upload, Apple VALID processing and existing Internal
 Testers assignment for source `7247074`. This is TestFlight delivery evidence;
-no App Review submission was made.
+no App Store review submission was made.
+Build 13 was subsequently [submitted to external TestFlight beta review](https://github.com/CrispStrobe/CrispMath/actions/runs/37032322549)
+on October 2 at 16:17 UTC. Apple reports WAITING_FOR_REVIEW and assignment to
+the existing Public Beta group is confirmed; external availability awaits
+approval. This beta submission does not resolve the earlier 4.3(a) rejection.
 Physical iPhone/iPad checks are explicitly deferred to another session.
 
 Apple asks for distinct functionality and accurate metadata in its

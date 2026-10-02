@@ -14,6 +14,8 @@ Physical iPhone/iPad testing is deferred to a separate session.
 0. [~] Apple: build 13 replaces rejected build 12 (ITMS-90683), with
    photo/camera purpose strings and a signed-bundle privacy gate. Release CI
    `37028331142` passed: uploaded, Apple VALID, assigned to Internal Testers.
+   External beta review submitted at 16:17 UTC; CI `37032322549` confirms
+   WAITING_FOR_REVIEW and Public Beta assignment. Await beta approval.
    Address 4.3(a) with truthful review evidence;
    final App Review follows the improvements and separate device tests.
 1. [x] Result provenance: identify exact/approximate results and computation
