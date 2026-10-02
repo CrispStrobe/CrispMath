@@ -29,6 +29,16 @@
   Debug correctness uses 200 rows with real CAS calls on each row; release performance retains 500/2,000 rows.
   Full-suite, live and performance evidence is collected in GitHub CI.
 
+Validation for `911f035`: 5,231 unit/widget tests passed with seven opt-in
+skips; 19 Python tooling tests, 175 focused checks, analysis, native OCR,
+release/debug Playwright, web gallery, all platform builds and Pages/Vercel
+post-deploy checks passed. Three-trial dependent-edit medians for 500/2,000
+rows were 0.60s/0.98s desktop and 2.58s/6.34s at 4× page CPU throttling,
+versus baseline 0.65s/1.63s and 4.31s/20.84s. These are browser workflow
+measurements, not physical-device claims. The independent strict 50-task
+audit retains its four known capability gaps; Apple physical tests remain
+deferred.
+
 ## 2026-10-01 — Calendar arithmetic in conditional branches
 
 - Preserve the selected `if(...)` branch before LaTeX whitespace normalization,
