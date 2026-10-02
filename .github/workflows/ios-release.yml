@@ -44,6 +44,14 @@ on:
         description: 'Retry metadata and internal assignment without building or uploading'
         type: boolean
         default: false
+      external_testflight:
+        description: 'Inspect external beta requirements (requires verify_only)'
+        type: boolean
+        default: false
+      submit_external:
+        description: 'Submit the verified build to external TestFlight beta review'
+        type: boolean
+        default: false
       verify_build:
         description: 'Optional uploaded build number; empty uses pubspec'
         type: string
@@ -60,7 +68,7 @@ env:
 
 jobs:
   build-upload:
-    if: ${{ inputs.verify_only != true }}
+    if: ${{ inputs.verify_only != true && inputs.external_testflight != true && inputs.submit_external != true }}
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -285,7 +293,26 @@ jobs:
         with:
           name: testflight-processing-snapshot
           path: processing-state.json
+      - name: External TestFlight inspection or submission
+        if: ${{ inputs.external_testflight == true }}
+        env:
+          SUBMIT_EXTERNAL: ${{ inputs.submit_external }}
+        run: |
+          VER=$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)
+          BUILD="${VERIFY_BUILD:-$(sed -n 's/^version: .*+//p' pubspec.yaml)}"
+          ARGS=()
+          if [ "$SUBMIT_EXTERNAL" = true ]; then ARGS+=(--submit); fi
+          python tool/testflight_external.py --key-file "$RUNNER_TEMP/cm-testflight.p8" \
+            --version "$VER" --build "$BUILD" "${ARGS[@]}"
+      - name: Retain external TestFlight evidence
+        if: ${{ always() && inputs.external_testflight == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-testflight-evidence
+          path: external-testflight-evidence.json
+          if-no-files-found: error
       - name: Retry internal assignment
+        if: ${{ inputs.external_testflight != true }}
         run: |
           VER=$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)
           BUILD="${VERIFY_BUILD:-$(sed -n 's/^version: .*+//p' pubspec.yaml)}"
