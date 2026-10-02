@@ -42,7 +42,10 @@ purpose string was absent. Replacement build 13 adds clear photo-library and
 camera explanations for formula recognition in the calculator and worksheets.
 The release pipeline checks both strings and version/build in the signed app
 before upload. All 32 release-tool unit checks pass, including missing-purpose
-negative controls. Upload and processing status will be recorded after CI.
+negative controls. [Release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37028331142) passed for source
+`7247074`: the signed 1.2.0 (13) bundle passed the purpose/version gate, upload
+succeeded without errors, Apple processing is VALID and assignment to the
+existing Internal Testers group is confirmed. No App Review submission was made.
 Physical iPhone/iPad, Siri/Files provider checks, better handwriting weights,
 a real sync backend and Apple's 4.3(a) review decision remain pending.
 

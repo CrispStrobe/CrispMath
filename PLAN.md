@@ -11,9 +11,10 @@ Execute in the requested order, with unit and live CI validation at every stage.
 Deploy previews to GitHub Pages and Vercel and test both with Playwright.
 Physical iPhone/iPad testing is deferred to a separate session.
 
-0. [~] Apple: replace rejected build 12 (ITMS-90683) with build 13, adding
-   photo/camera purpose strings and a signed-bundle privacy gate. Verify processing
-   and Internal Testers assignment. Address 4.3(a) with truthful review evidence;
+0. [~] Apple: build 13 replaces rejected build 12 (ITMS-90683), with
+   photo/camera purpose strings and a signed-bundle privacy gate. Release CI
+   `37028331142` passed: uploaded, Apple VALID, assigned to Internal Testers.
+   Address 4.3(a) with truthful review evidence;
    final App Review follows the improvements and separate device tests.
 1. [x] Result provenance: identify exact/approximate results and computation
    methods, explain unsupported or unchanged transformations, retain AI review.
