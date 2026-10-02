@@ -139,7 +139,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
   final Map<String, Set<String>> _dirtyLineIds = {};
   int _recalcGeneration = 0;
   int _recalcCompleted = 0, _recalcTotal = 0;
-  final ChangeNotifier _recalcProgress = ChangeNotifier();
+  final ValueNotifier<int> _recalcProgress = ValueNotifier(0);
   bool _recalcFailed = false;
   bool _recalcCancelled = false;
 
@@ -1168,7 +1168,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
         _recalcCompleted = completed;
         _recalcTotal = total;
         if (completed == total || progressClock.elapsedMilliseconds >= 50) {
-          _recalcProgress.notifyListeners();
+          _recalcProgress.value++;
           progressClock.reset();
         }
       },
@@ -1863,7 +1863,6 @@ class _NotepadLineRow extends StatelessWidget {
   final bool useLatexInput;
 
   const _NotepadLineRow({
-    super.key,
     required this.line,
     required this.index,
     required this.sideBySide,
