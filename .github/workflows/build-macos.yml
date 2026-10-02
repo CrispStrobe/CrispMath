@@ -109,7 +109,9 @@ jobs:
         run: |
           set -eu
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
-          CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASK_REPORT=task-results/macos.json "$BIN"
+          CRISPMATH_DIAGNOSTIC=workflows \
+            CRISPMATH_TASKS_FILE="$PWD/test/fixtures/workflow_tasks.json" \
+            CRISPMATH_TASK_REPORT="$PWD/task-results/macos.json" "$BIN"
 
       - uses: actions/upload-artifact@v4
         if: always()
