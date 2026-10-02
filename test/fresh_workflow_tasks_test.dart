@@ -54,6 +54,9 @@ void main() {
     expect(LinearSystemSolver.solve(['x+y=3'], ['x', 'y']),
         contains('no unique solution'));
     expect(LinearSystemSolver.solve(['x*x=2'], ['x']), isNull);
+    expect(LinearSystemSolver.solve(['x=2', '0=0'], ['x']), 'x = 2');
+    expect(LinearSystemSolver.solve(['x=2', '0=1'], ['x']),
+        contains('no solutions'));
     expect(LinearSystemSolver.solve(['x=2'], ['x', 'x']), startsWith('Error:'));
   });
   test('large integer powers retain every digit and exact evidence', () {

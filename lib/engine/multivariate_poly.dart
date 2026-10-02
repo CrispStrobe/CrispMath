@@ -16,7 +16,7 @@ class MultivariatePolynomial {
   /// Parse the existing bounded polynomial grammar with exact coefficients.
   static MultivariatePolynomial? tryParse(String input) {
     try {
-      return _MultiPolyParser(input).parse();
+      return _MultiPolyParser(input).parse(multivariateOnly: false);
     } catch (_) {
       return null;
     }
@@ -943,11 +943,10 @@ class _MultiPolyParser {
   bool get _atEnd => _pos >= src.length;
   String? get _peek => _pos < src.length ? src[_pos] : null;
 
-  MultivariatePolynomial? parse() {
+  MultivariatePolynomial? parse({bool multivariateOnly = true}) {
     final terms = _parseExpr();
     if (!_atEnd) return null;
-    if (_vars.isEmpty) return null; // no variables → not multivariate
-    if (_vars.length < 2) return null; // univariate → handled elsewhere
+    if (multivariateOnly && _vars.length < 2) return null;
 
     final sortedVars = _vars.toList()..sort();
     // Re-map terms to use sorted variable indices.
