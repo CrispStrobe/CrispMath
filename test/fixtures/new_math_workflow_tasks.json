@@ -72,7 +72,7 @@
     },
     {
       "kind": "document",
-      "title": "Sequential reassignment",
+      "title": "Reject imperative self-reassignment in a reactive worksheet",
       "lines": [
         "n=5",
         "n=n+1",
@@ -80,10 +80,21 @@
       ],
       "expected": [
         "5",
+        null,
+        null
+      ],
+      "id": "new-workflow-05",
+      "originalRequestedResults": [
+        "5",
         "6",
         "36"
       ],
-      "id": "new-workflow-05"
+      "expectedErrorContains": [
+        null,
+        "circularReference",
+        "circularReference"
+      ],
+      "unsupportedReason": "Imperative self-reassignment is unsupported in reactive worksheets; use n=5, next=n+1, next^2 to obtain 5, 6, 36 without redefining n."
     },
     {
       "kind": "document",

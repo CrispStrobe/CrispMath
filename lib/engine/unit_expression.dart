@@ -304,11 +304,19 @@ class UnitExpressionEvaluator {
         i++;
         continue;
       }
-      // Number — leading optional sign handled by the parser via `+`/`-`
-      // operators; here we accept digits, decimal point, and `e`/`E`
-      // for scientific notation.
-      if (_isDigit(c) || (c == '.' && i + 1 < n && _isDigit(s[i + 1]))) {
+      // A sign is unary at the start or immediately after an operator.
+      // Keep it inside the number so offset conversion applies to the
+      // signed temperature itself, rather than negating converted kelvin.
+      final signedNumber = (c == '+' || c == '-') &&
+          (out.isEmpty || out.last is _BinaryOp) &&
+          i + 1 < n &&
+          (_isDigit(s[i + 1]) ||
+              (s[i + 1] == '.' && i + 2 < n && _isDigit(s[i + 2])));
+      if (signedNumber ||
+          _isDigit(c) ||
+          (c == '.' && i + 1 < n && _isDigit(s[i + 1]))) {
         final start = i;
+        if (signedNumber) i++;
         var sawDot = false;
         var sawE = false;
         while (i < n) {

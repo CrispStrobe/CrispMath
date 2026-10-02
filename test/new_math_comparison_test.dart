@@ -49,8 +49,25 @@ void main() {
           ['u^2+C', 'u^2'],
           ['ln(u)', 'log(u)'],
           ['sqrt(u^2)', 'u'],
+          ['1/3x^3+C', 'x^3/3+C'],
+          ['1/3x^3+C', 'x^3/4+C'],
+          ['i+u', 'u+i'],
+          ['i', 'I'],
+          ['1/2e-3', '500'],
         ]),
-        ['passed', 'failed', 'failed', 'failed', 'passed', 'failed']);
+        [
+          'passed',
+          'failed',
+          'failed',
+          'failed',
+          'passed',
+          'failed',
+          'passed',
+          'failed',
+          'passed',
+          'failed',
+          'passed'
+        ]);
   });
 
   test('errors and undefined answers cannot pass even identical comparisons',
@@ -120,6 +137,16 @@ void main() {
           ['(3+4*I)/(3-4*I)', '-7/25-24*I/25'],
           ['sqrt(-16)', '5*I'],
           ['ln(-1)', '-pi*I'],
+          ['3.14159265358979*I', 'pi*I'],
+          ['3.15159265358979*I', 'pi*I'],
+          ['-3.14159265358979*I', 'pi*I'],
+          ['3.14159265358979*I', 'pi*I+C'],
+          ['u+3.14159265358979*I', 'u+pi*I'],
+          ['eigenvalues(Matrix([[0,-1],[1,0]]))', '{-I,I}'],
+          ['I', '0 + 1i'],
+          ['-I', '0 - 1i'],
+          ['I', '0 - 1i'],
+          ['eigenvalues(Matrix([[0,-1],[1,0]]))', '{0 + 1i, 0 - 1i}'],
         ]),
         [
           'passed',
@@ -129,7 +156,17 @@ void main() {
           'passed',
           'failed',
           'failed',
-          'failed'
+          'failed',
+          'passed',
+          'failed',
+          'failed',
+          'failed',
+          'failed',
+          'passed',
+          'passed',
+          'passed',
+          'failed',
+          'passed'
         ]);
   }, skip: !nativeEngine.isNativeAvailable);
 }

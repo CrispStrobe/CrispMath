@@ -124,7 +124,7 @@ class SymbolicLimit {
   static String _cleanEval(String s) {
     return s
         .trim()
-        .replaceFirst(RegExp(r'\s*\+\s*-?0(\.0*)?\s*\*?\s*I\$'), '')
+        .replaceFirst(RegExp(r'\s*[+-]\s*-?0(\.0*)?\s*\*?\s*I$'), '')
         .trim();
   }
 

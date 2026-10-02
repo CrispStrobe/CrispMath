@@ -704,7 +704,8 @@ class CspSolver {
         // `addLinearLeq` / `addLinearGeq` API which uses the same
         // bounds-consistency propagator the linear-arithmetic test
         // in the README exercises.
-        if (_addLinearNotEquals(problem, c, knownVars)) {
+        if (_addRepeatedProduct(problem, c, knownVars) ||
+            _addLinearNotEquals(problem, c, knownVars)) {
           continue;
         }
         final linear = _tryParseLinear(c, knownVars);
@@ -1130,6 +1131,49 @@ class CspSolver {
     // dart_csp can validate / reject them.
     if (vars.isEmpty) return null;
     return (vars: vars, coeffs: coeffs, op: op, bound: bound);
+  }
+
+  /// The dependency's simple-product parser loses repeated factors after
+  /// collecting unique variable names: `x*x == 4` becomes `x == 4`.
+  /// Preserve factor multiplicity while passing unique names to the solver.
+  static bool _addRepeatedProduct(
+      csp.Problem problem, String source, Set<String> knownVars,
+      {String? label}) {
+    final match = RegExp(
+            r'^\s*([A-Za-z_]\w*(?:\s*\*\s*[A-Za-z_]\w*)+)\s*(==|!=|<=|>=|<|>)\s*([+-]?\d+)\s*$')
+        .firstMatch(source);
+    if (match == null) return false;
+    final factors = match[1]!.split('*').map((s) => s.trim()).toList();
+    final names = factors.toSet().toList();
+    if (names.length == factors.length || !names.every(knownVars.contains)) {
+      return false;
+    }
+    final bound = int.tryParse(match[3]!);
+    if (bound == null) return false;
+    bool satisfies(Map<String, dynamic> values) {
+      num product = 1;
+      for (final name in factors) {
+        product *= values[name] as num;
+      }
+      return switch (match[2]) {
+        '==' => product == bound,
+        '!=' => product != bound,
+        '<=' => product <= bound,
+        '>=' => product >= bound,
+        '<' => product < bound,
+        '>' => product > bound,
+        _ => false,
+      };
+    }
+
+    if (names.length == 2) {
+      problem.addConstraint(names,
+          (dynamic a, dynamic b) => satisfies({names[0]: a, names[1]: b}),
+          label: label);
+    } else {
+      problem.addConstraint(names, satisfies, label: label);
+    }
+    return true;
   }
 
   /// The dependency's text parser does not handle arithmetic `!=`.
@@ -2608,7 +2652,8 @@ class CspSolver {
         -objConst,
       );
       for (final c in constraints) {
-        if (_addLinearNotEquals(problem, c, knownVars)) {
+        if (_addRepeatedProduct(problem, c, knownVars) ||
+            _addLinearNotEquals(problem, c, knownVars)) {
           continue;
         }
         final linear = _tryParseLinear(c, knownVars);
@@ -2733,7 +2778,8 @@ class CspSolver {
       for (var i = 0; i < constraints.length; i++) {
         final c = constraints[i];
         final label = 'C${i + 1}: $c';
-        if (_addLinearNotEquals(problem, c, knownVars, label: label)) {
+        if (_addRepeatedProduct(problem, c, knownVars, label: label) ||
+            _addLinearNotEquals(problem, c, knownVars, label: label)) {
           continue;
         }
         final linear = _tryParseLinear(c, knownVars);
@@ -2796,7 +2842,8 @@ class CspSolver {
       final knownVars = parsed.variables.keys.toSet();
       for (final c in parsed.constraints) {
         final label = c.label;
-        if (_addLinearNotEquals(problem, c.text, knownVars, label: label)) {
+        if (_addRepeatedProduct(problem, c.text, knownVars, label: label) ||
+            _addLinearNotEquals(problem, c.text, knownVars, label: label)) {
           continue;
         }
         final linear = _tryParseLinear(c.text, knownVars);

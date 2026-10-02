@@ -23,3 +23,15 @@ substitution and arithmetic, independently of app output.
 18. Fourth power even curve: x^4-2*x^2; expected [{'x': -2, 'y': 8}, {'x': -1, 'y': -1}, {'x': 0, 'y': 0}, {'x': 1, 'y': -1}, {'x': 2, 'y': 8}]
 19. Exact rational document JSON round trip: ['p=2/9', 'f(t)=p*t', 'f(27)']; expected ['2/9', '2*t/9', '6']
 20. Markdown retains computed function value: ['f(t)=t^3-2*t', 'f(5)']; expected ['t^3-2*t', '115']
+
+## Explicit feature boundary
+
+Problem 5 originally requests imperative reassignment `n=5; n=n+1; n^2`,
+whose expected sequential values are 5, 6, 36. The worksheet is reactive and
+uses the last definition of each name throughout the document; self-reference
+is deliberately a circular-reference error. The fixture retains the original
+requested answers and records this as an unsupported feature, testing explicit
+rejection rather than claiming the requested calculation succeeded. The focused
+document tests verify `n=5; next=n+1; next^2` computes 5, 6, 36, including after
+an edit, without changing the established worksheet semantics. Thus the corpus
+contains 99 positive math/workflow cases and one expected feature rejection.

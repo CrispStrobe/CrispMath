@@ -128,16 +128,27 @@ class WorkflowTasks {
           final expected = (task['expected'] as List).cast<String?>();
           final actual =
               doc.lines.map((l) => l.cachedError ?? l.cachedResult).toList();
+          final expectedErrors = task['expectedErrorContains'] as List?;
           final pass = expected.length == actual.length &&
               List.generate(
-                  expected.length,
-                  (i) => expected[i] == null
-                      ? actual[i] == null
-                      : _matches(actual[i] ?? '', expected[i])).every((v) => v);
+                      expected.length,
+                      (i) => expectedErrors != null && expectedErrors[i] != null
+                          ? doc.lines[i].cachedError != null &&
+                              doc.lines[i].cachedError!
+                                  .contains(expectedErrors[i] as String)
+                          : expected[i] == null
+                              ? actual[i] == null
+                              : _matches(actual[i] ?? '', expected[i]))
+                  .every((v) => v);
           return {
             'status': pass ? 'passed' : 'failed',
             'actual': actual,
-            'expected': expected
+            'expected': expected,
+            if (expectedErrors != null) 'expectedErrorContains': expectedErrors,
+            if (task['unsupportedReason'] != null)
+              'unsupportedReason': task['unsupportedReason'],
+            if (task['originalRequestedResults'] != null)
+              'originalRequestedResults': task['originalRequestedResults']
           };
         }
         final expectedResults = task['expectedResults'] as List?;
@@ -315,6 +326,18 @@ class WorkflowTasks {
     }
     String normalize(String value) {
       var v = value.trim().replaceAll('**', '^');
+      // Matrix eigensolvers print numeric imaginary suffixes ("1i"). Bare
+      // lowercase i remains an ordinary symbol; never globally rename it.
+      v = v.replaceAllMapped(
+          RegExp(
+              r'(?<![A-Za-z_0-9])([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*i\b'),
+          (match) => '${match[1]}*I');
+      // Antiderivative pretty-printing uses rational coefficients such as
+      // "1/3x^3". Group that coefficient before adding explicit multiplication
+      // so the numeric parser cannot interpret it as 1/(3*x^3).
+      v = v.replaceAllMapped(
+          RegExp(r'(?<![A-Za-z_0-9.])(\d+)/(\d+)(?=[A-Za-z_(])(?![eE][+-]?\d)'),
+          (match) => '(${match[1]}/${match[2]})*');
       final complex =
           RegExp(r'^(.+?)\s*([+-])\s*([0-9.eE+-]+)\*I$').firstMatch(v);
       if (complex != null) {
@@ -347,12 +370,46 @@ class WorkflowTasks {
         RegExp(r'\bI\b').hasMatch('$normalizedActual $normalizedExpected');
     if (hasImaginaryUnit || a == null || b == null) {
       // This path includes complex results. Never project onto the real part:
-      // the full symbolic difference must be exactly zero, including I and C.
+      // prove the full identity, or measure the full complex residual for
+      // numeric constants whose printed representation may be approximate.
       if (!engine.isNativeAvailable) return false;
       final difference =
           engine.simplify('($normalizedActual)-($normalizedExpected)');
-      return !invalid.hasMatch(difference) &&
-          RegExp(r'^0(?:\.0+)?$').hasMatch(difference.trim());
+      if (!invalid.hasMatch(difference) &&
+          RegExp(r'^0(?:\.0+)?$').hasMatch(difference.trim())) return true;
+      if (!hasImaginaryUnit) return false;
+      bool numericConstant(String value) {
+        const constants = {'I', 'pi', 'PI', 'e', 'E', 'tau'};
+        for (final identifier
+            in RegExp(r'[A-Za-z_][A-Za-z_0-9]*').allMatches(value)) {
+          if (!constants.contains(identifier[0]) &&
+              !value.substring(identifier.end).trimLeft().startsWith('(')) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      if (!numericConstant(normalizedActual) ||
+          !numericConstant(normalizedExpected)) return false;
+      final residualText =
+          engine.evaluate('abs(($normalizedActual)-($normalizedExpected))');
+      final magnitudeText = engine.evaluate('abs($normalizedExpected)');
+      if (invalid.hasMatch(residualText) || invalid.hasMatch(magnitudeText)) {
+        return false;
+      }
+      // No variable bindings: an unresolved symbol must remain a failed proof.
+      final residual =
+          NumericFallbackEvaluator.evalNumeric(normalize(residualText));
+      final magnitude =
+          NumericFallbackEvaluator.evalNumeric(normalize(magnitudeText));
+      return residual != null &&
+          magnitude != null &&
+          residual.isFinite &&
+          magnitude.isFinite &&
+          residual >= 0 &&
+          magnitude >= 0 &&
+          residual <= 1e-8 * (1 + magnitude);
     }
     final identifiers = RegExp(r'[A-Za-z_][A-Za-z_0-9]*')
         .allMatches('$normalizedActual $normalizedExpected')

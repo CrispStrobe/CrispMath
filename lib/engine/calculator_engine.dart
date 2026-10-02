@@ -12,6 +12,7 @@ import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'matrix_evaluator.dart';
 import 'linear_system_solver.dart';
+import 'rational_equation_solver.dart';
 import 'inequality_solver.dart';
 import 'rational_integrator.dart';
 import 'numeric_fallback.dart';
@@ -180,12 +181,23 @@ class CalculatorEngine {
     // Preserve arbitrary-size integer arithmetic before the bridge converts
     // numeric expressions to floating point. The existing polynomial parser
     // supplies bounded exact BigInt arithmetic for this restricted grammar.
-    if (expression.length <= 512 &&
-        RegExp(r'^[0-9\s()+*^\-]+$').hasMatch(expression)) {
-      final exact = SymbolicWeb.expand(expression);
-      if (exact != null && RegExp(r'^-?\d{16,}$').hasMatch(exact)) {
-        lastResultEvidence = const ResultEvidence(
-            ResultAccuracy.exact, ComputationMethod.integerArithmetic);
+    if (expression.length <= 512) {
+      var arithmetic = expression.replaceAllMapped(
+          RegExp(r'abs\(\s*([+-]?\d+)\s*(?:/\s*([+-]?\d+)\s*)?\)'),
+          (m) =>
+              '(${BigInt.parse(m[1]!).abs()}/${BigInt.parse(m[2] ?? '1').abs()})');
+      arithmetic = arithmetic.replaceAllMapped(
+          RegExp(r'(\d+)\s*\^\s*\(\s*-(\d+)\s*\)'),
+          (m) => '(1/(${m[1]}^${m[2]}))');
+      final exact = RegExp(r'^[0-9\s()/+*^\-]+$').hasMatch(arithmetic)
+          ? SymbolicWeb.expand(arithmetic)
+          : null;
+      if (exact != null && RegExp(r'^-?\d+(?:/\d+)?$').hasMatch(exact)) {
+        lastResultEvidence = ResultEvidence(
+            ResultAccuracy.exact,
+            exact.contains('/')
+                ? ComputationMethod.symbolicEvaluation
+                : ComputationMethod.integerArithmetic);
         return exact;
       }
     }
@@ -292,6 +304,13 @@ class CalculatorEngine {
   }
 
   String solve(String expression, String symbol) {
+    final rational = RationalEquationSolver.solve(expression, symbol);
+    if (rational != null) {
+      if (rational.isEmpty) return '$symbol = (no solutions)';
+      return rational.length == 1
+          ? '$symbol = ${rational.single}'
+          : '$symbol = {${rational.join(', ')}}';
+    }
     final bridge = _liveBridge;
     if (bridge == null) {
       // Web / native-less: solve linear & quadratic polynomials in pure
