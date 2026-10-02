@@ -26,11 +26,16 @@ Physical iPhone/iPad testing is deferred to a separate session.
 5. [ ] Document history: checkpoints, comparisons, restore and portable
    backups, followed by cross-device sync.
 
-Additional validation: 50-task CLI/WASM audit implemented; native 46 passed,
-3 failed and 1 unsupported; browser 49 passed and 1 failed. Keep tasks 14/15
-(Linux factoring/cancellation), 25 (series-capable Linux bridge) and 39
-(inline document functions) visible
-in strict CI reports. See `docs/workflow-task-audit.md`.
+Additional validation: all four 50-task audit gaps are closed. Native Linux and
+browser WASM each pass 50/50 with zero failures or unsupported cases in
+[run 36995303162](https://github.com/CrispStrobe/CrispMath/actions/runs/36995303162).
+The packaged macOS release app also passes 50/50 with its sandbox enabled.
+The pinned Linux bridge provides real factoring, rational cancellation and
+series; older Apple libraries compute exact Taylor coefficients through native
+symbolic differentiation. Worksheets support inline functions with dependency-aware calls and
+linked graphs. Pages and Vercel also enforce this strict audit after deployment.
+See `docs/workflow-task-audit.md`. Remaining ordered feature stages 3–5 above
+are separate from these resolved audit gaps.
 
 ## October release and workflow improvements
 

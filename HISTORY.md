@@ -1,3 +1,40 @@
+## 2026-10-02 — Native CAS parity and inline worksheet functions
+
+- Restore the Linux C++ CAS wrapper and ship its CI-built library: FLINT
+  factoring, rational cancellation and native series now satisfy the strict
+  audit's requested result forms. Pin the bridge and dependency manifest to
+  the same reviewed commit; retain binary provenance and direct runtime tests.
+- Restore macOS vendored-framework paths inside the CocoaPods source root.
+  Keep the packaged release app sandbox enabled; run the complete task corpus
+  through stdin and extract a framed stdout report. Reject fallback, partial,
+  duplicate or failing reports while retaining their evidence.
+- Compute exact Taylor coefficients with native symbolic differentiation and
+  substitution on Apple libraries lacking the series entry point. Prefer the
+  dedicated series implementation when available. Bound orders, reject poles
+  and run ten forced compatibility cases against real native CAS.
+- Add inline worksheet definitions and calls, including lexical parameters,
+  captured bindings, nested/forward calls, incremental edits and persistence.
+  Report invalid bodies, arity errors and dependency cycles; bound expansion
+  and clear stale results after failures. Link single-parameter definitions
+  directly to graphs, including parameters named `t`.
+- Add unit regressions and release/debug desktop/phone Playwright checks for
+  function edits, captured values, reload, error recovery and linked graphs.
+  Pages and Vercel now also enforce the same strict 50-task corpus after deploy.
+- Retain real iPhone/iPad simulator screenshots and a 12-scene browser gallery
+  as downloadable CI artifacts. Physical iPhone/iPad tests remain deferred.
+
+Validation for `2daed84`: native Linux, browser WASM and the sandboxed
+packaged macOS app each pass 50/50 with no failed/unsupported tasks. The
+forced Taylor compatibility battery passes all ten cases on Linux and macOS.
+5,250 unit/widget tests pass with seven opt-in skips; 22 Python tooling tests
+and 194 focused feature checks pass. Pages and Vercel each pass the strict
+50-task audit and two desktop/phone function UI checks after deployment. Release/debug Playwright and the performance gate pass. Final three-trial
+dependent-edit medians for 500/2,000 rows are 0.56s/0.81s desktop and
+2.05s/4.78s with 4× page CPU throttling, versus baseline 0.65s/1.63s
+and 4.31s/20.84s. These are browser measurements. Physical-device testing
+remains deferred. All platform builds pass. The refreshed CI galleries contain
+12 browser scenes and six native iPhone/iPad captures from `2daed84`.
+
 ## 2026-10-02 — Cancellable incremental document batches
 
 - Observe source/cache/list mutations through a transient document revision;
