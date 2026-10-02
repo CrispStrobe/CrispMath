@@ -5,7 +5,7 @@
     "version": "0.17.11"
   },
   "symbolic_math_bridge": {
-    "revision": "5e60afab780b7bd6011f49a6653ca0ba29f7752e"
+    "revision": "e75dbbe916c238e6a109ba85aac227fe9bbe34b7"
   },
   "playwright": "1.61.0",
   "candidate": "v1.2.0-rc.1"
