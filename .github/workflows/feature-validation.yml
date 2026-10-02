@@ -58,6 +58,7 @@ jobs:
           test/notepad_screen_test.dart test/app_state_persistence_test.dart
           test/result_evidence_test.dart test/workflow_tasks_test.dart test/integral_arguments_test.dart
           test/notepad_batch_test.dart test/notepad_scope_cache_test.dart test/notepad_activity_test.dart
+          test/selected_listenable_builder_test.dart test/notepad_dispatcher_test.dart
   unit:
     if: ${{ !inputs.probe_build_run_id }}
     runs-on: ubuntu-latest
@@ -201,7 +202,7 @@ jobs:
           python tool/check_notepad_calendar_browser.py --output browser-results/debug/calendar-routing.json
           python tool/check_result_evidence_browser.py --output browser-results/debug/provenance
           python tool/check_integral_syntax_browser.py --output browser-results/debug/integral-syntax
-          python tool/check_notepad_batch_browser.py
+          python tool/check_notepad_batch_browser.py --rows 200 --output browser-results/debug/notepad-batch
       - uses: actions/upload-artifact@v4
         if: always()
         with:

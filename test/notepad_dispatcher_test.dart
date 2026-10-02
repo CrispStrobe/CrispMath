@@ -3,6 +3,18 @@ import 'package:crisp_math/services/engine_op.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('batch scheduling avoids a second dispatcher timer', () async {
+    final dispatcher = NotepadDispatcher(
+        yieldLocalWork: false,
+        formatNumber: (value) => value,
+        evaluateExpression: (_) async => throw StateError('unexpected worker'));
+    var yielded = false;
+    final timer = Future<void>.delayed(Duration.zero, () => yielded = true);
+    expect(await dispatcher.evaluate('(3) + 1'), '4');
+    expect(yielded, isFalse);
+    await timer;
+    expect(yielded, isTrue);
+  });
   test('calendar literals and differences retain priority over integer sums',
       () async {
     final dispatcher = NotepadDispatcher(

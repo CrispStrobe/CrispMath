@@ -17,7 +17,7 @@ async def read_document(page, doc_id):
 async def check(args):
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
-    report = {'url': args.url, 'passed': False, 'checks': [],
+    report = {'url': args.url, 'rows': args.rows, 'passed': False, 'checks': [],
               'injectedSemanticLabelClipping': args.label_clip_probe}
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(args=['--no-sandbox', '--enable-unsafe-swiftshader'])
@@ -25,7 +25,7 @@ async def check(args):
         rapid['i'] = 'rapid-edits'
         rapid['l'] = [{'i': str(i), 's': source, 'r': result} for i, (source, result) in enumerate([
             ('a = 1', '1'), ('b = 2', '2'), ('a + 10', '11'), ('b + 20', '22'), ('99', '99')])]
-        batch = large_document(2000)
+        batch = large_document(args.rows)
         # Use real CAS worker round trips for the cancellation test. The integer
         # fast path is measured separately by benchmark_workflows.py.
         for i, row in enumerate(batch['l'][1:], 1):
@@ -91,14 +91,14 @@ async def check(args):
                     assert stopped['l'][-1].get('r') is None, 'Cancelled tail retained a stale result'
                     await page.screenshot(path=str(output/'cancelled-batch.png'))
                     await page.get_by_role('button', name='Retry', exact=True).click()
-                    await page.wait_for_function('''() => {
+                    await page.wait_for_function('''rows => {
                         const raw=localStorage.getItem('flutter.crisp.notepadDoc.performance-doc');
-                        return raw && JSON.parse(JSON.parse(raw)).l.at(-1).r==='2000';
-                    }''', timeout=180000)
+                        return raw && JSON.parse(JSON.parse(raw)).l.at(-1).r===String(rows);
+                    }''', arg=args.rows, timeout=180000)
                     await expect(page.get_by_role('button', name='Cancel calculation', exact=True)).to_have_count(0)
                     restored = await read_document(page, document['i'])
                     assert all(row.get('r') == str(i+1) and not row.get('e') for i, row in enumerate(restored['l']))
-                    report['checks'].append({'rows': 2000, 'cancelledTail': True, 'retryAllCorrect': True})
+                    report['checks'].append({'rows': args.rows, 'cancelledTail': True, 'retryAllCorrect': True})
                     await page.screenshot(path=str(output/'retried-batch.png'))
                 assert not errors, errors
             except Exception as error:
@@ -117,6 +117,7 @@ async def check(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--rows', type=int, default=2000)
     parser.add_argument('--url', default='http://localhost:8766/')
     parser.add_argument('--output', default='browser-results/notepad-batch')
     parser.add_argument('--label-clip-probe', action='store_true', help='Diagnostic only: inject clipping into an older bundle; report marks this explicitly')

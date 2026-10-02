@@ -21,6 +21,7 @@ import '../widgets/result_evidence_badge.dart';
 // non-emptiness test as the guardrail.
 
 import '../widgets/notepad_activity.dart';
+import '../widgets/selected_listenable_builder.dart';
 import '../services/notepad_dispatcher.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
@@ -390,6 +391,7 @@ class _NotepadScreenState extends State<NotepadScreen> {
     line.cachedFreeVars = [];
     // In-memory only — disk persist deferred to recalc timer.
     _persistDocLazy(doc);
+    _recalcProgress.value++;
     if (oldParsed.kind == NotepadLineKind.useDirective ||
         newParsed.kind == NotepadLineKind.useDirective) {
       _scheduleFullRecalc(doc);
@@ -1013,8 +1015,10 @@ class _NotepadScreenState extends State<NotepadScreen> {
   // Phase 5: dispatcher + recalc scheduling
   // ---------------------------------------------------------------------------
 
-  late final _notepadDispatcher =
-      NotepadDispatcher(engine: _engine, formatNumber: _appState.formatNumber);
+  late final _notepadDispatcher = NotepadDispatcher(
+      engine: _engine,
+      formatNumber: _appState.formatNumber,
+      yieldLocalWork: false);
 
   /// Resolve the doc's optional `use name1, name2, ...` directive
   /// against the global namespaces (decision #20). Variables in
@@ -1741,10 +1745,18 @@ class _NotepadScreenState extends State<NotepadScreen> {
           // Count hidden lines for the collapse chip.
           final hiddenCount =
               isHeading && isCollapsed ? _hiddenLinesUnder(doc, realIndex) : 0;
-          return ListenableBuilder(
+          return SelectedListenableBuilder(
             key: ValueKey(line.id),
             listenable: _recalcProgress,
-            builder: (context, _) => _NotepadLineRow(
+            select: () => (
+              _pendingLineIds.contains(line.id),
+              line.source,
+              line.cachedResult,
+              line.cachedError,
+              line.resultEvidence,
+              line.cachedFreeVars,
+            ),
+            builder: (context) => _NotepadLineRow(
               line: line,
               index: realIndex,
               sideBySide: sideBySide,

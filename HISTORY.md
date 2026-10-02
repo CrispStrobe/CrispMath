@@ -10,12 +10,19 @@
 - Add batch cancellation that discards late results and constraint exports,
   preserves completed rows and clears stale pending caches. Keep worker commands
   serialized: cancellation does not terminate an individual native operation.
+- Give the batch evaluator sole ownership of cooperative scheduling; retain
+  dispatcher yielding for standalone calls so two wall-clock budgets cannot
+  repeatedly trigger one another.
 - Show localized row progress, Cancel calculation and Retry; yield between row
-  batches and rebuild only activity/visible rows for progress, leaving document
+  batches and rebuild only activity/changed visible rows for progress, leaving document
   indexes and controllers intact. Limit live-region announcements to status
   text so cancellation keeps an independent accessible hit target. No persisted-schema change.
-- Add unit regressions and a 2,000-row phone-profile Playwright cancel/retry test,
+- Clip web semantic button/link text to its actual hit rectangle; a CI negative
+  control reproduced the overflowing Help label intercepting Cancel. Accessible
+  labels remain complete.
+- Add unit regressions and a 2,000-row release phone-profile Playwright cancel/retry test,
   plus rapid independent edits, to feature CI and Pages/Vercel post-deploy checks.
+  Debug correctness uses 200 rows; release performance retains 500/2,000 rows.
   Full-suite, live and performance evidence is collected in GitHub CI.
 
 ## 2026-10-01 — Calendar arithmetic in conditional branches

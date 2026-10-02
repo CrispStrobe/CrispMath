@@ -16,6 +16,7 @@ import 'integral_arguments.dart';
 class NotepadDispatcher {
   NotepadDispatcher(
       {required this.formatNumber,
+      this.yieldLocalWork = true,
       CalculatorEngine? engine,
       Future<String> Function(String)? evaluateExpression,
       Future<String> Function(EngineOp)? runOperation,
@@ -37,6 +38,9 @@ class NotepadDispatcher {
   final Future<String> Function(EngineOp) runOperation;
   final Future<ComputedResult> Function(EngineOp)? runDetailedOperation;
   final Future<ComputedResult> Function(String)? evaluateDetailedExpression;
+
+  /// Disable when a batch evaluator already owns cooperative scheduling.
+  final bool yieldLocalWork;
   final Stopwatch _localWorkBudget = Stopwatch();
 
   /// Engine dispatcher injected into [NotepadEvaluator]. Receives a
@@ -76,8 +80,9 @@ class NotepadDispatcher {
     if (integerSum != null) {
       // Bound main-thread work while avoiding a browser timer per cheap row.
       // The budget includes scope construction between dispatcher calls.
-      if (!_localWorkBudget.isRunning ||
-          _localWorkBudget.elapsedMilliseconds >= 8) {
+      if (yieldLocalWork &&
+          (!_localWorkBudget.isRunning ||
+              _localWorkBudget.elapsedMilliseconds >= 8)) {
         await Future<void>.delayed(Duration.zero);
         _localWorkBudget
           ..reset()
