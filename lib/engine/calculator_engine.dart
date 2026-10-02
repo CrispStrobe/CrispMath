@@ -15,6 +15,9 @@ import 'linear_system_solver.dart';
 import 'rational_equation_solver.dart';
 import 'inequality_solver.dart';
 import 'rational_integrator.dart';
+import 'rational_integral_domain.dart';
+import 'exact_constant.dart';
+import 'function_reference.dart';
 import 'numeric_fallback.dart';
 import 'ode_solver.dart';
 import 'numerical.dart';
@@ -179,34 +182,16 @@ class CalculatorEngine {
 
   String evaluate(String expression) {
     // Preserve arbitrary-size integer arithmetic before the bridge converts
-    // numeric expressions to floating point. The existing polynomial parser
-    // supplies bounded exact BigInt arithmetic for this restricted grammar.
-    if (expression.length <= 512) {
-      var arithmetic = expression.replaceAllMapped(
-          RegExp(r'abs\(\s*([+-]?\d+)\s*(?:/\s*([+-]?\d+)\s*)?\)'),
-          (m) =>
-              '(${BigInt.parse(m[1]!).abs()}/${BigInt.parse(m[2] ?? '1').abs()})');
-      arithmetic = arithmetic.replaceAllMapped(
-          RegExp(r'(\d+)\s*\^\s*\(\s*-(\d+)\s*\)'),
-          (m) {
-        // Powers associate to the right: 2^(-3)^2 means 2^((-3)^2),
-        // not (2^(-3))^2. Leave a chained exponent to the normal parser.
-        if (arithmetic.substring(m.end).trimLeft().startsWith('^')) {
-          return m[0]!;
-        }
-        return '(1/(${m[1]}^${m[2]}))';
-      });
-      final exact = RegExp(r'^[0-9\s()/+*^\-]+$').hasMatch(arithmetic)
-          ? SymbolicWeb.expand(arithmetic)
-          : null;
-      if (exact != null && RegExp(r'^-?\d+(?:/\d+)?$').hasMatch(exact)) {
-        lastResultEvidence = ResultEvidence(
-            ResultAccuracy.exact,
-            exact.contains('/')
-                ? ComputationMethod.symbolicEvaluation
-                : ComputationMethod.integerArithmetic);
-        return exact;
-      }
+    // numeric expressions to floating point. The bounded rational parser
+    // preserves precedence and never labels a floating-point fallback exact.
+    final exact = ExactConstantEvaluator.evaluate(expression);
+    if (exact != null) {
+      lastResultEvidence = ResultEvidence(
+          ResultAccuracy.exact,
+          exact.contains('/')
+              ? ComputationMethod.symbolicEvaluation
+              : ComputationMethod.integerArithmetic);
+      return exact;
     }
     // Matrix expressions can't go through SymEngine's text parser — it
     // doesn't recognize `Matrix([[...]])` literals. Route them through the
@@ -408,11 +393,27 @@ class CalculatorEngine {
     );
   }
 
-  String substitute(String expression, String variable, String value) =>
-      _bridgeCall(
-        'substitute',
-        (b) => b.substitute(expression, variable, value),
-      );
+  String substitute(String expression, String variable, String value) {
+    // Some native builds crash inside substitute() for antiderivatives. A
+    // scalar symbol replacement needs no FFI: preserve whole identifier and
+    // numeric tokens, then let the usual evaluator handle the resulting math.
+    if (!RegExp(r'^[A-Za-z_][A-Za-z_0-9]*$').hasMatch(variable) ||
+        value.trim().isEmpty) {
+      return 'Error: invalid substitution variable or value';
+    }
+    final tokens = RegExp(
+        r'[A-Za-z_][A-Za-z_0-9]*|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?');
+    return expression.replaceAllMapped(tokens, (match) {
+      if (match[0] != variable ||
+          (expression.substring(match.end).trimLeft().startsWith('(') &&
+              FunctionReferences.all.any((function) =>
+                  function.id == variable ||
+                  function.signature.startsWith('$variable(')))) {
+        return match[0]!;
+      }
+      return '($value)';
+    });
+  }
 
   String callUnary(String funcName, String expression) =>
       _bridgeCall(funcName, (b) => b.callUnary(funcName, expression));
@@ -1234,7 +1235,7 @@ class CalculatorEngine {
             order: order,
             simplify: bridge.simplify,
             differentiate: bridge.differentiate,
-            substitute: bridge.substitute);
+            substitute: substitute);
       }
       return bridge.series(expression, variable, point: point, order: order);
     } catch (e) {
@@ -1337,7 +1338,7 @@ class CalculatorEngine {
     double evalAt(double x) {
       try {
         final substituted =
-            bridge.substitute(expression, variable, _formatReal(x));
+            substitute(expression, variable, _formatReal(x));
         final result = bridge.evaluate(substituted);
         return _parseReal(result) ?? double.nan;
       } catch (_) {
@@ -1443,6 +1444,15 @@ class CalculatorEngine {
     }
 
     // Definite integration.
+    // Endpoint subtraction is valid only across an interval without poles.
+    // Cancel exact common factors first: removable holes may still have a
+    // convergent improper integral, unlike a genuine rational pole.
+    final poles = RationalIntegralDomain.polesWithin(
+        expression, variable, lower, upper);
+    if (poles != null && poles.isNotEmpty) {
+      return 'Error: integration interval contains a divergent pole '
+          'at $variable = ${poles.join(', ')}';
+    }
     // 1. Exact Dart polynomial definite integral.
     final polyDef =
         SymbolicWeb.definiteIntegral(expression, variable, lower, upper);
@@ -1481,8 +1491,8 @@ class CalculatorEngine {
     try {
       // StepEngine renders products with "·"; SymEngine wants "*".
       final f = antiderivative.replaceAll('·', '*');
-      final atUpper = bridge.substitute(f, variable, '($upper)');
-      final atLower = bridge.substitute(f, variable, '($lower)');
+      final atUpper = substitute(f, variable, '($upper)');
+      final atLower = substitute(f, variable, '($lower)');
       final diff = bridge.evaluate('($atUpper) - ($atLower)');
       if (diff.startsWith('Error')) return null;
       return diff;
@@ -1510,7 +1520,7 @@ class CalculatorEngine {
     double fAt(double x) {
       try {
         final substituted =
-            bridge.substitute(expression, variable, _formatReal(x));
+            substitute(expression, variable, _formatReal(x));
         return _parseReal(bridge.evaluate(substituted)) ?? double.nan;
       } catch (_) {
         return double.nan;

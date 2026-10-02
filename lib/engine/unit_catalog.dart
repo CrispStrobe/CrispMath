@@ -138,7 +138,8 @@ class Dimensions {
 /// Each entry maps a symbol to its (coherent SI) scale factor and the
 /// [Dimensions] vector it carries. Scale is always 1.0 for the base
 /// derived forms; for prefixed versions (kN, MJ, mW) we synthesize the
-/// scale on demand via [DerivedUnits.bySymbolWithPrefixes].
+/// scale on demand via [DerivedUnits.bySymbolWithPrefixes]. Non-coherent
+/// energy units such as Wh carry their conversion factor explicitly.
 class DerivedUnit {
   final String symbol;
   final String name;
@@ -172,6 +173,12 @@ class DerivedUnits {
       name: 'joule',
       dim: Dimensions(mass: 1, length: 2, time: -2),
       scale: 1.0,
+    ),
+    'Wh': DerivedUnit(
+      symbol: 'Wh',
+      name: 'watt-hour',
+      dim: Dimensions(mass: 1, length: 2, time: -2),
+      scale: 3600.0,
     ),
     'W': DerivedUnit(
       symbol: 'W',
@@ -707,8 +714,37 @@ class UnitCatalog {
   /// up the remainder against [prefixableSymbols], returning a
   /// synthesized [Unit] with the prefix's scale folded in.
   static Unit? bySymbolWithPrefixes(String symbol) {
+    // A length prefix is raised with the unit: one mm² is 10⁻⁶ m²,
+    // not 10⁻³ m². Normalize the supported keyboard exponent spelling.
+    symbol = symbol.replaceFirst(RegExp(r'\^2$'), '²')
+        .replaceFirst(RegExp(r'\^3$'), '³');
     final direct = bySymbol(symbol);
     if (direct != null) return direct;
+
+    if (symbol.endsWith('²') || symbol.endsWith('³')) {
+      final length = bySymbolWithPrefixes(symbol.substring(0, symbol.length - 1));
+      if (length == null || length.dimension != UnitDimension.length) return null;
+      final cubed = symbol.endsWith('³');
+      return Unit(
+          symbol: symbol,
+          name: '${cubed ? 'cubic' : 'square'} ${length.name}',
+          dimension: cubed ? UnitDimension.volume : UnitDimension.area,
+          scale: length.scale * length.scale * (cubed ? length.scale : 1));
+    }
+
+    final quotient = symbol.split('/');
+    if (quotient.length == 2) {
+      final length = bySymbolWithPrefixes(quotient[0]);
+      final time = bySymbolWithPrefixes(quotient[1]);
+      if (length == null || time == null ||
+          length.dimension != UnitDimension.length ||
+          time.dimension != UnitDimension.time) return null;
+      return Unit(
+          symbol: symbol,
+          name: '${length.name} per ${time.name}',
+          dimension: UnitDimension.velocity,
+          scale: length.scale / time.scale);
+    }
 
     // Try every prefix in longest-first order so `da` (deca) is tried
     // before `d` (deci).

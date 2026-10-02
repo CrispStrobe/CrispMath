@@ -55,7 +55,8 @@ Future<dynamic> runWorkflowModule(
       return {
         'mean': result.mean,
         'median': result.median,
-        'sampleStddev': result.sampleStddev
+        // JSON cannot encode NaN; null preserves the undefined sample value.
+        'sampleStddev': result.sampleStddev.isNaN ? null : result.sampleStddev
       };
     case 'regression':
       final result = Statistics.linearFit(numbers('xs'), numbers('ys'));

@@ -16,10 +16,27 @@ deployment workflows also run them against Pages and Vercel. Eight additional
 independently derived arithmetic controls are typed through the real desktop and
 phone UI, with source provenance, reload checks and screenshots.
 
-Initial execution and findings are pending. Desired behavior for an integral
-across a pole is rejection, never its principal value unless explicitly requested.
-Singleton sample standard deviation is undefined rather than zero. These
-references will not be changed merely to accept an incorrect app result.
+## Initial results and fixes
+
+[Initial CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37049929017),
+source `c581c56`, passed 93/100 new WASM checks: 40/40 algebra, 33/40 numeric
+and 20/20 workflow. Native passed 33/40 numeric and 20/20 workflow; the algebra
+batch crashed in native antiderivative substitution and did not produce a report.
+The preceding additional 100-case corpus still passed on both runtimes.
+
+The seven numeric failures were a rounded large-integer remainder, loss of exact
+power/reciprocal forms, zero singleton sample deviation, and three unavailable
+unit conversions (watt-hours, squared prefixes and compound speed). The first
+new actual-UI control also exposed a decimal result instead of the requested
+exact negative-base reciprocal.
+
+Fixes add bounded exact constant arithmetic, safely replace scalar symbols
+without the crashing FFI substitution, retain undefined singleton sample values,
+and support properly scaled derived and compound conversion targets. Rational
+integration checks cancel exact common factors before rejecting actual poles;
+this avoids principal-value answers for ordinary improper integrals while
+preserving removable holes. Independent expected mathematical values remain
+unchanged. Verification of these fixes is pending.
 
 All compilation, suites and browser execution run on hosted CI. VPS load, memory
 and disk were checked first; local work is limited to small edits and report

@@ -12,8 +12,9 @@ import '../services/integral_arguments.dart';
 
 /// Runs app code with explicit expectations, without touching saved documents.
 class WorkflowTasks {
-  WorkflowTasks(this.engine, {this.documentDispatcher});
+  WorkflowTasks(this.engine, {this.documentDispatcher, this.onTaskStart});
   final CalculatorEngine engine;
+  final void Function(String id)? onTaskStart;
   final Future<String> Function(String)? documentDispatcher;
 
   Future<Map<String, dynamic>> run(List<dynamic> tasks) async {
@@ -30,6 +31,7 @@ class WorkflowTasks {
     final results = <Map<String, dynamic>>[];
     for (final raw in tasks) {
       final task = Map<String, dynamic>.from(raw as Map);
+      onTaskStart?.call(task['id'] as String);
       final timer = Stopwatch()..start();
       try {
         final actual = await _execute(task);

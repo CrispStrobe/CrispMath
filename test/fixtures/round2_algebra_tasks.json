@@ -324,7 +324,7 @@
         "0",
         "2"
       ],
-      "errorContains": "Error"
+      "errorContains": "divergent pole"
     },
     {
       "id": "round2-algebra-31",
@@ -372,7 +372,7 @@
         "x",
         "0"
       ],
-      "errorContains": "Error"
+      "errorContains": "left and right limits differ"
     },
     {
       "id": "round2-algebra-35",

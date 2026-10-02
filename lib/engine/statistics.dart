@@ -133,7 +133,9 @@ class Statistics {
       sqDev += d * d;
     }
     final populationVariance = sqDev / n;
-    final sampleVariance = n > 1 ? sqDev / (n - 1) : 0.0;
+    // Bessel correction is undefined for one observation. Keep that distinct
+    // from its well-defined zero population variance.
+    final sampleVariance = n > 1 ? sqDev / (n - 1) : double.nan;
     final populationStddev = math.sqrt(populationVariance);
     final sampleStddev = math.sqrt(sampleVariance);
 

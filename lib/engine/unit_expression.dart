@@ -53,12 +53,12 @@ class UnitExpressionEvaluator {
     if (tokens.isEmpty) return null;
 
     // Split off optional `in <unit>` suffix.
-    Unit? targetUnit;
+    _UnitToken? targetUnit;
     var workingTokens = tokens;
     if (tokens.length >= 2 &&
         tokens[tokens.length - 2] is _InKeyword &&
         tokens.last is _UnitToken) {
-      targetUnit = (tokens.last as _UnitToken).unit;
+      targetUnit = tokens.last as _UnitToken;
       workingTokens = tokens.sublist(0, tokens.length - 2);
     }
 
@@ -178,16 +178,18 @@ class UnitExpressionEvaluator {
 
     // Decide output unit.
     if (targetUnit != null) {
-      if (Dimensions.of(targetUnit.dimension) != dim) {
+      if (targetUnit.dim != dim) {
         return 'Error: cannot convert result (${_dimLabel(dim)}) to '
-            '${targetUnit.symbol} (${targetUnit.dimension.name})';
+            '${targetUnit.symbol} (${_dimLabel(targetUnit.dim)})';
       }
       // The target unit's `toBase` understands offset (for temperature
       // back-conversion if we ever loosen the rejection above). Coherent
       // SI for the supported single-dim catalog matches the target's
       // base, so direct fromBase works.
-      final out = targetUnit.fromBase(siValue);
-      return UnitConverter.format(out, targetUnit);
+      final out = targetUnit.unit != null
+          ? targetUnit.unit!.fromBase(siValue)
+          : targetUnit.derived!.fromSi(siValue);
+      return '${UnitConverter.formatNumber(out)} ${targetUnit.symbol}';
     }
 
     // No explicit target. For pure single-dim results, keep the
@@ -386,6 +388,17 @@ class UnitExpressionEvaluator {
 
   static _UnitMatch? _tryMatchUnitAt(
       String s, int start, List<String> symbolsLongestFirst) {
+    // Compose supported metric area/volume/speed spellings on demand instead
+    // of generating every combination of prefixes in the tokenizer table.
+    final compound = RegExp(r'^[A-Za-zμ]+/[A-Za-zμ]+|^[A-Za-zμ]+(?:\^[23]|[²³])')
+        .firstMatch(s.substring(start));
+    if (compound != null) {
+      final end = start + compound[0]!.length;
+      if (end == s.length || !_isWordChar(s[end])) {
+        final unit = UnitCatalog.bySymbolWithPrefixes(compound[0]!);
+        if (unit != null) return _UnitMatch.single(unit, end);
+      }
+    }
     for (final sym in symbolsLongestFirst) {
       if (start + sym.length > s.length) continue;
       if (s.substring(start, start + sym.length) != sym) continue;

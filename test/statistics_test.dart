@@ -87,12 +87,14 @@ void main() {
       expect(s.sampleVariance, closeTo(0.0, _eps));
     });
 
-    test('single-element list has well-defined stats', () {
+    test('single-element sample deviation is undefined, population stays zero', () {
       final s = Statistics.describe(const [42]);
       expect(s.mean, closeTo(42.0, _eps));
       expect(s.median, closeTo(42.0, _eps));
       expect(s.populationVariance, closeTo(0.0, _eps));
-      expect(s.sampleVariance, closeTo(0.0, _eps));
+      expect(s.sampleVariance.isNaN, isTrue);
+      expect(s.sampleStddev.isNaN, isTrue);
+      expect(s.populationStddev, closeTo(0.0, _eps));
     });
   });
 

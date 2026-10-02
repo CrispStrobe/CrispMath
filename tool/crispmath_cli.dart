@@ -54,7 +54,8 @@ Future<void> main(List<String> args) async {
       }
       return;
     }
-    final runner = WorkflowTasks(CalculatorEngine());
+    final runner = WorkflowTasks(CalculatorEngine(),
+        onTaskStart: (id) => stderr.writeln('CrispMath task: $id'));
     final report = await runner.run(tasks);
     final output = const JsonEncoder.withIndent('  ').convert(report);
     final reportPath = option('--report');

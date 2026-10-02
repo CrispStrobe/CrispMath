@@ -58,6 +58,11 @@ class UnitConverter {
   /// zeros so 5.000 becomes 5 but 5.5 stays 5.5. Uses scientific
   /// notation for very large or very small magnitudes.
   static String format(double value, Unit unit) {
+    return '${formatNumber(value)} ${unit.symbol}';
+  }
+
+  /// Shared numeric presentation for catalog and composite derived units.
+  static String formatNumber(double value) {
     final abs = value.abs();
     String text;
     if (abs == 0) {
@@ -73,6 +78,6 @@ class UnitConverter {
         if (text.endsWith('.')) text = text.substring(0, text.length - 1);
       }
     }
-    return '$text ${unit.symbol}';
+    return text;
   }
 }

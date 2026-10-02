@@ -89,10 +89,11 @@ derivatives at explicit points. Conventional CAS spellings use `I` and `E`.
 No new adapters are required.
 
 Items 30 and 34 expect an explicit error rather than any finite number. Their
-`errorContains` field checks the shared Error marker, leaving the particular
-explanation flexible; the runner still separately marks unavailable operations
-unsupported. Item 30 specifically concerns an ordinary definite integral, not
-a requested Cauchy principal value.
+`errorContains` fields require respectively a divergent-pole explanation and
+differing one-sided limits; incidental parse errors cannot pass these cases.
+The runner still separately marks unavailable operations unsupported. Item 30
+specifically concerns an ordinary definite integral, not a requested Cauchy
+principal value.
 
 These questions keep earlier intentional bounds honest: matrix operations
 use small dimensions and rational equations use low degrees, while integrals
