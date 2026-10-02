@@ -24,7 +24,8 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:dart_csp/dart_csp.dart' as csp;
-import 'package:flutter/foundation.dart' show kIsWeb;
+
+const bool _isWeb = bool.fromEnvironment('dart.library.js_interop');
 
 /// One (variable → integer) solution from `solveDiophantine`.
 typedef DiophantineSolution = Map<String, int>;
@@ -703,6 +704,7 @@ class CspSolver {
         // `addLinearLeq` / `addLinearGeq` API which uses the same
         // bounds-consistency propagator the linear-arithmetic test
         // in the README exercises.
+        if (_addLinearNotEquals(problem, c, knownVars)) continue;
         final linear = _tryParseLinear(c, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;
@@ -1092,8 +1094,7 @@ class CspSolver {
   /// scheduling makespan and similar mixed-variable inequalities.
   ///
   /// Only `==`/`<=`/`>=`/`<`/`>` round-trip cleanly into the linear
-  /// API; we deliberately decline `!=` here so it stays on the
-  /// string-parser path (which handles it correctly).
+  /// API; `!=` uses the validated predicate path above.
   static ({
     List<String> vars,
     List<num> coeffs,
@@ -1127,6 +1128,37 @@ class CspSolver {
     // dart_csp can validate / reject them.
     if (vars.isEmpty) return null;
     return (vars: vars, coeffs: coeffs, op: op, bound: bound);
+  }
+
+  /// The dependency's text parser does not handle arithmetic `!=`.
+  /// Reuse the validated FlatZinc linear parser and post a complete predicate.
+  static bool _addLinearNotEquals(
+      csp.Problem problem, String source, Set<String> knownVars,
+      {String? label}) {
+    final linear = DslToFlatZinc._tryParseLinearNe(source, knownVars);
+    if (linear == null) return false;
+    final coefficients = <String, num>{};
+    for (var i = 0; i < linear.vars.length; i++) {
+      coefficients.update(linear.vars[i], (v) => v + linear.coeffs[i],
+          ifAbsent: () => linear.coeffs[i]);
+    }
+    final names = coefficients.keys.toList();
+    bool satisfies(Map<String, dynamic> values) {
+      num sum = 0;
+      for (final name in names) {
+        sum += coefficients[name]! * (values[name] as num);
+      }
+      return sum != linear.bound;
+    }
+
+    if (names.length == 2) {
+      problem.addConstraint(names,
+          (dynamic a, dynamic b) => satisfies({names[0]: a, names[1]: b}),
+          label: label);
+    } else {
+      problem.addConstraint(names, satisfies, label: label);
+    }
+    return true;
   }
 
   /// Round 78: split a sum-of-terms expression like `2*x + y - 3*z + 5`
@@ -2352,7 +2384,7 @@ class CspSolver {
   static ({Future<DiophantineResult?> result, void Function() cancel})
       solveDslInBackground(String program,
           {int maxSolutions = 100, bool compareStrategies = false}) {
-    if (kIsWeb) {
+    if (_isWeb) {
       final completer = Completer<DiophantineResult?>();
       solveDsl(program,
               maxSolutions: maxSolutions, compareStrategies: compareStrategies)
@@ -2574,6 +2606,7 @@ class CspSolver {
         -objConst,
       );
       for (final c in constraints) {
+        if (_addLinearNotEquals(problem, c, knownVars)) continue;
         final linear = _tryParseLinear(c, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;
@@ -2696,6 +2729,7 @@ class CspSolver {
       for (var i = 0; i < constraints.length; i++) {
         final c = constraints[i];
         final label = 'C${i + 1}: $c';
+        if (_addLinearNotEquals(problem, c, knownVars, label: label)) continue;
         final linear = _tryParseLinear(c, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;
@@ -2756,6 +2790,8 @@ class CspSolver {
       final knownVars = parsed.variables.keys.toSet();
       for (final c in parsed.constraints) {
         final label = c.label;
+        if (_addLinearNotEquals(problem, c.text, knownVars, label: label))
+          continue;
         final linear = _tryParseLinear(c.text, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;
@@ -2911,6 +2947,8 @@ class CspSolver {
       final knownVars = parsed.variables.keys.toSet();
       for (final c in parsed.constraints) {
         final label = c.label;
+        if (_addLinearNotEquals(problem, c.text, knownVars, label: label))
+          continue;
         final linear = _tryParseLinear(c.text, knownVars);
         if (linear != null) {
           final (:vars, :coeffs, :op, :bound) = linear;

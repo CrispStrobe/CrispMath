@@ -19,15 +19,18 @@ enum ComputationMethod {
 }
 
 class ResultEvidence {
-  const ResultEvidence(this.accuracy, this.method, {this.unchanged = false});
+  const ResultEvidence(this.accuracy, this.method,
+      {this.unchanged = false, this.sourceDomain});
   final ResultAccuracy accuracy;
   final ComputationMethod method;
   final bool unchanged;
+  final String? sourceDomain;
 
   Map<String, dynamic> toJson() => {
         'accuracy': accuracy.name,
         'method': method.name,
         if (unchanged) 'unchanged': true,
+        if (sourceDomain != null) 'sourceDomain': sourceDomain,
       };
 
   static ResultEvidence? fromJson(dynamic value) {
@@ -40,7 +43,9 @@ class ResultEvidence {
         .firstOrNull;
     if (accuracy == null || method == null) return null;
     return ResultEvidence(accuracy, method,
-        unchanged: value['unchanged'] == true);
+        unchanged: value['unchanged'] == true,
+        sourceDomain:
+            value['sourceDomain'] is String ? value['sourceDomain'] : null);
   }
 }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../engine/rational_domain.dart';
 import '../engine/result_evidence.dart';
 import '../engine/calculator_engine.dart';
 import 'engine_op.dart';
@@ -31,7 +32,15 @@ ComputedResult describeEngineResult(
                   unchanged: op.kind == 'simplify' &&
                       value.replaceAll(RegExp(r'\s+'), '') ==
                           op.arg1.replaceAll(RegExp(r'\s+'), ''));
-  return ComputedResult(value, evidence);
+  final domain = op.kind == 'simplify' && !value.startsWith('Error')
+      ? RationalDomain.inspect(op.arg1)
+      : null;
+  return ComputedResult(
+      value,
+      domain == null || evidence == null
+          ? evidence
+          : ResultEvidence(evidence.accuracy, evidence.method,
+              unchanged: evidence.unchanged, sourceDomain: domain.description));
 }
 
 String runEngineOp(CalculatorEngine engine, EngineOp op) {

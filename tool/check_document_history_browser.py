@@ -41,9 +41,14 @@ async def check(args):
                     await page.get_by_role('button', name=re.compile(r'^Settings')).click()
                     target = page.get_by_role('button', name=re.compile('Workspace backups'))
                     for _ in range(12):
-                        if await target.count() and await target.first.is_visible():
-                            await target.first.click()
-                            return
+                        if await target.count():
+                            bounds = await target.first.bounding_box()
+                            if bounds and bounds['y'] > 88 and bounds['y'] + bounds['height'] < height - 60:
+                                # Use an actual pointer click; Flutter's semantic scroll
+                                # wrappers overlap in the DOM after wheel scrolling.
+                                await page.mouse.click(bounds['x'] + bounds['width'] / 2, bounds['y'] + bounds['height'] / 2)
+                                await page.get_by_role('button', name='Save backup', exact=True).wait_for(timeout=5000)
+                                return
                         await page.mouse.move(width * .6, height * .5)
                         await page.mouse.wheel(0, 500)
                         await next_frames(page)

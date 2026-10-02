@@ -176,6 +176,18 @@ class CalculatorEngine {
   }
 
   String evaluate(String expression) {
+    // Preserve arbitrary-size integer arithmetic before the bridge converts
+    // numeric expressions to floating point. The existing polynomial parser
+    // supplies bounded exact BigInt arithmetic for this restricted grammar.
+    if (expression.length <= 512 &&
+        RegExp(r'^[0-9\s()+*^\-]+$').hasMatch(expression)) {
+      final exact = SymbolicWeb.expand(expression);
+      if (exact != null && RegExp(r'^-?\d{16,}$').hasMatch(exact)) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.exact, ComputationMethod.integerArithmetic);
+        return exact;
+      }
+    }
     // Matrix expressions can't go through SymEngine's text parser — it
     // doesn't recognize `Matrix([[...]])` literals. Route them through the
     // dedicated matrix FFI bindings first; fall back to the scalar parser

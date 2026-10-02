@@ -126,6 +126,15 @@ jobs:
         if: always()
         run: python tool/extract_workflow_report.py --log task-results/macos.log --output task-results/macos.json
 
+      - name: Run the fresh 50 problems against the packaged native app
+        run: |
+          set -euo pipefail
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          cat test/fixtures/fresh_workflow_tasks.json | \
+            CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+            CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee task-results/macos-fresh.log
+          python tool/extract_workflow_report.py --log task-results/macos-fresh.log --output task-results/macos-fresh.json
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

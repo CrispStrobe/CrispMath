@@ -93,9 +93,12 @@ jobs:
           images=[]
           for profile in ['iphone','ipad']:
             files=sorted((root/profile).glob('*.png'))
-            assert len(files)==4, (profile,files)
+            assert len(files)==7, (profile,files)
             evidence=json.loads((root/profile/'native-evidence.json').read_text())
             assert evidence['nativeWorkflowUrl'] is True
+            assert evidence['exportPreview'] is True
+            assert evidence['historyCheckpoint'] is True
+            assert evidence['handwritingInput'] is True
             assert evidence['nativeBridge'] is True
             assert evidence['nativeDerivative']=='cos(x)'
             assert evidence['integral']['value']=='1/3'

@@ -1,3 +1,4 @@
+import 'workflow_modules.dart';
 import '../engine/calculator_engine.dart';
 import '../engine/graph_sampling.dart';
 import '../engine/notepad.dart';
@@ -20,7 +21,8 @@ class WorkflowTasks {
       if (raw is! Map || raw['id'] is! String || !ids.add(raw['id'])) {
         throw const FormatException('Tasks need unique string IDs');
       }
-      if (!['engine', 'document', 'graph', 'export'].contains(raw['kind'])) {
+      if (!['engine', 'document', 'graph', 'export', 'module']
+          .contains(raw['kind'])) {
         throw FormatException('Unknown task kind: ${raw['kind']}');
       }
     }
@@ -59,6 +61,15 @@ class WorkflowTasks {
 
   Future<Map<String, dynamic>> _execute(Map<String, dynamic> task) async {
     switch (task['kind']) {
+      case 'module':
+        final actual = await runWorkflowModule(engine, task);
+        final pass = _structuredMatches(actual, task['expected'],
+            unordered: task['unordered'] == true);
+        return {
+          'status': pass ? 'passed' : 'failed',
+          'actual': actual,
+          'expected': task['expected']
+        };
       case 'engine':
         final args = task['call'] != null && task['operation'] == 'integrate'
             ? parseIntegralArguments(task['call'] as String) ??
@@ -79,7 +90,9 @@ class WorkflowTasks {
         var pass = task['errorContains'] != null
             ? result.value.startsWith('Error') &&
                 result.value.contains(task['errorContains'])
-            : _matches(result.value, task['expected']);
+            : task['exact'] == true
+                ? result.value == task['expected']
+                : _matches(result.value, task['expected']);
         if (task['resultPattern'] != null) {
           pass = pass &&
               RegExp(task['resultPattern'] as String).hasMatch(result.value);
@@ -206,11 +219,81 @@ class WorkflowTasks {
     throw StateError('Unhandled task');
   }
 
+  bool _structuredMatches(dynamic actual, dynamic expected,
+      {bool unordered = false}) {
+    if (actual == null || expected == null) return actual == expected;
+    if (actual is num && expected is num) {
+      return actual.isFinite &&
+          (actual - expected).abs() <= 1e-7 * (1 + expected.abs());
+    }
+    if (actual is String && expected is String) {
+      if (actual.startsWith('Matrix(') && expected.startsWith('Matrix(')) {
+        final a = actual.replaceAll(RegExp(r'\s+'), '');
+        final b = expected.replaceAll(RegExp(r'\s+'), '');
+        return a == b;
+      }
+      return _matches(actual, expected);
+    }
+    if (actual is Map && expected is Map) {
+      return actual.length == expected.length &&
+          expected.keys.every((key) =>
+              actual.containsKey(key) &&
+              _structuredMatches(actual[key], expected[key]));
+    }
+    if (actual is List && expected is List) {
+      if (actual.length != expected.length) return false;
+      if (!unordered) {
+        return List.generate(actual.length,
+            (i) => _structuredMatches(actual[i], expected[i])).every((v) => v);
+      }
+      final remaining = List.of(actual);
+      for (final value in expected) {
+        final index =
+            remaining.indexWhere((item) => _structuredMatches(item, value));
+        if (index < 0) return false;
+        remaining.removeAt(index);
+      }
+      return remaining.isEmpty;
+    }
+    return actual == expected;
+  }
+
   bool _matches(String actual, dynamic expected) {
     if (expected is! String) {
       throw const FormatException('Expected result must be a string');
     }
     if (actual == expected) return true;
+    if (actual.startsWith('Matrix(') && expected.startsWith('Matrix(')) {
+      return actual.replaceAll(RegExp(r'\s+'), '') ==
+          expected.replaceAll(RegExp(r'\s+'), '');
+    }
+    if (actual.contains('=') || expected.contains('=')) {
+      final assignments =
+          RegExp(r'([A-Za-z]+)\s*=\s*(.*?)(?=,\s*[A-Za-z]+\s*=|$)');
+      Map<String, String> parse(String value) =>
+          {for (final m in assignments.allMatches(value)) m[1]!: m[2]!.trim()};
+      final a = parse(actual), b = parse(expected);
+      return a.isNotEmpty &&
+          a.length == b.length &&
+          a.keys
+              .every((key) => b.containsKey(key) && _matches(a[key]!, b[key]!));
+    }
+    if (actual.startsWith('{') && expected.startsWith('{')) {
+      final a = actual
+          .substring(1, actual.length - 1)
+          .split(',')
+          .map((s) => s.trim())
+          .toList()
+        ..sort();
+      final b = expected
+          .substring(1, expected.length - 1)
+          .split(',')
+          .map((s) => s.trim())
+          .toList()
+        ..sort();
+      return a.length == b.length &&
+          List.generate(a.length, (i) => _matches(a[i], b[i])).every((v) => v);
+    }
     if (actual.startsWith('Error') || actual.contains('Error:')) return false;
     String normalize(String value) {
       var v = value.trim().replaceAll('**', '^');
@@ -222,6 +305,7 @@ class WorkflowTasks {
           v = complex[1]!.trim();
         }
       }
+      v = v.replaceAll(RegExp(r'[+\-]\s*0(?:\.0+)?\s*\*\s*I'), '');
       return v;
     }
 
@@ -229,8 +313,14 @@ class WorkflowTasks {
     final b = NumericFallbackEvaluator.compile(normalize(expected));
     if (a == null || b == null) return false;
     for (final x in [-1.73, -0.41, 0.23, 1.37, 2.61, 4.19]) {
-      final av = a.evaluate({'x': x, 'y': x * x + 0.37, 'C': x * x * x + 0.91});
-      final bv = b.evaluate({'x': x, 'y': x * x + 0.37, 'C': x * x * x + 0.91});
+      final scope = {
+        'x': x,
+        'y': x * x + 0.37,
+        't': x * x + 0.73,
+        'C': x * x * x + 0.91
+      };
+      final av = a.evaluate(scope);
+      final bv = b.evaluate(scope);
       if (av == null ||
           bv == null ||
           !av.isFinite ||

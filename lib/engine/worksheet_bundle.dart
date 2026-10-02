@@ -24,6 +24,10 @@ class WorksheetBundle {
             List.unmodifiable(expressions.take(12).map(WorksheetGraph.new)),
         warnings = List.unmodifiable([
           ...warnings,
+          ...source.lines
+              .where((line) => line.resultEvidence?.sourceDomain != null)
+              .map((line) =>
+                  '${line.source}: original domain ${line.resultEvidence!.sourceDomain}'),
           if (expressions.length > 12)
             'Only the first 12 linked graphs are included.',
         ]);

@@ -111,26 +111,31 @@ class TDistribution {
     return math.exp(logNorm + logKernel);
   }
 
-  /// CDF via numerical integration of the PDF using Simpson's rule
-  /// over [-large, x]. Symmetric about 0 so we exploit cdf(-x) = 1 -
-  /// cdf(x). 1000 Simpson subintervals give ~6 digits of accuracy
-  /// for typical df.
+  /// CDF through the regularized incomplete beta function. Unlike a
+  /// finite integration interval, this retains the heavy tails at low df.
+  /// https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.stdtr.html
   double cdf(double x) {
+    if (x.isNaN) return double.nan;
+    if (x == double.negativeInfinity) return 0;
+    if (x == double.infinity) return 1;
     if (x == 0) return 0.5;
-    if (x > 0) return 1.0 - cdf(-x);
-    // x < 0 — integrate PDF from -∞ approximation to x.
-    const lower = -50.0; // 50σ for standard normal is well past any
-    // realistic input; for t with low df the tails are heavier but
-    // still negligibly small below -50.
-    return _simpson(pdf, lower, x, 1000);
+    final v = df.toDouble();
+    final tail = .5 * _regularizedBeta(v / (v + x * x), v / 2, .5);
+    return x < 0 ? tail : 1 - tail;
   }
 
   /// Bisection on the monotone CDF. Same approach as Normal.quantile.
   double quantile(double p) {
     if (p <= 0) return double.negativeInfinity;
     if (p >= 1) return double.infinity;
-    var lo = -50.0;
-    var hi = 50.0;
+    var lo = -1.0;
+    var hi = 1.0;
+    while (cdf(lo) > p && lo > -1e150) {
+      lo *= 2;
+    }
+    while (cdf(hi) < p && hi < 1e150) {
+      hi *= 2;
+    }
     for (var i = 0; i < 100; i++) {
       final mid = 0.5 * (lo + hi);
       final c = cdf(mid);
@@ -283,6 +288,47 @@ class FDistribution {
   }
 
   double? get mean => d2 > 2 ? d2 / (d2 - 2.0) : null;
+}
+
+// Regularized incomplete beta, using symmetry and a modified Lentz
+// continued fraction (DLMF 8.17): https://dlmf.nist.gov/8.17.v
+// Bounded iteration fails explicitly rather than emitting a partial answer.
+double _regularizedBeta(double x, double a, double b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  final scale = math.exp(_logGamma(a + b) -
+      _logGamma(a) -
+      _logGamma(b) +
+      a * math.log(x) +
+      b * math.log(1 - x));
+  if (x > (a + 1) / (a + b + 2)) {
+    return (1 - scale * _betaFraction(1 - x, b, a) / b)
+        .clamp(0.0, 1.0)
+        .toDouble();
+  }
+  return (scale * _betaFraction(x, a, b) / a).clamp(0.0, 1.0).toDouble();
+}
+
+double _betaFraction(double x, double a, double b) {
+  const tiny = 1e-300;
+  double guard(double v) => v.abs() < tiny ? (v < 0 ? -tiny : tiny) : v;
+  var c = 1.0;
+  var d = 1 / guard(1 - (a + b) * x / (a + 1));
+  var h = d;
+  for (var m = 1; m <= 500; m++) {
+    final m2 = 2.0 * m;
+    var aa = m * (b - m) * x / ((a + m2 - 1) * (a + m2));
+    d = 1 / guard(1 + aa * d);
+    c = guard(1 + aa / c);
+    h *= d * c;
+    aa = -(a + m) * (a + b + m) * x / ((a + m2) * (a + m2 + 1));
+    d = 1 / guard(1 + aa * d);
+    c = guard(1 + aa / c);
+    final delta = d * c;
+    h *= delta;
+    if ((delta - 1).abs() < 2e-14) return h;
+  }
+  throw StateError('Incomplete beta did not converge');
 }
 
 // === Internal helpers ====================================================

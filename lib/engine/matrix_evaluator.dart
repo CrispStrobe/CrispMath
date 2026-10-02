@@ -18,6 +18,7 @@ import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'calculator_engine.dart';
 import 'eigen.dart';
+import 'numeric_fallback.dart';
 
 class MatrixEvaluator {
   /// Try to evaluate [expression] as a matrix operation. Returns the
@@ -413,8 +414,8 @@ class MatrixEvaluator {
       final row = <double>[];
       for (var c = 0; c < cols; c++) {
         final cell = m.get(r, c);
-        final v = double.tryParse(engine.evaluate(cell));
-        if (v == null) {
+        final v = NumericFallbackEvaluator.evalNumeric(cell);
+        if (v == null || !v.isFinite) {
           return 'Error: $op requires numeric entries (got "$cell")';
         }
         row.add(v);

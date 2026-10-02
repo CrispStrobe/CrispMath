@@ -3,9 +3,11 @@ import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:crisp_math/main.dart';
+import 'package:crisp_math/widgets/drawing_canvas.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
 import 'package:crisp_math/services/engine_op.dart';
 import 'package:crisp_math/services/notepad_dispatcher.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -90,11 +92,50 @@ void main() {
         reason: 'Native URL must reach Flutter and calculate the worksheet');
     expect(tester.takeException(), isNull);
     await binding.takeScreenshot('shortcuts-created-worksheet');
+    state.setCurrentNotepadDoc(doc.id);
+    await settle();
+    Future<void> menu(String label) async {
+      await tester.tap(find.byTooltip('Document menu'));
+      await settle();
+      await tester.tap(find.text(label).last);
+      await settle();
+    }
+
+    await menu('Worksheet export preview');
+    expect(find.text('Save HTML'), findsOneWidget);
+    await binding.takeScreenshot('worksheet-graph-export-preview');
+    await tester.tap(find.text('Close').last);
+    await settle();
+    await menu('Document history');
+    await tester.tap(find.text('Save checkpoint'));
+    await settle();
+    expect(find.text('Compare'), findsOneWidget);
+    await binding.takeScreenshot('worksheet-checkpoint-history');
+    await tester.tap(find.text('Close').last);
+    await settle();
+    final write = find.byTooltip('Write math');
+    if (write.evaluate().isNotEmpty) {
+      await tester.tap(write);
+      await settle();
+    } else {
+      await menu('Write math');
+    }
+    final paper = find.byType(DrawingCanvas);
+    expect(paper, findsOneWidget);
+    final rect = tester.getRect(paper);
+    final start = rect.topLeft + Offset(rect.width * .25, rect.height * .4);
+    await tester.dragFrom(start, Offset(rect.width * .4, rect.height * .15));
+    await tester.tapAt(rect.center);
+    await settle();
+    await binding.takeScreenshot('handwriting-editable-input');
     binding.reportData ??= {};
     binding.reportData!['nativeBridge'] = engine.isNativeAvailable;
     binding.reportData!['nativeDerivative'] = nativeDerivative;
     binding.reportData!['integral'] = integral.toJson();
     binding.reportData!['document'] = doc.toJson();
     binding.reportData!['nativeWorkflowUrl'] = workflowPassed;
+    binding.reportData!['exportPreview'] = true;
+    binding.reportData!['historyCheckpoint'] = true;
+    binding.reportData!['handwritingInput'] = true;
   });
 }

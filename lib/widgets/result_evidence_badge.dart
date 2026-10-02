@@ -40,6 +40,8 @@ class ResultEvidenceBadge extends StatelessWidget {
               Text('$accuracy · $method'),
               if (evidence.accuracy == ResultAccuracy.unknown)
                 Text(t.text(WorkflowLabel.resultUnknownPrecision)),
+              if (evidence.sourceDomain != null)
+                Text('Original domain: ${evidence.sourceDomain}'),
               if (evidence.unchanged)
                 Text(t.text(WorkflowLabel.resultUnchanged)),
             ]);
@@ -59,7 +61,8 @@ class ResultEvidenceBadge extends StatelessWidget {
                         onPressed: () => Navigator.of(context).pop(),
                         child: Text(t.text(WorkflowLabel.close)))
                   ])),
-      child: Text('$accuracy · $method'),
+      child: Text(
+          '$accuracy · $method${evidence.sourceDomain != null ? ' · domain' : ''}'),
     );
   }
 }

@@ -11,7 +11,8 @@ on:
       - 'lib/services/integral_arguments.dart'
       - 'tool/build_web.sh'
       - 'web/workflow_tasks_worker.js'
-      - 'test/fixtures/workflow_tasks.json'
+      - 'test/fixtures/*workflow_tasks.json'
+      - 'test/fresh_workflow_tasks_test.dart'
       - 'test/workflow_tasks_test.dart'
       - 'tool/crispmath_cli*'
       - 'tool/check_workflow_tasks_browser.py'
@@ -44,9 +45,11 @@ jobs:
           YAML
           flutter pub get
       - name: Corpus and comparison unit regressions
-        run: flutter test --no-pub test/workflow_tasks_test.dart
+        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart
       - name: Run every task against native app engine (strict)
         run: tool/crispmath_cli.sh --require-native --report task-results/native.json
+      - name: Run the fresh independent 50 problems (strict)
+        run: tool/crispmath_cli.sh --tasks test/fixtures/fresh_workflow_tasks.json --require-native --report task-results/native-fresh.json
       - name: Verify exact Taylor compatibility with the native CAS
         run: tool/crispmath_cli.sh --check-series-compatibility
       - uses: actions/upload-artifact@v4
@@ -86,6 +89,7 @@ jobs:
         run: |
           python -m http.server 8766 --directory build/web > /tmp/task-audit-http.log 2>&1 &
           python tool/check_workflow_tasks_browser.py --output task-results/browser.json
+          python tool/check_workflow_tasks_browser.py --tasks test/fixtures/fresh_workflow_tasks.json --output task-results/browser-fresh.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
