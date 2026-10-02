@@ -16,16 +16,19 @@ class RationalEquationSolver {
       Polynomial constant(Rational value) =>
           Polynomial.fromCoeffs([value], variable);
       Polynomial multiply(Polynomial a, Polynomial b) {
-        if (a.degree + b.degree > 8)
+        if (a.degree + b.degree > 8) {
           throw const FormatException('Degree bound');
+        }
         return a * b;
       }
 
       (Polynomial, Polynomial) walk(SymExpr node, int depth) {
-        if (depth > 32 || ++nodes > 256)
+        if (depth > 32 || ++nodes > 256) {
           throw const FormatException('Expression bound');
-        if (node is SymNum)
+        }
+        if (node is SymNum) {
           return (constant(node.value), constant(Rational.one));
+        }
         if (node is SymSym && node.name == variable) {
           return (
             Polynomial.fromCoeffs([Rational.zero, Rational.one], variable),
@@ -55,8 +58,9 @@ class RationalEquationSolver {
           }
           final (n, d) = walk(node.base, depth + 1);
           final power = exp.value.numerator.toInt();
-          if (n.degree * power.abs() > 8 || d.degree * power.abs() > 8)
+          if (n.degree * power.abs() > 8 || d.degree * power.abs() > 8) {
             throw const FormatException('Degree bound');
+          }
           if (power < 0) {
             denominators.add(n);
             return (d.pow(-power), n.pow(-power));
@@ -76,11 +80,13 @@ class RationalEquationSolver {
       final valid = <String>[];
       for (final root in roots) {
         final m = RegExp(r'^(-?\d+)(?:/(\d+))?$').firstMatch(root);
-        if (m == null)
+        if (m == null) {
           return null; // Native CAS handles irrational/complex cases.
+        }
         final value = Rational(BigInt.parse(m[1]!), BigInt.parse(m[2] ?? '1'));
-        if (denominators.every((p) => !evaluate(p, value).isZero))
+        if (denominators.every((p) => !evaluate(p, value).isZero)) {
           valid.add(root);
+        }
       }
       return valid;
     } catch (_) {

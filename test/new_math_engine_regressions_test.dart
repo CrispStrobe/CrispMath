@@ -1,6 +1,7 @@
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:crisp_math/engine/rational_equation_solver.dart';
+import 'package:crisp_math/engine/rational_domain.dart';
 import 'package:crisp_math/engine/result_evidence.dart';
 import 'package:crisp_math/engine/symbolic_limit.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +30,14 @@ class ComplexFormattedLimitEngine extends CalculatorEngine {
 }
 
 void main() {
+  test('whole-quotient domain evidence never consumes additive tails', () {
+    expect(RationalDomain.inspect('x^3/3+C'), isNull);
+    expect(RationalDomain.inspect('(x-1)/(x+2)-2'), isNull);
+    expect(RationalDomain.inspect('(x^2-9)/(x^2+x-6)')?.excluded,
+        unorderedEquals(['-3', '2']));
+    expect(RationalDomain.inspect('-3/x')?.excluded, ['0']);
+    expect(RationalDomain.inspect('1/(-x+2)')?.excluded, ['2']);
+  });
   test('exact arithmetic preserves small answers after huge cancellation', () {
     final engine = CalculatorEngine();
     for (final pair in [

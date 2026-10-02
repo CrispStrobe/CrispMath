@@ -20,6 +20,15 @@ class RationalDomain {
       if (c == '(') depth++;
       if (c == ')') depth--;
       if (depth < 0) return null;
+      // This inspector describes a whole quotient. A top-level sum such as
+      // x^3/3+C must not turn its additive tail into the denominator 3+C.
+      if ((c == '+' || c == '-') && depth == 0 && i > 0) {
+        final prefix = source.substring(0, i).trimRight();
+        if (prefix.isNotEmpty &&
+            !'+-*/^('.contains(prefix[prefix.length - 1])) {
+          return null;
+        }
+      }
       if (c == '/' && depth == 0) {
         if (division >= 0) return null;
         division = i;

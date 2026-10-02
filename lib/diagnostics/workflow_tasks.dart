@@ -365,7 +365,9 @@ class WorkflowTasks {
     final actualExcluded = actualDomain?.excluded.toSet() ?? <String>{};
     final expectedExcluded = expectedDomain?.excluded.toSet() ?? <String>{};
     if (actualExcluded.length != expectedExcluded.length ||
-        !actualExcluded.containsAll(expectedExcluded)) return false;
+        !actualExcluded.containsAll(expectedExcluded)) {
+      return false;
+    }
 
     final a = NumericFallbackEvaluator.compile(normalizedActual);
     final b = NumericFallbackEvaluator.compile(normalizedExpected);
@@ -382,7 +384,9 @@ class WorkflowTasks {
       final difference =
           engine.simplify('($normalizedActual)-($normalizedExpected)');
       if (!invalid.hasMatch(difference) &&
-          RegExp(r'^0(?:\.0+)?$').hasMatch(difference.trim())) return true;
+          RegExp(r'^0(?:\.0+)?$').hasMatch(difference.trim())) {
+        return true;
+      }
       if (!hasImaginaryUnit) return false;
       bool numericConstant(String value) {
         const constants = {'I', 'pi', 'PI', 'e', 'E', 'tau'};
@@ -397,7 +401,9 @@ class WorkflowTasks {
       }
 
       if (!numericConstant(normalizedActual) ||
-          !numericConstant(normalizedExpected)) return false;
+          !numericConstant(normalizedExpected)) {
+        return false;
+      }
       final residualText =
           engine.evaluate('abs(($normalizedActual)-($normalizedExpected))');
       final magnitudeText = engine.evaluate('abs($normalizedExpected)');
