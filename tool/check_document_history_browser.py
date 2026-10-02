@@ -39,7 +39,7 @@ async def check(args):
                     await next_frames(page)
                     await field.fill(source)
                 async def backups():
-                    await page.keyboard.press('Control+6')
+                    await page.get_by_role('button', name=re.compile('^Settings')).click()
                     await next_frames(page)
                     target = page.get_by_role('button', name=re.compile('Workspace backups'))
                     for _ in range(12):

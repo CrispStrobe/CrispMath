@@ -9,7 +9,11 @@ from playwright.async_api import async_playwright
 from benchmark_workflows import bootstrap, context_for, next_frames
 
 async def black_pixels(page, locator):
-    png = await locator.screenshot()
+    bounds = await locator.bounding_box()
+    # Flutter geometry can lie on fractional device pixels. Sample inside the
+    # paper so a rounded screenshot edge cannot include the dark dialog.
+    png = await page.screenshot(clip={'x': bounds['x'] + 2, 'y': bounds['y'] + 2,
+        'width': bounds['width'] - 4, 'height': bounds['height'] - 4})
     return await page.evaluate('''async encoded => {
       const image = new Image(); image.src = 'data:image/png;base64,' + encoded;
       await image.decode(); const canvas = document.createElement('canvas');
@@ -31,13 +35,13 @@ async def check(args):
             try:
                 await bootstrap(page, args.url)
                 await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
-                write = page.get_by_role('button', name='Write math', exact=True)
+                write = page.get_by_role('button', name=re.compile(r'^Write math'))
                 if await write.count():
                     await write.click()
                 else:
                     await page.get_by_role('button', name='Document menu', exact=True).click()
                     await page.locator('[aria-label="Write math"]').click()
-                paper = page.locator('[aria-label="Handwriting canvas"]')
+                paper = page.get_by_role('button', name='Handwriting canvas', exact=True)
                 await paper.wait_for()
                 await next_frames(page)
                 empty = await black_pixels(page, paper)

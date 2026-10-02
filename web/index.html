@@ -39,6 +39,12 @@
     flt-semantics[role="button"], flt-semantics[role="link"] {
       overflow: hidden !important;
     }
+    /* Flutter can retain an empty overlay semantics leaf after closing a
+       dialog. It has no control or label, but its default pointer-events:auto
+       covers the whole view. Keep labelled nodes and interactive barriers. */
+    flt-semantics:empty:not([role]):not([aria-label]):not([flt-tappable]) {
+      pointer-events: none !important;
+    }
   </style>
 
   <!-- Preload WASM binaries so the browser fetches them in parallel with
