@@ -119,7 +119,7 @@ jobs:
         run: tool/build_web.sh --release --no-wasm-dry-run -O2
       - name: Run every task against app WASM engine (strict)
         run: |
-          python -m http.server 8766 --directory build/web > /tmp/task-audit-http.log 2>&1 &
+          python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/task-audit-http.log 2>&1 &
           python tool/check_workflow_tasks_browser.py --output task-results/browser.json
           python tool/check_workflow_tasks_browser.py --tasks test/fixtures/fresh_workflow_tasks.json --output task-results/browser-fresh.json
       - name: Run all 100 additional problems against the actual WASM worker

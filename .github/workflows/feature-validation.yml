@@ -212,7 +212,7 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Live browser feature checks
         run: |
-          python -m http.server 8766 --directory build/web > /tmp/crispmath-http.log 2>&1 &
+          python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           python tool/ai_contract_fixture.py > /tmp/crispmath-ai-fixture.log 2>&1 &
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
           python tool/check_mobile_trace.py --screenshots browser-results
@@ -275,7 +275,7 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Capture verified workflow gallery
         run: |
-          python -m http.server 8766 --directory gallery-web > /tmp/gallery-http.log 2>&1 &
+          python -m http.server 8766 --bind 127.0.0.1 --directory gallery-web > /tmp/gallery-http.log 2>&1 &
           python tool/capture_product_gallery.py --source "$GITHUB_SHA" --output product-gallery
       - uses: actions/upload-artifact@v4
         if: always()
@@ -315,7 +315,7 @@ jobs:
           CLIP_LABELS: ${{ inputs.probe_clip_labels }}
           PROBE_PERFORMANCE: ${{ inputs.probe_performance }}
         run: |
-          python -m http.server 8766 --directory build/web > /tmp/crispmath-http.log 2>&1 &
+          python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           python tool/check_deployed_bundle.py --url http://localhost:8766/ --source "$APP_SOURCE"
           PROBE_ARGS=()
           if [ "$CLIP_LABELS" = "true" ]; then PROBE_ARGS+=(--label-clip-probe); fi
