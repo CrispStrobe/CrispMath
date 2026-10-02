@@ -29,7 +29,9 @@ class WorksheetFile {
       throw const FormatException('Unsupported CrispMath worksheet file');
     }
     final raw = payload['document'] as Map;
-    if (raw['n'] is! String || raw['l'] is! List) {
+    if (raw['n'] is! String ||
+        (raw['n'] as String).length > 200 ||
+        raw['l'] is! List) {
       throw const FormatException('Invalid worksheet name or rows');
     }
     final rows = raw['l'] as List;

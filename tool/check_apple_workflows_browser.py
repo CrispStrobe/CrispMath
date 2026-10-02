@@ -45,7 +45,7 @@ async def check(args):
 
                 async def menu(label):
                     await page.get_by_role('button', name='Document menu', exact=True).click()
-                    await page.get_by_text(label, exact=True).click()
+                    await page.locator('[aria-label=' + json.dumps(label) + ']').click()
 
                 async with page.expect_download() as download_info:
                     await menu('Save worksheet file')

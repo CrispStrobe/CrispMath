@@ -111,7 +111,7 @@ struct OpenCalculationIntent: AppIntent {
   static var title: LocalizedStringResource = "Open calculation"
   static var description = IntentDescription("Open an expression in CrispMath's calculator.")
   static var openAppWhenRun: Bool = true
-  @Parameter(title: "Expression", default: "") var expression: String
+  @Parameter(title: "Expression", default: "1+1") var expression: String
 
   @MainActor
   func perform() async throws -> some IntentResult {
