@@ -18,10 +18,8 @@ Future<dynamic> runWorkflowModule(
   switch (task['operation']) {
     case 'differentiateAt':
       final variable = task['variable'] as String? ?? 'x';
-      final derivative = engine.differentiate(task['expression'], variable);
-      if (derivative.startsWith('Error')) return derivative;
-      return engine
-          .evaluate(engine.substitute(derivative, variable, task['point']));
+      return engine.differentiateAt(
+          task['expression'], variable, task['point']);
     case 'normalCdf':
       return Normal(
               mean: (task['mean'] as num).toDouble(),

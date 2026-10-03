@@ -907,6 +907,7 @@ class _MultiPolyParser {
       : src = input.replaceAll('**', '^').replaceAll(' ', '');
   final String src;
   int _pos = 0;
+  int _depth = 0;
   final _vars = <String>{};
 
   // GUARD:mvcost >>>
@@ -944,6 +945,7 @@ class _MultiPolyParser {
   String? get _peek => _pos < src.length ? src[_pos] : null;
 
   MultivariatePolynomial? parse({bool multivariateOnly = true}) {
+    if (src.length > 512) return null;
     final terms = _parseExpr();
     if (!_atEnd) return null;
     if (multivariateOnly && _vars.length < 2) return null;
@@ -965,6 +967,15 @@ class _MultiPolyParser {
 
   /// Parse additive expression. Returns map of {var->exp} -> coeff.
   Map<Map<String, int>, Rational> _parseExpr() {
+    if (++_depth > 32) throw const FormatException('nesting too deep');
+    try {
+      return _parseExprBody();
+    } finally {
+      _depth--;
+    }
+  }
+
+  Map<Map<String, int>, Rational> _parseExprBody() {
     var negate = false;
     if (_peek == '+') {
       _pos++;
@@ -1127,7 +1138,24 @@ class _MultiPolyParser {
 
   Map<Map<String, int>, Rational> _scaleTerms(
       Map<Map<String, int>, Rational> t, Rational k) {
-    return {for (final e in t.entries) e.key: e.value * k};
+    return {for (final e in t.entries) e.key: _checkedProduct(e.value, k)};
+  }
+
+  Rational _checkedProduct(Rational a, Rational b) {
+    if (a.numerator.bitLength + b.numerator.bitLength > 16384 ||
+        a.denominator.bitLength + b.denominator.bitLength > 16384) {
+      throw const FormatException('coefficient too large');
+    }
+    return a * b;
+  }
+
+  Rational _checkedSum(Rational a, Rational b) {
+    if (a.numerator.bitLength + b.denominator.bitLength > 16383 ||
+        b.numerator.bitLength + a.denominator.bitLength > 16383 ||
+        a.denominator.bitLength + b.denominator.bitLength > 16384) {
+      throw const FormatException('coefficient too large');
+    }
+    return a + b;
   }
 
   Map<Map<String, int>, Rational> _addTerms(
@@ -1138,7 +1166,7 @@ class _MultiPolyParser {
       // Need to find matching key by content, not identity.
       final matchKey = _findKey(result, key);
       if (matchKey != null) {
-        final sum = result[matchKey]! + e.value;
+        final sum = _checkedSum(result[matchKey]!, e.value);
         if (sum.isZero) {
           result.remove(matchKey);
         } else {
@@ -1174,10 +1202,10 @@ class _MultiPolyParser {
         }
         // Remove zero exponents.
         newExp.removeWhere((k, v) => v == 0);
-        final prod = ea.value * eb.value;
+        final prod = _checkedProduct(ea.value, eb.value);
         final matchKey = _findKey(result, newExp);
         if (matchKey != null) {
-          final sum = result[matchKey]! + prod;
+          final sum = _checkedSum(result[matchKey]!, prod);
           if (sum.isZero) {
             result.remove(matchKey);
           } else {

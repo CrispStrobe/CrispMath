@@ -16,6 +16,8 @@ import 'rational_equation_solver.dart';
 import 'inequality_solver.dart';
 import 'rational_integrator.dart';
 import 'rational_integral_domain.dart';
+import 'polynomial_quotient_cancellation.dart';
+import 'real_calculus_proofs.dart';
 import 'exact_constant.dart';
 import 'definite_antiderivative.dart';
 import 'function_reference.dart';
@@ -395,6 +397,12 @@ class CalculatorEngine {
   }
 
   String simplify(String expression) {
+    final cancelled = PolynomialQuotientCancellation.simplify(expression);
+    if (cancelled != null) {
+      lastResultEvidence = ResultEvidence(ResultAccuracy.symbolic,
+          ComputationMethod.simplification, sourceDomain: cancelled.condition);
+      return cancelled.expression;
+    }
     // Native simplify is real since bridge 59ba08c: SymEngine simplify()
     // plus univariate rational cancellation ((x^2-1)/(x-1) -> x+1). It
     // still has no trig/log identity rewriting — that stays visible to the
@@ -422,6 +430,24 @@ class CalculatorEngine {
       'differentiate',
       (b) => b.differentiate(expression, variable),
     );
+  }
+
+  /// Point-aware real differentiation validates cusp domains before evaluating
+  /// a symbolic formula that may be undefined or misleading at that point.
+  String differentiateAt(String expression, String variable, String point) {
+    lastResultEvidence = null;
+    final cusp = RealCalculusProofs.absoluteDerivative(expression, variable, point);
+    if (cusp != null) {
+      if (!cusp.startsWith('Error')) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      }
+      return cusp;
+    }
+    final derivative = differentiate(expression, variable);
+    return derivative.startsWith('Error')
+        ? derivative
+        : evaluate(substitute(derivative, variable, point));
   }
 
   String substitute(String expression, String variable, String value) {
@@ -1256,9 +1282,21 @@ class CalculatorEngine {
   /// older native libraries compute exact coefficients by differentiation.
   String series(String expression, String variable,
       {String point = '0', int order = 6}) {
+    lastResultEvidence = null;
+    if (order < 1 || order > 64) return 'Error: order must be in 1..64';
+    // Taylor coefficients require derivatives at the center, not merely
+    // symbolic derivative formulas whose domains may exclude that center.
+    final cusp = RealCalculusProofs.cuspDerivative(
+        expression, variable, point, order: order - 1);
+    if (cusp != null) {
+      if (!cusp.startsWith('Error')) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      }
+      return cusp;
+    }
     final bridge = _liveBridge;
     if (bridge == null) return 'Error: series requires native library';
-    if (order < 1 || order > 64) return 'Error: order must be in 1..64';
     try {
       if (!bridge.hasSeries) {
         return symbolicTaylorSeries(expression, variable,
@@ -1344,14 +1382,24 @@ class CalculatorEngine {
   String limit(String expression, String variable, String point) {
     lastResultEvidence = null;
 
+    if (RealCalculusProofs.squeezedZero(expression, variable, point)) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      return '0';
+    }
+
     // Tier 1+2: try the symbolic limit engine.
-    final symbolic = SymbolicLimit.compute(
+    final nonsmooth = RegExp(r'\b(?:abs|sign|floor|ceil|Piecewise|Heaviside)\s*\(')
+        .hasMatch(expression);
+    final symbolic = nonsmooth ? null : SymbolicLimit.compute(
       engine: this,
       expression: expression,
       variable: variable,
       point: point,
     );
-    if (symbolic != null) {
+    if (symbolic != null && !RegExp(
+        r'\b(?:Derivative|Subs|undefined|nan|zoo|Error)\b', caseSensitive: false)
+        .hasMatch(symbolic.value)) {
       // Nested evaluations describe intermediate numerator/denominator
       // arithmetic. They are not the provenance of the completed limit.
       lastResultEvidence = const ResultEvidence(
@@ -1361,16 +1409,21 @@ class CalculatorEngine {
 
     lastResultEvidence = null;
     final bridge = _liveBridge;
-    if (bridge == null) {
+    final compiled = NumericFallbackEvaluator.compile(expression);
+    if (bridge == null && compiled == null) {
       return 'Error: limit requires native library';
     }
 
     // Tier 3: numerical fallback.
     double evalAt(double x) {
       try {
+        if (compiled != null) {
+          final value = compiled.evaluate({variable: x});
+          return value != null && value.isFinite ? value : double.nan;
+        }
         final substituted =
             substitute(expression, variable, _formatReal(x));
-        final result = bridge.evaluate(substituted);
+        final result = bridge!.evaluate(substituted);
         return _parseReal(result) ?? double.nan;
       } catch (_) {
         return double.nan;
@@ -1399,7 +1452,7 @@ class CalculatorEngine {
           : 'Error: limit at -infinity does not converge';
     }
 
-    final pointValue = double.tryParse(pt);
+    final pointValue = NumericFallbackEvaluator.evalNumeric(pt);
     if (pointValue == null) {
       return 'Error: limit point must be a real number or ±oo';
     }
@@ -1483,6 +1536,14 @@ class CalculatorEngine {
     if (poles != null && poles.isNotEmpty) {
       return 'Error: integration interval contains a divergent pole '
           'at $variable = ${poles.join(', ')}';
+    }
+    final elementary = RealCalculusProofs.definite(
+        expression, variable, lower, upper);
+    if (elementary != null) {
+      if (elementary.error != null) return elementary.error!;
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.approximate, ComputationMethod.fundamentalTheorem);
+      return _formatReal(elementary.value!);
     }
     // Integrate the exact continuous extension, rather than sampling an
     // original 0/0 hole. Genuine poles were checked before this substitution.

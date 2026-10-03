@@ -26,7 +26,7 @@ void main() {
     }.entries) {
       expect(engine.evaluate(entry.key), entry.value, reason: entry.key);
       expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
-      expect(engine.lastResultEvidence?.method, ComputationMethod.symbolicEvaluation);
+      expect(engine.lastResultEvidence?.method, ComputationMethod.integerArithmetic);
     }
   });
 

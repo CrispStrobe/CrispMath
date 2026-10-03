@@ -74,12 +74,17 @@ class WorkflowTasks {
     switch (task['kind']) {
       case 'module':
         final actual = await runWorkflowModule(engine, task);
-        final pass = _structuredMatches(actual, task['expected'],
-            unordered: task['unordered'] == true);
+        final pass = task['errorContains'] != null
+            ? actual is String && actual.startsWith('Error') &&
+                actual.contains(task['errorContains'])
+            : _structuredMatches(actual, task['expected'],
+                unordered: task['unordered'] == true);
         return {
           'status': pass ? 'passed' : 'failed',
           'actual': actual,
-          'expected': task['expected']
+          'expected': task['expected'] ?? task['errorContains'],
+          if (task['errorContains'] != null)
+            'expectedErrorContains': task['errorContains']
         };
       case 'engine':
         final args = task['call'] != null && task['operation'] == 'integrate'
@@ -116,6 +121,8 @@ class WorkflowTasks {
                   : 'failed',
           'actual': result.value,
           'expected': task['expected'] ?? task['errorContains'],
+          if (task['errorContains'] != null)
+            'expectedErrorContains': task['errorContains'],
           if (result.evidence != null) 'evidence': result.evidence!.toJson()
         };
       case 'document':

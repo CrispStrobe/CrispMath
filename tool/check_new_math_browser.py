@@ -138,7 +138,8 @@ async def check(args):
                         for case, line in zip(batch, restored['l']):
                             validate_result(case, line)
                         assert [line['s'] for line in restored['l']] == [case[1] for case in batch]
-                        assert [line['r'] for line in restored['l']] == [line['r'] for line in saved['l']]
+                        assert [line.get('r') for line in restored['l']] == [line.get('r') for line in saved['l']]
+                        assert [line.get('e') for line in restored['l']] == [line.get('e') for line in saved['l']]
                         assert not errors, errors
                         item.update({'passed': True, 'reload': True, 'afterReload': restored})
                     except Exception as error:
