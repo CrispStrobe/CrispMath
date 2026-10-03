@@ -40,6 +40,10 @@ on:
         description: 'Build & sign only, do NOT upload'
         type: boolean
         default: true
+      validation_run_id:
+        description: 'Optional Feature validation run whose browser/gallery must pass before upload'
+        type: string
+        default: ''
       verify_only:
         description: 'Retry metadata and internal assignment without building or uploading'
         type: boolean
@@ -65,6 +69,10 @@ on:
         description: 'Full SHA of the successful upload, required for verify_only'
         type: string
         default: ''
+
+permissions:
+  contents: read
+  actions: read
 
 env:
   BUNDLE_ID: com.crispstrobe.crispmath
@@ -228,6 +236,25 @@ jobs:
           name: crispmath-ipa
           path: build/ios/ipa/*.ipa
           if-no-files-found: error
+
+      - name: Wait for live release validation and matching application source
+        if: ${{ inputs.validation_run_id != '' && (github.event_name == 'push' || inputs.dry_run == false) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          python tool/wait_release_validation.py \
+            --run-id "$VALIDATION_RUN_ID" --package-sha "$GITHUB_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --output "$RUNNER_TEMP/release-validation.json"
+
+      - name: Preserve release validation provenance
+        if: ${{ always() && inputs.validation_run_id != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-validation-provenance
+          path: ${{ runner.temp }}/release-validation.json
+          if-no-files-found: ignore
 
       - name: Upload to App Store Connect
         if: ${{ github.event_name == 'push' || inputs.dry_run == false }}
