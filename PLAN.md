@@ -5,6 +5,24 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Fourth independent mathematical audit and build 15
+
+- [x] Draft 50 fresh references before runtime output; preserve identical
+  46/50 initial findings on Linux, WASM and packaged macOS.
+- [x] Implement exact perfect-square rational roots, centered/scaled linear
+  regression and dimension-aware compound unit targets; add 22 focused controls.
+- [x] Fix worksheet unit/limit lexical scope and immediate graph-bounds application;
+  add scope/parser/widget regressions and three further runtime controls.
+- [x] Validate all 413 runtime cases, 5,511 unit/widget tests (eight skips),
+  82 actual desktop/phone worksheet entries, release/debug browser, performance
+  and galleries on hosted CI, macOS, Pages and Vercel.
+- [x] Upload signed build 15 after validation: Apple VALID, Internal Testers
+  assigned, external beta APPROVED and Public Beta IN_BETA_TESTING. Release /
+  external CI: `37099298115` / `37099901727`.
+
+See [round-four evidence](docs/round4-math-audit-50.md). Physical checks remain
+in a separate session, and beta approval does not resolve App Review 4.3(a).
+
 ## Third independent mathematical audit and build 14
 
 - [x] Draft 50 fresh algebra/calculus and numeric/statistics/units/constraint
@@ -71,7 +89,9 @@ Physical iPhone/iPad testing is deferred to a separate session.
    external IN_BETA_TESTING. Build 14 now includes the newer math fixes: release CI
    `37094979914` passes signing, privacy/version and production-source validation;
    submission CI `37095571010` confirms external APPROVED and Public Beta
-   IN_BETA_TESTING. Public beta is available.
+   IN_BETA_TESTING. Build 15 includes the fourth audit and scope/graph fixes:
+   release CI `37099298115` and external CI `37099901727` confirm VALID,
+   APPROVED and Public Beta IN_BETA_TESTING. Public beta is available.
    Address 4.3(a) with truthful review evidence;
    final App Review follows the improvements and separate device tests.
 1. [x] Result provenance: identify exact/approximate results and computation

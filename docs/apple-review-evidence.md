@@ -22,9 +22,25 @@ production-source/dependency parity with green browser/gallery CI, successful
 upload, Apple VALID processing and Internal Testers assignment.
 [External TestFlight CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37095571010)
 confirms beta review APPROVED and internal/external IN_BETA_TESTING with Public
-Beta assignment. The existing public link offers build 14. The submission record
+Beta assignment. The existing public link offered build 14. The submission record
 matches build ID `26a96c77-406f-4bf0-8571-68834fe068e5`; Apple returns no submission
 timestamp. No App Review submission occurred. See [the third audit](round3-math-audit-50.md).
+Build 15 includes the fourth independent audit and worksheet-scope/graph fixes.
+[Signed release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37099298115)
+passes 48 tooling tests, signed photo/camera purpose strings and version checks,
+and identical-source production validation for
+`39c3591576bd0ab2d82e9a4e28ac1fd76e336d1e`, version 1.2.0 (15).
+Upload succeeds, Apple processing is VALID and Internal Testers are assigned.
+[External verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37099901727)
+confirms beta review APPROVED, internal/external IN_BETA_TESTING and Public Beta
+assignment. The submission record matches build ID
+`a33926e8-4a4f-4112-96fa-8345c1c537ea`; Apple returns no submission timestamp.
+The public link now offers build 15. All 413 accumulated runtime cases pass on
+Linux, WASM, packaged macOS, Pages and Vercel, together with 5,511 unit/widget
+tests (eight documented skips) and 82 actual desktop/phone worksheet entries.
+See [the fourth audit](round4-math-audit-50.md). No App Review submission occurred.
+Beta approval does not resolve guideline 4.3(a).
+
 Physical iPhone/iPad checks are explicitly deferred to another session.
 
 Apple asks for distinct functionality and accurate metadata in its

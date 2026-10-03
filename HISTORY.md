@@ -1,3 +1,34 @@
+## 2026-10-03 — Fourth independent 50-problem audit and scope/graph follow-up
+
+Two agents independently derive 50 fresh references; Linux, WASM and packaged
+macOS each initially pass 46/50. Preserve the answers and fix exact rational
+perfect-square roots, regression cancellation at large offsets and compound
+pressure targets. BigInt roots retain bounded cost; centered/scaled regression
+handles extreme magnitudes; unit targets compose prefix scales and dimensions.
+Add 22 focused regressions.
+
+Review of actual successful UI screenshots additionally reveals unit tokens and
+limit dummy variables incorrectly treated as free worksheet symbols. Preserve
+lexical unit/calculus syntax under global collisions while retaining reactive
+coefficients, approach points and quantity/scalar magnitudes. Add nine scope
+regressions, parser controls and three runtime fixtures, with actual unit dispatch
+and injected headless limit routing independently covered by native/WASM CAS.
+Debug live testing exposes a graph race: applying entered bounds after controller
+cleanup lets Fit use old bounds. Apply bounds immediately, defer only disposal,
+and add a rendered-viewport timing regression without hiding the real browser race.
+
+All 413 accumulated runtime checks pass on Linux, WASM, packaged macOS,
+Pages and Vercel. The full suite passes 5,511 unit/widget tests with eight
+explicit skips, 48 tooling tests, analysis, release/debug browser checks,
+performance gates and the populated 12-scene web gallery. All 82 actual
+desktop/phone worksheet entries pass, including globals colliding with unit
+and limit syntax. Signed build 15 passes the privacy/version and identical-source
+publication gates at `39c3591`, uploads successfully and reaches Apple VALID
+processing with Internal Testers assignment. Release CI `37099298115` and external
+CI `37099901727` confirm beta review APPROVED and Public Beta IN_BETA_TESTING.
+No App Review submission occurred; physical testing remains deferred and the
+4.3(a) finding remains open. See [the fourth audit](docs/round4-math-audit-50.md).
+
 ## 2026-10-03 — Third independent 50-problem audit
 
 Two agents draft 50 fresh references before consulting prior fixtures. Linux,
