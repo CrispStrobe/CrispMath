@@ -22,8 +22,11 @@ class NotepadLineParseCache {
   }
 }
 
-final _scopeIdentifierRegex =
-    RegExp(r'(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])');
+// Consume numbers before looking for names: the e/E in a scientific literal
+// belongs to that number, including decimal mantissas and signed exponents.
+const _notepadNumberToken = r'(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?';
+final _scopeIdentifierRegex = RegExp('$_notepadNumberToken|'
+    r'(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])');
 final _scalarScopeValue = RegExp(r'^[+-]?\d+(?:\.\d+)?$');
 
 /// Incremental bindings only for documents with unambiguous numeric ownership.
@@ -127,12 +130,6 @@ class _NumericScopeIndex {
   }
 }
 
-/// Cached word-boundary RegExp patterns for scope name substitution.
-final _wordBoundaryCache = <String, RegExp>{};
-RegExp _wordBoundaryPattern(String name) => _wordBoundaryCache.putIfAbsent(
-    name,
-    () => RegExp(
-        r'(?<![A-Za-z0-9_])' + RegExp.escape(name) + r'(?![A-Za-z0-9_])'));
 final _ansPattern = RegExp(r'(?<![A-Za-z0-9_])Ans(?![A-Za-z0-9_])');
 final _dividerRegex = RegExp(r'^-{3,}\s*$');
 final _trailingZeros = RegExp(r'0+$');
@@ -621,8 +618,8 @@ String? preprocessNotepadLine(
     ..sort((a, b) => b.length.compareTo(a.length));
   for (final name in names) {
     if (!out.contains(name)) continue;
-    final pattern = _wordBoundaryPattern(name);
-    out = out.replaceAll(pattern, '(${scope[name]!})');
+    out = out.replaceAllMapped(_scopeIdentifierRegex,
+        (match) => match[0] == name ? '(${scope[name]!})' : match[0]!);
   }
   return protected.restore(out);
 }
@@ -662,7 +659,11 @@ final RegExp _assignmentRegex = RegExp(
 );
 final RegExp _identifierRegex = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
 final RegExp _importListStartRegex = RegExp(r'[A-Za-z_0-9,]');
-final RegExp _identifierWordRegex = RegExp(r'[A-Za-z_][A-Za-z0-9_]*');
+final RegExp _identifierWordRegex =
+    RegExp('$_notepadNumberToken|([A-Za-z_][A-Za-z0-9_]*)');
+
+Iterable<RegExpMatch> _identifierWordMatches(String source) =>
+    _identifierWordRegex.allMatches(source).where((match) => match[1] != null);
 
 /// `fzn:` directive — must be the first non-whitespace token on the
 /// notepad line. Body captures everything after the colon and any
@@ -747,7 +748,7 @@ final RegExp _flatzincScalarLineRegex = RegExp(
 /// against scope keys + reserved CAS names).
 Set<String> identifierWordsIn(String source) {
   final out = <String>{};
-  for (final m in _identifierWordRegex.allMatches(source)) {
+  for (final m in _identifierWordMatches(source)) {
     out.add(m.group(0)!);
   }
   return out;
@@ -867,7 +868,7 @@ Set<String> _unboundIdentifierWords(String source,
     {bool includeOutputVariables = false}) {
   final bindings = _lexicalSyntaxBindings(source);
   return {
-    for (final word in _identifierWordRegex.allMatches(source))
+    for (final word in _identifierWordMatches(source))
       if (!bindings.containsKey(word.start) ||
           (includeOutputVariables && bindings[word.start]!.outputVariable)) word[0]!
   };
