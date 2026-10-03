@@ -6,8 +6,9 @@
 // than rational approximations like Acklam's but trivially correct
 // and well within the precision a calculator needs (~1e-10).
 //
-// erf is approximated with Abramowitz & Stegun 7.1.26, max error
-// 1.5e-7 — fine for student stats. The binomial PMF uses log-domain
+// Normal probabilities use bounded regularized-gamma evaluation, preserving
+// direct tails and avoiding an absolute-error-only erf approximation.
+// The binomial PMF uses log-domain
 // computations so it stays accurate at large n.
 
 import 'dart:math' as math;
@@ -19,38 +20,73 @@ class Normal {
 
   /// Probability density at [x]. φ(x; μ, σ) = (1/(σ√(2π))) e^(-(x-μ)²/(2σ²)).
   double pdf(double x) {
-    final z = (x - mean) / stddev;
-    return math.exp(-0.5 * z * z) / (stddev * math.sqrt(2 * math.pi));
+    final z = _standardized(x);
+    return math.exp(-0.5 * z * z) / stddev / math.sqrt(2 * math.pi);
   }
 
   /// Cumulative probability P(X ≤ x). Computed via erf:
   ///   F(x) = ½(1 + erf((x − μ) / (σ√2))).
   double cdf(double x) {
-    final z = (x - mean) / (stddev * math.sqrt2);
-    return 0.5 * (1 + _erf(z));
+    final z = _standardized(x);
+    if (z.isNaN) return double.nan;
+    final tail = _positiveTail(z.abs());
+    return z < 0 ? tail : 1 - tail;
+  }
+
+  double sf(double x) {
+    final z = _standardized(x);
+    if (z.isNaN) return double.nan;
+    final tail = _positiveTail(z.abs());
+    return z < 0 ? 1 - tail : tail;
+  }
+
+  double _standardized(double x) {
+    if (!mean.isFinite || !stddev.isFinite || stddev <= 0) {
+      throw ArgumentError('Normal requires a finite mean and positive finite standard deviation');
+    }
+    if (x.isInfinite) return x;
+    final difference = x - mean;
+    return difference.isFinite ? difference / stddev : x / stddev - mean / stddev;
+  }
+
+  double _positiveTail(double z) {
+    if (z == 0) return .5;
+    // For z>40, Mills' bound is below the smallest representable double.
+    // Avoid squaring a huge finite standardized input in the gamma routine.
+    if (z > 40) return 0;
+    // Q(1/2,z²/2) = erfc(z/sqrt(2)). Preserve the direct upper tail
+    // and use the same bounded accurate gamma routine as chi-square.
+    return .5 * _gammaProbability(.5, .5 * z * z, upper: true,
+        logX: 2 * math.log(z) - math.ln2);
   }
 
   /// Inverse CDF — returns x such that cdf(x) = p. Bisection on the
   /// monotone CDF, converging to ~1e-10 in well under 100 iterations.
   /// Returns ±infinity for p at the endpoints.
   double quantile(double p) {
+    _standardized(mean); // Validate distribution parameters before endpoints.
+    if (p.isNaN) return double.nan;
     if (p <= 0) return double.negativeInfinity;
     if (p >= 1) return double.infinity;
-    // Bracket: mean ± 12σ covers ~38 standard deviations of safety
-    // for the normal, far past anything a student will type.
-    var lo = mean - 12 * stddev;
-    var hi = mean + 12 * stddev;
+    if (p == .5) return mean;
+    // Bisect standardized coordinates: physical bounds can overflow even when
+    // the requested physical quantile is finite.
+    var lo = -40.0;
+    var hi = 40.0;
+    var mid = 0.0;
     for (var i = 0; i < 100; i++) {
-      final mid = 0.5 * (lo + hi);
-      final c = cdf(mid);
-      if ((hi - lo).abs() < 1e-12) return mid;
-      if (c < p) {
+      mid = 0.5 * (lo + hi);
+      if ((hi - lo).abs() < 1e-12) break;
+      final below = p > .5 ? standardNormal.sf(mid) > 1 - p
+          : standardNormal.cdf(mid) < p;
+      if (below) {
         lo = mid;
       } else {
         hi = mid;
       }
     }
-    return 0.5 * (lo + hi);
+    final scaled = mid * stddev;
+    return scaled.isFinite ? mean + scaled : (mean / stddev + mid) * stddev;
   }
 }
 
@@ -483,23 +519,6 @@ double _gammaProbability(double a, double x,
     }
   }
   throw StateError('Incomplete gamma did not converge');
-}
-
-/// Abramowitz & Stegun 7.1.26 — max abs error 1.5e-7 for x ≥ 0.
-/// Symmetric for x < 0: erf(-x) = -erf(x).
-double _erf(double x) {
-  final sign = x < 0 ? -1.0 : 1.0;
-  final ax = x.abs();
-  const a1 = 0.254829592;
-  const a2 = -0.284496736;
-  const a3 = 1.421413741;
-  const a4 = -1.453152027;
-  const a5 = 1.061405429;
-  const p = 0.3275911;
-  final t = 1.0 / (1.0 + p * ax);
-  final y = 1.0 -
-      (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-ax * ax);
-  return sign * y;
 }
 
 /// log(C(n, k)) using log-gamma. Works far past plain factorials.

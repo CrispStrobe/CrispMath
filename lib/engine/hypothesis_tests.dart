@@ -898,7 +898,7 @@ class HypothesisTests {
       lower = 0.5;
     } else {
       z = (u1 - muU) / sigmaU;
-      upper = (1.0 - standardNormal.cdf(z)).clamp(0.0, 1.0).toDouble();
+      upper = standardNormal.sf(z).clamp(0.0, 1.0).toDouble();
       lower = standardNormal.cdf(z).clamp(0.0, 1.0).toDouble();
     }
     final twoSided = (2 * math.min(upper, lower)).clamp(0.0, 1.0).toDouble();

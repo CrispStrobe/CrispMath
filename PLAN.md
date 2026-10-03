@@ -7,9 +7,11 @@ Completed items with details are in `HISTORY.md`.
 
 ## Eighth independent mathematical audit
 
-- [~] Draft and freeze fifty new mathematical references before app outputs.
-- [ ] Preserve initial native/WASM/packaged Mac failures; trace shared causes.
-- [ ] Fix confirmed gaps with targeted positive and negative regression controls.
+- [x] Freeze fifty fresh references at 26c751e before app outputs.
+- [x] Preserve initial native/WASM/Mac 47/50 results and unchanged prior587
+  passes; trace four distinct failed questions.
+- [~] Fix factorial expressions, normal accuracy/tails, compound unit grammar
+  and complex-coefficient quadratic solving with positive/negative controls.
 - [ ] Pass accumulated runtime and unit/live checks on hosted CI, Pages and Vercel.
 - [ ] Refresh native Apple galleries and beta delivery if production changes.
 

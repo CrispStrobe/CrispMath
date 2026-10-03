@@ -20,6 +20,7 @@ import 'polynomial_quotient_cancellation.dart';
 import 'real_calculus_proofs.dart';
 import 'exact_constant.dart';
 import 'exact_complex_constant.dart';
+import 'complex_quadratic_solver.dart';
 import 'definite_antiderivative.dart';
 import 'function_reference.dart';
 import 'numeric_fallback.dart';
@@ -339,6 +340,15 @@ class CalculatorEngine {
 
   String solve(String expression, String symbol) {
     lastResultEvidence = null;
+    final complex = ComplexQuadraticSolver.solve(expression, symbol);
+    if (complex != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      if (complex.isEmpty) return '$symbol = (no solutions)';
+      return complex.length == 1
+          ? '$symbol = ${complex.single}'
+          : '$symbol = {${complex.join(', ')}}';
+    }
     final rational = RationalEquationSolver.solve(expression, symbol);
     if (rational != null) {
       lastResultEvidence = const ResultEvidence(

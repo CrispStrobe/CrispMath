@@ -5,7 +5,7 @@ import 'polynomial.dart';
 class ExactConstantEvaluator {
   static String? evaluate(String input) {
     if (input.length > 512 ||
-        !RegExp(r'^[\d.\s+*/%^()\-absqrtfloorceilingE]+$').hasMatch(input)) {
+        !RegExp(r'^[\d.\s+*/%^!()\-absqrtfloorceilingE]+$').hasMatch(input)) {
       return null;
     }
     try {
@@ -120,7 +120,12 @@ class _ConstantParser {
   }
 
   Rational power() {
-    final base = primary();
+    var base = primary();
+    // Match the symbolic parser: factorial binds more tightly than power;
+    // repeated postfix ! means repeated factorial, not double factorial.
+    while (take('!')) {
+      base = factorial(base);
+    }
     if (!take('^')) return base;
     // Unary recurses into power: a^b^c means a^(b^c), while -a^b
     // means -(a^b). A parenthesized negative base stays negative.
@@ -141,6 +146,12 @@ class _ConstantParser {
   }
 
   Rational primary() {
+    if (take('factorial')) {
+      if (!take('(')) throw _Decline();
+      final value = expression();
+      if (!take(')')) throw _Decline();
+      return factorial(value);
+    }
     for (final name in ['floor', 'ceiling', 'ceil']) {
       if (!take(name)) continue;
       if (!take('(')) throw _Decline();
@@ -197,6 +208,23 @@ class _ConstantParser {
     return checked(scale.isNegative
         ? Rational(digits * powerOfTen, BigInt.one)
         : Rational(digits, powerOfTen));
+  }
+
+  Rational factorial(Rational value) {
+    // The argument bound applies before converting to int or starting a loop.
+    // Each multiplication checks its allocation budget before constructing it.
+    if (!value.isInteger || value.numerator.isNegative ||
+        value.numerator > BigInt.from(2048)) {
+      throw _Decline();
+    }
+    var product = BigInt.one;
+    final n = value.numerator.toInt();
+    for (var i = 2; i <= n; i++) {
+      final factor = BigInt.from(i);
+      productBudget(product, factor);
+      product *= factor;
+    }
+    return checked(Rational(product, BigInt.one));
   }
 
   /// Integer Newton iteration never converts to double or guesses exactness.

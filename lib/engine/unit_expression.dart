@@ -483,19 +483,23 @@ class UnitExpressionEvaluator {
 
   static _UnitMatch? _tryMatchUnitAt(
       String s, int start, List<String> symbolsLongestFirst) {
-    // A compound target can include a derived unit and a powered catalog
-    // unit (N/cm²), not just the curated length/time velocity spellings.
-    final quotient = RegExp(
-            r'^([A-Za-zμµ°]+(?:\^[23]|[²³])?)/([A-Za-zμµ°]+(?:\^[23]|[²³])?)')
+    // Contiguous products and quotients are unit syntax in either a quantity
+    // or an explicit target. Division remains left-associative (kg/m/s).
+    final compoundExpression = RegExp(
+            r'^([A-Za-zμµ°]+(?:\^[23]|[²³])?)(?:[*/·][A-Za-zμµ°]+(?:\^[23]|[²³])?)+')
         .firstMatch(s.substring(start));
-    if (quotient != null) {
-      final end = start + quotient[0]!.length;
+    if (compoundExpression != null) {
+      final text = compoundExpression[0]!;
+      final end = start + text.length;
+      final factors = text.split(RegExp(r'[*/·]'));
+      if (text.length > 1024 || factors.length > 16) return null;
       if (end == s.length ||
-          (!_isWordChar(s[end]) && s[end] != '^' && s[end] != '/')) {
+          (!_isWordChar(s[end]) && !'^/*·'.contains(s[end]))) {
         _UnitToken? atomic(String symbol) {
-          final catalog = UnitCatalog.bySymbolWithPrefixes(symbol);
+          final canonical = _aliases[symbol] ?? symbol;
+          final catalog = UnitCatalog.bySymbolWithPrefixes(canonical);
           if (catalog != null) return _UnitToken.single(catalog);
-          final derived = DerivedUnits.bySymbolWithPrefixes(symbol);
+          final derived = DerivedUnits.bySymbolWithPrefixes(canonical);
           if (derived != null) return _UnitToken.derived(derived);
           final power = RegExp(r'^([A-Za-zμµ°]+)(?:\^([23])|([²³]))$')
               .firstMatch(symbol);
@@ -510,21 +514,30 @@ class UnitExpressionEvaluator {
               scale: scale * scale * (cubed ? scale : 1)));
         }
 
-        final numerator = atomic(quotient[1]!);
-        final denominator = atomic(quotient[2]!);
-        if (numerator != null && denominator != null &&
-            !_hasNonZeroOffset(numerator.unit) &&
-            !_hasNonZeroOffset(denominator.unit)) {
-          final symbol = quotient[0]!
-              .replaceAll('^2', '²').replaceAll('^3', '³');
-          // Preserve catalog velocity identity where it already exists.
-          final curated = UnitCatalog.bySymbolWithPrefixes(symbol);
-          if (curated != null) return _UnitMatch.single(curated, end);
-          return _UnitMatch.derived(DerivedUnit(
-              symbol: symbol, name: symbol,
-              dim: numerator.dim / denominator.dim,
-              scale: numerator.toSi(1) / denominator.toSi(1)), end);
+        final first = atomic(factors.first);
+        if (first == null || _hasNonZeroOffset(first.unit)) return null;
+        var dimensions = first.dim;
+        var scale = first.toSi(1);
+        final operations = RegExp(r'[*/·]').allMatches(text).toList();
+        for (var i = 1; i < factors.length; i++) {
+          final next = atomic(factors[i]);
+          if (next == null || _hasNonZeroOffset(next.unit)) return null;
+          if (operations[i - 1][0] == '/') {
+            dimensions = dimensions / next.dim;
+            scale /= next.toSi(1);
+          } else {
+            dimensions = dimensions * next.dim;
+            scale *= next.toSi(1);
+          }
         }
+        if (!scale.isFinite || scale <= 0) return null;
+        final symbol = text.replaceAll('^2', '²').replaceAll('^3', '³');
+        // Preserve catalog velocity identity where it already exists.
+        final curated = UnitCatalog.bySymbolWithPrefixes(symbol);
+        if (curated != null) return _UnitMatch.single(curated, end);
+        return _UnitMatch.derived(DerivedUnit(
+            symbol: symbol, name: symbol,
+            dim: dimensions, scale: scale), end);
       }
     }
     // Compose supported metric area/volume/speed spellings on demand instead
