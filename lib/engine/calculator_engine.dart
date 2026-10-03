@@ -1300,6 +1300,22 @@ class CalculatorEngine {
     if (localPolynomial != null) {
       return series(localPolynomial, variable, point: point, order: order);
     }
+    // A polynomial in a different symbol is an exact coefficient, constant in
+    // this Taylor variable. Some native series implementations require the
+    // requested variable to occur and otherwise fail. Prove this bounded case
+    // directly, retaining the coefficient's actual variable and a real center.
+    if (expression.length <= 512 &&
+        RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(variable) &&
+        ExactConstantEvaluator.evaluate(point) != null) {
+      final expanded = SymbolicWeb.expand(expression);
+      final coefficient = expanded == null ? null : Polynomial.tryParse(expanded);
+      if (coefficient != null &&
+          (coefficient.degree <= 0 || coefficient.variable != variable)) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+        return coefficient.toString();
+      }
+    }
     final bridge = _liveBridge;
     if (bridge == null) return 'Error: series requires native library';
     try {

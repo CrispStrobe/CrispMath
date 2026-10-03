@@ -10,6 +10,18 @@ import 'package:crisp_math/engine/symbolic_web.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Taylor coefficient-only polynomials keep foreign symbols without native', () {
+    final engine = CalculatorEngine();
+    expect(engine.series('2-(2+y)', 'x', order: 3), '-y');
+    expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.symbolic);
+    expect(engine.series('2-(2+y)', 'x', point: '7/2', order: 64), '-y');
+    expect(engine.series('3*t^2+1', 'x', point: '-2', order: 1), '3t^2 + 1');
+    expect(engine.series('-3', 'x', order: 3), '-3');
+    expect(engine.series('2-(2+y)', 'x', point: '1/0', order: 3), startsWith('Error:'));
+    expect(engine.series('x+y', 'x', order: 3), startsWith('Error:'));
+    expect(engine.series('x', 'x', order: 3), startsWith('Error:'));
+    expect(engine.series('sin(y)', 'x', order: 3), startsWith('Error:'));
+  });
   test('constant-first polynomial parsing retains actual non-x variables', () {
     expect(SymbolicWeb.expand('2-(2+y)'), '-y');
     expect(SymbolicWeb.expand('2*t+1'), '2t + 1');
