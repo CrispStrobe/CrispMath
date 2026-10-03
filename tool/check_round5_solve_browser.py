@@ -66,7 +66,8 @@ async def check_incremental_badges(page, doc_id, batch, baseline, snapshots):
     assert all(line.get('evidence') for line in formal_baseline), baseline
     edits = [
         ('rename-owner', 'y=9', ['x'], '9', False),
-        ('invalidate-owner', 'x=1+', ['x'], None, True),
+        ('incomplete-owner', 'x=1+', ['x'], None, False),
+        ('invalidate-owner', 'x=diff(1)', ['x'], None, True),
         ('remove-owner', '', ['x'], None, False),
         ('restore-owner', 'x=9', [], '9', False),
         ('change-owner-value', 'x=12', [], '12', False),
@@ -86,7 +87,7 @@ async def check_incremental_badges(page, doc_id, batch, baseline, snapshots):
           if(rows.length!==3 || rows[0].s!==item.source)return false;
           if(Boolean(rows[0].e)!==item.ownerError)return false;
           if(item.ownerResult!==null && rows[0].r!==item.ownerResult)return false;
-          if(item.source==='' && rows[0].r)return false;
+          if(item.ownerResult===null && rows[0].r)return false;
           return rows.slice(1).every((line,index) =>
             line.s===item.formal[index].s && !line.e &&
             line.r===item.formal[index].r &&
@@ -103,7 +104,7 @@ async def check_incremental_badges(page, doc_id, batch, baseline, snapshots):
         assert owner['s'] == source and bool(owner.get('e')) == owner_error, owner
         if owner_result is not None:
             assert owner.get('r') == owner_result, owner
-        elif not source:
+        else:
             assert not owner.get('r'), owner
         for case, line, original in zip(batch[1:], document['l'][1:],
                                         formal_baseline):
