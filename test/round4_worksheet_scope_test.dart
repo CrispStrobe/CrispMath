@@ -1,6 +1,7 @@
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/result_evidence.dart';
 import 'package:crisp_math/services/engine_op.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
 import 'package:crisp_math/services/notepad_dispatcher.dart';
@@ -106,13 +107,25 @@ void main() {
     expect(dependenciesOfLine(parse('N/cm'), {'N', 'cm'}), {'N', 'cm'});
   });
 
-  test('actual worksheet limit shadows global x and reacts to its point', () async {
+  test('worksheet limit routing shadows global x and reacts to its point', () async {
     final engine = _PureScopeEngine();
+    final calls = <EngineOp>[];
     final dispatcher = NotepadDispatcher(
         engine: engine, yieldLocalWork: false, formatNumber: (value) => value,
         evaluateDetailedExpression: (source) async =>
             runEngineOpDetailed(engine, EngineOp('evaluate', source)),
-        runDetailedOperation: (op) async => runEngineOpDetailed(engine, op));
+        runDetailedOperation: (op) async {
+          calls.add(op);
+          expect(op.kind, 'limit');
+          expect(op.arg1, '(2)*x^2');
+          expect(op.arg2, 'x');
+          // This continuous polynomial's limit equals its value at the
+          // approach point. Exercise real substitution and exact evaluation;
+          // native/WASM runtime and UI checks cover the actual limit backend.
+          final value = engine.evaluate(
+              engine.substitute(op.arg1, op.arg2!, op.arg3!));
+          return ComputedResult(value, engine.lastResultEvidence);
+        });
     final doc = NotepadDocument.fresh(name: 'Reactive limit');
     doc.lines
       ..clear()
@@ -124,12 +137,16 @@ void main() {
     await evaluator.evaluateAll(doc);
     expect(doc.lines.last.cachedError, isNull);
     expect(doc.lines.last.cachedResult, '162');
+    expect(calls, hasLength(1));
+    expect(calls.single.arg3, '(9)');
     expect(doc.lines.last.cachedFreeVars, isEmpty);
     expect(buildDependencyGraph(doc).dependsOn[2], {0, 1});
     doc.lines[1].source = 'x=3';
     await evaluator.evaluateFrom(doc, 1);
     expect(doc.lines.last.cachedError, isNull);
     expect(doc.lines.last.cachedResult, '18');
+    expect(calls, hasLength(2));
+    expect(calls.last.arg3, '(3)');
     expect(doc.lines.last.cachedFreeVars, isEmpty);
   });
 

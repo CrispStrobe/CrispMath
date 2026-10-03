@@ -22,7 +22,9 @@ List<String>? parseLimitArguments(String source) {
   if (!call.startsWith('limit(') || !call.endsWith(')')) return null;
   final args = _split(call.substring(6, call.length - 1));
   if (args == null || args.length != 3 ||
-      !RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(args[1])) return null;
+      !RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(args[1])) {
+    return null;
+  }
   return args;
 }
 
