@@ -108,21 +108,44 @@ async def check_modules(args):
                             if args.constraint_only:
                                 roles=await page.get_by_role('textbox').evaluate_all("""els=>els.map((el,index)=>{
                                   const r=el.getBoundingClientRect();return {index,tag:el.tagName,value:el.value??null,
-                                  readOnly:el.readOnly===true||el.getAttribute('aria-readonly')==='true',
+                                  readOnly:el.readOnly===true||el.getAttribute('aria-readonly')==='true',disabled:el.disabled===true,
                                   attributes:Object.fromEntries(Array.from(el.attributes).map(a=>[a.name,a.value])),
                                   box:{x:r.x,y:r.y,width:r.width,height:r.height}};})""")
                                 item['textboxRolesBeforeFocus']=roles
                                 header_box=await header.bounding_box()
-                                candidates=[node for node in roles if node['readOnly'] and node['box']['width']>0
+                                candidates=[node for node in roles if node['disabled'] and node['box']['width']>0
                                             and node['box']['height']>0 and node['box']['y']>=header_box['y']+header_box['height']]
-                                assert len(candidates)==1,('Expected one actual read-only result control below header',roles,header_box)
+                                assert len(candidates)==1,('Expected one actual disabled result placeholder below header',roles,header_box)
                                 result_control=page.get_by_role('textbox').nth(candidates[0]['index'])
-                                await real_click(page,result_control)
+                                result_parent=result_control.locator('..')
+                                assert await result_parent.evaluate("el=>el.tagName==='FLT-SEMANTICS'"), 'Measured semantic result parent required'
+                                item['resultParentGeometry']=await result_parent.bounding_box()
+                                await real_click(page,result_parent)
                                 await controls.next_frames(page)
-                                await expect(result_control).to_have_value(re.compile(r'.+'),timeout=10000)
                                 item['domAfterResultFocus']=await page.locator('input,textarea,[role="textbox"]').evaluate_all("""els=>els.map(el=>{
                                   const r=el.getBoundingClientRect();return {tag:el.tagName,attributes:Object.fromEntries(Array.from(el.attributes).map(a=>[a.name,a.value])),
                                   text:el.textContent,value:el.value??null,readOnly:el.readOnly??null,box:{x:r.x,y:r.y,width:r.width,height:r.height}};})""")
+                                item['activeAfterFocus']=await page.evaluate("""()=>({tag:document.activeElement.tagName,value:document.activeElement.value??null,attributes:Object.fromEntries(Array.from(document.activeElement.attributes).map(a=>[a.name,a.value]))})""")
+                                await expect(result_control).to_have_value(re.compile(r'.+'),timeout=10000)
+                                item['assignment']=await result_control.input_value()
+                                item['assignmentSource']='measured-semantic-parent-real-click-native-field-value'
+                                item['optimum']=validate_optimum(item['header'],item['assignment'])
+                                item['assignmentGeometry']=await result_parent.bounding_box()
+                                assert item['assignmentGeometry']['y']>=header_box['y']+header_box['height']
+                                await context.grant_permissions(['clipboard-read','clipboard-write'])
+                                await real_click(page,page.get_by_role('button',name='Copy solutions',exact=True))
+                                item['clipboardAssignment']=await page.evaluate('()=>navigator.clipboard.readText()')
+                                assert item['clipboardAssignment']==item['assignment']
+                                validate_optimum(item['header'],item['clipboardAssignment'])
+                                await real_click(page,field)
+                                await expect(field).to_have_value(source)
+                                item['inputReadBackAfterResult']=await field.input_value()
+                                await real_click(page,result_parent)
+                                await expect(result_control).to_have_value(item['assignment'])
+                                await page.screenshot(path=str(output/f'{name}-{width}-result.png'))
+                                assert not errors,errors
+                                item['passed']=True
+                                continue
                             # Flutter SelectableText exposes its displayed text
                             # as a read-only native field, not a text-node label.
                             await page.wait_for_function(r"""()=>Array.from(document.querySelectorAll('input,textarea')).some(el=>
