@@ -23,6 +23,9 @@ controls.CASES = [
     ('triple-cosine-limit', 'limit((1-cos(3*x))/x^2,x,0)', '9/2'),
     ('squared-denominator-integral', 'integrate(x/(1+x^2)^2,x,0,1)', '1/4'),
     ('conjugate-product', '(3+2*I)*(3-2*I)', '13'),
+    ('unit-name-bar', 'bar=7', '7'),
+    ('unit-name-m', 'm=2', '2'),
+    ('compound-pressure-bar', '1 kN/m^2 in bar', '0.01 bar'),
 ]
 
 NUMERIC = re.compile(r'[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:/\d+)?')
@@ -33,6 +36,12 @@ def validate_result(case, line):
     assert line.get('s') == source and not line.get('e'), (case, line)
     result = line.get('r')
     assert isinstance(result, str) and result, (case, line)
+    if case_id == 'compound-pressure-bar':
+        match = re.fullmatch(r'([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+bar', result)
+        assert match and abs(float(match[1]) - 0.01) < 1e-10, (case, line)
+        assert not line.get('f'), (case, line)
+        assert (line.get('evidence') or {}).get('method') == 'unitConversion', (case, line)
+        return
     if case_id == 'function-template':
         assert re.sub(r'\s+', '', result) in {'t+1', '1+t'}, (case, line)
         assert not line.get('f'), (case, line)

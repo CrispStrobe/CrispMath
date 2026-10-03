@@ -15,6 +15,12 @@ on:
   pull_request:
     branches: [main, latex-input-field]
   workflow_dispatch:
+    inputs:
+      macos_runner:
+        description: 'GitHub-hosted macOS image (queue fallback)'
+        type: choice
+        options: [macos-14, macos-latest]
+        default: macos-14
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,7 +28,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: ${{ inputs.macos_runner || 'macos-14' }}
     timeout-minutes: 60
 
     steps:

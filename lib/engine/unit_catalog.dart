@@ -192,6 +192,12 @@ class DerivedUnits {
       dim: Dimensions(mass: 1, length: -1, time: -2),
       scale: 1.0,
     ),
+    'bar': DerivedUnit(
+      symbol: 'bar',
+      name: 'bar',
+      dim: Dimensions(mass: 1, length: -1, time: -2),
+      scale: 100000.0,
+    ),
     'Hz': DerivedUnit(
       symbol: 'Hz',
       name: 'hertz',

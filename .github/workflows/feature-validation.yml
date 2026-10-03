@@ -89,7 +89,7 @@ jobs:
           test/symbolic_taylor_test.dart test/result_evidence_test.dart test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/integral_arguments_test.dart
           test/notepad_functions_test.dart test/notepad_batch_test.dart test/notepad_scope_cache_test.dart test/notepad_activity_test.dart
           test/selected_listenable_builder_test.dart test/notepad_dispatcher_test.dart
-          test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart
+          test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round5_numeric_regressions_test.dart
   unit:
     if: ${{ !inputs.probe_build_run_id && !inputs.browser_only && !inputs.checks_only }}
     runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
