@@ -107,6 +107,15 @@ class RoundEightReferenceControls(unittest.TestCase):
             with self.subTest(wrong=wrong),self.assertRaises(AssertionError):
                 normal_cdf_display([group(wrong)],390,844)
 
+    def test_reactive_trace_keeps_parameter_value_and_no_builtin_badge(self):
+        self.check_value('reactive-trace-parameter','2')
+        self.check_value('reactive-trace','5')
+        case = self.case('reactive-trace')
+        validate_result((case[0],case[1],'8'),{'s':case[1],'r':'8'})
+        self.reject_values('reactive-trace',['8'])
+        self.reject_values('reactive-trace',['5'],f=['trace'])
+        self.reject_values('reactive-trace',['5'],f=['a'])
+
 
 if __name__ == '__main__':
     unittest.main()

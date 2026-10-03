@@ -20,7 +20,32 @@ from round8_reference_checks import (CASES, validate_result, normal_cdf_display,
 
 controls.CASES = CASES
 controls.validate_result = validate_result
-controls.AFTER_ENTRY = None
+async def check_reactive_trace(page, doc_id, batch, saved, changes):
+    if batch[0][0] != 'reactive-trace-parameter':
+        return
+    field = page.get_by_role('textbox').first
+    for parameter in [5, 2]:
+        source = f'a={parameter}'
+        await field.click()
+        await controls.next_frames(page)
+        await field.fill(source)
+        await expect(field).to_have_value(source)
+        await page.wait_for_function("""item=>{
+          const raw=localStorage.getItem('flutter.crisp.notepadDoc.'+item.id);
+          if(!raw)return false;
+          const lines=JSON.parse(JSON.parse(raw)).l;
+          return lines.length===2 && lines[0].s===item.source &&
+            lines[0].r===String(item.value) && lines[1].s==='trace(Matrix([[a,1],[0,3]]))' &&
+            lines[1].r===String(item.value+3) && !lines.some(line=>line.e||(line.f||[]).length);
+        }""",arg={'id':doc_id,'source':source,'value':parameter})
+        actual = await controls.read_document(page,doc_id)
+        validate_result((batch[0][0],source,str(parameter)),actual['l'][0])
+        validate_result((batch[1][0],batch[1][1],str(parameter+3)),actual['l'][1])
+        changes.append({'source':source,'expectedTrace':parameter+3,'document':actual,
+                        'dependencyProof':'actual edit of a recomputed dependent trace; no graph metadata is persisted'})
+
+
+controls.AFTER_ENTRY = check_reactive_trace
 
 async def check_normal_cdf(args):
     output = Path(args.output) / 'normal-cdf'

@@ -44,6 +44,8 @@ CASES = [
     ('force-impulse', '1 N * 1 s in kg*m/s', ('unit', '1', 'kg*m/s')),
     ('area-volume', '1 m² * 1 m in L', ('unit', '1000', 'L')),
     ('specific-cgs-energy', '1 J / 2 kg in erg/g', ('unit', '5000', 'erg/g')),
+    ('reactive-trace-parameter', 'a=2', '2'),
+    ('reactive-trace', 'trace(Matrix([[a,1],[0,3]]))', '5'),
 ]
 EXACT_CASES = {'nested-rational-powers', 'factorial-quotient', 'rational-radicand'}
 
