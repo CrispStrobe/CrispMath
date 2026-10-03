@@ -41,10 +41,10 @@ void main() {
           routed.add(op);
           // Transport-only sentinel; mathematical values are independently
           // checked through the actual native/WASM document runtime fixtures.
-          return 'transport-ok';
+          return '17';
         });
     for (final alias in ['series', 'taylor']) {
-      expect(await dispatcher.evaluate('$alias(abs(x),x,(-2),((3)))'), 'transport-ok');
+      expect(await dispatcher.evaluate('$alias(abs(x),x,(-2),((3)))'), '17');
       expect(routed.last.kind, 'series');
       expect(routed.last.arg1, 'abs(x)');
       expect(routed.last.arg2, 'x');
