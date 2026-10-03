@@ -30,6 +30,10 @@ on:
         description: 'Optional existing feature-web run ID: run only the fast batch browser probe'
         type: string
         default: ''
+      probe_math_scope:
+        description: 'Probe solve scoping through the immutable app UI instead of batch editing'
+        type: boolean
+        default: false
       probe_clip_labels:
         description: 'Diagnostic only: inject semantic-label clipping into that older bundle'
         type: boolean
@@ -322,6 +326,7 @@ jobs:
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
       - name: Probe actual batch UI
+        if: ${{ inputs.probe_math_scope != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           CLIP_LABELS: ${{ inputs.probe_clip_labels }}
@@ -338,6 +343,15 @@ jobs:
             python tool/benchmark_workflows.py --trials 3 --source "$APP_SOURCE" --output browser-results/workflow-performance.json
             python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
           fi
+      - name: Probe actual solve scope UI
+        if: ${{ inputs.probe_math_scope == true }}
+        env:
+          APP_SOURCE: ${{ steps.app-source.outputs.source }}
+        run: |
+          python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
+          curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+          python tool/check_deployed_bundle.py --url http://localhost:8766/ --source "$APP_SOURCE"
+          python tool/check_round5_solve_browser.py --expected-source "$APP_SOURCE" --output browser-results/solve-scope
       - uses: actions/upload-artifact@v4
         if: always()
         with:
