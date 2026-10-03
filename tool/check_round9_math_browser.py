@@ -43,6 +43,7 @@ async def check_modules(args):
     output = Path(args.output) / 'modules'
     output.mkdir(parents=True, exist_ok=True)
     report = {'passed':False,'checks':[],'toolSource':os.environ.get('GITHUB_SHA'),
+              'coverage':'constraint-only-diagnostic' if args.constraint_only else 'full-round9-modules',
               'comparisonNote':'Independent frozen sample moments and bounded integer objective; actual visible UI, no diagnostic engine API.'}
     def save():
         (output/'report.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -50,7 +51,9 @@ async def check_modules(args):
         browser = await pw.chromium.launch(args=['--no-sandbox','--enable-unsafe-swiftshader'])
         try:
             for width,height in [(1280,900),(390,844)]:
-                for name,source,references in [*STATISTICS_CASES,('shifted-quadratic-optimum',CONSTRAINT_PROGRAM,None)]:
+                module_cases=[('shifted-quadratic-optimum',CONSTRAINT_PROGRAM,None)]
+                if not args.constraint_only: module_cases=[*STATISTICS_CASES,*module_cases]
+                for name,source,references in module_cases:
                     context,page,errors = await controls.context_for(browser,{
                         'viewport':{'width':width,'height':height},'cpu':1,'has_touch':width<600})
                     item = {'case':name,'width':width,'height':height,'source':source,
@@ -98,6 +101,28 @@ async def check_modules(args):
                             header = page.get_by_text(re.compile(r'^Optimal: objective =')).first
                             await header.wait_for(state='attached',timeout=30000)
                             item['header']=await header.inner_text()
+                            item['domBeforeResultFocus']=await page.locator('flt-semantics,input,textarea,[role="textbox"]').evaluate_all("""els=>els.map(el=>{
+                              const r=el.getBoundingClientRect();return {tag:el.tagName,attributes:Object.fromEntries(Array.from(el.attributes).map(a=>[a.name,a.value])),
+                              text:el.textContent,value:el.value??null,readOnly:el.readOnly??null,box:{x:r.x,y:r.y,width:r.width,height:r.height}};})""")
+                            item['activeBeforeFocus']=await page.evaluate("""()=>({tag:document.activeElement.tagName,value:document.activeElement.value??null,role:document.activeElement.getAttribute('role')})""")
+                            if args.constraint_only:
+                                roles=await page.get_by_role('textbox').evaluate_all("""els=>els.map((el,index)=>{
+                                  const r=el.getBoundingClientRect();return {index,tag:el.tagName,value:el.value??null,
+                                  readOnly:el.readOnly===true||el.getAttribute('aria-readonly')==='true',
+                                  attributes:Object.fromEntries(Array.from(el.attributes).map(a=>[a.name,a.value])),
+                                  box:{x:r.x,y:r.y,width:r.width,height:r.height}};})""")
+                                item['textboxRolesBeforeFocus']=roles
+                                header_box=await header.bounding_box()
+                                candidates=[node for node in roles if node['readOnly'] and node['box']['width']>0
+                                            and node['box']['height']>0 and node['box']['y']>=header_box['y']+header_box['height']]
+                                assert len(candidates)==1,('Expected one actual read-only result control below header',roles,header_box)
+                                result_control=page.get_by_role('textbox').nth(candidates[0]['index'])
+                                await real_click(page,result_control)
+                                await controls.next_frames(page)
+                                await expect(result_control).to_have_value(re.compile(r'.+'),timeout=10000)
+                                item['domAfterResultFocus']=await page.locator('input,textarea,[role="textbox"]').evaluate_all("""els=>els.map(el=>{
+                                  const r=el.getBoundingClientRect();return {tag:el.tagName,attributes:Object.fromEntries(Array.from(el.attributes).map(a=>[a.name,a.value])),
+                                  text:el.textContent,value:el.value??null,readOnly:el.readOnly??null,box:{x:r.x,y:r.y,width:r.width,height:r.height}};})""")
                             # Flutter SelectableText exposes its displayed text
                             # as a read-only native field, not a text-node label.
                             await page.wait_for_function(r"""()=>Array.from(document.querySelectorAll('input,textarea')).some(el=>
@@ -129,6 +154,7 @@ async def check_modules(args):
                     except Exception as error:
                         item['error']=repr(error)
                         item['pageErrors']=errors
+                        item['domAtFailure']=await page.locator('input,textarea,[role="textbox"]').evaluate_all("els=>els.map(el=>({tag:el.tagName,value:el.value??null,readOnly:el.readOnly??null,attributes:Object.fromEntries(Array.from(el.attributes).map(a=>[a.name,a.value]))}))")
                         item['semanticLabels']=await page.locator('[aria-label]').evaluate_all("els=>els.map(el=>el.getAttribute('aria-label'))")
                         await page.screenshot(path=str(output/f'failure-{name}-{width}.png'))
                         save()
@@ -143,12 +169,13 @@ async def check_modules(args):
 
 
 async def check(args):
-    await controls.check(args)
+    if not args.constraint_only: await controls.check(args)
     await check_modules(args)
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--constraint-only',action='store_true',help='Diagnostic only: inspect the real constraint result DOM; skips worksheet/statistics checks')
     parser.add_argument('--url',default='http://127.0.0.1:8766/')
     parser.add_argument('--output',default='browser-results/round9-math-ui')
     parser.add_argument('--expected-source',default=os.environ.get('EXPECTED_SOURCE'))

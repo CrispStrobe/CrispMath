@@ -46,6 +46,10 @@ on:
         description: 'Run strict ninth-audit worksheet/statistics/constraint checks against an immutable validated bundle'
         type: boolean
         default: false
+      probe_round9_constraint_only:
+        description: 'Diagnostic only: inspect real constraint result focus/DOM, without claiming full math coverage'
+        type: boolean
+        default: false
       probe_clip_labels:
         description: 'Diagnostic only: inject semantic-label clipping into that older bundle'
         type: boolean
@@ -370,6 +374,7 @@ jobs:
           PROBE_ROUND7: ${{ inputs.probe_round7_math }}
           PROBE_ROUND8: ${{ inputs.probe_round8_math }}
           PROBE_ROUND9: ${{ inputs.probe_round9_math }}
+          ROUND9_CONSTRAINT_ONLY: ${{ inputs.probe_round9_constraint_only }}
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
@@ -383,7 +388,9 @@ jobs:
             python tool/check_round8_math_browser.py --expected-source "$APP_SOURCE" --output browser-results/round8-math || status=1
           fi
           if [ "$PROBE_ROUND9" = "true" ]; then
-            python tool/check_round9_math_browser.py --expected-source "$APP_SOURCE" --output browser-results/round9-math || status=1
+            ROUND9_ARGS=()
+            if [ "$ROUND9_CONSTRAINT_ONLY" = "true" ]; then ROUND9_ARGS+=(--constraint-only); fi
+            python tool/check_round9_math_browser.py "${ROUND9_ARGS[@]}" --expected-source "$APP_SOURCE" --output browser-results/round9-math || status=1
           fi
           exit "$status"
       - name: Probe actual solve scope UI
