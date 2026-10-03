@@ -1,3 +1,5 @@
+import '../engine/exact_constant.dart';
+
 /// Both worksheet and calculator forms, with nested commas kept in arguments.
 /// Returns [expression, variable] or [expression, variable, lower, upper].
 List<String>? parseIntegralArguments(String source) {
@@ -65,6 +67,33 @@ List<String>? parseDifferentiationArguments(String source) {
     return null;
   }
   return args;
+}
+
+/// Explicit Taylor calls bind their output variable only in the expression and
+/// declaration. Center and order remain ordinary, reactive worksheet values.
+/// The four arguments deliberately mirror the engine's explicit operation.
+List<String>? parseSeriesArguments(String source) {
+  final call = source.trim();
+  final prefix = call.startsWith('series(')
+      ? 'series('
+      : call.startsWith('taylor(')
+          ? 'taylor('
+          : null;
+  if (prefix == null || !call.endsWith(')')) return null;
+  final args = _split(call.substring(prefix.length, call.length - 1));
+  if (args == null || args.length != 4 ||
+      !RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(args[1])) {
+    return null;
+  }
+  return args;
+}
+
+/// An order must be a bounded exact integer, including parenthesized scope
+/// replacements; invalid values must never silently fall back to six terms.
+int? parseSeriesOrder(String source) {
+  final exact = ExactConstantEvaluator.evaluate(source);
+  final order = exact == null ? null : int.tryParse(exact);
+  return order != null && order >= 1 && order <= 64 ? order : null;
 }
 
 List<String>? _split(String body) {

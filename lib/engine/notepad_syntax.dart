@@ -768,14 +768,16 @@ Map<int, ({int end, String name, bool outputVariable})> _lexicalSyntaxBindings(
   };
   if (!source.contains('integrate') && !source.contains('limit') &&
       !source.contains('solve') && !source.contains('diff') &&
-      !source.contains('d/dx')) {
+      !source.contains('d/dx') && !source.contains('series') &&
+      !source.contains('taylor')) {
     return bindings;
   }
   final syntaxCalls = RegExp(r'(d/dx|[A-Za-z_][A-Za-z0-9_]*)\s*\(');
   for (final call in syntaxCalls.allMatches(source)) {
     final name = call[1];
     if (name != 'integrate' && name != 'limit' && name != 'solve' &&
-        name != 'diff' && name != 'd/dx') {
+        name != 'diff' && name != 'd/dx' && name != 'series' &&
+        name != 'taylor') {
       continue;
     }
     final open = call.end - 1;
@@ -794,7 +796,9 @@ Map<int, ({int end, String name, bool outputVariable})> _lexicalSyntaxBindings(
             ? parseLimitArguments(input)
             : name == 'solve'
                 ? parseSolveArguments(input)
-                : parseDifferentiationArguments(input);
+                : name == 'series' || name == 'taylor'
+                    ? parseSeriesArguments(input)
+                    : parseDifferentiationArguments(input);
     if (args == null) {
       continue;
     }
@@ -807,6 +811,7 @@ Map<int, ({int end, String name, bool outputVariable})> _lexicalSyntaxBindings(
           (end: call.start + 4, name: 'dx', outputVariable: false);
     }
     final outputVariable = name == 'diff' || name == 'd/dx' ||
+        name == 'series' || name == 'taylor' ||
         (name == 'integrate' && args.length == 2);
     List<({int start, int end})> ranges(int start, int finish) {
       var position = start;

@@ -152,6 +152,7 @@ class WorkflowTasks {
                     final limit = parseLimitArguments(source.trim());
                     final solve = parseSolveArguments(source.trim());
                     final derivative = parseDifferentiationArguments(source.trim());
+                    final series = parseSeriesArguments(source.trim());
                     final EngineOp operation;
                     if (integral != null) {
                       operation = EngineOp('integrate', integral[0], integral[1],
@@ -163,6 +164,18 @@ class WorkflowTasks {
                       operation = EngineOp('solve', solve[0], solve[1]);
                     } else if (derivative != null) {
                       operation = EngineOp('differentiate', derivative[0], derivative[1]);
+                    } else if (series != null) {
+                      final order = parseSeriesOrder(series[3]);
+                      if (order == null) {
+                        return const ComputedResult(
+                            'Error: series order must be an integer in 1..64', null);
+                      }
+                      operation = EngineOp('series', series[0], series[1],
+                          series[2], '$order');
+                    } else if ((source.trim().startsWith('series(') ||
+                            source.trim().startsWith('taylor(')) &&
+                        source.trim().endsWith(')')) {
+                      return const ComputedResult('Error: invalid series arguments', null);
                     } else {
                       operation = EngineOp('evaluate', source);
                     }

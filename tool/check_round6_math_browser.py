@@ -24,6 +24,9 @@ controls.CASES = [
     ('taylor-positive', 'series(abs(x),x,2,3)', 'x'),
     ('taylor-negative', 'series(abs(x),x,-2,3)', '-x'),
     ('taylor-product', 'series(x*abs(x),x,-2,3)', '-x^2'),
+    ('global-taylor-x', 'x=-2', '-2'),
+    ('taylor-global-alias', 'taylor(abs(x),x,2,3)', 'x'),
+    ('taylor-global-center', 'series(abs(x),x,x,3)', '-x'),
 ]
 
 
@@ -41,7 +44,8 @@ def validate_result(case, line):
     if case_id.startswith('taylor-'):
         polynomial = re.sub(r'\s+', '', result).replace('**', '^').replace('²', '^2')
         assert polynomial == expected, (case, line)
-        assert set(line.get('f') or []) == {'x'}, (case, line)
+        expected_free = set() if case_id.startswith('taylor-global-') else {'x'}
+        assert set(line.get('f') or []) == expected_free, (case, line)
         return
     if case_id == 'multivariate-cancellation':
         assert re.sub(r'\s+', '', result) in {'x+y', 'y+x'}, (case, line)
@@ -67,6 +71,28 @@ def validate_result(case, line):
     assert not line.get('f'), (case, line)
 
 
+async def check_incremental_taylor(page, doc_id, batch, saved, changes):
+    if batch[0][0] != 'global-taylor-x':
+        return
+    field = page.get_by_role('textbox').first
+    for source, values in [('x=2', ['2', 'x', 'x']),
+                           ('x=-2', ['-2', 'x', '-x'])]:
+        await field.click()
+        await controls.next_frames(page)
+        await field.fill(source)
+        await page.wait_for_function("""item => {
+          const raw=localStorage.getItem('flutter.crisp.notepadDoc.'+item.id);
+          if(!raw)return false;
+          const lines=JSON.parse(JSON.parse(raw)).l;
+          return lines[0].s===item.source && lines.every((line,index)=>
+            !line.e && (line.r||'').replace(/\\s+/g,'')===item.values[index] &&
+            !(line.f||[]).length);
+        }""", arg={'id': doc_id, 'source': source, 'values': values})
+        actual = await controls.read_document(page, doc_id)
+        changes.append({'source': source, 'expected': values, 'document': actual})
+
+
+controls.AFTER_ENTRY = check_incremental_taylor
 controls.validate_result = validate_result
 
 if __name__ == '__main__':

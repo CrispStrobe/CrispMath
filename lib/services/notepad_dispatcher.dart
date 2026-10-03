@@ -319,6 +319,16 @@ class NotepadDispatcher {
       final args = _splitCasArgs(trimmed);
       if (args.length != 3) return null;
       op = EngineOp('limit', _native(args[0]), args[1].trim(), args[2].trim());
+    } else if (_isCasCall(trimmed, 'series') || _isCasCall(trimmed, 'taylor')) {
+      final args = parseSeriesArguments(trimmed);
+      if (args == null) {
+        return const ComputedResult('Error: invalid series arguments', null);
+      }
+      final order = parseSeriesOrder(args[3]);
+      if (order == null) {
+        return const ComputedResult('Error: series order must be an integer in 1..64', null);
+      }
+      op = EngineOp('series', _native(args[0]), args[1], args[2], '$order');
     } else if (_isCasCall(trimmed, 'factor')) {
       final args = _splitCasArgs(trimmed);
       if (args.length != 1) return null;
