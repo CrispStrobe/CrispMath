@@ -128,7 +128,7 @@ def validate_result(case, line):
         assert not line.get('f'), (case, line)
         return
     if case_id == 'complex-conjugate':
-        assert polynomial_coefficients(result.replace('I', 'x')) == expected, (case, line)
+        assert polynomial_coefficients(result.translate(str.maketrans({'I': 'x', 'i': 'x'}))) == expected, (case, line)
         assert not line.get('f'), (case, line)
         return
     if case_id == 'source-hole-root':
@@ -142,7 +142,7 @@ def validate_result(case, line):
         assert set(line.get('f') or []) == free, (case, line)
         return
     if case_id == 'principal-squared-root':
-        assert polynomial_coefficients(result.replace('I', 'x')) == [Fraction(3), Fraction(-4)], (case, line)
+        assert polynomial_coefficients(result.translate(str.maketrans({'I': 'x', 'i': 'x'}))) == [Fraction(3), Fraction(-4)], (case, line)
     else:
         expected_value = expected
         actual_value = result

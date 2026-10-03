@@ -32,9 +32,17 @@ class TaylorReferenceControls(unittest.TestCase):
 
     def test_principal_root_exact_components(self):
         case = ('principal-squared-root', 'sqrt((-3+4*I)^2)', '3-4*I')
-        for result in ['3.0-4.0I', '-4I+3', '(3-4*I)', '3-8/2I']:
+        for result in ['3.0-4.0I', '-4I+3', '(3-4*I)', '3-8/2I', '3.0-4.0i']:
             validate_result(case, {'s': case[1], 'r': result})
         for result in ['-3+4I', '3-4.0001I', '3', '3-4I+I^2', 'Error']:
+            with self.subTest(result=result), self.assertRaises(AssertionError):
+                validate_result(case, {'s': case[1], 'r': result})
+
+    def test_conjugate_accepts_only_correct_imaginary_components(self):
+        case = ('complex-conjugate', 'conjugate((2+3*I)/(1-2*I))', [Fraction(-4,5), Fraction(-7,5)])
+        for result in ['-4/5 - 7/5i', '-4/5-7/5*I', '-0.8-1.4i']:
+            validate_result(case, {'s': case[1], 'r': result})
+        for result in ['-4/5+7/5i', '-4/5', '-4/5-7/5i+i^2']:
             with self.subTest(result=result), self.assertRaises(AssertionError):
                 validate_result(case, {'s': case[1], 'r': result})
 

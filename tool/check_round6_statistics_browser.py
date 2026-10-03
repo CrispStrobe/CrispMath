@@ -86,22 +86,35 @@ async def check_hypothesis(page, case_id, inputs, references, item, output, widt
                       'Degrees of freedom': 'p-value (two-sided)',
                       'p-value (two-sided)': 'p-value (upper tail)',
                       'p-value (upper tail)': 'p-value (lower tail)'}
-    # Wait for the expected labels/value pairs after actual form edits; read
-    # merged body semantics and retain each row's explicit following label.
+    # Flutter renders the results as one aria-labelled semantic group; its
+    # ordered text preserves actual row/value pairing. Never concatenate
+    # labels from unrelated nodes or read a hidden computation API.
+    first_label = 'χ² statistic' if case_id == 'chi-square-empty-bin' else 'Sample mean x̄'
+    group = page.get_by_label(re.compile('^'+re.escape(first_label)+r'\s'))
+    await group.wait_for(state='attached')
+    item['geometry'] = []
     for _ in range(12):
-        text = await page.locator('body').inner_text()
-        try:
-            rows = hypothesis_rows(text, successors)
-            if all(rows[label]['value'] == value for label,value in references.items()):
-                item.update({'renderedTable': text, 'rows': rows})
-                break
-        except AssertionError:
-            pass
+        assert await group.count() == 1, await group.count()
+        text = await group.get_attribute('aria-label')
+        rows = hypothesis_rows(text, successors)
+        for label,value in references.items():
+            assert rows[label]['value'] == value, (case_id,label,rows[label],value)
+        state = await group.evaluate("""el=>{
+          const r=el.getBoundingClientRect();
+          return {x:r.x,y:r.y,width:r.width,height:r.height,
+            visible:r.width>0&&r.height>0&&r.x>=0&&r.right<=innerWidth&&
+              r.y>=140&&r.bottom<=innerHeight};
+        }""")
+        item['geometry'].append(state)
+        if state['visible']:
+            item.update({'renderedTable': text, 'rows': rows,
+                         'tableSource': 'single-rendered-aria-label'})
+            break
         await page.mouse.move(page.viewport_size['width']*.8, page.viewport_size['height']*.65)
-        await page.mouse.wheel(0, 220)
+        await page.mouse.wheel(0, -160 if state['y']<140 else 160)
         await next_frames(page)
     else:
-        raise AssertionError((case_id, references, text))
+        raise AssertionError((case_id,'Result group not fully visible',item['geometry'],text))
     assert 'Reject H₀ at α' in text, (case_id,text)
     await page.screenshot(path=str(output / f'{case_id}-{width}-result.png'))
 
