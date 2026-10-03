@@ -24,19 +24,84 @@ CASES = [
 ]
 
 
-def rendered_rows(text):
-    """Parse the actual merged StatsTable semantics with explicit row bounds."""
-    number = r'(?:[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|Infinity|-Infinity|Undefined|NaN)'
-    successors = {'Count': 'Sum', 'Mean': 'Median', 'Median': 'Mode',
-                  'Std. deviation (n−1)': 'Variance (n)'}
-    rows = {}
-    for label, successor in successors.items():
-        pattern = rf'(?:^|\s){re.escape(label)}\s+({number})\s+{re.escape(successor)}(?:\s|$)'
-        matches = re.findall(pattern, text)
-        assert len(matches) == 1, (label, text, matches)
-        rows[label] = {'label': label, 'value': matches[0],
-                       'nextRowLabel': successor}
-    return rows
+from statistics_ui_reference_checks import rendered_rows, hypothesis_rows
+
+# GOF p=erfc(sqrt(5)); t mean=1e10, SD=1, n=3 gives t=sqrt(3)*1e10.
+# The df2 survival asymptote is 1/(2*t²), hence upper=1/6e20.
+TEST_CASES = [
+    ('chi-square-empty-bin', {'Observed counts': '0, 10', 'Expected counts': '5, 5'},
+     {'χ² statistic': '10', 'Degrees of freedom': '1', 'p-value (upper tail)': '0.001565'}),
+    ('student-t-far-upper-tail', {'Sample data': '9999999999, 10000000000, 10000000001', 'Hypothesized mean μ₀': '0'},
+     {'t-statistic': '1.7321e+10', 'Degrees of freedom': '2',
+      'p-value (two-sided)': '3.3333e-21', 'p-value (upper tail)': '1.6667e-21'}),
+]
+
+
+async def real_click(page, locator, *, horizontal=False):
+    """Reveal clipped Flutter controls with real wheel events, never force."""
+    for _ in range(12):
+        if await locator.count() == 1:
+            state = await locator.evaluate("""el=>{
+              const r=el.getBoundingClientRect(), x=r.x+r.width/2,y=r.y+r.height/2;
+              const hit=document.elementFromPoint(x,y);
+              return {ready:r.width>0&&r.height>0&&x>0&&x<innerWidth&&y>0&&y<innerHeight&&
+                !!hit&&(hit===el||el.contains(hit)),y};
+            }""")
+            if state['ready']:
+                await locator.click(trial=True, timeout=3000)
+                await locator.click()
+                return
+        else:
+            state = {}
+        width,height = page.viewport_size['width'],page.viewport_size['height']
+        if horizontal:
+            descriptive = page.get_by_text('Descriptive', exact=True).first
+            box = await descriptive.bounding_box()
+            assert box, 'Statistics tab bar must have actual geometry'
+            await page.mouse.move(width-30, box['y']+box['height']/2)
+            await page.mouse.wheel(180, 0)
+        else:
+            await page.mouse.move(width*.8, height*.65)
+            await page.mouse.wheel(0, -220 if state.get('y',height)<140 else 220)
+        await next_frames(page)
+    raise AssertionError(f'Control could not be revealed: {await locator.count()} matches')
+
+
+async def check_hypothesis(page, case_id, inputs, references, item, output, width):
+    await real_click(page, page.get_by_text('Tests', exact=True), horizontal=True)
+    choice = 'χ² goodness-of-fit' if case_id == 'chi-square-empty-bin' else 'One-sample t'
+    await real_click(page, page.get_by_text(choice, exact=True))
+    for label, value in inputs.items():
+        field = page.get_by_role('textbox', name=re.compile('^'+re.escape(label)))
+        await real_click(page, field)
+        await field.fill(value)
+        await expect(field).to_have_value(value)
+        await next_frames(page)
+    successors = {'χ² statistic': 'Degrees of freedom',
+                  'Degrees of freedom': 'p-value (upper tail)',
+                  'p-value (upper tail)': 'Reject H₀'} if case_id == 'chi-square-empty-bin' else {
+                      't-statistic': 'Degrees of freedom',
+                      'Degrees of freedom': 'p-value (two-sided)',
+                      'p-value (two-sided)': 'p-value (upper tail)',
+                      'p-value (upper tail)': 'p-value (lower tail)'}
+    # Wait for the expected labels/value pairs after actual form edits; read
+    # merged body semantics and retain each row's explicit following label.
+    for _ in range(12):
+        text = await page.locator('body').inner_text()
+        try:
+            rows = hypothesis_rows(text, successors)
+            if all(rows[label]['value'] == value for label,value in references.items()):
+                item.update({'renderedTable': text, 'rows': rows})
+                break
+        except AssertionError:
+            pass
+        await page.mouse.move(page.viewport_size['width']*.8, page.viewport_size['height']*.65)
+        await page.mouse.wheel(0, 220)
+        await next_frames(page)
+    else:
+        raise AssertionError((case_id, references, text))
+    assert 'Reject H₀ at α' in text, (case_id,text)
+    await page.screenshot(path=str(output / f'{case_id}-{width}-result.png'))
 
 
 async def check(args):
@@ -53,7 +118,7 @@ async def check(args):
             args=['--no-sandbox', '--enable-unsafe-swiftshader'])
         try:
             for width, height in [(1280, 900), (390, 844)]:
-                for case_id, source, references in CASES:
+                for case_id, source, references in CASES + TEST_CASES:
                     context, page, errors = await context_for(browser, {
                         'viewport': {'width': width, 'height': height},
                         'cpu': 1, 'has_touch': width < 600})
@@ -80,34 +145,37 @@ async def check(args):
                         await page.get_by_text(re.compile(
                             r'^Statistics\s+Descriptive stats, linear regression, '
                             r'normal & binomial distributions')).click()
-                        field = page.get_by_role('textbox').first
-                        await field.click()
-                        await next_frames(page)
-                        await field.fill(source)
-                        await expect(field).to_have_value(source)
-                        await next_frames(page)
-                        # Flutter merges the complete card into a single text
-                        # node; the hosted report and native screenshot confirm
-                        # this actual structure. Keep strict label/value pairing.
-                        table = page.get_by_text(re.compile(r'^Count\s+2\s+Sum\s')).first
-                        await table.wait_for()
-                        item['renderedTable'] = await table.inner_text()
-                        item['rows'] = rendered_rows(item['renderedTable'])
-                        for label, expected in references.items():
-                            assert item['rows'][label]['value'] == expected, (
-                                case_id, item['rows'][label], expected)
-                        await page.screenshot(path=str(output /
-                            f'{case_id}-{width}-upper.png'))
-                        # The phone's lower sample-SD row needs physical scrolling
-                        # for visual review. Read semantics again after scrolling.
-                        await page.mouse.move(width * .75, height * .65)
-                        await page.mouse.wheel(0, 350)
-                        await page.wait_for_timeout(150)
-                        await next_frames(page)
-                        after_scroll = await table.inner_text()
-                        assert rendered_rows(after_scroll) == item['rows'], after_scroll
-                        await page.screenshot(path=str(output /
-                            f'{case_id}-{width}-lower.png'))
+                        if isinstance(source, dict):
+                            await check_hypothesis(page, case_id, source, references, item, output, width)
+                        else:
+                            field = page.get_by_role('textbox').first
+                            await field.click()
+                            await next_frames(page)
+                            await field.fill(source)
+                            await expect(field).to_have_value(source)
+                            await next_frames(page)
+                            # Flutter merges the complete card into a single text
+                            # node; the hosted report and native screenshot confirm
+                            # this actual structure. Keep strict label/value pairing.
+                            table = page.get_by_text(re.compile(r'^Count\s+2\s+Sum\s')).first
+                            await table.wait_for()
+                            item['renderedTable'] = await table.inner_text()
+                            item['rows'] = rendered_rows(item['renderedTable'])
+                            for label, expected in references.items():
+                                assert item['rows'][label]['value'] == expected, (
+                                    case_id, item['rows'][label], expected)
+                            await page.screenshot(path=str(output /
+                                f'{case_id}-{width}-upper.png'))
+                            # The phone's lower sample-SD row needs physical scrolling
+                            # for visual review. Read semantics again after scrolling.
+                            await page.mouse.move(width * .75, height * .65)
+                            await page.mouse.wheel(0, 350)
+                            await page.wait_for_timeout(150)
+                            await next_frames(page)
+                            after_scroll = await table.inner_text()
+                            assert rendered_rows(after_scroll) == item['rows'], after_scroll
+                            await page.screenshot(path=str(output /
+                                f'{case_id}-{width}-lower.png'))
                         assert not errors, errors
                         item['passed'] = True
                     except Exception as error:
