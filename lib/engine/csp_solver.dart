@@ -1151,66 +1151,21 @@ class CspSolver {
     if (comparison == null) {
       return false;
     }
-    final names = <String>{};
-    var nonlinear = false;
-    var factorCount = 0;
-    List<({BigInt coefficient, List<String> factors})>? parse(String side) {
-      final matches = RegExp(r'([+-]?)([^+-]+)').allMatches(side).toList();
-      if (matches.isEmpty || matches.length > 64 ||
-          matches.map((m) => m[0]!).join() != side) {
-        return null;
-      }
-      final terms = <({BigInt coefficient, List<String> factors})>[];
-      for (final match in matches) {
-        var coefficient = match[1] == '-' ? -BigInt.one : BigInt.one;
-        final factors = <String>[];
-        final tokens = match[2]!.split('*');
-        factorCount += tokens.length;
-        if (factorCount > 128) {
-          return null;
-        }
-        for (final token in tokens) {
-          if (RegExp(r'^\d+$').hasMatch(token)) {
-            coefficient *= BigInt.parse(token);
-          } else if (RegExp(r'^[A-Za-z_]\w*$').hasMatch(token) &&
-              knownVars.contains(token)) {
-            factors.add(token);
-            names.add(token);
-          } else {
-            return null;
-          }
-        }
-        nonlinear |= factors.length > 1;
-        terms.add((coefficient: coefficient, factors: factors));
-      }
-      return terms;
-    }
-
-    final lhs = parse(comparison[1]!);
-    final rhs = parse(comparison[3]!);
-    if (lhs == null || rhs == null || !nonlinear) {
+    final lhs = _IntegerPolynomial.parse(comparison[1]!, knownVars);
+    final rhs = _IntegerPolynomial.parse(comparison[3]!, knownVars);
+    if (lhs == null || rhs == null ||
+        (!lhs.nonlinear && !rhs.nonlinear) ||
+        lhs.factorCount + rhs.factorCount > 128) {
       return false;
     }
-    BigInt evaluate(
-        List<({BigInt coefficient, List<String> factors})> terms,
-        Map<String, dynamic> values) {
-      var sum = BigInt.zero;
-      for (final term in terms) {
-        var product = term.coefficient;
-        for (final name in term.factors) {
-          product *= BigInt.from(values[name] as int);
-        }
-        sum += product;
-      }
-      return sum;
-    }
+    final names = {...lhs.names, ...rhs.names};
 
     bool satisfies(Map<String, dynamic> values) {
       // N-ary predicates may be queried before every variable is assigned.
       if (names.any((name) => values[name] == null)) {
         return true;
       }
-      final order = evaluate(lhs, values).compareTo(evaluate(rhs, values));
+      final order = lhs.evaluate(values).compareTo(rhs.evaluate(values));
       return switch (comparison[2]) {
         '==' => order == 0,
         '!=' => order != 0,
@@ -1487,7 +1442,8 @@ class CspSolver {
   /// inclusive `lo..hi` integer range. Multiple `vars:` lines are
   /// allowed. `allDifferent(...)` is expanded to pairwise `!=`
   /// constraints (small N — typical CSP examples have ≤ 10 vars).
-  /// `minimize` / `maximize` take a linear expression in the declared
+  /// `minimize` / `maximize` take a linear expression or bounded integer
+  /// sum/product expression in the declared
   /// variables and route to dart_csp's branch-and-bound; only one
   /// objective per program (specifying both, or one twice, is an
   /// error). With no objective the result is the enumeration of
@@ -2634,8 +2590,9 @@ class CspSolver {
   /// the [_ResultBlock] UI's empty-list branch never lights up for
   /// optimization mode.
   ///
-  /// Limitations: only linear objectives in the declared variables.
-  /// Non-linear objectives (`x*y`, `x^2`) are rejected at parse time.
+  /// Linear objectives keep their fast propagator. Bounded signed sums of
+  /// integer products (including repeated factors) use an exact predicate and
+  /// conservative range bounds. Powers/functions/division remain unsupported.
   static Future<DiophantineResult> solveOptimization({
     required Map<String, ({int min, int max})> variables,
     required List<String> constraints,
@@ -2656,27 +2613,55 @@ class CspSolver {
     }
     final knownVars = variables.keys.toSet();
     final parsed = _parseLinearTerms(objectiveExpr, knownVars);
-    if (parsed == null || parsed.vars.isEmpty) {
+    final polynomial = parsed == null
+        ? _IntegerPolynomial.parse(objectiveExpr, knownVars)
+        : null;
+    if ((parsed == null && (polynomial == null || !polynomial.nonlinear)) ||
+        (parsed != null && parsed.vars.isEmpty)) {
       return DiophantineResult.failure(
           'Could not parse ${minimize ? 'minimize' : 'maximize'} '
-          'expression "$objectiveExpr" — only linear expressions in '
-          'the declared variables are supported.');
+          'expression "$objectiveExpr" — use linear expressions or bounded '
+          'integer sums/products of declared variables.');
     }
-    final objConst = parsed.constant.toInt();
-    // Tight bounds on Σ coef_i · var_i + constant. For each term, the
-    // min contribution is coef * varLo when coef ≥ 0 else coef * varHi
-    // (symmetric for max). Sum independently, then fold in the
-    // constant offset so __obj__'s domain matches the user-visible
-    // objective value.
+    final objConst = parsed?.constant.toInt() ?? 0;
     var objLo = objConst;
     var objHi = objConst;
-    for (var i = 0; i < parsed.vars.length; i++) {
-      final coef = parsed.coeffs[i].toInt();
-      final range = variables[parsed.vars[i]]!;
-      final a = coef * range.min;
-      final b = coef * range.max;
-      objLo += a < b ? a : b;
-      objHi += a < b ? b : a;
+    if (parsed != null) {
+      // Preserve the dependency's efficient linear equality propagator.
+      for (var i = 0; i < parsed.vars.length; i++) {
+        final coef = parsed.coeffs[i].toInt();
+        final range = variables[parsed.vars[i]]!;
+        final a = coef * range.min;
+        final b = coef * range.max;
+        objLo += a < b ? a : b;
+        objHi += a < b ? b : a;
+      }
+    } else {
+      const safeInteger = 9007199254740991;
+      var assignments = BigInt.one;
+      for (final entry in variables.entries) {
+        final (:min, :max) = entry.value;
+        if (max < min || max - min > 10000 ||
+            min.abs() > safeInteger || max.abs() > safeInteger) {
+          return DiophantineResult.failure(
+              'Polynomial objective requires finite safe integer ranges '
+              'with max−min <= 10000.');
+        }
+        assignments *= BigInt.from(max - min + 1);
+      }
+      final bounds = polynomial!.bounds(variables);
+      final width = bounds.max - bounds.min + BigInt.one;
+      final safe = BigInt.from(safeInteger);
+      if (bounds.min.abs() > safe || bounds.max.abs() > safe ||
+          width > BigInt.from(10001) ||
+          assignments * width > BigInt.from(1000000)) {
+        return DiophantineResult.failure(
+            'Polynomial objective exceeds the bounded resource limit: '
+            'safe integer values, objective width <= 10001 and '
+            'combined domain size <= 1000000 required.');
+      }
+      objLo = bounds.min.toInt();
+      objHi = bounds.max.toInt();
     }
     const objVar = '__obj__';
     if (knownVars.contains(objVar)) {
@@ -2703,11 +2688,29 @@ class CspSolver {
       // Bind __obj__ = Σ coef_i · var_i + constant.
       // Move __obj__ to the LHS as `-1·__obj__` and the constant to
       // the RHS bound: Σ coef_i·var_i − __obj__ == −constant.
-      problem.addLinearEquals(
-        [...parsed.vars, objVar],
-        [...parsed.coeffs, -1],
-        -objConst,
-      );
+      if (parsed != null) {
+        problem.addLinearEquals(
+          [...parsed.vars, objVar],
+          [...parsed.coeffs, -1],
+          -objConst,
+        );
+      } else {
+        final objectivePolynomial = polynomial!;
+        final names = [...objectivePolynomial.names, objVar];
+        bool matches(Map<String, dynamic> values) {
+          if (names.any((name) => values[name] == null)) {
+            return true;
+          }
+          return objectivePolynomial.evaluate(values) ==
+              BigInt.from(values[objVar] as int);
+        }
+        if (names.length == 2) {
+          problem.addConstraint(names,
+              (dynamic a, dynamic b) => matches({names[0]: a, names[1]: b}));
+        } else {
+          problem.addConstraint(names, matches);
+        }
+      }
       for (final c in constraints) {
         if (_addPolynomialConstraint(problem, c, knownVars) ||
             _addLinearNotEquals(problem, c, knownVars)) {
@@ -3961,4 +3964,83 @@ class _LinearFlatZinc {
   ) =>
       'constraint $name([${coeffs.join(', ')}], '
       '[${vars.join(', ')}], $bound);';
+}
+
+/// Shared exact bounded grammar for polynomial constraints and objectives.
+class _IntegerPolynomial {
+  final List<({BigInt coefficient, List<String> factors})> terms;
+  final Set<String> names;
+  final int factorCount;
+  bool get nonlinear => terms.any((term) => term.factors.length > 1);
+
+  const _IntegerPolynomial(this.terms, this.names, this.factorCount);
+
+  static _IntegerPolynomial? parse(String source, Set<String> knownVars) {
+    if (source.length > 1024 ||
+        RegExp(r'[A-Za-z_0-9]\s+[A-Za-z_0-9]').hasMatch(source)) {
+      return null;
+    }
+    final text = source.replaceAll(RegExp(r'\s+'), '');
+    final matches = RegExp(r'([+-]?)([^+-]+)').allMatches(text).toList();
+    if (matches.isEmpty || matches.length > 64 ||
+        matches.map((match) => match[0]!).join() != text) {
+      return null;
+    }
+    final terms = <({BigInt coefficient, List<String> factors})>[];
+    final names = <String>{};
+    var factorCount = 0;
+    for (final match in matches) {
+      var coefficient = match[1] == '-' ? -BigInt.one : BigInt.one;
+      final factors = <String>[];
+      final tokens = match[2]!.split('*');
+      factorCount += tokens.length;
+      if (factorCount > 128) {
+        return null;
+      }
+      for (final token in tokens) {
+        if (RegExp(r'^\d+$').hasMatch(token)) {
+          coefficient *= BigInt.parse(token);
+        } else if (RegExp(r'^[A-Za-z_]\w*$').hasMatch(token) &&
+            knownVars.contains(token)) {
+          factors.add(token);
+          names.add(token);
+        } else {
+          return null;
+        }
+      }
+      terms.add((coefficient: coefficient, factors: factors));
+    }
+    return _IntegerPolynomial(terms, names, factorCount);
+  }
+
+  BigInt evaluate(Map<String, dynamic> values) {
+    var sum = BigInt.zero;
+    for (final term in terms) {
+      var product = term.coefficient;
+      for (final name in term.factors) {
+        product *= BigInt.from(values[name] as int);
+      }
+      sum += product;
+    }
+    return sum;
+  }
+
+  ({BigInt min, BigInt max}) bounds(Map<String, ({int min, int max})> variables) {
+    var lower = BigInt.zero;
+    var upper = BigInt.zero;
+    for (final term in terms) {
+      var lo = term.coefficient;
+      var hi = lo;
+      for (final name in term.factors) {
+        final range = variables[name]!;
+        final a = BigInt.from(range.min), b = BigInt.from(range.max);
+        final products = [lo * a, lo * b, hi * a, hi * b]..sort();
+        lo = products.first;
+        hi = products.last;
+      }
+      lower += lo;
+      upper += hi;
+    }
+    return (min: lower, max: upper);
+  }
 }

@@ -604,6 +604,7 @@ class UnitExpressionEvaluator {
     'tons': 't',
     'degree': '°',
     'degrees': '°',
+    'deg': '°',
     'degC': '°C',
     'celsius': '°C',
     'degF': '°F',

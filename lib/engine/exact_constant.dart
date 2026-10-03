@@ -1,11 +1,11 @@
 import 'polynomial.dart';
 
-/// Exact arithmetic for bounded rational constants and perfect-square roots.
+/// Exact arithmetic for bounded rational constants, roots and integer rounding.
 /// Returns null outside this grammar so callers can use their normal CAS path.
 class ExactConstantEvaluator {
   static String? evaluate(String input) {
     if (input.length > 512 ||
-        !RegExp(r'^[\d.\s+*/%^()\-absqrt]+$').hasMatch(input)) {
+        !RegExp(r'^[\d.\s+*/%^()\-absqrtfloorceiling]+$').hasMatch(input)) {
       return null;
     }
     try {
@@ -141,6 +141,22 @@ class _ConstantParser {
   }
 
   Rational primary() {
+    for (final name in ['floor', 'ceiling', 'ceil']) {
+      if (!take(name)) continue;
+      if (!take('(')) throw _Decline();
+      final value = expression();
+      if (!take(')')) throw _Decline();
+      var integer = value.numerator ~/ value.denominator;
+      final fractional = value.numerator % value.denominator != BigInt.zero;
+      if (fractional) {
+        if (name == 'floor' && value.numerator.isNegative) {
+          integer -= BigInt.one;
+        } else if (name != 'floor' && !value.numerator.isNegative) {
+          integer += BigInt.one;
+        }
+      }
+      return checked(Rational(integer, BigInt.one));
+    }
     if (take('sqrt')) {
       if (!take('(')) throw _Decline();
       final value = expression();

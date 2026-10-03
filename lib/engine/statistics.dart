@@ -119,25 +119,27 @@ class Statistics {
     if (data.isEmpty) {
       throw ArgumentError('describe() requires at least one data point.');
     }
+    if (data.any((value) => !value.isFinite)) {
+      throw ArgumentError('describe() requires finite observations.');
+    }
     final n = data.length;
     final sorted = List<double>.from(data)..sort();
-    final s = sorted.reduce((a, b) => a + b);
-    final mean = s / n;
-
-    // Variance: Welford-style two-pass is more numerically stable than
-    // the textbook sum-of-squares form, but for small student-scale
-    // datasets the difference is invisible. Use the textbook form.
-    double sqDev = 0;
-    for (final v in sorted) {
-      final d = v - mean;
-      sqDev += d * d;
-    }
-    final populationVariance = sqDev / n;
+    final moments = _centered(sorted);
+    final mean = moments.mean;
+    final valueScale = sorted.fold<double>(0, (a, b) => math.max(a, b.abs()));
+    final s = valueScale == 0 ? 0.0 :
+        _compensatedSum(sorted.map((value) => value / valueScale)) * valueScale;
+    final sqDev = _compensatedSum(
+        moments.deviations.map((value) => value * value));
+    // Compute deviations before their squares: variance can exceed double
+    // range even when the corresponding standard deviation is finite.
+    final populationStddev = math.sqrt(sqDev / n) * moments.scale;
     // Bessel correction is undefined for one observation. Keep that distinct
     // from its well-defined zero population variance.
-    final sampleVariance = n > 1 ? sqDev / (n - 1) : double.nan;
-    final populationStddev = math.sqrt(populationVariance);
-    final sampleStddev = math.sqrt(sampleVariance);
+    final sampleStddev = n > 1
+        ? math.sqrt(sqDev / (n - 1)) * moments.scale : double.nan;
+    final populationVariance = populationStddev * populationStddev;
+    final sampleVariance = sampleStddev * sampleStddev;
 
     return DescriptiveStats(
       count: n,
@@ -183,34 +185,7 @@ class Statistics {
       return LinearFit(
           slope: 0, intercept: ys.first, rSquared: double.nan, count: n);
     }
-    // Subtract a nearby anchor before averaging: raw sums of squares lose
-    // small variation at a large offset. Scaling the centered coordinates
-    // also prevents covariance/variance overflow at large magnitudes.
-    ({double mean, double scale, List<double> deviations}) centered(
-        List<double> values) {
-      final anchor = values.first;
-      var coordinates = values.map((value) => value - anchor).toList();
-      var origin = anchor;
-      double scale;
-      if (coordinates.any((value) => !value.isFinite)) {
-        // Opposite near-maximal doubles can have an unrepresentable
-        // difference although every observation and its mean are finite.
-        scale = values.fold<double>(0, (a, b) => math.max(a, b.abs()));
-        coordinates = values.map((value) => value / scale).toList();
-        origin = 0;
-      } else {
-        scale = coordinates.fold<double>(0, (a, b) => math.max(a, b.abs()));
-        coordinates = coordinates.map((value) => value / scale).toList();
-      }
-      final mean = coordinates.fold<double>(0, (a, b) => a + b) / n;
-      return (
-        mean: origin + mean * scale,
-        scale: scale,
-        deviations: coordinates.map((value) => value - mean).toList(),
-      );
-    }
-
-    final x = centered(xs), y = centered(ys);
+    final x = _centered(xs), y = _centered(ys);
     double varianceX = 0, varianceY = 0, covariance = 0;
     for (var i = 0; i < n; i++) {
       varianceX += x.deviations[i] * x.deviations[i];
@@ -381,11 +356,55 @@ class Statistics {
 
   // === Internal helpers ===================================================
 
+  static double _compensatedSum(Iterable<double> values) {
+    var sum = 0.0, correction = 0.0;
+    for (final value in values) {
+      final next = sum + value;
+      correction += sum.abs() >= value.abs()
+          ? (sum - next) + value : (value - next) + sum;
+      sum = next;
+    }
+    return sum + correction;
+  }
+
+  /// Shared normalized moments preserve nearby variation at a large offset,
+  /// and avoid overflowing subtraction for opposite extreme observations.
+  static ({double mean, double scale, List<double> deviations}) _centered(
+      List<double> values) {
+    final anchor = values.first;
+    var coordinates = values.map((value) => value - anchor).toList();
+    var scale = coordinates.fold<double>(0, (a, b) => math.max(a, b.abs()));
+    if (scale == 0) {
+      return (mean: anchor, scale: 0.0,
+          deviations: List<double>.filled(values.length, 0));
+    }
+    var origin = anchor;
+    final absoluteScale = values.fold<double>(0, (a, b) => math.max(a, b.abs()));
+    if (!scale.isFinite || scale > absoluteScale) {
+      scale = absoluteScale;
+      coordinates = values.map((value) => value / scale).toList();
+      origin = 0;
+    } else {
+      coordinates = coordinates.map((value) => value / scale).toList();
+    }
+    final normalizedMean = _compensatedSum(coordinates) / values.length;
+    return (mean: origin + normalizedMean * scale, scale: scale,
+        deviations: coordinates.map((value) => value - normalizedMean).toList());
+  }
+
+  static double _interpolate(double a, double b, double weight) {
+    if (a == b) return a;
+    // Same-sign endpoints have a representable difference; opposite signs
+    // have representable weighted terms, even if b-a would overflow.
+    return a.isNegative == b.isNegative
+        ? a + (b - a) * weight : a * (1 - weight) + b * weight;
+  }
+
   static double _median(List<double> sorted) {
     final n = sorted.length;
     return n.isOdd
         ? sorted[n ~/ 2]
-        : 0.5 * (sorted[n ~/ 2 - 1] + sorted[n ~/ 2]);
+        : _interpolate(sorted[n ~/ 2 - 1], sorted[n ~/ 2], 0.5);
   }
 
   /// All values tied for the highest frequency. Returns empty list when
@@ -416,6 +435,6 @@ class Statistics {
     final hi = h.ceil();
     if (lo == hi) return sorted[lo];
     final w = h - lo;
-    return sorted[lo] * (1 - w) + sorted[hi] * w;
+    return _interpolate(sorted[lo], sorted[hi], w);
   }
 }

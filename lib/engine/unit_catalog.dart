@@ -661,6 +661,7 @@ class UnitCatalog {
   /// which additionally tries to interpret unrecognized symbols as SI
   /// prefix + prefixable base.
   static Unit? bySymbol(String symbol) {
+    if (symbol == 'deg') symbol = '°';
     for (final units in _byDimension.values) {
       for (final u in units) {
         if (u.symbol == symbol) return u;

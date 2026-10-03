@@ -451,7 +451,9 @@ class WorkflowTasks {
           RegExp(r'(?<![A-Za-z_0-9.])(\d+)/(\d+)(?=[A-Za-z_(])(?![eE][+-]?\d)'),
           (match) => '(${match[1]}/${match[2]})*');
       final complex =
-          RegExp(r'^(.+?)\s*([+-])\s*([0-9.eE+-]+)\*I$').firstMatch(v);
+          RegExp(
+              r'^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([+-])\s*((?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*\*\s*I$')
+          .firstMatch(v);
       if (complex != null) {
         final real = double.tryParse(complex[1]!.trim());
         final imaginary = double.tryParse(complex[3]!);

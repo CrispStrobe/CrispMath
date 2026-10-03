@@ -332,6 +332,9 @@ class HypothesisTests {
     if (data.length < 2) {
       throw ArgumentError('oneSampleT() needs at least 2 data points.');
     }
+    if (!hypothesizedMean.isFinite) {
+      throw ArgumentError('oneSampleT() requires a finite hypothesized mean.');
+    }
     final stats = Statistics.describe(data);
     if (stats.sampleStddev == 0) {
       throw ArgumentError(
@@ -339,7 +342,14 @@ class HypothesisTests {
     }
     final n = stats.count;
     final se = stats.sampleStddev / math.sqrt(n.toDouble());
-    final t = (stats.mean - hypothesizedMean) / se;
+    var t = (stats.mean - hypothesizedMean) / se;
+    if (!se.isFinite || !(stats.mean - hypothesizedMean).isFinite) {
+      final scale = data.fold<double>(hypothesizedMean.abs(),
+          (a, b) => math.max(a, b.abs()));
+      final normalized = Statistics.describe(data.map((v) => v / scale).toList());
+      t = (normalized.mean - hypothesizedMean / scale) /
+          (normalized.sampleStddev / math.sqrt(n.toDouble()));
+    }
     final df = n - 1;
     final tDist = TDistribution(df: df);
 
@@ -409,10 +419,27 @@ class HypothesisTests {
       throw ArgumentError(
           'welchT() needs variance in both samples (one has stddev = 0).');
     }
-    final v1 = s1.sampleVariance / s1.count;
-    final v2 = s2.sampleVariance / s2.count;
-    final se = math.sqrt(v1 + v2);
-    final t = (s1.mean - s2.mean) / se;
+    var sd1 = s1.sampleStddev, sd2 = s2.sampleStddev;
+    var mean1 = s1.mean, mean2 = s2.mean;
+    if (!sd1.isFinite || !sd2.isFinite) {
+      final scale = [...sample1, ...sample2].fold<double>(0,
+          (a, b) => math.max(a, b.abs()));
+      final normalized1 = Statistics.describe(sample1.map((v) => v / scale).toList());
+      final normalized2 = Statistics.describe(sample2.map((v) => v / scale).toList());
+      sd1 = normalized1.sampleStddev;
+      sd2 = normalized2.sampleStddev;
+      mean1 = normalized1.mean;
+      mean2 = normalized2.mean;
+    }
+    // Scale standard errors before squaring. Raw variances and their
+    // squares can overflow or underflow while t and df remain finite.
+    final sdScale = math.max(sd1, sd2);
+    final v1 = math.pow(sd1 / sdScale, 2) / s1.count;
+    final v2 = math.pow(sd2 / sdScale, 2) / s2.count;
+    final difference = mean1 - mean2;
+    final normalizedDifference = difference.isFinite
+        ? difference / sdScale : mean1 / sdScale - mean2 / sdScale;
+    final t = normalizedDifference / math.sqrt(v1 + v2);
 
     // Welch-Satterthwaite df.
     final num = (v1 + v2) * (v1 + v2);
@@ -472,31 +499,48 @@ class HypothesisTests {
     final groupMeans = <double>[];
     final groupSizes = <int>[];
     var totalN = 0;
-    var totalSum = 0.0;
-    for (final g in groups) {
+    final observations = groups.expand((group) => group).toList();
+    final grandStats = Statistics.describe(observations);
+    final anchor = grandStats.mean;
+    final offsets = observations.map((value) => value - anchor).toList();
+    var observationScale = offsets.fold<double>(0, (a, b) => math.max(a, b.abs()));
+    final overflowedOffsets = !observationScale.isFinite;
+    if (overflowedOffsets) {
+      observationScale = observations.fold<double>(0, (a, b) => math.max(a, b.abs()));
+    }
+    if (observationScale == 0) {
+      throw ArgumentError('anovaOneWay() within-group variance is 0.');
+    }
+    final normalizedGroups = groups.map((group) => group.map((value) =>
+        overflowedOffsets ? value / observationScale :
+        (value - anchor) / observationScale).toList()).toList();
+    final normalizedMeans = <double>[];
+    for (var i = 0; i < groups.length; i++) {
+      final g = groups[i];
       final n = g.length;
-      final mean = g.reduce((a, b) => a + b) / n;
-      groupMeans.add(mean);
+      groupMeans.add(Statistics.describe(g).mean);
+      normalizedMeans.add(Statistics.describe(normalizedGroups[i]).mean);
       groupSizes.add(n);
       totalN += n;
-      totalSum += mean * n;
     }
     if (totalN <= k) {
       throw ArgumentError(
           'anovaOneWay() needs more total observations than groups (got '
           'N=$totalN, K=$k).');
     }
-    final grandMean = totalSum / totalN;
+    final grandMean = grandStats.mean;
+    final normalizedGrandMean = Statistics.describe(
+        normalizedGroups.expand((group) => group).toList()).mean;
 
     var ssBetween = 0.0;
     for (var i = 0; i < k; i++) {
-      final d = groupMeans[i] - grandMean;
+      final d = normalizedMeans[i] - normalizedGrandMean;
       ssBetween += groupSizes[i] * d * d;
     }
     var ssWithin = 0.0;
     for (var i = 0; i < k; i++) {
-      for (final x in groups[i]) {
-        final d = x - groupMeans[i];
+      for (final x in normalizedGroups[i]) {
+        final d = x - normalizedMeans[i];
         ssWithin += d * d;
       }
     }
@@ -522,10 +566,10 @@ class HypothesisTests {
       fStatistic: f,
       dfBetween: dfBetween,
       dfWithin: dfWithin,
-      ssBetween: ssBetween,
-      ssWithin: ssWithin,
-      msBetween: msBetween,
-      msWithin: msWithin,
+      ssBetween: ssBetween * observationScale * observationScale,
+      ssWithin: ssWithin * observationScale * observationScale,
+      msBetween: msBetween * observationScale * observationScale,
+      msWithin: msWithin * observationScale * observationScale,
       groupMeans: List.unmodifiable(groupMeans),
       groupSizes: List.unmodifiable(groupSizes),
       grandMean: grandMean,
