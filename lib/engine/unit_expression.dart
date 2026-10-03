@@ -269,6 +269,10 @@ class UnitExpressionEvaluator {
     // Apply the leading scalar prefix (V4).
     siValue *= scalarPrefix;
 
+    if (!siValue.isFinite) {
+      return 'Error: unit arithmetic produced a non-finite result';
+    }
+
     // Decide output unit.
     if (targetUnit != null) {
       if (targetUnit.dim != dim) {
@@ -282,6 +286,9 @@ class UnitExpressionEvaluator {
       final out = targetUnit.unit != null
           ? targetUnit.unit!.fromBase(siValue)
           : targetUnit.derived!.fromSi(siValue);
+      if (!out.isFinite) {
+        return 'Error: unit conversion produced a non-finite result';
+      }
       return '${UnitConverter.formatNumber(out)} ${targetUnit.symbol}';
     }
 
@@ -308,6 +315,9 @@ class UnitExpressionEvaluator {
     if (anchorSingleDim != null &&
         Dimensions.of(anchorSingleDim.dimension) == dim) {
       final out = anchorSingleDim.fromBase(siValue);
+      if (!out.isFinite) {
+        return 'Error: unit conversion produced a non-finite result';
+      }
       return UnitConverter.format(out, anchorSingleDim);
     }
     // Search single-dim catalog for a coherent-SI exact match.
@@ -436,7 +446,7 @@ class UnitExpressionEvaluator {
           break;
         }
         final value = double.tryParse(s.substring(start, i));
-        if (value == null) return null;
+        if (value == null || !value.isFinite) return null;
         out.add(_NumberToken(value));
         continue;
       }
@@ -483,72 +493,47 @@ class UnitExpressionEvaluator {
 
   static _UnitMatch? _tryMatchUnitAt(
       String s, int start, List<String> symbolsLongestFirst) {
-    // Contiguous products and quotients are unit syntax in either a quantity
-    // or an explicit target. Division remains left-associative (kg/m/s).
-    final compoundExpression = RegExp(
-            r'^([A-Za-zμµ°]+(?:\^[23]|[²³])?)(?:[*/·][A-Za-zμµ°]+(?:\^[23]|[²³])?)+')
+    // Resolve standalone powers and compound factors through one bounded
+    // grammar. Division remains left-associative (kg/m/s).
+    final match = RegExp(
+            r'^[A-Za-zμµ°Ω]+(?:\^[23]|[²³])?(?:[*/·][A-Za-zμµ°Ω]+(?:\^[23]|[²³])?)*')
         .firstMatch(s.substring(start));
-    if (compoundExpression != null) {
-      final text = compoundExpression[0]!;
+    if (match != null) {
+      final text = match[0]!;
       final end = start + text.length;
       final factors = text.split(RegExp(r'[*/·]'));
       if (text.length > 1024 || factors.length > 16) return null;
       if (end == s.length ||
-          (!_isWordChar(s[end]) && !'^/*·'.contains(s[end]))) {
-        _UnitToken? atomic(String symbol) {
-          final canonical = _aliases[symbol] ?? symbol;
-          final catalog = UnitCatalog.bySymbolWithPrefixes(canonical);
-          if (catalog != null) return _UnitToken.single(catalog);
-          final derived = DerivedUnits.bySymbolWithPrefixes(canonical);
-          if (derived != null) return _UnitToken.derived(derived);
-          final power = RegExp(r'^([A-Za-zμµ°]+)(?:\^([23])|([²³]))$')
-              .firstMatch(symbol);
-          if (power == null) return null;
-          final base = atomic(power[1]!);
-          if (base == null || _hasNonZeroOffset(base.unit)) return null;
-          final cubed = power[2] == '3' || power[3] == '³';
-          final scale = base.toSi(1);
-          return _UnitToken.derived(DerivedUnit(
-              symbol: '${base.symbol}${cubed ? '³' : '²'}', name: symbol,
-              dim: cubed ? base.dim * base.dim * base.dim : base.dim * base.dim,
-              scale: scale * scale * (cubed ? scale : 1)));
-        }
-
-        final first = atomic(factors.first);
-        if (first == null || _hasNonZeroOffset(first.unit)) return null;
-        var dimensions = first.dim;
-        var scale = first.toSi(1);
-        final operations = RegExp(r'[*/·]').allMatches(text).toList();
-        for (var i = 1; i < factors.length; i++) {
-          final next = atomic(factors[i]);
-          if (next == null || _hasNonZeroOffset(next.unit)) return null;
-          if (operations[i - 1][0] == '/') {
-            dimensions = dimensions / next.dim;
-            scale /= next.toSi(1);
-          } else {
-            dimensions = dimensions * next.dim;
-            scale *= next.toSi(1);
+          (!_isWordChar(s[end]) && !'^/*·²³'.contains(s[end]))) {
+        final first = _resolveAtomicUnit(factors.first);
+        if (first != null) {
+          if (factors.length == 1) {
+            return first.unit != null
+                ? _UnitMatch.single(first.unit!, end)
+                : _UnitMatch.derived(first.derived!, end);
           }
+          if (_hasNonZeroOffset(first.unit)) return null;
+          var dimensions = first.dim;
+          var scale = first.toSi(1);
+          final operations = RegExp(r'[*/·]').allMatches(text).toList();
+          for (var i = 1; i < factors.length; i++) {
+            final next = _resolveAtomicUnit(factors[i]);
+            if (next == null || _hasNonZeroOffset(next.unit)) return null;
+            if (operations[i - 1][0] == '/') {
+              dimensions = dimensions / next.dim;
+              scale /= next.toSi(1);
+            } else {
+              dimensions = dimensions * next.dim;
+              scale *= next.toSi(1);
+            }
+          }
+          if (!scale.isFinite || scale <= 0) return null;
+          final symbol = text.replaceAll('^2', '²').replaceAll('^3', '³');
+          final curated = UnitCatalog.bySymbolWithPrefixes(symbol);
+          if (curated != null) return _UnitMatch.single(curated, end);
+          return _UnitMatch.derived(DerivedUnit(
+              symbol: symbol, name: symbol, dim: dimensions, scale: scale), end);
         }
-        if (!scale.isFinite || scale <= 0) return null;
-        final symbol = text.replaceAll('^2', '²').replaceAll('^3', '³');
-        // Preserve catalog velocity identity where it already exists.
-        final curated = UnitCatalog.bySymbolWithPrefixes(symbol);
-        if (curated != null) return _UnitMatch.single(curated, end);
-        return _UnitMatch.derived(DerivedUnit(
-            symbol: symbol, name: symbol,
-            dim: dimensions, scale: scale), end);
-      }
-    }
-    // Compose supported metric area/volume/speed spellings on demand instead
-    // of generating every combination of prefixes in the tokenizer table.
-    final compound = RegExp(r'^[A-Za-zμµ]+/[A-Za-zμµ]+|^[A-Za-zμµ]+(?:\^[23]|[²³])')
-        .firstMatch(s.substring(start));
-    if (compound != null) {
-      final end = start + compound[0]!.length;
-      if (end == s.length || !_isWordChar(s[end])) {
-        final unit = UnitCatalog.bySymbolWithPrefixes(compound[0]!);
-        if (unit != null) return _UnitMatch.single(unit, end);
       }
     }
     for (final sym in symbolsLongestFirst) {
@@ -573,6 +558,32 @@ class UnitExpressionEvaluator {
       }
     }
     return null;
+  }
+
+  /// A common factor resolver keeps squared/cubed standalone quantities
+  /// consistent with the same factors inside composite conversion targets.
+  static _UnitToken? _resolveAtomicUnit(String symbol) {
+    final canonical = _aliases[symbol] ?? symbol;
+    final catalog = UnitCatalog.bySymbolWithPrefixes(canonical);
+    if (catalog != null) return _UnitToken.single(catalog);
+    final derived = DerivedUnits.bySymbolWithPrefixes(canonical);
+    if (derived != null) {
+      return derived.scale.isFinite && derived.scale > 0
+          ? _UnitToken.derived(derived) : null;
+    }
+    final power = RegExp(r'^([A-Za-zμµ°Ω]+)(?:\^([23])|([²³]))$')
+        .firstMatch(symbol);
+    if (power == null) return null;
+    final base = _resolveAtomicUnit(power[1]!);
+    if (base == null || _hasNonZeroOffset(base.unit)) return null;
+    final cubed = power[2] == '3' || power[3] == '³';
+    final baseScale = base.toSi(1);
+    final scale = baseScale * baseScale * (cubed ? baseScale : 1);
+    if (!scale.isFinite || scale <= 0) return null;
+    return _UnitToken.derived(DerivedUnit(
+        symbol: '${base.symbol}${cubed ? '³' : '²'}', name: symbol,
+        dim: cubed ? base.dim * base.dim * base.dim : base.dim * base.dim,
+        scale: scale));
   }
 
   /// Natural-spelling aliases mapping to catalog symbols. The inline

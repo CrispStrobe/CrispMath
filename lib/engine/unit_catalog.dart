@@ -26,39 +26,41 @@ enum UnitDimension {
 }
 
 /// Vector of integer exponents over the SI base dimensions we track
-/// (length, mass, time, temperature). V5 composite-dimension arithmetic
+/// (length, mass, time, temperature, current). Composite-dimension arithmetic
 /// adds/subtracts these element-wise when quantities multiply / divide.
 ///
 /// `dimensionless` is the all-zero vector — falls out naturally from
 /// `m / m`, the result of dividing same-dimension quantities, angle
 /// units (treated as dimensionless ratios), etc.
 ///
-/// Restricted to the four base dims that cover everything in our
-/// curated catalog plus the V5 derived units (N, J, W, Pa, Hz).
-/// Current/amount/luminosity can join later if we ever add a derived
-/// unit that needs them.
+/// Electrical units add current as an independent dimension, so volts,
+/// amperes and resistance cannot be confused with mechanical quantities.
 class Dimensions {
   final int length;
   final int mass;
   final int time;
   final int temperature;
+  final int current;
 
   const Dimensions({
     this.length = 0,
     this.mass = 0,
     this.time = 0,
     this.temperature = 0,
+    this.current = 0,
   });
 
   static const dimensionless = Dimensions();
 
-  bool get isZero => length == 0 && mass == 0 && time == 0 && temperature == 0;
+  bool get isZero =>
+      length == 0 && mass == 0 && time == 0 && temperature == 0 && current == 0;
 
   Dimensions operator *(Dimensions o) => Dimensions(
         length: length + o.length,
         mass: mass + o.mass,
         time: time + o.time,
         temperature: temperature + o.temperature,
+        current: current + o.current,
       );
 
   Dimensions operator /(Dimensions o) => Dimensions(
@@ -66,6 +68,7 @@ class Dimensions {
         mass: mass - o.mass,
         time: time - o.time,
         temperature: temperature - o.temperature,
+        current: current - o.current,
       );
 
   @override
@@ -74,10 +77,11 @@ class Dimensions {
       length == other.length &&
       mass == other.mass &&
       time == other.time &&
-      temperature == other.temperature;
+      temperature == other.temperature &&
+      current == other.current;
 
   @override
-  int get hashCode => Object.hash(length, mass, time, temperature);
+  int get hashCode => Object.hash(length, mass, time, temperature, current);
 
   /// Compact human-readable form: `m·kg/s²`, `kg·m²·s⁻²`, etc. Falls
   /// back to base-unit symbols (m, kg, s, K) when the dimension vector
@@ -96,11 +100,12 @@ class Dimensions {
     addPart('kg', mass);
     addPart('s', time);
     addPart('K', temperature);
+    addPart('A', current);
 
     if (parts.isEmpty && negs.isEmpty) return ''; // dimensionless
     final num = parts.isEmpty ? '1' : parts.join('·');
     if (negs.isEmpty) return num;
-    return '$num/${negs.join('·')}';
+    return '$num/${negs.join('/')}';
   }
 
   /// Maps a single-dimension [UnitDimension] to its [Dimensions] vector.
@@ -162,6 +167,21 @@ class DerivedUnit {
 
 class DerivedUnits {
   static const Map<String, DerivedUnit> _byName = {
+    'A': DerivedUnit(
+      symbol: 'A', name: 'ampere', dim: Dimensions(current: 1), scale: 1.0,
+    ),
+    'V': DerivedUnit(
+      symbol: 'V', name: 'volt',
+      dim: Dimensions(mass: 1, length: 2, time: -3, current: -1), scale: 1.0,
+    ),
+    'Ω': DerivedUnit(
+      symbol: 'Ω', name: 'ohm',
+      dim: Dimensions(mass: 1, length: 2, time: -3, current: -2), scale: 1.0,
+    ),
+    'ohm': DerivedUnit(
+      symbol: 'Ω', name: 'ohm',
+      dim: Dimensions(mass: 1, length: 2, time: -3, current: -2), scale: 1.0,
+    ),
     'N': DerivedUnit(
       symbol: 'N',
       name: 'newton',

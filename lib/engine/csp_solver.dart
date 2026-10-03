@@ -1133,11 +1133,12 @@ class CspSolver {
     return (vars: vars, coeffs: coeffs, op: op, bound: bound);
   }
 
-  /// Route flat integer polynomials around the dependency's text parser.
+  /// Route bounded integer polynomials around the dependency's text parser.
   /// That parser drops repeated factors in products and rejects sums of
   /// products. Linear inputs retain their dedicated propagator. This bounded
   /// grammar supports signed sums of products of declared variables and integer
-  /// constants on either side, with no implicit multiplication or powers.
+  /// constants and grouped expressions on either side, with no implicit
+  /// multiplication, division or exponent operators.
   static bool _addPolynomialConstraint(
       csp.Problem problem, String source, Set<String> knownVars,
       {String? label}) {
@@ -1154,7 +1155,7 @@ class CspSolver {
     final lhs = _IntegerPolynomial.parse(comparison[1]!, knownVars);
     final rhs = _IntegerPolynomial.parse(comparison[3]!, knownVars);
     if (lhs == null || rhs == null ||
-        (!lhs.nonlinear && !rhs.nonlinear) ||
+        (!lhs.nonlinear && !rhs.nonlinear && !text.contains('(')) ||
         lhs.factorCount + rhs.factorCount > 128) {
       return false;
     }
@@ -1175,6 +1176,16 @@ class CspSolver {
         '>' => order > 0,
         _ => false,
       };
+    }
+
+    // The dependency rejects zero-arity predicates. Fold literal-only
+    // comparisons exactly; a false one must still make the model unsatisfiable.
+    if (names.isEmpty) {
+      if (satisfies(const {})) return true;
+      if (knownVars.isEmpty) return false;
+      problem.addConstraint([knownVars.first], (dynamic value) => false,
+          label: label);
+      return true;
     }
 
     final variables = names.toList();
@@ -2616,7 +2627,7 @@ class CspSolver {
     final polynomial = parsed == null
         ? _IntegerPolynomial.parse(objectiveExpr, knownVars)
         : null;
-    if ((parsed == null && (polynomial == null || !polynomial.nonlinear)) ||
+    if ((parsed == null && (polynomial == null || polynomial.names.isEmpty)) ||
         (parsed != null && parsed.vars.isEmpty)) {
       return DiophantineResult.failure(
           'Could not parse ${minimize ? 'minimize' : 'maximize'} '
@@ -3971,46 +3982,25 @@ class _IntegerPolynomial {
   final List<({BigInt coefficient, List<String> factors})> terms;
   final Set<String> names;
   final int factorCount;
-  bool get nonlinear => terms.any((term) => term.factors.length > 1);
+  final bool nonlinear;
 
-  const _IntegerPolynomial(this.terms, this.names, this.factorCount);
+  const _IntegerPolynomial(this.terms, this.names, this.factorCount, this.nonlinear);
 
   static _IntegerPolynomial? parse(String source, Set<String> knownVars) {
     if (source.length > 1024 ||
         RegExp(r'[A-Za-z_0-9]\s+[A-Za-z_0-9]').hasMatch(source)) {
       return null;
     }
-    final text = source.replaceAll(RegExp(r'\s+'), '');
-    final matches = RegExp(r'([+-]?)([^+-]+)').allMatches(text).toList();
-    if (matches.isEmpty || matches.length > 64 ||
-        matches.map((match) => match[0]!).join() != text) {
+    try {
+      final parser = _IntegerPolynomialParser(source, knownVars);
+      final terms = parser.parse();
+      final names = parser.names;
+      final factorCount = terms.fold<int>(
+          0, (count, term) => count + term.factors.length + 1);
+      return _IntegerPolynomial(terms, names, factorCount, parser.nonlinear);
+    } on FormatException {
       return null;
     }
-    final terms = <({BigInt coefficient, List<String> factors})>[];
-    final names = <String>{};
-    var factorCount = 0;
-    for (final match in matches) {
-      var coefficient = match[1] == '-' ? -BigInt.one : BigInt.one;
-      final factors = <String>[];
-      final tokens = match[2]!.split('*');
-      factorCount += tokens.length;
-      if (factorCount > 128) {
-        return null;
-      }
-      for (final token in tokens) {
-        if (RegExp(r'^\d+$').hasMatch(token)) {
-          coefficient *= BigInt.parse(token);
-        } else if (RegExp(r'^[A-Za-z_]\w*$').hasMatch(token) &&
-            knownVars.contains(token)) {
-          factors.add(token);
-          names.add(token);
-        } else {
-          return null;
-        }
-      }
-      terms.add((coefficient: coefficient, factors: factors));
-    }
-    return _IntegerPolynomial(terms, names, factorCount);
   }
 
   BigInt evaluate(Map<String, dynamic> values) {
@@ -4042,5 +4032,141 @@ class _IntegerPolynomial {
       upper += hi;
     }
     return (min: lower, max: upper);
+  }
+}
+
+
+typedef _PolynomialTerms = List<({BigInt coefficient, List<String> factors})>;
+
+/// Parse the shared integer polynomial grammar without the dependency's text
+/// parser. Every expansion is bounded before allocation; evaluation stays exact.
+class _IntegerPolynomialParser {
+  final String text;
+  final Set<String> knownVars;
+  var index = 0;
+  var depth = 0;
+  final names = <String>{};
+  var nonlinear = false;
+  static const maxTerms = 64;
+  static const maxFactors = 128;
+  static const maxCoefficientBits = 4096;
+
+  _IntegerPolynomialParser(String source, this.knownVars)
+      : text = source.replaceAll(RegExp(r'\s+'), '');
+
+  Never _invalid() => throw const FormatException('Invalid bounded polynomial');
+
+  _PolynomialTerms parse() {
+    final terms = _sum();
+    if (index != text.length) _invalid();
+    return terms;
+  }
+
+  bool _take(String token) {
+    if (index < text.length && text[index] == token) {
+      index++;
+      return true;
+    }
+    return false;
+  }
+
+  _PolynomialTerms _sum() {
+    var left = _product();
+    while (index < text.length && (text[index] == '+' || text[index] == '-')) {
+      final minus = text[index++] == '-';
+      final right = _product();
+      if (left.length + right.length > maxTerms) _invalid();
+      left = _bounded([
+        ...left,
+        for (final term in right)
+          (coefficient: minus ? -term.coefficient : term.coefficient,
+           factors: term.factors),
+      ]);
+    }
+    return left;
+  }
+
+  _PolynomialTerms _product() {
+    var left = _unary();
+    while (_take('*')) {
+      final right = _unary();
+      if (left.length * right.length > maxTerms) _invalid();
+      var factorBudget = 0;
+      for (final a in left) {
+        for (final b in right) {
+          if (a.factors.length + b.factors.length > 1) nonlinear = true;
+          factorBudget += a.factors.length + b.factors.length + 1;
+          if (factorBudget > maxFactors ||
+              a.coefficient.bitLength + b.coefficient.bitLength >
+                  maxCoefficientBits) _invalid();
+        }
+      }
+      left = _bounded([
+        for (final a in left)
+          for (final b in right)
+            (coefficient: a.coefficient * b.coefficient,
+             factors: [...a.factors, ...b.factors]),
+      ]);
+    }
+    return left;
+  }
+
+  _PolynomialTerms _unary() {
+    if (++depth > 32) _invalid();
+    try {
+      if (_take('+')) return _unary();
+      if (_take('-')) {
+        return [for (final term in _unary())
+          (coefficient: -term.coefficient, factors: term.factors)];
+      }
+      if (_take('(')) {
+        final terms = _sum();
+        if (!_take(')')) _invalid();
+        return terms;
+      }
+      if (index >= text.length) _invalid();
+      final start = index;
+      final digit = RegExp(r'[0-9]');
+      if (digit.hasMatch(text[index])) {
+        while (index < text.length && digit.hasMatch(text[index])) { index++; }
+        final coefficient = BigInt.parse(text.substring(start, index));
+        if (coefficient.bitLength > maxCoefficientBits) _invalid();
+        return [(coefficient: coefficient, factors: <String>[])];
+      }
+      if (!RegExp(r'[A-Za-z_]').hasMatch(text[index])) _invalid();
+      while (index < text.length && RegExp(r'[A-Za-z_0-9]').hasMatch(text[index])) {
+        index++;
+      }
+      final name = text.substring(start, index);
+      if (!knownVars.contains(name)) _invalid();
+      names.add(name);
+      return [(coefficient: BigInt.one, factors: [name])];
+    } finally {
+      depth--;
+    }
+  }
+
+  _PolynomialTerms _bounded(_PolynomialTerms terms) {
+    if (terms.length > maxTerms) _invalid();
+    var count = 0;
+    final coefficients = <String, BigInt>{};
+    final factors = <String, List<String>>{};
+    for (final term in terms) {
+      count += term.factors.length + 1;
+      if (count > maxFactors || term.coefficient.bitLength > maxCoefficientBits) {
+        _invalid();
+      }
+      final names = [...term.factors]..sort();
+      final key = names.join('*');
+      final coefficient = (coefficients[key] ?? BigInt.zero) + term.coefficient;
+      if (coefficient.bitLength > maxCoefficientBits) _invalid();
+      coefficients[key] = coefficient;
+      factors[key] = names;
+    }
+    final result = [for (final entry in coefficients.entries)
+      if (entry.value != BigInt.zero)
+        (coefficient: entry.value, factors: factors[entry.key]!)];
+    return result.isEmpty
+        ? [(coefficient: BigInt.zero, factors: <String>[])] : result;
   }
 }

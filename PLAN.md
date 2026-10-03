@@ -8,8 +8,9 @@ Completed items with details are in `HISTORY.md`.
 ## Ninth independent mathematical audit
 
 - [x] Freeze fifty fresh independent references at 3bc82de before app outputs.
-- [ ] Preserve initial native/WASM/packaged Mac evidence and prior 637 results.
-- [ ] Trace and repair confirmed gaps with positive/negative regression controls.
+- [x] Preserve initial native/WASM/Mac 684/687 and all prior 637 passes.
+- [~] Repair electrical dimensions, standalone unit powers and grouped polynomial
+  objectives with positive/negative controls.
 - [ ] Pass hosted unit, runtime and actual UI/deployed checks.
 - [ ] Refresh Apple galleries and external beta if production changes.
 
