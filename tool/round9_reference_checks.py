@@ -190,3 +190,17 @@ def validate_optimum(header,assignment):
     x,y=values['x'],values['y']
     assert (x,y) in {(1,-1),(2,-2)} and x+y==0 and (x-2)**2+(y+1)**2==1,assignment
     return {'objective':1,'x':x,'y':y}
+
+
+def constraint_assignment_field(fields):
+    """Find a unique actual read-only result field, not an editable source."""
+    candidates=[]
+    for field in fields:
+        value=field.get('value','')
+        box=field.get('box') or {}
+        if (field.get('tag') in {'input','textarea'} and field.get('readOnly') is True
+                and re.fullmatch(r'\s*[xy]\s*=\s*-?\d+\s*,\s*[xy]\s*=\s*-?\d+\s*',value)
+                and box.get('width',0)>0 and box.get('height',0)>0):
+            candidates.append(field)
+    assert len(candidates)==1,('Expected one rendered read-only constraint assignment',fields)
+    return candidates[0]

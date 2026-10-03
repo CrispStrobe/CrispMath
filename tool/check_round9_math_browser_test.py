@@ -3,7 +3,7 @@ from fractions import Fraction
 from round7_reference_checks import polynomial_coefficients
 import unittest
 from round9_reference_checks import (CASES, TAYLOR_EXPECTED, log_polynomial,
-                                     validate_result, validate_optimum, validate_statistics, STATISTICS_CASES)
+                                     validate_result, validate_optimum, validate_statistics, STATISTICS_CASES, constraint_assignment_field)
 
 
 class RoundNineReferencesTest(unittest.TestCase):
@@ -69,6 +69,17 @@ class RoundNineReferencesTest(unittest.TestCase):
                       text.replace('Mean 2.0000e-200 Median','Mean 2.0000e-200 WRONG'),
                       text+' Mean 2.0000e-200 Median']:
             with self.assertRaises(AssertionError):validate_statistics(wrong,expected)
+
+    def test_actual_constraint_output_field_excludes_editable_or_ambiguous_values(self):
+        field={'index':1,'tag':'input','readOnly':True,'value':'x=1, y=-1',
+               'box':{'x':16,'y':400,'width':1248,'height':40}}
+        self.assertEqual(constraint_assignment_field([field])['value'],'x=1, y=-1')
+        for fields in [[{**field,'readOnly':False}],
+                       [{**field,'tag':'div'}],
+                       [{**field,'box':{'width':0,'height':40}}],
+                       [field,{**field,'index':2}],
+                       [{**field,'value':'vars: x, y in -3..3'}]]:
+            with self.assertRaises(AssertionError):constraint_assignment_field(fields)
 
     def test_both_independent_integer_optima_and_order(self):
         self.assertEqual(validate_optimum('Optimal: objective = 1','x = 1, y = -1')['objective'],1)

@@ -11,7 +11,7 @@ from playwright.async_api import async_playwright, expect
 import check_new_math_browser as controls
 from check_round6_statistics_browser import real_click
 from round9_reference_checks import (CASES, STATISTICS_CASES, CONSTRAINT_PROGRAM,
-                                     validate_result, validate_statistics, validate_optimum)
+                                     validate_result, validate_statistics, validate_optimum, constraint_assignment_field)
 
 controls.CASES = CASES
 controls.validate_result = validate_result
@@ -97,10 +97,19 @@ async def check_modules(args):
                             await real_click(page,page.get_by_role('button',name='Solve',exact=True))
                             header = page.get_by_text(re.compile(r'^Optimal: objective =')).first
                             await header.wait_for(state='attached',timeout=30000)
-                            assignment = page.get_by_text(re.compile(r'^\s*[xy]\s*=\s*-?\d+\s*,\s*[xy]\s*=')).first
-                            await assignment.wait_for(state='attached')
                             item['header']=await header.inner_text()
-                            item['assignment']=await assignment.inner_text()
+                            # Flutter SelectableText exposes its displayed text
+                            # as a read-only native field, not a text-node label.
+                            await page.wait_for_function(r"""()=>Array.from(document.querySelectorAll('input,textarea')).some(el=>
+                              el.readOnly&&/^\s*[xy]\s*=\s*-?\d+\s*,\s*[xy]\s*=\s*-?\d+\s*$/.test(el.value))""",timeout=30000)
+                            fields=await page.locator('input,textarea').evaluate_all("""els=>els.map((el,index)=>{
+                              const r=el.getBoundingClientRect();return {index,tag:el.tagName.toLowerCase(),
+                              readOnly:el.readOnly,value:el.value,box:{x:r.x,y:r.y,width:r.width,height:r.height}};})""")
+                            item['renderedFields']=fields
+                            selected=constraint_assignment_field(fields)
+                            assignment=page.locator('input,textarea').nth(selected['index'])
+                            item['assignment']=await assignment.input_value()
+                            item['assignmentSource']='unique-rendered-read-only-field-value'
                             item['optimum']=validate_optimum(item['header'],item['assignment'])
                             for locator in [header,assignment]:
                                 for _ in range(10):
@@ -113,6 +122,7 @@ async def check_modules(args):
                             item['headerGeometry']=await header.bounding_box()
                             item['assignmentGeometry']=await assignment.bounding_box()
                             assert await field.input_value()==source
+                            assert await assignment.input_value()==item['assignment']
                             await page.screenshot(path=str(output/f'{name}-{width}-result.png'))
                         assert not errors,errors
                         item['passed']=True
