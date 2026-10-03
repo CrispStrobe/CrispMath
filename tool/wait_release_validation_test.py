@@ -21,7 +21,8 @@ def tree():
         {'path': path, 'type': 'blob', 'mode': '100644', 'sha': BLOB}
         for path in ('lib/main.dart', 'pubspec.yaml', 'pubspec.lock',
                      'ios/Runner/Info.plist', 'assets/model.onnx',
-                     'tool/stage_ocr_runtime.py', 'tool/ocr_runtime_checksums.json')]}
+                     'tool/stage_ocr_runtime.py', 'tool/ocr_runtime_checksums.json',
+                     'tool/dependency_lock.json')]}
 
 
 class FakeAPI:
@@ -137,6 +138,14 @@ class ReleaseValidationTest(unittest.TestCase):
         self.api.packaged = tree()
         self.api.packaged['tree'].pop()
         with self.assertRaises(ValidationError):
+            self.check()
+
+    def test_dependency_lock_pin_change_blocks_even_with_green_browser(self):
+        # A packaging pin can change native shipped code without lib/ changing.
+        lock = next(entry for entry in self.api.packaged['tree']
+                    if entry['path'] == 'tool/dependency_lock.json')
+        lock['sha'] = 'e' * 40
+        with self.assertRaisesRegex(ValidationError, 'tool/dependency_lock.json'):
             self.check()
 
     def test_ci_docs_and_test_only_changes_allow_same_app(self):

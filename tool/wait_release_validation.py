@@ -34,7 +34,8 @@ def production_path(path):
         return False
     if root == 'tool':
         return path in {'tool/stage_ocr_runtime.py',
-                        'tool/ocr_runtime_checksums.json', 'tool/build_web.sh'}
+                        'tool/ocr_runtime_checksums.json', 'tool/dependency_lock.json',
+                        'tool/build_web.sh'}
     if '/' not in path and (path.lower().endswith('.md') or path in {
             '.gitignore', 'analysis_options.yaml'}):
         return False
