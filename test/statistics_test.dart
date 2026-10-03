@@ -87,12 +87,14 @@ void main() {
       expect(s.sampleVariance, closeTo(0.0, _eps));
     });
 
-    test('single-element list has well-defined stats', () {
+    test('single-element sample deviation is undefined, population stays zero', () {
       final s = Statistics.describe(const [42]);
       expect(s.mean, closeTo(42.0, _eps));
       expect(s.median, closeTo(42.0, _eps));
       expect(s.populationVariance, closeTo(0.0, _eps));
-      expect(s.sampleVariance, closeTo(0.0, _eps));
+      expect(s.sampleVariance.isNaN, isTrue);
+      expect(s.sampleStddev.isNaN, isTrue);
+      expect(s.populationStddev, closeTo(0.0, _eps));
     });
   });
 
@@ -133,16 +135,14 @@ void main() {
       expect(f.rSquared, closeTo(1.0, _eps));
     });
 
-    test('flat line y = 3 has slope 0 and R² = 1', () {
-      // R² is undefined when y is constant; we return 1 (perfect fit
-      // by convention since slope=0 exactly matches the data).
+    test('flat line y = 3 has slope 0 and undefined R²', () {
       final f = Statistics.linearFit(
         const [1, 2, 3, 4],
         const [3, 3, 3, 3],
       );
       expect(f.slope, closeTo(0.0, _eps));
       expect(f.intercept, closeTo(3.0, _eps));
-      expect(f.rSquared, closeTo(1.0, _eps));
+      expect(f.rSquared.isNaN, isTrue);
     });
 
     test('all xs equal returns NaN slope (undefined)', () {

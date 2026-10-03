@@ -42,7 +42,7 @@ packages:
     source: hosted
     version: "4.0.9"
   args:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: args
       sha256: d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04
@@ -116,7 +116,7 @@ packages:
   crispembed:
     dependency: "direct main"
     description:
-      path: "../CrispEmbed/flutter/crispembed"
+      path: ".ci/CrispEmbed/flutter/crispembed"
       relative: true
     source: path
     version: "0.17.11"
@@ -129,7 +129,7 @@ packages:
     source: hosted
     version: "0.3.5+2"
   crypto:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto
       sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
@@ -147,11 +147,12 @@ packages:
   dart_csp:
     dependency: "direct main"
     description:
-      name: dart_csp
-      sha256: "19a62dbb3f8ed04b8d48a03113a87a3e09c8584a852e40030a9a282bdef1c0d5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.0"
+      path: "."
+      ref: ce10138a4bc857847429b9cfa3d4071854a5bbca
+      resolved-ref: ce10138a4bc857847429b9cfa3d4071854a5bbca
+      url: "https://github.com/CrispStrobe/dart_csp.git"
+    source: git
+    version: "2.3.0"
   dart_jsonwebtoken:
     dependency: transitive
     description:
@@ -200,6 +201,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.1"
+  file_picker:
+    dependency: "direct main"
+    description:
+      name: file_picker
+      sha256: "29cc1fdb20613876cc7afc529738c1c0f11a9ca159b010edad0c566ac330847e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "11.0.3"
   file_selector_linux:
     dependency: transitive
     description:
@@ -232,14 +241,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.3+5"
-  fixnum:
-    dependency: transitive
-    description:
-      name: fixnum
-      sha256: b6dc7065e46c974bc7c5f143080a6764ec7a4be6da1285ececdc37be96de53be
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.1"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -327,7 +328,7 @@ packages:
     source: hosted
     version: "2.2.0"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
@@ -500,7 +501,7 @@ packages:
     source: hosted
     version: "7.0.7296"
   meta:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: meta
       sha256: "1741988757a65eb6b36abe716829688cf01910bbf91c34354ff7ec1c3de2b349"
@@ -523,22 +524,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
-  onnx_runtime_dart:
-    dependency: "direct main"
-    description:
-      name: onnx_runtime_dart
-      sha256: "5241071a108a26e40897cfe36af736be82b8ff63b6de122911a16f7551a6bfe5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.10.7"
-  onnxruntime:
-    dependency: "direct main"
-    description:
-      name: onnxruntime
-      sha256: e77ec05acafc135cc5fe7bcdf11b101b39f06513c9d5e9fa02cb1929f6bac72a
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.1"
   package_info_plus:
     dependency: "direct main"
     description:
@@ -683,14 +668,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.5"
-  protobuf:
-    dependency: transitive
-    description:
-      name: protobuf
-      sha256: "13b6717366aa7ec3792dd62c19c7d33a785708224365f2db23c5ca01f1c1a0f2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.1.0"
   provider:
     dependency: transitive
     description:
@@ -844,11 +821,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: d5ff0b4
-      resolved-ref: d5ff0b48c44e94d2f175e977e7ef6da4ed3c068a
+      ref: e75dbbe916c238e6a109ba85aac227fe9bbe34b7
+      resolved-ref: e75dbbe916c238e6a109ba85aac227fe9bbe34b7
       url: "https://github.com/CrispStrobe/symbolic_math_bridge.git"
     source: git
-    version: "1.5.0"
+    version: "1.5.1"
   sync_http:
     dependency: transitive
     description:
@@ -1002,7 +979,7 @@ packages:
     source: hosted
     version: "15.0.2"
   web:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: web
       sha256: "868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a"

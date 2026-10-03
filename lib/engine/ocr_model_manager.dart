@@ -52,7 +52,7 @@ class OcrModelManager {
     try {
       final client = HttpClient();
       _activeDownloads[model.id] = client;
-      
+
       final tmpFile = File(tmpPath);
 
       // Resume interrupted downloads if the .tmp file exists.

@@ -1,0 +1,20 @@
+{
+  "0.17.11": {
+    "crispembed-android-arm64-v8a.tar.gz": "a29267f57b288537af2e6ef366cbfb07b77f9dbe8e679e214cb85533cd40b273",
+    "crispembed-android-armeabi-v7a.tar.gz": "030f92bd1368738263e335b19f1da7a3f57e5548a23e46c10780d91fc0fbce56",
+    "crispembed-embed-wasm.tar.gz": "e949bbeee1269a998a7c04c88fa49bf0db03757acc8ff858b439c7edf7880488",
+    "crispembed-ios-arm64.tar.gz": "451b4abab54611be3610aea310f878f8d00bd2561c6396afd9a299500c8ad4f7",
+    "crispembed-linux-arm64.tar.gz": "6e459cadf7e2273a5aeb6a802f6bc55f47613ebde7a90f4bad5f6de03fc6e78d",
+    "crispembed-linux-x86_64-cuda-bundled.tar.gz": "254fcd58d5a7f0fd13e2e303918048420dcfb9464329f35c5bea3e3ba6eaefc0",
+    "crispembed-linux-x86_64-cuda.tar.gz": "f3fff56b81a4441daecd1de025b0943e36c88e8ed497b74c34da8f268fbc4492",
+    "crispembed-linux-x86_64.tar.gz": "8ded8e3162dc01717545ddf34cf1782469a075e9f5f84f7a737d5380b0c5cec0",
+    "crispembed-macos-arm64.tar.gz": "24d64f99ebeb6797e3808f2ed933d5bc66d28c054ad4fd48c990e1c27f3d321b",
+    "crispembed-ocr-wasm.tar.gz": "0000f88d5fe3e0381ae26b30c68e90a6b02d9084a6b372180b2461d7040d8721",
+    "crispembed-ocr.js": "f4d7a196227ba1650f1f5d5a22af2b0f5c70df70e035ef0504d9bb995cd96925",
+    "crispembed-windows-x86_64-cuda.zip": "56d83fd25253de920d5d7f8f949366eddcb202ff6b57d4158f5e886fc39f9b31",
+    "crispembed-windows-x86_64-vulkan.zip": "0579cc3d04e4493a6791887de518b29241ea50a0d8401b0dd82fb81e24a95d68",
+    "crispembed-windows-x86_64.zip": "46a70c42eb1bfd079332e63ce41683fe48bf12d8dbba262de2a00ba87cbfff15",
+    "crispembed_ocr.js": "e35942986fcac5b42ba5647c270a5793874b8de5006cbd2f313ab97799017ccc",
+    "crispembed_ocr.wasm": "6d4c71246bd0bed8ea2769dc2e5a750928ebc990e3b69dca4e6e72d388a9c695"
+  }
+}

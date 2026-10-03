@@ -32,10 +32,24 @@
   <title>CrispMath</title>
   <link rel="manifest" href="manifest.json">
 
+  <!-- Flutter's transparent DOM button labels can wrap beyond their native
+       hit rectangles and intercept adjacent controls. Clip their paint/hit
+       overflow while preserving the complete labels for assistive technology. -->
+  <style>
+    flt-semantics[role="button"], flt-semantics[role="link"] {
+      overflow: hidden !important;
+    }
+    /* Flutter can retain an empty overlay semantics leaf after closing a
+       dialog. It has no control or label, but its default pointer-events:auto
+       covers the whole view. Keep labelled nodes and interactive barriers. */
+    flt-semantics:empty:not([role]):not([aria-label]):not([flt-tappable]) {
+      pointer-events: none !important;
+    }
+  </style>
+
   <!-- Preload WASM binaries so the browser fetches them in parallel with
        HTML parsing, before the JS loaders request them. -->
   <link rel="preload" href="symengine.wasm" as="fetch" crossorigin>
-  <link rel="preload" href="crispembed_ocr.wasm" as="fetch" crossorigin>
 </head>
 <body>
   <!-- SymEngine WASM: defer so it doesn't block HTML parsing. The factory
@@ -50,11 +64,7 @@
        scripts, so an inline handshake races symengine.js and loses
        (SymEngineModule not defined -> web CAS silently dead). -->
   <script src="symengine_boot.js" defer></script>
-  <!-- CrispEmbed OCR WASM: loaded on-demand by Dart code via the
-       CrispEmbedOCR() factory (MODULARIZE=1). Unlike SymEngine, this is
-       NOT auto-initialized — the module is instantiated when the user
-       first triggers OCR (avoids blocking page load with unused WASM). -->
-  <script src="crispembed_ocr.js" defer></script>
+  <!-- OCR loader and WASM are fetched when the user opens OCR. -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

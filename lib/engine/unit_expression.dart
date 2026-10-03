@@ -32,6 +32,99 @@ import 'unit_catalog.dart';
 import 'unit_converter.dart';
 
 class UnitExpressionEvaluator {
+  static final _syntaxSpanCache =
+      <String, List<({int start, int end})>>{};
+  static final _syntaxWord = RegExp(r'[A-Za-z_][A-Za-z0-9_]*');
+  static final _syntaxNumber =
+      RegExp(r'(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?');
+
+  /// Identifier spans owned by recognized inline unit syntax. Magnitude
+  /// identifiers remain worksheet references; placeholder 1 only validates
+  /// their grammar positions and is never an evaluation result.
+  static List<({int start, int end})> syntaxIdentifierSpans(String source) {
+    if (source.length > 2048 || source.contains('(')) return const [];
+    final cached = _syntaxSpanCache[source];
+    if (cached != null) return cached;
+    List<({int start, int end})> recognize() {
+      // Arithmetic documents avoid constructing/scanning the unit matcher.
+      if (!RegExp(r'\s|\d[A-Za-zµμ°]').hasMatch(source)) return const [];
+      final spans = <({int start, int end})>[];
+      final candidate = StringBuffer();
+      void keepWords(int start, int end) {
+        for (final word in _syntaxWord.allMatches(source.substring(start, end))) {
+          spans.add((start: start + word.start, end: start + word.end));
+        }
+      }
+      var position = 0;
+      while (position < source.length) {
+        final number = _syntaxNumber.matchAsPrefix(source, position);
+        if (number != null) {
+          candidate.write(number[0]);
+          // e/E belongs to the numerical literal, not to document scope.
+          keepWords(position, number.end);
+          position = number.end;
+          continue;
+        }
+        final character = source[position];
+        if (' \t\n+-*/'.contains(character)) {
+          candidate.write(character);
+          position++;
+          continue;
+        }
+        final word = _syntaxWord.matchAsPrefix(source, position);
+        if (word?[0] == 'in') {
+          candidate.write('in');
+          keepWords(position, word!.end);
+          position = word.end;
+          continue;
+        }
+        var afterWord = word?.end ?? position;
+        while (afterWord < source.length &&
+            ' \t\n'.contains(source[afterWord])) {
+          afterWord++;
+        }
+        var previous = position - 1;
+        while (previous >= 0 && ' \t\n'.contains(source[previous])) {
+          previous--;
+        }
+        final scalarPosition = word != null &&
+            ((previous >= 0 && '*/'.contains(source[previous])) ||
+                (previous < 0 && afterWord < source.length &&
+                    source[afterWord] == '*'));
+        final followedByUnit = word != null && afterWord > word.end &&
+            _syntaxWord.matchAsPrefix(source, afterWord)?[0] != 'in' &&
+            _tryMatchUnitAt(source, afterWord, _symbolsLongestFirst) != null;
+        // Unit-like scalar names in quantity positions stay scalar references:
+        // both m's in `v km + m m` have different lexical roles.
+        if (followedByUnit || scalarPosition) {
+          candidate.write('1');
+          position = word.end;
+          continue;
+        }
+        final unit = _tryMatchUnitAt(source, position, _symbolsLongestFirst);
+        if (unit != null) {
+          candidate.write(source.substring(position, unit.endIndex));
+          keepWords(position, unit.endIndex);
+          position = unit.endIndex;
+        } else if (word != null) {
+          candidate.write('1');
+          position = word.end;
+        } else {
+          return const [];
+        }
+      }
+      if (tryEvaluate(candidate.toString()) == null) return const [];
+      return List.unmodifiable(spans);
+    }
+
+    final spans = recognize();
+    if (_syntaxSpanCache.length >= 256) {
+      _syntaxSpanCache.remove(_syntaxSpanCache.keys.first);
+    }
+    _syntaxSpanCache[source] = spans;
+    return spans;
+  }
+
   /// Try to evaluate [expression] as a unit-arithmetic expression.
   /// Returns the formatted result string on success, or null when
   /// the expression doesn't look like one (caller should fall back
@@ -53,12 +146,12 @@ class UnitExpressionEvaluator {
     if (tokens.isEmpty) return null;
 
     // Split off optional `in <unit>` suffix.
-    Unit? targetUnit;
+    _UnitToken? targetUnit;
     var workingTokens = tokens;
     if (tokens.length >= 2 &&
         tokens[tokens.length - 2] is _InKeyword &&
         tokens.last is _UnitToken) {
-      targetUnit = (tokens.last as _UnitToken).unit;
+      targetUnit = tokens.last as _UnitToken;
       workingTokens = tokens.sublist(0, tokens.length - 2);
     }
 
@@ -176,18 +269,27 @@ class UnitExpressionEvaluator {
     // Apply the leading scalar prefix (V4).
     siValue *= scalarPrefix;
 
+    if (!siValue.isFinite) {
+      return 'Error: unit arithmetic produced a non-finite result';
+    }
+
     // Decide output unit.
     if (targetUnit != null) {
-      if (Dimensions.of(targetUnit.dimension) != dim) {
+      if (targetUnit.dim != dim) {
         return 'Error: cannot convert result (${_dimLabel(dim)}) to '
-            '${targetUnit.symbol} (${targetUnit.dimension.name})';
+            '${targetUnit.symbol} (${_dimLabel(targetUnit.dim)})';
       }
       // The target unit's `toBase` understands offset (for temperature
       // back-conversion if we ever loosen the rejection above). Coherent
       // SI for the supported single-dim catalog matches the target's
       // base, so direct fromBase works.
-      final out = targetUnit.fromBase(siValue);
-      return UnitConverter.format(out, targetUnit);
+      final out = targetUnit.unit != null
+          ? targetUnit.unit!.fromBase(siValue)
+          : targetUnit.derived!.fromSi(siValue);
+      if (!out.isFinite) {
+        return 'Error: unit conversion produced a non-finite result';
+      }
+      return '${UnitConverter.formatNumber(out)} ${targetUnit.symbol}';
     }
 
     // No explicit target. For pure single-dim results, keep the
@@ -213,6 +315,9 @@ class UnitExpressionEvaluator {
     if (anchorSingleDim != null &&
         Dimensions.of(anchorSingleDim.dimension) == dim) {
       final out = anchorSingleDim.fromBase(siValue);
+      if (!out.isFinite) {
+        return 'Error: unit conversion produced a non-finite result';
+      }
       return UnitConverter.format(out, anchorSingleDim);
     }
     // Search single-dim catalog for a coherent-SI exact match.
@@ -270,16 +375,8 @@ class UnitExpressionEvaluator {
     return s;
   }
 
-  /// Tokenize [s]. Returns null on any unrecognized token — the caller
-  /// will fall through to the scalar evaluator. A successful tokenize
-  /// is the signal that "this looks like a unit expression."
-  static List<_Token>? _tokenize(String s) {
-    final out = <_Token>[];
-    var i = 0;
-    final n = s.length;
-
-    // Build a list of unit symbols longest-first so multi-char units
-    // (m/s, km/h, mph) match before the bare alternatives.
+  // Catalog and prefix spellings are immutable; share the matcher order.
+  static final List<String> _symbolsLongestFirst = (() {
     final symbols = <String>[
       for (final dim in UnitCatalog.allDimensions())
         for (final u in UnitCatalog.unitsFor(dim)) u.symbol,
@@ -296,6 +393,16 @@ class UnitExpressionEvaluator {
       ...DerivedUnits.prefixedSymbols(),
     ];
     symbols.sort((a, b) => b.length.compareTo(a.length));
+    return List<String>.unmodifiable(symbols);
+  })();
+
+  /// Tokenize [s]. Returns null on any unrecognized token — the caller
+  /// will fall through to the scalar evaluator. A successful tokenize
+  /// is the signal that "this looks like a unit expression."
+  static List<_Token>? _tokenize(String s) {
+    final out = <_Token>[];
+    var i = 0;
+    final n = s.length;
 
     while (i < n) {
       final c = s[i];
@@ -304,11 +411,19 @@ class UnitExpressionEvaluator {
         i++;
         continue;
       }
-      // Number — leading optional sign handled by the parser via `+`/`-`
-      // operators; here we accept digits, decimal point, and `e`/`E`
-      // for scientific notation.
-      if (_isDigit(c) || (c == '.' && i + 1 < n && _isDigit(s[i + 1]))) {
+      // A sign is unary at the start or immediately after an operator.
+      // Keep it inside the number so offset conversion applies to the
+      // signed temperature itself, rather than negating converted kelvin.
+      final signedNumber = (c == '+' || c == '-') &&
+          (out.isEmpty || out.last is _BinaryOp) &&
+          i + 1 < n &&
+          (_isDigit(s[i + 1]) ||
+              (s[i + 1] == '.' && i + 2 < n && _isDigit(s[i + 2])));
+      if (signedNumber ||
+          _isDigit(c) ||
+          (c == '.' && i + 1 < n && _isDigit(s[i + 1]))) {
         final start = i;
+        if (signedNumber) i++;
         var sawDot = false;
         var sawE = false;
         while (i < n) {
@@ -331,7 +446,7 @@ class UnitExpressionEvaluator {
           break;
         }
         final value = double.tryParse(s.substring(start, i));
-        if (value == null) return null;
+        if (value == null || !value.isFinite) return null;
         out.add(_NumberToken(value));
         continue;
       }
@@ -349,7 +464,7 @@ class UnitExpressionEvaluator {
         // Special-case: `/` might be the leading character of a unit
         // symbol like `m/s`. Try to match a unit first.
         if (c == '/') {
-          final matched = _tryMatchUnitAt(s, i, symbols);
+          final matched = _tryMatchUnitAt(s, i, _symbolsLongestFirst);
           if (matched != null) {
             // No number ahead of this unit means it's a stray slash —
             // bail out so the scalar evaluator handles it.
@@ -361,7 +476,7 @@ class UnitExpressionEvaluator {
         continue;
       }
       // Unit symbol (longest match wins).
-      final matched = _tryMatchUnitAt(s, i, symbols);
+      final matched = _tryMatchUnitAt(s, i, _symbolsLongestFirst);
       if (matched != null) {
         out.add(matched.unit != null
             ? _UnitToken.single(matched.unit!)
@@ -378,6 +493,49 @@ class UnitExpressionEvaluator {
 
   static _UnitMatch? _tryMatchUnitAt(
       String s, int start, List<String> symbolsLongestFirst) {
+    // Resolve standalone powers and compound factors through one bounded
+    // grammar. Division remains left-associative (kg/m/s).
+    final match = RegExp(
+            r'^[A-Za-zμµ°Ω]+(?:\^[23]|[²³])?(?:[*/·][A-Za-zμµ°Ω]+(?:\^[23]|[²³])?)*')
+        .firstMatch(s.substring(start));
+    if (match != null) {
+      final text = match[0]!;
+      final end = start + text.length;
+      final factors = text.split(RegExp(r'[*/·]'));
+      if (text.length > 1024 || factors.length > 16) return null;
+      if (end == s.length ||
+          (!_isWordChar(s[end]) && !'^/*·²³'.contains(s[end]))) {
+        final first = _resolveAtomicUnit(factors.first);
+        if (first != null) {
+          if (factors.length == 1) {
+            return first.unit != null
+                ? _UnitMatch.single(first.unit!, end)
+                : _UnitMatch.derived(first.derived!, end);
+          }
+          if (_hasNonZeroOffset(first.unit)) return null;
+          var dimensions = first.dim;
+          var scale = first.toSi(1);
+          final operations = RegExp(r'[*/·]').allMatches(text).toList();
+          for (var i = 1; i < factors.length; i++) {
+            final next = _resolveAtomicUnit(factors[i]);
+            if (next == null || _hasNonZeroOffset(next.unit)) return null;
+            if (operations[i - 1][0] == '/') {
+              dimensions = dimensions / next.dim;
+              scale /= next.toSi(1);
+            } else {
+              dimensions = dimensions * next.dim;
+              scale *= next.toSi(1);
+            }
+          }
+          if (!scale.isFinite || scale <= 0) return null;
+          final symbol = text.replaceAll('^2', '²').replaceAll('^3', '³');
+          final curated = UnitCatalog.bySymbolWithPrefixes(symbol);
+          if (curated != null) return _UnitMatch.single(curated, end);
+          return _UnitMatch.derived(DerivedUnit(
+              symbol: symbol, name: symbol, dim: dimensions, scale: scale), end);
+        }
+      }
+    }
     for (final sym in symbolsLongestFirst) {
       if (start + sym.length > s.length) continue;
       if (s.substring(start, start + sym.length) != sym) continue;
@@ -400,6 +558,32 @@ class UnitExpressionEvaluator {
       }
     }
     return null;
+  }
+
+  /// A common factor resolver keeps squared/cubed standalone quantities
+  /// consistent with the same factors inside composite conversion targets.
+  static _UnitToken? _resolveAtomicUnit(String symbol) {
+    final canonical = _aliases[symbol] ?? symbol;
+    final catalog = UnitCatalog.bySymbolWithPrefixes(canonical);
+    if (catalog != null) return _UnitToken.single(catalog);
+    final derived = DerivedUnits.bySymbolWithPrefixes(canonical);
+    if (derived != null) {
+      return derived.scale.isFinite && derived.scale > 0
+          ? _UnitToken.derived(derived) : null;
+    }
+    final power = RegExp(r'^([A-Za-zμµ°Ω]+)(?:\^([23])|([²³]))$')
+        .firstMatch(symbol);
+    if (power == null) return null;
+    final base = _resolveAtomicUnit(power[1]!);
+    if (base == null || _hasNonZeroOffset(base.unit)) return null;
+    final cubed = power[2] == '3' || power[3] == '³';
+    final baseScale = base.toSi(1);
+    final scale = baseScale * baseScale * (cubed ? baseScale : 1);
+    if (!scale.isFinite || scale <= 0) return null;
+    return _UnitToken.derived(DerivedUnit(
+        symbol: '${base.symbol}${cubed ? '³' : '²'}', name: symbol,
+        dim: cubed ? base.dim * base.dim * base.dim : base.dim * base.dim,
+        scale: scale));
   }
 
   /// Natural-spelling aliases mapping to catalog symbols. The inline
@@ -444,6 +628,7 @@ class UnitExpressionEvaluator {
     'tons': 't',
     'degree': '°',
     'degrees': '°',
+    'deg': '°',
     'degC': '°C',
     'celsius': '°C',
     'degF': '°F',
@@ -461,13 +646,11 @@ class UnitExpressionEvaluator {
     'cm^3': 'cm³',
     'ft^3': 'cu ft',
     'in^3': 'cu in',
-
     'litre': 'L',
     'liters': 'L',
     'liter': 'L',
     'hectare': 'ha',
     'hectares': 'ha',
-
   };
 
   static _Consumed? _consumeQuantity(List<_Token> toks, int i) {

@@ -1,0 +1,50 @@
+# Checkpoints, backups and transfer
+
+Document menu → Document history saves a source checkpoint. Compare lists source,
+row order, presentation and name changes. Restore first saves “Before restore”,
+keeps document/row IDs, clears old computation caches and recalculates the active
+worksheet. Retention is 20 checkpoints per document, 100 overall, within 1 MB.
+Storage failures are shown rather than reported as success.
+
+Settings → Workspace backups saves a portable `.json` file through the platform
+file picker. The schema includes workspace settings, calculation history, user
+functions, variables, graphs/links/parameters, source worksheets, 3D scene and
+checkpoints. API keys, AI settings and authenticated sessions are excluded.
+A SHA-256 digest detects accidental file damage; it is not an authenticity signature.
+Maximum file size is 16 MB. Imported calculation caches are discarded.
+
+Open backup validates all recognized data before presenting a restore preview.
+Import worksheets preserves local settings/graphs and retains a separate source
+copy for conflicting document IDs, regardless of device timestamps. Repeating
+an unchanged conflict import reuses its preserved copy. Replace workspace
+restores the saved workspace. Both actions save a local recovery backup first;
+Previous workspace opens it for review/restore. A browser quota failure during
+recovery creation aborts the restore before it changes the workspace. A later
+persistence failure leaves recovery available and reports the error.
+
+The Files route supports manual transfer through iCloud Drive or another file
+provider. It does not provide automatic cloud synchronization.
+
+## Optional Supabase cloud backup
+
+Cloud Sync accepts an HTTPS project URL and a public publishable/legacy anon key.
+Existing build-time `SUPABASE_URL`/`SUPABASE_ANON_KEY` settings still take precedence.
+Local setup persists independently of workspace backups. Sign in uses Supabase
+Auth; Push asks before replacing the cloud snapshot. Pull opens the same restore
+preview and never silently chooses the version with the latest device clock.
+
+Apply `supabase/migrations/20261002_user_sync_data.sql` to the selected project
+only after checking its existing table and policies. It creates the expected
+schema for a new project and adds the monotonic `revision` column to an existing
+compatible table. Existing unrelated policies must be reviewed separately.
+The owner policies use `auth.uid()` for reads and writes, following the
+[Supabase RLS documentation](https://supabase.com/docs/guides/database/postgres/row-level-security).
+A unique user ID prevents concurrent initial uploads from overwriting each other.
+Subsequent writes match and increment the previously observed server revision,
+so stale writes fail even when device timestamps are identical.
+
+No real project credentials were supplied for this work. Client tests use the
+real Supabase SDK with explicit HTTP fixtures; the database CI workflow applies
+the migration to PostgreSQL with two authenticated user identities and anonymous
+access assertions. A real project, sign-in and two-device round trip remain
+separate deployment checks. Physical iPhone/iPad checks are deferred.

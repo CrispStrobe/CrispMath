@@ -1,0 +1,82 @@
+name: Real handwriting quality
+on:
+  push:
+    branches: ['feat/graph-workspace-ux']
+    paths:
+      - 'lib/widgets/drawing_canvas.dart'
+      - 'lib/widgets/handwriting_input_dialog.dart'
+      - 'lib/engine/ocr_provider.dart'
+      - 'lib/engine/ocr_providers_init*.dart'
+      - 'native_test/handwriting_quality_test.dart'
+      - 'tool/provision_handwriting_quality.py'
+      - '.github/workflows/handwriting-quality.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: handwriting-quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  measured:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+          submodules: recursive
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Resolve Dart bridge
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Build real OCR once for all models
+        run: |
+          cmake -S .ci/CrispEmbed -B .ci/ocr-build -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=ON -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build .ci/ocr-build --target crispembed-shared --parallel 2
+      - name: Provision fixed test drawings
+        run: |
+          python3 -m pip install -r tool/inference-requirements.txt
+          python3 tool/provision_handwriting_quality.py
+      - name: Download pinned benchmark weights
+        run: |
+          curl --fail --location --retry 3 https://huggingface.co/cstr/posformer-crohme-GGUF/resolve/230657859144cc43a88605a4e737b47929181d4c/posformer-crohme-q8_0.gguf --output .ci/posformer-q8.gguf
+          curl --fail --location --retry 3 https://huggingface.co/cstr/bttr-handwritten-math-gguf/resolve/2576c9c43c4a58a61b4b383e4c3b4dbea96e6fbd/bttr-hw-q8_0.gguf --output .ci/bttr-q8.gguf
+          curl --fail --location --retry 3 https://huggingface.co/cstr/hmer-handwritten-math-gguf/resolve/4579b7e140c2c242b688790877a1ecda9ee39511/hmer-hw-q8_0.gguf --output .ci/hmer-q8.gguf
+          echo '450211ad27ce19e2f30651e69fdc77ea76a13b66e29e045858286024864bf4a4  .ci/posformer-q8.gguf' | sha256sum --check
+          echo '2482a774f239c4a8a8552e50b369a15f4dd87aec10c2787ccdfa1678985c5537  .ci/bttr-q8.gguf' | sha256sum --check
+          echo '565bc4e4250213871fc01d0683fe8457a8bf9b187b96b6999e05f28615b8f6d7  .ci/hmer-q8.gguf' | sha256sum --check
+      - name: Measure each model on identical human test samples
+        run: |
+          export CRISPMATH_OCR_LIBRARY="$PWD/.ci/ocr-build/libcrispembed.so"
+          export CRISPMATH_OCR_MODEL="$PWD/.ci/posformer-q8.gguf"
+          export CRISPMATH_OCR_SHA256=450211ad27ce19e2f30651e69fdc77ea76a13b66e29e045858286024864bf4a4
+          export CRISPMATH_HANDWRITING_REPORT=.dart_tool/inference/handwriting-posformer.json
+          flutter test --reporter expanded native_test/handwriting_quality_test.dart
+          export CRISPMATH_OCR_MODEL="$PWD/.ci/bttr-q8.gguf"
+          export CRISPMATH_OCR_SHA256=2482a774f239c4a8a8552e50b369a15f4dd87aec10c2787ccdfa1678985c5537
+          export CRISPMATH_HANDWRITING_REPORT=.dart_tool/inference/handwriting-bttr.json
+          flutter test --reporter expanded native_test/handwriting_quality_test.dart
+          export CRISPMATH_OCR_MODEL="$PWD/.ci/hmer-q8.gguf"
+          export CRISPMATH_OCR_SHA256=565bc4e4250213871fc01d0683fe8457a8bf9b187b96b6999e05f28615b8f6d7
+          export CRISPMATH_HANDWRITING_REPORT=.dart_tool/inference/handwriting-hmer.json
+          flutter test --reporter expanded native_test/handwriting_quality_test.dart
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-handwriting-quality
+          path: |
+            .dart_tool/inference/handwriting-*.json
+            .dart_tool/inference/handwriting-corpus/
+          retention-days: 14

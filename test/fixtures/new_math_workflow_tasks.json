@@ -1,0 +1,394 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent elementary substitution and exact arithmetic; graph domains retained in original expressions.",
+  "tasks": [
+    {
+      "kind": "document",
+      "title": "Dependent affine worksheet",
+      "lines": [
+        "a=7",
+        "b=a-2",
+        "f(t)=b*t+a",
+        "f(4)"
+      ],
+      "expected": [
+        "7",
+        "5",
+        "5*t+7",
+        "27"
+      ],
+      "id": "new-workflow-01"
+    },
+    {
+      "kind": "document",
+      "title": "Negative parameter edit",
+      "lines": [
+        "a=7",
+        "b=a-2",
+        "f(t)=b*t+a",
+        "f(4)"
+      ],
+      "expected": [
+        "-3",
+        "-5",
+        "-5*t-3",
+        "-23"
+      ],
+      "edit": {
+        "index": 0,
+        "source": "a=-3"
+      },
+      "id": "new-workflow-02"
+    },
+    {
+      "kind": "document",
+      "title": "Rational coefficient",
+      "lines": [
+        "r=3/7",
+        "f(t)=r*t^2",
+        "f(14)"
+      ],
+      "expected": [
+        "3/7",
+        "3*t^2/7",
+        "84"
+      ],
+      "id": "new-workflow-03"
+    },
+    {
+      "kind": "document",
+      "title": "Nested affine argument",
+      "lines": [
+        "f(t)=t^2-1",
+        "g(u)=f(2*u+1)",
+        "g(3)"
+      ],
+      "expected": [
+        "t^2-1",
+        "(2*u+1)^2-1",
+        "48"
+      ],
+      "id": "new-workflow-04"
+    },
+    {
+      "kind": "document",
+      "title": "Reject imperative self-reassignment in a reactive worksheet",
+      "lines": [
+        "n=5",
+        "n=n+1",
+        "n^2"
+      ],
+      "expected": [
+        "5",
+        null,
+        null
+      ],
+      "id": "new-workflow-05",
+      "originalRequestedResults": [
+        "5",
+        "6",
+        "36"
+      ],
+      "expectedErrorContains": [
+        null,
+        "circularReference",
+        "circularReference"
+      ],
+      "unsupportedReason": "Imperative self-reassignment is unsupported in reactive worksheets; use n=5, next=n+1, next^2 to obtain 5, 6, 36 without redefining n."
+    },
+    {
+      "kind": "document",
+      "title": "Decimal and rational addition",
+      "lines": [
+        "d=0.125",
+        "d+1/8"
+      ],
+      "expected": [
+        "1/8",
+        "1/4"
+      ],
+      "id": "new-workflow-06"
+    },
+    {
+      "kind": "document",
+      "title": "Rational function substitution",
+      "lines": [
+        "f(t)=t/(t+1)",
+        "f(3)"
+      ],
+      "expected": [
+        "t/(t+1)",
+        "3/4"
+      ],
+      "id": "new-workflow-07"
+    },
+    {
+      "kind": "document",
+      "title": "Exponential at zero",
+      "lines": [
+        "f(t)=exp(t)",
+        "f(0)"
+      ],
+      "expected": [
+        "exp(t)",
+        "1"
+      ],
+      "id": "new-workflow-08"
+    },
+    {
+      "kind": "document",
+      "title": "Negative argument cube",
+      "lines": [
+        "f(t)=t^3",
+        "f(-2)"
+      ],
+      "expected": [
+        "t^3",
+        "-8"
+      ],
+      "id": "new-workflow-09"
+    },
+    {
+      "kind": "document",
+      "title": "Function value becomes variable",
+      "lines": [
+        "f(t)=t^2",
+        "a=f(4)",
+        "a+f(3)"
+      ],
+      "expected": [
+        "t^2",
+        "16",
+        "25"
+      ],
+      "id": "new-workflow-10"
+    },
+    {
+      "kind": "document",
+      "title": "Decimal parameter recalculation",
+      "lines": [
+        "r=0.5",
+        "area(t)=r*t^2",
+        "area(4)"
+      ],
+      "expected": [
+        "1/4",
+        "t^2/4",
+        "4"
+      ],
+      "edit": {
+        "index": 0,
+        "source": "r=0.25"
+      },
+      "id": "new-workflow-11"
+    },
+    {
+      "kind": "document",
+      "title": "Function replacement invalidates dependents",
+      "lines": [
+        "f(t)=t^2",
+        "b=f(3)",
+        "b+f(2)"
+      ],
+      "expected": [
+        "t^3",
+        "27",
+        "35"
+      ],
+      "edit": {
+        "index": 0,
+        "source": "f(t)=t^3"
+      },
+      "id": "new-workflow-12"
+    },
+    {
+      "kind": "graph",
+      "title": "Circle upper semicircle",
+      "expression": "sqrt(1-x^2)",
+      "checks": [
+        {
+          "x": -2,
+          "y": null
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": null
+        }
+      ],
+      "id": "new-workflow-13"
+    },
+    {
+      "kind": "graph",
+      "title": "Logarithm domain",
+      "expression": "log(x)",
+      "checks": [
+        {
+          "x": -1,
+          "y": null
+        },
+        {
+          "x": 0,
+          "y": null
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "id": "new-workflow-14"
+    },
+    {
+      "kind": "graph",
+      "title": "Absolute value cusp",
+      "expression": "abs(x)",
+      "checks": [
+        {
+          "x": -2,
+          "y": 2
+        },
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 2,
+          "y": 2
+        }
+      ],
+      "id": "new-workflow-15"
+    },
+    {
+      "kind": "graph",
+      "title": "Rational two poles",
+      "expression": "1/(x^2-1)",
+      "checks": [
+        {
+          "x": -2,
+          "y": 0.3333333333333333
+        },
+        {
+          "x": -1,
+          "y": null
+        },
+        {
+          "x": 0,
+          "y": -1
+        },
+        {
+          "x": 1,
+          "y": null
+        },
+        {
+          "x": 2,
+          "y": 0.3333333333333333
+        }
+      ],
+      "id": "new-workflow-16"
+    },
+    {
+      "kind": "graph",
+      "title": "Cancellation still has original hole",
+      "expression": "(x^2-1)/(x-1)",
+      "checks": [
+        {
+          "x": -2,
+          "y": -1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": null
+        },
+        {
+          "x": 2,
+          "y": 3
+        }
+      ],
+      "id": "new-workflow-17"
+    },
+    {
+      "kind": "graph",
+      "title": "Fourth power even curve",
+      "expression": "x^4-2*x^2",
+      "checks": [
+        {
+          "x": -2,
+          "y": 8
+        },
+        {
+          "x": -1,
+          "y": -1
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": -1
+        },
+        {
+          "x": 2,
+          "y": 8
+        }
+      ],
+      "id": "new-workflow-18"
+    },
+    {
+      "kind": "export",
+      "title": "Exact rational document JSON round trip",
+      "format": "json",
+      "lines": [
+        "p=2/9",
+        "f(t)=p*t",
+        "f(27)"
+      ],
+      "expectedResults": [
+        "2/9",
+        "2*t/9",
+        "6"
+      ],
+      "id": "new-workflow-19"
+    },
+    {
+      "kind": "export",
+      "title": "Markdown retains computed function value",
+      "format": "markdown",
+      "lines": [
+        "f(t)=t^3-2*t",
+        "f(5)"
+      ],
+      "expectedResults": [
+        "t^3-2*t",
+        "115"
+      ],
+      "contains": [
+        "115"
+      ],
+      "id": "new-workflow-20"
+    }
+  ]
+}

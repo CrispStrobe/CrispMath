@@ -29,14 +29,19 @@ Linux, and Windows.
     (pure-Dart QR algorithm with Hessenberg reduction).
 - **Interactive graphing:** Y1..Y10 function slots, pan + pinch-to-zoom, axis
   labelling, curve sketching (Kurvendiskussion), root & extrema annotations,
-  parameter sliders.
+  parameter sliders, curve tracing (tap/drag or arrow keys), value tables with
+  TSV/CSV clipboard export, editable independent axis bounds, finite-value fit
+  and a 20-change undo history. Fit uses the current x interval and trims the
+  outer 2% of samples to avoid isolated poles dominating the y range.
 - **Notepad:** Multi-line evaluator with variables, cross-references,
   subtotals, date/time arithmetic, currency conversion (44 currencies),
   inline mini-plots, collapsible sections, templates, Markdown/LaTeX export.
+  Link an expression line to a graph slot; document scope updates the graph,
+  and its source dialog opens the document or detaches the expression.
 - **Statistics:** Descriptive stats, linear/polynomial/exponential regression,
   normal/binomial distributions, 9 hypothesis tests (t-test, ANOVA,
   chi-square, Fisher's exact, sign test, Wilcoxon). Clipboard paste for data.
-- **Unit conversion:** 6 base dimensions + 5 derived SI units (N, J, W, Pa, Hz),
+- **Unit conversion:** built-in dimensions and derived SI units (N, J, W, Pa, Hz),
   composite-dimension arithmetic (`100 m / 10 s → 10 m/s`), SI prefix system.
 - **Constraint solver:** FlatZinc parser + solver (Sudoku, N-queens, boolean
   SAT). Notepad `fzn:` prefix for inline constraint problems.
@@ -49,6 +54,8 @@ Linux, and Windows.
   - `720–1199 px` — side rail (tablets / narrow desktop windows).
   - `≥ 1200 px` — side rail plus a secondary pane so calculator + graph (or
     calculator + analysis) can be shown at the same time.
+- **Command search:** The global Search commands button and Ctrl/Cmd+K find
+  screens, tools and function examples. Arrow keys select; Enter opens a result.
 - **Accessibility:** High-contrast theme, configurable text scale (80%–150%),
   keyboard navigation (Ctrl+1-6), ~225 semantic labels, full keyboard input.
 - **Localization:** English, German, French, Spanish (EN/DE/FR/ES) with
@@ -56,9 +63,9 @@ Linux, and Windows.
 - **Export/Import:** PDF, Markdown, LaTeX, JSON (full state), CSV (history).
   Shareable URL links (`?expr=...&tab=N`).
 
-## Cloud Sync & Optional ONNX Runtime (v1.1.1)
+## Cloud Sync & Optional Math Assistance
 - **Supabase Cloud Sync:** Sync AppState (variables, history, notepad, graphs) seamlessly across devices. Features robust merging to prevent data loss.
-- **Polymorphic AI (ONNX):** Optional hardware-accelerated math NLP and Vision AI via ONNX Runtime (CoreML/NNAPI on mobile, falling back to pure-Dart `onnx_runtime_dart` on Web). The module is deferred and loaded on-demand to save app size.
+- **Math assistance:** Deferred provider-backed natural-language translation on native and web. Configure a full chat-completions or messages endpoint, model and API key in CrispAssist settings. The assistant supports cancellation, timeout and retry, and lets you edit the expression before sending it to the calculator. Keyless local endpoints are supported; browser endpoints must allow CORS. Configuration is not a claim that a model connection has been verified.
 - **Advanced Graphing:** Vector Fields and plotting enhancements.
 - **Notepad PDF Export:** Print or save complete interactive math sessions to PDF.
 
@@ -135,9 +142,16 @@ CrispMath/
 ## Building and running
 
 ```bash
+# Fetch the on-device OCR plugin into the same path used by CI.
+git clone https://github.com/CrispStrobe/CrispEmbed.git .ci/CrispEmbed
+git -C .ci/CrispEmbed checkout --detach 11e6d598521976f38081934106b55095b46b40e3
 flutter pub get
-flutter test            # ~4018 unit tests run without the native bridge
+# For desktop OCR, stage the matching release library (linux or windows):
+python3 tool/stage_ocr_runtime.py --platform linux
+flutter analyze
+flutter test            # Over 5,100 unit and widget tests; no native bridge needed
 flutter run             # Runs the app; SymEngine bridge required for math
+tool/build_web.sh --release  # Also compiles the browser math worker
 
 # CAS regression corpus (SymPy-certified expected values):
 python3 tool/cas_corpus_verify.py                        # certify + regenerate
@@ -149,12 +163,12 @@ The native side lives in the `symbolic_math_bridge` plugin (separate
 repository, git-pinned in `pubspec.yaml`). See its README for the SymEngine
 build.
 
-## Platform support (v1.1.1)
+## Platform support (1.2.0 candidate)
 
 | Platform | SymEngine bridge | Notes |
 |---|---|---|
 | **iOS** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
-| **macOS** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
+| **macOS 12+** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
 | **Android arm64-v8a** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg+NDK build (PLAN P11 R132) |
 | **Windows x86_64** | ✓ full | `symbolic_math_bridge_plugin.dll`, MSYS2/MinGW64 build (PLAN P11 R131) |
 | **Linux x86_64** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg `x64-linux` static build on ubuntu-22.04 / GLIBC 2.35 (PLAN P11 R130) |
@@ -199,3 +213,159 @@ web-only gap is multivariate factoring (falls back to `expand`).
 
 See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
 recently.
+
+## Performance validation
+
+Modules mount on their first visit and retain their state afterward; hidden
+graphs stop scheduling samples. Graph geometry is sampled outside painting: native builds use an isolate;
+web builds use a persistent browser worker with its own SymEngine WASM
+instance. Gesture updates use coarse samples, then refine at rest. An
+8-entry viewport cache and a 128-entry numeric expression cache are bounded.
+Calculator CAS and graph sampling use separate browser workers, so cancelling
+an evaluation does not interrupt the plot. Build web through
+`tool/build_web.sh` so the compiled worker is included. For `flutter run -d
+chrome`, first run `dart compile js -O2 -Ddart.vm.product=true
+lib/services/math_worker_entry.dart -o web/math_worker.dart.js`.
+
+Use the settings performance overlay in a profile build. It reports UI and
+raster p95 work times against the display's refresh-rate budget; it does not
+claim presentation FPS. Exercise graph pan/zoom with multiple functions,
+implicit contours and parameter sliders; edit a large notepad; then compare
+cold startup with OCR unopened. Record the device and build mode with results.
+`dart run tool/benchmark_graph_sampling.dart` measures sampling CPU time only.
+
+For browser worker transport/cancellation checks, compile
+`tool/math_worker_browser_probe.dart` to `web/math_worker_probe.dart.js`, serve
+`web/` over HTTP, and run `python tool/check_math_worker.py --url
+http://localhost:8765/`. This optional check uses Python Playwright and accepts
+`--chromium` for an existing Chromium executable. The probe is a development
+artifact and is excluded from production bundles by `tool/build_web.sh`.
+
+Notepad records are stored per document. Existing `crisp.notepadDocs` blobs
+migrate automatically, retaining the old blob until migration succeeds.
+Writes are ordered, edits are batched, and lifecycle pauses flush pending
+changes. JSON import/export remains compatible; linked graph source IDs are included
+in the optional `graphLinks` field.
+
+
+## Feature validation
+
+Build with `tool/build_web.sh --debug --no-wasm-dry-run` and serve `build/web`
+over HTTP. With Python Playwright installed, start
+`python tool/ai_contract_fixture.py`, then run
+`python tool/check_feature_browser.py --stage 5 --url http://localhost:8766/`.
+Run `python tool/check_mobile_trace.py` for touch tap/drag checks with
+accessibility enabled in a phone-sized viewport. This uses touch emulation,
+not a physical Android device.
+Run `python tool/check_catalog_browser.py` to verify translated example titles,
+descriptions and unique search results in German, French and Spanish.
+The ordered workflow checks tracing/table CSV against numeric values, linked
+source edits, command navigation, bounds/fit/undo, and provider error,
+cancellation, retry and calculator handoff. It saves screenshots and failure
+labels. The HTTP fixture tests the provider contract, not actual model quality.
+A real provider and an evaluation corpus are still needed to assess translation
+quality. The Feature validation workflow runs focused regressions, the entire
+unit/widget suite, and live release/debug browser checks as separate jobs.
+
+Native OCR recognition runs separately from the model-independent suite:
+
+```sh
+CRISPMATH_OCR_MODEL=/path/to/pix2tex-mfr-q4_k.gguf \
+CRISPMATH_OCR_LIBRARY=/path/to/libcrispembed.so \
+flutter test native_test/ocr_native_test.dart
+```
+
+The native check recognizes the committed `5 + 7` image and requires an exact
+calculator result of `12`. Missing libraries or models fail the check. The
+Feature validation workflow builds the library and downloads the same printed
+math model offered by the app before running it. The ordinary unit suite covers
+LaTeX conversion and evaluation without requiring native OCR assets.
+
+### Workflow measurements
+
+After serving a release bundle at `http://127.0.0.1:8766/`, run:
+
+```sh
+python -m pip install -r tool/browser-requirements.txt
+python -m playwright install chromium
+python tool/benchmark_workflows.py --source YOUR_COMMIT
+```
+
+The report in `browser-results/workflow-performance.json` records cold/warm
+startup, calculation-to-saved-history, keyboard trace, pointer pan and editing
+the first variable in 500/2,000-row dependency chains until the final result
+is saved. Restored documents deliberately reuse their cached results; opening
+latency measures the restored editor, and editing measures recalculation.
+Desktop uses 1280×900; the touch profile uses 390×844 and 4× page CPU throttling.
+Throttling is configured through the page CDP session; worker timing is not calibrated. Measurements include browser automation overhead,
+notepad debounce and storage. RAF intervals describe browser frame scheduling
+on the measured host; they do not certify phone FPS or GPU performance. Small
+sample p95 values describe only the observed trials. Feature validation uploads
+the full report with its browser artifacts.
+
+`dart tool/benchmark_notepad.dart` measures the dependency evaluator separately
+with a numeric dispatcher and verifies both initial and edited final results.
+Its JIT timings exclude UI and worker costs. CI retains this report alongside
+the full browser workflow measurements so regressions can be located.
+
+### Real inference quality checks
+
+Unit scoring/provider contracts: `flutter test test/inference_quality_test.dart test/ai_provider_service_test.dart`.
+Real-model checks require an actual configured endpoint; no canned responses:
+
+```sh
+CRISPMATH_AI_ENDPOINT=http://127.0.0.1:11434/v1/chat/completions \
+CRISPMATH_AI_MODEL=your-model flutter test native_test/ai_quality_test.dart
+python3 -m pip install -r tool/inference-requirements.txt
+python3 tool/provision_ocr_quality.py
+CRISPMATH_OCR_MODEL=/path/pix2tex.gguf CRISPMATH_OCR_LIBRARY=/path/libcrispembed.so \
+flutter test native_test/ocr_native_test.dart native_test/ocr_quality_test.dart
+```
+
+Reports in `.dart_tool/inference` separate availability failures from incorrect
+translations and recognition errors. The October 1 CPU baseline with Qwen2.5
+0.5B returned 2 correct translations out of 14; it is unsuitable as an automatic
+answer source. Printed pix2tex recognized 10 of 13 scored images correctly; all
+three human handwriting cases failed expression validation. Exact outcomes and
+model provenance are in `tool/inference_baseline.json`. Truncated responses and
+exposed reasoning traces are rejected before preview.
+
+OCR provisioning renders four fonts, fractions, a root, four image variations,
+and three actual human test samples from [Google MathWriting](https://github.com/google-research/google-research/tree/master/mathwriting).
+The pinned archive is checksum verified. Generated handwriting images stay in
+ignored evaluation storage with attribution and CC BY-NC-SA 4.0 notice; they
+are not application assets. CI uploads scored reports and notices. The strict
+original printed fixture must still recognize and evaluate to 12.
+
+### Core workflow and maintenance checks
+
+On mobile, **Edit expression** opens a text field that supports typing, paste,
+selection and Enter submission; **Math preview** returns to rendered notation.
+Inspecting a linked graph offers **Edit a** (or another bound variable) when its
+assignment belongs to the source document. That action focuses the effective
+assignment, including a definition later in the document. Imported values keep
+their source ownership. AI clarification questions request more input; they are
+never inserted as calculator expressions. Recalculation shows progress and
+unexpected document failures offer retry.
+
+`tool/check_core_workflow_browser.py` verifies mobile entry, calculation,
+linked-variable editing, tracing and reload persistence against a built app.
+Workflow labels have exhaustive en/de/fr/es coverage. Notepad syntax/scope and
+worker dispatch now live in focused components. A per-run classification cache
+observes source edits; numeric substitution scans only the expression while
+symbolic bindings retain ordered replacement. In sequential JIT runs on this
+shared VPS, a 2,000-row dependent edit changed from 13.4 to 2.7 seconds. See
+`tool/notepad_evaluator_comparison.json`; this excludes UI and worker latency.
+Small integer sums also avoid per-row worker messages: the existing numeric
+parser handles only short addition/subtraction expressions with bounded operands,
+so every intermediate integer is exact. Evaluation yields between rows for UI
+responsiveness; fractions, larger integers and other operations retain engine
+routing.
+Documents with unique numeric assignments also reuse a scope index. It checks
+source identities, cached results and imports between rows; changes rebuild the
+index only if its safety conditions still hold. Symbolic results, duplicate
+assignment names and FlatZinc use the existing scope builder. A separate local
+JIT run measured a 2,000-row edit at 0.39 seconds; this still excludes UI and
+worker latency and is not an end-to-end timing.
+Native CI still validates installed OCR runtimes, and superseded platform builds
+are cancelled automatically per workflow and branch.

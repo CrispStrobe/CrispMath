@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independently drafted exact rational and matrix identities, centered moments and regression sums, closed Cauchy/t probabilities, binomial coefficient formula, Gaussian and chi-square references, dimensional SI/CGS conversions, and complete finite polynomial constraint proofs. See docs/round9-math-numeric.md.",
+  "tasks": [
+    {
+      "id": "round9-numeric-01",
+      "title": "Reciprocal harmonic pair",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "1/(1/7+1/11)"
+      ],
+      "exact": true,
+      "expected": "77/18"
+    },
+    {
+      "id": "round9-numeric-02",
+      "title": "Odd signed power cancellation",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(-2)^15+2^15"
+      ],
+      "exact": true,
+      "expected": "0"
+    },
+    {
+      "id": "round9-numeric-03",
+      "title": "Mixed-sign three-dimensional determinant",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[2,3,1],[4,1,-3],[-2,5,2]]))"
+      ],
+      "exact": true,
+      "expected": "50"
+    },
+    {
+      "id": "round9-numeric-04",
+      "title": "Unimodular symmetric inverse",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "inv(Matrix([[2,1],[1,1]]))"
+      ],
+      "expected": "Matrix([[1,-1],[-1,2]])"
+    },
+    {
+      "id": "round9-numeric-05",
+      "title": "Noncommuting shear matrix product",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "Matrix([[1,2],[0,1]])*Matrix([[1,0],[3,1]])"
+      ],
+      "expected": "Matrix([[7,2],[3,1]])"
+    },
+    {
+      "id": "round9-numeric-06",
+      "title": "Exact noninteger rational square root",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(81/121)"
+      ],
+      "exact": true,
+      "expected": "9/11"
+    },
+    {
+      "id": "round9-numeric-07",
+      "title": "Subvariance-underflow sample spread",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        1e-200,
+        2e-200,
+        3e-200
+      ],
+      "expected": {
+        "mean": 2e-200,
+        "median": 2e-200,
+        "sampleStddev": 1e-200
+      }
+    },
+    {
+      "id": "round9-numeric-08",
+      "title": "Variance-overflow finite sample spread",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        1e+200,
+        2e+200,
+        3e+200
+      ],
+      "expected": {
+        "mean": 2e+200,
+        "median": 2e+200,
+        "sampleStddev": 1e+200
+      }
+    },
+    {
+      "id": "round9-numeric-09",
+      "title": "Five-point even response has zero linear fit",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        -2,
+        -1,
+        0,
+        1,
+        2
+      ],
+      "ys": [
+        4,
+        1,
+        0,
+        1,
+        4
+      ],
+      "expected": {
+        "slope": 0,
+        "intercept": 2,
+        "rSquared": 0
+      }
+    },
+    {
+      "id": "round9-numeric-10",
+      "title": "Nonperfect three-point centered fit",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        0,
+        1,
+        2
+      ],
+      "ys": [
+        2,
+        2,
+        5
+      ],
+      "expected": {
+        "slope": 1.5,
+        "intercept": 1.5,
+        "rSquared": 0.75
+      }
+    },
+    {
+      "id": "round9-numeric-11",
+      "title": "Two rare successes in one million trials",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 1000000,
+      "p": 1e-06,
+      "k": 2,
+      "expected": 0.1839398125556351
+    },
+    {
+      "id": "round9-numeric-12",
+      "title": "Ten independent rare-event misses",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 10,
+      "p": 0.1,
+      "k": 0,
+      "expected": 0.3486784401
+    },
+    {
+      "id": "round9-numeric-13",
+      "title": "Normal nonunit scale standardized coordinate",
+      "kind": "module",
+      "operation": "normalCdf",
+      "mean": 0,
+      "stddev": 2,
+      "x": 2,
+      "expected": 0.8413447460685429
+    },
+    {
+      "id": "round9-numeric-14",
+      "title": "Cauchy interval between exact angles",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 1,
+      "lower": 1,
+      "upper": 1.7320508075688772,
+      "expected": 0.08333333333333333
+    },
+    {
+      "id": "round9-numeric-15",
+      "title": "Two-degree t central half mass",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 2,
+      "lower": -0.816496580927726,
+      "upper": 0.816496580927726,
+      "expected": 0.5
+    },
+    {
+      "id": "round9-numeric-16",
+      "title": "Chi square with zero observed cell",
+      "kind": "module",
+      "operation": "chiSquare",
+      "observed": [
+        0,
+        20
+      ],
+      "counts": [
+        10,
+        10
+      ],
+      "expected": {
+        "statistic": 20,
+        "df": 1,
+        "pValue": 7.744216431044084e-06
+      }
+    },
+    {
+      "id": "round9-numeric-17",
+      "title": "Atmosphere litre pressure work",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 atm * 1 L in J",
+      "expected": "101.325 J"
+    },
+    {
+      "id": "round9-numeric-18",
+      "title": "CGS force from energy per distance",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 erg / 1 cm in N",
+      "expected": "0.00001 N"
+    },
+    {
+      "id": "round9-numeric-19",
+      "title": "Ohm law prefixes cancel",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 mA * 1 k\u03a9 in V",
+      "expected": "1 V"
+    },
+    {
+      "id": "round9-numeric-20",
+      "title": "Mass density coherent quotient",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 kg / 1 L in g/cm\u00b3",
+      "expected": "1 g/cm\u00b3"
+    },
+    {
+      "id": "round9-numeric-21",
+      "title": "Specific energy dimension identity",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 m\u00b2 / 1 s\u00b2 in J/kg",
+      "expected": "1 J/kg"
+    },
+    {
+      "id": "round9-numeric-22",
+      "title": "Two positive integer roots under sum and product",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 0..4\nx+y == 4\nx*y == 3",
+      "unordered": true,
+      "expected": [
+        {
+          "x": 1,
+          "y": 3
+        },
+        {
+          "x": 3,
+          "y": 1
+        }
+      ]
+    },
+    {
+      "id": "round9-numeric-23",
+      "title": "Negative root after quadratic constraint",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -4..4\nx*x == 9\nx < 0",
+      "unordered": true,
+      "expected": [
+        {
+          "x": -3
+        }
+      ]
+    },
+    {
+      "id": "round9-numeric-24",
+      "title": "Two adjacent integer minimizers of shifted norm",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -3..3\nx+y == 0\nminimize (x-2)*(x-2)+(y+1)*(y+1)",
+      "expected": 1
+    },
+    {
+      "id": "round9-numeric-25",
+      "title": "Discrete product optimum lies between integer points",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -3..3\nx+y == 1\nmaximize x*y",
+      "expected": 0
+    }
+  ]
+}

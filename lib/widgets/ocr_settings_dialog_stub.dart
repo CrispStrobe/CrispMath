@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../engine/ocr_model_catalog.dart';
 import '../engine/ocr_model_manager_web.dart';
 import '../engine/ocr_provider.dart';
+import '../services/ocr_initialization.dart';
 
 class OcrSettingsDialog extends StatefulWidget {
   const OcrSettingsDialog({super.key});
@@ -24,6 +25,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   @override
   void initState() {
     super.initState();
+    ensureOcrProviders().then((_) {
+      if (mounted) setState(() {});
+    });
     _checkDownloaded();
   }
 

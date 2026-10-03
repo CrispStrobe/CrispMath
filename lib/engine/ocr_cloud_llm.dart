@@ -17,7 +17,11 @@ import '../engine/app_state.dart';
 
 /// OCR provider that sends images to a cloud LLM (Claude/GPT-4V)
 /// for math equation recognition.
-class CloudLlmOcrProvider implements OcrProvider {
+class CloudLlmOcrProvider implements OcrProvider, HandwritingOcrProvider {
+  @override
+  bool get supportsHandwriting => true;
+  @override
+  String? get licenseToAccept => null;
   @override
   String get name => 'Cloud LLM (handwritten + printed)';
 
@@ -31,8 +35,9 @@ class CloudLlmOcrProvider implements OcrProvider {
   bool get requiresApiKey => true;
 
   @override
-  Future<OcrResult?> recognize(
-      Uint8List imageBytes, int width, int height) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)?
+          onProgress}) async {
     final appState = AppState();
     if (!appState.crispAssistEnabled) return null;
 

@@ -106,6 +106,15 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
     COMPONENT Runtime)
 endforeach(bundled_library)
 
+# CrispEmbed's plugin bundles its primary library. Include its CPU runtime
+# dependencies too, so OCR works on machines without a developer installation.
+file(GLOB CRISPEMBED_CPU_LIBRARIES
+  "${FLUTTER_MANAGED_DIR}/ephemeral/.plugin_symlinks/crispembed/linux/lib/*.so*")
+if(CRISPEMBED_CPU_LIBRARIES)
+  install(FILES ${CRISPEMBED_CPU_LIBRARIES}
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
+endif()
+
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"

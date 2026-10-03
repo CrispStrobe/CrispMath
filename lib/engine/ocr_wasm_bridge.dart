@@ -3,7 +3,7 @@
 // WASM-backed math OCR via CrispEmbed compiled to WebAssembly.
 //
 // Loading flow:
-//   1. web/index.html loads crispembed_ocr.js (Emscripten loader)
+//   1. The first OCR request loads crispembed_ocr.js (Emscripten loader)
 //   2. Dart calls CrispEmbedOcrWasm.init() which instantiates the module
 //   3. JS fetches the GGUF model and writes it to Emscripten MEMFS
 //   4. C code opens it via fopen/fread and runs inference
@@ -11,6 +11,8 @@
 // Follows the same dart:js_interop pattern as symbolic_math_bridge_web.dart.
 
 import 'dart:js_interop';
+import 'dart:async';
+import 'package:web/web.dart' as web;
 import 'dart:typed_data';
 
 // ---------------------------------------------------------------------------
@@ -142,11 +144,29 @@ class CrispEmbedOcrWasm {
   /// Whether the WASM module has been loaded and is ready.
   static bool get isAvailable => _moduleLoaded;
 
-  /// Initialize the Emscripten module. Call once at app startup.
+  /// Initialize the Emscripten module on the first OCR request.
   /// Returns true if the module loaded successfully.
   static Future<bool> initModule() async {
     if (_moduleLoaded) return true;
-    if (_jsModuleFactory == null) return false;
+    if (_jsModuleFactory == null) {
+      final loaded = Completer<void>();
+      final script = web.HTMLScriptElement()..src = 'crispembed_ocr.js';
+      script.onload = ((web.Event _) {
+        if (!loaded.isCompleted) loaded.complete();
+      }).toJS;
+      script.onerror = ((web.Event _) {
+        if (!loaded.isCompleted) {
+          loaded.completeError(StateError('OCR loader failed'));
+        }
+      }).toJS;
+      web.document.head!.appendChild(script);
+      try {
+        await loaded.future.timeout(const Duration(seconds: 20));
+      } catch (_) {
+        script.remove();
+        return false;
+      }
+    }
 
     try {
       _injectHelpers();

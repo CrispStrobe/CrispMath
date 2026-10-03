@@ -86,7 +86,7 @@ class ExpressionPreprocessingUtils {
     return u >= 48 && u <= 57;
   }
 
-    static final _nativeLruCache = <String, String>{};
+  static final _nativeLruCache = <String, String>{};
   static const _maxNativeCacheSize = 200;
 
   static String preprocessNativeExpression(String expression) {
@@ -114,7 +114,7 @@ class ExpressionPreprocessingUtils {
     // Expand vector calls — `dot([1,2,3], [4,5,6])` → `(1*4 + 2*5 + 3*6)` etc.
     // Done first so subsequent rules see plain arithmetic, not call syntax.
     p = VectorMath.preprocess(p);
-    
+
     // Support nCr and nPr combinatorics shortcuts
     p = p.replaceAllMapped(RegExp(r'\bnCr\s*\(([^,]+),([^)]+)\)'), (m) {
       return 'binomial(${m.group(1)}, ${m.group(2)})';
@@ -501,7 +501,8 @@ class ExpressionPreprocessingUtils {
   /// isn't an `if(...)` shape, when arg-count isn't 3, or when the
   /// condition stays symbolic — the caller should leave the
   /// original expression in place and let downstream surface the
-  /// error.
+  /// error. [preprocessCondition] can normalize math syntax while leaving
+  /// whitespace in the chosen branch intact.
   ///
   /// SymEngine's text parser has no `Piecewise` entry, so the
   /// PLAN's original lowering target (`Piecewise((t, cond),
@@ -509,8 +510,9 @@ class ExpressionPreprocessingUtils {
   /// practical replacement.
   static Future<String?> tryFoldIfConditional(
     String input,
-    Future<String> Function(String) evaluator,
-  ) async {
+    Future<String> Function(String) evaluator, {
+    String Function(String)? preprocessCondition,
+  }) async {
     final trimmed = input.trim();
     if (!trimmed.startsWith('if(') || !trimmed.endsWith(')')) return null;
     // Walk parens from the opening `(` to be sure the closing `)`
@@ -533,7 +535,9 @@ class ExpressionPreprocessingUtils {
     if (matchedEnd != trimmed.length - 1) return null;
     final args = _splitTopLevelByComma(trimmed.substring(3, matchedEnd));
     if (args.length != 3) return null;
-    final pre = preprocessNativeExpression(args[0].trim());
+    final condition = args[0].trim();
+    final pre = preprocessNativeExpression(
+        preprocessCondition?.call(condition) ?? condition);
     final raw = await evaluator(pre);
     final normalized = normalizeBooleanResult(raw).trim();
     if (normalized == 'true') return args[1].trim();
@@ -1014,9 +1018,8 @@ class ExpressionPreprocessingUtils {
         .replaceAllMapped(RegExp(r'(\d[eE])\+(?=\d)'), (m) => '${m[1]}$ePlus')
         .replaceAllMapped(RegExp(r'(\d[eE])-(?=\d)'), (m) => '${m[1]}$eMinus');
 
-    normalized = normalized
-        .replaceAll(_reSpace, ' ')
-        .replaceAll(_rePlus, ' + ');
+    normalized =
+        normalized.replaceAll(_reSpace, ' ').replaceAll(_rePlus, ' + ');
     // Use a lookahead for the trailing `\S` so it isn't consumed.
     // The old form `(\S)\s*-\s*(\S)` would gobble the right
     // operand and leave a chained `a-b-c` half-spaced as

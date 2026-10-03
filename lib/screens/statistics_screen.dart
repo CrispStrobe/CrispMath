@@ -1432,6 +1432,7 @@ class _TestsTabState extends State<_TestsTab> {
 // === Shared formatting helper ============================================
 
 String _fmt(double v) {
+  if (v.isNaN) return 'Undefined';
   if (!v.isFinite) return v.toString();
   if (v == 0) return '0';
   final abs = v.abs();

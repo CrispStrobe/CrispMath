@@ -1,0 +1,83 @@
+{
+  "measured_at": "2026-10-01",
+  "before_source": "557bd06c148c73b5c5620978b8a3bec925e44741",
+  "after_sha256": {
+    "lib/engine/notepad_evaluator.dart": "808c2a89026a3fe4d0ece4b48a61e532ed7d9fb5dbe0a366e9743fc83e029cce",
+    "lib/engine/notepad_syntax.dart": "424dbaa63f64792e2421c04f6d0551ad5aee9714374569669e594ecaa8ac46c8"
+  },
+  "measurement": "Dart JIT dependency evaluator with numeric dispatcher",
+  "includes_ui_or_worker_latency": false,
+  "trials": 1,
+  "before": [
+    {
+      "rows": 100,
+      "evaluate_all_ms": 344.676,
+      "dependent_edit_ms": 135.862,
+      "last_result": "101"
+    },
+    {
+      "rows": 500,
+      "evaluate_all_ms": 964.556,
+      "dependent_edit_ms": 1596.508,
+      "last_result": "501"
+    },
+    {
+      "rows": 2000,
+      "evaluate_all_ms": 13125.583,
+      "dependent_edit_ms": 13387.159,
+      "last_result": "2001"
+    }
+  ],
+  "after": [
+    {
+      "rows": 100,
+      "evaluate_all_ms": 124.865,
+      "dependent_edit_ms": 43.168,
+      "last_result": "101"
+    },
+    {
+      "rows": 500,
+      "evaluate_all_ms": 188.273,
+      "dependent_edit_ms": 285.642,
+      "last_result": "501"
+    },
+    {
+      "rows": 2000,
+      "evaluate_all_ms": 1817.555,
+      "dependent_edit_ms": 2672.393,
+      "last_result": "2001"
+    }
+  ],
+  "limitations": [
+    "Sequential runs on the same shared VPS; host load is uncontrolled.",
+    "These are evaluator timings, not application edit latency. Browser comparisons are tracked separately."
+  ],
+  "numeric_scope_index": {
+    "source": "31be0971e6e528c8fc0bffc0325cc9504371dd3e",
+    "measurement": {
+      "measurement": "Dart JIT dependency evaluator with numeric dispatcher",
+      "includes_ui_or_worker_latency": false,
+      "documents": [
+        {
+          "rows": 100,
+          "evaluate_all_ms": 139.475,
+          "dependent_edit_ms": 44.238,
+          "last_result": "101"
+        },
+        {
+          "rows": 500,
+          "evaluate_all_ms": 203.858,
+          "dependent_edit_ms": 158.764,
+          "last_result": "501"
+        },
+        {
+          "rows": 2000,
+          "evaluate_all_ms": 631.829,
+          "dependent_edit_ms": 390.982,
+          "last_result": "2001"
+        }
+      ]
+    },
+    "qualifier": "Single local JIT run on a shared VPS; excludes UI and worker latency; prior measurements remain separate."
+  }
+}

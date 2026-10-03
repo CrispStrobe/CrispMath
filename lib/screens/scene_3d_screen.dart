@@ -32,12 +32,12 @@ class _Scene3DScreenState extends State<Scene3DScreen> {
   @override
   void initState() {
     super.initState();
-    _appState.addListener(_onStateChange);
+    _appState.sceneChanges.addListener(_onStateChange);
   }
 
   @override
   void dispose() {
-    _appState.removeListener(_onStateChange);
+    _appState.sceneChanges.removeListener(_onStateChange);
     super.dispose();
   }
 

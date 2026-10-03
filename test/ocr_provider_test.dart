@@ -6,6 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crisp_math/engine/ocr_provider.dart';
 
 void main() {
+  test(
+      'real OCR token spacing preserves roots, bare fractions and function calls',
+      () {
+    expect(latexToEngineSyntax(r'{ \frac { 3 } { 4 } } + { \frac 1 4 }'),
+        '((3)/(4))+((1)/(4))');
+    expect(latexToEngineSyntax(r'\sqrt { 8 1 } + 1'), 'sqrt(81)+1');
+    expect(latexToEngineSyntax(r'2 \sin ( x / 2 )'), '2 sin( x/2 )');
+    expect(latexToEngineSyntax(r'\frac 1 2'), '(1)/(2)');
+    expect(latexToEngineSyntax(r'\frac{1}{2}'), '(1)/(2)');
+    expect(latexToEngineSyntax(r'\frac{\frac 1 4}{2}'), '((1)/(4))/(2)');
+  });
   // =========================================================================
   // postProcessOcrText
   // =========================================================================

@@ -1,0 +1,75 @@
+name: Workflow performance
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run:
+        description: Successful Build Web run containing crisp_math-web
+        required: true
+        type: string
+      profiles:
+        description: Browser profiles
+        type: choice
+        default: both
+        options: [both, desktop, phone]
+      rows:
+        description: Space-separated document sizes
+        type: string
+        default: '500 2000'
+      trials:
+        description: Edit/interaction trials per document
+        type: string
+        default: '3'
+      startups:
+        description: Startup trials
+        type: string
+        default: '3'
+concurrency:
+  group: workflow-performance-${{ github.ref }}-${{ inputs.profiles || 'both' }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+  actions: read
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify profiling helpers
+        run: python -m unittest discover -s tool -p '*_test.py'
+      - name: Identify application source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_RUN: ${{ inputs.artifact_run }}
+        run: |
+          run_id="${ARTIFACT_RUN:-36865790063}"
+          gh run view "$run_id" --json headSha --jq '.headSha' > /tmp/application-source
+          echo "PERFORMANCE_ARTIFACT_RUN=$run_id" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v4
+        with:
+          name: crisp_math-web
+          path: performance-web
+          run-id: ${{ env.PERFORMANCE_ARTIFACT_RUN }}
+          github-token: ${{ github.token }}
+      - name: Install browser tools
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Measure release workflows
+        env:
+          PERFORMANCE_PROFILES: ${{ inputs.profiles || 'both' }}
+          PERFORMANCE_ROWS: ${{ inputs.rows || '500 2000' }}
+          PERFORMANCE_TRIALS: ${{ inputs.trials || '3' }}
+          PERFORMANCE_STARTUPS: ${{ inputs.startups || '3' }}
+        run: |
+          python -m http.server 8766 --directory performance-web > /tmp/performance-http.log 2>&1 &
+          read -r -a document_rows <<< "$PERFORMANCE_ROWS"
+          profiles=(desktop phone)
+          if [[ "$PERFORMANCE_PROFILES" != both ]]; then profiles=("$PERFORMANCE_PROFILES"); fi
+          python tool/benchmark_workflows.py --profiles "${profiles[@]}" --rows "${document_rows[@]}" --trials "$PERFORMANCE_TRIALS" --startups "$PERFORMANCE_STARTUPS" --source "$(cat /tmp/application-source)" --output browser-results/workflow-performance.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workflow-performance
+          path: browser-results
+          if-no-files-found: error

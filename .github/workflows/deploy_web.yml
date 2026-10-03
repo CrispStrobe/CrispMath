@@ -20,20 +20,27 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          path: ../CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.44.0'
           channel: 'stable'
 
       - name: Install Dependencies
-        run: flutter pub get
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
 
       - name: Build Web (WASM)
         # We enable WASM GC compilation.
-        run: flutter build web --wasm --base-href "/CrispMath/"
+        run: tool/build_web.sh --wasm --base-href "/CrispMath/"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

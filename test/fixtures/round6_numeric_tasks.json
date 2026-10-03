@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "reference": "Frozen independent exact arithmetic, stable descriptive-statistics identities, closed-form probabilities, dimensional conversion definitions, complete finite constraint sets and elementary matrix algebra.",
+  "tasks": [
+    {
+      "id": "round6-numeric-01",
+      "title": "Exact cancellation below machine epsilon",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(1+10^(-20))-1"
+      ],
+      "expected": "1/100000000000000000000",
+      "exact": true
+    },
+    {
+      "id": "round6-numeric-02",
+      "title": "Exact rational principal square root",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt((3/7)^2)"
+      ],
+      "expected": "3/7",
+      "exact": true
+    },
+    {
+      "id": "round6-numeric-03",
+      "title": "Reciprocal power followed by division",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(1/3)^(-2)/9"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "round6-numeric-04",
+      "title": "Negative rational floor",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "floor(-7/3)"
+      ],
+      "expected": "-3",
+      "exact": true
+    },
+    {
+      "id": "round6-numeric-05",
+      "title": "Negative rational ceiling",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "ceiling(-7/3)"
+      ],
+      "expected": "-2",
+      "exact": true
+    },
+    {
+      "id": "round6-numeric-06",
+      "title": "Nested root absolute cancellation",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "abs(-2+sqrt(4))"
+      ],
+      "expected": "0",
+      "exact": true
+    },
+    {
+      "id": "round6-numeric-07",
+      "title": "Repeated extreme finite observations",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        1e+308,
+        1e+308
+      ],
+      "expected": {
+        "mean": 1e+308,
+        "median": 1e+308,
+        "sampleStddev": 0
+      }
+    },
+    {
+      "id": "round6-numeric-08",
+      "title": "Extreme symmetric sample with finite deviation",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        -1e+308,
+        1e+308
+      ],
+      "expected": {
+        "mean": 0,
+        "median": 0,
+        "sampleStddev": 1.4142135623730951e+308
+      }
+    },
+    {
+      "id": "round6-numeric-09",
+      "title": "Symmetric large sample deviation",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        -1e+150,
+        0,
+        1e+150
+      ],
+      "expected": {
+        "mean": 0,
+        "median": 0,
+        "sampleStddev": 1e+150
+      }
+    },
+    {
+      "id": "round6-numeric-10",
+      "title": "Central large binomial coefficient",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 1000,
+      "p": 0.5,
+      "k": 500,
+      "expected": 0.0252250181783608
+    },
+    {
+      "id": "round6-numeric-11",
+      "title": "Normal CDF translated far from origin",
+      "kind": "module",
+      "operation": "normalCdf",
+      "mean": 1000000000,
+      "stddev": 1,
+      "x": 1000000001,
+      "expected": 0.8413447460685429
+    },
+    {
+      "id": "round6-numeric-12",
+      "title": "Zero width Cauchy interval",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 1,
+      "lower": 2,
+      "upper": 2,
+      "expected": 0
+    },
+    {
+      "id": "round6-numeric-13",
+      "title": "International acre exact area factor",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 acre in m²",
+      "expected": "4046.8564224 m²"
+    },
+    {
+      "id": "round6-numeric-14",
+      "title": "Half turn degree spelling",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "180 deg in rad",
+      "expected": "3.1415926536 rad"
+    },
+    {
+      "id": "round6-numeric-15",
+      "title": "Hectare to coherent area",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 ha in m²",
+      "expected": "10000 m²"
+    },
+    {
+      "id": "round6-numeric-16",
+      "title": "Scientific literal pressure conversion",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1e-3 bar in Pa",
+      "expected": "100 Pa"
+    },
+    {
+      "id": "round6-numeric-17",
+      "title": "Noncoherent specific energy quotient",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 Wh/kg in J/kg",
+      "expected": "3600 J/kg"
+    },
+    {
+      "id": "round6-numeric-18",
+      "title": "Dimensionless length quotient",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "10 cm / 2 mm",
+      "expected": "50"
+    },
+    {
+      "id": "round6-numeric-19",
+      "title": "Infeasible bounded sum has empty solution set",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 0..2\nx+y == 5",
+      "expected": [],
+      "unordered": true
+    },
+    {
+      "id": "round6-numeric-20",
+      "title": "Binary allDifferent pigeonhole contradiction",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: a, b, c in 0..1\nallDifferent(a, b, c)",
+      "expected": [],
+      "unordered": true
+    },
+    {
+      "id": "round6-numeric-21",
+      "title": "Signed product inequality complete solutions",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in -2..2\nx*y >= 2",
+      "expected": [
+        {
+          "x": -2,
+          "y": -2
+        },
+        {
+          "x": -2,
+          "y": -1
+        },
+        {
+          "x": -1,
+          "y": -2
+        },
+        {
+          "x": 1,
+          "y": 2
+        },
+        {
+          "x": 2,
+          "y": 1
+        },
+        {
+          "x": 2,
+          "y": 2
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round6-numeric-22",
+      "title": "Negative cubic equation unique integer root",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -4..4\nx*x*x == -8",
+      "expected": [
+        {
+          "x": -2
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round6-numeric-23",
+      "title": "Nonlinear objective interior optimum",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x in -3..3\nminimize x*x",
+      "expected": 0
+    },
+    {
+      "id": "round6-numeric-24",
+      "title": "Rectangular matrix transpose",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "transpose(Matrix([[1,2,3],[4,5,6]]))"
+      ],
+      "expected": "Matrix([[1,4],[2,5],[3,6]])"
+    },
+    {
+      "id": "round6-numeric-25",
+      "title": "Three by three repeated column determinant",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[1,2,1],[3,4,3],[5,6,5]]))"
+      ],
+      "expected": "0"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "reference": "Additional variable-preservation controls without changing the frozen fifty: vanishing envelope y-2 proves a squeezed zero; u=2y gives one-half integral_0^1 ln(u)du=-1/2; abs(2y-4)=2y-4 locally at y3; a Taylor expansion with respect to absent x retains constant coefficient -y.",
+  "tasks": [
+    {
+      "id": "round6-variable-01", "kind": "engine",
+      "title": "Non-x shifted envelope proves squeezed zero",
+      "operation": "limit", "args": ["(y-2)*sin(1/(y-2))", "y", "2"],
+      "expected": "0"
+    },
+    {
+      "id": "round6-variable-02", "kind": "engine",
+      "title": "Non-x affine logarithm keeps its convergent endpoint domain",
+      "operation": "integrate", "args": ["ln(2*y)", "y", "0", "1/2"],
+      "expected": "-1/2"
+    },
+    {
+      "id": "round6-variable-03", "kind": "engine",
+      "title": "Non-x shifted absolute Taylor branch preserves y",
+      "operation": "series", "args": ["abs(2*y-4)", "y", "3", "3"],
+      "expected": "2*y-4"
+    },
+    {
+      "id": "round6-variable-04", "kind": "engine",
+      "title": "Taylor expansion in absent x retains foreign coefficient y",
+      "operation": "series", "args": ["2-(2+y)", "x", "0", "3"],
+      "expected": "-y"
+    }
+  ]
+}

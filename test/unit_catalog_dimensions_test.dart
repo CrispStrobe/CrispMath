@@ -109,10 +109,13 @@ void main() {
       expect(DerivedUnits.bySymbol('W'), isNotNull);
       expect(DerivedUnits.bySymbol('Pa'), isNotNull);
       expect(DerivedUnits.bySymbol('Hz'), isNotNull);
+      expect(DerivedUnits.bySymbol('A')!.dim, const Dimensions(current: 1));
+      expect(DerivedUnits.bySymbol('V'), isNotNull);
+      expect(DerivedUnits.bySymbol('Ω'), isNotNull);
     });
 
     test('bySymbol returns null for unknown', () {
-      expect(DerivedUnits.bySymbol('A'), isNull);
+      expect(DerivedUnits.bySymbol('unknown'), isNull);
       expect(DerivedUnits.bySymbol('foo'), isNull);
     });
 

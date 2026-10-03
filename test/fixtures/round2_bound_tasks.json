@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent definite-integral lexical binding and reactive-bound controls",
+  "tasks": [
+    {
+      "id": "round2-bound-01",
+      "kind": "document",
+      "title": "Definite integral shadows the worksheet x",
+      "lines": [
+        "x=5",
+        "integrate(x^2,x,0,1)"
+      ],
+      "expected": [
+        "5",
+        "1/3"
+      ],
+      "expectedAccuracy": [
+        "exact",
+        "exact"
+      ],
+      "expectedFreeVars": [
+        [],
+        []
+      ]
+    },
+    {
+      "id": "round2-bound-02",
+      "kind": "document",
+      "title": "Global upper bound remains reactive while integrand x is local",
+      "lines": [
+        "x=2",
+        "integrate(x^2,x,0,x)"
+      ],
+      "edit": {
+        "index": 0,
+        "source": "x=3"
+      },
+      "expected": [
+        "3",
+        "9"
+      ],
+      "expectedFreeVars": [
+        [],
+        []
+      ],
+      "expectedAccuracy": [
+        "exact",
+        "exact"
+      ]
+    },
+    {
+      "id": "round2-bound-03",
+      "kind": "document",
+      "title": "Tuple integral shadows global x and substitutes coefficients",
+      "lines": [
+        "x=5",
+        "a=2",
+        "integrate(a*x,(x,0,1))"
+      ],
+      "expected": [
+        "5",
+        "2",
+        "1"
+      ],
+      "expectedAccuracy": [
+        "exact",
+        "exact",
+        "exact"
+      ],
+      "expectedFreeVars": [
+        [],
+        [],
+        []
+      ]
+    }
+  ]
+}

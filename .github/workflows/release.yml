@@ -11,147 +11,256 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      candidate:
+        description: 'Artifact label for the release candidate'
+        default: 'v1.2.0-rc.3'
+        type: string
+
+env:
+  RELEASE_LABEL: ${{ github.event_name == 'workflow_dispatch' && inputs.candidate || github.ref_name }}
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tool -p release_candidate_manifest_test.py
+      - run: python tool/release_candidate_manifest.py --label "$RELEASE_LABEL"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-manifest
+          path: candidate-manifest.json
+
   # ── macOS (full SymEngine support) ──────────────────────────────────
   macos:
+    needs: validate
     runs-on: macos-14
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout pinned CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tool/stage_ocr_runtime.py --platform macos
       - run: flutter pub get
       - name: Build macOS (release, unsigned)
         run: |
           unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
           flutter build macos --release \
-            --dart-define=APP_VERSION=${{ github.ref_name }}
+            --dart-define=APP_VERSION=${{ env.RELEASE_LABEL }}
       - name: Verify SymEngine symbols
         run: |
           set -eu
           APP="build/macos/Build/Products/Release/crisp_math.app"
           TOTAL=0
-          for bin in $(find "$APP" -type f -perm -u+x); do
+          while IFS= read -r -d '' bin; do
             c=$(nm -arch arm64 "$bin" 2>/dev/null | grep -c flutter_symengine || true)
             TOTAL=$((TOTAL + c))
-          done
+          done < <(find "$APP" -type f -perm -u+x -print0)
           echo "Total SymEngine symbols: $TOTAL"
-          # Release linkage is the open P1#2; warn instead of fail.
+          # Require the release CAS symbols before publishing the artifact.
           if [ "$TOTAL" -lt 30 ]; then
-            echo "::warning::Release build has $TOTAL SymEngine symbols (expected 30+)."
+            echo "::error::Release build has $TOTAL SymEngine symbols (expected 30+)."
+            exit 1
           fi
       - run: |
           cd build/macos/Build/Products/Release
-          zip -ryq ../../../../../crisp_math-${{ github.ref_name }}-macos.zip crisp_math.app
+          zip -ryq ../../../../../crisp_math-${{ env.RELEASE_LABEL }}-macos.zip crisp_math.app
       - uses: actions/upload-artifact@v4
         with:
           name: macos-release
-          path: crisp_math-${{ github.ref_name }}-macos.zip
+          path: crisp_math-${{ env.RELEASE_LABEL }}-macos.zip
 
   # ── iOS (full SymEngine support, unsigned) ──────────────────────────
   ios:
+    needs: validate
     runs-on: macos-14
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout pinned CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tool/stage_ocr_runtime.py --platform ios
       - run: flutter pub get
       - name: Build iOS (release, unsigned)
         run: |
           unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
           flutter build ios --release --no-codesign \
-            --dart-define=APP_VERSION=${{ github.ref_name }}
+            --dart-define=APP_VERSION=${{ env.RELEASE_LABEL }}
       - run: |
           cd build/ios/iphoneos
-          zip -ryq ../../../crisp_math-${{ github.ref_name }}-ios-unsigned.zip Runner.app
+          zip -ryq ../../../crisp_math-${{ env.RELEASE_LABEL }}-ios-unsigned.zip Runner.app
       - uses: actions/upload-artifact@v4
         with:
           name: ios-release
-          path: crisp_math-${{ github.ref_name }}-ios-unsigned.zip
+          path: crisp_math-${{ env.RELEASE_LABEL }}-ios-unsigned.zip
 
   # ── Linux (degraded SymEngine support) ───────────────────────────────
   linux:
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout pinned CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
       - run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build libgtk-3-dev
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
       - run: flutter config --enable-linux-desktop
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tool/stage_ocr_runtime.py --platform linux
       - run: flutter pub get
-      - run: flutter build linux --release --dart-define=APP_VERSION=${{ github.ref_name }}
+      - run: flutter build linux --release --dart-define=APP_VERSION=${{ env.RELEASE_LABEL }}
       - run: |
           cd build/linux/x64/release/
-          tar czf ../../../../crisp_math-${{ github.ref_name }}-linux-x64.tar.gz bundle
+          tar czf ../../../../crisp_math-${{ env.RELEASE_LABEL }}-linux-x64.tar.gz bundle
       - uses: actions/upload-artifact@v4
         with:
           name: linux-release
-          path: crisp_math-${{ github.ref_name }}-linux-x64.tar.gz
+          path: crisp_math-${{ env.RELEASE_LABEL }}-linux-x64.tar.gz
 
   # ── Windows (degraded SymEngine support) ─────────────────────────────
   windows:
+    needs: validate
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout pinned CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
       - run: flutter config --enable-windows-desktop
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tool/stage_ocr_runtime.py --platform windows
       - run: flutter pub get
-      - run: flutter build windows --release --dart-define=APP_VERSION=${{ github.ref_name }}
+      - run: flutter build windows --release --dart-define=APP_VERSION=${{ env.RELEASE_LABEL }}
       - name: Zip the bundle
         run: |
           cd build\windows\x64\runner\Release
-          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\crisp_math-${{ github.ref_name }}-windows-x64.zip
+          Compress-Archive -Path * -DestinationPath ..\..\..\..\..\crisp_math-${{ env.RELEASE_LABEL }}-windows-x64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: windows-release
-          path: crisp_math-${{ github.ref_name }}-windows-x64.zip
+          path: crisp_math-${{ env.RELEASE_LABEL }}-windows-x64.zip
 
   # ── Android (degraded SymEngine support, unsigned APK) ───────────────
   android:
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout pinned CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tool/stage_ocr_runtime.py --platform android
       - run: flutter pub get
-      - run: flutter build apk --release --dart-define=APP_VERSION=${{ github.ref_name }}
+      - run: flutter build apk --release --dart-define=APP_VERSION=${{ env.RELEASE_LABEL }}
       - name: Rename APK
-        run: mv build/app/outputs/flutter-apk/app-release.apk crisp_math-${{ github.ref_name }}-android.apk
+        run: mv build/app/outputs/flutter-apk/app-release.apk crisp_math-${{ env.RELEASE_LABEL }}-android.apk
       - uses: actions/upload-artifact@v4
         with:
           name: android-release
-          path: crisp_math-${{ github.ref_name }}-android.apk
+          path: crisp_math-${{ env.RELEASE_LABEL }}-android.apk
+
+  web:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: tool/build_web.sh --release --no-wasm-dry-run -O2
+      - run: zip -rq "crisp_math-$RELEASE_LABEL-web.zip" build/web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-release
+          path: crisp_math-*-web.zip
 
   # ── Publish all artifacts to a GitHub Release ───────────────────────
   publish:
-    needs: [macos, ios, linux, windows, android]
+    permissions:
+      contents: write
+    needs: [macos, ios, linux, windows, android, web]
     runs-on: ubuntu-latest
-    if: always() && contains(needs.*.result, 'success')
+    if: github.event_name == 'push' && success()
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -161,8 +270,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_LABEL }}
+          name: ${{ env.RELEASE_LABEL }}
           generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
@@ -171,6 +280,8 @@ jobs:
             artifacts/linux-release/*.tar.gz
             artifacts/windows-release/*.zip
             artifacts/android-release/*.apk
+            artifacts/web-release/*.zip
+            artifacts/candidate-manifest/*.json
           # Curated notes live in the tag-matched file; the auto-generated
           # commit list is appended below it (generate_release_notes).
-          body_path: .release-notes-${{ github.ref_name }}.md
+          body_path: RELEASE_NOTES.md

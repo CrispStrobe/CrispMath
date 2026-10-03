@@ -11,6 +11,7 @@
 
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:crisp_math/widgets/native_bridge_status_listenable.dart';
 
 void main() {
   group('native bridge wiring', () {
@@ -18,6 +19,24 @@ void main() {
       // Reset the process-wide signal — it's a singleton and other tests in
       // this file mutate it.
       nativeBridgeStatus.value = NativeBridgeStatus.loading;
+    });
+
+    test('Flutter status listeners receive transitions and detach cleanly', () {
+      final observed = <NativeBridgeStatus>[];
+      final listenable = nativeBridgeStatusListenable;
+      void listener() => observed.add(listenable.value);
+      listenable.addListener(listener);
+      try {
+        nativeBridgeStatus.value = NativeBridgeStatus.unavailable;
+        nativeBridgeStatus.value = NativeBridgeStatus.ready;
+        expect(observed,
+            [NativeBridgeStatus.unavailable, NativeBridgeStatus.ready]);
+        listenable.removeListener(listener);
+        nativeBridgeStatus.value = NativeBridgeStatus.loading;
+        expect(observed, hasLength(2));
+      } finally {
+        listenable.removeListener(listener);
+      }
     });
 
     test('nativeBridgeReady mirrors the status enum', () {

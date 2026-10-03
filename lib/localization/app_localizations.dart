@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 import '../engine/module_help_kind.dart';
 import '../engine/step_engine.dart' show StepNote;
+import 'worked_example_translations.dart';
 
 export '../engine/module_help_kind.dart' show ModuleHelpKind;
 
@@ -59,6 +60,12 @@ abstract class AppLocalizations {
   String get notepadManageNotepads;
   String get notepadOpenDocument;
   String get notepadExportAsJson;
+  String get notepadOpenFile;
+  String get notepadSaveFile;
+  String get notepadFileSaved;
+  String get notepadFileOpenFailed;
+  String get notepadFileSaveFailed;
+
   String get notepadImportFromJson;
   String get notepadImport;
   String get notepadImportJsonHint;
@@ -80,6 +87,10 @@ abstract class AppLocalizations {
   String get graphErrorEmpty;
   String get graphErrorUnbalanced;
   String get graphErrorTrailingOperator;
+  String get graphSampling;
+  String get graphSamplingFailed;
+  String get graphNoRealValues;
+  String get graphRetry;
   String graphingTitle(int count);
   String functionAdded(int slot);
   String functionRemoved(int slot);
@@ -859,6 +870,16 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get notepadOpenDocument => 'Open';
   @override
+  String get notepadOpenFile => 'Open worksheet file';
+  @override
+  String get notepadSaveFile => 'Save worksheet file';
+  @override
+  String get notepadFileSaved => 'Worksheet saved';
+  @override
+  String get notepadFileOpenFailed => 'Could not open worksheet';
+  @override
+  String get notepadFileSaveFailed => 'Could not save worksheet';
+  @override
   String get notepadExportAsJson => 'Export as JSON';
   @override
   String get notepadImportFromJson => 'Import from JSON';
@@ -908,6 +929,15 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get historyNoMatches => 'No matching entries.';
 
+  @override
+  String get graphSampling => 'Updating graph';
+  @override
+  String get graphSamplingFailed => 'Could not update the graph.';
+  @override
+  String get graphNoRealValues =>
+      'No real values in this range. Check the expression or try another range.';
+  @override
+  String get graphRetry => 'Retry';
   @override
   String graphingTitle(int count) => 'Graphing ($count functions)';
   @override
@@ -2603,6 +2633,18 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get notepadOpenDocument => 'Öffnen';
   @override
+  String get notepadOpenFile => 'Arbeitsblattdatei öffnen';
+  @override
+  String get notepadSaveFile => 'Arbeitsblattdatei speichern';
+  @override
+  String get notepadFileSaved => 'Arbeitsblatt gespeichert';
+  @override
+  String get notepadFileOpenFailed =>
+      'Arbeitsblatt konnte nicht geöffnet werden';
+  @override
+  String get notepadFileSaveFailed =>
+      'Arbeitsblatt konnte nicht gespeichert werden';
+  @override
   String get notepadExportAsJson => 'Als JSON exportieren';
   @override
   String get notepadImportFromJson => 'Aus JSON importieren';
@@ -2653,6 +2695,16 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get historyNoMatches => 'Keine passenden Einträge.';
 
+  @override
+  String get graphSampling => 'Graph wird aktualisiert';
+  @override
+  String get graphSamplingFailed =>
+      'Der Graph konnte nicht aktualisiert werden.';
+  @override
+  String get graphNoRealValues =>
+      'Keine reellen Werte in diesem Bereich. Prüfe den Ausdruck oder wähle einen anderen Bereich.';
+  @override
+  String get graphRetry => 'Erneut versuchen';
   @override
   String graphingTitle(int count) => 'Graphen ($count Funktionen)';
   @override
@@ -4074,7 +4126,7 @@ class DeLocalizations implements AppLocalizations {
       case 'compositeDim':
         return 'Arithmetik mit zusammengesetzten Dimensionen';
     }
-    return null;
+    return additionalWorkedExampleTitle('de', id);
   }
 
   @override
@@ -4233,7 +4285,7 @@ class DeLocalizations implements AppLocalizations {
       case 'compositeDim':
         return '100 m / 10 s ergibt eine Geschwindigkeit in m/s — V5-Parser.';
     }
-    return null;
+    return additionalWorkedExampleDescription('de', id);
   }
 
   // Round 100: DE function-reference prose. CAS category translated
@@ -5958,6 +6010,18 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get notepadOpenDocument => 'Ouvrir';
   @override
+  String get notepadOpenFile => 'Ouvrir un fichier de feuille de calcul';
+  @override
+  String get notepadSaveFile => 'Enregistrer la feuille de calcul';
+  @override
+  String get notepadFileSaved => 'Feuille de calcul enregistrée';
+  @override
+  String get notepadFileOpenFailed =>
+      'Impossible d’ouvrir la feuille de calcul';
+  @override
+  String get notepadFileSaveFailed =>
+      'Impossible d’enregistrer la feuille de calcul';
+  @override
   String get notepadExportAsJson => 'Exporter en JSON';
   @override
   String get notepadImportFromJson => 'Importer depuis JSON';
@@ -6008,6 +6072,15 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get historyNoMatches => 'Aucune entrée correspondante.';
 
+  @override
+  String get graphSampling => 'Actualisation du graphe';
+  @override
+  String get graphSamplingFailed => 'Impossible d’actualiser le graphe.';
+  @override
+  String get graphNoRealValues =>
+      'Aucune valeur réelle dans cet intervalle. Vérifiez l’expression ou essayez un autre intervalle.';
+  @override
+  String get graphRetry => 'Réessayer';
   @override
   String graphingTitle(int count) => 'Graphes ($count fonctions)';
   @override
@@ -7439,7 +7512,7 @@ class FrLocalizations implements AppLocalizations {
       case 'compositeDim':
         return 'Arithmétique à dimensions composées';
     }
-    return null;
+    return additionalWorkedExampleTitle('fr', id);
   }
 
   @override
@@ -7598,7 +7671,7 @@ class FrLocalizations implements AppLocalizations {
       case 'compositeDim':
         return '100 m / 10 s donne une vitesse en m/s — analyseur V5.';
     }
-    return null;
+    return additionalWorkedExampleDescription('fr', id);
   }
 
   // Round 100: FR function-reference prose. Double-quoted strings
@@ -9253,6 +9326,16 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get notepadOpenDocument => 'Abrir';
   @override
+  String get notepadOpenFile => 'Abrir archivo de hoja de cálculo';
+  @override
+  String get notepadSaveFile => 'Guardar archivo de hoja de cálculo';
+  @override
+  String get notepadFileSaved => 'Hoja de cálculo guardada';
+  @override
+  String get notepadFileOpenFailed => 'No se pudo abrir la hoja de cálculo';
+  @override
+  String get notepadFileSaveFailed => 'No se pudo guardar la hoja de cálculo';
+  @override
   String get notepadExportAsJson => 'Exportar como JSON';
   @override
   String get notepadImportFromJson => 'Importar desde JSON';
@@ -9302,6 +9385,15 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get historyNoMatches => 'No hay entradas coincidentes.';
 
+  @override
+  String get graphSampling => 'Actualizando gráfico';
+  @override
+  String get graphSamplingFailed => 'No se pudo actualizar el gráfico.';
+  @override
+  String get graphNoRealValues =>
+      'No hay valores reales en este intervalo. Revisa la expresión o prueba otro intervalo.';
+  @override
+  String get graphRetry => 'Reintentar';
   @override
   String graphingTitle(int count) => 'Gráficos ($count funciones)';
   @override
@@ -10728,7 +10820,7 @@ class EsLocalizations implements AppLocalizations {
       case 'compositeDim':
         return 'Aritmética con dimensiones compuestas';
     }
-    return null;
+    return additionalWorkedExampleTitle('es', id);
   }
 
   @override
@@ -10890,7 +10982,7 @@ class EsLocalizations implements AppLocalizations {
       case 'compositeDim':
         return '100 m / 10 s da una velocidad en m/s — analizador V5.';
     }
-    return null;
+    return additionalWorkedExampleDescription('es', id);
   }
 
   // Round 100: ES function-reference prose.

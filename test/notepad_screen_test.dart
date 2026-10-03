@@ -33,6 +33,11 @@ Future<void> _bootApp(WidgetTester tester, {Size? size}) async {
     await tester.binding.setSurfaceSize(size);
   }
   await AppState().load(force: true);
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.binding.setSurfaceSize(null);
+  });
   await tester.pumpWidget(const CrispMathApp());
   await tester.pump();
   await tester.pump(const Duration(seconds: 1));
@@ -78,7 +83,11 @@ void main() {
       await _bootApp(tester, size: const Size(1280, 800));
       expect(find.text('Notepad'), findsWidgets);
       await _gotoNotepad(tester);
-      expect(find.text('Untitled'), findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byType(AppBar), matching: find.text('Untitled')),
+          findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Untitled'), findsOneWidget);
     });
   });
 
@@ -179,7 +188,8 @@ void main() {
 
       await tester.tap(find.byTooltip('Document menu'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('New document'));
+      await tester
+          .tap(find.widgetWithText(PopupMenuItem<String>, 'New document'));
       await tester.pumpAndSettle();
 
       // Sequential naming (decision #8): `Untitled` is taken by the
@@ -234,7 +244,8 @@ void main() {
       // Create a doc we can safely delete.
       await tester.tap(find.byTooltip('Document menu'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('New document'));
+      await tester
+          .tap(find.widgetWithText(PopupMenuItem<String>, 'New document'));
       await tester.pumpAndSettle();
       final state = AppState();
       final victimId = state.currentNotepadDocId!;
@@ -354,6 +365,26 @@ void main() {
   });
 
   group('NotepadScreen — Phase 5 recalc', () {
+    testWidgets('blank row keeps editor focus when its layout expands',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      doc.lines.clear();
+      doc.lines.add(NotepadLine.fresh(source: ''));
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      final editor = find.byType(TextField).first;
+      await tester.tap(editor);
+      await tester.enterText(editor, '2026-10-01');
+      final before = tester.state(find.byType(EditableText).first);
+      await tester.pump();
+      expect(tester.state(find.byType(EditableText).first), same(before));
+      expect(tester.widget<TextField>(editor).focusNode!.hasFocus, isTrue);
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+      await tester.enterText(editor, '2026-10-01 + 2 days');
+      expect(doc.lines.first.source, '2026-10-01 + 2 days');
+    });
     // Widget tests run on FakeAsync; the engine worker isolate runs
     // on real wall-clock, so we can't drive a full dispatcher round-
     // trip from a fake-clock pump. What we *can* verify is that the
@@ -375,14 +406,15 @@ void main() {
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField).last, '2 + 3');
+      // Fractions still require the asynchronous engine worker.
+      await tester.enterText(find.byType(TextField).last, '2 / 3');
       // Stale cache is cleared synchronously inside _onLineEdited
       // — no wait needed.
       final line = AppState()
           .notepadDocuments[AppState().currentNotepadDocId!]!
           .lines
           .firstWhere((l) => l.id == 'p5-eval');
-      expect(line.source, '2 + 3');
+      expect(line.source, '2 / 3');
       expect(line.cachedResult, isNull);
       expect(line.cachedError, isNull);
 
@@ -399,7 +431,7 @@ void main() {
       await _bootApp(tester, size: const Size(1280, 800));
       await _gotoNotepad(tester);
       final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
-      doc.lines.add(NotepadLine(id: 'p5-recalc-all', source: '1 + 1'));
+      doc.lines.add(NotepadLine(id: 'p5-recalc-all', source: '1 / 3'));
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
 
@@ -413,6 +445,23 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       expect(find.byType(CircularProgressIndicator), findsWidgets,
           reason: 'Recalculate all should flip the row into pending state');
+    });
+
+    testWidgets('small sums complete after debounce and update cached results',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final line = NotepadLine(id: 'small-sum', source: '');
+      doc.lines.add(line);
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '2 + 3');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(line.cachedResult, '5');
+      expect(line.cachedError, isNull);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     });
   });
 

@@ -1,0 +1,650 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "task-01",
+      "kind": "engine",
+      "title": "Precedence",
+      "operation": "evaluate",
+      "args": [
+        "3+4*5"
+      ],
+      "expected": "23"
+    },
+    {
+      "id": "task-02",
+      "kind": "engine",
+      "title": "Parentheses",
+      "operation": "evaluate",
+      "args": [
+        "(3+4)*5"
+      ],
+      "expected": "35"
+    },
+    {
+      "id": "task-03",
+      "kind": "engine",
+      "title": "Rational addition",
+      "operation": "evaluate",
+      "args": [
+        "1/3+1/6"
+      ],
+      "expected": "1/2"
+    },
+    {
+      "id": "task-04",
+      "kind": "engine",
+      "title": "Negative exponent",
+      "operation": "evaluate",
+      "args": [
+        "2^(-3)"
+      ],
+      "expected": "1/8"
+    },
+    {
+      "id": "task-05",
+      "kind": "engine",
+      "title": "Integer power",
+      "operation": "evaluate",
+      "args": [
+        "2^10"
+      ],
+      "expected": "1024"
+    },
+    {
+      "id": "task-06",
+      "kind": "engine",
+      "title": "Square root",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(144)"
+      ],
+      "expected": "12"
+    },
+    {
+      "id": "task-07",
+      "kind": "engine",
+      "title": "Absolute value",
+      "operation": "evaluate",
+      "args": [
+        "abs(-17)"
+      ],
+      "expected": "17"
+    },
+    {
+      "id": "task-08",
+      "kind": "engine",
+      "title": "Sine origin",
+      "operation": "evaluate",
+      "args": [
+        "sin(0)"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "task-09",
+      "kind": "engine",
+      "title": "Cosine origin",
+      "operation": "evaluate",
+      "args": [
+        "cos(0)"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "task-10",
+      "kind": "engine",
+      "title": "Exponential origin",
+      "operation": "evaluate",
+      "args": [
+        "exp(0)"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "task-11",
+      "kind": "engine",
+      "title": "Log identity",
+      "operation": "evaluate",
+      "args": [
+        "log(1)"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "task-12",
+      "kind": "engine",
+      "title": "Polynomial cancellation",
+      "operation": "evaluate",
+      "args": [
+        "(x+1)-(x+1)"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "task-13",
+      "kind": "engine",
+      "title": "Binomial expansion",
+      "operation": "expand",
+      "args": [
+        "(x+1)^3"
+      ],
+      "expected": "x^3+3*x^2+3*x+1"
+    },
+    {
+      "id": "task-14",
+      "kind": "engine",
+      "title": "Difference of squares",
+      "operation": "factor",
+      "args": [
+        "x^2-9"
+      ],
+      "expected": "(x-3)*(x+3)",
+      "resultPattern": "\\([^)]*\\)\\s*\\*?\\s*\\("
+    },
+    {
+      "id": "task-15",
+      "kind": "engine",
+      "title": "Rational cancellation",
+      "operation": "simplify",
+      "args": [
+        "(x^2-1)/(x-1)"
+      ],
+      "expected": "x+1",
+      "resultPattern": "^(?:x\\s*\\+\\s*1|1\\s*\\+\\s*x)$"
+    },
+    {
+      "id": "task-16",
+      "kind": "engine",
+      "title": "Polynomial derivative",
+      "operation": "differentiate",
+      "args": [
+        "x^4",
+        "x"
+      ],
+      "expected": "4*x^3"
+    },
+    {
+      "id": "task-17",
+      "kind": "engine",
+      "title": "Product derivative",
+      "operation": "differentiate",
+      "args": [
+        "x*sin(x)",
+        "x"
+      ],
+      "expected": "sin(x)+x*cos(x)"
+    },
+    {
+      "id": "task-18",
+      "kind": "engine",
+      "title": "Chain derivative",
+      "operation": "differentiate",
+      "args": [
+        "sin(x^2)",
+        "x"
+      ],
+      "expected": "2*x*cos(x^2)"
+    },
+    {
+      "id": "task-19",
+      "kind": "engine",
+      "title": "Polynomial antiderivative",
+      "operation": "integrate",
+      "args": [
+        "x^2",
+        "x"
+      ],
+      "expected": "x^3/3 + C"
+    },
+    {
+      "id": "task-20",
+      "kind": "engine",
+      "title": "Exact definite integral",
+      "operation": "integrate",
+      "args": [
+        "x^2",
+        "x",
+        "0",
+        "1"
+      ],
+      "expected": "1/3",
+      "call": "integrate(x^2,x,0,1)"
+    },
+    {
+      "id": "task-21",
+      "kind": "engine",
+      "title": "Reversed bounds",
+      "operation": "integrate",
+      "args": [
+        "x",
+        "x",
+        "2",
+        "0"
+      ],
+      "expected": "-2",
+      "call": "integrate(x,(x,2,0))"
+    },
+    {
+      "id": "task-22",
+      "kind": "engine",
+      "title": "Zero-width integral",
+      "operation": "integrate",
+      "args": [
+        "x^2",
+        "x",
+        "3",
+        "3"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "task-23",
+      "kind": "engine",
+      "title": "Numerical definite integral",
+      "operation": "integrate",
+      "args": [
+        "exp(x^2)",
+        "x",
+        "0",
+        "1"
+      ],
+      "expected": "1.4626517459071816"
+    },
+    {
+      "id": "task-24",
+      "kind": "engine",
+      "title": "Removable limit",
+      "operation": "limit",
+      "args": [
+        "sin(x)/x",
+        "x",
+        "0"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "task-25",
+      "kind": "engine",
+      "title": "Geometric series",
+      "operation": "series",
+      "args": [
+        "1/(1-x)",
+        "x",
+        "0",
+        "4"
+      ],
+      "expected": "1+x+x^2+x^3"
+    },
+    {
+      "id": "task-26",
+      "kind": "engine",
+      "title": "GCD",
+      "operation": "gcd",
+      "args": [
+        "84",
+        "30"
+      ],
+      "expected": "6"
+    },
+    {
+      "id": "task-27",
+      "kind": "engine",
+      "title": "LCM",
+      "operation": "lcm",
+      "args": [
+        "12",
+        "18"
+      ],
+      "expected": "36"
+    },
+    {
+      "id": "task-28",
+      "kind": "engine",
+      "title": "Factorial",
+      "operation": "factorial",
+      "args": [
+        "10"
+      ],
+      "expected": "3628800"
+    },
+    {
+      "id": "task-29",
+      "kind": "engine",
+      "title": "Fibonacci",
+      "operation": "fibonacci",
+      "args": [
+        "20"
+      ],
+      "expected": "6765"
+    },
+    {
+      "id": "task-30",
+      "kind": "engine",
+      "title": "Unknown operation reports an error",
+      "operation": "nonexistent",
+      "args": [
+        "1"
+      ],
+      "errorContains": "unknown engine op"
+    },
+    {
+      "id": "task-31",
+      "kind": "document",
+      "title": "Assignment chain",
+      "lines": [
+        "a=3",
+        "b=a+4",
+        "b*2"
+      ],
+      "expected": [
+        "3",
+        "7",
+        "14"
+      ]
+    },
+    {
+      "id": "task-32",
+      "kind": "document",
+      "title": "Forward dependency",
+      "lines": [
+        "b=a+1",
+        "a=4"
+      ],
+      "expected": [
+        "5",
+        "4"
+      ]
+    },
+    {
+      "id": "task-33",
+      "kind": "document",
+      "title": "Multiple dependents",
+      "lines": [
+        "a=2",
+        "b=a+1",
+        "c=a*3",
+        "b+c"
+      ],
+      "expected": [
+        "2",
+        "3",
+        "6",
+        "9"
+      ]
+    },
+    {
+      "id": "task-34",
+      "kind": "document",
+      "title": "Source edit recalculates dependents",
+      "lines": [
+        "a=2",
+        "b=a*3",
+        "b+1"
+      ],
+      "expected": [
+        "5",
+        "15",
+        "16"
+      ],
+      "edit": {
+        "index": 0,
+        "source": "a=5"
+      }
+    },
+    {
+      "id": "task-35",
+      "kind": "document",
+      "title": "Independent row survives edit",
+      "lines": [
+        "a=2",
+        "a+1",
+        "9*9"
+      ],
+      "expected": [
+        "7",
+        "8",
+        "81"
+      ],
+      "edit": {
+        "index": 0,
+        "source": "a=7"
+      }
+    },
+    {
+      "id": "task-36",
+      "kind": "document",
+      "title": "Blank rows",
+      "lines": [
+        "",
+        "2+3",
+        ""
+      ],
+      "expected": [
+        null,
+        "5",
+        null
+      ]
+    },
+    {
+      "id": "task-37",
+      "kind": "document",
+      "title": "Comments and headings",
+      "lines": [
+        "## Budget",
+        "// explanation",
+        "2+2"
+      ],
+      "expected": [
+        null,
+        null,
+        "4"
+      ]
+    },
+    {
+      "id": "task-38",
+      "kind": "document",
+      "title": "Line aliases",
+      "lines": [
+        "3",
+        "line1+4"
+      ],
+      "expected": [
+        "3",
+        "7"
+      ]
+    },
+    {
+      "id": "task-39",
+      "kind": "document",
+      "title": "Function definition",
+      "lines": [
+        "f(x)=x^2+1",
+        "f(3)"
+      ],
+      "expected": [
+        "x^2+1",
+        "10"
+      ]
+    },
+    {
+      "id": "task-40",
+      "kind": "document",
+      "title": "Negative assignment",
+      "lines": [
+        "a=-3",
+        "a^2"
+      ],
+      "expected": [
+        "-3",
+        "9"
+      ]
+    },
+    {
+      "id": "task-41",
+      "kind": "graph",
+      "title": "Parabola",
+      "expression": "x^2",
+      "checks": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": 4
+        }
+      ]
+    },
+    {
+      "id": "task-42",
+      "kind": "graph",
+      "title": "Sine",
+      "expression": "sin(x)",
+      "checks": [
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "task-43",
+      "kind": "graph",
+      "title": "Reciprocal gap",
+      "expression": "1/x",
+      "checks": [
+        {
+          "x": 0,
+          "y": null
+        },
+        {
+          "x": 2,
+          "y": 0.5
+        }
+      ]
+    },
+    {
+      "id": "task-44",
+      "kind": "graph",
+      "title": "Log domain",
+      "expression": "log(x)",
+      "checks": [
+        {
+          "x": -1,
+          "y": null
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "task-45",
+      "kind": "graph",
+      "title": "Square-root domain",
+      "expression": "sqrt(x)",
+      "checks": [
+        {
+          "x": -1,
+          "y": null
+        },
+        {
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "task-46",
+      "kind": "export",
+      "title": "Markdown results",
+      "format": "markdown",
+      "name": "Worksheet",
+      "lines": [
+        "a=3",
+        "a*4"
+      ],
+      "contains": [
+        "`a=3`",
+        "`a*4`",
+        "12"
+      ],
+      "expectedResults": [
+        "3",
+        "12"
+      ]
+    },
+    {
+      "id": "task-47",
+      "kind": "export",
+      "title": "LaTeX document",
+      "format": "latex",
+      "name": "Worksheet",
+      "lines": [
+        "a=3",
+        "a*4"
+      ],
+      "contains": [
+        "\\begin{document}",
+        "12",
+        "\\end{document}"
+      ],
+      "expectedResults": [
+        "3",
+        "12"
+      ]
+    },
+    {
+      "id": "task-48",
+      "kind": "export",
+      "title": "LaTeX escaping",
+      "format": "latex",
+      "name": "Budget_2026&cost",
+      "lines": [
+        "a=3",
+        "a*4"
+      ],
+      "contains": [
+        "Budget\\_2026\\&cost"
+      ],
+      "expectedResults": [
+        "3",
+        "12"
+      ]
+    },
+    {
+      "id": "task-49",
+      "kind": "export",
+      "title": "Portable JSON round trip",
+      "format": "json",
+      "name": "Worksheet",
+      "lines": [
+        "a=3",
+        "a*4"
+      ],
+      "contains": [],
+      "expectedResults": [
+        "3",
+        "12"
+      ]
+    },
+    {
+      "id": "task-50",
+      "kind": "export",
+      "title": "Real PDF bytes",
+      "format": "pdf",
+      "name": "Worksheet",
+      "lines": [
+        "a=3",
+        "a*4"
+      ],
+      "contains": [],
+      "expectedResults": [
+        "3",
+        "12"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+name: Deployed workspace checks
+on:
+  push:
+    branches: ['feat/graph-workspace-ux']
+    paths:
+      - '.github/workflows/deployed-workspace-checks.yml'
+      - 'tool/check_document_history_browser.py'
+      - 'tool/check_handwriting_browser.py'
+      - 'tool/check_fresh_calculations_browser.py'
+  workflow_dispatch:
+    inputs:
+      expected_source:
+        description: 'Optional exact deployed app SHA; empty records the existing deployment for debugging'
+        type: string
+        default: ''
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - site: pages
+            url: https://crispstrobe.github.io/CrispMath/
+          - site: vercel
+            url: https://crisp-math.vercel.app/
+    env:
+      APP_URL: ${{ matrix.url }}
+      EXPECTED_SOURCE: ${{ inputs.expected_source }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        id: dependencies
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Identify tested app and tool revisions
+        id: source
+        run: |
+          mkdir -p live-results
+          python - <<'PY'
+          import json, os
+          from urllib.request import urlopen
+          from urllib.parse import urljoin
+          with urlopen(urljoin(os.environ['APP_URL'], 'build-info.json'), timeout=30) as response:
+            info=json.load(response)
+          source=info['source']
+          expected=os.environ.get('EXPECTED_SOURCE')
+          if expected and source != expected:
+            raise RuntimeError('The deployed application revision does not match the requested source')
+          record={'url':os.environ['APP_URL'],'appSource':source,'toolSource':os.environ['GITHUB_SHA'],'exactSourceRequested':bool(expected)}
+          with open('live-results/source.json','w') as file:json.dump(record,file,indent=2)
+          print(json.dumps(record))
+          PY
+      - name: Checkpoint, backup and recovery round trip
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        run: python tool/check_document_history_browser.py --url "$APP_URL" --output live-results/document-history
+      - name: Visible ink, dots, undo and clear
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        run: python tool/check_handwriting_browser.py --url "$APP_URL" --output live-results/handwriting
+      - name: Exact integer, eigenvalues and original domain details
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        run: python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output live-results/fresh-calculations
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workspace-live-${{ matrix.site }}
+          path: live-results
+          retention-days: 14

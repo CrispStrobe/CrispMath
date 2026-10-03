@@ -1,0 +1,16 @@
+{
+  "flutter": "3.44.0",
+  "crispembed": {
+    "revision": "11e6d598521976f38081934106b55095b46b40e3",
+    "version": "0.17.11"
+  },
+  "symbolic_math_bridge": {
+    "revision": "e75dbbe916c238e6a109ba85aac227fe9bbe34b7"
+  },
+  "playwright": "1.61.0",
+  "candidate": "v1.2.0-rc.3",
+  "dart_csp": {
+    "revision": "ce10138a4bc857847429b9cfa3d4071854a5bbca",
+    "version": "2.3.0"
+  }
+}

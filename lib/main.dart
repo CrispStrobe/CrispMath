@@ -12,7 +12,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:crisp_math/services/ai_service.dart' deferred as ai;
+import 'widgets/ai_math_dialog.dart' deferred as ai;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -21,6 +21,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'diagnostics_runner_stub.dart'
     if (dart.library.io) 'diagnostics_runner_io.dart';
 import 'engine/app_state.dart';
+import 'widgets/workspace_backup_dialog.dart';
 import 'engine/calculator_engine.dart';
 import 'engine/matrix_diagnostics.dart';
 import 'localization/app_localizations.dart';
@@ -33,8 +34,13 @@ import 'screens/help_screen.dart';
 import 'screens/notepad_screen.dart';
 import 'services/crash_reporter.dart';
 import 'services/sync_service.dart';
+import 'services/apple_workflow.dart';
 import 'utils/share_link.dart';
 import 'widgets/perf_overlay.dart';
+import 'widgets/command_palette.dart';
+import 'engine/command_catalog.dart';
+import 'widgets/module_navigation.dart';
+import 'widgets/unit_converter_dialog.dart';
 import 'services/native_licenses.dart';
 import 'widgets/export_data_dialog.dart';
 import 'widgets/import_data_dialog.dart';
@@ -44,9 +50,6 @@ import 'widgets/sync_dialog.dart';
 import 'widgets/function_reference_dialog.dart';
 import 'widgets/worked_examples_dialog.dart';
 import 'widgets/web_unsupported_banner.dart';
-import 'engine/ocr_providers_init_stub.dart'
-    if (dart.library.io) 'engine/ocr_providers_init.dart'
-    if (dart.library.js_interop) 'engine/ocr_providers_init_web.dart';
 import 'widgets/ocr_settings_dialog_stub.dart'
     if (dart.library.io) 'widgets/ocr_settings_dialog.dart';
 
@@ -71,22 +74,19 @@ void main() async {
   CrashReporter.instance.install();
 
   await AppState().load();
-  await SyncService.instance.init();
   // Register native (SymEngine / GMP / MPFR / MPC / FLINT) license texts so
   // they appear in `showLicensePage` alongside the pub deps.
-  // Fire license registration and OCR provider init in the background —
-  // neither blocks the first frame. Licenses are only needed when the user
-  // opens showLicensePage; OCR providers register asynchronously and any
-  // OCR attempt before completion simply sees no active provider.
-  unawaited(registerNativeLicenses());
-  unawaited(initOcrProviders());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(SyncService.instance.init());
+    unawaited(registerNativeLicenses());
+  });
 
   // Headless self-test for CI / manual verification. Invoke with the
-  // `CRISPMATH_DIAGNOSTIC=matrix|steps` environment variable set (desktop
+  // `CRISPMATH_DIAGNOSTIC=matrix|steps|workflows` environment variable set (desktop
   // only). Runs the matrix / step battery against the native bridge,
   // prints PASS/FAIL lines, and exits non-zero on any failure. On web this
   // is a no-op (the conditional import resolves to the stub).
-  runDiagnosticsIfRequested();
+  await runDiagnosticsIfRequested();
 
   // The SymEngine bridge loads synchronously on native, but on web the WASM
   // module (web/symengine.js + symengine.wasm) resolves asynchronously after
@@ -106,7 +106,7 @@ class CrispMathApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = AppState();
     return ListenableBuilder(
-      listenable: appState,
+      listenable: appState.appearanceChanges,
       builder: (context, _) {
         return MaterialApp(
           title: 'CrispMath - CAS Calculator',
@@ -125,12 +125,9 @@ class CrispMathApp extends StatelessWidget {
             Locale('es', ''),
           ],
           themeMode: appState.themeMode,
-          theme: appState.highContrast
-              ? _buildHighContrastLightTheme()
-              : _buildLightTheme(),
-          darkTheme: appState.highContrast
-              ? _buildHighContrastDarkTheme()
-              : _buildDarkTheme(),
+          theme: appState.highContrast ? _highContrastLightTheme : _lightTheme,
+          darkTheme:
+              appState.highContrast ? _highContrastDarkTheme : _darkTheme,
           builder: (context, child) {
             final scale = appState.textScale;
             if (scale == 1.0) return child!;
@@ -148,6 +145,11 @@ class CrispMathApp extends StatelessWidget {
     );
   }
 }
+
+final _lightTheme = _buildLightTheme();
+final _darkTheme = _buildDarkTheme();
+final _highContrastLightTheme = _buildHighContrastLightTheme();
+final _highContrastDarkTheme = _buildHighContrastDarkTheme();
 
 ThemeData _buildDarkTheme() {
   return ThemeData.dark().copyWith(
@@ -242,12 +244,14 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _selectedIndex = _kCalculator;
+  final _visitedTabs = <int>{_kCalculator};
   bool _showPerfOverlay = false;
 
   final GlobalKey<CalculatorScreenState> _calculatorKey = GlobalKey();
   final GlobalKey<GraphingScreenState> _graphingKey = GlobalKey();
+  final GlobalKey<NotepadScreenState> _notepadKey = GlobalKey();
 
   late final List<Widget> _screens;
 
@@ -260,13 +264,17 @@ class _MainScreenState extends State<MainScreen> {
         onGoToGraphing: () => _select(_kGraphing),
         onGoToAnalysis: () => _select(_kAnalysis),
       ),
-      const NotepadScreen(),
+      NotepadScreen(key: _notepadKey),
       GraphingScreen(key: _graphingKey),
       FunctionEditorScreen(
         onSwitchToGraphing: (_) => _select(_kGraphing),
       ),
       const AnalysisHubScreen(),
-      const SettingsScreen(),
+      SettingsScreen(onWorkspaceRestored: () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _notepadKey.currentState?.recalculateAll();
+        });
+      }),
     ];
     // First-launch onboarding tour. Skipped if the user has already
     // dismissed it (persisted) or — pragmatically — when running
@@ -298,21 +306,63 @@ class _MainScreenState extends State<MainScreen> {
           _calculatorKey.currentState?.insertExpression(share.expression!);
         }
       }
+      unawaited(AppleWorkflowBridge.listen((action) async {
+        if (!mounted) return;
+        if (action.expression != null) {
+          _select(_kCalculator);
+          _calculatorKey.currentState?.insertExpression(action.expression!);
+        }
+        final doc = action.document;
+        if (doc != null) {
+          final state = AppState();
+          state.setNotepadDocument(doc);
+          state.setCurrentNotepadDoc(doc.id);
+          _select(_kNotepad);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && state.currentNotepadDocId == doc.id) {
+              _notepadKey.currentState?.recalculateAll();
+            }
+          });
+        }
+      }, (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not open workflow: $error')));
+      }));
     });
     // Worked-examples V2: when a dialog signals "insert this into the
     // calculator", switch to the Calculator tab. The CalculatorScreen
     // itself consumes the pending expression and inserts it.
-    AppState().addListener(_maybeRouteToCalculator);
+    WidgetsBinding.instance.addObserver(this);
+    AppState().navigationChanges.addListener(_maybeRouteToCalculator);
   }
 
   @override
   void dispose() {
-    AppState().removeListener(_maybeRouteToCalculator);
+    AppleWorkflowBridge.stop();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(AppState().flushPersistence());
+    AppState().navigationChanges.removeListener(_maybeRouteToCalculator);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      unawaited(AppState().flushPersistence());
+    }
   }
 
   void _maybeRouteToCalculator() {
     if (!mounted) return;
+    final requested = AppState().consumeRequestedTab();
+    if (requested != null) {
+      _select(requested);
+      return;
+    }
     if (AppState().pendingInsertExpression != null &&
         _selectedIndex != _kCalculator) {
       _select(_kCalculator);
@@ -321,7 +371,10 @@ class _MainScreenState extends State<MainScreen> {
 
   void _select(int i) {
     if (i == _selectedIndex) return;
-    setState(() => _selectedIndex = i);
+    setState(() {
+      _selectedIndex = i;
+      _visitedTabs.add(i);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (i == _kCalculator) {
         _calculatorKey.currentState?.requestFocus();
@@ -337,6 +390,10 @@ class _MainScreenState extends State<MainScreen> {
     // Ctrl/Cmd + 1-6 switch between tabs (accessibility / power-user).
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true):
+            _openCommands,
+        const SingleActivator(LogicalKeyboardKey.keyK, meta: true):
+            _openCommands,
         const SingleActivator(LogicalKeyboardKey.digit1, control: true): () =>
             _select(0),
         const SingleActivator(LogicalKeyboardKey.digit2, control: true): () =>
@@ -383,6 +440,26 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  Future<void> _openCommands() async {
+    final command = await showDialog<AppCommand>(
+        context: context, builder: (_) => const CommandPalette());
+    if (!mounted || command == null) return;
+    final target = command.target;
+    if (target.startsWith('tab:')) {
+      _select(int.parse(target.substring(4)));
+    } else if (target == 'units') {
+      await showDialog<void>(
+          context: context, builder: (_) => const UnitConverterDialog());
+    } else if (target.startsWith('reference:')) {
+      await showDialog<void>(
+          context: context,
+          builder: (_) =>
+              FunctionReferenceDialog(initialSearch: target.substring(10)));
+    } else {
+      dispatchModuleSentinel(context, target);
+    }
+  }
+
   List<({IconData icon, String label})> _destinations(AppLocalizations t) {
     return [
       (icon: Icons.calculate, label: t.navCalculator),
@@ -401,15 +478,35 @@ class _MainScreenState extends State<MainScreen> {
         children: [
           if (_showPerfOverlay) const PerfOverlay(),
           const WebUnsupportedBanner(),
+          Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                  onPressed: _openCommands,
+                  icon: const Icon(Icons.search),
+                  label: const Text('Search commands'))),
           Expanded(child: body),
+        ],
+      );
+
+  /// Mount a module on its first visit, then retain its editing state.
+  /// Hidden modules also stop animation-driven work and graph sampling.
+  Widget _tabStack() => IndexedStack(
+        index: _selectedIndex,
+        children: [
+          for (var i = 0; i < _screens.length; i++)
+            TickerMode(
+              enabled: i == _selectedIndex,
+              child: _visitedTabs.contains(i)
+                  ? _screens[i]
+                  : const SizedBox.shrink(),
+            ),
         ],
       );
 
   Widget _buildBottomNavLayout(AppLocalizations t) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      body: _withWebBanner(
-          IndexedStack(index: _selectedIndex, children: _screens)),
+      body: _withWebBanner(_tabStack()),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: cs.surface,
@@ -449,7 +546,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           const VerticalDivider(width: 1),
           Expanded(
-            child: IndexedStack(index: _selectedIndex, children: _screens),
+            child: _tabStack(),
           ),
         ],
       )),
@@ -458,7 +555,8 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final VoidCallback? onWorkspaceRestored;
+  const SettingsScreen({super.key, this.onWorkspaceRestored});
 
   @override
   Widget build(BuildContext context) {
@@ -764,6 +862,19 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              Card(
+                  child: ListTile(
+                leading:
+                    const Icon(Icons.backup_outlined, semanticLabel: 'Backup'),
+                title: const Text('Workspace backups'),
+                subtitle:
+                    const Text('Files, restore and transfer between devices'),
+                onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) =>
+                        WorkspaceBackupDialog(onRestored: onWorkspaceRestored)),
+              )),
               // OCR model management
               const SizedBox(height: 16),
               Card(
@@ -804,7 +915,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 16),
-              _OnnxSettingsCard(),
+              _MathAssistantSettingsCard(),
               const SizedBox(height: 16),
               _CrispAssistSettingsCard(appState: appState),
               const SizedBox(height: 16),
@@ -826,15 +937,15 @@ class SettingsScreen extends StatelessWidget {
               if (CrashReporter.instance.hasReports) const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading:
-                      const Icon(Icons.cloud_sync, semanticLabel: 'Sync'),
+                  leading: const Icon(Icons.cloud_sync, semanticLabel: 'Sync'),
                   title: const Text('Cloud Sync'),
                   trailing: const Icon(Icons.arrow_forward_ios,
                       size: 16, semanticLabel: 'Open'),
                   onTap: () {
                     showDialog(
                       context: context,
-                      builder: (_) => SyncDialog(appState: appState),
+                      builder: (_) => SyncDialog(
+                          appState: appState, onRestored: onWorkspaceRestored),
                     );
                   },
                 ),
@@ -1003,81 +1114,24 @@ class SettingsScreen extends StatelessWidget {
 // CrispAssist settings card
 // ---------------------------------------------------------------------------
 
-class _OnnxSettingsCard extends StatefulWidget {
+class _MathAssistantSettingsCard extends StatelessWidget {
   @override
-  State<_OnnxSettingsCard> createState() => _OnnxSettingsCardState();
-}
-
-class _OnnxSettingsCardState extends State<_OnnxSettingsCard> {
-  bool _isLoading = false;
-  String _status = "Not loaded (Optional AI)";
-
-  void _loadOnnx() async {
-    setState(() {
-      _isLoading = true;
-      _status = "Loading ONNX Runtime...";
-    });
-    
-    await ai.loadLibrary();
-    final aiService = ai.aiService;
-    
-    await aiService.initializeOptionalAi();
-    
-    setState(() {
-      _isLoading = false;
-      _status = aiService.isReady ? "Ready (CoreML / NNAPI available)" : "Failed to load";
-    });
-  }
-
-  void _showNlpDialog() {
-    final ctl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Test Math NLP"),
-          content: TextField(
-            controller: ctl,
-            decoration: const InputDecoration(hintText: "e.g. Integrate x squared"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                final aiService = ai.aiService;
-                final result = await aiService.processMathNLP(ctl.text);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result ?? '')));
-                }
-              },
-              child: const Text("Solve"),
-            )
-          ],
-        );
-      }
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.memory, semanticLabel: 'AI Engine'),
-        title: const Text('Local Math AI Engine (ONNX)'),
-        subtitle: Text(_status),
-        trailing: _isLoading 
-            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-            : OutlinedButton(
-                onPressed: _status.contains("Ready") ? _showNlpDialog : _loadOnnx,
-                child: Text(_status.contains("Ready") ? 'Test' : 'Initialize'),
-              ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Card(
+          child: ListTile(
+        leading: const Icon(Icons.auto_awesome),
+        title: const Text('Math assistance'),
+        subtitle: const Text(
+            'Translate a question, review the expression, then calculate.'),
+        trailing: OutlinedButton(
+            onPressed: () async {
+              await ai.loadLibrary();
+              if (context.mounted) {
+                await showDialog<void>(
+                    context: context, builder: (_) => ai.AiMathDialog());
+              }
+            },
+            child: const Text('Open assistant')),
+      ));
 }
 
 class _CrispAssistSettingsCard extends StatefulWidget {
@@ -1168,7 +1222,7 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
                             style: Theme.of(context).textTheme.titleMedium),
                         Text(
                           enabled
-                              ? 'Connected (${widget.appState.crispAssistModel})'
+                              ? 'Configured (${widget.appState.crispAssistModel})'
                               : 'Not configured',
                           style: TextStyle(
                             fontSize: 12,

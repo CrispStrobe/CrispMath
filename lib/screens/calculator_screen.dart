@@ -1,3 +1,7 @@
+import '../engine/result_evidence.dart';
+import '../services/engine_dispatch.dart';
+import '../services/integral_arguments.dart';
+import '../widgets/result_evidence_badge.dart';
 // lib/screens/calculator_screen.dart
 
 import 'dart:async';
@@ -10,8 +14,10 @@ import 'package:flutter_math_fork/flutter_math.dart';
 // Engine imports
 import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
+import '../widgets/native_bridge_status_listenable.dart';
 import '../engine/inequality_solver.dart';
 import '../engine/ocr_provider.dart';
+import '../services/ocr_initialization.dart';
 import '../engine/scan_cleanup.dart';
 import '../widgets/ocr_capture_dialog.dart';
 import 'package:image_picker/image_picker.dart';
@@ -83,6 +89,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   final FocusNode _calculatorFocusNode = FocusNode(); // Dedicated focus node
 
   String _resultPreview = '';
+  ResultEvidence? _resultEvidence;
   bool _justCalculated = false;
   bool _showLatexHistory = false; // History display toggle
 
@@ -124,7 +131,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // so availability-dependent chrome stays consistent. (History is a log
     // of past calculations and is intentionally not rewritten; new
     // calculations pick up the live bridge automatically.)
-    nativeBridgeStatus.addListener(_onBridgeStatusChanged);
+    nativeBridgeStatusListenable.addListener(_onBridgeStatusChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculatorFocusNode.requestFocus();
@@ -181,7 +188,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   void dispose() {
     appRouteObserver.unsubscribe(this);
     _appState.removeListener(_consumePendingInsert);
-    nativeBridgeStatus.removeListener(_onBridgeStatusChanged);
+    nativeBridgeStatusListenable.removeListener(_onBridgeStatusChanged);
     _tabController.dispose();
     _latexController.removeListener(_onInputChanged);
     _latexController.dispose();
@@ -194,6 +201,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   /// OCR: pick image → run provider → show confirmation → insert.
   Future<void> _launchOcr(BuildContext context) async {
+    await ensureOcrProviders();
+    if (!context.mounted) return;
     var provider = OcrProviders.active;
 
     // Check if layout-aware OCR is available.
@@ -297,8 +306,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   Future<void> _processDroppedFile(XFile file) async {
+    await ensureOcrProviders();
+    if (!mounted) return;
     final bytes = await file.readAsBytes();
-    
+
     // Choose layout provider if available, otherwise active provider
     final layoutProvider = OcrProviders.available
         .where((p) => p.name.contains('Layout'))
@@ -339,19 +350,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
       _ocrCurrentRegionBox = null;
     });
 
-    final result = await provider.recognize(
-      ocrBytes, imgWidth, imgHeight,
-      onProgress: (total, current, x1, y1, x2, y2) {
-        if (mounted) {
-          setState(() {
-            _ocrCurrentRegionBox = Rect.fromLTRB(x1, y1, x2, y2);
-          });
-        }
+    final result = await provider.recognize(ocrBytes, imgWidth, imgHeight,
+        onProgress: (total, current, x1, y1, x2, y2) {
+      if (mounted) {
+        setState(() {
+          _ocrCurrentRegionBox = Rect.fromLTRB(x1, y1, x2, y2);
+        });
       }
-    );
+    });
 
     if (!mounted) return;
-    
+
     setState(() {
       _isOcrProcessing = false;
       _ocrDroppedImage = null;
@@ -489,50 +498,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
         });
       }
     });
-  }
-
-  /// Compute the live preview string without calling setState.
-  String _computeLivePreview() {
-    String currentText = _latexController.text.trim();
-
-    if (currentText.isEmpty ||
-        currentText.toLowerCase().startsWith('solve') ||
-        currentText.contains('=') ||
-        currentText.length < 2 ||
-        RegExp(r'^[a-zA-Z]+$').hasMatch(currentText)) {
-      return '';
-    }
-
-    if (!RegExp(r'[\d\+\-\*/\^\(\)\.\,\\]').hasMatch(currentText)) {
-      return '';
-    }
-
-    try {
-      final convertedExpression = LatexConversionUtils.fromLatex(currentText);
-      final substituted = ExpressionPreprocessingUtils.substituteVariables(
-          convertedExpression, _appState);
-      final preprocessed =
-          ExpressionPreprocessingUtils.preprocessNativeExpression(
-              ExpressionPreprocessingUtils.preprocessExpression(
-                  substituted, _appState));
-      final rawResult = _engine.evaluate(preprocessed);
-
-      final normalizedResult =
-          ExpressionPreprocessingUtils.normalizeComplexResult(rawResult);
-
-      if (normalizedResult != "Error" &&
-          normalizedResult != currentText &&
-          normalizedResult != preprocessed) {
-        if (normalizedResult.contains('Error')) return '';
-        // Same display rounding the history entry will get, so the
-        // preview never flashes 15-digit float noise.
-        return _appState.formatNumber(normalizedResult);
-      } else {
-        return '';
-      }
-    } catch (e) {
-      return '';
-    }
   }
 
   /// Recover from a stuck HardwareKeyboard state. Hot reload, a brief
@@ -1144,6 +1109,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   Future<void> _calculate(String expression) async {
+    _resultEvidence = null;
     if (kDebugMode) debugPrint('CALC: "$expression"');
     try {
       final trimmed = expression.trim();
@@ -1350,6 +1316,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
         // mode. Just return the literal directly.
         if (RegExp(r'^[+-]?\d+$').hasMatch(preprocessed.trim())) {
           result = preprocessed.trim();
+          _resultEvidence = const ResultEvidence(
+              ResultAccuracy.exact, ComputationMethod.integerArithmetic);
         } else {
           // Big expressions (integrate, factor, simplify, matrix, long
           // factorials) get offloaded to a worker isolate via
@@ -1366,7 +1334,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
       setState(() {
         _appState.addHistoryEntry(
-            LatexConversionUtils.latexToReadable(expression), result);
+            LatexConversionUtils.latexToReadable(expression), result,
+            resultEvidence: _resultEvidence);
         _resultPreview = '';
         _justCalculated = true;
         _latexController.clear();
@@ -1848,44 +1817,21 @@ class CalculatorScreenState extends State<CalculatorScreen>
     }
   }
 
-  /// integrate(expr, var) or integrate(expr, (var, lower, upper))
+  /// Accept both flat and tuple bounds, matching the worksheet dispatcher.
   Future<String> _handleIntegrateFunction(String expression) async {
-    try {
-      final content = expression.substring(10, expression.length - 1).trim();
-      // Split into expression and the rest at the first comma at depth 0.
-      final firstComma = _findTopLevelComma(content);
-      if (firstComma < 0) return 'Error: integrate() needs at least a variable';
-
-      final exprPart = content.substring(0, firstComma).trim();
-      final rest = content.substring(firstComma + 1).trim();
-
-      final preprocessedExpr =
-          ExpressionPreprocessingUtils.preprocessNativeExpression(
-        ExpressionPreprocessingUtils.preprocessExpression(exprPart, _appState),
-      );
-
-      // (var, a, b) form — definite integral
-      if (rest.startsWith('(') && rest.endsWith(')')) {
-        final inner = rest.substring(1, rest.length - 1);
-        final parts = inner.split(',').map((s) => s.trim()).toList();
-        if (parts.length == 3) {
-          return _runEngineOpMaybeAsync('integrate', preprocessedExpr,
-              arg2: parts[0],
-              arg3: parts[1],
-              arg4: parts[2],
-              fallback: () => _engine.integrate(
-                  preprocessedExpr, parts[0], parts[1], parts[2]));
-        }
-        return 'Error: integrate(expr, (var, lower, upper)) expected';
-      }
-
-      // Just a variable — indefinite integral
-      return _runEngineOpMaybeAsync('integrate', preprocessedExpr,
-          arg2: rest,
-          fallback: () => _engine.integrate(preprocessedExpr, rest));
-    } catch (e) {
-      return 'Error: Invalid integrate() syntax';
+    final args = parseIntegralArguments(expression);
+    if (args == null) {
+      return 'Error: integrate(expr, var), integrate(expr, var, lower, upper) or integrate(expr, (var, lower, upper)) expected';
     }
+    final body = ExpressionPreprocessingUtils.preprocessNativeExpression(
+        ExpressionPreprocessingUtils.preprocessExpression(args[0], _appState));
+    final lower = args.length == 4 ? args[2] : null;
+    final upper = args.length == 4 ? args[3] : null;
+    return _runEngineOpMaybeAsync('integrate', body,
+        arg2: args[1],
+        arg3: lower,
+        arg4: upper,
+        fallback: () => _engine.integrate(body, args[1], lower, upper));
   }
 
   /// limit(expr, var, point)
@@ -2531,12 +2477,20 @@ class CalculatorScreenState extends State<CalculatorScreen>
     String? arg4,
     required String Function() fallback,
   }) async {
-    if (!EngineService.shouldRunAsync(arg1)) return fallback();
+    final operation = EngineOp(op, arg1, arg2, arg3, arg4);
+    if (!EngineService.shouldRunAsync(arg1)) {
+      _engine.lastResultEvidence = null;
+      final computed = describeEngineResult(_engine, operation, fallback());
+      _resultEvidence = computed.evidence;
+      return computed.value;
+    }
     try {
-      return await _runWithProgress(
+      final computed = await _runWithProgress(
         AppLocalizations.of(context).calculating,
-        () => EngineService.runOpAsync(EngineOp(op, arg1, arg2, arg3, arg4)),
+        () => EngineService.runOpDetailedAsync(operation),
       );
+      _resultEvidence = computed.evidence;
+      return computed.value;
     } on _CancelledByUserException {
       return 'Error: cancelled';
     }
@@ -2574,18 +2528,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
     );
   }
 
-  /// Returns the index of the first top-level (depth 0) comma in `s`, or -1.
-  int _findTopLevelComma(String s) {
-    var depth = 0;
-    for (var i = 0; i < s.length; i++) {
-      final c = s[i];
-      if (c == '(' || c == '[' || c == '{') depth++;
-      if (c == ')' || c == ']' || c == '}') depth--;
-      if (c == ',' && depth == 0) return i;
-    }
-    return -1;
-  }
-
   @override
   Widget build(BuildContext context) {
     return DropTarget(
@@ -2616,411 +2558,450 @@ class CalculatorScreenState extends State<CalculatorScreen>
               }
             },
             child: SafeArea(
-        child: Column(
-          children: [
-            // History display section
-            Expanded(
-              flex: 3,
               child: Column(
                 children: [
-                  // Top toolbar. Round 93 (P6): the worked-examples
-                  // `(?)` icon lives here and is **always** visible,
-                  // so the container renders unconditionally now. The
-                  // history-specific controls (LaTeX/Plain toggle,
-                  // search, clear) only render once there's history
-                  // to act on.
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    // Round 108: a plain Row overflowed (~90px) on
-                    // narrow phones once the history controls (LaTeX/Plain
-                    // toggle, search, clear) appeared alongside the four
-                    // always-on action icons. Wrap keeps everything on one
-                    // right-aligned line on wide layouts (tablet/desktop)
-                    // and gracefully wraps the extras to a second line on
-                    // narrow ones instead of clipping.
-                    child: Wrap(
-                      alignment: WrapAlignment.end,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      runSpacing: 4,
+                  // History display section
+                  Expanded(
+                    flex: 3,
+                    child: Column(
                       children: [
-                        // OCR camera button
-                        IconButton(
-                          icon: const Icon(Icons.camera_alt_outlined,
-                              size: 20, semanticLabel: 'Scan math'),
-                          tooltip: 'Scan math',
-                          onPressed: () => _launchOcr(context),
-                        ),
-                        // Handwriting input
-                        IconButton(
-                          icon: const Icon(Icons.draw_outlined,
-                              size: 20, semanticLabel: 'Write math'),
-                          tooltip: 'Write math',
-                          onPressed: () async {
-                            final expr =
-                                await showHandwritingInputDialog(context);
-                            if (expr != null && expr.isNotEmpty) {
-                              _latexController.clear();
-                              _latexController.insert(expr);
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.menu_book_outlined,
-                              size: 20, semanticLabel: 'Worked examples'),
-                          tooltip:
-                              AppLocalizations.of(context).workedExamplesTitle,
-                          onPressed: () => showDialog<void>(
-                            context: context,
-                            builder: (_) => const WorkedExamplesDialog(),
-                          ),
-                        ),
-                        // Round 101 (P6): help-mode toggle. Filled icon
-                        // + colored when active. Wrapping HelpTarget /
-                        // popovers land in Rounds 102-104.
-                        ListenableBuilder(
-                          listenable: _appState,
-                          builder: (context, _) {
-                            final on = _appState.helpMode;
-                            final t = AppLocalizations.of(context);
-                            return IconButton(
-                              icon: Icon(
-                                on ? Icons.help : Icons.help_outline,
-                                size: 20,
-                                semanticLabel:
-                                    on ? 'Disable help mode' : 'Help mode',
-                                color: on
-                                    ? Theme.of(context).colorScheme.primary
-                                    : null,
+                        // Top toolbar. Round 93 (P6): the worked-examples
+                        // `(?)` icon lives here and is **always** visible,
+                        // so the container renders unconditionally now. The
+                        // history-specific controls (LaTeX/Plain toggle,
+                        // search, clear) only render once there's history
+                        // to act on.
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          // Round 108: a plain Row overflowed (~90px) on
+                          // narrow phones once the history controls (LaTeX/Plain
+                          // toggle, search, clear) appeared alongside the four
+                          // always-on action icons. Wrap keeps everything on one
+                          // right-aligned line on wide layouts (tablet/desktop)
+                          // and gracefully wraps the extras to a second line on
+                          // narrow ones instead of clipping.
+                          child: Wrap(
+                            alignment: WrapAlignment.end,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            runSpacing: 4,
+                            children: [
+                              // OCR camera button
+                              IconButton(
+                                icon: const Icon(Icons.camera_alt_outlined,
+                                    size: 20, semanticLabel: 'Scan math'),
+                                tooltip: 'Scan math',
+                                onPressed: () => _launchOcr(context),
                               ),
-                              tooltip: on
-                                  ? t.helpModeDisableTooltip
-                                  : t.helpModeEnableTooltip,
-                              onPressed: _appState.toggleHelpMode,
-                            );
-                          },
-                        ),
-                        if (_appState.history.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Text(
-                            AppLocalizations.of(context).historyLabel,
-                            style: TextStyle(
-                                fontSize: 12, color: Colors.grey[600]),
-                          ),
-                          const SizedBox(width: 8),
-                          SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment<bool>(
-                                value: false,
-                                icon: Icon(Icons.text_fields,
-                                    size: 16, semanticLabel: 'Plain text'),
-                              ),
-                              ButtonSegment<bool>(
-                                value: true,
-                                icon: Icon(Icons.functions,
-                                    size: 16, semanticLabel: 'LaTeX'),
-                              ),
-                            ],
-                            selected: {_showLatexHistory},
-                            onSelectionChanged: (Set<bool> newSelection) {
-                              setState(() {
-                                _showLatexHistory = newSelection.first;
-                              });
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: Icon(
-                              _historySearchOpen
-                                  ? Icons.search_off
-                                  : Icons.search,
-                              size: 20,
-                              semanticLabel: 'Search history',
-                            ),
-                            tooltip: AppLocalizations.of(context).searchHistory,
-                            onPressed: () {
-                              setState(() {
-                                _historySearchOpen = !_historySearchOpen;
-                                if (!_historySearchOpen) {
-                                  _historySearchController.clear();
-                                }
-                              });
-                              // Hand focus to the search field when opening.
-                              // Without this the calculator's KeyboardListener
-                              // (focusNode: _calculatorFocusNode) keeps the
-                              // primary focus and the TextField never gets to
-                              // see keystrokes.
-                              if (_historySearchOpen) {
-                                FocusManager.instance.primaryFocus?.unfocus();
-                                WidgetsBinding.instance
-                                    .addPostFrameCallback((_) {
-                                  if (mounted) {
-                                    _historySearchFocusNode.requestFocus();
+                              // Handwriting input
+                              IconButton(
+                                icon: const Icon(Icons.draw_outlined,
+                                    size: 20, semanticLabel: 'Write math'),
+                                tooltip: 'Write math',
+                                onPressed: () async {
+                                  final expr =
+                                      await showHandwritingInputDialog(context);
+                                  if (expr != null && expr.isNotEmpty) {
+                                    _latexController.clear();
+                                    _latexController.insert(expr);
                                   }
-                                });
-                              } else {
-                                // Closed: hand focus back to the calculator.
-                                _calculatorFocusNode.requestFocus();
-                              }
-                            },
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.menu_book_outlined,
+                                    size: 20, semanticLabel: 'Worked examples'),
+                                tooltip: AppLocalizations.of(context)
+                                    .workedExamplesTitle,
+                                onPressed: () => showDialog<void>(
+                                  context: context,
+                                  builder: (_) => const WorkedExamplesDialog(),
+                                ),
+                              ),
+                              // Round 101 (P6): help-mode toggle. Filled icon
+                              // + colored when active. Wrapping HelpTarget /
+                              // popovers land in Rounds 102-104.
+                              ListenableBuilder(
+                                listenable: _appState.calculatorChanges,
+                                builder: (context, _) {
+                                  final on = _appState.helpMode;
+                                  final t = AppLocalizations.of(context);
+                                  return IconButton(
+                                    icon: Icon(
+                                      on ? Icons.help : Icons.help_outline,
+                                      size: 20,
+                                      semanticLabel: on
+                                          ? 'Disable help mode'
+                                          : 'Help mode',
+                                      color: on
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : null,
+                                    ),
+                                    tooltip: on
+                                        ? t.helpModeDisableTooltip
+                                        : t.helpModeEnableTooltip,
+                                    onPressed: _appState.toggleHelpMode,
+                                  );
+                                },
+                              ),
+                              if (_appState.history.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppLocalizations.of(context).historyLabel,
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey[600]),
+                                ),
+                                const SizedBox(width: 8),
+                                SegmentedButton<bool>(
+                                  segments: const [
+                                    ButtonSegment<bool>(
+                                      value: false,
+                                      icon: Icon(Icons.text_fields,
+                                          size: 16,
+                                          semanticLabel: 'Plain text'),
+                                    ),
+                                    ButtonSegment<bool>(
+                                      value: true,
+                                      icon: Icon(Icons.functions,
+                                          size: 16, semanticLabel: 'LaTeX'),
+                                    ),
+                                  ],
+                                  selected: {_showLatexHistory},
+                                  onSelectionChanged: (Set<bool> newSelection) {
+                                    setState(() {
+                                      _showLatexHistory = newSelection.first;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: Icon(
+                                    _historySearchOpen
+                                        ? Icons.search_off
+                                        : Icons.search,
+                                    size: 20,
+                                    semanticLabel: 'Search history',
+                                  ),
+                                  tooltip: AppLocalizations.of(context)
+                                      .searchHistory,
+                                  onPressed: () {
+                                    setState(() {
+                                      _historySearchOpen = !_historySearchOpen;
+                                      if (!_historySearchOpen) {
+                                        _historySearchController.clear();
+                                      }
+                                    });
+                                    // Hand focus to the search field when opening.
+                                    // Without this the calculator's KeyboardListener
+                                    // (focusNode: _calculatorFocusNode) keeps the
+                                    // primary focus and the TextField never gets to
+                                    // see keystrokes.
+                                    if (_historySearchOpen) {
+                                      FocusManager.instance.primaryFocus
+                                          ?.unfocus();
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                        if (mounted) {
+                                          _historySearchFocusNode
+                                              .requestFocus();
+                                        }
+                                      });
+                                    } else {
+                                      // Closed: hand focus back to the calculator.
+                                      _calculatorFocusNode.requestFocus();
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_sweep,
+                                      size: 20, semanticLabel: 'Clear history'),
+                                  tooltip:
+                                      AppLocalizations.of(context).clearHistory,
+                                  onPressed: _confirmClearHistory,
+                                ),
+                              ],
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_sweep,
-                                size: 20, semanticLabel: 'Clear history'),
-                            tooltip: AppLocalizations.of(context).clearHistory,
-                            onPressed: _confirmClearHistory,
+                        ),
+
+                        if (_historySearchOpen && _appState.history.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                            child: TextField(
+                              controller: _historySearchController,
+                              focusNode: _historySearchFocusNode,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                prefixIcon: const Icon(Icons.search,
+                                    size: 18, semanticLabel: 'Search'),
+                                hintText: AppLocalizations.of(context)
+                                    .searchHistoryHint,
+                                border: const OutlineInputBorder(),
+                                suffixIcon: _historySearchController
+                                        .text.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        icon: const Icon(Icons.clear,
+                                            size: 18,
+                                            semanticLabel: 'Clear search'),
+                                        tooltip: AppLocalizations.of(context)
+                                            .clearSearchTooltip,
+                                        onPressed: () {
+                                          _historySearchController.clear();
+                                        },
+                                      ),
+                              ),
+                            ),
                           ),
-                        ],
+
+                        // History list
+                        Expanded(
+                          child: ListenableBuilder(
+                              listenable: _appState.calculatorChanges,
+                              builder: (context, child) {
+                                if (_appState.history.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      AppLocalizations.of(context).historyHere,
+                                      style:
+                                          const TextStyle(color: Colors.grey),
+                                    ),
+                                  );
+                                }
+
+                                final q =
+                                    _debouncedSearchQuery.trim().toLowerCase();
+                                final entries = q.isEmpty
+                                    ? _appState.history
+                                    : _appState.history
+                                        .where((e) =>
+                                            e.expression
+                                                .toLowerCase()
+                                                .contains(q) ||
+                                            e.result.toLowerCase().contains(q))
+                                        .toList();
+
+                                if (entries.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      AppLocalizations.of(context)
+                                          .historyNoMatches,
+                                      style:
+                                          const TextStyle(color: Colors.grey),
+                                    ),
+                                  );
+                                }
+
+                                return ListView.builder(
+                                  itemCount: entries.length,
+                                  reverse: true,
+                                  itemBuilder: (context, index) {
+                                    final entry = entries[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 8),
+                                      child: Builder(builder: (context) {
+                                        final tt = AppLocalizations.of(context);
+                                        final display =
+                                            EngineErrorFormatter.format(
+                                                entry.result, tt);
+                                        final isError =
+                                            EngineErrorFormatter.isError(
+                                                entry.result);
+                                        // Arbitrary-precision integer results (e.g.
+                                        // 100! = 158 digits) get a digit-count
+                                        // badge and tap-to-copy. We abbreviate the
+                                        // middle for display past ~60 digits to
+                                        // keep the row from dominating the screen,
+                                        // but the clipboard always gets the full
+                                        // value from entry.result.
+                                        final digitCount = isError
+                                            ? 0
+                                            : ExactInteger.digitCount(
+                                                entry.result);
+                                        final isBigInt = digitCount > 20;
+                                        // Round 110 (P7 kickoff): boolean-literal
+                                        // results render as a colored chip below.
+                                        // Detection is on the trimmed raw result so
+                                        // formatter-applied padding doesn't hide it.
+                                        final trimmedRaw = entry.result.trim();
+                                        final boolChip = trimmedRaw == 'true'
+                                            ? true
+                                            : (trimmedRaw == 'false'
+                                                ? false
+                                                : null);
+                                        final shownResult = isBigInt
+                                            ? ExactInteger.abbreviate(
+                                                entry.result)
+                                            : display;
+                                        return HelpTarget(
+                                          onHelpTap: () =>
+                                              _showHistoryHelpModal(
+                                                  context, entry),
+                                          child: GestureDetector(
+                                            onTap: isBigInt
+                                                ? () =>
+                                                    _copyBigIntegerToClipboard(
+                                                        context, entry.result)
+                                                : null,
+                                            onLongPress: () =>
+                                                _showHistoryEntryMenu(
+                                                    context, entry),
+                                            onSecondaryTap: () =>
+                                                _showHistoryEntryMenu(
+                                                    context, entry),
+                                            behavior: HitTestBehavior.opaque,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                _buildExpressionDisplay(
+                                                    entry.expression),
+                                                const SizedBox(height: 4),
+                                                if (boolChip != null &&
+                                                    !isError)
+                                                  _buildBooleanChip(
+                                                      context, boolChip)
+                                                else
+                                                  Text(
+                                                    isError
+                                                        ? display
+                                                        : '= $shownResult',
+                                                    style: TextStyle(
+                                                      fontSize: isError
+                                                          ? 16
+                                                          : (isBigInt
+                                                              ? 18
+                                                              : 28),
+                                                      color: isError
+                                                          ? Theme.of(context)
+                                                              .colorScheme
+                                                              .error
+                                                          : Colors.blue[300],
+                                                      fontStyle: isError
+                                                          ? FontStyle.italic
+                                                          : FontStyle.normal,
+                                                    ),
+                                                    textAlign: TextAlign.right,
+                                                    softWrap: true,
+                                                  ),
+                                                if (entry.resultEvidence !=
+                                                    null)
+                                                  ResultEvidenceBadge(
+                                                      evidence: entry
+                                                          .resultEvidence!),
+                                                if (isBigInt)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            top: 2),
+                                                    child: Text(
+                                                      '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface
+                                                            .withValues(
+                                                                alpha: 0.6),
+                                                        fontStyle:
+                                                            FontStyle.italic,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.right,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    );
+                                  },
+                                );
+                              }),
+                        ),
                       ],
                     ),
                   ),
 
-                  if (_historySearchOpen && _appState.history.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: TextField(
-                        controller: _historySearchController,
-                        focusNode: _historySearchFocusNode,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          prefixIcon: const Icon(Icons.search,
-                              size: 18, semanticLabel: 'Search'),
-                          hintText:
-                              AppLocalizations.of(context).searchHistoryHint,
-                          border: const OutlineInputBorder(),
-                          suffixIcon: _historySearchController.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      size: 18, semanticLabel: 'Clear search'),
-                                  tooltip: AppLocalizations.of(context)
-                                      .clearSearchTooltip,
-                                  onPressed: () {
-                                    _historySearchController.clear();
-                                  },
-                                ),
-                        ),
-                      ),
-                    ),
+                  const Divider(height: 1),
 
-                  // History list
+                  // LaTeX input field + always-visible action row (reset focus,
+                  // backspace, ◀/▶, =/EXE) so the user never has to hunt for a
+                  // submit button across keypad tabs and can always recover from
+                  // a stuck focus state by tapping the refresh icon.
+                  // Round 108: responsive input area — see CalculatorInputBar.
+                  // Wide layouts keep the toolbar left of the field; phone
+                  // widths stack the field full-width above the toolbar so long
+                  // numbers have room.
+                  CalculatorInputBar(
+                    controller: _latexController,
+                    onResetFocus: _resetFocus,
+                    onEvaluate: () => _onButtonPressed('EXE'),
+                    resultPreview: _resultPreview,
+                  ),
+
+                  // Keypad - Use the existing CalculatorKeypad widget
                   Expanded(
-                    child: ListenableBuilder(
-                        listenable: _appState,
-                        builder: (context, child) {
-                          if (_appState.history.isEmpty) {
-                            return Center(
-                              child: Text(
-                                AppLocalizations.of(context).historyHere,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            );
-                          }
-
-                          final q = _debouncedSearchQuery.trim().toLowerCase();
-                          final entries = q.isEmpty
-                              ? _appState.history
-                              : _appState.history
-                                  .where((e) =>
-                                      e.expression.toLowerCase().contains(q) ||
-                                      e.result.toLowerCase().contains(q))
-                                  .toList();
-
-                          if (entries.isEmpty) {
-                            return Center(
-                              child: Text(
-                                AppLocalizations.of(context).historyNoMatches,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            );
-                          }
-
-                          return ListView.builder(
-                            itemCount: entries.length,
-                            reverse: true,
-                            itemBuilder: (context, index) {
-                              final entry = entries[index];
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 8),
-                                child: Builder(builder: (context) {
-                                  final tt = AppLocalizations.of(context);
-                                  final display = EngineErrorFormatter.format(
-                                      entry.result, tt);
-                                  final isError = EngineErrorFormatter.isError(
-                                      entry.result);
-                                  // Arbitrary-precision integer results (e.g.
-                                  // 100! = 158 digits) get a digit-count
-                                  // badge and tap-to-copy. We abbreviate the
-                                  // middle for display past ~60 digits to
-                                  // keep the row from dominating the screen,
-                                  // but the clipboard always gets the full
-                                  // value from entry.result.
-                                  final digitCount = isError
-                                      ? 0
-                                      : ExactInteger.digitCount(entry.result);
-                                  final isBigInt = digitCount > 20;
-                                  // Round 110 (P7 kickoff): boolean-literal
-                                  // results render as a colored chip below.
-                                  // Detection is on the trimmed raw result so
-                                  // formatter-applied padding doesn't hide it.
-                                  final trimmedRaw = entry.result.trim();
-                                  final boolChip = trimmedRaw == 'true'
-                                      ? true
-                                      : (trimmedRaw == 'false' ? false : null);
-                                  final shownResult = isBigInt
-                                      ? ExactInteger.abbreviate(entry.result)
-                                      : display;
-                                  return HelpTarget(
-                                    onHelpTap: () =>
-                                        _showHistoryHelpModal(context, entry),
-                                    child: GestureDetector(
-                                      onTap: isBigInt
-                                          ? () => _copyBigIntegerToClipboard(
-                                              context, entry.result)
-                                          : null,
-                                      onLongPress: () =>
-                                          _showHistoryEntryMenu(context, entry),
-                                      onSecondaryTap: () =>
-                                          _showHistoryEntryMenu(context, entry),
-                                      behavior: HitTestBehavior.opaque,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          _buildExpressionDisplay(
-                                              entry.expression),
-                                          const SizedBox(height: 4),
-                                          if (boolChip != null && !isError)
-                                            _buildBooleanChip(context, boolChip)
-                                          else
-                                            Text(
-                                              isError
-                                                  ? display
-                                                  : '= $shownResult',
-                                              style: TextStyle(
-                                                fontSize: isError
-                                                    ? 16
-                                                    : (isBigInt ? 18 : 28),
-                                                color: isError
-                                                    ? Theme.of(context)
-                                                        .colorScheme
-                                                        .error
-                                                    : Colors.blue[300],
-                                                fontStyle: isError
-                                                    ? FontStyle.italic
-                                                    : FontStyle.normal,
-                                              ),
-                                              textAlign: TextAlign.right,
-                                              softWrap: true,
-                                            ),
-                                          if (isBigInt)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.only(top: 2),
-                                              child: Text(
-                                                '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface
-                                                      .withValues(alpha: 0.6),
-                                                  fontStyle: FontStyle.italic,
-                                                ),
-                                                textAlign: TextAlign.right,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }),
-                              );
-                            },
-                          );
-                        }),
+                    flex: 5,
+                    child: CalculatorKeypad(
+                      tabController: _tabController,
+                      onButtonPressed: _onButtonPressed,
+                      localizations: AppLocalizations.of(context),
+                      appState: _appState,
+                      onVariableTap: (name) => _latexController.insert(name),
+                      memory: _memory, // Pass memory
+                      onMemoryAction:
+                          _handleMemoryAction, // Pass button handler
+                      onGoToGraphing: widget.onGoToGraphing,
+                      onGoToAnalysis: widget.onGoToAnalysis,
+                    ),
                   ),
                 ],
               ),
             ),
-
-            const Divider(height: 1),
-
-            // LaTeX input field + always-visible action row (reset focus,
-            // backspace, ◀/▶, =/EXE) so the user never has to hunt for a
-            // submit button across keypad tabs and can always recover from
-            // a stuck focus state by tapping the refresh icon.
-            // Round 108: responsive input area — see CalculatorInputBar.
-            // Wide layouts keep the toolbar left of the field; phone
-            // widths stack the field full-width above the toolbar so long
-            // numbers have room.
-            CalculatorInputBar(
-              controller: _latexController,
-              onResetFocus: _resetFocus,
-              onEvaluate: () => _onButtonPressed('EXE'),
-              resultPreview: _resultPreview,
-            ),
-
-            // Keypad - Use the existing CalculatorKeypad widget
-            Expanded(
-              flex: 5,
-              child: CalculatorKeypad(
-                tabController: _tabController,
-                onButtonPressed: _onButtonPressed,
-                localizations: AppLocalizations.of(context),
-                appState: _appState,
-                onVariableTap: (name) => _latexController.insert(name),
-                memory: _memory, // Pass memory
-                onMemoryAction: _handleMemoryAction, // Pass button handler
-                onGoToGraphing: widget.onGoToGraphing,
-                onGoToAnalysis: widget.onGoToAnalysis,
+          ),
+          if (_isDragging)
+            Positioned.fill(
+              child: Container(
+                color: Colors.blue.withValues(alpha: 0.2),
+                child: const Center(
+                  child: Icon(Icons.upload_file, size: 100, color: Colors.blue),
+                ),
               ),
             ),
-          ],
-        ),
-      ),
-          ),
-          
-          if (_isDragging)
-             Positioned.fill(
-               child: Container(
-                 color: Colors.blue.withValues(alpha: 0.2),
-                 child: const Center(
-                   child: Icon(Icons.upload_file, size: 100, color: Colors.blue),
-                 ),
-               ),
-             ),
-
           if (_isOcrProcessing && _ocrDroppedImage != null)
-             Positioned.fill(
-               child: Container(
-                 color: Colors.black.withValues(alpha: 0.8),
-                 child: Center(
-                   child: FittedBox(
-                     fit: BoxFit.contain,
-                     child: SizedBox(
-                       width: _ocrImageWidth.toDouble(),
-                       height: _ocrImageHeight.toDouble(),
-                       child: Stack(
-                         children: [
-                           Image.memory(_ocrDroppedImage!),
-                           if (_ocrCurrentRegionBox != null)
-                             Positioned.fromRect(
-                               rect: _ocrCurrentRegionBox!,
-                               child: Container(
-                                 decoration: BoxDecoration(
-                                   border: Border.all(color: Colors.greenAccent, width: 6),
-                                 ),
-                               ),
-                             ),
-                         ],
-                       ),
-                     ),
-                   ),
-                 ),
-               ),
-             ),
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.8),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: SizedBox(
+                      width: _ocrImageWidth.toDouble(),
+                      height: _ocrImageHeight.toDouble(),
+                      child: Stack(
+                        children: [
+                          Image.memory(_ocrDroppedImage!),
+                          if (_ocrCurrentRegionBox != null)
+                            Positioned.fromRect(
+                              rect: _ocrCurrentRegionBox!,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: Colors.greenAccent, width: 6),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

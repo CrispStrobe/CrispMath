@@ -6,8 +6,9 @@
 // than rational approximations like Acklam's but trivially correct
 // and well within the precision a calculator needs (~1e-10).
 //
-// erf is approximated with Abramowitz & Stegun 7.1.26, max error
-// 1.5e-7 — fine for student stats. The binomial PMF uses log-domain
+// Normal probabilities use bounded regularized-gamma evaluation, preserving
+// direct tails and avoiding an absolute-error-only erf approximation.
+// The binomial PMF uses log-domain
 // computations so it stays accurate at large n.
 
 import 'dart:math' as math;
@@ -19,38 +20,73 @@ class Normal {
 
   /// Probability density at [x]. φ(x; μ, σ) = (1/(σ√(2π))) e^(-(x-μ)²/(2σ²)).
   double pdf(double x) {
-    final z = (x - mean) / stddev;
-    return math.exp(-0.5 * z * z) / (stddev * math.sqrt(2 * math.pi));
+    final z = _standardized(x);
+    return math.exp(-0.5 * z * z) / stddev / math.sqrt(2 * math.pi);
   }
 
   /// Cumulative probability P(X ≤ x). Computed via erf:
   ///   F(x) = ½(1 + erf((x − μ) / (σ√2))).
   double cdf(double x) {
-    final z = (x - mean) / (stddev * math.sqrt2);
-    return 0.5 * (1 + _erf(z));
+    final z = _standardized(x);
+    if (z.isNaN) return double.nan;
+    final tail = _positiveTail(z.abs());
+    return z < 0 ? tail : 1 - tail;
+  }
+
+  double sf(double x) {
+    final z = _standardized(x);
+    if (z.isNaN) return double.nan;
+    final tail = _positiveTail(z.abs());
+    return z < 0 ? 1 - tail : tail;
+  }
+
+  double _standardized(double x) {
+    if (!mean.isFinite || !stddev.isFinite || stddev <= 0) {
+      throw ArgumentError('Normal requires a finite mean and positive finite standard deviation');
+    }
+    if (x.isInfinite) return x;
+    final difference = x - mean;
+    return difference.isFinite ? difference / stddev : x / stddev - mean / stddev;
+  }
+
+  double _positiveTail(double z) {
+    if (z == 0) return .5;
+    // For z>40, Mills' bound is below the smallest representable double.
+    // Avoid squaring a huge finite standardized input in the gamma routine.
+    if (z > 40) return 0;
+    // Q(1/2,z²/2) = erfc(z/sqrt(2)). Preserve the direct upper tail
+    // and use the same bounded accurate gamma routine as chi-square.
+    return .5 * _gammaProbability(.5, .5 * z * z, upper: true,
+        logX: 2 * math.log(z) - math.ln2);
   }
 
   /// Inverse CDF — returns x such that cdf(x) = p. Bisection on the
   /// monotone CDF, converging to ~1e-10 in well under 100 iterations.
   /// Returns ±infinity for p at the endpoints.
   double quantile(double p) {
+    _standardized(mean); // Validate distribution parameters before endpoints.
+    if (p.isNaN) return double.nan;
     if (p <= 0) return double.negativeInfinity;
     if (p >= 1) return double.infinity;
-    // Bracket: mean ± 12σ covers ~38 standard deviations of safety
-    // for the normal, far past anything a student will type.
-    var lo = mean - 12 * stddev;
-    var hi = mean + 12 * stddev;
+    if (p == .5) return mean;
+    // Bisect standardized coordinates: physical bounds can overflow even when
+    // the requested physical quantile is finite.
+    var lo = -40.0;
+    var hi = 40.0;
+    var mid = 0.0;
     for (var i = 0; i < 100; i++) {
-      final mid = 0.5 * (lo + hi);
-      final c = cdf(mid);
-      if ((hi - lo).abs() < 1e-12) return mid;
-      if (c < p) {
+      mid = 0.5 * (lo + hi);
+      if ((hi - lo).abs() < 1e-12) break;
+      final below = p > .5 ? standardNormal.sf(mid) > 1 - p
+          : standardNormal.cdf(mid) < p;
+      if (below) {
         lo = mid;
       } else {
         hi = mid;
       }
     }
-    return 0.5 * (lo + hi);
+    final scaled = mid * stddev;
+    return scaled.isFinite ? mean + scaled : (mean / stddev + mid) * stddev;
   }
 }
 
@@ -104,33 +140,134 @@ class TDistribution {
 
   /// PDF: Γ((ν+1)/2) / (√(νπ) · Γ(ν/2)) · (1 + x²/ν)^(-(ν+1)/2).
   double pdf(double x) {
+    return math.exp(_logPdf(x));
+  }
+
+  double _logPdf(double x) {
     final v = df.toDouble();
     final logNorm =
         _logGamma((v + 1) / 2) - 0.5 * math.log(v * math.pi) - _logGamma(v / 2);
-    final logKernel = -((v + 1) / 2) * math.log(1 + x * x / v);
-    return math.exp(logNorm + logKernel);
+    final absolute = x.abs();
+    final logRatio = absolute > math.sqrt(v)
+        ? 2 * math.log(absolute) - math.log(v) +
+            math.log(1 + v / absolute / absolute)
+        : math.log(1 + x * x / v);
+    return logNorm - ((v + 1) / 2) * logRatio;
   }
 
-  /// CDF via numerical integration of the PDF using Simpson's rule
-  /// over [-large, x]. Symmetric about 0 so we exploit cdf(-x) = 1 -
-  /// cdf(x). 1000 Simpson subintervals give ~6 digits of accuracy
-  /// for typical df.
+  /// CDF through the regularized incomplete beta function. Unlike a
+  /// finite integration interval, this retains the heavy tails at low df.
+  /// https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.stdtr.html
   double cdf(double x) {
+    if (x.isNaN) return double.nan;
+    if (x == double.negativeInfinity) return 0;
+    if (x == double.infinity) return 1;
     if (x == 0) return 0.5;
-    if (x > 0) return 1.0 - cdf(-x);
-    // x < 0 — integrate PDF from -∞ approximation to x.
-    const lower = -50.0; // 50σ for standard normal is well past any
-    // realistic input; for t with low df the tails are heavier but
-    // still negligibly small below -50.
-    return _simpson(pdf, lower, x, 1000);
+    final tail = _positiveTail(x.abs());
+    return x < 0 ? tail : 1 - tail;
+  }
+
+  /// Direct survival probability, without subtracting a rounded CDF from 1.
+  double sf(double x) {
+    if (x.isNaN) return double.nan;
+    if (x == double.negativeInfinity) return 1;
+    if (x == double.infinity) return 0;
+    final tail = _positiveTail(x.abs());
+    return x < 0 ? 1 - tail : tail;
+  }
+
+  double _positiveTail(double x) {
+    if (x == 0) return .5;
+    if (x == double.infinity) return 0;
+    if (df == 1) {
+      return x > 1 ? math.atan(1 / x) / math.pi
+          : .5 - math.atan(x) / math.pi;
+    }
+    if (df == 2) {
+      final root = x > 1
+          ? x * math.sqrt(1 + 2 / x / x) : math.sqrt(x * x + 2);
+      return (1 / root) / (root + x);
+    }
+    final v = df.toDouble();
+    return .5 * _regularizedBeta(v / (v + x * x), v / 2, .5);
+  }
+
+  /// Shared interval probability preserves either tail instead of subtracting
+  /// two CDF values that both round to 1. Bounds are ordered, inclusive.
+  double intervalProbability(double lower, double upper) {
+    if (lower.isNaN || upper.isNaN) return double.nan;
+    if (lower > upper) throw ArgumentError('Interval lower bound exceeds upper bound');
+    if (lower == upper) return 0;
+    if (df == 1 && lower.abs() <= 1 && upper.abs() <= 1) {
+      return (math.atan(upper) - math.atan(lower)) / math.pi;
+    }
+    if (df == 2 && lower.abs() <= 1 && upper.abs() <= 1) {
+      return upper / (2 * math.sqrt(upper * upper + 2)) -
+          lower / (2 * math.sqrt(lower * lower + 2));
+    }
+    if (lower.isFinite && upper.isFinite) {
+      final width = upper - lower;
+      final magnitude = math.max(1.0, math.max(lower.abs(), upper.abs()));
+      if ((lower.abs() <= 1 && upper.abs() <= 1) ||
+          (width.isFinite && width / magnitude <= 1e-6)) {
+        return _integratedInterval(lower, upper);
+      }
+    }
+    final probability = lower >= 0 ? sf(lower) - sf(upper)
+        : upper <= 0 ? sf(-upper) - sf(-lower)
+        : 1 - sf(upper) - sf(-lower);
+    return probability.clamp(0.0, 1.0).toDouble();
+  }
+
+  /// Normalize the smooth density before bounded adaptive integration.
+  /// This retains narrow central mass and intervals whose density itself
+  /// underflows, while density times interval width remains representable.
+  double _integratedInterval(double lower, double upper) {
+    final width = upper - lower;
+    final nearestZero = lower >= 0 ? lower : upper <= 0 ? upper : 0.0;
+    final logScale = _logPdf(nearestZero);
+    var evaluations = 0;
+    double value(double position) {
+      if (++evaluations > 4097) {
+        throw StateError('Student t interval integration budget exceeded');
+      }
+      return math.exp(_logPdf(lower + position * width) - logScale);
+    }
+    double integrate(double left, double right, double fa, double fm,
+        double fb, double whole, int depth) {
+      final middle = (left + right) / 2;
+      final fl = value((left + middle) / 2);
+      final fr = value((middle + right) / 2);
+      final l = (middle - left) * (fa + 4 * fl + fm) / 6;
+      final r = (right - middle) * (fm + 4 * fr + fb) / 6;
+      final refined = l + r;
+      if ((refined - whole).abs() <= 15e-13 * refined.abs()) {
+        return refined + (refined - whole) / 15;
+      }
+      if (depth == 0) {
+        throw StateError('Student t interval integration did not converge');
+      }
+      return integrate(left, middle, fa, fl, fm, l, depth - 1) +
+          integrate(middle, right, fm, fr, fb, r, depth - 1);
+    }
+    final fa = value(0), fm = value(.5), fb = value(1);
+    final integral = integrate(0, 1, fa, fm, fb, (fa + 4 * fm + fb) / 6, 12);
+    return (math.exp(logScale + math.log(width)) * integral)
+        .clamp(0.0, 1.0).toDouble();
   }
 
   /// Bisection on the monotone CDF. Same approach as Normal.quantile.
   double quantile(double p) {
     if (p <= 0) return double.negativeInfinity;
     if (p >= 1) return double.infinity;
-    var lo = -50.0;
-    var hi = 50.0;
+    var lo = -1.0;
+    var hi = 1.0;
+    while (cdf(lo) > p && lo > -1e150) {
+      lo *= 2;
+    }
+    while (cdf(hi) < p && hi < 1e150) {
+      hi *= 2;
+    }
     for (var i = 0; i < 100; i++) {
       final mid = 0.5 * (lo + hi);
       final c = cdf(mid);
@@ -165,11 +302,22 @@ class ChiSquare {
     return math.exp(logVal);
   }
 
-  /// CDF via numerical integration of the PDF on [0, x]. 1000 Simpson
-  /// subintervals give ~6 digits for typical df.
+  /// Regularized incomplete gamma avoids integrating the singular df=1
+  /// density at zero and computes each tail in its stable regime.
   double cdf(double x) {
+    if (x.isNaN) return double.nan;
     if (x <= 0) return 0.0;
-    return _simpson(pdf, 0, x, 1000);
+    if (x == double.infinity) return 1;
+    return _gammaProbability(df / 2, x / 2, upper: false,
+        logX: math.log(x) - math.ln2);
+  }
+
+  double sf(double x) {
+    if (x.isNaN) return double.nan;
+    if (x <= 0) return 1;
+    if (x == double.infinity) return 0;
+    return _gammaProbability(df / 2, x / 2, upper: true,
+        logX: math.log(x) - math.ln2);
   }
 
   /// Bisection on the monotone CDF. Upper bracket scales with df
@@ -285,23 +433,92 @@ class FDistribution {
   double? get mean => d2 > 2 ? d2 / (d2 - 2.0) : null;
 }
 
+// Regularized incomplete beta, using symmetry and a modified Lentz
+// continued fraction (DLMF 8.17): https://dlmf.nist.gov/8.17.v
+// Bounded iteration fails explicitly rather than emitting a partial answer.
+double _regularizedBeta(double x, double a, double b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  final scale = math.exp(_logGamma(a + b) -
+      _logGamma(a) -
+      _logGamma(b) +
+      a * math.log(x) +
+      b * math.log(1 - x));
+  if (x > (a + 1) / (a + b + 2)) {
+    return (1 - scale * _betaFraction(1 - x, b, a) / b)
+        .clamp(0.0, 1.0)
+        .toDouble();
+  }
+  return (scale * _betaFraction(x, a, b) / a).clamp(0.0, 1.0).toDouble();
+}
+
+double _betaFraction(double x, double a, double b) {
+  const tiny = 1e-300;
+  double guard(double v) => v.abs() < tiny ? (v < 0 ? -tiny : tiny) : v;
+  var c = 1.0;
+  var d = 1 / guard(1 - (a + b) * x / (a + 1));
+  var h = d;
+  for (var m = 1; m <= 500; m++) {
+    final m2 = 2.0 * m;
+    var aa = m * (b - m) * x / ((a + m2 - 1) * (a + m2));
+    d = 1 / guard(1 + aa * d);
+    c = guard(1 + aa / c);
+    h *= d * c;
+    aa = -(a + m) * (a + b + m) * x / ((a + m2) * (a + m2 + 1));
+    d = 1 / guard(1 + aa * d);
+    c = guard(1 + aa / c);
+    final delta = d * c;
+    h *= delta;
+    if ((delta - 1).abs() < 2e-14) return h;
+  }
+  throw StateError('Incomplete beta did not converge');
+}
+
 // === Internal helpers ====================================================
 
-/// Abramowitz & Stegun 7.1.26 — max abs error 1.5e-7 for x ≥ 0.
-/// Symmetric for x < 0: erf(-x) = -erf(x).
-double _erf(double x) {
-  final sign = x < 0 ? -1.0 : 1.0;
-  final ax = x.abs();
-  const a1 = 0.254829592;
-  const a2 = -0.284496736;
-  const a3 = 1.421413741;
-  const a4 = -1.453152027;
-  const a5 = 1.061405429;
-  const p = 0.3275911;
-  final t = 1.0 / (1.0 + p * ax);
-  final y = 1.0 -
-      (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-ax * ax);
-  return sign * y;
+/// Regularized gamma P/Q: convergent power series below a+1, modified
+/// Lentz continued fraction above it. Both share a logarithmic scale.
+/// The fixed iteration budget rejects nonconvergence explicitly.
+double _gammaProbability(double a, double x,
+    {required bool upper, double? logX}) {
+  if (x == 0 && logX == null) return upper ? 1 : 0;
+  // Keeping log(x/2) from the original input avoids underflowing the gamma
+  // argument for the smallest positive chi-square observation at df=1.
+  final scale = math.exp(a * (logX ?? math.log(x)) - x - _logGamma(a));
+  const epsilon = 2e-14;
+  const tiny = 1e-300;
+  if (x < a + 1) {
+    var term = 1 / a;
+    var sum = term;
+    for (var i = 1; i <= 2000; i++) {
+      term *= x / (a + i);
+      sum += term;
+      if (term.abs() <= sum.abs() * epsilon) {
+        final p = (sum * scale).clamp(0.0, 1.0).toDouble();
+        return upper ? 1 - p : p;
+      }
+    }
+  } else {
+    double guard(double value) => value.abs() < tiny
+        ? (value < 0 ? -tiny : tiny) : value;
+    var b = x + 1 - a;
+    var c = 1 / tiny;
+    var d = 1 / guard(b);
+    var h = d;
+    for (var i = 1; i <= 2000; i++) {
+      final coefficient = -i * (i - a);
+      b += 2;
+      d = 1 / guard(b + coefficient * d);
+      c = guard(b + coefficient / c);
+      final delta = d * c;
+      h *= delta;
+      if ((delta - 1).abs() <= epsilon) {
+        final q = (scale * h).clamp(0.0, 1.0).toDouble();
+        return upper ? q : 1 - q;
+      }
+    }
+  }
+  throw StateError('Incomplete gamma did not converge');
 }
 
 /// log(C(n, k)) using log-gamma. Works far past plain factorials.
