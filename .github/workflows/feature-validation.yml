@@ -34,6 +34,10 @@ on:
         description: 'Probe solve scoping through the immutable app UI instead of batch editing'
         type: boolean
         default: false
+      probe_round7_math:
+        description: 'Run strict seventh-audit worksheet/statistics checks against an immutable validated bundle'
+        type: boolean
+        default: false
       probe_clip_labels:
         description: 'Diagnostic only: inject semantic-label clipping into that older bundle'
         type: boolean
@@ -326,7 +330,7 @@ jobs:
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
       - name: Probe actual batch UI
-        if: ${{ inputs.probe_math_scope != true }}
+        if: ${{ inputs.probe_math_scope != true && inputs.probe_round7_math != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           CLIP_LABELS: ${{ inputs.probe_clip_labels }}
@@ -343,8 +347,28 @@ jobs:
             python tool/benchmark_workflows.py --trials 3 --source "$APP_SOURCE" --output browser-results/workflow-performance.json
             python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
           fi
+      - name: Validate production parity and browser comparison controls
+        if: ${{ inputs.probe_round7_math == true }}
+        env:
+          BUILD_RUN_ID: ${{ inputs.probe_build_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python tool/wait_release_validation.py --run-id "$BUILD_RUN_ID" --package-sha "$GITHUB_SHA" --output browser-results/source-parity.json
+          python -m unittest discover -s tool -p '*_test.py'
+      - name: Probe actual seventh-audit worksheet and statistics UI
+        if: ${{ inputs.probe_round7_math == true }}
+        env:
+          APP_SOURCE: ${{ steps.app-source.outputs.source }}
+        run: |
+          python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
+          curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+          python tool/check_deployed_bundle.py --url http://localhost:8766/ --source "$APP_SOURCE"
+          status=0
+          python tool/check_round6_statistics_browser.py --expected-source "$APP_SOURCE" --output browser-results/round7-statistics || status=1
+          python tool/check_round7_math_browser.py --expected-source "$APP_SOURCE" --output browser-results/round7-math || status=1
+          exit "$status"
       - name: Probe actual solve scope UI
-        if: ${{ inputs.probe_math_scope == true }}
+        if: ${{ inputs.probe_math_scope == true && inputs.probe_round7_math != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
         run: |

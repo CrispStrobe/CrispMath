@@ -76,9 +76,20 @@ async def check_hypothesis(page, case_id, inputs, references, item, output, widt
     for label, value in inputs.items():
         field = page.get_by_role('textbox', name=re.compile('^'+re.escape(label)))
         await real_click(page, field)
+        # Flutter attaches its native editing strategy after focus changes.
+        # Settle actual frames before typing, as the existing worksheet and
+        # descriptive-statistics controls already do.
+        await next_frames(page)
         await field.fill(value)
         await expect(field).to_have_value(value)
         await next_frames(page)
+        await expect(field).to_have_value(value)
+    item['inputsReadBack'] = {}
+    for label,value in inputs.items():
+        field = page.get_by_role('textbox', name=re.compile('^'+re.escape(label)))
+        actual = await field.input_value()
+        assert actual == value, (case_id,label,actual,value)
+        item['inputsReadBack'][label] = actual
     successors = {'χ² statistic': 'Degrees of freedom',
                   'Degrees of freedom': 'p-value (upper tail)',
                   'p-value (upper tail)': 'Reject H₀'} if case_id == 'chi-square-empty-bin' else {
