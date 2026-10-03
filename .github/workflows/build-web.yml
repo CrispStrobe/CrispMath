@@ -48,7 +48,7 @@ concurrency:
 jobs:
   build:
     runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     # Job-level env so the deploy step's `if:` can test for a configured
     # token and skip gracefully when secrets are absent.
@@ -162,6 +162,9 @@ jobs:
           done
           for area in algebra numeric; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round8_${area}_tasks.json" --output "deployed-results/round8-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round9_${area}_tasks.json" --output "deployed-results/round9-${area}.json"
           done
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
           python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export

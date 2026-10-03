@@ -39,7 +39,7 @@ concurrency:
 jobs:
   build-deploy:
     runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
-    timeout-minutes: 20
+    timeout-minutes: 30
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -127,6 +127,9 @@ jobs:
           done
           for area in algebra numeric; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round8_${area}_tasks.json" --output "deployed-results/round8-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round9_${area}_tasks.json" --output "deployed-results/round9-${area}.json"
           done
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
           python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export
