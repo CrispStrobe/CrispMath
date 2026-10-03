@@ -9010,3 +9010,43 @@ passed. Input replacement waits for Flutter focus synchronization; graph
 measurements also wait for route transitions and verify each pan changes
 bounds. Dialog interaction is excluded from pan timing/frame probes. CI
 can reuse an existing validated web artifact for targeted profiles.
+
+### Sixth independent mathematical audit — October 3, 2026
+
+Fifty hand-derived references were frozen before app evaluation. Initial native
+and packaged macOS checks passed 39/50; WASM passed 40/50. The references remain
+unchanged. Shared fixes address exact rational rounding, extreme finite
+statistics, degree aliases, bounded nonlinear objectives, multivariate
+cancellation with source domains, convergent endpoint integrals, squeeze proofs
+and point/Taylor cusp semantics. Further live and negative controls repair
+worksheet Taylor routing/reactivity, readable output, shared polynomial variable
+preservation and foreign-symbol Taylor coefficients. Details and coverage
+bounds are in [the sixth audit](docs/round6-math-audit-50.md).
+
+Final production source `73ca7815dd3b875e93a46f9dd3004ccb3b735550` passes all
+537 accumulated runtime checks on Linux, WASM, packaged macOS, Pages and public
+Vercel. Actual desktop/phone UI checks pass 160 worksheet entries, eighteen
+binding-edit states and four statistics-screen checks on the browser audit and
+both deployments. Hosted analysis is clean; 5,599 unit/widget tests pass with
+eight skips, plus 52 tooling checks and 355 focused regressions. Release/debug
+browser checks, all four performance gates and twelve web-gallery scenes pass. Desktop 500/2,000-row edit medians are 0.623/1.275 s;
+CPU-throttled phone medians are 1.749/4.598 s. These are hosted browser
+latencies, not physical-device frame-rate measurements.
+
+Fresh native gallery run 37112800752 passes 33 populated captures at the same
+source: eleven iPhone, eleven iPad and eleven native macOS. Four selected graph
+and notepad images are visually reviewed as populated and legible. Simulator
+checks remain distinct from deferred physical-device checks.
+
+[Signed release 37114719521](https://github.com/CrispStrobe/CrispMath/actions/runs/37114719521)
+uploads 1.2.0 (17) after privacy-string, signature, version and exact
+production-source validation. [External verification 37115481288](https://github.com/CrispStrobe/CrispMath/actions/runs/37115481288)
+confirms VALID processing, the actual beta submission APPROVED and Public Beta
+IN_BETA_TESTING. The [public beta](https://testflight.apple.com/join/E6HdVhTx)
+now offers build 17. No App Review submission occurs.
+
+All expensive work remains on GitHub-hosted runners. An additional 52.39 MiB of
+cold task screenshots/logs was moved to CIFS with SHA-256 verification and
+readable source symlinks. Active sources/reports stay on fast storage; unrelated
+projects remain untouched. Real handwriting accuracy, physical devices and
+Apple's App Review 4.3(a) finding remain pending outside this mathematical audit.

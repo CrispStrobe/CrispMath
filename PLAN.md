@@ -5,6 +5,29 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Sixth independent mathematical audit
+
+- [x] Freeze fifty fresh hand-derived references and preserve initial native/macOS
+  39/50 and WASM 40/50 findings without changing expected answers.
+- [x] Repair exact rounding, finite extreme statistics, degree aliases and bounded
+  nonlinear objectives, with shared numeric/constraint regression controls.
+- [x] Add multivariate cancellation with source domains, convergent endpoint
+  integration, squeeze proofs and shared point/Taylor cusp guards.
+- [x] Repair worksheet series routing, canonical Taylor output and shared
+  polynomial variable preservation; prove coefficient-only Taylor expansions.
+- [x] Validate all 537 accumulated runtime cases on native Linux, WASM and
+  packaged macOS; actual browser paths pass 160 entries, eighteen binding-edit
+  states and four statistics-screen checks.
+- [x] Pass 5,599 unit/widget tests (eight skips), 52 tooling checks, clean analysis,
+  355 focused regressions, release/debug browser checks, four performance gates,
+  twelve web-gallery scenes and deployed Pages/Vercel checks.
+- [x] Capture 33 populated native iPhone/iPad/macOS screenshots at the final source;
+  visually review four selected graph/notepad images.
+- [x] Upload signed validated build 17; confirm VALID processing, APPROVED beta
+  review and Public Beta IN_BETA_TESTING without an App Review submission.
+
+See [round-six evidence](docs/round6-math-audit-50.md).
+
 ## Fifth independent mathematical audit and build 16
 
 - [x] Freeze 50 fresh hand-derived references and preserve identical 49/50
