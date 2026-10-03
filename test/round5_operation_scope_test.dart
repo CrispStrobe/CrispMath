@@ -1,11 +1,40 @@
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/polynomial.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
 import 'package:crisp_math/services/engine_op.dart';
 import 'package:crisp_math/services/integral_arguments.dart';
 import 'package:crisp_math/services/notepad_dispatcher.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+// Strict single-monomial grammar keeps grouping and integration constants.
+// Only a leading rational coefficient may have its parentheses removed.
+String? _canonicalMonomial(String source) {
+  var text = source.replaceAll(' ', '').replaceAll('**', '^')
+      .replaceAll('²', '^2').replaceAll('³', '^3');
+  text = text.replaceAllMapped(
+      RegExp(r'^\(([+-]?\d+/\d+)\)(?=\*?x\^)'), (match) => match[1]!);
+  final first = RegExp(r'^([+-]?\d+)(?:/(\d+))?\*?x\^([23])(\+C)?$')
+      .firstMatch(text);
+  if (first != null) {
+    final coefficient = Rational(BigInt.parse(first[1]!),
+        BigInt.parse(first[2] ?? '1'));
+    return '$coefficient*x^${first[3]}${first[4] ?? ''}';
+  }
+  final last = RegExp(r'^([+-]?\d+)?\*?x\^([23])(?:/(\d+))?(\+C)?$')
+      .firstMatch(text);
+  if (last == null) return null;
+  final coefficient = Rational(BigInt.parse(last[1] ?? '1'),
+      BigInt.parse(last[3] ?? '1'));
+  return '$coefficient*x^${last[2]}${last[4] ?? ''}';
+}
+
+void _expectMonomial(String actual, String reference) {
+  final normalized = _canonicalMonomial(actual);
+  expect(normalized, isNotNull, reason: 'Unsupported monomial notation: $actual');
+  expect(normalized, _canonicalMonomial(reference));
+}
 
 NotepadDocument _document(List<String> sources) =>
     NotepadDocument.fresh(name: 'Solve scope controls')
@@ -35,6 +64,23 @@ NotepadEvaluator _evaluator(List<EngineOp> routed) {
 }
 
 void main() {
+  test('monomial assertions accept equivalent coefficients and preserve grouping',
+      () {
+    for (final source in ['1/3x^3+C', '(1/3)*x³ + C', 'x^3/3+C']) {
+      _expectMonomial(source, 'x^3/3+C');
+    }
+    for (final source in ['2/3x^3+C', '(2/3)*x³+C', '2*x^3/3+C']) {
+      _expectMonomial(source, '2*x^3/3+C');
+    }
+    expect(_canonicalMonomial('x^3/(3+C)'), isNull);
+    expect(_canonicalMonomial('(x^3+C)/3'), isNull);
+    expect(_canonicalMonomial('x^3/3'),
+        isNot(_canonicalMonomial('x^3/3+C')));
+    expect(_canonicalMonomial('2*x^3/3+C'),
+        isNot(_canonicalMonomial('x^3/3+C')));
+    expect(_canonicalMonomial('x^2/3+C'),
+        isNot(_canonicalMonomial('x^3/3+C')));
+  });
   test('real worksheet solve shadows a global variable and routes its declaration',
       () async {
     final routed = <EngineOp>[];
@@ -101,25 +147,18 @@ void main() {
     expect(buildDependencyGraph(doc).dependsOn[1], isEmpty);
     expect(buildDependencyGraph(doc).dependsOn[2], isEmpty);
     await evaluator.evaluateAll(doc);
-    String normalize(String value) => value
-        .replaceAll('**', '^')
-        .replaceAll('²', '^2')
-        .replaceAll('³', '^3')
-        .replaceAllMapped(RegExp(r'\((\d+/\d+)\)'), (match) => match[1]!)
-        .replaceAll('*', '')
-        .replaceAll(' ', '');
     expect(doc.lines[1].cachedError, isNull);
-    expect(normalize(doc.lines[1].cachedResult!), '3x^2');
+    _expectMonomial(doc.lines[1].cachedResult!, '3x^2');
     expect(doc.lines[2].cachedError, isNull);
-    expect(normalize(doc.lines[2].cachedResult!), '1/3x^3+C');
+    _expectMonomial(doc.lines[2].cachedResult!, '1/3x^3+C');
     expect(doc.lines[1].cachedFreeVars, isEmpty);
     expect(doc.lines[2].cachedFreeVars, isEmpty);
     expect(routed.where((op) => op.kind == 'differentiate').single.arg2, 'x');
     expect(routed.where((op) => op.kind == 'integrate').single.arg2, 'x');
     doc.lines.first.source = 'x=100';
     await evaluator.evaluateFrom(doc, 0);
-    expect(normalize(doc.lines[1].cachedResult!), '3x^2');
-    expect(normalize(doc.lines[2].cachedResult!), '1/3x^3+C');
+    _expectMonomial(doc.lines[1].cachedResult!, '3x^2');
+    _expectMonomial(doc.lines[2].cachedResult!, '1/3x^3+C');
   });
 
   test('formal operation coefficients react without capturing their variable',
@@ -128,20 +167,13 @@ void main() {
     final evaluator = _evaluator([]);
     expect(buildDependencyGraph(doc).dependsOn[2], {0});
     expect(buildDependencyGraph(doc).dependsOn[3], {0});
-    String normalize(String value) => value
-        .replaceAll('**', '^')
-        .replaceAll('²', '^2')
-        .replaceAll('³', '^3')
-        .replaceAllMapped(RegExp(r'\((\d+/\d+)\)'), (match) => match[1]!)
-        .replaceAll('*', '')
-        .replaceAll(' ', '');
     await evaluator.evaluateAll(doc);
-    expect(normalize(doc.lines[2].cachedResult!), '6x^2');
-    expect(normalize(doc.lines[3].cachedResult!), '2/3x^3+C');
+    _expectMonomial(doc.lines[2].cachedResult!, '6x^2');
+    _expectMonomial(doc.lines[3].cachedResult!, '2/3x^3+C');
     doc.lines.first.source = 'a=3';
     await evaluator.evaluateFrom(doc, 0);
-    expect(normalize(doc.lines[2].cachedResult!), '9x^2');
-    expect(normalize(doc.lines[3].cachedResult!), 'x^3+C');
+    _expectMonomial(doc.lines[2].cachedResult!, '9x^2');
+    _expectMonomial(doc.lines[3].cachedResult!, 'x^3+C');
   });
 
   test('formal output chips remain visible outside enclosing definite scopes', () {
@@ -172,16 +204,32 @@ void main() {
     expect(buildDependencyGraph(doc).dependsOn[3], isEmpty);
     await _evaluator(routed).evaluateAll(doc);
     expect(doc.lines.last.cachedError, isNull);
-    expect(doc.lines.last.cachedResult!
-        .replaceAll('**', '^')
-        .replaceAll('²', '^2')
-        .replaceAll('³', '^3')
-        .replaceAllMapped(RegExp(r'\((\d+/\d+)\)'), (match) => match[1]!)
-        .replaceAll('*', '')
-        .replaceAll(' ', ''), '3x^2');
+    _expectMonomial(doc.lines.last.cachedResult!, '3*x^2');
     expect(doc.lines.last.cachedFreeVars, isEmpty);
     expect(routed.last.kind, 'differentiate');
     expect(routed.last.arg2, 'x');
+  });
+
+  test('formal output badges use available globals without hiding unbound names',
+      () async {
+    // The function forces the full scope path before x has a cached value.
+    final doc = _document([
+      'g(t)=t', 'x=9', 'diff(x^3,x)', 'integrate(x^2,x)',
+    ]);
+    final evaluator = _evaluator([]);
+    await evaluator.evaluateAll(doc);
+    expect(doc.lines[2].cachedFreeVars, isEmpty);
+    expect(doc.lines[3].cachedFreeVars, isEmpty);
+    expect(buildDependencyGraph(doc).dependsOn[2], isEmpty);
+    expect(buildDependencyGraph(doc).dependsOn[3], isEmpty);
+    doc.lines[1].source = '';
+    await evaluator.evaluateAll(doc);
+    expect(doc.lines[2].cachedFreeVars, ['x']);
+    expect(doc.lines[3].cachedFreeVars, ['x']);
+    final unbound = _document(['diff(x^3,x)', 'integrate(x^2,x)']);
+    await _evaluator([]).evaluateAll(unbound);
+    expect(unbound.lines[0].cachedFreeVars, ['x']);
+    expect(unbound.lines[1].cachedFreeVars, ['x']);
   });
 
   test('explicit solve parser validates declarations and folds equations', () {

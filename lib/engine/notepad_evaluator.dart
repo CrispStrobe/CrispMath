@@ -511,6 +511,22 @@ class NotepadEvaluator {
           externalScope: externalScope, parseCache: parseCache);
     }
     final scopeKeys = {...scope.keys};
+    // Formal output variables are protected from input substitution, but a
+    // successfully available global still means the name is not unbound.
+    final formalOutputNames =
+        _unboundIdentifierWords(body, includeOutputVariables: true)
+            .difference(referencedNames);
+    if (formalOutputNames.isNotEmpty) {
+      if (indexedScope != null) {
+        scopeKeys.addAll(formalOutputNames.where(indexedScope.containsKey));
+      } else {
+        scopeKeys.addAll(buildNotepadScope(doc,
+                externalScope: externalScope,
+                parseCache: parseCache,
+                names: formalOutputNames)
+            .keys);
+      }
+    }
     if (parsed.isFunction || _mayCallNotepadFunction(body)) {
       scopeKeys.addAll(_scopeKeysFor(doc, firstCode));
     }

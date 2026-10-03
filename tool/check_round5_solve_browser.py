@@ -35,7 +35,7 @@ def validate_result(case, line):
         if case_id == 'formal-derivative':
             assert re.fullmatch(r'3\*?x\^2', expression), (case, line)
         else:
-            term = r'(?:(?:x\^3|\(x\^3\))/3|(?:1/3|\(1/3\))\*x\^3)'
+            term = r'(?:(?:x\^3|\(x\^3\))/3|(?:1/3|\(1/3\))\*?x\^3)'
             assert re.fullmatch(rf'(?:{term}\+C|C\+{term})', expression), (case, line)
         assert not line.get('f'), (case, line)
         return
