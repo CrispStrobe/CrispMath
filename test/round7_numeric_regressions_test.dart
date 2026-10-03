@@ -58,7 +58,7 @@ void main() {
     test('narrow offset interval agrees with independent midpoint density', () {
       const distribution = TDistribution(df: 3);
       const lower = 5.0, upper = 5.0000000001;
-      final midpoint = (lower + upper) / 2;
+      const midpoint = (lower + upper) / 2;
       final expected = (upper - lower) * 2 / (math.pi * math.sqrt(3)) /
           math.pow(1 + midpoint * midpoint / 3, 2);
       expect(distribution.intervalProbability(lower, upper) / expected,

@@ -39,6 +39,7 @@ TEST_CASES = [
 
 async def real_click(page, locator, *, horizontal=False):
     """Reveal clipped Flutter controls with real wheel events, never force."""
+    await locator.wait_for(state='attached')
     for _ in range(12):
         if await locator.count() == 1:
             state = await locator.evaluate("""el=>{
