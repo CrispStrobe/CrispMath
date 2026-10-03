@@ -8,12 +8,18 @@ Completed items with details are in `HISTORY.md`.
 ## Eighth independent mathematical audit
 
 - [x] Freeze fifty fresh references at 26c751e before app outputs.
-- [x] Preserve initial native/WASM/Mac 47/50 results and unchanged prior587
+- [x] Preserve initial native/WASM/Mac 47/50 results and unchanged prior 587
   passes; trace four distinct failed questions.
-- [~] Fix factorial expressions, normal accuracy/tails, compound unit grammar
+- [x] Fix factorial expressions, normal accuracy/tails, compound unit grammar
   and complex-coefficient quadratic solving with positive/negative controls.
-- [ ] Pass accumulated runtime and unit/live checks on hosted CI, Pages and Vercel.
-- [ ] Refresh native Apple galleries and beta delivery if production changes.
+- [x] Pass 637 accumulated runtime questions, 5,677 units/eight skips, 433 focused
+  regressions and 77 tooling controls; actual Pages/Vercel checks pass 284 entries,
+  26 edit states and ten statistics checks.
+- [x] Refresh 33 native Apple views; visually review four populated captures.
+- [x] Upload signed build 19; verify Apple VALID, beta APPROVED and Public Beta
+  IN_BETA_TESTING after all gates, without an App Review submission.
+
+See [round-eight evidence](docs/round8-math-audit-50.md).
 
 ## Seventh independent mathematical audit
 

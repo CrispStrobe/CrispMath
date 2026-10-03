@@ -1,3 +1,41 @@
+## 2026-10-03 — Eighth independent audit, factorials and normal accuracy
+
+Freeze fifty fresh independently derived questions before observing app outputs.
+Native, packaged Mac and WASM initially pass 47/50 each; four distinct questions
+fail on at least one platform, while all previous 587 pass. Preserve references
+and initial evidence. Repair bounded exact factorial expressions/postfix grammar,
+normal CDF and direct tails/quantiles, compound product-unit targets and shared
+Gaussian-rational quadratic solving. Unit checks uncover degree cancellation in
+fixed coefficient buffers; actual worksheets uncover trace's false free-variable
+badge. Repair growable bounded buffers and share matrix operation names between
+evaluation and worksheet classification, with reactive and negative controls.
+
+Final production c02ae7b has 368 files and fingerprint
+862243195034f245e44e3fc881a9a26a982f561709f29a96a913158ce305b5af.
+Full feature CI37138935788 passes clean analysis, 5,677 unit/widget tests (eight
+skips), 433 focused regressions, release/debug browser checks, four paired
+same-host performance gates and twelve populated web views. Linux/WASM
+37138931799 and packaged Mac37138933578 pass all 637 runtime cases, including
+all fifty new ones. Helper-only d6319e6 preserves production parity; immutable
+probe37139929279 passes 77 tooling checks, 70 actual worksheet entries, four
+reactive trace edits and two Normal CDF screens. Pages37139286564 and
+Vercel37139288891 each pass 637 runtime cases, 284 worksheet entries, 26 edit
+states and ten statistics-screen checks. Tiny evidence is retained on CIFS;
+app binaries and full galleries stay in hosted artifacts.
+
+Native gallery37139012893 passes 33 populated final-source Apple views; four
+selected graph/worksheet captures are visually reviewed. A first iOS attempt
+stalls after compilation before VM-driver connection; preserve logs, then retry
+only iOS on a fresh hosted runner. The retry connects and passes actual native
+tests without product/assertion changes. Signed release37143330448 verifies
+bundle privacy/version/signature and production parity, then uploads build 19.
+Apple processing is VALID; external verification37144064147 confirms APPROVED
+beta review and Public Beta IN_BETA_TESTING at the existing public link. Build
+UUID is a2e86e31-bf31-429c-bc93-2a83f1afd2dc; submittedDate is null. No App Review
+submission occurs. Physical Apple, real Siri/Files-provider, two-device cloud, handwriting accuracy and
+Apple's 4.3(a) App Review finding remain open.
+See [round-eight evidence](docs/round8-math-audit-50.md).
+
 ## 2026-10-03 — Seventh independent audit, exact inputs and stable tails
 
 Freeze fifty independently derived questions before app outputs. Initial Linux,
