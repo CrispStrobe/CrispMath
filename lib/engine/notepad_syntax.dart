@@ -288,6 +288,8 @@ const Set<String> kReservedNotepadNames = {
   'exp', 'log', 'ln', 'log10', 'log2',
   // Roots, abs, rounding
   'sqrt', 'cbrt', 'abs', 'floor', 'ceil', 'ceiling', 'round', 'sign',
+  // Complex conjugation is a builtin, not an unresolved worksheet symbol.
+  'conjugate',
   // Number theory
   'gcd', 'lcm', 'factorial', 'fibonacci', 'isprime', 'nextprime',
   'prevprime', 'factorint', 'divisors', 'totient', 'modinv', 'modpow',

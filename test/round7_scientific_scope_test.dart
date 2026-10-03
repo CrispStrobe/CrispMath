@@ -13,6 +13,14 @@ NotepadDocument _document(List<String> sources) =>
       ..lines.addAll(sources.map((source) => NotepadLine.fresh(source: source)));
 
 void main() {
+  test('complex conjugation is a builtin while its arguments remain reactive', () {
+    expect(freeVariablesOfLine(_parse('conjugate((2+3*I)/(1-2*I))'), {}),
+        isEmpty);
+    expect(freeVariablesOfLine(_parse('conjugate(z+I)'), {}), {'z'});
+    expect(dependenciesOfLine(_parse('conjugate(z+I)'), {'z'}), {'z'});
+    expect(_parse('conjugate=7').kind, NotepadLineKind.expression);
+  });
+
   test('scientific numbers have no identifier fragments', () {
     for (final source in [
       '1e308*1e-308', '1E+308*1E-308', '1.e3', '.25e-3',
