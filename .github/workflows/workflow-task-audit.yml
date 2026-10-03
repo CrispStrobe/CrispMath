@@ -14,6 +14,7 @@ on:
       - 'test/fixtures/*workflow_tasks.json'
       - 'test/fixtures/new_math_*_tasks.json'
       - 'test/fixtures/round2_*_tasks.json'
+      - 'test/fixtures/round3_*_tasks.json'
       - 'test/round2_*_test.dart'
       - 'test/new_math_*_test.dart'
       - 'test/fresh_workflow_tasks_test.dart'
@@ -89,6 +90,14 @@ jobs:
             tool/crispmath_cli.sh --tasks "test/fixtures/round2_${area}_tasks.json" --require-native --report "task-results/native-round2-${area}.json" || status=1
           done
           exit "$status"
+      - name: Run third independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round3_${area}_tasks.json" --require-native --report "task-results/native-round3-${area}.json" || status=1
+          done
+          exit "$status"
       - name: Verify exact Taylor compatibility with the native CAS
         run: tool/crispmath_cli.sh --check-series-compatibility
       - uses: actions/upload-artifact@v4
@@ -147,6 +156,14 @@ jobs:
           status=0
           for area in algebra numeric workflow native_safety dependency bound; do
             python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round2_${area}_tasks.json" --output "task-results/browser-round2-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run third independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round3_${area}_tasks.json" --output "task-results/browser-round3-${area}.json" || status=1
           done
           exit "$status"
       - name: Enter repaired calculations through desktop and phone UI

@@ -110,6 +110,9 @@ jobs:
           for area in algebra numeric workflow native_safety dependency bound; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round2_${area}_tasks.json" --output "deployed-results/round2-${area}.json"
           done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round3_${area}_tasks.json" --output "deployed-results/round3-${area}.json"
+          done
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
           python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export
           python tool/check_document_history_browser.py --url "$APP_URL" --output deployed-results/document-history
