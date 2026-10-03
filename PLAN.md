@@ -5,6 +5,23 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Third independent mathematical audit and build 14
+
+- [x] Draft 50 fresh algebra/calculus and numeric/statistics/units/constraint
+  problems before inspecting previous fixtures; preserve the initial 46/50 findings.
+- [x] Fix removable-hole integration, undefined constant-response regression R²,
+  microlitre prefixes and bounded integer-polynomial constraint routing.
+- [x] Pass 360 accumulated runtime checks on Linux, WASM, packaged macOS,
+  Pages and Vercel; pass 5,478 unit/widget tests with eight documented skips.
+- [x] Pass 64 actual desktop/phone worksheet entries, release/debug browser,
+  real mobile touch tracing, performance gates and the populated web gallery.
+- [x] Upload signed build 14 with the latest calculation fixes; Apple processing
+  is VALID, internal assignment is confirmed, and external beta review is APPROVED
+  with Public Beta IN_BETA_TESTING. Release/submission CI: `37094979914` / `37095571010`.
+
+See [round-three evidence](docs/round3-math-audit-50.md). Physical iPhone/iPad
+checks and the earlier 4.3(a) App Review finding remain open.
+
 ## Second independent mathematical audit and native screenshots
 
 - [x] Draft another 100 independent references using two agents, plus four crash, three provenance
@@ -19,7 +36,7 @@ Completed items with details are in `HISTORY.md`.
 - [x] Capture and verify 11 populated native scenes each for iPhone, iPad and macOS.
 
 See [round-two evidence](docs/round2-math-audit-100.md). Physical checks are
-still deferred, and these changes are later than submitted TestFlight build 13.
+still deferred; these changes are included in externally approved TestFlight build 14.
 
 ## Additional mathematical audit
 
@@ -36,8 +53,8 @@ still deferred, and these changes are later than submitted TestFlight build 13.
   geometry, host-specific dialog selectors and fixture-server readiness.
 
 See [the complete audit and limitations](docs/new-math-audit-100.md).
-These changes are later than the submitted TestFlight build 13; physical Apple
-checks remain deferred.
+These changes are included in externally approved TestFlight build 14; physical
+Apple checks remain deferred.
 
 ## October follow-up release and workspace improvements
 
@@ -51,8 +68,10 @@ Physical iPhone/iPad testing is deferred to a separate session.
    External beta review submitted at 16:17 UTC; CI `37032322549` confirms
    initially WAITING_FOR_REVIEW with Public Beta assignment. Read-only CI
    `37092308470` on October 3 confirms beta review APPROVED and both internal/
-   external IN_BETA_TESTING; public beta is available. New math changes remain
-   outside uploaded build 13.
+   external IN_BETA_TESTING. Build 14 now includes the newer math fixes: release CI
+   `37094979914` passes signing, privacy/version and production-source validation;
+   submission CI `37095571010` confirms external APPROVED and Public Beta
+   IN_BETA_TESTING. Public beta is available.
    Address 4.3(a) with truthful review evidence;
    final App Review follows the improvements and separate device tests.
 1. [x] Result provenance: identify exact/approximate results and computation

@@ -15,6 +15,16 @@ on October 3 confirms beta review APPROVED and both internal and external
 IN_BETA_TESTING. The [public beta](https://testflight.apple.com/join/E6HdVhTx) is
 available. The later mathematical fixes are not in build 13. Beta approval
 does not resolve the earlier 4.3(a) rejection.
+Build 14 now includes the later mathematical fixes. [Signed release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37094979914)
+passes for source `e0a0614999ba5f22c592b8fd61c18a2c9aacaa71`, version 1.2.0 (14):
+48 tooling tests, signed photo/camera purpose strings and version/build checks,
+production-source/dependency parity with green browser/gallery CI, successful
+upload, Apple VALID processing and Internal Testers assignment.
+[External TestFlight CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37095571010)
+confirms beta review APPROVED and internal/external IN_BETA_TESTING with Public
+Beta assignment. The existing public link offers build 14. The submission record
+matches build ID `26a96c77-406f-4bf0-8571-68834fe068e5`; Apple returns no submission
+timestamp. No App Review submission occurred. See [the third audit](round3-math-audit-50.md).
 Physical iPhone/iPad checks are explicitly deferred to another session.
 
 Apple asks for distinct functionality and accurate metadata in its

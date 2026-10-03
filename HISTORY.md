@@ -1,3 +1,27 @@
+## 2026-10-03 — Third independent 50-problem audit
+
+Two agents draft 50 fresh references before consulting prior fixtures. Linux,
+WASM and packaged macOS each initially pass 46/50. Fix all four findings:
+continuous-extension integration through removable holes, undefined R² for
+constant responses, prefixed litres and a bounded integer-polynomial constraint
+adapter shared by enumeration, optimization, explanations and propagation.
+Retain independent reference answers and original-domain checks for genuine poles.
+
+All 360 accumulated runtime checks pass on Linux, WASM, packaged macOS,
+GitHub Pages and Vercel. Analysis and 5,478 unit/widget tests pass with eight
+explicit skips. Sixty-four actual desktop/phone worksheet entries pass, along
+with release/debug browser checks, touch tracing, performance gates and the
+12-scene web gallery. Correct toolbar visibility readiness in the mobile trace
+helper without bypassing real pointer actionability. Archive 268.84 MiB of cold
+CrispMath artifacts to CIFS with verified hashes and readable symlinks.
+Signed build 14 includes these fixes. Release CI `37094979914` passes 48 tooling
+checks, signed photo/camera purpose strings and version/build checks, and a
+browser/gallery production-source/dependency parity gate before upload. Apple
+processing is VALID and Internal Testers assignment is confirmed. External CI
+`37095571010` confirms beta review APPROVED and Public Beta IN_BETA_TESTING.
+No App Review submission occurred; the earlier 4.3(a) finding remains open.
+See [the third audit](docs/round3-math-audit-50.md). Physical testing remains deferred.
+
 ## 2026-10-02 — Second independent audit and populated native galleries
 
 Draft another 100 problems with independent algebra/calculus, numeric/statistics/
