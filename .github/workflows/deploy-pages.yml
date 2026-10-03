@@ -122,6 +122,7 @@ jobs:
           python tool/check_new_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/new-math-ui
           python tool/check_round2_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round2-math-ui
           python tool/check_round3_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round3-math-ui
+          python tool/check_round4_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round4-math-ui
           python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
           python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations
           python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery

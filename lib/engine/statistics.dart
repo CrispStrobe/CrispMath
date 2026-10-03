@@ -170,16 +170,11 @@ class Statistics {
       throw ArgumentError('linearFit() needs at least 2 points.');
     }
     final n = xs.length;
-    double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
-    for (var i = 0; i < n; i++) {
-      sumX += xs[i];
-      sumY += ys[i];
-      sumXY += xs[i] * ys[i];
-      sumX2 += xs[i] * xs[i];
-      sumY2 += ys[i] * ys[i];
+    if (xs.any((value) => !value.isFinite) ||
+        ys.any((value) => !value.isFinite)) {
+      throw ArgumentError('linearFit() requires finite observations.');
     }
-    final denom = n * sumX2 - sumX * sumX;
-    if (denom == 0 || xs.every((value) => value == xs.first)) {
+    if (xs.every((value) => value == xs.first)) {
       // All x's identical — regression undefined.
       return LinearFit(
           slope: double.nan, intercept: double.nan, rSquared: double.nan, count: n);
@@ -188,12 +183,50 @@ class Statistics {
       return LinearFit(
           slope: 0, intercept: ys.first, rSquared: double.nan, count: n);
     }
-    final slope = (n * sumXY - sumX * sumY) / denom;
-    final intercept = (sumY - slope * sumX) / n;
-    final denomY = n * sumY2 - sumY * sumY;
-    final r2 = denomY == 0
-        ? double.nan // Constant response has zero total variation: R² is undefined.
-        : math.pow(n * sumXY - sumX * sumY, 2) / (denom * denomY);
+    // Subtract a nearby anchor before averaging: raw sums of squares lose
+    // small variation at a large offset. Scaling the centered coordinates
+    // also prevents covariance/variance overflow at large magnitudes.
+    ({double mean, double scale, List<double> deviations}) centered(
+        List<double> values) {
+      final anchor = values.first;
+      var coordinates = values.map((value) => value - anchor).toList();
+      var origin = anchor;
+      double scale;
+      if (coordinates.any((value) => !value.isFinite)) {
+        // Opposite near-maximal doubles can have an unrepresentable
+        // difference although every observation and its mean are finite.
+        scale = values.fold<double>(0, (a, b) => math.max(a, b.abs()));
+        coordinates = values.map((value) => value / scale).toList();
+        origin = 0;
+      } else {
+        scale = coordinates.fold<double>(0, (a, b) => math.max(a, b.abs()));
+        coordinates = coordinates.map((value) => value / scale).toList();
+      }
+      final mean = coordinates.fold<double>(0, (a, b) => a + b) / n;
+      return (
+        mean: origin + mean * scale,
+        scale: scale,
+        deviations: coordinates.map((value) => value - mean).toList(),
+      );
+    }
+
+    final x = centered(xs), y = centered(ys);
+    double varianceX = 0, varianceY = 0, covariance = 0;
+    for (var i = 0; i < n; i++) {
+      varianceX += x.deviations[i] * x.deviations[i];
+      varianceY += y.deviations[i] * y.deviations[i];
+      covariance += x.deviations[i] * y.deviations[i];
+    }
+    final scaleRatio = y.scale / x.scale;
+    final coefficient = covariance / varianceX;
+    final slope = covariance == 0
+        ? 0.0
+        : scaleRatio.isFinite
+            ? coefficient * scaleRatio
+            : coefficient * y.scale / x.scale;
+    final intercept = y.mean - slope * x.mean;
+    final correlation = covariance / math.sqrt(varianceX) / math.sqrt(varianceY);
+    final r2 = (correlation * correlation).clamp(0.0, 1.0).toDouble();
     return LinearFit(
       slope: slope,
       intercept: intercept,

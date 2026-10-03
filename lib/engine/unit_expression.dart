@@ -388,6 +388,50 @@ class UnitExpressionEvaluator {
 
   static _UnitMatch? _tryMatchUnitAt(
       String s, int start, List<String> symbolsLongestFirst) {
+    // A compound target can include a derived unit and a powered catalog
+    // unit (N/cm²), not just the curated length/time velocity spellings.
+    final quotient = RegExp(
+            r'^([A-Za-zμµ°]+(?:\^[23]|[²³])?)/([A-Za-zμµ°]+(?:\^[23]|[²³])?)')
+        .firstMatch(s.substring(start));
+    if (quotient != null) {
+      final end = start + quotient[0]!.length;
+      if (end == s.length ||
+          (!_isWordChar(s[end]) && s[end] != '^' && s[end] != '/')) {
+        _UnitToken? atomic(String symbol) {
+          final catalog = UnitCatalog.bySymbolWithPrefixes(symbol);
+          if (catalog != null) return _UnitToken.single(catalog);
+          final derived = DerivedUnits.bySymbolWithPrefixes(symbol);
+          if (derived != null) return _UnitToken.derived(derived);
+          final power = RegExp(r'^([A-Za-zμµ°]+)(?:\^([23])|([²³]))$')
+              .firstMatch(symbol);
+          if (power == null) return null;
+          final base = atomic(power[1]!);
+          if (base == null || _hasNonZeroOffset(base.unit)) return null;
+          final cubed = power[2] == '3' || power[3] == '³';
+          final scale = base.toSi(1);
+          return _UnitToken.derived(DerivedUnit(
+              symbol: '${base.symbol}${cubed ? '³' : '²'}', name: symbol,
+              dim: cubed ? base.dim * base.dim * base.dim : base.dim * base.dim,
+              scale: scale * scale * (cubed ? scale : 1)));
+        }
+
+        final numerator = atomic(quotient[1]!);
+        final denominator = atomic(quotient[2]!);
+        if (numerator != null && denominator != null &&
+            !_hasNonZeroOffset(numerator.unit) &&
+            !_hasNonZeroOffset(denominator.unit)) {
+          final symbol = quotient[0]!
+              .replaceAll('^2', '²').replaceAll('^3', '³');
+          // Preserve catalog velocity identity where it already exists.
+          final curated = UnitCatalog.bySymbolWithPrefixes(symbol);
+          if (curated != null) return _UnitMatch.single(curated, end);
+          return _UnitMatch.derived(DerivedUnit(
+              symbol: symbol, name: symbol,
+              dim: numerator.dim / denominator.dim,
+              scale: numerator.toSi(1) / denominator.toSi(1)), end);
+        }
+      }
+    }
     // Compose supported metric area/volume/speed spellings on demand instead
     // of generating every combination of prefixes in the tokenizer table.
     final compound = RegExp(r'^[A-Za-zμµ]+/[A-Za-zμµ]+|^[A-Za-zμµ]+(?:\^[23]|[²³])')

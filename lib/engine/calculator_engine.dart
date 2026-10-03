@@ -189,7 +189,7 @@ class CalculatorEngine {
     if (exact != null) {
       lastResultEvidence = ResultEvidence(
           ResultAccuracy.exact,
-          exact.contains('/')
+          exact.contains('/') || RegExp(r'\bsqrt\s*\(').hasMatch(expression)
               ? ComputationMethod.symbolicEvaluation
               : ComputationMethod.integerArithmetic);
       return exact;

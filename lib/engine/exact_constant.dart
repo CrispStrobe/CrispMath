@@ -1,11 +1,11 @@
 import 'polynomial.dart';
 
-/// Exact arithmetic for bounded integer, decimal and rational constant expressions.
+/// Exact arithmetic for bounded rational constants and perfect-square roots.
 /// Returns null outside this grammar so callers can use their normal CAS path.
 class ExactConstantEvaluator {
   static String? evaluate(String input) {
     if (input.length > 512 ||
-        !RegExp(r'^[\d.\s+*/%^()\-abs]+$').hasMatch(input)) {
+        !RegExp(r'^[\d.\s+*/%^()\-absqrt]+$').hasMatch(input)) {
       return null;
     }
     try {
@@ -141,6 +141,14 @@ class _ConstantParser {
   }
 
   Rational primary() {
+    if (take('sqrt')) {
+      if (!take('(')) throw _Decline();
+      final value = expression();
+      if (!take(')') || value.numerator.isNegative) throw _Decline();
+      return checked(Rational(
+          perfectSquareRoot(value.numerator),
+          perfectSquareRoot(value.denominator)));
+    }
     if (take('abs')) {
       if (!take('(')) throw _Decline();
       final value = expression();
@@ -162,5 +170,20 @@ class _ConstantParser {
     final places = dot < 0 ? 0 : text.length - dot - 1;
     return checked(Rational(BigInt.parse(text.replaceAll('.', '')),
         BigInt.from(10).pow(places)));
+  }
+
+  /// Integer Newton iteration never converts to double or guesses exactness.
+  /// Parsed operands have already passed maxBits; iteration starts above the
+  /// root and decreases, using only integers bounded by that same input size.
+  BigInt perfectSquareRoot(BigInt value) {
+    if (value == BigInt.zero) return BigInt.zero;
+    var root = BigInt.one << ((value.bitLength + 1) ~/ 2);
+    while (true) {
+      final next = (root + value ~/ root) >> 1;
+      if (next >= root) break;
+      root = next;
+    }
+    if (root * root != value) throw _Decline();
+    return root;
   }
 }
