@@ -317,6 +317,9 @@ jobs:
       - name: Enter eighth independent math controls through actual UI
         if: ${{ !cancelled() }}
         run: python tool/check_round8_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round8-math-ui
+      - name: Enter ninth independent math and module controls through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round9_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round9-math-ui
       - uses: actions/upload-artifact@v4
         if: always()
         with:

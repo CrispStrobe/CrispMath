@@ -1,6 +1,7 @@
 """Standard-library-only assertions for independently frozen round-seven math."""
 import ast
 from fractions import Fraction
+import math
 import re
 
 TINY_ROOT = Fraction(1, 10**160)
@@ -42,6 +43,53 @@ UNIT_CASES = {'cgs-energy', 'standard-atmosphere', 'signed-force-distance',
               'frequency-cancellation', 'fahrenheit-fixed-point', 'mass-concentration'}
 
 
+MAX_COEFFICIENT_BITS = 4096
+MAX_LITERAL_EXPONENT = 1024
+
+
+def bounded_fraction(literal):
+    """Reject oversized scientific literals before Fraction allocates powers."""
+    assert len(literal) <= 1024, 'Reference numeric literal exceeds length budget'
+    assert re.fullmatch(r'[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:/\d+)?',literal),literal
+    exponent = re.search(r'[eE]([+-]?\d+)',literal)
+    if exponent:
+        digits=exponent[1].lstrip('+-').lstrip('0') or '0'
+        assert len(digits)<=4 and abs(int(exponent[1]))<=MAX_LITERAL_EXPONENT, 'Reference scientific exponent exceeds budget'
+    value=Fraction(literal)
+    return bounded_coefficient(value)
+
+
+def bounded_coefficient(value):
+    assert value.numerator.bit_length()<=MAX_COEFFICIENT_BITS and value.denominator.bit_length()<=MAX_COEFFICIENT_BITS, 'Reference rational coefficient exceeds bit budget'
+    return value
+
+
+def bounded_add(left,right):
+    """Preflight cross-products before constructing an exact rational sum."""
+    common=math.gcd(left.denominator,right.denominator)
+    left_scale=right.denominator//common
+    right_scale=left.denominator//common
+    assert max(left.numerator.bit_length()+left_scale.bit_length(),right.numerator.bit_length()+right_scale.bit_length())+1<=MAX_COEFFICIENT_BITS, 'Reference addition exceeds numerator budget'
+    assert left.denominator.bit_length()+left_scale.bit_length()<=MAX_COEFFICIENT_BITS, 'Reference addition exceeds denominator budget'
+    return bounded_coefficient(Fraction(left.numerator*left_scale+right.numerator*right_scale,left.denominator*left_scale))
+
+
+def bounded_multiply(left,right):
+    """Cancel first, then bound integer products before multiplication."""
+    first=math.gcd(left.numerator,right.denominator)
+    second=math.gcd(right.numerator,left.denominator)
+    numerator_left,numerator_right=left.numerator//first,right.numerator//second
+    denominator_left,denominator_right=left.denominator//second,right.denominator//first
+    assert numerator_left.bit_length()+numerator_right.bit_length()<=MAX_COEFFICIENT_BITS, 'Reference multiplication exceeds numerator budget'
+    assert denominator_left.bit_length()+denominator_right.bit_length()<=MAX_COEFFICIENT_BITS, 'Reference multiplication exceeds denominator budget'
+    return bounded_coefficient(Fraction(numerator_left*numerator_right,denominator_left*denominator_right))
+
+
+def bounded_divide(left,right):
+    assert right, 'Reference division by zero'
+    return bounded_multiply(left,Fraction(right.denominator,right.numerator))
+
+
 def polynomial_coefficients(expression):
     """Parse only bounded rational polynomials, comparing every coefficient.
 
@@ -70,14 +118,14 @@ def polynomial_coefficients(expression):
         result = [Fraction(0)] * (len(left) + len(right) - 1)
         for i, a in enumerate(left):
             for j, b in enumerate(right):
-                result[i+j] += a*b
+                result[i+j] = bounded_add(result[i+j],bounded_multiply(a,b))
         return trim(result)
 
     def parse(node):
         if isinstance(node, ast.Constant) and type(node.value) in {int, float}:
             literal = ast.get_source_segment(text, node)
             assert re.fullmatch(r'\d+(?:\.\d+)?(?:[eE][+-]?\d+)?', literal), expression
-            return [Fraction(literal)]
+            return [bounded_fraction(literal)]
         if isinstance(node, ast.Name) and node.id == 'x':
             return [Fraction(0), Fraction(1)]
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
@@ -87,13 +135,13 @@ def polynomial_coefficients(expression):
         left, right = parse(node.left), parse(node.right)
         if isinstance(node.op, (ast.Add, ast.Sub)):
             sign = 1 if isinstance(node.op, ast.Add) else -1
-            return trim([(left[i] if i < len(left) else 0) + sign*(right[i] if i < len(right) else 0)
+            return trim([bounded_add(left[i] if i < len(left) else Fraction(0), sign*(right[i] if i < len(right) else Fraction(0)))
                          for i in range(max(len(left), len(right)))])
         if isinstance(node.op, ast.Mult):
             return multiply(left, right)
         if isinstance(node.op, ast.Div):
             assert len(right) == 1 and right[0] != 0, expression
-            return trim([value / right[0] for value in left])
+            return trim([bounded_divide(value,right[0]) for value in left])
         assert isinstance(node.op, ast.Pow) and len(right) == 1, expression
         exponent = right[0]
         assert exponent.denominator == 1 and 0 <= exponent <= 8, expression
@@ -156,7 +204,7 @@ def validate_result(case, line):
                 actual_value = result[:-len(suffix)]
         actual_value = actual_value.strip()
         assert re.fullmatch(r'[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:/\d+)?', actual_value), (case, line)
-        assert Fraction(actual_value) == Fraction(expected_value), (case, line)
+        assert bounded_fraction(actual_value) == Fraction(expected_value), (case, line)
     if case_id in EXACT_CASES:
         assert evidence.get('accuracy') == 'exact', (case, line)
     if case_id == 'squared-log-endpoint':

@@ -1247,6 +1247,13 @@ class CspSolver {
   /// [solveDsl].
   static ({List<String> vars, List<num> coeffs, num constant})?
       _parseLinearTerms(String expr, Set<String> knownVars) {
+    // The fast linear route shares the same source budget as the grouped
+    // polynomial route. Zero coefficients must not bypass these limits.
+    if (expr.length > 1024 ||
+        RegExp(r'[A-Za-z_]\w*|\d+(?:\.\d+)?')
+            .allMatches(expr).take(129).length > 128) {
+      return null;
+    }
     final stripped = expr.replaceAll(' ', '');
     if (stripped.isEmpty) return null;
     final terms = <String>[];
@@ -1255,11 +1262,13 @@ class CspSolver {
       final c = stripped[i];
       if ((c == '+' || c == '-') && i > 0) {
         terms.add(current.toString());
+        if (terms.length > 64) return null;
         current = StringBuffer();
       }
       current.write(c);
     }
     if (current.isNotEmpty) terms.add(current.toString());
+    if (terms.length > 64) return null;
 
     final vars = <String>[];
     final coeffs = <num>[];

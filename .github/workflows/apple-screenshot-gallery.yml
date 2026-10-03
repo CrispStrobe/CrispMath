@@ -12,6 +12,8 @@ on:
       - 'test_driver/product_gallery_driver.dart'
       - 'macos/Runner/MainFlutterWindow.swift'
       - 'tool/verify_native_gallery.py'
+      - 'tool/run_native_gallery.py'
+      - 'tool/run_native_gallery_test.py'
 permissions:
   contents: read
 jobs:
@@ -58,6 +60,8 @@ jobs:
               path: .ci/CrispEmbed/flutter/crispembed
           YAML
           flutter pub get
+      - name: Validate bounded native capture tooling
+        run: python3 -m unittest discover -s tool -p "run_native_gallery_test.py"
       - name: Select actual iPhone and iPad simulators
         run: |
           mkdir -p native-gallery
@@ -72,19 +76,16 @@ jobs:
             f.write('GALLERY_IPHONE='+phone['udid']+'\nGALLERY_IPAD='+tablet['udid']+'\n')
           json.dump({'source':os.environ['GITHUB_SHA'],'kind':'native-ios-simulator','iphone':phone,'ipad':tablet,'physicalDeviceTest':False},open('native-gallery/manifest.json','w'),indent=2)
           PY
-      - name: Capture iPhone and iPad with real native CAS assertions
+      - name: Capture iPhone with bounded native launch and real CAS assertions
+        timeout-minutes: 20
         run: |
           unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
-          for profile in iphone ipad; do
-            if [ "$profile" = iphone ]; then simulator="$GALLERY_IPHONE"; else simulator="$GALLERY_IPAD"; fi
-            xcrun simctl boot "$simulator" || true
-            xcrun simctl bootstatus "$simulator" -b
-            xcrun simctl status_bar "$simulator" override --time '9:41' --batteryState charged --batteryLevel 100 --wifiBars 3
-            CRISPMATH_GALLERY_OUTPUT="native-gallery/$profile" flutter drive \
-              --driver=test_driver/product_gallery_driver.dart \
-              --target=integration_test/product_gallery_test.dart -d "$simulator"
-            xcrun simctl shutdown "$simulator"
-          done
+          python3 tool/run_native_gallery.py --profile iphone --simulator "$GALLERY_IPHONE"
+      - name: Capture iPad with bounded native launch and real CAS assertions
+        timeout-minutes: 20
+        run: |
+          unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
+          python3 tool/run_native_gallery.py --profile ipad --simulator "$GALLERY_IPAD"
       - name: Verify native images and record pixel dimensions
         run: python3 tool/verify_native_gallery.py native-gallery iphone ipad
       - uses: actions/upload-artifact@v4

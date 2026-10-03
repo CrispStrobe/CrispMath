@@ -53,7 +53,7 @@ expanded terms (64), factors (128), nesting (32) and coefficient bits (4096)
 before allocation while retaining objective-domain guards. Reduced linear or
 constant expressions remain valid; constant true/false constraints retain safe
 solver routing. Independent static review found these cancellation/zero-arity
-and display-overflow cases, which now have controls. Twenty-eight new regression
+and display-overflow cases, which now have controls. Twenty-nine new regression
 tests and two reference tests are ready for hosted verification. Build 20 is
 prepared; build 19 remains approved until all changed-production gates pass.
 
@@ -66,3 +66,20 @@ unit assertions described grouped objectives and ampere as unsupported; they
 now assert the newly supported behavior while retaining other invalid-input
 checks. Initial failure logs are preserved. The analyzer's reported missing
 braces are corrected. Final full/runtime/live verification follows.
+
+The next candidate `76b4e41` also passes all 687 runtime questions on WASM
+and packaged Mac. Its sole remaining full-unit/focused failure is 65 zero
+linear terms bypassing polynomial limits through the older linear fast path.
+The shared linear parser now checks 1024 source characters, 64 raw terms and
+128 atoms before coefficient parsing; decimal linear grammar and propagation
+remain intact. Positive 64-term controls and unchanged negative 65-term controls
+cover both routes.
+
+Actual browser coverage adds 66 worksheet entries, four real descriptive-statistics
+checks and two real constraint optimizations. Independent tooling controls retain
+exact principal signs, complete roots, every matrix/Taylor coefficient and
+visible tiny-value labels. Shared exact comparator arithmetic now preflights
+scientific exponents and rational coefficient growth before allocation.
+Native gallery capture has separate iPhone/iPad steps with bounded boot/drive
+phases, streamed logs, failure diagnostics and owned-descendant cleanup. These
+helper changes retain the same production code and screenshot assertions.

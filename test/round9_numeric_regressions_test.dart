@@ -160,6 +160,15 @@ void main() {
       expect(cancelled.ok, isTrue, reason: cancelled.error);
       expect(cancelled.solutions.map((s) => s['x']), unorderedEquals([-1, 0, 1]));
     });
+    test('source budget boundary permits zero and repeated exact terms', () async {
+      for (final term in ['0*x', 'x*x']) {
+        final result = await CspSolver.solveDsl(
+            'vars: x in -1..1\nminimize ${List.filled(64, term).join('+')}');
+        expect(result.ok, isTrue, reason: result.error);
+        expect(result.objective, 0);
+        expect(result.solutions, isNotEmpty);
+      }
+    });
     test('unsupported syntax and resource budgets fail before optimization', () async {
       final expansion = List.filled(9, '(x+y)').join('*');
       final nested = '${List.filled(40, '(').join()}x*x'
