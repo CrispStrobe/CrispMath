@@ -1,0 +1,337 @@
+{
+  "schemaVersion": 1,
+  "reference": "Frozen independent exact arithmetic; sample deviation definitions and exact scaled line coefficients; closed-form binomial and Student-t probabilities; dimensional unit definitions and complete finite solution sets.",
+  "tasks": [
+    {
+      "id": "round5-numeric-01",
+      "title": "Exact small decimal sum",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "0.001+0.009"
+      ],
+      "expected": "1/100",
+      "exact": true
+    },
+    {
+      "id": "round5-numeric-02",
+      "title": "Nested rational division",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(2/3)/(4/9)"
+      ],
+      "expected": "3/2",
+      "exact": true
+    },
+    {
+      "id": "round5-numeric-03",
+      "title": "Signed rational reciprocal cube",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(-2/5)^(-3)"
+      ],
+      "expected": "-125/8",
+      "exact": true
+    },
+    {
+      "id": "round5-numeric-04",
+      "title": "Power remainder with shifted numerator",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(2^50+5)%13"
+      ],
+      "expected": "9",
+      "exact": true
+    },
+    {
+      "id": "round5-numeric-05",
+      "title": "Exact small decimal square root",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(0.0004)"
+      ],
+      "expected": "1/50",
+      "exact": true
+    },
+    {
+      "id": "round5-numeric-06",
+      "title": "Quotient of rational square roots",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(9/100)/sqrt(4/25)"
+      ],
+      "expected": "3/4",
+      "exact": true
+    },
+    {
+      "id": "round5-numeric-07",
+      "title": "Four zero observations and one outlier",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        10
+      ],
+      "expected": {
+        "mean": 2,
+        "median": 0,
+        "sampleStddev": 4.47213595499958
+      }
+    },
+    {
+      "id": "round5-numeric-08",
+      "title": "Two observation sample deviation",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        2,
+        5
+      ],
+      "expected": {
+        "mean": 3.5,
+        "median": 3.5,
+        "sampleStddev": 2.1213203435596424
+      }
+    },
+    {
+      "id": "round5-numeric-09",
+      "title": "Negative slope symmetric regression",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        -3,
+        -1,
+        1,
+        3
+      ],
+      "ys": [
+        3,
+        1,
+        -1,
+        -3
+      ],
+      "expected": {
+        "slope": -1,
+        "intercept": 0,
+        "rSquared": 1
+      }
+    },
+    {
+      "id": "round5-numeric-10",
+      "title": "Regression below unscaled product precision",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        -1e-200,
+        0,
+        1e-200
+      ],
+      "ys": [
+        -2e-200,
+        0,
+        2e-200
+      ],
+      "expected": {
+        "slope": 2,
+        "intercept": 0,
+        "rSquared": 1
+      }
+    },
+    {
+      "id": "round5-numeric-11",
+      "title": "Binomial all failures at fair probability",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 6,
+      "p": 0.5,
+      "k": 0,
+      "expected": 0.015625
+    },
+    {
+      "id": "round5-numeric-12",
+      "title": "Binomial all successes at fair probability",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 6,
+      "p": 0.5,
+      "k": 6,
+      "expected": 0.015625
+    },
+    {
+      "id": "round5-numeric-13",
+      "title": "Cauchy negative unit interval",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 1,
+      "lower": -1,
+      "upper": 0,
+      "expected": 0.25
+    },
+    {
+      "id": "round5-numeric-14",
+      "title": "Two degree t symmetric interval",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 2,
+      "lower": -2,
+      "upper": 2,
+      "expected": 0.8164965809277261
+    },
+    {
+      "id": "round5-numeric-15",
+      "title": "Megajoules to kilowatt hours",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "3 MJ in kWh",
+      "expected": "0.8333333333 kWh"
+    },
+    {
+      "id": "round5-numeric-16",
+      "title": "Millilitres to micro sign microlitres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "7.5 mL in µL",
+      "expected": "7500 µL"
+    },
+    {
+      "id": "round5-numeric-17",
+      "title": "Density quotient with prefixed numerator",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 g/cm³ in kg/L",
+      "expected": "1 kg/L"
+    },
+    {
+      "id": "round5-numeric-18",
+      "title": "Compound pressure to bar",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 kN/m² in bar",
+      "expected": "0.01 bar"
+    },
+    {
+      "id": "round5-numeric-19",
+      "title": "Power per millisecond to kilowatts per second",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "2 W/ms in kW/s",
+      "expected": "2 kW/s"
+    },
+    {
+      "id": "round5-numeric-20",
+      "title": "Square denominator pressure rescaling",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "0.25 N/mm² in N/cm²",
+      "expected": "25 N/cm²"
+    },
+    {
+      "id": "round5-numeric-21",
+      "title": "Difference of signed squares equals three",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in -2..2\nx*x-y*y == 3",
+      "unordered": true,
+      "expected": [
+        {
+          "x": -2,
+          "y": -1
+        },
+        {
+          "x": -2,
+          "y": 1
+        },
+        {
+          "x": 2,
+          "y": -1
+        },
+        {
+          "x": 2,
+          "y": 1
+        }
+      ]
+    },
+    {
+      "id": "round5-numeric-22",
+      "title": "Ordered factors of four",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 0..4\nx*y == 4\nx <= y",
+      "unordered": true,
+      "expected": [
+        {
+          "x": 1,
+          "y": 4
+        },
+        {
+          "x": 2,
+          "y": 2
+        }
+      ]
+    },
+    {
+      "id": "round5-numeric-23",
+      "title": "Nonzero signed cube inequality",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -3..3\nx*x*x != 0",
+      "unordered": true,
+      "expected": [
+        {
+          "x": -3
+        },
+        {
+          "x": -2
+        },
+        {
+          "x": -1
+        },
+        {
+          "x": 1
+        },
+        {
+          "x": 2
+        },
+        {
+          "x": 3
+        }
+      ]
+    },
+    {
+      "id": "round5-numeric-24",
+      "title": "Binary majority with repeated endpoint",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: a, b, c in 0..1\na+b+c >= 2\na == c",
+      "unordered": true,
+      "expected": [
+        {
+          "a": 1,
+          "b": 0,
+          "c": 1
+        },
+        {
+          "a": 1,
+          "b": 1,
+          "c": 1
+        }
+      ]
+    },
+    {
+      "id": "round5-numeric-25",
+      "title": "Signed constrained difference maximum",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -3..3\nx+y == -1\nmaximize x-y",
+      "expected": 5
+    }
+  ]
+}

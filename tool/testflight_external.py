@@ -14,6 +14,41 @@ TEST_NOTES = ('Please test worksheet calculations: a=3, f(t)=t^2+a, f(4) should 
               'review and correct recognized formulas before inserting them.')
 
 
+ENGLISH_BETA_DESCRIPTION = (
+    'CrispMath is a scientific calculator with a Computer Algebra System '
+    '(SymEngine), 2D/3D graphing, formula photo import, and a live-formula notepad. '
+    'Core calculations run on your device. Optional AI assistance sends the math '
+    'you request help with to your configured provider; optional cloud sync '
+    'transfers your workspace through a configured backend.')
+
+
+def update_english_description(api, app, evidence):
+    """Change only the existing en-US beta description, then verify preservation."""
+    english = [loc for loc in evidence['appLocalizations'] if loc.get('locale') == 'en-US']
+    if len(english) != 1 or not english[0].get('id'):
+        raise ValueError('Expected exactly one existing en-US beta localization')
+    before = english[0]
+    changed = before.get('description') != ENGLISH_BETA_DESCRIPTION
+    if changed:
+        api.request('/v1/betaAppLocalizations/' + before['id'], {'data': {
+            'type': 'betaAppLocalizations', 'id': before['id'],
+            'attributes': {'description': ENGLISH_BETA_DESCRIPTION}}}, method='PATCH')
+    verified = inspect(api, app, evidence['build'], evidence['version'])
+    if verified['buildId'] != evidence['buildId']:
+        raise ValueError('Verified beta build changed during metadata update')
+    expected = [dict(loc, description=ENGLISH_BETA_DESCRIPTION)
+                if loc['id'] == before['id'] else loc for loc in evidence['appLocalizations']]
+    by_id = lambda locales: {loc['id']: loc for loc in locales}
+    if by_id(verified['appLocalizations']) != by_id(expected):
+        raise ValueError('Beta description update or localization preservation was not confirmed')
+    if by_id(verified['buildLocalizations']) != by_id(evidence['buildLocalizations']):
+        raise ValueError('Existing beta release notes changed during metadata update')
+    verified['metadataOnly'] = True
+    verified['betaDescriptionChanged'] = changed
+    verified['betaDescriptionUpdateVerified'] = True
+    return verified
+
+
 def submit(api, app, evidence):
     if evidence.get('buildAudienceType') == 'INTERNAL_ONLY':
         raise ValueError('Build was restricted to internal testing')
@@ -97,12 +132,16 @@ if __name__ == '__main__':
     parser.add_argument('--key-file', type=Path, required=True)
     parser.add_argument('--version', required=True)
     parser.add_argument('--build', required=True)
-    parser.add_argument('--submit', action='store_true')
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument('--submit', action='store_true')
+    action.add_argument('--update-english-description', action='store_true')
     args = parser.parse_args()
     api = AppleApi(args.key_file)
     evidence = inspect(api, os.environ['ASC_APP_ID'], args.build, args.version)
     output = Path('external-testflight-evidence.json')
     output.write_text(json.dumps(evidence, indent=2) + '\n')
+    if args.update_english_description:
+        evidence = update_english_description(api, os.environ['ASC_APP_ID'], evidence)
     if args.submit:
         evidence = submit(api, os.environ['ASC_APP_ID'], evidence)
     Path('external-testflight-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')

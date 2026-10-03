@@ -204,6 +204,22 @@ jobs:
           done
           exit "$status"
 
+      - name: Run fifth independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric; do
+            count=25
+            cat "test/fixtures/round5_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round5-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round5-${area}.log" --output "task-results/macos-round5-${area}.json" --expected-count "$count" || status=1
+          done
+          exit "$status"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

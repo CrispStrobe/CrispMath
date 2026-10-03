@@ -2,7 +2,8 @@ import unittest
 from copy import deepcopy
 from unittest.mock import patch
 
-from testflight_external import inspect, submit
+from testflight_external import (ENGLISH_BETA_DESCRIPTION, inspect, submit,
+                                 update_english_description)
 
 
 class InspectionFixture:
@@ -101,3 +102,89 @@ class ExternalSubmissionTests(unittest.TestCase):
             api = SubmissionFixture()
             with self.assertRaises(ValueError): submit(api, 'app', evidence)
             self.assertEqual(api.writes, [])
+
+
+class BetaDescriptionFixture:
+    def __init__(self, evidence, apply=True):
+        self.evidence = deepcopy(evidence)
+        self.writes = []
+        self.apply = apply
+
+    def request(self, path, data=None, method=None):
+        self.writes.append((path, deepcopy(data), method))
+        if path != '/v1/betaAppLocalizations/english' or method != 'PATCH':
+            raise AssertionError('Metadata update must write only the English beta localization')
+        if set(data['data']['attributes']) != {'description'}:
+            raise AssertionError('Other metadata must be preserved')
+        if self.apply:
+            self.evidence['appLocalizations'][0]['description'] = data['data']['attributes']['description']
+        return {}
+
+
+def description_evidence():
+    return {'version': '1.2.0', 'build': '15', 'buildId': 'build15',
+            'appLocalizations': [
+                {'id': 'english', 'locale': 'en-US', 'description': 'All computation runs on-device.',
+                 'feedbackEmail': 'feedback@example.com', 'privacyPolicyUrl': 'https://example.com/privacy'},
+                {'id': 'german', 'locale': 'de-DE', 'description': 'Individuelle Beschreibung'}],
+            'buildLocalizations': [
+                {'id': 'notes-en', 'locale': 'en-US', 'whatsNew': 'Custom build 15 test notes'},
+                {'id': 'notes-de', 'locale': 'de-DE', 'whatsNew': 'Eigene Testhinweise'}]}
+
+
+class BetaDescriptionTests(unittest.TestCase):
+    def test_updates_only_english_beta_description_and_preserves_custom_notes(self):
+        evidence = description_evidence()
+        api = BetaDescriptionFixture(evidence)
+        with patch('testflight_external.inspect', side_effect=lambda *args: deepcopy(api.evidence)) as verify:
+            result = update_english_description(api, 'app', evidence)
+        verify.assert_called_once_with(api, 'app', '15', '1.2.0')
+        self.assertEqual(api.writes, [('/v1/betaAppLocalizations/english', {'data': {
+            'type': 'betaAppLocalizations', 'id': 'english',
+            'attributes': {'description': ENGLISH_BETA_DESCRIPTION}}}, 'PATCH')])
+        self.assertEqual(result['buildLocalizations'], evidence['buildLocalizations'])
+        self.assertEqual(result['appLocalizations'][1], evidence['appLocalizations'][1])
+        self.assertTrue(result['metadataOnly'])
+        self.assertTrue(result['betaDescriptionChanged'])
+        self.assertTrue(result['betaDescriptionUpdateVerified'])
+        self.assertIn('Optional AI assistance', ENGLISH_BETA_DESCRIPTION)
+        self.assertIn('optional cloud sync', ENGLISH_BETA_DESCRIPTION)
+        self.assertNotIn('All computation runs on-device', ENGLISH_BETA_DESCRIPTION)
+
+    def test_retry_is_read_only_when_description_is_already_correct(self):
+        evidence = description_evidence()
+        evidence['appLocalizations'][0]['description'] = ENGLISH_BETA_DESCRIPTION
+        api = BetaDescriptionFixture(evidence)
+        with patch('testflight_external.inspect', return_value=deepcopy(evidence)):
+            result = update_english_description(api, 'app', evidence)
+        self.assertFalse(result['betaDescriptionChanged'])
+        self.assertTrue(result['betaDescriptionUpdateVerified'])
+        self.assertEqual(api.writes, [])
+
+    def test_missing_or_ambiguous_english_localization_prevents_writes(self):
+        for duplicate in (False, True):
+            evidence = description_evidence()
+            english = evidence['appLocalizations'][0]
+            evidence['appLocalizations'] = [english, deepcopy(english)] if duplicate else [evidence['appLocalizations'][1]]
+            api = BetaDescriptionFixture(evidence)
+            with self.subTest(duplicate=duplicate), self.assertRaises(ValueError):
+                update_english_description(api, 'app', evidence)
+            self.assertEqual(api.writes, [])
+
+    def test_unapplied_patch_changed_build_or_changed_custom_metadata_is_rejected(self):
+        for kind in ('unapplied', 'build', 'notes', 'other-locale', 'privacy'):
+            evidence = description_evidence()
+            api = BetaDescriptionFixture(evidence, apply=kind != 'unapplied')
+            def response(*args):
+                verified = deepcopy(api.evidence)
+                if kind == 'build': verified['buildId'] = 'different'
+                if kind == 'notes': verified['buildLocalizations'][0]['whatsNew'] = 'overwritten'
+                if kind == 'other-locale': verified['appLocalizations'][1]['description'] = 'overwritten'
+                if kind == 'privacy': verified['appLocalizations'][0]['privacyPolicyUrl'] = None
+                return verified
+            with self.subTest(kind=kind), patch('testflight_external.inspect', side_effect=response), self.assertRaises(ValueError):
+                update_english_description(api, 'app', evidence)
+
+
+if __name__ == '__main__':
+    unittest.main()

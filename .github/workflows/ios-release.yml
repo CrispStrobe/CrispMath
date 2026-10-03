@@ -57,6 +57,10 @@ on:
         description: 'Inspect external beta requirements (requires verify_only)'
         type: boolean
         default: false
+      update_beta_description:
+        description: 'Correct only en-US beta description (requires verify_only and external_testflight; no submission)'
+        type: boolean
+        default: false
       submit_external:
         description: 'Submit the verified build to external TestFlight beta review'
         type: boolean
@@ -81,7 +85,7 @@ env:
 
 jobs:
   build-upload:
-    if: ${{ inputs.verify_only != true && inputs.external_testflight != true && inputs.submit_external != true }}
+    if: ${{ inputs.verify_only != true && inputs.external_testflight != true && inputs.submit_external != true && inputs.update_beta_description != true }}
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -294,7 +298,7 @@ jobs:
           if-no-files-found: error
 
   verify-upload:
-    if: ${{ inputs.verify_only == true }}
+    if: ${{ inputs.verify_only == true || inputs.update_beta_description == true }}
     runs-on: ${{ inputs.api_runner || 'ubuntu-latest' }}
     timeout-minutes: 20
     env:
@@ -303,6 +307,10 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       BUILD_SOURCE: ${{ inputs.uploaded_source }}
       VERIFY_BUILD: ${{ inputs.verify_build }}
+      UPDATE_BETA_DESCRIPTION: ${{ inputs.update_beta_description }}
+      VERIFY_ONLY: ${{ inputs.verify_only }}
+      EXTERNAL_TESTFLIGHT: ${{ inputs.external_testflight }}
+      SUBMIT_EXTERNAL: ${{ inputs.submit_external }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -311,6 +319,11 @@ jobs:
       - name: Dependencies and release-tool unit checks
         run: |
           test "${#BUILD_SOURCE}" -eq 40
+          if [ "$UPDATE_BETA_DESCRIPTION" = true ]; then
+            test "$VERIFY_ONLY" = true
+            test "$EXTERNAL_TESTFLIGHT" = true
+            test "$SUBMIT_EXTERNAL" != true
+          fi
           python -m pip install cryptography
           python -m unittest discover -s tool -p '*_test.py'
       - name: Prepare temporary private API key
@@ -334,6 +347,7 @@ jobs:
           BUILD="${VERIFY_BUILD:-$(sed -n 's/^version: .*+//p' pubspec.yaml)}"
           ARGS=()
           if [ "$SUBMIT_EXTERNAL" = true ]; then ARGS+=(--submit); fi
+          if [ "$UPDATE_BETA_DESCRIPTION" = true ]; then ARGS+=(--update-english-description); fi
           python tool/testflight_external.py --key-file "$RUNNER_TEMP/cm-testflight.p8" \
             --version "$VER" --build "$BUILD" "${ARGS[@]}"
       - name: Retain external TestFlight evidence
