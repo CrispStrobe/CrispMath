@@ -418,7 +418,9 @@ class NotepadEvaluator {
       if (line.cachedResult == null || line.cachedError != null ||
           (!line.source.contains('diff') &&
               !line.source.contains('integrate') &&
-              !line.source.contains('d/dx'))) {
+              !line.source.contains('d/dx') &&
+              !line.source.contains('series') &&
+              !line.source.contains('taylor'))) {
         continue;
       }
       final parsed = parseCache.parse(line.source,
@@ -435,8 +437,9 @@ class NotepadEvaluator {
       availableNames ??= buildNotepadScope(doc,
           externalScope: externalScope, parseCache: parseCache).keys.toSet();
       final badges = line.cachedFreeVars.toSet();
+      final outputNames = identifierWordsIn(line.cachedResult!);
       for (final name in formalNames) {
-        if (availableNames.contains(name)) {
+        if (!outputNames.contains(name) || availableNames.contains(name)) {
           badges.remove(name);
         } else {
           badges.add(name);
@@ -692,7 +695,14 @@ class NotepadEvaluator {
     } else {
       line.cachedResult = result;
       line.cachedError = null;
-      line.cachedFreeVars = freeVars;
+      // A formal calculus variable belongs to the output only when the
+      // computed expression still uses it. Ordinary input names remain
+      // dependencies, even when an operation cancels their contribution.
+      final outputNames = identifierWordsIn(result);
+      line.cachedFreeVars = freeVars
+          .where((name) =>
+              !formalOutputNames.contains(name) || outputNames.contains(name))
+          .toList();
     }
   }
 
