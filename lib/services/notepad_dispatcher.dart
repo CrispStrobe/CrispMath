@@ -272,8 +272,10 @@ class NotepadDispatcher {
     EngineOp? op;
 
     if (_isCasCall(trimmed, 'diff') || _isCasCall(trimmed, 'd/dx')) {
-      final args = _splitCasArgs(trimmed);
-      if (args.length != 2) return null;
+      final args = parseDifferentiationArguments(trimmed);
+      if (args == null) {
+        return const ComputedResult('Error: invalid differentiation arguments', null);
+      }
       op = EngineOp('differentiate', _native(args[0]), args[1].trim());
     } else if (_isCasCall(trimmed, 'integrate')) {
       final args = parseIntegralArguments(trimmed);
@@ -290,24 +292,29 @@ class NotepadDispatcher {
     } else if (_isCasCall(trimmed, 'solve')) {
       final args = _splitCasArgs(trimmed);
       if (args.isEmpty || args.length > 2) return null;
-      var equation = args[0].trim();
-      final variable = args.length == 2
-          ? args[1].trim()
-          : ExpressionPreprocessingUtils.detectVariable(equation);
-      // `solve(x^2 = 4, x)` — fold the `=` into a standard
-      // `LHS - (RHS)` form before sending to the engine. Mirrors
-      // calculator_screen.dart:1014-1023.
-      if (equation.contains('=')) {
-        final eqParts = equation.split('=');
-        if (eqParts.length == 2) {
-          final leftSide = eqParts[0].trim();
-          final rightSide = eqParts[1].trim();
-          equation = rightSide == '0' || rightSide.isEmpty
-              ? leftSide
-              : '$leftSide - ($rightSide)';
-        }
+      final explicit = args.length == 2 ? parseSolveArguments(trimmed) : null;
+      if (args.length == 2 && explicit == null) {
+        return const ComputedResult('Error: invalid solve arguments', null);
       }
-      op = EngineOp('solve', _native(equation), variable);
+      if (explicit != null) {
+        op = EngineOp('solve', _native(explicit[0]), explicit[1]);
+      } else {
+        var equation = args[0].trim();
+        final variable = ExpressionPreprocessingUtils.detectVariable(equation);
+        // One-argument solve retains its existing variable inference and
+        // equation folding; explicit declarations use the shared parser above.
+        if (equation.contains('=')) {
+          final eqParts = equation.split('=');
+          if (eqParts.length == 2) {
+            final leftSide = eqParts[0].trim();
+            final rightSide = eqParts[1].trim();
+            equation = rightSide == '0' || rightSide.isEmpty
+                ? leftSide
+                : '$leftSide - ($rightSide)';
+          }
+        }
+        op = EngineOp('solve', _native(equation), variable);
+      }
     } else if (_isCasCall(trimmed, 'limit')) {
       final args = _splitCasArgs(trimmed);
       if (args.length != 3) return null;

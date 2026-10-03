@@ -28,6 +28,45 @@ List<String>? parseLimitArguments(String source) {
   return args;
 }
 
+/// Explicit solve variable owns its equation scope; coefficients stay free.
+/// Returns the zero-form equation and a single validated declaration.
+/// One-argument variable inference belongs to the caller, not this binder.
+List<String>? parseSolveArguments(String source) {
+  final call = source.trim();
+  if (!call.startsWith('solve(') || !call.endsWith(')')) return null;
+  final args = _split(call.substring(6, call.length - 1));
+  if (args == null || args.length != 2 ||
+      !RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(args[1])) {
+    return null;
+  }
+  if (args[0].contains('=')) {
+    final sides = args[0].split('=');
+    if (sides.length != 2 || sides.any((side) => side.trim().isEmpty)) {
+      return null;
+    }
+    return ['(${sides[0].trim()})-(${sides[1].trim()})', args[1]];
+  }
+  return args;
+}
+
+/// Differentiation retains its formal variable in symbolic output, but the
+/// explicit declaration must never be replaced by a worksheet scalar.
+List<String>? parseDifferentiationArguments(String source) {
+  final call = source.trim();
+  final prefix = call.startsWith('diff(')
+      ? 'diff('
+      : call.startsWith('d/dx(')
+          ? 'd/dx('
+          : null;
+  if (prefix == null || !call.endsWith(')')) return null;
+  final args = _split(call.substring(prefix.length, call.length - 1));
+  if (args == null || args.length != 2 ||
+      !RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(args[1])) {
+    return null;
+  }
+  return args;
+}
+
 List<String>? _split(String body) {
   final stack = <String>[];
   final args = <String>[];

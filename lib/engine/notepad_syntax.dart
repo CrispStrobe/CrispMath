@@ -753,20 +753,31 @@ Set<String> identifierWordsIn(String source) {
   return out;
 }
 
-/// Word spans owned by definite integrals, limits and inline unit syntax.
-/// Invalid/indefinite calls do not bind away identifiers. Positions let the
+/// Word spans owned by calculus operations, solve and inline unit syntax.
+/// Formal output variables stay visible to free-variable analysis. Positions let
 /// same name remain free in bounds, limit points or quantity magnitudes.
-Map<int, ({int end, String name})> _lexicalSyntaxBindings(String source) {
-  final bindings = <int, ({int end, String name})>{
+Map<int, ({int end, String name, bool outputVariable})> _lexicalSyntaxBindings(
+    String source) {
+  final bindings = <int, ({int end, String name, bool outputVariable})>{
     for (final span in UnitExpressionEvaluator.syntaxIdentifierSpans(source))
-      span.start: (end: span.end, name: source.substring(span.start, span.end)),
+      span.start: (
+        end: span.end,
+        name: source.substring(span.start, span.end),
+        outputVariable: false,
+      ),
   };
-  if (!source.contains('integrate') && !source.contains('limit')) {
+  if (!source.contains('integrate') && !source.contains('limit') &&
+      !source.contains('solve') && !source.contains('diff') &&
+      !source.contains('d/dx')) {
     return bindings;
   }
-  for (final call in _notepadCallPattern.allMatches(source)) {
+  final syntaxCalls = RegExp(r'(d/dx|[A-Za-z_][A-Za-z0-9_]*)\s*\(');
+  for (final call in syntaxCalls.allMatches(source)) {
     final name = call[1];
-    if (name != 'integrate' && name != 'limit') continue;
+    if (name != 'integrate' && name != 'limit' && name != 'solve' &&
+        name != 'diff' && name != 'd/dx') {
+      continue;
+    }
     final open = call.end - 1;
     var depth = 1;
     var end = open + 1;
@@ -779,10 +790,24 @@ Map<int, ({int end, String name})> _lexicalSyntaxBindings(String source) {
     final input = '$name${source.substring(open, end + 1)}';
     final args = name == 'integrate'
         ? parseIntegralArguments(input)
-        : parseLimitArguments(input);
-    if (args == null || (name == 'integrate' && args.length != 4)) {
+        : name == 'limit'
+            ? parseLimitArguments(input)
+            : name == 'solve'
+                ? parseSolveArguments(input)
+                : parseDifferentiationArguments(input);
+    if (args == null) {
       continue;
     }
+    if (name == 'd/dx') {
+      // The supported operator spelling owns only these callee fragments;
+      // ordinary variables named d or dx elsewhere remain mathematical names.
+      bindings[call.start] =
+          (end: call.start + 1, name: 'd', outputVariable: false);
+      bindings[call.start + 2] =
+          (end: call.start + 4, name: 'dx', outputVariable: false);
+    }
+    final outputVariable = name == 'diff' || name == 'd/dx' ||
+        (name == 'integrate' && args.length == 2);
     List<({int start, int end})> ranges(int start, int finish) {
       var position = start;
       final result = <({int start, int end})>[];
@@ -802,7 +827,7 @@ Map<int, ({int end, String name})> _lexicalSyntaxBindings(String source) {
     final callRanges = ranges(open + 1, end);
     final integrand = callRanges.first;
     var declaration = callRanges[1];
-    if (callRanges.length == 2) {
+    if (name == 'integrate' && args.length == 4 && callRanges.length == 2) {
       var start = declaration.start;
       var finish = declaration.end;
       while (source[start].trim().isEmpty) {
@@ -819,19 +844,27 @@ Map<int, ({int end, String name})> _lexicalSyntaxBindings(String source) {
       for (final token
           in tokens.allMatches(source.substring(range.start, range.end))) {
         if (token[0] != args[1]) continue;
-        bindings[range.start + token.start] =
-            (end: range.start + token.end, name: args[1]);
+        final position = range.start + token.start;
+        bindings[position] = (
+          end: range.start + token.end,
+          name: args[1],
+          // A nested formal output cannot escape an enclosing bound scope.
+          outputVariable: outputVariable &&
+              (bindings[position]?.outputVariable ?? true),
+        );
       }
     }
   }
   return bindings;
 }
 
-Set<String> _unboundIdentifierWords(String source) {
+Set<String> _unboundIdentifierWords(String source,
+    {bool includeOutputVariables = false}) {
   final bindings = _lexicalSyntaxBindings(source);
   return {
     for (final word in _identifierWordRegex.allMatches(source))
-      if (!bindings.containsKey(word.start)) word[0]!
+      if (!bindings.containsKey(word.start) ||
+          (includeOutputVariables && bindings[word.start]!.outputVariable)) word[0]!
   };
 }
 
@@ -901,8 +934,8 @@ Set<String> dependenciesOfLine(
 /// neither a scope name nor a reserved CAS function / constant.
 /// Surfaced by the UI as the `free: x, y` tag (decision #15).
 ///
-/// Calculus binders and tokens in recognized inline unit syntax are excluded;
-/// ordinary identifiers with unit-like spellings remain mathematical names.
+/// Fully bound calculus variables and unit syntax are excluded. Differentiation
+/// and indefinite integration retain their formal variable in symbolic output.
 Set<String> freeVariablesOfLine(
   ParsedNotepadLine parsed,
   Set<String> scopeKeys,
@@ -912,7 +945,7 @@ Set<String> freeVariablesOfLine(
   if (parsed.kind == NotepadLineKind.flatzinc) return const {};
   final body = parsed.body;
   if (body == null) return const {};
-  final words = _unboundIdentifierWords(body);
+  final words = _unboundIdentifierWords(body, includeOutputVariables: true);
   return words
       .where((id) =>
           !scopeKeys.contains(id) &&

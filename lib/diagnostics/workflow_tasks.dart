@@ -143,15 +143,23 @@ class WorkflowTasks {
                     }
                     final integral = parseIntegralArguments(source.trim());
                     final limit = parseLimitArguments(source.trim());
-                    final computed = runEngineOpDetailed(
-                        engine,
-                        integral == null
-                            ? limit == null
-                                ? EngineOp('evaluate', source)
-                                : EngineOp('limit', limit[0], limit[1], limit[2])
-                            : EngineOp('integrate', integral[0], integral[1],
-                                integral.length == 4 ? integral[2] : null,
-                                integral.length == 4 ? integral[3] : null));
+                    final solve = parseSolveArguments(source.trim());
+                    final derivative = parseDifferentiationArguments(source.trim());
+                    final EngineOp operation;
+                    if (integral != null) {
+                      operation = EngineOp('integrate', integral[0], integral[1],
+                          integral.length == 4 ? integral[2] : null,
+                          integral.length == 4 ? integral[3] : null);
+                    } else if (limit != null) {
+                      operation = EngineOp('limit', limit[0], limit[1], limit[2]);
+                    } else if (solve != null) {
+                      operation = EngineOp('solve', solve[0], solve[1]);
+                    } else if (derivative != null) {
+                      operation = EngineOp('differentiate', derivative[0], derivative[1]);
+                    } else {
+                      operation = EngineOp('evaluate', source);
+                    }
+                    final computed = runEngineOpDetailed(engine, operation);
                     final raw = computed.value;
                     // The UI removes a purely zero imaginary suffix before
                     // caching scalar values. Keep this CLI path pure Dart.

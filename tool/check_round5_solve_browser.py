@@ -18,6 +18,9 @@ controls.CASES = [
     ('reactive-coefficient', 'a=2', '2'),
     ('linear-global-x', 'x=9', '9'),
     ('linear-local-solve', 'solve(a*x-6,x)', {3}),
+    ('calculus-global-x', 'x=9', '9'),
+    ('formal-derivative', 'diff(x^3,x)', '3*x^2'),
+    ('formal-antiderivative', 'integrate(x^2,x)', 'x^3/3+C'),
 ]
 NUMERIC = re.compile(r'[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:/\d+)?')
 
@@ -27,6 +30,15 @@ def validate_result(case, line):
     assert line.get('s') == source and not line.get('e'), (case, line)
     result = line.get('r')
     assert isinstance(result, str) and result, (case, line)
+    if case_id in {'formal-derivative', 'formal-antiderivative'}:
+        expression = re.sub(r'\s+', '', result).replace('**', '^').replace('²', '^2').replace('³', '^3')
+        if case_id == 'formal-derivative':
+            assert re.fullmatch(r'3\*?x\^2', expression), (case, line)
+        else:
+            term = r'(?:(?:x\^3|\(x\^3\))/3|(?:1/3|\(1/3\))\*x\^3)'
+            assert re.fullmatch(rf'(?:{term}\+C|C\+{term})', expression), (case, line)
+        assert not line.get('f'), (case, line)
+        return
     if isinstance(expected, set):
         match = re.fullmatch(r'x\s*=\s*(\{[^{}]+\}|[^{}]+)', result.strip())
         assert match, (case, line)

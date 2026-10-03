@@ -116,7 +116,7 @@ jobs:
           for area in algebra numeric scope; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round4_${area}_tasks.json" --output "deployed-results/round4-${area}.json"
           done
-          for area in algebra numeric; do
+          for area in algebra numeric scope; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round5_${area}_tasks.json" --output "deployed-results/round5-${area}.json"
           done
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
@@ -127,6 +127,7 @@ jobs:
           python tool/check_round3_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round3-math-ui
           python tool/check_round4_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round4-math-ui
           python tool/check_round5_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-math-ui
+          python tool/check_round5_solve_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-solve-ui
           python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
           python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations
           python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery
