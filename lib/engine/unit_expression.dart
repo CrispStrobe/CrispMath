@@ -390,7 +390,7 @@ class UnitExpressionEvaluator {
       String s, int start, List<String> symbolsLongestFirst) {
     // Compose supported metric area/volume/speed spellings on demand instead
     // of generating every combination of prefixes in the tokenizer table.
-    final compound = RegExp(r'^[A-Za-zμ]+/[A-Za-zμ]+|^[A-Za-zμ]+(?:\^[23]|[²³])')
+    final compound = RegExp(r'^[A-Za-zμµ]+/[A-Za-zμµ]+|^[A-Za-zμµ]+(?:\^[23]|[²³])')
         .firstMatch(s.substring(start));
     if (compound != null) {
       final end = start + compound[0]!.length;

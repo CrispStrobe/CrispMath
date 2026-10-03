@@ -93,6 +93,8 @@ void main() {
       ['1 μL in m^3', '1.000000e-9 m³'],
       ['250 µL in mL', '0.25 mL'],
       ['50 μL in mL', '0.05 mL'],
+      // Cubing 10^-6 metres gives 10^-18 m³; a microlitre is 10^-9 m³.
+      ['1 µm³ in µL', '1.000000e-9 µL'],
     ]) {
       test(example.first, () {
         expect(UnitExpressionEvaluator.tryEvaluate(example.first), example.last);
