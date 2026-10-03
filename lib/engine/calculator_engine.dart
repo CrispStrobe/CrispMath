@@ -1295,6 +1295,11 @@ class CalculatorEngine {
       }
       return cusp;
     }
+    final localPolynomial =
+        RealCalculusProofs.absoluteLocalPolynomial(expression, variable, point);
+    if (localPolynomial != null) {
+      return series(localPolynomial, variable, point: point, order: order);
+    }
     final bridge = _liveBridge;
     if (bridge == null) return 'Error: series requires native library';
     try {
@@ -1306,7 +1311,10 @@ class CalculatorEngine {
             differentiate: bridge.differentiate,
             substitute: substitute);
       }
-      return bridge.series(expression, variable, point: point, order: order);
+      final result = bridge.series(expression, variable, point: point, order: order);
+      return invalidSymbolicTaylorValue(result)
+          ? 'Error: series failed: not expandable at this point'
+          : result;
     } catch (e) {
       _log('series error: $e');
       return 'Error: series failed';

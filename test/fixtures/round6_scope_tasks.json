@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "reference": "Additional real worksheet rounding-alias scope regression; original fifty unchanged.",
+  "tasks": [
+    {
+      "id": "round6-scope-01",
+      "kind": "document",
+      "title": "Rounding builtins keep only their actual argument dependencies",
+      "lines": [
+        "a=-7/3",
+        "ceiling(a)",
+        "floor(a)",
+        "ceil(a)"
+      ],
+      "expected": [
+        "-7/3",
+        "-2",
+        "-3",
+        "-2"
+      ],
+      "expectedFreeVars": [
+        [],
+        [],
+        [],
+        []
+      ],
+      "expectedAccuracy": [
+        "exact",
+        "exact",
+        "exact",
+        "exact"
+      ]
+    }
+  ]
+}

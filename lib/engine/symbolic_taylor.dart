@@ -1,5 +1,10 @@
 /// Exact Taylor coefficients computed through symbolic CAS operations.
 /// Used by native libraries that expose differentiation but not series().
+bool invalidSymbolicTaylorValue(String value) => value.startsWith('Error') ||
+    RegExp(r'\b(nan|zoo|oo|inf|infinity|complexinfinity)\b',
+        caseSensitive: false).hasMatch(value) ||
+    RegExp(r'\b(?:Derivative|Subs)\s*\(', caseSensitive: false).hasMatch(value);
+
 String symbolicTaylorSeries(
   String expression,
   String variable, {
@@ -13,10 +18,7 @@ String symbolicTaylorSeries(
     return 'Error: order must be in 1..64';
   }
   String checked(String value) {
-    if (value.startsWith('Error') ||
-        RegExp(r'\b(nan|zoo|oo|inf|infinity|complexinfinity)\b',
-                caseSensitive: false)
-            .hasMatch(value)) {
+    if (invalidSymbolicTaylorValue(value)) {
       throw FormatException('not expandable at this point: $value');
     }
     return value;

@@ -4,9 +4,40 @@ import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:crisp_math/engine/polynomial_quotient_cancellation.dart';
 import 'package:crisp_math/engine/real_calculus_proofs.dart';
 import 'package:crisp_math/engine/result_evidence.dart';
+import 'package:crisp_math/engine/symbolic_expr.dart';
+import 'package:crisp_math/engine/symbolic_taylor.dart';
+import 'package:crisp_math/engine/symbolic_web.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('absolute Taylor branches use local exact polynomial coefficients', () {
+    expect(RealCalculusProofs.absoluteLocalPolynomial('abs(x)', 'x', '2'), 'x');
+    expect(RealCalculusProofs.absoluteLocalPolynomial('abs(x)', 'x', '-2'), '-x');
+    expect(RealCalculusProofs.absoluteLocalPolynomial('x*abs(x)', 'x', '-2'), '-x^2');
+    expect(RealCalculusProofs.absoluteLocalPolynomial('abs(x)', 'x', '0'), isNull);
+    final local = RealCalculusProofs.absoluteLocalPolynomial('x*abs(x)', 'x', '-2')!;
+    final engine = CalculatorEngine();
+    final tangent = symbolicTaylorSeries(local, 'x', point: '-2', order: 2,
+        simplify: (s) => SymbolicExpressionEvaluator.tryEvaluate(s) ?? 'Error',
+        differentiate: (s, v) => SymbolicWeb.differentiate(s, v) ?? 'Error',
+        substitute: engine.substitute);
+    for (final x in [-3.0, -2.0, -1.0]) {
+      expect(NumericFallbackEvaluator.evalNumeric(tangent, {'x': x}),
+          closeTo(4 * x + 4, 1e-12));
+    }
+  });
+
+  test('Taylor coefficients reject unevaluated derivative and substitution forms', () {
+    for (final formal in ['Derivative(abs(x),x)', 'Subs(f(x),x,2)']) {
+      final value = symbolicTaylorSeries('abs(x)', 'x', point: '2', order: 3,
+          simplify: (s) => s,
+          differentiate: (s, v) => formal,
+          substitute: (s, v, p) => s);
+      expect(value, startsWith('Error: series'));
+      expect(invalidSymbolicTaylorValue(formal), isTrue);
+    }
+    expect(invalidSymbolicTaylorValue('Derivative+Subs*x'), isFalse);
+  });
   test('multivariate exact cancellation retains original denominator restriction', () {
     final engine = CalculatorEngine();
     final result = engine.simplify('(x^2-y^2)/(x-y)');

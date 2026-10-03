@@ -21,6 +21,9 @@ controls.CASES = [
     ('squeezed-limit', 'limit(x*sin(1/x),x,0)', '0'),
     ('unequal-limits', 'limit(abs(x)/x,x,0)', 'left and right limits differ'),
     ('divergent-endpoint', 'integrate(1/x,x,-1,0)', 'divergent pole'),
+    ('taylor-positive', 'series(abs(x),x,2,3)', 'x'),
+    ('taylor-negative', 'series(abs(x),x,-2,3)', '-x'),
+    ('taylor-product', 'series(x*abs(x),x,-2,3)', '-x^2'),
 ]
 
 
@@ -35,6 +38,11 @@ def validate_result(case, line):
     result = line.get('r')
     assert isinstance(result, str) and result and not result.startswith('Error'), (case, line)
     evidence = line.get('evidence') or {}
+    if case_id.startswith('taylor-'):
+        polynomial = re.sub(r'\s+', '', result).replace('**', '^').replace('²', '^2')
+        assert polynomial == expected, (case, line)
+        assert set(line.get('f') or []) == {'x'}, (case, line)
+        return
     if case_id == 'multivariate-cancellation':
         assert re.sub(r'\s+', '', result) in {'x+y', 'y+x'}, (case, line)
         domain = evidence.get('sourceDomain') or ''

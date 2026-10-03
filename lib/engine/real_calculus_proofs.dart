@@ -61,15 +61,19 @@ class RealCalculusProofs {
     return p == null || (p.degree > 0 && p.variable != variable) ? null : p;
   }
 
+  static String _explicitCoefficients(String source, String variable) {
+    // Polynomial pretty-printing uses rational coefficients such as 3x and
+    // 1/2x. Restore explicit multiplication before substituting a parenthesis.
+    return source.replaceAllMapped(
+        RegExp('([0-9])\\s*(${RegExp.escape(variable)})(?![A-Za-z_0-9])'),
+        (m) => '${m[1]}*${m[2]}');
+  }
+
   static String? at(String source, String variable, String point) {
     if (source.length > 512) {
       return null;
     }
-    // Polynomial pretty-printing uses rational coefficients such as 3x and
-    // 1/2x. Restore explicit multiplication before substituting a parenthesis.
-    final explicit = source.replaceAllMapped(
-        RegExp('([0-9])\\s*(${RegExp.escape(variable)})(?![A-Za-z_0-9])'),
-        (m) => '${m[1]}*${m[2]}');
+    final explicit = _explicitCoefficients(source, variable);
     final replaced = explicit.replaceAllMapped(RegExp(r'[A-Za-z_][A-Za-z_0-9]*'),
         (m) => m[0] == variable ? '($point)' : m[0]!);
     return ExactConstantEvaluator.evaluate(replaced);
@@ -160,6 +164,18 @@ class RealCalculusProofs {
     final result = at(expression, variable, point);
     return result == null ? null : value.startsWith('-')
         ? ExactConstantEvaluator.evaluate('-($result)') : result;
+  }
+
+  /// Away from a real affine cusp the sign is constant in a neighborhood,
+  /// so its polynomial multiple has the ordinary Taylor series of +/-P*L.
+  static String? absoluteLocalPolynomial(String source, String variable, String point) {
+    final parsed = _absoluteProduct(source, variable);
+    if (parsed == null) return null;
+    final value = at(parsed.inner.toString(), variable, point);
+    if (value == null || value == '0') return null;
+    final sign = value.startsWith('-') ? '-1' : '1';
+    final local = SymbolicWeb.expand('($sign)*(${parsed.outer})*(${parsed.inner})');
+    return local == null ? null : _explicitCoefficients(local, variable);
   }
 
   /// A real absolute-value cusp in a polynomial multiple. At its zero an
