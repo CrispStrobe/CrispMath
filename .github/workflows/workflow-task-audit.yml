@@ -17,10 +17,12 @@ on:
       - 'test/fixtures/round3_*_tasks.json'
       - 'test/fixtures/round4_*_tasks.json'
       - 'test/fixtures/round5_*_tasks.json'
+      - 'test/fixtures/round6_*_tasks.json'
       - 'test/round2_*_test.dart'
       - 'test/round3_*_test.dart'
       - 'test/round4_*_test.dart'
       - 'test/round5_*_test.dart'
+      - 'test/round6_*_test.dart'
       - 'test/csp_polynomial_regression_test.dart'
       - 'test/new_math_*_test.dart'
       - 'test/fresh_workflow_tasks_test.dart'
@@ -75,7 +77,7 @@ jobs:
           YAML
           flutter pub get
       - name: Corpus and comparison unit regressions
-        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart test/round2_graph_regressions_test.dart test/round2_exact_constant_test.dart test/round2_numeric_regressions_test.dart test/round2_algebra_regressions_test.dart test/worksheet_numeric_provenance_test.dart test/workflow_document_provenance_test.dart test/round3_algebra_regressions_test.dart test/round3_numeric_regressions_test.dart test/csp_polynomial_regression_test.dart test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round5_numeric_regressions_test.dart test/round5_operation_scope_test.dart test/graph_navigation_widget_test.dart
+        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart test/round2_graph_regressions_test.dart test/round2_exact_constant_test.dart test/round2_numeric_regressions_test.dart test/round2_algebra_regressions_test.dart test/worksheet_numeric_provenance_test.dart test/workflow_document_provenance_test.dart test/round3_algebra_regressions_test.dart test/round3_numeric_regressions_test.dart test/csp_polynomial_regression_test.dart test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round6_reference_tasks_test.dart test/round5_numeric_regressions_test.dart test/round5_operation_scope_test.dart test/graph_navigation_widget_test.dart
       - name: Run every task against native app engine (strict)
         run: tool/crispmath_cli.sh --require-native --report task-results/native.json
       - name: Run the fresh independent 50 problems (strict)
@@ -118,6 +120,14 @@ jobs:
           status=0
           for area in algebra numeric scope; do
             tool/crispmath_cli.sh --tasks "test/fixtures/round5_${area}_tasks.json" --require-native --report "task-results/native-round5-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run sixth independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round6_${area}_tasks.json" --require-native --report "task-results/native-round6-${area}.json" || status=1
           done
           exit "$status"
       - name: Verify exact Taylor compatibility with the native CAS
@@ -202,6 +212,14 @@ jobs:
           status=0
           for area in algebra numeric scope; do
             python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round5_${area}_tasks.json" --output "task-results/browser-round5-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run sixth independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round6_${area}_tasks.json" --output "task-results/browser-round6-${area}.json" || status=1
           done
           exit "$status"
       - name: Enter repaired calculations through desktop and phone UI

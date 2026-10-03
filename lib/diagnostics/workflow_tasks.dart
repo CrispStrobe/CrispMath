@@ -54,7 +54,7 @@ class WorkflowTasks {
         });
       }
     }
-    return {
+    return _diagnosticValue(<String, dynamic>{
       'schemaVersion': 2,
       'nativeBridge': nativeBridgeReady,
       'total': results.length,
@@ -67,7 +67,7 @@ class WorkflowTasks {
       for (final status in ['passed', 'failed', 'unsupported'])
         status: results.where((r) => r['status'] == status).length,
       'results': results
-    };
+    }) as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> _execute(Map<String, dynamic> task) async {
@@ -304,7 +304,7 @@ class WorkflowTasks {
           pass = pass &&
               (check['y'] == null
                   ? !p.ok
-                  : p.ok && (p.y - check['y']).abs() < 1e-8);
+                  : p.ok && _numericClose(p.y, check['y'], relativeTolerance: 1e-8));
         }
         return {
           'status': pass ? 'passed' : 'failed',
@@ -315,12 +315,40 @@ class WorkflowTasks {
     throw StateError('Unhandled task');
   }
 
+  // Compare original values first. Explicit diagnostic strings preserve a
+  // failed NaN/infinite result without aborting JSON serialization of the rest
+  // of the independently drafted corpus.
+  dynamic _diagnosticValue(dynamic value) {
+    if (value is num && !value.isFinite) {
+      if (value.isNaN) return 'NaN';
+      return value.isNegative ? '-Infinity' : 'Infinity';
+    }
+    if (value is List) return value.map(_diagnosticValue).toList();
+    if (value is Map) {
+      return value.map(
+          (key, item) => MapEntry(key.toString(), _diagnosticValue(item)));
+    }
+    return value;
+  }
+
+  // Nonzero references require relative agreement even far below one. Scale
+  // before subtraction to avoid underflowing a tolerance or overflowing a
+  // difference. Only an explicitly zero reference permits absolute noise.
+  bool _numericClose(num actual, num expected,
+      {required double relativeTolerance}) {
+    if (!actual.isFinite || !expected.isFinite) return false;
+    if (actual == expected) return true;
+    if (expected == 0) return actual.abs() <= relativeTolerance;
+    final scale = actual.abs() > expected.abs() ? actual.abs() : expected.abs();
+    return (actual / scale - expected / scale).abs() <=
+        relativeTolerance * (expected.abs() / scale);
+  }
+
   bool _structuredMatches(dynamic actual, dynamic expected,
       {bool unordered = false}) {
     if (actual == null || expected == null) return actual == expected;
     if (actual is num && expected is num) {
-      return actual.isFinite &&
-          (actual - expected).abs() <= 1e-7 * (1 + expected.abs());
+      return _numericClose(actual, expected, relativeTolerance: 1e-7);
     }
     if (actual is String && expected is String) {
       if (actual.startsWith('Matrix(') && expected.startsWith('Matrix(')) {
@@ -425,8 +453,15 @@ class WorkflowTasks {
       final complex =
           RegExp(r'^(.+?)\s*([+-])\s*([0-9.eE+-]+)\*I$').firstMatch(v);
       if (complex != null) {
+        final real = double.tryParse(complex[1]!.trim());
         final imaginary = double.tryParse(complex[3]!);
-        if (imaginary != null && imaginary.abs() < 1e-12) {
+        if (imaginary != null &&
+            imaginary.isFinite &&
+            (imaginary == 0 ||
+                (real != null &&
+                    real.isFinite &&
+                    real != 0 &&
+                    imaginary.abs() / real.abs() < 1e-12))) {
           v = complex[1]!.trim();
         }
       }
@@ -482,24 +517,38 @@ class WorkflowTasks {
           !numericConstant(normalizedExpected)) {
         return false;
       }
-      final residualText =
-          engine.evaluate('abs(($normalizedActual)-($normalizedExpected))');
-      final magnitudeText = engine.evaluate('abs($normalizedExpected)');
-      if (invalid.hasMatch(residualText) || invalid.hasMatch(magnitudeText)) {
+      // Prefer a real parsed reference: computing abs() through complex
+      // squaring can underflow even when a tiny real number is representable.
+      final realReference =
+          NumericFallbackEvaluator.evalNumeric(normalizedExpected);
+      final magnitudeText = realReference == null
+          ? engine.evaluate('abs($normalizedExpected)')
+          : realReference.abs().toString();
+      if (invalid.hasMatch(magnitudeText)) return false;
+      final magnitude = realReference?.abs() ??
+          NumericFallbackEvaluator.evalNumeric(normalize(magnitudeText));
+      if (magnitude == null || !magnitude.isFinite || magnitude < 0) {
         return false;
       }
-      // No variable bindings: an unresolved symbol must remain a failed proof.
+      // A magnitude rounded down to zero is not proof of a zero reference.
+      if (magnitude == 0 &&
+          !RegExp(r'^0(?:\.0+)?$')
+              .hasMatch(engine.simplify(normalizedExpected).trim())) {
+        return false;
+      }
+      final residualText = magnitude == 0
+          ? engine.evaluate('abs(($normalizedActual)-($normalizedExpected))')
+          : engine.evaluate(
+              'abs(($normalizedActual)/($magnitude)-($normalizedExpected)/($magnitude))');
+      if (invalid.hasMatch(residualText)) return false;
+      // Scale components before abs(), so tiny complex residuals cannot
+      // disappear while squaring. No unresolved symbol may pass as a number.
       final residual =
           NumericFallbackEvaluator.evalNumeric(normalize(residualText));
-      final magnitude =
-          NumericFallbackEvaluator.evalNumeric(normalize(magnitudeText));
       return residual != null &&
-          magnitude != null &&
           residual.isFinite &&
-          magnitude.isFinite &&
           residual >= 0 &&
-          magnitude >= 0 &&
-          residual <= 1e-8 * (1 + magnitude);
+          residual <= 1e-8;
     }
     final identifiers = RegExp(r'[A-Za-z_][A-Za-z_0-9]*')
         .allMatches('$normalizedActual $normalizedExpected')
@@ -526,7 +575,7 @@ class WorkflowTasks {
         continue;
       }
       finiteChecks++;
-      if ((av - bv).abs() > 1e-8 * (1 + bv.abs())) {
+      if (!_numericClose(av, bv, relativeTolerance: 1e-8)) {
         return false;
       }
     }

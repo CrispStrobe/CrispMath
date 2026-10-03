@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent references frozen in docs/round6-math-algebra.md before fixture/output inspection. One undefined derivative retained as documented follow-up and replaced due missing module-error assertion schema.",
+  "tasks": [
+    {"id":"round6-algebra-01","kind":"engine","title":"Symbolic parameter determinant","operation":"evaluate","args":["det(Matrix([[a,1],[1,a]]))"],"expected":"a^2-1"},
+    {"id":"round6-algebra-02","kind":"engine","title":"Symbolic unit triangular inverse","operation":"evaluate","args":["inv(Matrix([[1,t],[0,1]]))"],"expected":"Matrix([[1,-t],[0,1]])"},
+    {"id":"round6-algebra-03","kind":"engine","title":"Tall full rank rectangular RREF","operation":"evaluate","args":["rref(Matrix([[1,0],[0,1],[1,1]]))"],"expected":"Matrix([[1,0],[0,1],[0,0]])"},
+    {"id":"round6-algebra-04","kind":"engine","title":"Defective Jordan eigenvalue multiplicity","operation":"evaluate","args":["eigenvalues(Matrix([[2,1],[0,2]]))"],"expected":"{2,2}"},
+    {"id":"round6-algebra-05","kind":"engine","title":"Non real shifted quadratic solutions","operation":"solve","args":["x^2+2*x+5","x"],"expected":"x = {-1-2*I,-1+2*I}"},
+    {"id":"round6-algebra-06","kind":"engine","title":"Sophie Germain quartic factor identity","operation":"factor","args":["x^4+4"],"expected":"(x^2-2*x+2)*(x^2+2*x+2)"},
+    {"id":"round6-algebra-07","kind":"engine","title":"Multivariate cubic binomial expansion","operation":"expand","args":["(x+y)^3"],"expected":"x^3+3*x^2*y+3*x*y^2+y^3"},
+    {"id":"round6-algebra-08","kind":"engine","title":"Multivariate difference of squares quotient","operation":"simplify","args":["(x^2-y^2)/(x-y)"],"expected":"x+y"},
+    {"id":"round6-algebra-09","kind":"engine","title":"Sole numerator candidate is an excluded source hole","operation":"solve","args":["(x-2)^2/(x-2)","x"],"expected":"x = (no solutions)"},
+    {"id":"round6-algebra-10","kind":"engine","title":"Absolute value integral crosses a cusp","operation":"integrate","args":["abs(x)","x","-1","2"],"expected":"5/2"},
+    {"id":"round6-algebra-11","kind":"engine","title":"Convergent inverse square root endpoint","operation":"integrate","args":["1/sqrt(x)","x","0","1"],"expected":"2"},
+    {"id":"round6-algebra-12","kind":"engine","title":"Convergent logarithm endpoint with limiting antiderivative","operation":"integrate","args":["ln(x)","x","0","1"],"expected":"-1"},
+    {"id":"round6-algebra-13","kind":"engine","title":"Left endpoint logarithmic divergence","operation":"integrate","args":["1/x","x","-1","0"],"errorContains":"divergent pole"},
+    {"id":"round6-algebra-14","kind":"engine","title":"Vanishing exponential essential singularity","operation":"limit","args":["exp(-1/x^2)","x","0"],"expected":"0"},
+    {"id":"round6-algebra-15","kind":"engine","title":"Squeezed oscillatory limit","operation":"limit","args":["x*sin(1/x)","x","0"],"expected":"0"},
+    {"id":"round6-algebra-16","kind":"engine","title":"Sign quotient has distinct directional limits","operation":"limit","args":["abs(x)/x","x","0"],"errorContains":"left and right limits differ"},
+    {"id":"round6-algebra-17","kind":"module","title":"Differentiable product of cusp factor at zero","operation":"differentiateAt","expression":"x*abs(x)","variable":"x","point":"0","expected":"0"},
+    {"id":"round6-algebra-18","kind":"module","title":"Cubic over quadratic quotient derivative","operation":"differentiateAt","expression":"x^3/(x^2+1)","variable":"x","point":"1","expected":"1"},
+    {"id":"round6-algebra-19","kind":"engine","title":"Partial derivative ignores independent transcendental term","operation":"differentiate","args":["x^2+sin(y)","x"],"expected":"2*x"},
+    {"id":"round6-algebra-20","kind":"engine","title":"Odd rational integral on a regular symmetric interval","operation":"integrate","args":["x/(x^2+1)","x","-1","1"],"expected":"0"},
+    {"id":"round6-algebra-21","kind":"engine","title":"Complex modulus uses both components","operation":"evaluate","args":["abs(3+4*I)"],"expected":"5"},
+    {"id":"round6-algebra-22","kind":"engine","title":"Principal negative radical product branch","operation":"evaluate","args":["sqrt(-9)*sqrt(-4)"],"expected":"-6"},
+    {"id":"round6-algebra-23","kind":"engine","title":"Exact principal rational root followed by inverse power","operation":"evaluate","args":["sqrt(1/16)^(-3)"],"expected":"64","exact":true},
+    {"id":"round6-algebra-24","kind":"document","title":"Function and integral declarations shadow same global name","lines":["a=2","f(a)=a+1","integrate(f(a),a,0,1)"],"expected":["2","a+1","3/2"],"expectedFreeVars":[[],[],[]]},
+    {"id":"round6-algebra-25","kind":"document","title":"Forward coefficient dependency with global dummy excluded","lines":["integrate(a*x,x,0,1)","a=4","x=9"],"expected":["2","4","9"],"expectedFreeVars":[[],[],[]],"expectedAccuracy":["exact","exact","exact"]}
+  ]
+}

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crisp_math/diagnostics/workflow_tasks.dart';
 import 'package:crisp_math/engine/calculator_engine.dart';
@@ -97,12 +98,72 @@ void main() {
         ['failed', 'failed', 'passed', 'failed']);
   });
 
+  test('nonzero references retain relative precision at tiny and large scales',
+      () async {
+    expect(
+        await comparePairs(ComparisonEchoEngine(), [
+          ['0', '1e-200'],
+          ['1e-200', '2e-200'],
+          ['1e-200', '1.000000001e-200'],
+          ['1e-200', '1e-200'],
+          ['-1e-200', '1e-200'],
+          ['1e308', '1.000000001e308'],
+          ['-1e308', '1e308'],
+          ['1e-10', '0'], // Explicit zero reference allows numerical noise.
+          ['1e-3', '0'],
+          ['1e-200*u', '2e-200*u'],
+        ]),
+        ['failed', 'failed', 'passed', 'passed', 'failed', 'passed',
+          'failed', 'passed', 'failed', 'failed']);
+  });
+
+  test('real distribution modules cannot lose tiny nonzero probabilities',
+      () async {
+    final report = await WorkflowTasks(ComparisonEchoEngine()).run([
+      for (final (i, probability, expected) in [
+        (0, 0.0, 1e-200),
+        (1, 1e-200, 2e-200),
+        (2, 1e-200, 1e-200),
+        (3, 1e-200, 1.000000001e-200),
+      ])
+        {'id': 'tiny-binomial-$i', 'kind': 'module', 'operation': 'binomial',
+         'n': 1, 'p': probability, 'k': 1, 'expected': expected},
+    ]);
+    expect((report['results'] as List).map((r) => r['status']),
+        ['failed', 'failed', 'passed', 'passed']);
+  });
+
+  test('nonfinite module failures serialize without dropping corpus rows',
+      () async {
+    final report = await WorkflowTasks(ComparisonEchoEngine()).run([
+      {'id': 'large-constant', 'kind': 'module', 'operation': 'describe',
+       'data': [1e308, 1e308],
+       'expected': {'mean': 0, 'median': 1e308, 'sampleStddev': 0}},
+      {'id': 'out-of-range-deviation', 'kind': 'module', 'operation': 'describe',
+       'data': [-1.7e308, 1.7e308],
+       'expected': {'mean': 0, 'median': 0, 'sampleStddev': 0}},
+      {'id': 'following-task', 'kind': 'module', 'operation': 'binomial',
+       'n': 1, 'p': 0.5, 'k': 1, 'expected': 0.5},
+    ]);
+    final encoded = jsonEncode(report);
+    final decoded = jsonDecode(encoded) as Map<String, dynamic>;
+    expect(decoded['total'], 3);
+    expect(decoded['failed'], 2);
+    expect(decoded['passed'], 1);
+    final rows = decoded['results'] as List;
+    expect(rows[1]['actual']['sampleStddev'], 'Infinity');
+    expect(rows[2]['status'], 'passed');
+  });
+
   test('complex components cannot be dropped without a symbolic proof',
       () async {
     expect(
         await comparePairs(ComparisonEchoEngine(), [
           ['23.0 + 0.0*I', '23'],
           ['9.0 - 2.2e-15*I', '9'],
+          ['1e-200+1e-200*I', '1e-200'],
+          ['0+1e-200*I', '0'],
+          ['1e-200+2e-215*I', '1e-200'],
           ['23+I', '23'],
           ['3+4*I', '3-4*I'],
           ['3+4*I', '3+5*I'],
@@ -112,6 +173,9 @@ void main() {
         ]),
         [
           'passed',
+          'passed',
+          'failed',
+          'failed',
           'passed',
           'failed',
           'failed',
@@ -133,6 +197,8 @@ void main() {
           // Expected expression is deliberately unreduced, so the comparator
           // must prove a complex identity rather than match canonical strings.
           ['-7/25+24*I/25', '(3+4*I)/(3-4*I)'],
+          ['1e-200+1e-200*I', '1e-200'],
+          ['1e-200+2e-215*I', '1e-200'],
           ['-1', 'I^2'],
           ['(3+4*I)/(3-4*I)', '-7/25-24*I/25'],
           ['sqrt(-16)', '5*I'],
@@ -152,6 +218,8 @@ void main() {
           'passed',
           'passed',
           'passed',
+          'passed',
+          'failed',
           'passed',
           'passed',
           'failed',
