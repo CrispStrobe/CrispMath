@@ -5,6 +5,31 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Seventh independent mathematical audit
+
+- [x] Freeze fifty fresh references before app outputs; preserve initial Linux
+  34/50, packaged macOS 33/50 and WASM 31/50 findings unchanged.
+- [x] Repair complex branches/conjugation, original equation holes, logarithmic
+  endpoint integration, irrational poles and polynomial absolute-value calculus.
+- [x] Preserve exact scientific constants/matrix cells, readable singular errors,
+  stable statistical tails and shared erg/atm dimensions with negative controls.
+- [x] Repair scientific worksheet badges/dependencies/substitution/function
+  templates and recognize builtin conjugation.
+- [x] Pass 5,648 unit/widget tests (eight skips), clean analysis, 404 focused
+  regressions, release/debug browser, four performance gates and twelve web views.
+- [x] Pass all 587 runtime checks on Linux, WASM and packaged macOS at b299ab1.
+- [x] Pass immutable-bundle production parity, all 64 tooling controls and
+  corrected actual desktop/phone worksheets/statistics (54 new entries/four
+  edits/eight statistics checks).
+- [x] Pass cumulative Pages/Vercel checks: 587 runtime cases, 214 worksheet
+  entries, 22 binding edits and eight statistics checks on each deployment.
+- [x] Capture 33 final-source populated iPhone/iPad/native macOS views; visually
+  review four selected graph/worksheet images.
+- [x] Upload signed build 18 after live gates; verify Apple VALID, external beta
+  APPROVED and Public Beta IN_BETA_TESTING without App Review submission.
+
+See [round-seven evidence](docs/round7-math-audit-50.md).
+
 ## Sixth independent mathematical audit
 
 - [x] Freeze fifty fresh hand-derived references and preserve initial native/macOS

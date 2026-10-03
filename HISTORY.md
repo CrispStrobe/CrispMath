@@ -1,3 +1,50 @@
+## 2026-10-03 — Seventh independent audit, exact inputs and stable tails
+
+Freeze fifty independently derived questions before app outputs. Initial Linux,
+packaged macOS and WASM results are 34/50, 33/50 and 31/50 respectively; nineteen
+distinct questions fail on at least one platform, while the previous 537 pass.
+Preserve all references and initial evidence. Repair shared bounded proofs for
+complex conjugation/principal powers, forbidden equation roots, affine logarithm
+endpoints, irrational poles, polynomial absolute-value calculus and rationalized
+infinity limits. Preserve scientific literals and decimal matrix cells as exact
+rationals before CAS/FFI; certify closed rational matrix evidence and singular
+errors. Replace cancellation-prone t tails and chi-square integration with stable
+survival/gamma routines shared by hypothesis tests. Add erg/atm in the dimension
+catalog. Actual worksheets reveal additional scientific-token and builtin-name
+scope gaps; fix shared name/dependency/substitution/template scanning with reactive
+and negative controls rather than editing the frozen answers.
+
+Final production b299ab1 has 366 files and fingerprint
+0aab8294a63dddff32cd7ef62a6f473aab4fd8480f30525dc7ca0359c51e03e5.
+Native Linux, packaged Mac and WASM each pass all 587 runtime cases, including
+50/50 new questions. Full feature CI37120276425 passes clean analysis, 5,648
+unit/widget tests with eight skips, 404 focused regressions, release/debug
+browser checks, four same-host paired performance gates and twelve web views.
+Helper-only abf3d3e preserves exact production parity; immutable-bundle probe
+37123152551 passes all 64 tooling controls, 54 new actual worksheet entries,
+four edits and eight statistics checks on desktop/phone. Driver fixes wait for
+real field focus, read back both inputs, use actual semantic labels and accept
+equivalent lowercase imaginary notation with wrong-value/sign controls intact.
+Cumulative actual worksheet coverage is 214 entries and 22 binding-edit states.
+Final native gallery37121956172 passes 33 populated iPhone/iPad simulator/native
+Mac views; four graph/worksheet captures are visually reviewed. Full artifacts
+stay hosted; only small evidence and selected images are downloaded to CIFS.
+
+Pages37123153962 and Vercel37123155237 pass all runtime/live checks on abf3d3e.
+Signed build18 run37124118509 passes privacy/version/signature and exact
+production-source validation before upload. Apple processing is VALID and
+Internal Testers are assigned. External verification37124700154 confirms build
+f26bb783-4db8-4916-9b2d-66fee7405d2f APPROVED and Public Beta IN_BETA_TESTING,
+with external group assigned and submittedDate null. No App Review submission
+occurs. Public beta https://testflight.apple.com/join/E6HdVhTx now offers build18.
+
+[round-seven audit](docs/round7-math-audit-50.md) records initial evidence,
+bounded coverage, final runs and release state. Task-only cold archival frees
+115.93 MiB net by hashing and relocating 4,462 historical files with readable
+symlinks. Shared fast storage remains constrained; no other project or process
+is touched. Physical-device, handwriting accuracy and App Review 4.3(a) remain
+separate open items.
+
 ## 2026-10-03 — Fifth independent audit, build 16 and truthful beta metadata
 
 Freeze another 50 independently derived questions. Linux, WASM and packaged
