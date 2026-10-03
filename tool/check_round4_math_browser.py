@@ -18,8 +18,11 @@ controls.CASES = [
     ('quarter-negative-square', '(0.25)^(-2)', '16'),
     ('square-root-rational-ratio', 'sqrt(49)/sqrt(121)', '7/11'),
     ('quadratic-logarithm-integral', 'integrate(2*x/(x^2+4),x,0,2)', None),
-    ('exponential-logarithmic-bound', 'integrate(exp(-2*x),x,0,ln(2))', '3/8'),
+    ('global-limit-x', 'x=9', '9'),
     ('scaled-tangent-cubic-limit', 'limit((tan(2*x)-2*x)/x^3,x,0)', '8/3'),
+    ('exponential-logarithmic-bound', 'integrate(exp(-2*x),x,0,ln(2))', '3/8'),
+    ('unit-name-N', 'N=99', '99'),
+    ('unit-name-cm', 'cm=2', '2'),
     ('pressure-square-centimetres', '1 kPa in N/cm^2', '0.1 N/cm²'),
 ]
 
@@ -36,6 +39,7 @@ def validate_result(case, line):
         # in N/cm, kPa or an unlabelled scalar does not satisfy this conversion.
         match = re.fullmatch(r'([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+N/cm²', result)
         assert match and abs(float(match[1]) - 0.1) < 1e-10, (case, line)
+        assert not line.get('f'), (case, line)
         return
 
     if case_id == 'quadratic-logarithm-integral':
@@ -59,7 +63,8 @@ def validate_result(case, line):
         # Demand the exact rational result without requiring the CAS to use
         # the rational frontend's accuracy classification.
         assert result == '7/11', (case, line)
-    if 'integral' in case_id or case_id == 'exponential-logarithmic-bound':
+    if ('integral' in case_id or case_id in {
+            'exponential-logarithmic-bound', 'scaled-tangent-cubic-limit'}):
         # Dummy x belongs to the definite integral, not to the worksheet's
         # free-variable controls. Do not label numerical quadrature exact.
         assert not line.get('f'), (case, line)

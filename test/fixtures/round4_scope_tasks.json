@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent scope references: 1 kPa=0.1 N/cm²; tan(2x)=2x+8x³/3+O(x⁵); lim a*t² at t=b is a*b². Binder and unit tokens retain lexical meaning under global collisions.",
+  "tasks": [
+    {
+      "id": "round4-scope-01",
+      "kind": "document",
+      "title": "Pressure symbols shadow unrelated worksheet globals",
+      "lines": ["N=99", "cm=2", "kPa=7", "1 kPa in N/cm^2"],
+      "edit": {"index": 0, "source": "N=123"},
+      "expected": ["123", "2", "7", "0.1 N/cm²"],
+      "expectedFreeVars": [[], [], [], []]
+    },
+    {
+      "id": "round4-scope-02",
+      "kind": "document",
+      "title": "Limit dummy shadows a same-name worksheet scalar",
+      "lines": ["x=9", "limit((tan(2*x)-2*x)/x^3,x,0)"],
+      "expected": ["9", "8/3"],
+      "expectedFreeVars": [[], []]
+    },
+    {
+      "id": "round4-scope-03",
+      "kind": "document",
+      "title": "Limit coefficient and same-name approach point remain reactive",
+      "lines": ["a=2", "x=9", "limit(a*x^2,x,x)"],
+      "edit": {"index": 1, "source": "x=3"},
+      "expected": ["2", "3", "18"],
+      "expectedFreeVars": [[], [], []]
+    }
+  ]
+}

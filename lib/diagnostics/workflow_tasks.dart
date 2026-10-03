@@ -1,4 +1,5 @@
 import 'workflow_modules.dart';
+import '../engine/unit_expression.dart';
 import '../engine/calculator_engine.dart';
 import '../engine/result_evidence.dart';
 import '../engine/graph_sampling.dart';
@@ -129,11 +130,25 @@ class WorkflowTasks {
             dispatcher: documentDispatcher ?? (s) async => engine.evaluate(s),
             detailedDispatcher: documentDispatcher == null
                 ? (source) async {
+                    var unit = UnitExpressionEvaluator.tryEvaluate(source);
+                    if (unit == null && source.contains('(')) {
+                      // Worksheet substitutions wrap scalar quantities; mirror
+                      // the application's unit route without importing Flutter.
+                      unit = UnitExpressionEvaluator.tryEvaluate(
+                          source.replaceAll('(', '').replaceAll(')', ''));
+                    }
+                    if (unit != null) {
+                      return ComputedResult(unit, const ResultEvidence(
+                          ResultAccuracy.unknown, ComputationMethod.unitConversion));
+                    }
                     final integral = parseIntegralArguments(source.trim());
+                    final limit = parseLimitArguments(source.trim());
                     final computed = runEngineOpDetailed(
                         engine,
                         integral == null
-                            ? EngineOp('evaluate', source)
+                            ? limit == null
+                                ? EngineOp('evaluate', source)
+                                : EngineOp('limit', limit[0], limit[1], limit[2])
                             : EngineOp('integrate', integral[0], integral[1],
                                 integral.length == 4 ? integral[2] : null,
                                 integral.length == 4 ? integral[3] : null));

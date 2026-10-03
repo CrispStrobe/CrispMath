@@ -32,6 +32,99 @@ import 'unit_catalog.dart';
 import 'unit_converter.dart';
 
 class UnitExpressionEvaluator {
+  static final _syntaxSpanCache =
+      <String, List<({int start, int end})>>{};
+  static final _syntaxWord = RegExp(r'[A-Za-z_][A-Za-z0-9_]*');
+  static final _syntaxNumber =
+      RegExp(r'(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?');
+
+  /// Identifier spans owned by recognized inline unit syntax. Magnitude
+  /// identifiers remain worksheet references; placeholder 1 only validates
+  /// their grammar positions and is never an evaluation result.
+  static List<({int start, int end})> syntaxIdentifierSpans(String source) {
+    if (source.length > 2048 || source.contains('(')) return const [];
+    final cached = _syntaxSpanCache[source];
+    if (cached != null) return cached;
+    List<({int start, int end})> recognize() {
+      // Arithmetic documents avoid constructing/scanning the unit matcher.
+      if (!RegExp(r'\s|\d[A-Za-zµμ°]').hasMatch(source)) return const [];
+      final spans = <({int start, int end})>[];
+      final candidate = StringBuffer();
+      void keepWords(int start, int end) {
+        for (final word in _syntaxWord.allMatches(source.substring(start, end))) {
+          spans.add((start: start + word.start, end: start + word.end));
+        }
+      }
+      var position = 0;
+      while (position < source.length) {
+        final number = _syntaxNumber.matchAsPrefix(source, position);
+        if (number != null) {
+          candidate.write(number[0]);
+          // e/E belongs to the numerical literal, not to document scope.
+          keepWords(position, number.end);
+          position = number.end;
+          continue;
+        }
+        final character = source[position];
+        if (' \t\n+-*/'.contains(character)) {
+          candidate.write(character);
+          position++;
+          continue;
+        }
+        final word = _syntaxWord.matchAsPrefix(source, position);
+        if (word?[0] == 'in') {
+          candidate.write('in');
+          keepWords(position, word!.end);
+          position = word.end;
+          continue;
+        }
+        var afterWord = word?.end ?? position;
+        while (afterWord < source.length &&
+            ' \t\n'.contains(source[afterWord])) {
+          afterWord++;
+        }
+        var previous = position - 1;
+        while (previous >= 0 && ' \t\n'.contains(source[previous])) {
+          previous--;
+        }
+        final scalarPosition = word != null &&
+            ((previous >= 0 && '*/'.contains(source[previous])) ||
+                (previous < 0 && afterWord < source.length &&
+                    source[afterWord] == '*'));
+        final followedByUnit = word != null && afterWord > word.end &&
+            _syntaxWord.matchAsPrefix(source, afterWord)?[0] != 'in' &&
+            _tryMatchUnitAt(source, afterWord, _symbolsLongestFirst) != null;
+        // Unit-like scalar names in quantity positions stay scalar references:
+        // both m's in `v km + m m` have different lexical roles.
+        if (followedByUnit || scalarPosition) {
+          candidate.write('1');
+          position = word.end;
+          continue;
+        }
+        final unit = _tryMatchUnitAt(source, position, _symbolsLongestFirst);
+        if (unit != null) {
+          candidate.write(source.substring(position, unit.endIndex));
+          keepWords(position, unit.endIndex);
+          position = unit.endIndex;
+        } else if (word != null) {
+          candidate.write('1');
+          position = word.end;
+        } else {
+          return const [];
+        }
+      }
+      if (tryEvaluate(candidate.toString()) == null) return const [];
+      return List.unmodifiable(spans);
+    }
+
+    final spans = recognize();
+    if (_syntaxSpanCache.length >= 256) {
+      _syntaxSpanCache.remove(_syntaxSpanCache.keys.first);
+    }
+    _syntaxSpanCache[source] = spans;
+    return spans;
+  }
+
   /// Try to evaluate [expression] as a unit-arithmetic expression.
   /// Returns the formatted result string on success, or null when
   /// the expression doesn't look like one (caller should fall back
@@ -272,16 +365,8 @@ class UnitExpressionEvaluator {
     return s;
   }
 
-  /// Tokenize [s]. Returns null on any unrecognized token — the caller
-  /// will fall through to the scalar evaluator. A successful tokenize
-  /// is the signal that "this looks like a unit expression."
-  static List<_Token>? _tokenize(String s) {
-    final out = <_Token>[];
-    var i = 0;
-    final n = s.length;
-
-    // Build a list of unit symbols longest-first so multi-char units
-    // (m/s, km/h, mph) match before the bare alternatives.
+  // Catalog and prefix spellings are immutable; share the matcher order.
+  static final List<String> _symbolsLongestFirst = (() {
     final symbols = <String>[
       for (final dim in UnitCatalog.allDimensions())
         for (final u in UnitCatalog.unitsFor(dim)) u.symbol,
@@ -298,6 +383,16 @@ class UnitExpressionEvaluator {
       ...DerivedUnits.prefixedSymbols(),
     ];
     symbols.sort((a, b) => b.length.compareTo(a.length));
+    return List<String>.unmodifiable(symbols);
+  })();
+
+  /// Tokenize [s]. Returns null on any unrecognized token — the caller
+  /// will fall through to the scalar evaluator. A successful tokenize
+  /// is the signal that "this looks like a unit expression."
+  static List<_Token>? _tokenize(String s) {
+    final out = <_Token>[];
+    var i = 0;
+    final n = s.length;
 
     while (i < n) {
       final c = s[i];
@@ -359,7 +454,7 @@ class UnitExpressionEvaluator {
         // Special-case: `/` might be the leading character of a unit
         // symbol like `m/s`. Try to match a unit first.
         if (c == '/') {
-          final matched = _tryMatchUnitAt(s, i, symbols);
+          final matched = _tryMatchUnitAt(s, i, _symbolsLongestFirst);
           if (matched != null) {
             // No number ahead of this unit means it's a stray slash —
             // bail out so the scalar evaluator handles it.
@@ -371,7 +466,7 @@ class UnitExpressionEvaluator {
         continue;
       }
       // Unit symbol (longest match wins).
-      final matched = _tryMatchUnitAt(s, i, symbols);
+      final matched = _tryMatchUnitAt(s, i, _symbolsLongestFirst);
       if (matched != null) {
         out.add(matched.unit != null
             ? _UnitToken.single(matched.unit!)

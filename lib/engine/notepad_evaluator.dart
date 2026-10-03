@@ -12,6 +12,7 @@ import 'result_evidence.dart';
 
 import 'notepad.dart';
 import 'numeric_fallback.dart';
+import 'unit_expression.dart';
 import 'symbolic_expr.dart';
 import '../services/integral_arguments.dart';
 
@@ -493,10 +494,7 @@ class NotepadEvaluator {
 
     // Build the line's scope view + free vars.
     final body = parsed.body ?? '';
-    final referencedNames = {
-      ...identifierWordsIn(body),
-      ..._scopeIdentifierRegex.allMatches(body).map((match) => match[0]!),
-    };
+    final referencedNames = _unboundIdentifierWords(body);
     var scope = indexedScope == null
         ? buildNotepadScope(doc,
             externalScope: externalScope,

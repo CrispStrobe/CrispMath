@@ -537,12 +537,14 @@ class GraphingScreenState extends State<GraphingScreen>
                         child: const Text('Apply bounds'))
                   ],
                 )));
-    // Wait for the route animation before releasing its text controllers.
+    // Apply accepted bounds immediately: another graph command can run while
+    // the dismissed dialog animates out and must see the new viewport.
+    if (mounted && result != null) _applyBounds(result);
+    // Only controller disposal waits for the route animation to finish.
     await Future<void>.delayed(const Duration(milliseconds: 300));
     for (final c in controllers) {
       c.dispose();
     }
-    if (mounted && result != null) _applyBounds(result);
   }
 
   Future<void> _fitGraph() async {

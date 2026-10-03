@@ -194,11 +194,13 @@ jobs:
           mkdir -p task-results
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
           status=0
-          for area in algebra numeric; do
+          for area in algebra numeric scope; do
+            count=25
+            if [ "$area" = scope ]; then count=3; fi
             cat "test/fixtures/round4_${area}_tasks.json" | \
               CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
               CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round4-${area}.log" || status=1
-            python tool/extract_workflow_report.py --log "task-results/macos-round4-${area}.log" --output "task-results/macos-round4-${area}.json" --expected-count 25 || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round4-${area}.log" --output "task-results/macos-round4-${area}.json" --expected-count "$count" || status=1
           done
           exit "$status"
 

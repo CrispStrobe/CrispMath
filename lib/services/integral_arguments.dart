@@ -15,6 +15,17 @@ List<String>? parseIntegralArguments(String source) {
   return args;
 }
 
+/// A limit binds its variable in the expression, with an unbound approach point.
+/// Nested argument commas are retained; malformed declarations decline.
+List<String>? parseLimitArguments(String source) {
+  final call = source.trim();
+  if (!call.startsWith('limit(') || !call.endsWith(')')) return null;
+  final args = _split(call.substring(6, call.length - 1));
+  if (args == null || args.length != 3 ||
+      !RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(args[1])) return null;
+  return args;
+}
+
 List<String>? _split(String body) {
   final stack = <String>[];
   final args = <String>[];

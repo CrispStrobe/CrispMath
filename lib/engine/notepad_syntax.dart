@@ -585,10 +585,10 @@ String? preprocessNotepadLine(
   Map<String, NotepadDocument>? allDocs,
 }) {
   if (parsed.body == null) return null;
-  // Definite-integral dummy variables are lexical bindings, not document
-  // values. Protect them before function expansion and scalar substitution;
-  // bounds and occurrences outside the integral still use document scope.
-  final protected = _protectDefiniteIntegralBindings(parsed.body!, scope);
+  // Calculus dummy variables and recognized unit tokens own their syntax.
+  // Protect them before function expansion and scalar substitution; bounds,
+  // limit points and quantity magnitudes still use document scope.
+  final protected = _protectLexicalSyntaxBindings(parsed.body!, scope);
   var out = protected.source;
   out = expandNotepadFunctionCalls(out, doc);
 
@@ -753,14 +753,20 @@ Set<String> identifierWordsIn(String source) {
   return out;
 }
 
-/// Word spans bound by a definite integrate(expr,var,lo,hi) or tuple call.
+/// Word spans owned by definite integrals, limits and inline unit syntax.
 /// Invalid/indefinite calls do not bind away identifiers. Positions let the
-/// same name remain free when used in a bound or outside the integral.
-Map<int, ({int end, String name})> _definiteIntegralBindings(String source) {
-  final bindings = <int, ({int end, String name})>{};
-  if (!source.contains('integrate')) return bindings;
+/// same name remain free in bounds, limit points or quantity magnitudes.
+Map<int, ({int end, String name})> _lexicalSyntaxBindings(String source) {
+  final bindings = <int, ({int end, String name})>{
+    for (final span in UnitExpressionEvaluator.syntaxIdentifierSpans(source))
+      span.start: (end: span.end, name: source.substring(span.start, span.end)),
+  };
+  if (!source.contains('integrate') && !source.contains('limit')) {
+    return bindings;
+  }
   for (final call in _notepadCallPattern.allMatches(source)) {
-    if (call[1] != 'integrate') continue;
+    final name = call[1];
+    if (name != 'integrate' && name != 'limit') continue;
     final open = call.end - 1;
     var depth = 1;
     var end = open + 1;
@@ -770,8 +776,13 @@ Map<int, ({int end, String name})> _definiteIntegralBindings(String source) {
       if (depth == 0) break;
     }
     if (depth != 0) continue;
-    final args = parseIntegralArguments('integrate${source.substring(open, end + 1)}');
-    if (args == null || args.length != 4) continue;
+    final input = '$name${source.substring(open, end + 1)}';
+    final args = name == 'integrate'
+        ? parseIntegralArguments(input)
+        : parseLimitArguments(input);
+    if (args == null || (name == 'integrate' && args.length != 4)) {
+      continue;
+    }
     List<({int start, int end})> ranges(int start, int finish) {
       var position = start;
       final result = <({int start, int end})>[];
@@ -817,15 +828,15 @@ Map<int, ({int end, String name})> _definiteIntegralBindings(String source) {
 }
 
 Set<String> _unboundIdentifierWords(String source) {
-  final bindings = _definiteIntegralBindings(source);
+  final bindings = _lexicalSyntaxBindings(source);
   return {
     for (final word in _identifierWordRegex.allMatches(source))
       if (!bindings.containsKey(word.start)) word[0]!
   };
 }
 
-class _ProtectedIntegralBindings {
-  const _ProtectedIntegralBindings(this.source, this.replacements);
+class _ProtectedSyntaxBindings {
+  const _ProtectedSyntaxBindings(this.source, this.replacements);
   final String source;
   final Map<String, String> replacements;
   String restore(String value) {
@@ -836,10 +847,10 @@ class _ProtectedIntegralBindings {
   }
 }
 
-_ProtectedIntegralBindings _protectDefiniteIntegralBindings(
+_ProtectedSyntaxBindings _protectLexicalSyntaxBindings(
     String source, Map<String, String> scope) {
-  final bindings = _definiteIntegralBindings(source);
-  if (bindings.isEmpty) return _ProtectedIntegralBindings(source, const {});
+  final bindings = _lexicalSyntaxBindings(source);
+  if (bindings.isEmpty) return _ProtectedSyntaxBindings(source, const {});
   final starts = bindings.keys.toList()..sort();
   final output = StringBuffer();
   final replacements = <String, String>{};
@@ -860,7 +871,7 @@ _ProtectedIntegralBindings _protectDefiniteIntegralBindings(
     cursor = binding.end;
   }
   output.write(source.substring(cursor));
-  return _ProtectedIntegralBindings(output.toString(), replacements);
+  return _ProtectedSyntaxBindings(output.toString(), replacements);
 }
 
 /// In-document dependencies for a parsed line: the subset of
@@ -890,10 +901,8 @@ Set<String> dependenciesOfLine(
 /// neither a scope name nor a reserved CAS function / constant.
 /// Surfaced by the UI as the `free: x, y` tag (decision #15).
 ///
-/// Note: unit symbols (`km`, `mph`, etc.) currently slip through
-/// as "free" since the unit catalog isn't consulted at this layer.
-/// Phase 6 wires units; if needed, a future refinement subtracts
-/// known unit symbols here.
+/// Calculus binders and tokens in recognized inline unit syntax are excluded;
+/// ordinary identifiers with unit-like spellings remain mathematical names.
 Set<String> freeVariablesOfLine(
   ParsedNotepadLine parsed,
   Set<String> scopeKeys,

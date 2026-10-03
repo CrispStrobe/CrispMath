@@ -29,6 +29,14 @@ void main() {
       expect(parseIntegralArguments(source), isNull, reason: source);
     }
   });
+  test('limits preserve nested points and reject invalid variable declarations', () {
+    expect(parseLimitArguments('limit((sin(x)-x)/x^3,x,min(0,1))'),
+        ['(sin(x)-x)/x^3', 'x', 'min(0,1)']);
+    for (final source in ['limit(x,x)', 'limit(x,x,,1)', 'limit(x,x+1,0)',
+      'limit(x,(x,0))', 'limit(x,x,min(0,1])', 'limit(x,,0)']) {
+      expect(parseLimitArguments(source), isNull, reason: source);
+    }
+  });
   test('worksheet routes both forms with bounds and rejects a lone bound',
       () async {
     final routed = <List<String?>>[];
