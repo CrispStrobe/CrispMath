@@ -16,6 +16,8 @@ void main() {
       'x/(1+I)-1': ['1+I'],
       'I*(x-2)^2': ['2'],
       '0*x^2+I*x+1': ['I'],
+      'I*x^2-I*x^2+I*x+1': ['I'],
+      'I*x^2-I*x^2+x+I': ['-I'],
     };
     for (final entry in references.entries) {
       expect(ComplexQuadraticSolver.solve(entry.key, 'x'),
@@ -23,6 +25,8 @@ void main() {
     }
     expect(ComplexQuadraticSolver.solve('I*y^2+2*y-I', 'y'), ['I']);
     expect(ComplexQuadraticSolver.solve('I+1', 'x'), isEmpty);
+    expect(ComplexQuadraticSolver.solve('I*x-I*x+1', 'x'), isEmpty);
+    expect(ComplexQuadraticSolver.solve('I*x-I*x', 'x'), isNull);
     expect(ComplexQuadraticSolver.solve('I-I', 'x'), isNull,
         reason: 'An identically zero equation cannot be represented by finite roots');
     final engine = CalculatorEngine();

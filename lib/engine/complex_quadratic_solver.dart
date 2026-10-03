@@ -31,7 +31,8 @@ class ComplexQuadraticSolver {
         if (a.length + b.length - 2 > 2) {
           throw const FormatException('Complex polynomial degree budget');
         }
-        final result = List.filled(a.length + b.length - 1, _Gaussian.zero);
+        final result = List.filled(a.length + b.length - 1, _Gaussian.zero,
+            growable: true);
         for (var i = 0; i < a.length; i++) {
           for (var j = 0; j < b.length; j++) {
             result[i + j] = result[i + j] + a[i] * b[j];
@@ -58,7 +59,7 @@ class ComplexQuadraticSolver {
             final next = walk(term, depth + 1);
             final combined = List.filled(
                 result.length > next.length ? result.length : next.length,
-                _Gaussian.zero);
+                _Gaussian.zero, growable: true);
             for (var j = 0; j < combined.length; j++) {
               combined[j] = (j < result.length ? result[j] : _Gaussian.zero) +
                   (j < next.length ? next[j] : _Gaussian.zero);
