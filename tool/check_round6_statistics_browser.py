@@ -56,7 +56,7 @@ async def real_click(page, locator, *, horizontal=False):
             state = {}
         width,height = page.viewport_size['width'],page.viewport_size['height']
         if horizontal:
-            descriptive = page.get_by_text('Descriptive', exact=True).first
+            descriptive = page.get_by_label('Descriptive', exact=True).first
             box = await descriptive.bounding_box()
             assert box, 'Statistics tab bar must have actual geometry'
             await page.mouse.move(width-30, box['y']+box['height']/2)
@@ -69,9 +69,10 @@ async def real_click(page, locator, *, horizontal=False):
 
 
 async def check_hypothesis(page, case_id, inputs, references, item, output, width):
-    await real_click(page, page.get_by_text('Tests', exact=True), horizontal=True)
+    await real_click(page, page.get_by_label('Tests', exact=True), horizontal=True)
     choice = 'χ² goodness-of-fit' if case_id == 'chi-square-empty-bin' else 'One-sample t'
-    await real_click(page, page.get_by_text(choice, exact=True))
+    await real_click(page, page.get_by_label(choice, exact=True).or_(
+        page.get_by_text(choice, exact=True)).first)
     for label, value in inputs.items():
         field = page.get_by_role('textbox', name=re.compile('^'+re.escape(label)))
         await real_click(page, field)

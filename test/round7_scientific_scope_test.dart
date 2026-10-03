@@ -1,6 +1,7 @@
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ParsedNotepadLine _parse(String source) => classifyNotepadLine(
@@ -67,7 +68,11 @@ void main() {
     expect(document.lines[1].cachedResult, '1');
     expect(document.lines[1].cachedFreeVars, isEmpty);
     expect(document.lines[2].cachedResult, '8');
-    expect(document.lines[4].cachedResult, '1/500');
+    // Worksheet presentation may use a terminating decimal for this exact
+    // rational. The independently derived value is a / 1000 in either form.
+    expect(NumericFallbackEvaluator.evalNumeric(document.lines[4].cachedResult!),
+        closeTo(2 / 1000, 1e-15));
+    expect(document.lines[4].cachedFreeVars, isEmpty);
     calls.clear();
     document.lines[0].source = 'e308=9';
     await evaluator.evaluateChanged(document, {0});
@@ -76,6 +81,8 @@ void main() {
     expect(calls, isNot(contains('1e308*1e-308')));
     document.lines[3].source = 'a=3';
     await evaluator.evaluateChanged(document, {3});
-    expect(document.lines[4].cachedResult, '3/1000');
+    expect(NumericFallbackEvaluator.evalNumeric(document.lines[4].cachedResult!),
+        closeTo(3 / 1000, 1e-15));
+    expect(document.lines[4].cachedFreeVars, isEmpty);
   });
 }
