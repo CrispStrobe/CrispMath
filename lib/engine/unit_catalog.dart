@@ -689,6 +689,7 @@ class UnitCatalog {
     'c': 1e-2,
     'm': 1e-3,
     'μ': 1e-6,
+    'µ': 1e-6, // Unicode micro sign, commonly pasted instead of Greek mu
     'u': 1e-6, // ASCII alternative for μ
     'n': 1e-9,
     'p': 1e-12,
@@ -705,6 +706,7 @@ class UnitCatalog {
     'm', // metre
     's', // second
     'g', // gram
+    'L', // litre, including millilitres and microlitres
     'K', // kelvin
     'rad', // radian
   };

@@ -61,9 +61,9 @@ Future<dynamic> runWorkflowModule(
     case 'regression':
       final result = Statistics.linearFit(numbers('xs'), numbers('ys'));
       return {
-        'slope': result.slope,
-        'intercept': result.intercept,
-        'rSquared': result.rSquared
+        'slope': result.slope.isFinite ? result.slope : null,
+        'intercept': result.intercept.isFinite ? result.intercept : null,
+        'rSquared': result.rSquared.isFinite ? result.rSquared : null
       };
     case 'oneSampleT':
     case 'pairedT':

@@ -8,6 +8,46 @@ import 'symbolic_web.dart';
 class RationalIntegralDomain {
   static List<double>? polesWithin(
       String source, String variable, String lower, String upper) {
+    final a = NumericFallbackEvaluator.evalNumeric(lower);
+    final b = NumericFallbackEvaluator.evalNumeric(upper);
+    if (a == null || b == null || !a.isFinite || !b.isFinite) return null;
+    final quotient = _reducedQuotient(source, variable);
+    if (quotient == null) return null;
+    final reduced = quotient.denominator;
+    if (reduced.degree == 0) return <double>[];
+    final roots = SymbolicWeb.solveList(reduced.toString(), variable);
+    if (roots == null) return null;
+    final from = a < b ? a : b;
+    final to = a < b ? b : a;
+    final poles = <double>[];
+    for (final root in roots) {
+      if (RegExp(r'\b[Ii]\b').hasMatch(root)) continue; // Nonreal root.
+      final value = NumericFallbackEvaluator.evalNumeric(root);
+      if (value == null || !value.isFinite) return null;
+      if (value >= from && value <= to) poles.add(value);
+    }
+    return poles;
+  }
+
+  /// Continuous extension through exactly cancelled rational holes.
+  /// Only definite integration may use this after checking genuine poles;
+  /// the original expression still defines its own excluded input points.
+  /// Null preserves the source when unsupported or no common factor exists.
+  static String? reducedExpression(String source, String variable) {
+    final quotient = _reducedQuotient(source, variable);
+    if (quotient == null || !quotient.cancelled) return null;
+    final numerator = quotient.numerator;
+    final denominator = quotient.denominator;
+    if (denominator.degree == 0) {
+      return numerator
+          .scale(Rational.one / denominator.coeffs.single)
+          .toString();
+    }
+    return '($numerator)/($denominator)';
+  }
+
+  static ({Polynomial numerator, Polynomial denominator, bool cancelled})?
+      _reducedQuotient(String source, String variable) {
     if (source.length > 512 ||
         !RegExp(r'^[A-Za-z_][A-Za-z_0-9]*$').hasMatch(variable)) {
       return null;
@@ -28,9 +68,6 @@ class RationalIntegralDomain {
       if (!wholeWrapper || depth != 0) break;
       quotient = quotient.substring(1, quotient.length - 1).trim();
     }
-    final a = NumericFallbackEvaluator.evalNumeric(lower);
-    final b = NumericFallbackEvaluator.evalNumeric(upper);
-    if (a == null || b == null || !a.isFinite || !b.isFinite) return null;
     final domain = RationalDomain.inspect(quotient, variable: variable);
     if (domain == null) return null;
     var depth = 0;
@@ -57,19 +94,10 @@ class RationalIntegralDomain {
     final num = Polynomial.fromCoeffs(n.coeffs, variable);
     final den = Polynomial.fromCoeffs(d.coeffs, variable);
     final common = Polynomial.gcd(num, den);
-    final reduced = den.divmod(common).quotient;
-    if (reduced.degree == 0) return <double>[];
-    final roots = SymbolicWeb.solveList(reduced.toString(), variable);
-    if (roots == null) return null;
-    final from = a < b ? a : b;
-    final to = a < b ? b : a;
-    final poles = <double>[];
-    for (final root in roots) {
-      if (RegExp(r'\b[Ii]\b').hasMatch(root)) continue; // Nonreal root.
-      final value = NumericFallbackEvaluator.evalNumeric(root);
-      if (value == null || !value.isFinite) return null;
-      if (value >= from && value <= to) poles.add(value);
-    }
-    return poles;
+    return (
+      numerator: num.divmod(common).quotient,
+      denominator: den.divmod(common).quotient,
+      cancelled: common.degree > 0,
+    );
   }
 }

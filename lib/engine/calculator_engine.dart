@@ -1484,9 +1484,14 @@ class CalculatorEngine {
       return 'Error: integration interval contains a divergent pole '
           'at $variable = ${poles.join(', ')}';
     }
+    // Integrate the exact continuous extension, rather than sampling an
+    // original 0/0 hole. Genuine poles were checked before this substitution.
+    final integrand =
+        RationalIntegralDomain.reducedExpression(expression, variable) ??
+            expression;
     // 1. Exact Dart polynomial definite integral.
     final polyDef =
-        SymbolicWeb.definiteIntegral(expression, variable, lower, upper);
+        SymbolicWeb.definiteIntegral(integrand, variable, lower, upper);
     if (polyDef != null) {
       lastResultEvidence = ResultEvidence(
           RegExp(r'^[+-]?\d+(?:/\d+)?$').hasMatch(polyDef.trim())
@@ -1499,7 +1504,7 @@ class CalculatorEngine {
     //    Finite real endpoints use Dart arithmetic to avoid native crashes
     //    evaluating composed logarithm/absolute-value antiderivatives.
     if (bridge != null) {
-      final anti = StepEngine.antiderivative(expression, variable, this);
+      final anti = StepEngine.antiderivative(integrand, variable, this);
       if (anti != null) {
         final ftc =
             _definiteFromAntiderivativeString(anti, variable, lower, upper);
@@ -1510,7 +1515,7 @@ class CalculatorEngine {
         }
       }
       // 3. Numerical Simpson fallback.
-      return _definiteNumerical(bridge, expression, variable, lower, upper);
+      return _definiteNumerical(bridge, integrand, variable, lower, upper);
     }
     return 'Error: integrate requires native library';
   }

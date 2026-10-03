@@ -179,16 +179,20 @@ class Statistics {
       sumY2 += ys[i] * ys[i];
     }
     final denom = n * sumX2 - sumX * sumX;
-    if (denom == 0) {
+    if (denom == 0 || xs.every((value) => value == xs.first)) {
       // All x's identical — regression undefined.
       return LinearFit(
-          slope: double.nan, intercept: double.nan, rSquared: 0, count: n);
+          slope: double.nan, intercept: double.nan, rSquared: double.nan, count: n);
+    }
+    if (ys.every((value) => value == ys.first)) {
+      return LinearFit(
+          slope: 0, intercept: ys.first, rSquared: double.nan, count: n);
     }
     final slope = (n * sumXY - sumX * sumY) / denom;
     final intercept = (sumY - slope * sumX) / n;
     final denomY = n * sumY2 - sumY * sumY;
     final r2 = denomY == 0
-        ? 1.0 // y is constant; treat fit as exact (slope=0).
+        ? double.nan // Constant response has zero total variation: R² is undefined.
         : math.pow(n * sumXY - sumX * sumY, 2) / (denom * denomY);
     return LinearFit(
       slope: slope,
@@ -303,7 +307,9 @@ class Statistics {
       ssRes += math.pow(ys[i] - yPred, 2);
       ssTot += math.pow(ys[i] - yMean, 2);
     }
-    final r2 = ssTot == 0 ? 1.0 : 1.0 - ssRes / ssTot;
+    final r2 = ssTot == 0 || ys.every((value) => value == ys.first)
+        ? double.nan
+        : 1.0 - ssRes / ssTot;
 
     return PolynomialFit(
       coefficients: coeffs,

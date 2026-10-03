@@ -49,7 +49,10 @@ Physical iPhone/iPad testing is deferred to a separate session.
    photo/camera purpose strings and a signed-bundle privacy gate. Release CI
    `37028331142` passed: uploaded, Apple VALID, assigned to Internal Testers.
    External beta review submitted at 16:17 UTC; CI `37032322549` confirms
-   WAITING_FOR_REVIEW and Public Beta assignment. Await beta approval.
+   initially WAITING_FOR_REVIEW with Public Beta assignment. Read-only CI
+   `37092308470` on October 3 confirms beta review APPROVED and both internal/
+   external IN_BETA_TESTING; public beta is available. New math changes remain
+   outside uploaded build 13.
    Address 4.3(a) with truthful review evidence;
    final App Review follows the improvements and separate device tests.
 1. [x] Result provenance: identify exact/approximate results and computation

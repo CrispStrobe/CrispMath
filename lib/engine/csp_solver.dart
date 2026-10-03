@@ -704,7 +704,7 @@ class CspSolver {
         // `addLinearLeq` / `addLinearGeq` API which uses the same
         // bounds-consistency propagator the linear-arithmetic test
         // in the README exercises.
-        if (_addRepeatedProduct(problem, c, knownVars) ||
+        if (_addPolynomialConstraint(problem, c, knownVars) ||
             _addLinearNotEquals(problem, c, knownVars)) {
           continue;
         }
@@ -1133,45 +1133,102 @@ class CspSolver {
     return (vars: vars, coeffs: coeffs, op: op, bound: bound);
   }
 
-  /// The dependency's simple-product parser loses repeated factors after
-  /// collecting unique variable names: `x*x == 4` becomes `x == 4`.
-  /// Preserve factor multiplicity while passing unique names to the solver.
-  static bool _addRepeatedProduct(
+  /// Route flat integer polynomials around the dependency's text parser.
+  /// That parser drops repeated factors in products and rejects sums of
+  /// products. Linear inputs retain their dedicated propagator. This bounded
+  /// grammar supports signed sums of products of declared variables and integer
+  /// constants on either side, with no implicit multiplication or powers.
+  static bool _addPolynomialConstraint(
       csp.Problem problem, String source, Set<String> knownVars,
       {String? label}) {
-    final match = RegExp(
-            r'^\s*([A-Za-z_]\w*(?:\s*\*\s*[A-Za-z_]\w*)+)\s*(==|!=|<=|>=|<|>)\s*([+-]?\d+)\s*$')
-        .firstMatch(source);
-    if (match == null) return false;
-    final factors = match[1]!.split('*').map((s) => s.trim()).toList();
-    final names = factors.toSet().toList();
-    if (names.length == factors.length || !names.every(knownVars.contains)) {
+    if (source.length > 1024 ||
+        RegExp(r'[A-Za-z_0-9]\s+[A-Za-z_0-9]').hasMatch(source)) {
       return false;
     }
-    final bound = int.tryParse(match[3]!);
-    if (bound == null) return false;
-    bool satisfies(Map<String, dynamic> values) {
-      num product = 1;
-      for (final name in factors) {
-        product *= values[name] as num;
+    final text = source.replaceAll(RegExp(r'\s+'), '');
+    final comparison = RegExp(r'^(.+?)(==|!=|<=|>=|<|>)(.+)$')
+        .firstMatch(text);
+    if (comparison == null) {
+      return false;
+    }
+    final names = <String>{};
+    var nonlinear = false;
+    var factorCount = 0;
+    List<({BigInt coefficient, List<String> factors})>? parse(String side) {
+      final matches = RegExp(r'([+-]?)([^+-]+)').allMatches(side).toList();
+      if (matches.isEmpty || matches.length > 64 ||
+          matches.map((m) => m[0]!).join() != side) {
+        return null;
       }
-      return switch (match[2]) {
-        '==' => product == bound,
-        '!=' => product != bound,
-        '<=' => product <= bound,
-        '>=' => product >= bound,
-        '<' => product < bound,
-        '>' => product > bound,
+      final terms = <({BigInt coefficient, List<String> factors})>[];
+      for (final match in matches) {
+        var coefficient = match[1] == '-' ? -BigInt.one : BigInt.one;
+        final factors = <String>[];
+        final tokens = match[2]!.split('*');
+        factorCount += tokens.length;
+        if (factorCount > 128) {
+          return null;
+        }
+        for (final token in tokens) {
+          if (RegExp(r'^\d+$').hasMatch(token)) {
+            coefficient *= BigInt.parse(token);
+          } else if (RegExp(r'^[A-Za-z_]\w*$').hasMatch(token) &&
+              knownVars.contains(token)) {
+            factors.add(token);
+            names.add(token);
+          } else {
+            return null;
+          }
+        }
+        nonlinear |= factors.length > 1;
+        terms.add((coefficient: coefficient, factors: factors));
+      }
+      return terms;
+    }
+
+    final lhs = parse(comparison[1]!);
+    final rhs = parse(comparison[3]!);
+    if (lhs == null || rhs == null || !nonlinear) {
+      return false;
+    }
+    BigInt evaluate(
+        List<({BigInt coefficient, List<String> factors})> terms,
+        Map<String, dynamic> values) {
+      var sum = BigInt.zero;
+      for (final term in terms) {
+        var product = term.coefficient;
+        for (final name in term.factors) {
+          product *= BigInt.from(values[name] as int);
+        }
+        sum += product;
+      }
+      return sum;
+    }
+
+    bool satisfies(Map<String, dynamic> values) {
+      // N-ary predicates may be queried before every variable is assigned.
+      if (names.any((name) => values[name] == null)) {
+        return true;
+      }
+      final order = evaluate(lhs, values).compareTo(evaluate(rhs, values));
+      return switch (comparison[2]) {
+        '==' => order == 0,
+        '!=' => order != 0,
+        '<=' => order <= 0,
+        '>=' => order >= 0,
+        '<' => order < 0,
+        '>' => order > 0,
         _ => false,
       };
     }
 
-    if (names.length == 2) {
-      problem.addConstraint(names,
-          (dynamic a, dynamic b) => satisfies({names[0]: a, names[1]: b}),
+    final variables = names.toList();
+    if (variables.length == 2) {
+      problem.addConstraint(variables,
+          (dynamic a, dynamic b) => satisfies({variables[0]: a, variables[1]: b}),
           label: label);
     } else {
-      problem.addConstraint(names, satisfies, label: label);
+      problem.addConstraint(variables, satisfies, label: label);
     }
     return true;
   }
@@ -2652,7 +2709,7 @@ class CspSolver {
         -objConst,
       );
       for (final c in constraints) {
-        if (_addRepeatedProduct(problem, c, knownVars) ||
+        if (_addPolynomialConstraint(problem, c, knownVars) ||
             _addLinearNotEquals(problem, c, knownVars)) {
           continue;
         }
@@ -2778,7 +2835,7 @@ class CspSolver {
       for (var i = 0; i < constraints.length; i++) {
         final c = constraints[i];
         final label = 'C${i + 1}: $c';
-        if (_addRepeatedProduct(problem, c, knownVars, label: label) ||
+        if (_addPolynomialConstraint(problem, c, knownVars, label: label) ||
             _addLinearNotEquals(problem, c, knownVars, label: label)) {
           continue;
         }
@@ -2842,7 +2899,7 @@ class CspSolver {
       final knownVars = parsed.variables.keys.toSet();
       for (final c in parsed.constraints) {
         final label = c.label;
-        if (_addRepeatedProduct(problem, c.text, knownVars, label: label) ||
+        if (_addPolynomialConstraint(problem, c.text, knownVars, label: label) ||
             _addLinearNotEquals(problem, c.text, knownVars, label: label)) {
           continue;
         }
@@ -3001,7 +3058,8 @@ class CspSolver {
       final knownVars = parsed.variables.keys.toSet();
       for (final c in parsed.constraints) {
         final label = c.label;
-        if (_addLinearNotEquals(problem, c.text, knownVars, label: label)) {
+        if (_addPolynomialConstraint(problem, c.text, knownVars, label: label) ||
+            _addLinearNotEquals(problem, c.text, knownVars, label: label)) {
           continue;
         }
         final linear = _tryParseLinear(c.text, knownVars);

@@ -9,9 +9,12 @@ bundle and successful upload, Apple VALID processing and existing Internal
 Testers assignment for source `7247074`. This is TestFlight delivery evidence;
 no App Store review submission was made.
 Build 13 was subsequently [submitted to external TestFlight beta review](https://github.com/CrispStrobe/CrispMath/actions/runs/37032322549)
-on October 2 at 16:17 UTC. Apple reports WAITING_FOR_REVIEW and assignment to
-the existing Public Beta group is confirmed; external availability awaits
-approval. This beta submission does not resolve the earlier 4.3(a) rejection.
+on October 2 at 16:17 UTC, initially WAITING_FOR_REVIEW with Public Beta
+assignment confirmed. [Read-only API verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37092308470)
+on October 3 confirms beta review APPROVED and both internal and external
+IN_BETA_TESTING. The [public beta](https://testflight.apple.com/join/E6HdVhTx) is
+available. The later mathematical fixes are not in build 13. Beta approval
+does not resolve the earlier 4.3(a) rejection.
 Physical iPhone/iPad checks are explicitly deferred to another session.
 
 Apple asks for distinct functionality and accurate metadata in its
@@ -27,6 +30,13 @@ single preview; save a checkpoint, compare it and restore it; transfer the
 source worksheet through Files and recalculate its results locally.
 Calculator, worksheet, graph, checkpoint and export screens should show this
 connected workflow. The native URL bridge can create the same worksheet.
+
+The latest [33-image native gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37056297272)
+passed for source `c5955f2`, with 11 populated scenes each on iPhone/iPad
+simulators and the real native macOS application. Evaluated engineering
+worksheets, sampled graphs, tracing, value tables, export/history and visible
+handwriting are asserted and selected images are visually reviewed. See
+[the capture evidence and limitations](native-apple-gallery.md).
 
 The native gallery workflow captures actual iPhone/iPad simulator screens and
 retains CAS assertions (the derivative of sin(x) is cos(x); the integral of
