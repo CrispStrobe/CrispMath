@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent hand derivations before implementation/output inspection in docs/round8-math-algebra.md. Principal complex branches; ordinary real improper integrals, never principal values.",
+  "tasks": [
+    {
+      "id": "round8-algebra-01",
+      "kind": "engine",
+      "title": "Principal square roots multiply to a negative real",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(-9)*sqrt(-16)"
+      ],
+      "expected": "-12"
+    },
+    {
+      "id": "round8-algebra-02",
+      "kind": "engine",
+      "title": "Principal logarithm in the lower imaginary axis",
+      "operation": "evaluate",
+      "args": [
+        "ln(-I)"
+      ],
+      "expected": "-pi*I/2"
+    },
+    {
+      "id": "round8-algebra-03",
+      "kind": "engine",
+      "title": "Negative Gaussian power retains reciprocal signs",
+      "operation": "evaluate",
+      "args": [
+        "(1+I)^(-3)"
+      ],
+      "expected": "-1/4-I/4"
+    },
+    {
+      "id": "round8-algebra-04",
+      "kind": "engine",
+      "title": "Conjugation after a complex cube",
+      "operation": "evaluate",
+      "args": [
+        "conjugate((1-I)^3)"
+      ],
+      "expected": "-2+2*I"
+    },
+    {
+      "id": "round8-algebra-05",
+      "kind": "engine",
+      "title": "Conjugate quotient sum cancels imaginary components",
+      "operation": "evaluate",
+      "args": [
+        "(2+I)/(2-I)+(2-I)/(2+I)"
+      ],
+      "expected": "6/5"
+    },
+    {
+      "id": "round8-algebra-06",
+      "kind": "engine",
+      "title": "Repeated roots with only one surviving domain point",
+      "operation": "solve",
+      "args": [
+        "(x^2-4)^2/(x+2)",
+        "x"
+      ],
+      "expected": "x = 2"
+    },
+    {
+      "id": "round8-algebra-07",
+      "kind": "engine",
+      "title": "Entire repeated solution set is excluded by source poles",
+      "operation": "solve",
+      "args": [
+        "(x-3)^3/(x^2-9)",
+        "x"
+      ],
+      "expected": "x = (no solutions)"
+    },
+    {
+      "id": "round8-algebra-08",
+      "kind": "engine",
+      "title": "Complex coefficients translate roots off the real axis",
+      "operation": "solve",
+      "args": [
+        "x^2-2*I*x-2",
+        "x"
+      ],
+      "expected": "x = {-1+I,1+I}"
+    },
+    {
+      "id": "round8-algebra-09",
+      "kind": "engine",
+      "title": "Odd logarithmic moment at an improper endpoint",
+      "operation": "integrate",
+      "args": [
+        "ln(x)^3",
+        "x",
+        "0",
+        "1"
+      ],
+      "expected": "-6"
+    },
+    {
+      "id": "round8-algebra-10",
+      "kind": "engine",
+      "title": "Cubic monotonicity proves an irrational interior pole",
+      "operation": "integrate",
+      "args": [
+        "1/(x^3-x-1)",
+        "x",
+        "1",
+        "2"
+      ],
+      "errorContains": "divergent pole"
+    },
+    {
+      "id": "round8-algebra-11",
+      "kind": "engine",
+      "title": "Cancelled irrational hole has a continuous extension",
+      "operation": "integrate",
+      "args": [
+        "(x^2-3)/(x^2-3)",
+        "x",
+        "1",
+        "2"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "round8-algebra-12",
+      "kind": "engine",
+      "title": "Scaled inverse square root has a convergent endpoint",
+      "operation": "integrate",
+      "args": [
+        "1/sqrt(3*x)",
+        "x",
+        "0",
+        "3"
+      ],
+      "expected": "2"
+    },
+    {
+      "id": "round8-algebra-13",
+      "kind": "engine",
+      "title": "Shifted affine logarithm at its zero endpoint",
+      "operation": "integrate",
+      "args": [
+        "ln(1+2*x)",
+        "x",
+        "-1/2",
+        "0"
+      ],
+      "expected": "-1/2"
+    },
+    {
+      "id": "round8-algebra-14",
+      "kind": "module",
+      "title": "Everywhere positive quadratic inside absolute value",
+      "operation": "differentiateAt",
+      "expression": "abs(x^2+2*x+2)",
+      "variable": "x",
+      "point": "-1",
+      "expected": "0"
+    },
+    {
+      "id": "round8-algebra-15",
+      "kind": "module",
+      "title": "Even high-multiplicity absolute root is differentiable",
+      "operation": "differentiateAt",
+      "expression": "abs((x-2)^4)",
+      "variable": "x",
+      "point": "2",
+      "expected": "0"
+    },
+    {
+      "id": "round8-algebra-16",
+      "kind": "module",
+      "title": "Outer zero suppresses an absolute cusp first derivative",
+      "operation": "differentiateAt",
+      "expression": "(x-1)*abs(x-1)",
+      "variable": "x",
+      "point": "1",
+      "expected": "0"
+    },
+    {
+      "id": "round8-algebra-17",
+      "kind": "engine",
+      "title": "Shifted even absolute root gives an exact local polynomial",
+      "operation": "series",
+      "args": [
+        "abs((x-1)^2)",
+        "x",
+        "1",
+        "5"
+      ],
+      "expected": "(x-1)^2",
+      "resultPattern": "^(?!.*(?:abs|series|taylor|Derivative|Subs)).+$"
+    },
+    {
+      "id": "round8-algebra-18",
+      "kind": "engine",
+      "title": "Absolute Taylor picks the locally negative quadratic branch",
+      "operation": "series",
+      "args": [
+        "abs(x^2-4*x+3)",
+        "x",
+        "2",
+        "4"
+      ],
+      "expected": "-x^2+4*x-3",
+      "resultPattern": "^(?!.*(?:abs|series|taylor|Derivative|Subs)).+$"
+    },
+    {
+      "id": "round8-algebra-19",
+      "kind": "engine",
+      "title": "Quadratic radical cancellation at infinity",
+      "operation": "limit",
+      "args": [
+        "sqrt(9*x^2+6*x+7)-3*x",
+        "x",
+        "oo"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "round8-algebra-20",
+      "kind": "engine",
+      "title": "Quadratic oscillatory amplitude proves a zero limit",
+      "operation": "limit",
+      "args": [
+        "x^2*cos(1/x)",
+        "x",
+        "0"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "round8-algebra-21",
+      "kind": "engine",
+      "title": "Shifted absolute ratio has incompatible one-sided limits",
+      "operation": "limit",
+      "args": [
+        "abs(x-2)/(x-2)",
+        "x",
+        "2"
+      ],
+      "errorContains": "left and right limits differ"
+    },
+    {
+      "id": "round8-algebra-22",
+      "kind": "engine",
+      "title": "Exponential second-order cancellation",
+      "operation": "limit",
+      "args": [
+        "(exp(2*x)-1-2*x)/x^2",
+        "x",
+        "0"
+      ],
+      "expected": "2"
+    },
+    {
+      "id": "round8-algebra-23",
+      "kind": "engine",
+      "title": "Off-diagonal inverse keeps reciprocal positions",
+      "operation": "evaluate",
+      "args": [
+        "inv(Matrix([[0,2],[3,0]]))"
+      ],
+      "expected": "Matrix([[0,1/3],[1/2,0]])"
+    },
+    {
+      "id": "round8-algebra-24",
+      "kind": "engine",
+      "title": "Three-cycle determinant has both nonzero permutation terms",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[1,2,0],[0,1,2],[2,0,1]]))"
+      ],
+      "expected": "9"
+    },
+    {
+      "id": "round8-algebra-25",
+      "kind": "engine",
+      "title": "Jordan matrix square retains the nilpotent linear term",
+      "operation": "evaluate",
+      "args": [
+        "Matrix([[1,1],[0,1]])^2"
+      ],
+      "expected": "Matrix([[1,2],[0,1]])"
+    }
+  ]
+}

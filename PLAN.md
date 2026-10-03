@@ -5,6 +5,14 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Eighth independent mathematical audit
+
+- [~] Draft and freeze fifty new mathematical references before app outputs.
+- [ ] Preserve initial native/WASM/packaged Mac failures; trace shared causes.
+- [ ] Fix confirmed gaps with targeted positive and negative regression controls.
+- [ ] Pass accumulated runtime and unit/live checks on hosted CI, Pages and Vercel.
+- [ ] Refresh native Apple galleries and beta delivery if production changes.
+
 ## Seventh independent mathematical audit
 
 - [x] Freeze fifty fresh references before app outputs; preserve initial Linux
