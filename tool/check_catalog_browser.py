@@ -16,6 +16,26 @@ LOCALES = {
            'Área bajo sin(x) de 0 a π.', 'Copiar expresión'),
 }
 
+async def wait_for_catalog_content(page, expected, failure_prefix):
+    # Textbox values and result counts can update before Flutter's next semantics
+    # frame. A one-result-to-one-result search needs actual new content readiness.
+    try:
+        await page.wait_for_function(
+            """expected => {
+              const labels = document.body.innerText + '\\n' +
+                Array.from(document.querySelectorAll('[aria-label]'))
+                  .map(el => el.getAttribute('aria-label')).join('\\n');
+              return expected.every(value => labels.includes(value));
+            }""", arg=expected)
+    except Exception:
+        failure_prefix.parent.mkdir(parents=True, exist_ok=True)
+        failure_prefix.with_suffix('.json').write_text(json.dumps({
+            'expected': expected, 'actualLabels': await labels(page)
+        }, ensure_ascii=False, indent=2))
+        await page.screenshot(path=str(failure_prefix.with_suffix('.png')))
+        raise
+
+
 async def check(args):
     async with async_playwright() as p:
         options = {'args': ['--no-sandbox', '--enable-unsafe-swiftshader']}
@@ -42,11 +62,18 @@ async def check(args):
                 await type_text(page, search, title)
                 buttons = page.get_by_role('button', name=re.compile('^' + re.escape(copy)))
                 await expect(buttons).to_have_count(1)
+                await wait_for_catalog_content(
+                    page, [title, description],
+                    Path(args.screenshots) / f'catalog-{locale}-title-failure')
                 visible = await labels(page)
                 assert title in visible and description in visible, visible
                 await type_text(page, search, 'alg8')
                 await expect(buttons).to_have_count(1)
                 await expect(search).to_have_value('alg8')
+                await wait_for_catalog_content(
+                    page, ['solve(a*x^2 + b*x + c = 0, x)'],
+                    Path(args.screenshots) / f'catalog-{locale}-id-failure')
+                await expect(buttons).to_have_count(1)
                 # Both translated prose and stable IDs find a single catalog entry.
                 assert 'solve(a*x^2 + b*x + c = 0, x)' in await labels(page)
                 assert not errors, errors
