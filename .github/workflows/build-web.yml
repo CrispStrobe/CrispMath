@@ -170,6 +170,7 @@ jobs:
           python tool/check_round5_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-math-ui
           python tool/check_round6_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round6-math-ui
           python tool/check_round6_statistics_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round6-statistics-ui
+          python tool/check_round7_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round7-math-ui
           python tool/check_round5_solve_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-solve-ui
           python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
           python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations

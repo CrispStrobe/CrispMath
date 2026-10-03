@@ -267,6 +267,9 @@ jobs:
       - name: Enter solve scope controls through actual desktop and phone UI
         if: ${{ !cancelled() }}
         run: python tool/check_round5_solve_browser.py --expected-source "$GITHUB_SHA" --output task-results/round5-solve-ui
+      - name: Enter seventh independent math controls through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round7_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round7-math-ui
       - uses: actions/upload-artifact@v4
         if: always()
         with:
