@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 1,
+  "reference": "Frozen exact decimal and BigInt identities; elementary singular matrix algebra; smallest representable finite data moments; binomial/Student-t/chi-square probabilities; physical unit definitions; complete finite constrained polynomial optima.",
+  "tasks": [
+    {
+      "id": "round7-numeric-01",
+      "title": "Exact reciprocal decimal scales",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "1e308*1e-308"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "round7-numeric-02",
+      "title": "Euclidean remainder negative divisor",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(-11)%(-4)"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "round7-numeric-03",
+      "title": "Exact square root below normal double range",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(1e-320)"
+      ],
+      "expected": "1/10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "exact": true
+    },
+    {
+      "id": "round7-numeric-04",
+      "title": "Near singular determinant beyond safe integers",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[9007199254740993,9007199254740994],[9007199254740994,9007199254740995]]))"
+      ],
+      "expected": "-1",
+      "exact": true
+    },
+    {
+      "id": "round7-numeric-05",
+      "title": "Exact decimal perturbation determinant",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[1,1],[1,1.0000000000000001]]))"
+      ],
+      "expected": "1/10000000000000000",
+      "exact": true
+    },
+    {
+      "id": "round7-numeric-06",
+      "title": "Rank two square matrix row reduction",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "rref(Matrix([[1,2,3],[2,4,6],[0,1,1]]))"
+      ],
+      "expected": "Matrix([[1,0,1],[0,1,1],[0,0,0]])"
+    },
+    {
+      "id": "round7-numeric-07",
+      "title": "Near singular exact decimal inverse",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "inv(Matrix([[1,1],[1,1.0000000000000001]]))"
+      ],
+      "expected": "Matrix([[10000000000000001,-10000000000000000],[-10000000000000000,10000000000000000]])"
+    },
+    {
+      "id": "round7-numeric-08",
+      "title": "Repeated smallest subnormal midpoint",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        5e-324,
+        5e-324
+      ],
+      "expected": {
+        "mean": 5e-324,
+        "median": 5e-324,
+        "sampleStddev": 0
+      }
+    },
+    {
+      "id": "round7-numeric-09",
+      "title": "Smallest subnormal sample deviation",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        -5e-324,
+        0,
+        5e-324
+      ],
+      "expected": {
+        "mean": 0,
+        "median": 0,
+        "sampleStddev": 5e-324
+      }
+    },
+    {
+      "id": "round7-numeric-10",
+      "title": "Subnormal coordinate regression",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        -5e-324,
+        0,
+        5e-324
+      ],
+      "ys": [
+        -1e-323,
+        0,
+        1e-323
+      ],
+      "expected": {
+        "slope": 2,
+        "intercept": 0,
+        "rSquared": 1
+      }
+    },
+    {
+      "id": "round7-numeric-11",
+      "title": "Sorted extreme cancellation sample",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        1e+308,
+        1e+308,
+        -1e+308,
+        -1e+308
+      ],
+      "expected": {
+        "mean": 0,
+        "median": 0,
+        "sampleStddev": 1.1547005383792515e+308
+      }
+    },
+    {
+      "id": "round7-numeric-12",
+      "title": "Nonzero tiny binomial mass",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 2,
+      "p": 1e-200,
+      "k": 1,
+      "expected": 2e-200
+    },
+    {
+      "id": "round7-numeric-13",
+      "title": "Far tail interval avoids rounded CDF subtraction",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 2,
+      "lower": 10000000000,
+      "upper": 20000000000,
+      "expected": 3.75e-21
+    },
+    {
+      "id": "round7-numeric-14",
+      "title": "Chi square empty observed bin",
+      "kind": "module",
+      "operation": "chiSquare",
+      "observed": [
+        0,
+        10
+      ],
+      "counts": [
+        5,
+        5
+      ],
+      "expected": {
+        "statistic": 10,
+        "df": 1,
+        "pValue": 0.0015654022580025497
+      }
+    },
+    {
+      "id": "round7-numeric-15",
+      "title": "CGS energy unit to coherent SI",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "10000000 erg in J",
+      "expected": "1 J"
+    },
+    {
+      "id": "round7-numeric-16",
+      "title": "Standard atmosphere to bar",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 atm in bar",
+      "expected": "1.01325 bar"
+    },
+    {
+      "id": "round7-numeric-17",
+      "title": "Signed force distance multiplication",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "-3 N * -2 m in J",
+      "expected": "6 J"
+    },
+    {
+      "id": "round7-numeric-18",
+      "title": "Frequency time dimensional cancellation",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "2 Hz * 3 s",
+      "expected": "6"
+    },
+    {
+      "id": "round7-numeric-19",
+      "title": "Temperature fixed point Fahrenheit to Kelvin",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "32 °F in K",
+      "expected": "273.15 K"
+    },
+    {
+      "id": "round7-numeric-20",
+      "title": "Mass concentration quotient",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 g/L in kg/m³",
+      "expected": "1 kg/m³"
+    },
+    {
+      "id": "round7-numeric-21",
+      "title": "Coupled polynomial objective parity minimum",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -2..2\nx+y == 1\nminimize x*x-2*x*y+y*y",
+      "expected": 1
+    },
+    {
+      "id": "round7-numeric-22",
+      "title": "Repeated nonlinear terms cancel in objective",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x in -3..3\nminimize x*x-x*x+x",
+      "expected": -3
+    },
+    {
+      "id": "round7-numeric-23",
+      "title": "Signed product objective constrained optimum",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -2..2\nx+y >= 1\nminimize x*y",
+      "expected": -2
+    },
+    {
+      "id": "round7-numeric-24",
+      "title": "Squared norm objective with coupled signs",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -1..1\nx+y == 0\nmaximize x*x+y*y",
+      "expected": 2
+    },
+    {
+      "id": "round7-numeric-25",
+      "title": "Integer disk inequality complete solutions",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in -2..2\nx*x+y*y <= 1",
+      "unordered": true,
+      "expected": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": -1
+        },
+        {
+          "x": 0,
+          "y": 1
+        }
+      ]
+    }
+  ]
+}

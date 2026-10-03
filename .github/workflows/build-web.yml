@@ -157,6 +157,9 @@ jobs:
           for area in algebra numeric domain scope taylor series_scope variable; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round6_${area}_tasks.json" --output "deployed-results/round6-${area}.json"
           done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round7_${area}_tasks.json" --output "deployed-results/round7-${area}.json"
+          done
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
           python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export
           python tool/check_document_history_browser.py --url "$APP_URL" --output deployed-results/document-history

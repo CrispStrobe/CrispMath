@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent hand derivations and pre-output freshness replacements in docs/round7-math-algebra.md. Complex powers/logarithms use principal branches; improper integrals are ordinary real integrals, never principal values.",
+  "tasks": [
+    {"id":"round7-algebra-01","kind":"engine","title":"Principal log subtraction across the branch cut","operation":"evaluate","args":["ln(-1-I)-ln(1+I)"],"expected":"-pi*I"},
+    {"id":"round7-algebra-02","kind":"engine","title":"Principal square root after squaring reverses the original sign","operation":"evaluate","args":["sqrt((-3+4*I)^2)"],"expected":"3-4*I"},
+    {"id":"round7-algebra-03","kind":"engine","title":"Non-real principal square root has two positive components","operation":"evaluate","args":["sqrt(1+I)"],"expected":"sqrt((sqrt(2)+1)/2)+I*sqrt((sqrt(2)-1)/2)"},
+    {"id":"round7-algebra-04","kind":"engine","title":"Conjugation reverses the imaginary quotient component","operation":"evaluate","args":["conjugate((2+3*I)/(1-2*I))"],"expected":"-4/5-7*I/5"},
+    {"id":"round7-algebra-05","kind":"engine","title":"Principal logarithm forgets exponential winding","operation":"evaluate","args":["ln(exp(4*pi*I))"],"expected":"0"},
+    {"id":"round7-algebra-06","kind":"engine","title":"Principal negative cube root differs from the real cube root","operation":"evaluate","args":["(-8)^(1/3)"],"expected":"1+sqrt(3)*I"},
+    {"id":"round7-algebra-07","kind":"engine","title":"Rank-one spectrum retains two zero eigenvalues","operation":"evaluate","args":["eigenvalues(Matrix([[1,2,3],[2,4,6],[3,6,9]]))"],"expected":"{14,0,0}"},
+    {"id":"round7-algebra-08","kind":"engine","title":"Three dimensional dependent rows give a zero determinant","operation":"evaluate","args":["det(Matrix([[1,0,1],[0,1,1],[1,1,2]]))"],"expected":"0"},
+    {"id":"round7-algebra-09","kind":"engine","title":"A singular matrix has no inverse","operation":"evaluate","args":["inv(Matrix([[1,2],[2,4]]))"],"errorContains":"Matrix inversion failed"},
+    {"id":"round7-algebra-10","kind":"engine","title":"Augmented RREF exposes an inconsistent equation","operation":"evaluate","args":["rref(Matrix([[1,1,1],[2,2,3]]))"],"expected":"Matrix([[1,1,0],[0,0,1]])"},
+    {"id":"round7-algebra-11","kind":"engine","title":"Repeated source-hole root is excluded while another root survives","operation":"solve","args":["(x-1)^2*(x+2)/(x-1)","x"],"expected":"x = -2"},
+    {"id":"round7-algebra-12","kind":"engine","title":"Repeated complex roots produce a distinct solution set","operation":"solve","args":["(x^2+1)^2","x"],"expected":"x = {-I,I}"},
+    {"id":"round7-algebra-13","kind":"engine","title":"A nonzero nilpotent matrix becomes zero at the third power","operation":"evaluate","args":["Matrix([[0,1,0],[0,0,1],[0,0,0]])^3"],"expected":"Matrix([[0,0,0],[0,0,0],[0,0,0]])"},
+    {"id":"round7-algebra-14","kind":"engine","title":"Unit triangular inverse includes the second superdiagonal","operation":"evaluate","args":["inv(Matrix([[1,1,0],[0,1,1],[0,0,1]]))"],"expected":"Matrix([[1,-1,1],[0,1,-1],[0,0,1]])"},
+    {"id":"round7-algebra-15","kind":"engine","title":"Squared logarithm has a convergent improper endpoint integral","operation":"integrate","args":["ln(x)^2","x","0","1"],"expected":"2"},
+    {"id":"round7-algebra-16","kind":"engine","title":"Real logarithmic integration cannot cross into negative arguments","operation":"integrate","args":["ln(1-x)","x","0","2"],"errorContains":"real integrand domain"},
+    {"id":"round7-algebra-17","kind":"engine","title":"Two irrational quartic interior poles make the real integral divergent","operation":"integrate","args":["1/(x^4-2)","x","-2","2"],"errorContains":"divergent pole"},
+    {"id":"round7-algebra-18","kind":"engine","title":"Absolute value is smooth locally away from its cusp","operation":"limit","args":["(abs(x+1)-1)/x","x","0"],"expected":"1"},
+    {"id":"round7-algebra-19","kind":"engine","title":"Second-order square-root cancellation keeps its quadratic coefficient","operation":"limit","args":["(sqrt(1+x)-1-x/2)/x^2","x","0"],"expected":"-1/8"},
+    {"id":"round7-algebra-20","kind":"engine","title":"Rationalized difference of divergent terms has a finite infinity limit","operation":"limit","args":["sqrt(x^2+3*x)-x","x","oo"],"expected":"3/2"},
+    {"id":"round7-algebra-21","kind":"module","title":"Nonlinear absolute value is smooth at a negative inner value","operation":"differentiateAt","expression":"abs(x^2-1)","variable":"x","point":"0","expected":"0"},
+    {"id":"round7-algebra-22","kind":"module","title":"Cubic vanishing inside an absolute value flattens its first derivative","operation":"differentiateAt","expression":"abs(x^3)","variable":"x","point":"0","expected":"0"},
+    {"id":"round7-algebra-23","kind":"engine","title":"Nonlinear absolute Taylor branch is an exact local quadratic","operation":"series","args":["abs(x^2-1)","x","0","5"],"expected":"1-x^2"},
+    {"id":"round7-algebra-24","kind":"engine","title":"Shifted rational Taylor series truncates at the requested degree","operation":"series","args":["1/(1+x)","x","1","4"],"expected":"(-x^3+5*x^2-11*x+15)/16"},
+    {"id":"round7-algebra-25","kind":"document","title":"Reactive nonlinear Taylor coefficient respects a local formal variable","lines":["p=1","x=9","taylor(abs(x^2-p),x,0,5)"],"edit":{"index":0,"source":"p=4"},"expected":["4","9","4-x^2"],"expectedFreeVars":[[],[],[]]}
+  ]
+}
