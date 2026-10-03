@@ -1,3 +1,48 @@
+## 2026-10-03 — Ninth independent audit, electrical units and grouped objectives
+
+Freeze fifty independently derived references at 3bc82de before observing app
+outputs. Initial native Linux, packaged Mac and WASM pass 684/687: every previous
+637 and all 25 new algebra cases pass; three numeric questions fail. Preserve
+the original references and reports. Add coherent electrical current/ampere,
+volt/ohm dimensions and prefixes, share bounded standalone/compound unit-power
+resolution, and parse grouped integer-polynomial objectives with exact bounded
+coefficients. Unit checks uncover cancellation and linear-fast-path source-budget
+bypasses; retain 64-source-term limits before simplification. Preserve finite
+display conversion, constant/reduced-linear routing and domain guards.
+
+Actual worksheets expose a correct constant Taylor result with a false free-x
+badge. Filter formal-output names by the computed result and apply the same rule
+during incremental Taylor refresh, preserving ordinary reactive dependencies,
+evidence and no-redispatch behavior. Add five classification regression groups.
+A separate CSP driver failure is diagnosed from saved DOM: a real click on the
+measured semantic parent populates Flutter's SelectableText value. Strict result,
+input, clipboard and geometry checks pass on desktop/phone; no math assertions
+or frozen answers are relaxed.
+
+Final production cd1991d has 368 files, fingerprint
+66b34f42dc4df8b0d371e50e0c9b49567d2bc7a37ac9b4e17d33e92f2f8c475f.
+Full feature37148985902 passes clean analysis, 5,714 units (eight skips), 470
+focused tests, release/debug browser, four performance gates and twelve web
+views. Native job37148985883 passes 687/687 and 436 focused tests (one skip);
+packaged Mac37149045651 and final WASM37151622061 each pass 687/687. Helper-only
+7c0f244 retains identical production; complete immutable probe37151620364 passes
+92 tooling controls, 66 worksheet entries, four statistics and two constraint
+checks. Pages37151623602 and production Vercel37151625320 each pass all 687
+runtime cases, 350 worksheet entries, 26 incremental edit states, 14 statistics
+checks and two constraint checks. Native gallery37149047636 passes 33 populated
+Apple views; four selected final graph/notepad captures are visually reviewed.
+
+Signed upload37152766933 validates privacy/version/signature and production
+parity, then delivers 1.2.0 (20); Apple processing is VALID and Internal Testers
+is assigned. External37153462920 confirms APPROVED beta review and Public Beta
+IN_BETA_TESTING, build UUID11d2c137-1b71-42d2-8399-2e0bc6b66f87. submittedDate
+is null. No App Review submission occurs. All costly work stays hosted; selected
+reports/images stay on CIFS. Safely relocate 301 cold task files (112,677,506
+bytes) with verified hashes/readable symlinks; preserve active source and other
+projects. Physical Apple, real Siri/Files-provider, two-device cloud, handwriting
+accuracy and Apple's 4.3(a) finding remain open.
+See [round-nine evidence](docs/round9-math-audit-50.md).
+
 ## 2026-10-03 — Eighth independent audit, factorials and normal accuracy
 
 Freeze fifty fresh independently derived questions before observing app outputs.

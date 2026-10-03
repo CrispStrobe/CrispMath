@@ -9,10 +9,18 @@ Completed items with details are in `HISTORY.md`.
 
 - [x] Freeze fifty fresh independent references at 3bc82de before app outputs.
 - [x] Preserve initial native/WASM/Mac 684/687 and all prior 637 passes.
-- [~] Repair electrical dimensions, standalone unit powers and grouped polynomial
-  objectives with positive/negative controls.
-- [ ] Pass hosted unit, runtime and actual UI/deployed checks.
-- [ ] Refresh Apple galleries and external beta if production changes.
+- [x] Repair electrical dimensions, standalone unit powers, grouped polynomial
+  objectives and computed calculus badges with positive/negative controls.
+- [x] Pass 687 runtime questions on Linux/WASM/packaged Mac, 5,714 units (eight
+  skips), 470 focused tests, clean analysis and 92 final tooling controls.
+- [x] Pass actual/deployed checks on both Pages/Vercel: 350 worksheet entries,
+  26 incremental edit states, 14 statistics checks and two constraint checks.
+- [x] Refresh 33 populated native Apple views; visually review four final
+  graph/notepad captures and preserve bounded native-launch evidence.
+- [x] Upload signed build 20 after all gates; verify VALID processing, APPROVED
+  beta review and Public Beta IN_BETA_TESTING without App Review submission.
+
+See [round-nine evidence](docs/round9-math-audit-50.md).
 
 ## Eighth independent mathematical audit
 
