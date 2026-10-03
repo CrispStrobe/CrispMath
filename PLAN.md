@@ -5,6 +5,29 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Fifth independent mathematical audit and build 16
+
+- [x] Freeze 50 fresh hand-derived references and preserve identical 49/50
+  initial findings on Linux, WASM and packaged macOS.
+- [x] Add bar pressure conversion with prefixes/compound dimensions, eleven
+  focused controls and a live unit/global-name collision check.
+- [x] Correct only the misleading English TestFlight beta description after
+  52 hosted tooling tests; preserve custom notes/other locales and build-15 beta.
+- [x] Preserve the live global-x solve failure from an immutable green build;
+  protect solve/differentiation/indefinite-integral formal variables, with twelve
+  unit controls and six additional runtime fixtures, including badge-only
+  refresh after incremental binding edits without extra CAS calls.
+- [x] Validate all 469 accumulated runtime cases, 5,536 unit/widget tests
+  (eight skips), 124 actual desktop/phone entries and fourteen binding edit
+  states, release/debug browser, galleries, Pages and production Vercel.
+- [x] Upload signed build 16: release CI `37105698802` passes privacy/version
+  and identical-source validation, upload, Apple VALID and Internal Testers
+  assignment. External CI `37106359044` confirms APPROVED and Public Beta
+  IN_BETA_TESTING for source `1afa020`.
+
+See [round-five evidence](docs/round5-math-audit-50.md). Physical checks remain
+in a separate session; the earlier App Review finding remains unresolved.
+
 ## Fourth independent mathematical audit and build 15
 
 - [x] Draft 50 fresh references before runtime output; preserve identical
@@ -91,7 +114,10 @@ Physical iPhone/iPad testing is deferred to a separate session.
    submission CI `37095571010` confirms external APPROVED and Public Beta
    IN_BETA_TESTING. Build 15 includes the fourth audit and scope/graph fixes:
    release CI `37099298115` and external CI `37099901727` confirm VALID,
-   APPROVED and Public Beta IN_BETA_TESTING. Public beta is available.
+   APPROVED and Public Beta IN_BETA_TESTING. Build 16 includes the fifth audit
+   and formal-scope/badge fixes: release CI `37105698802`, external CI
+   `37106359044`, VALID, APPROVED and Public Beta IN_BETA_TESTING for source
+   `1afa020`. Public beta is available.
    Address 4.3(a) with truthful review evidence;
    final App Review follows the improvements and separate device tests.
 1. [x] Result provenance: identify exact/approximate results and computation
@@ -229,9 +255,12 @@ system solver, no inequality solver.
   formatters; SymbolicLimit blind to complex-formatted evaluate
   output). Known gaps are enforced expected-failures (`knownGap`).
   Details in HISTORY.md 2026-07-04.
-- [ ] **Honest capability signaling.** Where an operation returns a
-  weaker-than-asked result (e.g. simplify can't reduce trig
-  identities), the UI/docs must say so rather than imply success.
+- [x] **Honest capability signaling.** Result evidence identifies numerical
+  integration/fallbacks, unknown precision, unsupported operations and unchanged
+  transformations; unit and actual browser controls assert those distinctions.
+  Independent audits preserve original-domain exclusions and exact requests.
+  English beta metadata now distinguishes core local calculations from optional
+  connected services; metadata-only CI `37100740297` verifies the correction.
 
 ### C2 — Bind what SymEngine already has (needs xcframework rebuild)
 
@@ -566,9 +595,10 @@ display can't do justice.
 
 ### Tier 1 — Ship blockers
 
-- [ ] **Distribution pipeline.** Apple Developer enrollment +
-  notarization + TestFlight/App Store. Android via Play. **Load-bearing
-  prerequisite** for everything below to reach users.
+- [~] **Distribution pipeline.** Apple enrollment, signed CI delivery and
+  internal/external TestFlight are verified; the beta is available. App Store
+  review still awaits the deferred device checks and resolution of 4.3(a).
+  macOS notarization and Android Play publication remain release work.
 - [x] **Bundle CrispEmbed native lib per platform.** PR merged. CI
   builds all 8 targets (Linux/macOS/Windows/iOS/Android×3 + Flutter
   bundle). All green.

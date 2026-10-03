@@ -35,11 +35,35 @@ Upload succeeds, Apple processing is VALID and Internal Testers are assigned.
 confirms beta review APPROVED, internal/external IN_BETA_TESTING and Public Beta
 assignment. The submission record matches build ID
 `a33926e8-4a4f-4112-96fa-8345c1c537ea`; Apple returns no submission timestamp.
-The public link now offers build 15. All 413 accumulated runtime cases pass on
+The public link offered build 15. All 413 accumulated runtime cases pass on
 Linux, WASM, packaged macOS, Pages and Vercel, together with 5,511 unit/widget
 tests (eight documented skips) and 82 actual desktop/phone worksheet entries.
 See [the fourth audit](round4-math-audit-50.md). No App Review submission occurred.
 Beta approval does not resolve guideline 4.3(a).
+
+The English beta description is corrected in
+[metadata-only CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37100740297)
+after 52 tooling tests pass. It now describes core calculations on-device and
+optional configured connected AI/cloud services. Actual read-back confirms that
+only the description changes; custom release notes, locale/privacy fields,
+groups and submission records remain intact. Build 15 retains its approved beta
+state. See [the fifth audit](round5-math-audit-50.md).
+
+Build 16 includes the fifth independent audit and formal-scope/badge fixes.
+[Signed release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37105698802)
+passes all 52 tooling tests, signed photo-library/camera purpose strings,
+version 1.2.0/build 16 and identical production source/dependency validation for
+`1afa020420871204fbda9fec577ee3c908d59015`. Upload succeeds, Apple processing is
+VALID and Internal Testers are assigned.
+[External beta verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37106359044)
+confirms APPROVED, internal/external IN_BETA_TESTING and Public Beta assignment.
+The build/submission record is `1b484f10-8f35-4311-b549-28c22289b8a4`, with no
+submission timestamp returned by Apple. The public link now offers build 16.
+All 469 accumulated runtime checks pass across Linux/WASM, packaged macOS,
+Pages and Vercel; full CI passes 5,536 unit/widget tests (eight skips), 124 actual
+desktop/phone entries plus fourteen binding-edit states, release/debug assertions
+and performance/gallery checks. The truthful beta description is retained.
+No App Review submission occurs; beta approval does not resolve guideline 4.3(a).
 
 Physical iPhone/iPad checks are explicitly deferred to another session.
 
@@ -57,12 +81,14 @@ source worksheet through Files and recalculate its results locally.
 Calculator, worksheet, graph, checkpoint and export screens should show this
 connected workflow. The native URL bridge can create the same worksheet.
 
-The latest [33-image native gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37056297272)
-passed for source `c5955f2`, with 11 populated scenes each on iPhone/iPad
+The latest [33-image native gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37104046317)
+passes for capture source `2927336`, with 11 populated scenes each on iPhone/iPad
 simulators and the real native macOS application. Evaluated engineering
 worksheets, sampled graphs, tracing, value tables, export/history and visible
-handwriting are asserted and selected images are visually reviewed. See
-[the capture evidence and limitations](native-apple-gallery.md).
+handwriting are asserted; selected macOS graph/worksheet/table images are
+visually reviewed, and iPhone/iPad manifests/evidence are inspected. See
+[the capture evidence and limitations](native-apple-gallery.md). The subsequent
+`1afa020` changes only the live-test helper; production code remains unchanged.
 
 The native gallery workflow captures actual iPhone/iPad simulator screens and
 retains CAS assertions (the derivative of sin(x) is cos(x); the integral of

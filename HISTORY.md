@@ -1,3 +1,54 @@
+## 2026-10-03 — Fifth independent audit, build 16 and truthful beta metadata
+
+Freeze another 50 independently derived questions. Linux, WASM and packaged
+macOS each initially pass 49/50; all algebra questions pass, and the sole gap
+is conversion from compound pressure to bar. Add bar with pressure dimensions
+and scale 100000 Pa, retaining canonical Pa formatting. Eleven focused controls
+cover prefixes, signed values, reverse conversion, compound rates, mismatched
+dimensions and unknown words. All original reference answers remain unchanged.
+Add live controls with global bar/m variables to protect unit syntax.
+
+The first repaired suite passes 463 runtime cases and 5,524 unit/widget tests,
+with release/debug and live deployments green. Further saved-report review
+reveals solve scope incorrectly depends on the solved variable. Immutable live
+probe `37102252890` confirms a global x causes solve failure. Protect explicit
+solve variables and adjacent differentiation/indefinite-integral declarations,
+while retaining their symbolic-output free-variable semantics. Add actual
+routing, nested/alias scope controls and six further runtime fixtures.
+A final lifecycle review catches stale formal-variable badges after incremental
+rename/removal/failure/restoration of a global binding. Refresh only badge
+metadata after edited bindings settle; retain cached symbolic values, evidence
+and operation counts. Twelve focused scope controls and actual desktop/phone
+binding edits cover these paths. Final CI at `1afa020` passes 5,536 tests with eight skips, 52 tooling tests,
+analysis, release/debug browser/performance and the populated web gallery.
+Linux/WASM, packaged macOS, Pages and production Vercel pass all 469 runtime
+cases; live desktop/phone paths pass 124 entries and fourteen binding edit
+states with unchanged references and strict reload/evidence assertions.
+Refresh the native gallery at `2927336` (unchanged production source): all
+33 populated iPhone/iPad simulator/native Mac images and CAS/content assertions
+pass. Inspect manifests and visually review three Mac captures. A further cold
+OCR archive reclaims 18.33 MiB from root, preserving hash-verified readable
+symlinks and avoiding active files or other projects.
+
+Correct the existing English TestFlight description's all-on-device claim through
+an explicit metadata-only path. Hosted CI `37100740297` passes 52 tooling tests
+before writing to Apple; read-back confirms only the description changed. Other
+locale attributes/privacy fields, custom notes, groups and review records remain
+intact. Uploaded build 15 remains VALID, APPROVED and IN_BETA_TESTING. No binary
+upload or App Review submission occurs in that metadata update.
+
+Signed build 16 at exact source `1afa020` passes 52 tooling tests, signed-bundle
+privacy/version checks and production parity with green browser/gallery CI.
+Release `37105698802` uploads successfully, confirms Apple VALID and Internal
+Testers assignment. External verification `37106359044` confirms beta review
+APPROVED and Public Beta IN_BETA_TESTING. The corrected beta description is
+retained; no App Review submission occurs.
+
+Validation and build-16 delivery are recorded in
+[the fifth audit](docs/round5-math-audit-50.md). All costly execution remains on
+hosted CI; physical testing, real cloud round trips and handwriting training
+remain deferred or dependent on external resources.
+
 ## 2026-10-03 — Fourth independent 50-problem audit and scope/graph follow-up
 
 Two agents independently derive 50 fresh references; Linux, WASM and packaged

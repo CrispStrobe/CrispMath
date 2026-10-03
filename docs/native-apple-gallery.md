@@ -1,11 +1,13 @@
 # Native Apple screenshot evidence
 
-The [GitHub CI gallery run](https://github.com/CrispStrobe/CrispMath/actions/runs/37056297272)
+The [latest GitHub CI gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37104046317)
 captures the real CrispMath application at source
-`c5955f24c1c2cc5a6da4d748eedc07fa66269765`.
-Both CI jobs passed on 2 October 2026: all 33 images and calculation
-assertions were verified. Selected graph, worksheet, and handwriting views
-were also reviewed visually on every profile.
+`29273367886684638798575dec2050746752aacc`.
+Both jobs pass on 3 October 2026: all 33 images and native calculation/content
+assertions are verified. Three selected macOS graph, engineering worksheet and
+value-table images are visually reviewed. The subsequent `1afa020` changes only
+the live test helper; production code is unchanged. iPhone/iPad manifests and
+calculation reports are inspected without downloading their images or app bundles.
 
 | Profile | Capture | Images | Pixel dimensions |
 | --- | --- | ---: | --- |
@@ -19,8 +21,11 @@ use simulators; physical-device testing remains for another session.
 
 Both CI artifacts include a source-tagged `manifest.json`, RGB PNG images,
 and calculator evidence: `native-apple-screenshot-gallery` and
-`native-macos-screenshot-gallery`. Reviewed local copies and a combined
-manifest are in `.dart_tool/stage9-ci/apple-native-final/`.
+`native-macos-screenshot-gallery`. Selected macOS images and platform manifests are in
+`.dart_tool/stage12-ci/final-incremental-gallery/`; all 33 images remain in the
+remote artifacts. The [earlier gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37056297272),
+source `c5955f2`, retains the prior visual review across all three profiles in
+`.dart_tool/stage9-ci/apple-native-final/`.
 
 | Scene filename, without `.png` | Visible content |
 | --- | --- |
