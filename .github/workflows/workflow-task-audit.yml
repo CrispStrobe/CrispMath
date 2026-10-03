@@ -240,6 +240,9 @@ jobs:
       - name: Sixth independent math worksheet UI controls
         if: ${{ !cancelled() }}
         run: python tool/check_round6_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round6-math-ui
+      - name: Extreme samples through the actual statistics screen
+        if: ${{ !cancelled() }}
+        run: python tool/check_round6_statistics_browser.py --expected-source "$GITHUB_SHA" --output task-results/round6-statistics-ui
 
       - name: Enter solve scope controls through actual desktop and phone UI
         if: ${{ !cancelled() }}

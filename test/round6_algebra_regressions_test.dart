@@ -10,6 +10,7 @@ void main() {
   test('multivariate exact cancellation retains original denominator restriction', () {
     final engine = CalculatorEngine();
     final result = engine.simplify('(x^2-y^2)/(x-y)');
+    expect(result, 'x+y');
     final compiled = NumericFallbackEvaluator.compile(result)!;
     expect(compiled.evaluate({'x': 5, 'y': 2}), 7);
     expect(compiled.evaluate({'x': -3, 'y': 4}), 1);
@@ -82,12 +83,19 @@ void main() {
     expect(engine.differentiateAt('x*abs(x)', 'x', '-2'), '4');
     expect(engine.differentiateAt('abs(2*x-4)', 'x', '3'), '2');
     expect(engine.differentiateAt('abs(2*x-4)', 'x', '1'), '-2');
+    expect(engine.differentiateAt('abs(2*x-4)', 'x', '2'),
+        contains('derivative does not exist'));
+    expect(engine.differentiateAt('abs(x/2-1)', 'x', '3'), '1/2');
+    expect(engine.differentiateAt('abs(x/2-1)', 'x', '1'), '-1/2');
     expect(engine.differentiateAt('(x-2)*abs(3*x-6)', 'x', '2'), '0');
     expect(engine.series('abs(x)', 'x', order: 2), startsWith('Error:'));
     expect(engine.series('x*abs(x)', 'x', order: 2), '0');
     expect(engine.series('x*abs(x)', 'x', order: 3), startsWith('Error:'));
     expect(engine.series('x^2*abs(x)', 'x', order: 3), '0');
     expect(engine.series('x^2*abs(x)', 'x', order: 4), startsWith('Error:'));
+    expect(engine.series('(x-2)*abs(3*x-6)', 'x', point: '2', order: 2), '0');
+    expect(engine.series('(x-2)*abs(3*x-6)', 'x', point: '2', order: 3),
+        startsWith('Error:'));
     expect(RealCalculusProofs.cuspDerivative('abs(x^2)', 'x', '0'), isNull);
     expect(RealCalculusProofs.cuspDerivative('abs(y)', 'x', '0'), isNull);
   });

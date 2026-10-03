@@ -1,11 +1,10 @@
 import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/result_evidence.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// The numerical limit/integrate paths in CalculatorEngine *need* the native
-// bridge to evaluate the inner expressions — they call `bridge.substitute`
-// and `bridge.evaluate`. In the test host the bridge isn't loaded so we
-// verify the fallback paths (error strings) and the input-validation
-// branches that don't need the bridge.
+// Supported real numerical limits use the Dart evaluator when the native
+// bridge is unavailable. Mathematical rejection and approximate evidence
+// remain distinct from exact polynomial integration.
 
 void main() {
   final engine = CalculatorEngine();
@@ -17,16 +16,18 @@ void main() {
       expect(result, startsWith('Error'));
     });
 
-    test('infinity sentinel does not crash', () {
+    test('reciprocal tends to zero at positive infinity with approximate evidence', () {
       final result = engine.limit('1/x', 'x', 'oo');
-      expect(result, isA<String>());
-      expect(result, startsWith('Error'));
+      expect(result, '0');
+      expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.approximate);
+      expect(engine.lastResultEvidence?.method, ComputationMethod.numericFallback);
     });
 
-    test('negative infinity sentinel does not crash', () {
+    test('reciprocal tends to zero at negative infinity with approximate evidence', () {
       final result = engine.limit('1/x', 'x', '-oo');
-      expect(result, isA<String>());
-      expect(result, startsWith('Error'));
+      expect(result, '0');
+      expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.approximate);
+      expect(engine.lastResultEvidence?.method, ComputationMethod.numericFallback);
     });
   });
 

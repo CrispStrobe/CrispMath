@@ -123,18 +123,27 @@ class PolynomialQuotientCancellation {
         }
       }
     }
-    final terms = <String>[];
+    final terms = StringBuffer();
     for (final entry in quotient.entries) {
       final powers = exponents(entry.key);
-      final factors = <String>[entry.value.toString()];
+      final factors = <String>[];
+      final magnitude = entry.value.abs;
+      if (magnitude != Rational.one || powers.every((power) => power == 0)) {
+        factors.add(magnitude.toString());
+      }
       for (var i = 0; i < names.length; i++) {
         if (powers[i] > 0) {
           factors.add(powers[i] == 1 ? names[i] : '${names[i]}^${powers[i]}');
         }
       }
-      terms.add(factors.join('*'));
+      if (entry.value.sign < 0) {
+        terms.write('-');
+      } else if (terms.isNotEmpty) {
+        terms.write('+');
+      }
+      terms.write(factors.join('*'));
     }
-    return (expression: terms.isEmpty ? '0' : terms.join('+'),
+    return (expression: terms.isEmpty ? '0' : terms.toString(),
       condition: '($denominatorSource) ≠ 0');
   }
 }

@@ -65,7 +65,12 @@ class RealCalculusProofs {
     if (source.length > 512) {
       return null;
     }
-    final replaced = source.replaceAllMapped(RegExp(r'[A-Za-z_][A-Za-z_0-9]*'),
+    // Polynomial pretty-printing uses rational coefficients such as 3x and
+    // 1/2x. Restore explicit multiplication before substituting a parenthesis.
+    final explicit = source.replaceAllMapped(
+        RegExp('([0-9])\\s*(${RegExp.escape(variable)})(?![A-Za-z_0-9])'),
+        (m) => '${m[1]}*${m[2]}');
+    final replaced = explicit.replaceAllMapped(RegExp(r'[A-Za-z_][A-Za-z_0-9]*'),
         (m) => m[0] == variable ? '($point)' : m[0]!);
     return ExactConstantEvaluator.evaluate(replaced);
   }

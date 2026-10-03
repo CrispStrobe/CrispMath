@@ -525,16 +525,16 @@ minimize x
       expect(r.error, contains('No assignment'));
     }, timeout: const Timeout(Duration(seconds: 10)));
 
-    test('non-linear objective expression is rejected at parse time', () async {
+    test('unsupported power objective is rejected at parse time', () async {
       const dsl = '''
 vars: x, y in 1..5
-minimize x*y
+minimize x^2*y
 ''';
       final r = await CspSolver.solveDsl(dsl);
       expect(r.ok, isFalse);
-      // Either parse error or unknown-variable error — both are fine
-      // as long as it doesn't pass through silently.
-      expect(r.error, isNotNull);
+      // Flat products are supported; explicit powers remain outside the
+      // bounded objective grammar and must not be silently misparsed.
+      expect(r.error, contains('Could not parse'));
     });
 
     test('objective referencing undeclared variable is rejected', () async {
