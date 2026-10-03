@@ -83,7 +83,12 @@ async def check(args):
                             assert report['appSource'] == app_source
                         report['appSource'] = app_source
                         await page.get_by_role('button', name=re.compile(r'^Analysis')).click()
-                        await page.get_by_text('Statistics', exact=True).click()
+                        # ListTile merges its title and subtitle into one
+                        # rendered semantic text node, as the failed live
+                        # report confirms. Match that actual card label.
+                        await page.get_by_text(re.compile(
+                            r'^Statistics\s+Descriptive stats, linear regression, '
+                            r'normal & binomial distributions')).click()
                         field = page.get_by_role('textbox').first
                         await field.click()
                         await next_frames(page)

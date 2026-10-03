@@ -1,7 +1,6 @@
 import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
-import 'package:crisp_math/engine/notepad_syntax.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ParsedNotepadLine _parse(String source) =>
