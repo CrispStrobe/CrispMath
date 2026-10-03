@@ -11,6 +11,7 @@ import 'result_evidence.dart';
 // global namespaces.
 
 import 'notepad.dart';
+import 'matrix_operation_names.dart';
 import 'numeric_fallback.dart';
 import 'unit_expression.dart';
 import 'symbolic_expr.dart';

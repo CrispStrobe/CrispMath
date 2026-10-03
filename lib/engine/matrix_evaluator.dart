@@ -18,6 +18,7 @@ import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'calculator_engine.dart';
 import 'eigen.dart';
+import 'matrix_operation_names.dart';
 import 'exact_constant.dart';
 import 'result_evidence.dart';
 import 'numeric_fallback.dart';
@@ -32,15 +33,7 @@ class MatrixEvaluator {
     if (!s.contains('Matrix(')) return null;
 
     // 1. Unary calls: det / inv / transpose / rref of Matrix(...)
-    for (final op in const [
-      'det',
-      'trace',
-      'inv',
-      'transpose',
-      'rref',
-      'eigenvalues',
-      'eigenvectors'
-    ]) {
+    for (final op in kMatrixUnaryOperationNames) {
       if (s.startsWith('$op(') && s.endsWith(')')) {
         final inner = s.substring(op.length + 1, s.length - 1).trim();
         if (_looksLikeMatrix(inner)) {

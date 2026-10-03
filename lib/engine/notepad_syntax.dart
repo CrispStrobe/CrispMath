@@ -302,10 +302,10 @@ const Set<String> kReservedNotepadNames = {
   'beta', 'lowergamma', 'uppergamma', 'polygamma',
   // Calculus / CAS ops
   'integrate', 'diff', 'limit', 'solve', 'expand', 'simplify', 'subst',
-  'series', 'taylor', 'linsolve', 'eigenvalues', 'eigenvectors',
+  'series', 'taylor', 'linsolve',
   'besselj', 'bessely', 'plot',
   // Matrix / linear algebra
-  'Matrix', 'det', 'inv', 'transpose', 'rref',
+  'Matrix', ...kMatrixUnaryOperationNames,
   // Constants (commonly typed)
   'pi', 'Pi', 'PI', 'e', 'E', 'I', 'inf', 'oo', 'euler', 'EulerGamma', 'gamma',
   // Stats-ish
