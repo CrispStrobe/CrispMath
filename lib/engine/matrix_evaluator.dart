@@ -18,6 +18,8 @@ import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'calculator_engine.dart';
 import 'eigen.dart';
+import 'exact_constant.dart';
+import 'result_evidence.dart';
 import 'numeric_fallback.dart';
 
 class MatrixEvaluator {
@@ -123,7 +125,10 @@ class MatrixEvaluator {
     try {
       for (var r = 0; r < rows.length; r++) {
         for (var c = 0; c < cols; c++) {
-          m.set(r, c, rows[r][c].trim());
+          // Feed decimal/scientific constants to the CAS as exact rationals.
+          // A tiny decimal perturbation must survive before determinant and
+          // inverse operations, rather than becoming a binary float cell.
+          m.set(r, c, canonicalCell(rows[r][c]));
         }
       }
     } catch (_) {
@@ -180,6 +185,34 @@ class MatrixEvaluator {
     return out;
   }
 
+  /// Preserve the exact numeric grammar before crossing the matrix FFI.
+  /// Symbolic/complex/unsupported cells retain their existing CAS routing.
+  static String canonicalCell(String source) =>
+      ExactConstantEvaluator.evaluate(source.trim()) ?? source.trim();
+
+  static bool _rationalCells(String literal) {
+    if (literal.length > 8192 || !_looksLikeMatrix(literal)) return false;
+    final rows = _parseRows(
+        literal.substring('Matrix('.length, literal.length - 1).trim());
+    if (rows == null || rows.isEmpty || rows.first.isEmpty ||
+        rows.any((row) => row.length != rows.first.length) ||
+        rows.fold<int>(0, (count, row) => count + row.length) > 64) {
+      return false;
+    }
+    return rows.expand((row) => row).every(
+        (cell) => ExactConstantEvaluator.evaluate(cell.trim()) != null);
+  }
+
+  static bool _rationalResult(String result) {
+    final scalar = RegExp(r'^[+-]?\d+(?:/\d+)?$');
+    if (scalar.hasMatch(result.trim())) return true;
+    if (!_looksLikeMatrix(result)) return false;
+    final rows = _parseRows(
+        result.substring('Matrix('.length, result.length - 1).trim());
+    return rows != null && rows.isNotEmpty &&
+        rows.expand((row) => row).every((cell) => scalar.hasMatch(cell.trim()));
+  }
+
   // === Operation routing ===================================================
 
   static String _applyUnary(
@@ -187,26 +220,46 @@ class MatrixEvaluator {
     final m = _buildMatrix(matrixLit, engine);
     if (m == null) return 'Error: $op invalid matrix literal';
     try {
-      switch (op) {
-        case 'det':
-          return m.getDeterminant();
-        case 'inv':
-          return _format(m.inverse());
-        case 'trace':
-          return _trace(m, engine);
-
-        case 'transpose':
-          return _format(_transpose(m, engine));
-        case 'rref':
-          return _format(_rref(m, engine));
-        case 'eigenvalues':
-        case 'eigenvectors':
-          return _eigenOp(op, m, engine);
+      if (op == 'inv') {
+        if (m.rows != m.cols) {
+          return 'Error: inv failed: Matrix inversion failed: '
+              'matrix must be square';
+        }
+        // Exact rational inputs permit a determinant certificate. Do not let
+        // a singular inverse cross the WASM boundary and leak JS objects.
+        if (_rationalCells(matrixLit) &&
+            ExactConstantEvaluator.evaluate(m.getDeterminant()) == '0') {
+          return 'Error: inv failed: Matrix inversion failed: singular matrix';
+        }
       }
+      final result = switch (op) {
+        'det' => m.getDeterminant(),
+        'inv' => _format(m.inverse()),
+        'trace' => _trace(m, engine),
+        'transpose' => _format(_transpose(m, engine)),
+        'rref' => _format(_rref(m, engine)),
+        'eigenvalues' || 'eigenvectors' => _eigenOp(op, m, engine),
+        _ => 'Error: $op not implemented',
+      };
+      // These operations are closed over exact rational cells. Numeric eigen
+      // algorithms are excluded; an integer-looking floating approximation
+      // never receives exact evidence from this proof.
+      if (op != 'eigenvalues' && op != 'eigenvectors' &&
+          _rationalCells(matrixLit) && _rationalResult(result)) {
+        engine.lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      }
+      return result;
     } catch (e) {
+      final message = '$e';
+      if (message.contains('[object Object]') ||
+          message.contains('JSObject') || message.contains('JSAny')) {
+        return op == 'inv'
+            ? 'Error: inv failed: Matrix inversion failed'
+            : 'Error: $op failed';
+      }
       return 'Error: $op failed: $e';
     }
-    return 'Error: $op not implemented';
   }
 
   static String _trace(SymEngineMatrix m, CalculatorEngine engine) {

@@ -38,6 +38,24 @@ class TaylorReferenceControls(unittest.TestCase):
             with self.subTest(result=result), self.assertRaises(AssertionError):
                 validate_result(case, {'s': case[1], 'r': result})
 
+    def test_source_hole_root_is_excluded(self):
+        case = ('source-hole-root', 'solve((x-1)^2*(x+2)/(x-1),x)', '-2')
+        validate_result(case, {'s': case[1], 'r': 'x = {-2}'})
+        for result in ['x = {1,-2}', 'x = 1', 'x = {-2,-2}']:
+            with self.subTest(result=result), self.assertRaises(AssertionError):
+                validate_result(case, {'s': case[1], 'r': result})
+
+    def test_inverse_retains_each_exact_coefficient(self):
+        expected = [[10000000000000001, -10000000000000000],
+                    [-10000000000000000, 10000000000000000]]
+        case = ('near-singular-inverse', 'inv(Matrix([[1,1],[1,1.0000000000000001]]))', expected)
+        good = 'Matrix([[10000000000000001,-10000000000000000],[-10000000000000000,10000000000000000]])'
+        validate_result(case, {'s': case[1], 'r': good, 'evidence': {'accuracy': 'exact'}})
+        for wrong in [good.replace('10000000000000001', '10000000000000000'),
+                      'Matrix([[9.938978e15,-9.938978e15],[-9.938978e15,9.938978e15]])']:
+            with self.subTest(result=wrong), self.assertRaises(AssertionError):
+                validate_result(case, {'s': case[1], 'r': wrong, 'evidence': {'accuracy': 'exact'}})
+
     def test_formal_badges_follow_defined_global_only(self):
         case = ('reactive-nonlinear-taylor', 'taylor(abs(x^2-p),x,0,5)', [4, 0, -1])
         validate_result(case, {'s': case[1], 'r': '4-x²', 'f': []})

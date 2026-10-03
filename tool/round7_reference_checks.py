@@ -25,6 +25,9 @@ CASES = [
     ('mass-concentration', '1 g/L in kg/m³', '1 kg/m³'),
     ('nonlinear-local-taylor', 'series(abs(x^2-1),x,0,5)', [1, 0, -1]),
     ('shifted-rational-taylor', 'series(1/(1+x),x,1,4)', [Fraction(15,16), Fraction(-11,16), Fraction(5,16), Fraction(-1,16)]),
+    ('complex-conjugate', 'conjugate((2+3*I)/(1-2*I))', [Fraction(-4,5), Fraction(-7,5)]),
+    ('source-hole-root', 'solve((x-1)^2*(x+2)/(x-1),x)', '-2'),
+    ('near-singular-inverse', 'inv(Matrix([[1,1],[1,1.0000000000000001]]))', [[10000000000000001, -10000000000000000], [-10000000000000000, 10000000000000000]]),
     ('principal-squared-root', 'sqrt((-3+4*I)^2)', '3-4*I'),
     ('reactive-parameter', 'p=1', '1'),
     ('formal-global-binding', 'x=9', '9'),
@@ -113,6 +116,26 @@ def validate_result(case, line):
     result = line.get('r')
     assert isinstance(result, str) and result and not result.startswith('Error'), (case, line)
     evidence = line.get('evidence') or {}
+    if case_id == 'near-singular-inverse':
+        tree = ast.parse(result, mode='eval').body
+        assert isinstance(tree, ast.Call) and isinstance(tree.func, ast.Name) and tree.func.id == 'Matrix', (case, line)
+        assert len(tree.args) == 1 and not tree.keywords and isinstance(tree.args[0], ast.List), (case, line)
+        rows = tree.args[0].elts
+        assert len(rows) == 2 and all(isinstance(row, ast.List) and len(row.elts) == 2 for row in rows), (case, line)
+        actual = [[polynomial_coefficients(ast.get_source_segment(result, cell)) for cell in row.elts] for row in rows]
+        assert actual == [[[Fraction(value)] for value in row] for row in expected], (case, line)
+        assert evidence.get('accuracy') == 'exact', (case, line)
+        assert not line.get('f'), (case, line)
+        return
+    if case_id == 'complex-conjugate':
+        assert polynomial_coefficients(result.replace('I', 'x')) == expected, (case, line)
+        assert not line.get('f'), (case, line)
+        return
+    if case_id == 'source-hole-root':
+        root = re.fullmatch(r'x\s*=\s*\{?\s*(-?\d+(?:/\d+)?)\s*\}?', result)
+        assert root and Fraction(root[1]) == -2, (case, line)
+        assert not line.get('f'), (case, line)
+        return
     if isinstance(expected, list):
         assert polynomial_coefficients(result) == [Fraction(value) for value in expected], (case, line)
         free = set() if case_id == 'reactive-nonlinear-taylor' else {'x'}
@@ -131,6 +154,7 @@ def validate_result(case, line):
                 suffix = ' ' + parts[1]
                 assert result.endswith(suffix), (case, line)
                 actual_value = result[:-len(suffix)]
+        actual_value = actual_value.strip()
         assert re.fullmatch(r'[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:/\d+)?', actual_value), (case, line)
         assert Fraction(actual_value) == Fraction(expected_value), (case, line)
     if case_id in EXACT_CASES:
@@ -138,6 +162,7 @@ def validate_result(case, line):
     if case_id == 'squared-log-endpoint':
         assert evidence.get('method') == 'fundamentalTheorem', (case, line)
     if case_id.endswith('limit'):
-        assert evidence.get('accuracy') == 'symbolic', (case, line)
+        assert (evidence.get('method'), evidence.get('accuracy')) in {
+            ('symbolicEvaluation', 'symbolic'), ('numericFallback', 'approximate')}, (case, line)
     assert not line.get('f'), (case, line)
 

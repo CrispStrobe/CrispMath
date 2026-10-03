@@ -4,9 +4,56 @@ import 'exact_constant.dart';
 import 'numeric_fallback.dart';
 import 'polynomial.dart';
 import 'symbolic_web.dart';
+import 'symbolic_input_budget.dart';
 
 /// Small real-domain proofs, rather than snapping sampled values to zero.
 class RealCalculusProofs {
+  /// Rationalize a matched quadratic radical and affine term at infinity.
+  /// Exact matching of leading coefficients proves cancellation; unmatched
+  /// divergent/complex branches decline rather than using large-number samples.
+  static String? quadraticRadicalLimit(String source, String variable, String point) {
+    final direction = ['oo', 'inf', 'infinity', r'\infty'].contains(point.trim())
+        ? 1 : ['-oo', '-inf', '-infinity'].contains(point.trim()) ? -1 : 0;
+    if (source.length > 512 || direction == 0) {
+      return null;
+    }
+    final body = strip(source).replaceAll(' ', '');
+    var depth = 0, difference = -1;
+    for (var i = 0; i < body.length; i++) {
+      if (body[i] == '(') depth++;
+      if (body[i] == ')') depth--;
+      if (body[i] == '-' && depth == 0 && i > 0 &&
+          !'+-*/^('.contains(body[i - 1])) {
+        if (difference >= 0) {
+          return null;
+        }
+        difference = i;
+      }
+    }
+    if (difference < 0 || depth != 0) {
+      return null;
+    }
+    final left = strip(body.substring(0, difference));
+    final right = strip(body.substring(difference + 1));
+    final reverse = right.startsWith('sqrt(') && right.endsWith(')');
+    final radical = reverse ? right : left;
+    if (!radical.startsWith('sqrt(') || !radical.endsWith(')')) {
+      return null;
+    }
+    final q = polynomial(radical.substring(5, radical.length - 1), variable);
+    final line = polynomial(reverse ? left : right, variable);
+    if (q == null || q.degree != 2 || line == null || line.degree != 1) {
+      return null;
+    }
+    final slope = line.coeffs[1];
+    if (slope.sign != direction || q.coeffs[2].sign <= 0 ||
+        slope * slope != q.coeffs[2]) {
+      return null;
+    }
+    final result = q.coeffs[1] / (Rational.fromInt(2) * slope) - line.coeffs[0];
+    return (reverse ? -result : result).toString();
+  }
+
   static String strip(String source) {
     var value = source.trim();
     while (value.startsWith('(') && value.endsWith(')')) {
@@ -53,7 +100,7 @@ class RealCalculusProofs {
   }
 
   static Polynomial? polynomial(String source, String variable) {
-    if (source.length > 512) {
+    if (source.length > 512 || !boundedSymbolicLiterals(source)) {
       return null;
     }
     final expanded = SymbolicWeb.expand(source);
@@ -145,35 +192,68 @@ class RealCalculusProofs {
     }
     final inner = polynomial(call[1]!, variable);
     final outer = polynomial(amplitude, variable);
-    if (inner == null || inner.degree != 1 || outer == null) {
+    if (inner == null || inner.degree < 1 || inner.degree > 8 ||
+        outer == null || outer.degree > 16) {
       return null;
     }
     return (inner: inner, outer: outer);
   }
 
-  /// Exact real first derivative of P(x)*abs(a*x+b), including its domain.
+  /// Exact real first derivative of P(x)*abs(Q(x)), including polynomial
+  /// zeros whose multiplicity may smooth an otherwise absolute-value cusp.
   static String? absoluteDerivative(String source, String variable, String point) {
     final parsed = _absoluteProduct(source, variable);
-    if (parsed == null) return null;
+    if (parsed == null) {
+      return null;
+    }
     final value = at(parsed.inner.toString(), variable, point);
-    if (value == null) return null;
-    if (value == '0') return cuspDerivative(source, variable, point);
-    final slope = parsed.inner.coeffs[1];
+    if (value == null) {
+      return null;
+    }
+    if (value == '0') {
+      final local = absoluteLocalPolynomial(source, variable, point);
+      if (local != null) {
+        final p = polynomial(local, variable);
+        return p == null ? null : at(p.derivative().toString(), variable, point);
+      }
+      return cuspDerivative(source, variable, point);
+    }
     final expression = '(${parsed.outer.derivative()})*(${parsed.inner})'
-        '+(${parsed.outer})*($slope)';
+        '+(${parsed.outer})*(${parsed.inner.derivative()})';
     final result = at(expression, variable, point);
     return result == null ? null : value.startsWith('-')
         ? ExactConstantEvaluator.evaluate('-($result)') : result;
   }
 
-  /// Away from a real affine cusp the sign is constant in a neighborhood,
-  /// so its polynomial multiple has the ordinary Taylor series of +/-P*L.
+  /// A nonzero polynomial value or an even-order zero has a constant sign in
+  /// a neighborhood, so abs(Q) has the ordinary polynomial branch +/-Q.
   static String? absoluteLocalPolynomial(String source, String variable, String point) {
     final parsed = _absoluteProduct(source, variable);
-    if (parsed == null) return null;
+    if (parsed == null) {
+      return null;
+    }
     final value = at(parsed.inner.toString(), variable, point);
-    if (value == null || value == '0') return null;
-    final sign = value.startsWith('-') ? '-1' : '1';
+    if (value == null) {
+      return null;
+    }
+    var signValue = value;
+    if (value == '0') {
+      var derivative = parsed.inner;
+      var multiplicity = 0;
+      while (signValue == '0' && !derivative.isZero) {
+        derivative = derivative.derivative();
+        multiplicity++;
+        final coefficient = at(derivative.toString(), variable, point);
+        if (coefficient == null) {
+          return null;
+        }
+        signValue = coefficient;
+      }
+      if (multiplicity.isOdd || signValue == '0') {
+        return null;
+      }
+    }
+    final sign = signValue.startsWith('-') ? '-1' : '1';
     final local = SymbolicWeb.expand('($sign)*(${parsed.outer})*(${parsed.inner})');
     return local == null ? null : _explicitCoefficients(local, variable);
   }
@@ -189,6 +269,24 @@ class RealCalculusProofs {
     if (order < 0 || order > 64) {
       return null;
     }
+    var innerDerivative = parsed.inner;
+    var innerMultiplicity = 0;
+    while (!innerDerivative.isZero) {
+      final coefficient = at(innerDerivative.toString(), variable, point);
+      if (coefficient == null) {
+        return null;
+      }
+      if (coefficient != '0') {
+        break;
+      }
+      innerMultiplicity++;
+      innerDerivative = innerDerivative.derivative();
+    }
+    // An even-order zero does not change Q's sign: abs(Q) has an ordinary
+    // polynomial branch here, handled by absoluteLocalPolynomial instead.
+    if (innerMultiplicity.isEven) {
+      return null;
+    }
     var derivative = parsed.outer;
     var multiplicity = 0;
     while (!derivative.isZero) {
@@ -202,7 +300,7 @@ class RealCalculusProofs {
       multiplicity++;
       derivative = derivative.derivative();
     }
-    return derivative.isZero || order <= multiplicity
+    return derivative.isZero || order < multiplicity + innerMultiplicity
         ? '0'
         : 'Error: derivative does not exist at $variable = $point (order $order)';
   }
@@ -214,9 +312,14 @@ class RealCalculusProofs {
     if (source.length > 512) {
       return null;
     }
-    final body = strip(source).replaceAll(' ', '');
-    final call = RegExp(r'^(1/)?(sqrt|ln|log)\((.*)\)$').firstMatch(body);
+    final body = strip(source).replaceAll(' ', '').replaceAll('**', '^');
+    final call = RegExp(r'^(1/)?(sqrt|ln|log)\((.*)\)(?:\^(\d+)|\^\((\d+)\))?$').firstMatch(body);
     if (call == null || (call[1] != null && call[2] != 'sqrt')) {
+      return null;
+    }
+    final power = int.tryParse(call[4] ?? call[5] ?? '1');
+    if (power == null || power > 8 ||
+        (call[2] == 'sqrt' && (call[4] != null || call[5] != null))) {
       return null;
     }
     final linear = polynomial(call[3]!, variable);
@@ -242,7 +345,15 @@ class RealCalculusProofs {
     }
     double antiderivative(double u) {
       if (call[2] == 'ln' || call[2] == 'log') {
-        return (u == 0 ? 0 : u * math.log(u) - u) / slope;
+        if (u == 0) {
+          return 0;
+        }
+        final logarithm = math.log(u);
+        var primitive = u;
+        for (var degree = 1; degree <= power; degree++) {
+          primitive = u * math.pow(logarithm, degree) - degree * primitive;
+        }
+        return primitive / slope;
       }
       return call[1] == null
           ? 2 * u * math.sqrt(u) / (3 * slope)

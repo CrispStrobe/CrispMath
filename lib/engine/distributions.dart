@@ -104,11 +104,19 @@ class TDistribution {
 
   /// PDF: Γ((ν+1)/2) / (√(νπ) · Γ(ν/2)) · (1 + x²/ν)^(-(ν+1)/2).
   double pdf(double x) {
+    return math.exp(_logPdf(x));
+  }
+
+  double _logPdf(double x) {
     final v = df.toDouble();
     final logNorm =
         _logGamma((v + 1) / 2) - 0.5 * math.log(v * math.pi) - _logGamma(v / 2);
-    final logKernel = -((v + 1) / 2) * math.log(1 + x * x / v);
-    return math.exp(logNorm + logKernel);
+    final absolute = x.abs();
+    final logRatio = absolute > math.sqrt(v)
+        ? 2 * math.log(absolute) - math.log(v) +
+            math.log(1 + v / absolute / absolute)
+        : math.log(1 + x * x / v);
+    return logNorm - ((v + 1) / 2) * logRatio;
   }
 
   /// CDF through the regularized incomplete beta function. Unlike a
@@ -119,9 +127,97 @@ class TDistribution {
     if (x == double.negativeInfinity) return 0;
     if (x == double.infinity) return 1;
     if (x == 0) return 0.5;
-    final v = df.toDouble();
-    final tail = .5 * _regularizedBeta(v / (v + x * x), v / 2, .5);
+    final tail = _positiveTail(x.abs());
     return x < 0 ? tail : 1 - tail;
+  }
+
+  /// Direct survival probability, without subtracting a rounded CDF from 1.
+  double sf(double x) {
+    if (x.isNaN) return double.nan;
+    if (x == double.negativeInfinity) return 1;
+    if (x == double.infinity) return 0;
+    final tail = _positiveTail(x.abs());
+    return x < 0 ? 1 - tail : tail;
+  }
+
+  double _positiveTail(double x) {
+    if (x == 0) return .5;
+    if (x == double.infinity) return 0;
+    if (df == 1) {
+      return x > 1 ? math.atan(1 / x) / math.pi
+          : .5 - math.atan(x) / math.pi;
+    }
+    if (df == 2) {
+      final root = x > 1
+          ? x * math.sqrt(1 + 2 / x / x) : math.sqrt(x * x + 2);
+      return (1 / root) / (root + x);
+    }
+    final v = df.toDouble();
+    return .5 * _regularizedBeta(v / (v + x * x), v / 2, .5);
+  }
+
+  /// Shared interval probability preserves either tail instead of subtracting
+  /// two CDF values that both round to 1. Bounds are ordered, inclusive.
+  double intervalProbability(double lower, double upper) {
+    if (lower.isNaN || upper.isNaN) return double.nan;
+    if (lower > upper) throw ArgumentError('Interval lower bound exceeds upper bound');
+    if (lower == upper) return 0;
+    if (df == 1 && lower.abs() <= 1 && upper.abs() <= 1) {
+      return (math.atan(upper) - math.atan(lower)) / math.pi;
+    }
+    if (df == 2 && lower.abs() <= 1 && upper.abs() <= 1) {
+      return upper / (2 * math.sqrt(upper * upper + 2)) -
+          lower / (2 * math.sqrt(lower * lower + 2));
+    }
+    if (lower.isFinite && upper.isFinite) {
+      final width = upper - lower;
+      final magnitude = math.max(1.0, math.max(lower.abs(), upper.abs()));
+      if ((lower.abs() <= 1 && upper.abs() <= 1) ||
+          (width.isFinite && width / magnitude <= 1e-6)) {
+        return _integratedInterval(lower, upper);
+      }
+    }
+    final probability = lower >= 0 ? sf(lower) - sf(upper)
+        : upper <= 0 ? sf(-upper) - sf(-lower)
+        : 1 - sf(upper) - sf(-lower);
+    return probability.clamp(0.0, 1.0).toDouble();
+  }
+
+  /// Normalize the smooth density before bounded adaptive integration.
+  /// This retains narrow central mass and intervals whose density itself
+  /// underflows, while density times interval width remains representable.
+  double _integratedInterval(double lower, double upper) {
+    final width = upper - lower;
+    final nearestZero = lower >= 0 ? lower : upper <= 0 ? upper : 0.0;
+    final logScale = _logPdf(nearestZero);
+    var evaluations = 0;
+    double value(double position) {
+      if (++evaluations > 4097) {
+        throw StateError('Student t interval integration budget exceeded');
+      }
+      return math.exp(_logPdf(lower + position * width) - logScale);
+    }
+    double integrate(double left, double right, double fa, double fm,
+        double fb, double whole, int depth) {
+      final middle = (left + right) / 2;
+      final fl = value((left + middle) / 2);
+      final fr = value((middle + right) / 2);
+      final l = (middle - left) * (fa + 4 * fl + fm) / 6;
+      final r = (right - middle) * (fm + 4 * fr + fb) / 6;
+      final refined = l + r;
+      if ((refined - whole).abs() <= 15e-13 * refined.abs()) {
+        return refined + (refined - whole) / 15;
+      }
+      if (depth == 0) {
+        throw StateError('Student t interval integration did not converge');
+      }
+      return integrate(left, middle, fa, fl, fm, l, depth - 1) +
+          integrate(middle, right, fm, fr, fb, r, depth - 1);
+    }
+    final fa = value(0), fm = value(.5), fb = value(1);
+    final integral = integrate(0, 1, fa, fm, fb, (fa + 4 * fm + fb) / 6, 12);
+    return (math.exp(logScale + math.log(width)) * integral)
+        .clamp(0.0, 1.0).toDouble();
   }
 
   /// Bisection on the monotone CDF. Same approach as Normal.quantile.
@@ -170,11 +266,22 @@ class ChiSquare {
     return math.exp(logVal);
   }
 
-  /// CDF via numerical integration of the PDF on [0, x]. 1000 Simpson
-  /// subintervals give ~6 digits for typical df.
+  /// Regularized incomplete gamma avoids integrating the singular df=1
+  /// density at zero and computes each tail in its stable regime.
   double cdf(double x) {
+    if (x.isNaN) return double.nan;
     if (x <= 0) return 0.0;
-    return _simpson(pdf, 0, x, 1000);
+    if (x == double.infinity) return 1;
+    return _gammaProbability(df / 2, x / 2, upper: false,
+        logX: math.log(x) - math.ln2);
+  }
+
+  double sf(double x) {
+    if (x.isNaN) return double.nan;
+    if (x <= 0) return 1;
+    if (x == double.infinity) return 0;
+    return _gammaProbability(df / 2, x / 2, upper: true,
+        logX: math.log(x) - math.ln2);
   }
 
   /// Bisection on the monotone CDF. Upper bracket scales with df
@@ -332,6 +439,51 @@ double _betaFraction(double x, double a, double b) {
 }
 
 // === Internal helpers ====================================================
+
+/// Regularized gamma P/Q: convergent power series below a+1, modified
+/// Lentz continued fraction above it. Both share a logarithmic scale.
+/// The fixed iteration budget rejects nonconvergence explicitly.
+double _gammaProbability(double a, double x,
+    {required bool upper, double? logX}) {
+  if (x == 0 && logX == null) return upper ? 1 : 0;
+  // Keeping log(x/2) from the original input avoids underflowing the gamma
+  // argument for the smallest positive chi-square observation at df=1.
+  final scale = math.exp(a * (logX ?? math.log(x)) - x - _logGamma(a));
+  const epsilon = 2e-14;
+  const tiny = 1e-300;
+  if (x < a + 1) {
+    var term = 1 / a;
+    var sum = term;
+    for (var i = 1; i <= 2000; i++) {
+      term *= x / (a + i);
+      sum += term;
+      if (term.abs() <= sum.abs() * epsilon) {
+        final p = (sum * scale).clamp(0.0, 1.0).toDouble();
+        return upper ? 1 - p : p;
+      }
+    }
+  } else {
+    double guard(double value) => value.abs() < tiny
+        ? (value < 0 ? -tiny : tiny) : value;
+    var b = x + 1 - a;
+    var c = 1 / tiny;
+    var d = 1 / guard(b);
+    var h = d;
+    for (var i = 1; i <= 2000; i++) {
+      final coefficient = -i * (i - a);
+      b += 2;
+      d = 1 / guard(b + coefficient * d);
+      c = guard(b + coefficient / c);
+      final delta = d * c;
+      h *= delta;
+      if ((delta - 1).abs() <= epsilon) {
+        final q = (scale * h).clamp(0.0, 1.0).toDouble();
+        return upper ? q : 1 - q;
+      }
+    }
+  }
+  throw StateError('Incomplete gamma did not converge');
+}
 
 /// Abramowitz & Stegun 7.1.26 — max abs error 1.5e-7 for x ≥ 0.
 /// Symmetric for x < 0: erf(-x) = -erf(x).

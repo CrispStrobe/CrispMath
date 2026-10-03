@@ -27,8 +27,8 @@ Future<dynamic> runWorkflowModule(
           .cdf((task['x'] as num).toDouble());
     case 'tInterval':
       final distribution = TDistribution(df: (task['df'] as num).toInt());
-      return distribution.cdf((task['upper'] as num).toDouble()) -
-          distribution.cdf((task['lower'] as num).toDouble());
+      return distribution.intervalProbability(
+          (task['lower'] as num).toDouble(), (task['upper'] as num).toDouble());
     case 'rationalDomain':
       final domain = RationalDomain.inspect(task['expression'],
           variable: task['variable']);

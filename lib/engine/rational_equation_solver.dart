@@ -1,6 +1,9 @@
 import 'polynomial.dart';
+import 'exact_constant.dart';
 import 'symbolic_expr.dart';
 import 'symbolic_web.dart';
+import 'polynomial_domain_proofs.dart';
+import 'symbolic_input_budget.dart';
 
 /// Bounded exact rational equations; preserves original denominator conditions.
 class RationalEquationSolver {
@@ -20,10 +23,27 @@ class RationalEquationSolver {
   }
 
   static List<String>? solve(String source, String variable) {
-    if (source.length > 512 || !source.contains('/')) return null;
+    final candidates = _candidatePolynomial(source, variable);
+    return candidates == null ? null :
+        SymbolicWeb.solveList(candidates.toString(), variable);
+  }
+
+  /// Native higher-degree solving must use this domain-filtered polynomial,
+  /// rather than resurrecting factors excluded by the original expression.
+  static String? candidateEquation(String source, String variable) =>
+      _candidatePolynomial(source, variable)?.toString();
+
+  static Polynomial? _candidatePolynomial(String source, String variable) {
+    if (source.length > 512 || !boundedSymbolicLiterals(source) ||
+        (!source.contains('/') &&
+            !RegExp(r'\^\s*\(?\s*-\d').hasMatch(source.replaceAll('**', '^')))) {
+      return null;
+    }
     try {
       final parts = source.split('=');
-      if (parts.length > 2) return null;
+      if (parts.length > 2) {
+        return null;
+      }
       final expression =
           parts.length == 2 ? '(${parts[0]})-(${parts[1]})' : source;
       final denominators = <Polynomial>[];
@@ -66,14 +86,13 @@ class RationalEquationSolver {
           return (n, d);
         }
         if (node is SymPow) {
-          final exp = node.exponent.simplify();
-          if (exp is! SymNum ||
-              !exp.value.isInteger ||
-              exp.value.numerator.abs() > BigInt.from(8)) {
+          final exact = ExactConstantEvaluator.evaluate(renderSymExpr(node.exponent));
+          final exponent = exact == null ? null : BigInt.tryParse(exact);
+          if (exponent == null || exponent.abs() > BigInt.from(8)) {
             throw const FormatException('Unsupported exponent');
           }
           final (n, d) = walk(node.base, depth + 1);
-          final power = exp.value.numerator.toInt();
+          final power = exponent.toInt();
           if (n.degree * power.abs() > 8 ||
               d.degree * power.abs() > 8 ||
               _coefficientCost(n) * power.abs() > _maxCoefficientBits ||
@@ -90,24 +109,30 @@ class RationalEquationSolver {
       }
 
       final (numerator, denominator) = walk(SymParser(expression).parse(), 0);
-      if (denominator.isZero || numerator.isZero) return null;
+      if (denominator.isZero || numerator.isZero) {
+        return null;
+      }
       denominators.add(denominator);
-      final roots = SymbolicWeb.solveList(numerator.toString(), variable);
-      if (roots == null) return null;
-      Rational evaluate(Polynomial poly, Rational x) =>
-          poly.coeffs.reversed.fold(Rational.zero, (v, c) => v * x + c);
-      final valid = <String>[];
-      for (final root in roots) {
-        final m = RegExp(r'^(-?\d+)(?:/(\d+))?$').firstMatch(root);
-        if (m == null) {
-          return null; // Native CAS handles irrational/complex cases.
+      var candidates = numerator;
+      // Original denominators own their exclusions even after cancellation.
+      // Remove every multiplicity of a forbidden factor before asking for
+      // roots, so repeated, irrational and complex holes cannot reappear.
+      for (final excluded in denominators) {
+        if (excluded.isZero) {
+          return null;
         }
-        final value = Rational(BigInt.parse(m[1]!), BigInt.parse(m[2] ?? '1'));
-        if (denominators.every((p) => !evaluate(p, value).isZero)) {
-          valid.add(root);
+        for (var degree = 0; degree < 8; degree++) {
+          final common = PolynomialDomainProofs.gcd(candidates, excluded);
+          if (common == null) {
+            return null;
+          }
+          if (common.degree <= 0) {
+            break;
+          }
+          candidates = candidates.divmod(common).quotient;
         }
       }
-      return valid;
+      return candidates;
     } catch (_) {
       return null;
     }

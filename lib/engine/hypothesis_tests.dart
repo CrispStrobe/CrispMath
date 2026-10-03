@@ -353,7 +353,7 @@ class HypothesisTests {
     final df = n - 1;
     final tDist = TDistribution(df: df);
 
-    final upper = (1.0 - tDist.cdf(t)).clamp(0.0, 1.0).toDouble();
+    final upper = tDist.sf(t).clamp(0.0, 1.0).toDouble();
     final lower = tDist.cdf(t).clamp(0.0, 1.0).toDouble();
     // Two-sided convention: 2 × min(upper, lower).
     final twoSided = (2 * math.min(upper, lower)).clamp(0.0, 1.0).toDouble();
@@ -454,7 +454,7 @@ class HypothesisTests {
     final dfInt = df.round();
     final tDist = TDistribution(df: math.max(1, dfInt));
 
-    final upper = (1.0 - tDist.cdf(t)).clamp(0.0, 1.0).toDouble();
+    final upper = tDist.sf(t).clamp(0.0, 1.0).toDouble();
     final lower = tDist.cdf(t).clamp(0.0, 1.0).toDouble();
     final twoSided = (2 * math.min(upper, lower)).clamp(0.0, 1.0).toDouble();
 
@@ -604,7 +604,7 @@ class HypothesisTests {
             'row $i has ${observed[i].length} cells (expected $cols).');
       }
       for (final v in observed[i]) {
-        if (v < 0) {
+        if (!v.isFinite || v < 0) {
           throw ArgumentError('chiSquareIndependence() observed counts must be '
               'non-negative.');
         }
@@ -655,7 +655,7 @@ class HypothesisTests {
       }
     }
     final df = (rows - 1) * (cols - 1);
-    final p = (1.0 - ChiSquare(df: df).cdf(chi2)).clamp(0.0, 1.0).toDouble();
+    final p = ChiSquare(df: df).sf(chi2).clamp(0.0, 1.0).toDouble();
 
     return ChiSquareIndependenceResult(
       statistic: chi2,
@@ -934,12 +934,12 @@ class HypothesisTests {
       throw ArgumentError('chiSquareGof() needs at least 2 categories.');
     }
     for (final v in expected) {
-      if (v <= 0) {
+      if (!v.isFinite || v <= 0) {
         throw ArgumentError('chiSquareGof() expected counts must all be > 0.');
       }
     }
     for (final v in observed) {
-      if (v < 0) {
+      if (!v.isFinite || v < 0) {
         throw ArgumentError(
             'chiSquareGof() observed counts must be non-negative.');
       }
@@ -950,7 +950,7 @@ class HypothesisTests {
       chi2 += d * d / expected[i];
     }
     final df = observed.length - 1;
-    final p = (1.0 - ChiSquare(df: df).cdf(chi2)).clamp(0.0, 1.0);
+    final p = ChiSquare(df: df).sf(chi2).clamp(0.0, 1.0);
     return ChiSquareGofResult(
       statistic: chi2,
       df: df,

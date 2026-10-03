@@ -19,6 +19,7 @@ import 'rational_integral_domain.dart';
 import 'polynomial_quotient_cancellation.dart';
 import 'real_calculus_proofs.dart';
 import 'exact_constant.dart';
+import 'exact_complex_constant.dart';
 import 'definite_antiderivative.dart';
 import 'function_reference.dart';
 import 'numeric_fallback.dart';
@@ -196,6 +197,14 @@ class CalculatorEngine {
               : ComputationMethod.integerArithmetic);
       return exact;
     }
+    final conjugated = ExactComplexConstant.conjugation(expression);
+    if (conjugated != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      return conjugated;
+    }
+    final principal = ExactComplexConstant.principalPower(expression);
+    if (principal != null) return evaluate(principal);
     // Native evaluation can crash on composed logarithm/absolute-value
     // constants. Only this bounded, supported real grammar bypasses the CAS;
     // free symbols and complex expressions retain their normal routing.
@@ -339,13 +348,15 @@ class CalculatorEngine {
           ? '$symbol = ${rational.single}'
           : '$symbol = {${rational.join(', ')}}';
     }
+    final candidates = RationalEquationSolver.candidateEquation(expression, symbol)
+        ?? expression;
     final bridge = _liveBridge;
     if (bridge == null) {
       // Web / native-less: solve linear & quadratic polynomials in pure
       // Dart so the browser build isn't limited to "requires native
       // library" for the most common cases. Higher-degree / non-
       // polynomial equations return null and fall through.
-      final web = SymbolicWeb.solveList(expression, symbol);
+      final web = SymbolicWeb.solveList(candidates, symbol);
       if (web != null) {
         if (web.isEmpty) return '$symbol = (no solutions)';
         if (web.length > 1) return '$symbol = {${web.join(', ')}}';
@@ -354,7 +365,7 @@ class CalculatorEngine {
       return 'Error: solve requires native library';
     }
     try {
-      final result = bridge.solve(expression, symbol);
+      final result = bridge.solve(candidates, symbol);
       if (result.startsWith('Error')) return result;
       if (result.startsWith('[') && result.endsWith(']')) {
         final inner = result.substring(1, result.length - 1);
@@ -1406,6 +1417,13 @@ class CalculatorEngine {
   String limit(String expression, String variable, String point) {
     lastResultEvidence = null;
 
+    final radical = RealCalculusProofs.quadraticRadicalLimit(expression, variable, point);
+    if (radical != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      return radical;
+    }
+
     if (RealCalculusProofs.squeezedZero(expression, variable, point)) {
       lastResultEvidence = const ResultEvidence(
           ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
@@ -1423,7 +1441,9 @@ class CalculatorEngine {
     );
     if (symbolic != null && !RegExp(
         r'\b(?:Derivative|Subs|undefined|nan|zoo|Error)\b', caseSensitive: false)
-        .hasMatch(symbolic.value)) {
+        .hasMatch(symbolic.value) &&
+        (!RegExp(r'\b(?:oo|inf|infinity)\b', caseSensitive: false).hasMatch(symbolic.value) ||
+            RegExp(r'^[+-]?(?:oo|inf|infinity)$', caseSensitive: false).hasMatch(symbolic.value.trim()))) {
       // Nested evaluations describe intermediate numerator/denominator
       // arithmetic. They are not the provenance of the completed limit.
       lastResultEvidence = const ResultEvidence(
@@ -1560,6 +1580,15 @@ class CalculatorEngine {
     if (poles != null && poles.isNotEmpty) {
       return 'Error: integration interval contains a divergent pole '
           'at $variable = ${poles.join(', ')}';
+    }
+    final polynomialPole = RationalIntegralDomain.containsPole(
+        expression, variable, lower, upper);
+    if (polynomialPole == true) {
+      return 'Error: integration interval contains a divergent pole';
+    }
+    if (poles == null && polynomialPole == null &&
+        RationalIntegralDomain.isSupportedQuotient(expression, variable)) {
+      return 'Error: cannot certify the rational integration interval domain';
     }
     final elementary = RealCalculusProofs.definite(
         expression, variable, lower, upper);

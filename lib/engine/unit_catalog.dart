@@ -180,6 +180,12 @@ class DerivedUnits {
       dim: Dimensions(mass: 1, length: 2, time: -2),
       scale: 3600.0,
     ),
+    'erg': DerivedUnit(
+      symbol: 'erg',
+      name: 'erg',
+      dim: Dimensions(mass: 1, length: 2, time: -2),
+      scale: 1e-7,
+    ),
     'W': DerivedUnit(
       symbol: 'W',
       name: 'watt',
@@ -203,6 +209,12 @@ class DerivedUnits {
       name: 'hertz',
       dim: Dimensions(time: -1),
       scale: 1.0,
+    ),
+    'atm': DerivedUnit(
+      symbol: 'atm',
+      name: 'standard atmosphere',
+      dim: Dimensions(mass: 1, length: -1, time: -2),
+      scale: 101325.0,
     ),
   };
 

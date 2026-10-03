@@ -5,7 +5,7 @@ import 'polynomial.dart';
 class ExactConstantEvaluator {
   static String? evaluate(String input) {
     if (input.length > 512 ||
-        !RegExp(r'^[\d.\s+*/%^()\-absqrtfloorceiling]+$').hasMatch(input)) {
+        !RegExp(r'^[\d.\s+*/%^()\-absqrtfloorceilingE]+$').hasMatch(input)) {
       return null;
     }
     try {
@@ -177,15 +177,26 @@ class _ConstantParser {
       return value;
     }
     whitespace();
-    final literal = RegExp(r'^(?:\d+(?:\.\d*)?|\.\d+)')
+    final literal = RegExp(r'^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?')
         .firstMatch(input.substring(position));
     if (literal == null) throw _Decline();
     final text = literal[0]!;
     position += text.length;
-    final dot = text.indexOf('.');
-    final places = dot < 0 ? 0 : text.length - dot - 1;
-    return checked(Rational(BigInt.parse(text.replaceAll('.', '')),
-        BigInt.from(10).pow(places)));
+    final parts = text.split(RegExp(r'[eE]'));
+    final mantissa = parts.first;
+    final exponent = parts.length == 1 ? BigInt.zero : BigInt.parse(parts[1]);
+    final dot = mantissa.indexOf('.');
+    final places = dot < 0 ? 0 : mantissa.length - dot - 1;
+    // Bound the decimal scale before allocating a power of ten. Scientific
+    // literals stay rational; converting them to doubles first would erase
+    // subnormal roots and exact cancellation across large decimal scales.
+    final scale = BigInt.from(places) - exponent;
+    if (scale.abs() > BigInt.from(maxBits ~/ 4)) throw _Decline();
+    final digits = BigInt.parse(mantissa.replaceAll('.', ''));
+    final powerOfTen = BigInt.from(10).pow(scale.abs().toInt());
+    return checked(scale.isNegative
+        ? Rational(digits * powerOfTen, BigInt.one)
+        : Rational(digits, powerOfTen));
   }
 
   /// Integer Newton iteration never converts to double or guesses exactness.
