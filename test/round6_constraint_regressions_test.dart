@@ -101,7 +101,7 @@ maximize 3*a + 5*b
   });
 
   test('unsupported polynomial grammars fail explicitly', () async {
-    for (final expression in ['x^2', '(x-1)*(x-1)', 'x*x/2',
+    for (final expression in ['x^2', 'x*x/2',
       'sin(x)', 'x*missing', 'x x', '1.5*x*x']) {
       final result = await CspSolver.solveOptimization(
         variables: {'x': (min: -3, max: 3)},
@@ -112,6 +112,18 @@ maximize 3*a + 5*b
       expect(result.ok, isFalse, reason: expression);
       expect(result.error, contains('Could not parse'), reason: expression);
     }
+  });
+
+  test('grouped shifted factors find their exact global minimum', () async {
+    final result = await CspSolver.solveOptimization(
+      variables: {'x': (min: -3, max: 3)},
+      constraints: const [],
+      minimize: true,
+      objectiveExpr: '(x-1)*(x-1)',
+    );
+    expect(result.ok, isTrue, reason: result.error);
+    expect(result.objective, 0);
+    expect(result.solutions.single, {'x': 1});
   });
 
   test('large objective domains fail before an expensive search', () async {

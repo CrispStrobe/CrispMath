@@ -166,7 +166,8 @@ void main() {
           '${List.filled(40, ')').join()}';
       for (final expression in ['(x-1)/(x+1)', '(x-1)^2',
         '(x-1)(x+1)', '(z-1)*(z+1)', '(x-1)*(x+1',
-        expansion, nested]) {
+        expansion, nested, List.filled(65, 'x*x').join('+'),
+        List.filled(65, '0*x').join('+')]) {
         final result = await CspSolver.solveDsl(
             'vars: x, y in -2..2\nminimize $expression');
         expect(result.ok, isFalse, reason: expression);

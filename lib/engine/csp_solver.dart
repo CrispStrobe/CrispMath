@@ -4045,6 +4045,8 @@ class _IntegerPolynomialParser {
   final Set<String> knownVars;
   var index = 0;
   var depth = 0;
+  var sourceTerms = 1;
+  var sourceAtoms = 0;
   final names = <String>{};
   var nonlinear = false;
   static const maxTerms = 64;
@@ -4073,6 +4075,7 @@ class _IntegerPolynomialParser {
   _PolynomialTerms _sum() {
     var left = _product();
     while (index < text.length && (text[index] == '+' || text[index] == '-')) {
+      if (++sourceTerms > maxTerms) _invalid();
       final minus = text[index++] == '-';
       final right = _product();
       if (left.length + right.length > maxTerms) _invalid();
@@ -4098,7 +4101,9 @@ class _IntegerPolynomialParser {
           factorBudget += a.factors.length + b.factors.length + 1;
           if (factorBudget > maxFactors ||
               a.coefficient.bitLength + b.coefficient.bitLength >
-                  maxCoefficientBits) _invalid();
+                  maxCoefficientBits) {
+            _invalid();
+          }
         }
       }
       left = _bounded([
@@ -4126,6 +4131,7 @@ class _IntegerPolynomialParser {
       }
       if (index >= text.length) _invalid();
       final start = index;
+      if (++sourceAtoms > maxFactors) _invalid();
       final digit = RegExp(r'[0-9]');
       if (digit.hasMatch(text[index])) {
         while (index < text.length && digit.hasMatch(text[index])) { index++; }

@@ -56,3 +56,13 @@ solver routing. Independent static review found these cancellation/zero-arity
 and display-overflow cases, which now have controls. Twenty-eight new regression
 tests and two reference tests are ready for hosted verification. Build 20 is
 prepared; build 19 remains approved until all changed-production gates pass.
+
+The first repaired candidate `0d8dd15` passes all 687 runtime questions on
+native Linux and packaged Mac. Full units expose a real input-budget regression:
+canonical term combination allowed 65 repeated summands to bypass the previous
+64-source-term limit. Separate global source-term/atom counters now retain that
+limit before simplification, with oversized repeated/zero controls. Two existing
+unit assertions described grouped objectives and ampere as unsupported; they
+now assert the newly supported behavior while retaining other invalid-input
+checks. Initial failure logs are preserved. The analyzer's reported missing
+braces are corrected. Final full/runtime/live verification follows.
