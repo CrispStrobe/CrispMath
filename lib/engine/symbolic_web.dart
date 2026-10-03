@@ -406,7 +406,11 @@ class SymbolicWeb {
       final parser = _PolyExprParser(s);
       final p = parser.parseExpr();
       if (!parser.atEnd) return null;
-      return p;
+      // Constant-first arithmetic can retain the constant's placeholder x.
+      // The parser tracks the actual single variable independently throughout
+      // nested expressions; keep that declaration on the final coefficient
+      // vector for every public polynomial operation.
+      return Polynomial.fromCoeffs(p.coeffs, parser._variableName);
     } on _PolyBail {
       return null;
     }

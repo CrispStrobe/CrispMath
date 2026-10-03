@@ -10,6 +10,24 @@ import 'package:crisp_math/engine/symbolic_web.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('constant-first polynomial parsing retains actual non-x variables', () {
+    expect(SymbolicWeb.expand('2-(2+y)'), '-y');
+    expect(SymbolicWeb.expand('2*t+1'), '2t + 1');
+    expect(SymbolicWeb.differentiate('2+y', 'y'), '1');
+    expect(SymbolicWeb.differentiate('2+y', 'x'), '0');
+    expect(SymbolicWeb.differentiate('3*(2+t)^2', 't'), '6t + 12');
+    expect(SymbolicWeb.integrate('2+y', 'y'), '1/2y^2 + 2y');
+    expect(SymbolicWeb.integrate('2+y', 'x'), isNull);
+    expect(SymbolicWeb.definiteIntegral('2+t', 't', '0', '1'), '5/2');
+    expect(SymbolicWeb.solveList('2+t', 't'), ['-2']);
+    final engine = CalculatorEngine();
+    expect(engine.integrate('2+y', 'y', '0', '1'), '5/2');
+    expect(engine.differentiateAt('abs(2+y)', 'y', '0'), '1');
+    expect(engine.differentiateAt('abs(2+y)', 'y', '-2'),
+        contains('derivative does not exist'));
+    expect(RealCalculusProofs.polynomial('2-(2+y)', 'x'), isNull);
+    expect(RealCalculusProofs.polynomial('2-(2+y)', 'y')?.toString(), '-y');
+  });
   test('Taylor shifted polynomial output is canonical without changing domains', () {
     expect(normalizePolynomialTaylorValue('2 - (2 + x)', 'x'), '-x');
     expect(normalizePolynomialTaylorValue('-4+4*(x+2)-(x+2)^2', 'x'), '-x^2');

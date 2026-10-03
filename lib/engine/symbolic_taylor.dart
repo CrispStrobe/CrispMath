@@ -6,6 +6,10 @@ import 'symbolic_web.dart';
 /// readable without reinterpreting functions, foreign variables or errors.
 String normalizePolynomialTaylorValue(String value, String variable) {
   if (value.length > 512 || invalidSymbolicTaylorValue(value)) return value;
+  if (RegExp(r'[A-Za-z_][A-Za-z_0-9]*').allMatches(value)
+      .any((word) => word[0] != variable)) {
+    return value;
+  }
   final expanded = SymbolicWeb.expand(value);
   final polynomial = expanded == null ? null : Polynomial.tryParse(expanded);
   return polynomial != null &&

@@ -234,12 +234,13 @@ jobs:
           mkdir -p task-results
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
           status=0
-          for area in algebra numeric domain scope taylor series_scope; do
+          for area in algebra numeric domain scope taylor series_scope variable; do
             count=25
             if [ "$area" = domain ]; then count=2; fi
             if [ "$area" = scope ]; then count=1; fi
             if [ "$area" = taylor ]; then count=3; fi
             if [ "$area" = series_scope ]; then count=8; fi
+            if [ "$area" = variable ]; then count=4; fi
             cat "test/fixtures/round6_${area}_tasks.json" | \
               CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
               CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round6-${area}.log" || status=1
