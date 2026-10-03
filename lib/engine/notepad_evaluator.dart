@@ -407,6 +407,42 @@ class NotepadEvaluator {
       }
       progress(i);
     }
+    // Formal output variables have no value dependency on a same-named scalar.
+    // Refresh only their availability badges after all edited bindings settle;
+    // symbolic results and evidence stay cached, without another engine call.
+    Set<String>? availableNames;
+    for (var i = 0; i < doc.lines.length; i++) {
+      cancellation?.check();
+      final line = doc.lines[i];
+      if (line.cachedResult == null || line.cachedError != null ||
+          (!line.source.contains('diff') &&
+              !line.source.contains('integrate') &&
+              !line.source.contains('d/dx'))) {
+        continue;
+      }
+      final parsed = parseCache.parse(line.source,
+          lineIndex: i, firstCodeLineIndex: firstCode);
+      final body = parsed.body;
+      if (body == null) continue;
+      final formalNames =
+          _unboundIdentifierWords(body, includeOutputVariables: true)
+              .difference(_unboundIdentifierWords(body))
+            ..removeAll(parsed.parameters ?? const <String>[])
+            ..removeAll(kReservedNotepadNames)
+            ..remove('Ans');
+      if (formalNames.isEmpty) continue;
+      availableNames ??= buildNotepadScope(doc,
+          externalScope: externalScope, parseCache: parseCache).keys.toSet();
+      final badges = line.cachedFreeVars.toSet();
+      for (final name in formalNames) {
+        if (availableNames.contains(name)) {
+          badges.remove(name);
+        } else {
+          badges.add(name);
+        }
+      }
+      line.cachedFreeVars = badges.toList()..sort();
+    }
     return doc;
   }
 

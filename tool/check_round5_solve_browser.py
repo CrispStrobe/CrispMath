@@ -25,7 +25,7 @@ controls.CASES = [
 NUMERIC = re.compile(r'[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?:/\d+)?')
 
 
-def validate_result(case, line):
+def validate_result(case, line, expected_free=()):
     case_id, source, expected = case
     assert line.get('s') == source and not line.get('e'), (case, line)
     result = line.get('r')
@@ -37,7 +37,7 @@ def validate_result(case, line):
         else:
             term = r'(?:(?:x\^3|\(x\^3\))/3|(?:1/3|\(1/3\))\*?x\^3)'
             assert re.fullmatch(rf'(?:{term}\+C|C\+{term})', expression), (case, line)
-        assert not line.get('f'), (case, line)
+        assert line.get('f', []) == list(expected_free), (case, line)
         return
     if isinstance(expected, set):
         match = re.fullmatch(r'x\s*=\s*(\{[^{}]+\}|[^{}]+)', result.strip())
@@ -57,6 +57,63 @@ def validate_result(case, line):
 
 
 controls.validate_result = validate_result
+
+
+async def check_incremental_badges(page, doc_id, batch, baseline, snapshots):
+    if batch[0][0] != 'calculus-global-x':
+        return
+    formal_baseline = baseline['l'][1:]
+    assert all(line.get('evidence') for line in formal_baseline), baseline
+    edits = [
+        ('rename-owner', 'y=9', ['x'], '9', False),
+        ('invalidate-owner', 'x=1+', ['x'], None, True),
+        ('remove-owner', '', ['x'], None, False),
+        ('restore-owner', 'x=9', [], '9', False),
+        ('change-owner-value', 'x=12', [], '12', False),
+        ('restore-before-reload', 'x=9', [], '9', False),
+    ]
+    for label, source, free_vars, owner_result, owner_error in edits:
+        field = page.get_by_role('textbox').nth(0)
+        await field.click()
+        await controls.next_frames(page)
+        await field.fill(source)
+        # Observe persisted app state only. No direct cache mutation or
+        # recalculate-all action may conceal an incremental refresh defect.
+        await page.wait_for_function('''item => {
+          const raw=localStorage.getItem('flutter.crisp.notepadDoc.'+item.id);
+          if(!raw)return false;
+          const rows=JSON.parse(JSON.parse(raw)).l;
+          if(rows.length!==3 || rows[0].s!==item.source)return false;
+          if(Boolean(rows[0].e)!==item.ownerError)return false;
+          if(item.ownerResult!==null && rows[0].r!==item.ownerResult)return false;
+          if(item.source==='' && rows[0].r)return false;
+          return rows.slice(1).every((line,index) =>
+            line.s===item.formal[index].s && !line.e &&
+            line.r===item.formal[index].r &&
+            JSON.stringify(line.f || [])===JSON.stringify(item.free));
+        }''', arg={'id': doc_id, 'source': source, 'free': free_vars,
+                  'ownerResult': owner_result, 'ownerError': owner_error,
+                  'formal': formal_baseline})
+        document = await controls.read_document(page, doc_id)
+        # Keep evidence for every observed edit, even if a later assertion fails.
+        snapshots.append({'edit': label, 'source': source,
+                          'expectedFreeVariables': free_vars,
+                          'document': document})
+        owner = document['l'][0]
+        assert owner['s'] == source and bool(owner.get('e')) == owner_error, owner
+        if owner_result is not None:
+            assert owner.get('r') == owner_result, owner
+        elif not source:
+            assert not owner.get('r'), owner
+        for case, line, original in zip(batch[1:], document['l'][1:],
+                                        formal_baseline):
+            validate_result(case, line, expected_free=free_vars)
+            assert line['r'] == original['r'], (label, line, original)
+            assert line.get('evidence') == original.get('evidence'), (
+                label, line, original)
+
+
+controls.AFTER_ENTRY = check_incremental_badges
 
 
 if __name__ == '__main__':

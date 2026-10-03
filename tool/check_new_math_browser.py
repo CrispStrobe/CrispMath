@@ -28,6 +28,9 @@ CASES = [
     ('parenthesized-negative-power', '(2^(-3))^2', '1/64'),
 ]
 
+# Specialized controls may extend a baseline batch using actual UI edits.
+AFTER_ENTRY = None
+
 
 def validate_result(case, line):
     """Accept only the independently known value, with bounded notation variants."""
@@ -119,6 +122,10 @@ async def check(args):
                         for case, line in zip(batch, saved['l']):
                             validate_result(case, line)
                         item['beforeReload'] = saved
+                        if AFTER_ENTRY is not None:
+                            item['incrementalEdits'] = []
+                            await AFTER_ENTRY(page, doc_id, batch, saved,
+                                              item['incrementalEdits'])
                         await page.screenshot(
                             path=str(output / f'math-{width}-batch-{batch_number}.png'))
                         await page.reload(wait_until='domcontentloaded')

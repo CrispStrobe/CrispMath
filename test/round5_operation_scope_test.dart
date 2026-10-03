@@ -210,6 +210,38 @@ void main() {
     expect(routed.last.arg2, 'x');
   });
 
+  test('incremental edits refresh formal availability without recalculating CAS',
+      () async {
+    final routed = <EngineOp>[];
+    final doc = _document(['x=9', 'diff(x^3,x)', 'integrate(x^2,x)']);
+    final evaluator = _evaluator(routed);
+    await evaluator.evaluateAll(doc);
+    final symbolicResults =
+        doc.lines.skip(1).map((line) => line.cachedResult).toList();
+    final evidence = doc.lines.skip(1).map((line) => line.resultEvidence).toList();
+    final initialCasCalls = routed
+        .where((op) => op.kind == 'differentiate' || op.kind == 'integrate')
+        .length;
+    for (final source in ['y=9', 'x=4', 'x=1/0', 'x=2', '# removed x', 'x=3']) {
+      doc.lines.first.source = source;
+      await evaluator.evaluateChanged(doc, {0});
+      final available = source == 'x=4' || source == 'x=2' || source == 'x=3';
+      for (final line in doc.lines.skip(1)) {
+        expect(line.cachedFreeVars, available ? isEmpty : ['x'], reason: source);
+      }
+      expect(doc.lines.skip(1).map((line) => line.cachedResult).toList(),
+          symbolicResults, reason: source);
+      expect(doc.lines.skip(1).map((line) => line.resultEvidence).toList(),
+          evidence, reason: source);
+      expect(
+          routed
+              .where((op) => op.kind == 'differentiate' || op.kind == 'integrate')
+              .length,
+          initialCasCalls,
+          reason: source);
+    }
+  });
+
   test('formal output badges use available globals without hiding unbound names',
       () async {
     // The function forces the full scope path before x has a cached value.
