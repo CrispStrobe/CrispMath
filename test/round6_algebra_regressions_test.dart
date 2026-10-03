@@ -10,6 +10,16 @@ import 'package:crisp_math/engine/symbolic_web.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Taylor shifted polynomial output is canonical without changing domains', () {
+    expect(normalizePolynomialTaylorValue('2 - (2 + x)', 'x'), '-x');
+    expect(normalizePolynomialTaylorValue('-4+4*(x+2)-(x+2)^2', 'x'), '-x^2');
+    expect(normalizePolynomialTaylorValue('2-(2+y)', 'x'), '2-(2+y)');
+    expect(normalizePolynomialTaylorValue('sin(x-2)', 'x'), 'sin(x-2)');
+    expect(normalizePolynomialTaylorValue('Derivative(abs(x),x)', 'x'),
+        'Derivative(abs(x),x)');
+    expect(normalizePolynomialTaylorValue('x/(x-1)', 'x'), 'x/(x-1)');
+    expect(normalizePolynomialTaylorValue('2-(2+x)+1', 'x'), '-x + 1');
+  });
   test('absolute Taylor branches use local exact polynomial coefficients', () {
     expect(RealCalculusProofs.absoluteLocalPolynomial('abs(x)', 'x', '2'), 'x');
     expect(RealCalculusProofs.absoluteLocalPolynomial('abs(x)', 'x', '-2'), '-x');

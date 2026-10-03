@@ -1314,7 +1314,7 @@ class CalculatorEngine {
       final result = bridge.series(expression, variable, point: point, order: order);
       return invalidSymbolicTaylorValue(result)
           ? 'Error: series failed: not expandable at this point'
-          : result;
+          : normalizePolynomialTaylorValue(result, variable);
     } catch (e) {
       _log('series error: $e');
       return 'Error: series failed';

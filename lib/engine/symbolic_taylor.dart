@@ -1,3 +1,19 @@
+import 'polynomial.dart';
+import 'symbolic_web.dart';
+
+/// Canonicalize only bounded exact univariate polynomials. Native series may
+/// retain a shifted basis such as 2-(2+x); expanding it makes the actual output
+/// readable without reinterpreting functions, foreign variables or errors.
+String normalizePolynomialTaylorValue(String value, String variable) {
+  if (value.length > 512 || invalidSymbolicTaylorValue(value)) return value;
+  final expanded = SymbolicWeb.expand(value);
+  final polynomial = expanded == null ? null : Polynomial.tryParse(expanded);
+  return polynomial != null &&
+          (polynomial.degree <= 0 || polynomial.variable == variable)
+      ? polynomial.toString()
+      : value;
+}
+
 /// Exact Taylor coefficients computed through symbolic CAS operations.
 /// Used by native libraries that expose differentiation but not series().
 bool invalidSymbolicTaylorValue(String value) => value.startsWith('Error') ||
@@ -38,7 +54,8 @@ String symbolicTaylorSeries(
         factorial *= BigInt.from(degree + 1);
       }
     }
-    return checked(simplify(terms.join('+')));
+    return normalizePolynomialTaylorValue(
+        checked(simplify(terms.join('+'))), variable);
   } catch (error) {
     return 'Error: series failed: $error';
   }
