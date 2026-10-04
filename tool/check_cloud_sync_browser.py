@@ -158,8 +158,18 @@ async def open_sync(page):
     raise AssertionError('Cloud Sync action was not reachable by real scrolling')
 
 
+def titled_dialog(page, title):
+    return page.get_by_role('alertdialog').filter(
+        has=page.locator('span').filter(has_text=re.compile('^' + re.escape(title) + '$')))
+
+
 async def dismiss_sync(page):
-    await real_click(page, page.get_by_role('button', name='Close', exact=True))
+    dialog = titled_dialog(page, 'Cloud Sync')
+    await expect(dialog).to_have_count(1)
+    close = dialog.get_by_role('button', name='Close', exact=True)
+    await expect(close).to_have_count(1)
+    await real_click(page, close)
+    await dialog.wait_for(state='hidden')
     await page.get_by_role('button', name='Pull', exact=True).wait_for(state='hidden')
     await next_frames(page)
     await page.wait_for_timeout(500)
@@ -242,11 +252,19 @@ async def push(page, first, revision):
 
 async def pull_import(page, expected_name):
     await real_click(page, page.get_by_role('button', name='Pull', exact=True))
-    await page.get_by_role('button', name='Import worksheets', exact=True).wait_for()
-    await expect(page.get_by_text(expected_name + ': 3 rows', exact=True)).to_be_visible()
-    await real_click(page, page.get_by_role('button', name='Import worksheets', exact=True))
-    await expect(page.get_by_text('Worksheets imported; conflicting versions kept separately.', exact=True)).to_be_visible()
-    await real_click(page, page.get_by_role('button', name='Close', exact=True))
+    review = titled_dialog(page, 'Workspace backups')
+    await expect(review).to_have_count(1)
+    await review.get_by_role('button', name='Import worksheets', exact=True).wait_for()
+    await expect(review.get_by_text(expected_name + ': 3 rows', exact=True)).to_be_visible()
+    await real_click(page, review.get_by_role('button', name='Import worksheets', exact=True))
+    await expect(review.get_by_text('Worksheets imported; conflicting versions kept separately.', exact=True)).to_be_visible()
+    await real_click(page, review.get_by_role('button', name='Close', exact=True))
+    # Import removes its preview controls before the review route closes.
+    # Wait for the actual titled route to leave accessibility, then require
+    # the distinct underlying sync controls before closing that route.
+    await review.wait_for(state='hidden')
+    await page.get_by_role('button', name='Pull', exact=True).wait_for()
+    await expect(page.get_by_role('button', name='Close', exact=True)).to_have_count(1)
     await dismiss_sync(page)
 
 
