@@ -38,7 +38,8 @@ class MainFlutterWindow: NSWindow {
         result(FlutterMethodNotImplemented)
         return
       }
-      window.setContentSize(NSSize(width: 1280, height: 900))
+      // Render at 2x for Apple's supported 2560x1600 Mac screenshot size.
+      window.setContentSize(NSSize(width: 1280, height: 800))
       window.center()
       window.makeKeyAndOrderFront(nil)
       result(true)
