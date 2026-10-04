@@ -9,14 +9,18 @@ Completed items with details are in `HISTORY.md`.
 
 - [x] Review all 33 native captures and select worksheet → traced graph →
   checkpoint history → export preview; prepare connected-workflow presentation.
-- [~] Compare native handwriting with an independent implementation using
-  public exported weights; measure actual preprocessing/encoder/decoder stages.
-- [~] Clarify default-off cloud behavior and validate local-only startup, guards,
+- [x] Compare native handwriting with an independent implementation using
+  public exported weights; measure actual preprocessing/encoder/decoder stages
+  and isolated normalization/ceil-pooling repairs on the unchanged fifty samples.
+- [x] Clarify default-off cloud behavior and validate local-only startup, guards,
   checkpoint/backup workflows and zero backend requests on hosted CI.
 - [ ] Merge PR #1 after complete validation; physical/App Review remain deferred.
 - [ ] Resume feature expansion with a guided connected worksheet and fifty
   fresh independently referenced mathematical problems, preserving unit/live
   CI, Pages and Vercel checks.
+- [ ] Promote the proven handwriting runtime corrections only with matching
+  platform binaries, checksums and regression evidence. Recognition quality and
+  original training-checkpoint parity remain unresolved; do not ship the candidate.
 
 ## Cloud feedback and handwriting diagnostics
 

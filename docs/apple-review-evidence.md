@@ -39,6 +39,25 @@ See [the tenth audit](round10-math-audit-50.md) for frozen independent reference
 production fixes and evidence limits. Earlier release history remains in
 [HISTORY.md](../HISTORY.md) and the individual audit documents.
 
+### Unreleased follow-up candidate
+
+There is no Supabase project for this release. Cloud sync stays off by default;
+local worksheets, checkpoints and portable backups require no account. The
+working candidate makes that behavior explicit in Settings and the cloud dialog.
+Those presentation changes are not in the approved build 22 above. The
+candidate's 368-file production fingerprint is
+`0b88cc4432391969cc38261a68b66a436374b1c5c5e6af12cb25426032b177f8`.
+
+[Published Pages](https://github.com/CrispStrobe/CrispMath/actions/runs/37214651593)
+and [Vercel checks](https://github.com/CrispStrobe/CrispMath/actions/runs/37214653063)
+at `cf0a3a8f23e16f684c3015243b15589244e49a3a` pass all 737 runtime questions
+and the live browser checks. Desktop, phone and tablet each preserve local
+worksheets, checkpoint restoration and source-only backup downloads across
+canonical launch and reload, reject invalid cloud configuration, and emit zero
+backend requests or uncaught page errors. These local-only checks do not verify
+a deployed Supabase project or a physical device. Later diagnostic/test-driver
+commits through `8818639` have identical application production files.
+
 ## What to demonstrate to review
 
 Present the connected, persistent worksheet workflow as the concrete product

@@ -152,6 +152,62 @@ Both records identify the original `11e6d5…` source, actual instrumented
 source, instrumentation tool and normalization patch hashes. Production
 bridge/model pins remain unchanged.
 
+## Measured normalization and ceil-pooling repair
+
+[Hosted run 37215287926](https://github.com/CrispStrobe/CrispMath/actions/runs/37215287926)
+at `fed79e99f169e3507a6fbc24822ca39a28151350` measured the baseline,
+normalization-only and combined normalization/ceil-pooling arms on the same
+frozen references, and repeated the independent exported-weight comparison.
+Both hosted jobs completed successfully. The combined repair's actual
+native pooling helper matched PyTorch exactly in all 16 synthetic controls,
+covering even/odd dimensions, corner handling, multiple channels and
+single-row/column inputs; wrong floor/zero-padding and invalid-argument
+controls passed. Normalization controls covered dimensions 256 and 384,
+with maximum error `3.1789e-7`.
+
+After the combined repair, every captured encoder and decoder stage matched
+the reference on all five cases and 25 decoder steps per encoder arm.
+Default encoder maximum absolute error was `0.00198841`, within the fixed
+FP16-versus-FP32 tolerance; scalar encoder maximum was `3.5763e-6`.
+Decoder maximum across both arms was `7.6294e-6`. These are bounded
+exported-weight comparisons with the preprocessing and decoder-isolation
+limits described above, not original-training/checkpoint parity or
+full-length decoding parity.
+
+| Model | Baseline | Normalization only | Normalization and ceil pooling |
+| --- | --- | --- | --- |
+| Original CROHME Q8 | 7/50 | 7/50 | 7/50 |
+| MathWriting v2 FP32 candidate | 0/50 | 0/50 | 0/50 |
+
+All seven originally correct IDs are preserved in both repaired arms:
+`0111fa141bb73b48`, `02c39c1be9d660b7`, `0276c02c9b9222e9`,
+`0333d9584ff7c0d0`, `002ae6d5dd4173e4`, `02da6f52e30f674d`,
+`032278982233fefa`. Baseline-to-normalization and baseline-to-combined
+token-output changes were 35 and 38 for the original model, and 49 and 48
+for the candidate. Normalization-to-combined changes were 16 and 47.
+No runtime failures occurred. No recognition-accuracy gain was measured;
+the original vocabulary gaps and the remaining model-quality errors persist.
+
+Quality artifact `11308057664` and reference artifact `11308561639` retain
+the strict paired reports and actual source/library/patch provenance.
+The combined diagnostic patch SHA-256 is
+`79e6e53ba5f1aba9a484ac88261d9dfa5060f7f61a18db47b602c0d5f1343e4d`.
+The uninstrumented repaired source SHA-256 is
+`9106567aa2d0d0386db1f962d0e4e16bdb500110fa915d7b70de6458440770ec`,
+and its quality-test library is
+`1c907d77efed09a6fe3eadc321f3044e4c6ae5d69ea6a8fc0b9b6501d789781b`.
+The separate instrumented reference library is
+`d7c881d7273c85c25e9b55fd3b02861e83aacdbb850190dd22a6d34aeb6082a0`;
+its reports identify the additional instrumentation source/tool hashes.
+
+The measurements justify preparing a minimal upstream runtime correction,
+without diagnostic exports, followed by matching hosted native/WASM builds,
+source/binary provenance, platform checksums and app regression checks.
+Production promotion is held until after the first app PR merge; current
+bridge/model pins remain unchanged. Candidate weights remain excluded from
+production because these results establish neither improved accuracy nor
+resolved training/licensing provenance.
+
 ## Reproducibility
 
 | Identity | Pinned value |
@@ -258,10 +314,11 @@ and trained embedding/output weights; changing only tokenizer metadata cannot
 teach those symbols. Validate such a model on independent held-out samples,
 preserving these frozen references and reporting both coverage and accuracy.
 
-The measured GGML pooling mismatch warrants a controlled ceil-pooling
-repair, followed by independent stage comparisons and an unchanged 50-case
-accuracy measurement. No production recognition improvement has yet been
-established by that repair.
+The diagnostic GGML pooling repair now has bounded independent stage
+agreement and preserves all seven correct original-model cases in the
+unchanged 50-case measurement. A production correction still requires new
+matching runtime binaries and checksums; recognition quality has not
+improved on this benchmark.
 
 Original-checkpoint conversion and training parity still require the
 corresponding checkpoint. The published checkpoint repository returned

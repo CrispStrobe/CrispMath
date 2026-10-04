@@ -1,3 +1,47 @@
+## 2026-10-04 — Native presentation, default-off cloud and independent OCR reference
+
+Review all 33 populated native Apple captures and select connected worksheet,
+traced graph, checkpoint history and linked-graph export for each profile.
+Phone graph controls intentionally scroll horizontally; actual hosted actions
+reveal and operate trace/table controls. No inaccessible-control defect is
+established. Prepare connected-workflow captions and a draft store description
+without sending an App Review submission or uploading store images.
+
+There is no Supabase project. Settings and the cloud dialog explain that cloud
+is off by default and local work needs no account. Missing configuration avoids
+SDK initialization. Eleven service/widget groups cover the existing real-SDK
+behavior plus unavailable guards and local backups. Hosted `8818639` unit checks
+pass 5,746 with eight skips, 502 focused checks, 130 executed tooling controls
+(three further numeric controls deliberately skip outside the reference job),
+and zero analysis issues. Its disposable configured-cloud GUI preserves local
+21 and separately imported 23, authenticated reload and verified cleanup.
+A measured popup-selection failure is repaired in the test driver with settled
+real pointer geometry and strict selected-document/source/editor checks.
+
+[Pages 37214651593](https://github.com/CrispStrobe/CrispMath/actions/runs/37214651593)
+and [Vercel 37214653063](https://github.com/CrispStrobe/CrispMath/actions/runs/37214653063)
+each pass 737 runtime questions and all live reports. Fresh desktop, phone and
+tablet cloud-off flows preserve worksheet calculation, checkpoints and backups
+through canonical launch and reload, reject invalid configuration and emit zero
+backend requests or uncaught errors. Deployed `cf0a3a8` and candidate `8818639`
+share all 368 production files, fingerprint
+`0b88cc4432391969cc38261a68b66a436374b1c5c5e6af12cb25426032b177f8`.
+The candidate wording changes are not in approved TestFlight build 22.
+
+Independent hosted exported-weight comparisons account for all 270 FP32 tensors
+and identify missing decoder input normalization and floor instead of ceil
+pooling. Combined diagnostic repairs match every checked encoder/decoder stage;
+the same fifty samples still score 7/50 original and 0/50 candidate. This is
+bounded forward-correctness evidence, not improved recognition or original
+training-checkpoint/full-length decoding parity. Matching production runtime
+binaries/checksums and suitable recognition weights remain work to do. See
+[measured findings](docs/handwriting-quality-findings.md).
+
+PR merge and the guided worksheet/fresh fifty-problem expansion follow these
+checks. Physical iPhone/iPad and App Review remain deferred. All builds, model
+inference and test batches run on hosted CI; only small reports and selected
+images go to CIFS, with resource measurements repeated on the shared VPS.
+
 ## 2026-10-04 — Accessible cloud feedback and controlled handwriting diagnostics
 
 Cloud setup, authentication and transfers report safe outcomes inside the dialog
