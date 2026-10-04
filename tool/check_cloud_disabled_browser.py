@@ -129,7 +129,10 @@ async def check(args):
                         await close_dialog(page, backups)
                         await dialog.get_by_role('button', name='Workspace backups', exact=True).wait_for()
                         await dismiss_sync(page)
-                        await expect(page.get_by_text('Off · local work needs no account', exact=True)).to_be_visible()
+                        off_settings = page.get_by_role('button',
+                            name='Sync Cloud Sync Off · local work needs no account Open', exact=True)
+                        await expect(off_settings).to_have_count(1)
+                        await expect(off_settings).to_be_visible()
 
                         stage = profile + ': canonical launch and reload remain off'
                         # A worksheet creation link is an action on every launch.
