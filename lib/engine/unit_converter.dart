@@ -68,7 +68,7 @@ class UnitConverter {
     if (abs == 0) {
       text = '0';
     } else if (abs >= 1e9 || (abs > 0 && abs < 1e-4)) {
-      text = value.toStringAsExponential(6);
+      text = value.toStringAsExponential(11);
     } else {
       // Up to ~10 significant digits, then strip trailing zeros.
       text = value.toStringAsFixed(10);

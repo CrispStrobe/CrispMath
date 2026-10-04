@@ -85,7 +85,7 @@ async def check_modules(args):
                         await expect(field).to_have_value(source)
                         item['inputReadBack']=await field.input_value()
                         if references:
-                            table = page.get_by_text(re.compile(r'^Count\s+5\s+Sum\s')).first
+                            table = page.get_by_text(re.compile(r'^Count\s+\d+\s+Sum\s')).first
                             await table.wait_for(state='attached')
                             item['renderedTable']=await table.inner_text()
                             item['rows']=validate_statistics(item['renderedTable'],references)
