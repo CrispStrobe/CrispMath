@@ -14,6 +14,8 @@
 
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
+import 'package:crisp_math/localization/workflow_localizations.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/services/engine_service.dart';
@@ -60,6 +62,94 @@ void main() {
   tearDown(() async {
     await EngineService.shutdownForTest();
   });
+
+  testWidgets('computed multi-digit result exposes its complete accessible value',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    await tester.enterText(find.byType(TextField).first, '2+37');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    final state = AppState();
+    expect(state.notepadDocuments[state.currentNotepadDocId]!.lines.first.cachedResult, '39');
+    expect(find.bySemanticsLabel('39'), findsOneWidget);
+  });
+
+  testWidgets('guided creation preserves existing source and cancels stale linking',
+      (tester) async {
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    final state = AppState();
+    final existing = state.notepadDocuments[state.currentNotepadDocId]!;
+    existing.lines.first.source = '// My existing work';
+    state.setNotepadDocument(existing);
+    await tester.pumpAndSettle();
+    final created = <String>[];
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Explore a linked worksheet'));
+      final id = state.currentNotepadDocId!;
+      created.add(id);
+      expect(id, isNot(existing.id));
+      expect(state.notepadDocuments[id]!.lines.map((line) => line.source),
+          ['a=3', 'f(x)=x^2+a', 'f(4)']);
+      // Switch before the creation continuation's real evaluation starts.
+      state.setCurrentNotepadDoc(existing.id);
+      await tester.pumpAndSettle();
+      expect(state.graphLinks.values.where((link) => link.documentId == id), isEmpty);
+    }
+    expect(created.toSet().length, 2);
+    expect(state.notepadDocuments[existing.id]!.lines.first.source, '// My existing work');
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final locale in ['en', 'de', 'fr', 'es']) {
+    testWidgets('worksheet actions wrap accessibly in $locale at phone text scale 2',
+        (tester) async {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      tester.binding.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.binding.platformDispatcher.clearTextScaleFactorTestValue);
+      final state = AppState();
+      state.setLocale(Locale(locale));
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      doc.lines.first.source = '// Existing source';
+      state.setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      final labels = WorkflowLocalizations(locale);
+      for (final label in [WorkflowLabel.worksheetHistory, WorkflowLabel.worksheetExport]) {
+        final button = find.widgetWithText(OutlinedButton, labels.text(label));
+        expect(button, findsOneWidget);
+        final bounds = tester.getRect(button);
+        expect(bounds.height, greaterThanOrEqualTo(48));
+        expect(bounds.left, greaterThanOrEqualTo(0));
+        expect(bounds.right, lessThanOrEqualTo(390));
+      }
+      await tester.tap(find.widgetWithText(OutlinedButton,
+          labels.text(WorkflowLabel.worksheetHistory)));
+      await tester.pumpAndSettle();
+      expect(find.text(labels.text(WorkflowLabel.historySave)), findsOneWidget);
+      expect(tester.takeException(), isNull,
+          reason: 'History instructions must scroll instead of overflowing');
+      await tester.tap(find.text(labels.text(WorkflowLabel.close)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(OutlinedButton,
+          labels.text(WorkflowLabel.worksheetExport)));
+      await tester.pumpAndSettle();
+      expect(find.text(labels.text(WorkflowLabel.exportSave, 'MD')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text(labels.text(WorkflowLabel.close)));
+      await tester.pumpAndSettle();
+      final context = tester.element(find.byType(AppBar).first);
+      await tester.tap(find.byTooltip(AppLocalizations.of(context).notepadDocumentMenu));
+      await tester.pumpAndSettle();
+      expect(find.text(labels.text(WorkflowLabel.exploreWorksheet)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   group('NotepadScreen — breakpoints', () {
     testWidgets('tab visible at narrow (bottom nav) breakpoint',

@@ -1297,7 +1297,8 @@ class AppState extends ChangeNotifier {
         globals: userVariables);
   }
 
-  int linkNotepadLine(String documentId, String lineId) {
+  int linkNotepadLine(String documentId, String lineId,
+      {bool openGraph = true}) {
     final resolved = resolveLinkedGraph(notepadDocuments[documentId], lineId,
         globals: userVariables);
     if (resolved.error != null) throw StateError(resolved.error!);
@@ -1317,8 +1318,10 @@ class AppState extends ChangeNotifier {
     _refreshLinkedGraphs();
     _persistGraphLinks();
     _notify({AppStateDomain.graphs});
-    _requestedTab = 2;
-    _notify({AppStateDomain.navigation});
+    if (openGraph) {
+      _requestedTab = 2;
+      _notify({AppStateDomain.navigation});
+    }
     return slot;
   }
 

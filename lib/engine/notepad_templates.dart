@@ -31,6 +31,13 @@ class NotepadTemplate {
 }
 
 class NotepadTemplates {
+  /// Fresh source only; the normal worksheet evaluator owns every result.
+  static NotepadDocument connectedWorksheet({required String name}) =>
+      NotepadTemplate(
+        id: 'connected', name: name, description: '',
+        lines: const ['a=3', 'f(x)=x^2+a', 'f(4)'],
+      ).createDocument();
+
   static const List<NotepadTemplate> all = [
     NotepadTemplate(
       id: 'budget',

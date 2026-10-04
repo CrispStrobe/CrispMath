@@ -36,6 +36,7 @@ import '../engine/app_state.dart';
 import '../engine/calculator_engine.dart';
 import '../widgets/native_bridge_status_listenable.dart';
 import '../engine/notepad.dart';
+import '../localization/workflow_localizations.dart';
 import '../engine/notepad_evaluator.dart';
 import '../engine/notepad_export.dart';
 import '../engine/worksheet_bundle.dart';
@@ -931,6 +932,74 @@ class NotepadScreenState extends State<NotepadScreen> {
     });
   }
 
+  Future<void> _exploreLinkedWorksheet() async {
+    final labels = WorkflowLocalizations.of(context);
+    final doc = NotepadTemplates.connectedWorksheet(
+        name: labels.text(WorkflowLabel.connectedWorksheetName));
+    _recalcTimer?.cancel();
+    _interruptRecalc(_currentDoc);
+    FocusScope.of(context).unfocus();
+    _appState.setNotepadDocument(doc);
+    _appState.setCurrentNotepadDoc(doc.id);
+    final revision = doc.scopeRevision;
+    // Let the document/controller switch finish before using the real pipeline.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || _currentDoc?.id != doc.id || doc.scopeRevision != revision) {
+      return;
+    }
+    _recalcTimer?.cancel();
+    final calculation = _runRecalc(doc);
+    final generation = _recalcGeneration;
+    await calculation;
+    if (!mounted || generation != _recalcGeneration ||
+        _currentDoc?.id != doc.id || doc.scopeRevision != revision ||
+        doc.lines.any((line) => line.cachedError != null) ||
+        doc.lines.last.cachedResult == null) return;
+    try {
+      _appState.linkNotepadLine(doc.id, doc.lines[1].id, openGraph: false);
+    } on StateError catch (error) {
+      if (!mounted || _currentDoc?.id != doc.id) return;
+      final full = _appState.graphFunctions.every((source) => source.isNotEmpty);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+          full ? labels.text(WorkflowLabel.worksheetGraphFull) :
+          labels.text(WorkflowLabel.worksheetLinkFailed, error.message.toString()))));
+    }
+  }
+
+  Widget _worksheetActions(NotepadDocument doc) {
+    final labels = WorkflowLocalizations.of(context);
+    final linked = _appState.graphLinks.values
+        .where((source) => source.documentId == doc.id &&
+            doc.lines.any((line) => line.id == source.lineId)).firstOrNull;
+    final hasSource = doc.lines.any((line) => line.source.trim().isNotEmpty);
+    if (!hasSource) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Wrap(spacing: 8, runSpacing: 4, children: [
+        if (linked != null)
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+            icon: const Icon(Icons.show_chart),
+            label: Text(labels.text(WorkflowLabel.worksheetGraph)),
+            onPressed: () => _linkLine(doc,
+                doc.lines.firstWhere((line) => line.id == linked.lineId)),
+          ),
+        OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+          icon: const Icon(Icons.history),
+          label: Text(labels.text(WorkflowLabel.worksheetHistory)),
+          onPressed: () => _onMenuSelected('document-history'),
+        ),
+        OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+          icon: const Icon(Icons.ios_share),
+          label: Text(labels.text(WorkflowLabel.worksheetExport)),
+          onPressed: _previewExport,
+        ),
+      ]),
+    );
+  }
+
   Future<void> _openWorksheetFile() async {
     try {
       final doc = await WorksheetFileService.open();
@@ -1505,6 +1574,7 @@ class NotepadScreenState extends State<NotepadScreen> {
                                     },
                                   ),
                                 if (_searchOpen) _buildSearchBar(doc),
+                                _worksheetActions(doc),
                                 Expanded(child: _buildDocBody(doc)),
                               ],
                             );
@@ -1646,6 +1716,8 @@ class NotepadScreenState extends State<NotepadScreen> {
         itemBuilder: (context) {
           final items = <PopupMenuEntry<String>>[
             PopupMenuItem(value: 'new', child: Text(t.notepadNewDocument)),
+            PopupMenuItem(value: 'explore-linked', child: Text(
+                WorkflowLocalizations.of(context).text(WorkflowLabel.exploreWorksheet))),
             PopupMenuItem(value: 'open-file', child: Text(t.notepadOpenFile)),
             if (doc != null)
               PopupMenuItem(value: 'save-file', child: Text(t.notepadSaveFile)),
@@ -1708,13 +1780,13 @@ class NotepadScreenState extends State<NotepadScreen> {
               value: 'copy-markdown',
               child: Text(t.notepadCopyAsMarkdown),
             ));
-            items.add(const PopupMenuItem(
+            items.add(PopupMenuItem(
               value: 'document-history',
-              child: Text('Document history'),
+              child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetHistory)),
             ));
-            items.add(const PopupMenuItem(
+            items.add(PopupMenuItem(
               value: 'export-preview',
-              child: Text('Worksheet export preview'),
+              child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetExport)),
             ));
             items.add(const PopupMenuItem(
               value: 'export-pdf',
@@ -1751,6 +1823,10 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _onMenuSelected(String value) async {
+    if (value == 'explore-linked') {
+      await _exploreLinkedWorksheet();
+      return;
+    }
     if (value.startsWith('template:')) {
       final id = value.substring('template:'.length);
       final tmpl = NotepadTemplates.all.firstWhere(
@@ -1848,6 +1924,12 @@ class NotepadScreenState extends State<NotepadScreen> {
                   icon: const Icon(Icons.add, semanticLabel: 'New'),
                   label: Text(t.notepadNewDocument),
                   onPressed: _newDocument,
+                ),
+                FilledButton.icon(
+                  icon: const Icon(Icons.show_chart),
+                  label: Text(WorkflowLocalizations.of(context).text(
+                      WorkflowLabel.exploreWorksheet)),
+                  onPressed: _exploreLinkedWorksheet,
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.menu_book,
@@ -2603,6 +2685,9 @@ class _NotepadResultColumn extends StatelessWidget {
     } catch (_) {
       body = Text(res, style: style, textAlign: textAlign);
     }
+    // Speak the complete computed value, including multi-digit math rendered
+    // as separate glyph widgets. The label describes the same visible body.
+    body = Semantics(label: res, excludeSemantics: true, child: body);
     return LongPressDraggable<String>(
       data: res,
       feedback: Material(
