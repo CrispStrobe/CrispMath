@@ -9,6 +9,10 @@ from pathlib import Path
 from compare_handwriting_encoders import POSFORMER_SHA256, tokens, require
 
 FROZEN_MANIFEST_SHA256 = 'a2edabf8937298a52f072c41917bf4a8022ecaee9a50d00dcc1d52934b711109'
+MODELS = {
+    'crohme-q8': POSFORMER_SHA256,
+    'mathwriting-v2': '12060161fc6dc3c3fde146532ffade00f8f2286dd5a53e1f8777215afa9193c0',
+}
 
 
 def file_hash(path):
@@ -38,14 +42,22 @@ def metadata(reader):
             'Invalid special-token IDs')
     require(all(vocabulary[index] == f'<{name}>' for name, index in specials.items()),
             'Special-token names and IDs disagree')
+    dimensions = {name: field(f'posformer.decoder.{name}')
+                  for name in ('d_model', 'nhead', 'max_len')}
+    require(all(type(value) is int and value > 0 for value in dimensions.values()) and
+            dimensions['d_model'] <= 1024 and dimensions['nhead'] <= 32 and
+            dimensions['d_model'] % dimensions['nhead'] == 0 and
+            dimensions['max_len'] <= 512, 'Unsupported decoder dimensions')
+    require(field('posformer.encoder.input_channels') == 1, 'Unsupported encoder channels')
     tensors = {tensor.name: tensor for tensor in reader.tensors}
     require('dec.proj.bias' in tensors and 'dec.proj.weight' in tensors,
             'Missing decoder projection tensors')
     bias_shape = [int(i) for i in tensors['dec.proj.bias'].shape]
     weight_shape = [int(i) for i in tensors['dec.proj.weight'].shape]
-    require(bias_shape == [count] and len(weight_shape) == 2 and
-            weight_shape[1] == count, 'Tokenizer and projection tensor dimensions differ')
+    require(bias_shape == [count] and weight_shape == [dimensions['d_model'], count],
+            'Tokenizer and projection tensor dimensions differ')
     return {'tokens': vocabulary, 'vocab_size': count, 'special_token_ids': specials,
+            'decoder_dimensions': dimensions, 'encoder_input_channels': 1,
             'projection_bias_shape': bias_shape, 'projection_weight_shape': weight_shape}
 
 
@@ -95,16 +107,19 @@ def coverage(manifest, vocabulary):
             'references, aliases and accuracy scoring remain unchanged.', 'cases': rows}
 
 
-def audit(model, manifest_path):
+def audit(model, manifest_path, model_id='crohme-q8'):
     from gguf import GGUFReader
-    require(file_hash(model) == POSFORMER_SHA256, 'Unpinned weights')
+    require(model_id in MODELS, 'Unknown pinned model identity')
+    expected_hash = MODELS[model_id]
+    require(file_hash(model) == expected_hash, 'Unpinned weights')
     require(file_hash(manifest_path) == FROZEN_MANIFEST_SHA256, 'Frozen manifest changed')
     source = os.environ.get('GITHUB_SHA', '')
     require(re.fullmatch(r'[0-9a-f]{40}', source), 'Missing CI source identity')
     actual = metadata(GGUFReader(model, mode='r'))
     manifest = json.loads(Path(manifest_path).read_text())
     return {'format': 'crispmath.handwriting-vocabulary-audit', 'source': source,
-            'model_sha256': POSFORMER_SHA256, 'corpus_manifest_sha256': FROZEN_MANIFEST_SHA256,
+            'model_id': model_id, 'model_sha256': expected_hash,
+            'corpus_manifest_sha256': FROZEN_MANIFEST_SHA256,
             'tokenizer_field': 'tokenizer.tokens',
             'tokenizer_sha256': hashlib.sha256(json.dumps(actual['tokens'],
                 ensure_ascii=False, separators=(',', ':')).encode()).hexdigest(),
@@ -116,8 +131,9 @@ if __name__ == '__main__':
     parser.add_argument('--model', required=True)
     parser.add_argument('--manifest', required=True)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--model-id', choices=sorted(MODELS), default='crohme-q8')
     args = parser.parse_args()
-    result = audit(args.model, args.manifest)
+    result = audit(args.model, args.manifest, args.model_id)
     Path(args.output).write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps({key: value for key, value in result.items()
                       if key not in ('cases', 'actual_gguf_metadata')}))

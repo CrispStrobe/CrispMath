@@ -159,8 +159,7 @@ async def open_sync(page):
 
 
 async def dismiss_sync(page):
-    # The configured dialog has no Close button; Escape is its normal modal dismissal.
-    await page.keyboard.press('Escape')
+    await real_click(page, page.get_by_role('button', name='Close', exact=True))
     await page.get_by_role('button', name='Pull', exact=True).wait_for(state='hidden')
     await next_frames(page)
     await page.wait_for_timeout(500)
@@ -168,16 +167,26 @@ async def dismiss_sync(page):
 
 async def login(page, email, password):
     await open_sync(page)
-    for label, value in [('Email', email), ('Password', password)]:
+    async def fill(label, value):
         field = page.get_by_role('textbox', name=label, exact=True)
         await real_click(page, field)
         await next_frames(page)
         await field.fill(value)
-        # Never put the password in a Playwright assertion's failure output.
         assert await field.input_value() == value, 'Auth field did not retain input'
+    await fill('Email', email)
+    await fill('Password', password + '-wrong')
+    await real_click(page, page.get_by_role('button', name='Log In', exact=True))
+    failure = page.get_by_text('Sign in failed. Check your email and password, then try again.', exact=True)
+    await expect(failure).to_be_visible()
+    await expect(page.get_by_role('button', name='Pull', exact=True)).to_have_count(0)
+    await fill('Password', password)
     await real_click(page, page.get_by_role('button', name='Log In', exact=True))
     await page.get_by_role('button', name='Pull', exact=True).wait_for()
+    await expect(failure).to_have_count(0)
+    await expect(page.get_by_text('Signed in. You can now pull or upload a cloud backup.', exact=True)).to_be_visible()
     await expect(page.get_by_text('Logged in as ' + email, exact=True)).to_be_visible()
+    await real_click(page, page.get_by_role('button', name='Pull', exact=True))
+    await expect(page.get_by_text('No cloud backup is available.', exact=True)).to_be_visible()
 
 
 async def push(page, first, revision):
@@ -191,9 +200,8 @@ async def push(page, first, revision):
                 and target.path == '/rest/v1/user_sync_data'
                 and response.request.method == method)
 
-    # Scaffold snackbars behind the still-open Flutter alertdialog are excluded
-    # from its active accessibility surface. Observe the real GUI-triggered SDK
-    # write and then prove persistence with the other browser's Pull/import.
+    # Require the real GUI-triggered SDK write, inline accessible success and
+    # persistence through the other browser's Pull/import.
     async with page.expect_response(actual_upload) as observed:
         await real_click(page, page.get_by_role('button', name='Upload backup', exact=True))
     response = await observed.value
@@ -204,6 +212,7 @@ async def push(page, first, revision):
     doc = next(d for d in state['notepadDocuments'] if d['n'] == 'Cloud source')
     assert [row['s'] for row in doc['l']] == [first, 'f(t)=t^2+a', 'f(4)'], 'Wrong uploaded worksheet source'
     assert all('r' not in row for row in doc['l']), 'Cloud upload trusted computed cache'
+    await expect(page.get_by_text('Cloud backup uploaded.', exact=True)).to_be_visible()
     await page.get_by_role('button', name='Pull', exact=True).wait_for()
     await expect(page.get_by_role('button', name='Pull', exact=True)).to_be_enabled()
     return {'responseStatus': response.status, 'revision': revision,
@@ -288,7 +297,11 @@ async def check(args):
                 await menu(second, 'Recalculate all')
                 await worksheet_result(second, 'Cloud source', 'a=3', '19')
                 report['checks'].append({'independentProfiles': ['desktop', 'phone'],
-                    'guiSignInPushPullReviewImport': True, 'importSourceRecalculated': True,
+                    'guiSignInPushPullReviewImport': True,
+                    'inlineWrongPasswordErrorBothProfiles': True,
+                    'inlineSignInSuccessBothProfiles': True,
+                    'inlineNoBackupBothProfiles': True,
+                    'inlineUploadSuccess': True, 'importSourceRecalculated': True,
                     'unrelatedPhoneWorksheetPreserved': True, 'uploadResponse': upload})
                 stage = 'conflicting independent edits'
                 await edit(second, 'a=5')
@@ -329,9 +342,13 @@ async def check(args):
                     await page.get_by_role('button', name='Sign Out', exact=True).wait_for()
                     await real_click(page, page.get_by_role('button', name='Sign Out', exact=True))
                     await page.get_by_role('button', name='Log In', exact=True).wait_for()
+                    await expect(page.get_by_text('Signed out. Your workspace remains saved on this device.', exact=True)).to_be_visible()
                     await expect(page.get_by_role('button', name='Pull', exact=True)).to_have_count(0)
+                    await real_click(page, page.get_by_role('button', name='Close', exact=True))
+                    await page.get_by_role('button', name='Log In', exact=True).wait_for(state='hidden')
                 assert not page_errors, 'Uncaught browser page errors occurred'
-                report['checks'].append({'guiSignOutBothProfiles': True,
+                report['checks'].append({'guiSignOutBothProfiles': True, 'inlineSignOutFeedbackBothProfiles': True,
+                    'normalCloseBothProfiles': True,
                     'uncaughtPageErrors': 0,
                     'reloadRestoredAuthenticatedSession': True})
             except Exception:

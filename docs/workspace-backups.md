@@ -33,6 +33,14 @@ Local setup persists independently of workspace backups. Sign in uses Supabase
 Auth; Push asks before replacing the cloud snapshot. Pull opens the same restore
 preview and never silently chooses the version with the latest device clock.
 
+Setup, account and transfer feedback appears inside the Cloud Sync dialog as
+an accessible live region. Starting another operation clears the previous
+message. The dialog scrolls on narrow screens and keeps a Close action
+available during requests. Closing it does not cancel an already submitted
+server operation. Errors explain the next step without showing SDK response
+bodies or credentials; signing out clears the password field and preserves
+local worksheets.
+
 Apply `supabase/migrations/20261002_user_sync_data.sql` to the selected project
 only after checking its existing table and policies. It creates the expected
 schema for a new project and adds the monotonic `revision` column to an existing

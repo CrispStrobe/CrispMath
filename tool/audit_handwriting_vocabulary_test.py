@@ -1,8 +1,10 @@
 import copy
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
-from audit_handwriting_vocabulary import coverage, metadata, representable
+from audit_handwriting_vocabulary import (MODELS, audit, coverage, metadata,
+                                         representable)
 
 
 def reader():
@@ -12,6 +14,8 @@ def reader():
               'posformer.decoder.pad_token': 0,
               'posformer.decoder.sos_token': 1,
               'posformer.decoder.eos_token': 2}
+    fields.update({'posformer.decoder.d_model': 256, 'posformer.decoder.nhead': 8,
+                   'posformer.decoder.max_len': 200, 'posformer.encoder.input_channels': 1})
     return SimpleNamespace(fields={k: SimpleNamespace(contents=lambda v=v: v)
                                    for k, v in fields.items()},
                            tensors=[SimpleNamespace(name='dec.proj.bias', shape=[6]),
@@ -19,6 +23,21 @@ def reader():
 
 
 class VocabularyAuditTest(unittest.TestCase):
+    def test_candidate_hash_cannot_be_replaced_by_baseline_or_changed_manifest(self):
+        def forbid_reader(*args, **kwargs):
+            self.fail('Weights must not be opened before identity checks pass')
+        with patch.dict('sys.modules', {'gguf': SimpleNamespace(GGUFReader=forbid_reader)}):
+            with patch('audit_handwriting_vocabulary.file_hash',
+                       return_value=MODELS['crohme-q8']):
+                with self.assertRaisesRegex(ValueError, 'Unpinned weights'):
+                    audit('candidate.gguf', 'manifest.json', 'mathwriting-v2')
+            with patch('audit_handwriting_vocabulary.file_hash',
+                       side_effect=[MODELS['mathwriting-v2'], 'd' * 64]):
+                with self.assertRaisesRegex(ValueError, 'Frozen manifest changed'):
+                    audit('candidate.gguf', 'manifest.json', 'mathwriting-v2')
+            with self.assertRaisesRegex(ValueError, 'Unknown pinned model identity'):
+                audit('candidate.gguf', 'manifest.json', 'unknown-model')
+
     def test_actual_metadata_requires_consistent_tokenizer_and_tensor_dimensions(self):
         self.assertEqual(metadata(reader())['vocab_size'], 6)
         for mutation in ('field', 'vocab', 'projection', 'architecture', 'special'):
@@ -40,6 +59,21 @@ class VocabularyAuditTest(unittest.TestCase):
         self.assertTrue(representable('x \u0120+ 1', ['x', '+', '1']))
         self.assertFalse(representable('x+2', ['x', '+', '1']))
         self.assertFalse(representable(r'\Omega', ['O', 'm', 'e', 'g', 'a']))
+
+    def test_candidate_dimensions_are_read_from_metadata_and_unsupported_shapes_fail(self):
+        candidate = reader()
+        candidate.fields['posformer.decoder.d_model'].contents = lambda: 384
+        candidate.tensors[1].shape = [384, 6]
+        self.assertEqual(metadata(candidate)['decoder_dimensions']['d_model'], 384)
+        for key, value in [('posformer.decoder.d_model', 0),
+                           ('posformer.decoder.d_model', 257),
+                           ('posformer.decoder.nhead', 0),
+                           ('posformer.decoder.max_len', 513),
+                           ('posformer.encoder.input_channels', 3)]:
+            broken = reader()
+            broken.fields[key].contents = lambda value=value: value
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                metadata(broken)
 
     def test_missing_single_command_can_be_representable_by_multiple_tokens(self):
         self.assertTrue(representable(r'\sin', ['\\', 's', 'i', 'n']))

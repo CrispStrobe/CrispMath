@@ -18,6 +18,10 @@ on:
         description: 'Also diagnose scalar/default encoder parity on the same 50 PosFormer samples'
         type: boolean
         default: false
+      mathwriting_candidate:
+        description: 'Evaluate the pinned public MathWriting v2 candidate separately after metadata checks'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -73,6 +77,15 @@ jobs:
             --model .ci/posformer-q8.gguf \
             --manifest .dart_tool/inference/handwriting-corpus/manifest.json \
             --output .dart_tool/inference/handwriting-vocabulary.json
+      - name: Download and inspect optional MathWriting v2 candidate
+        if: inputs.mathwriting_candidate == true
+        run: |
+          curl --fail --location --retry 3 https://huggingface.co/cstr/posformer-mathwriting-GGUF/resolve/45eb7de7d8ae26708701f06cae68d96f1abb0ef7/posformer-mathwriting_v2-f32.gguf --output .ci/posformer-mathwriting-v2-f32.gguf
+          echo '12060161fc6dc3c3fde146532ffade00f8f2286dd5a53e1f8777215afa9193c0  .ci/posformer-mathwriting-v2-f32.gguf' | sha256sum --check
+          python3 tool/audit_handwriting_vocabulary.py \
+            --model .ci/posformer-mathwriting-v2-f32.gguf --model-id mathwriting-v2 \
+            --manifest .dart_tool/inference/handwriting-corpus/manifest.json \
+            --output .dart_tool/inference/handwriting-vocabulary-mathwriting.json
       - name: Measure each model on identical human test samples
         run: |
           unset POSFORMER_SCALAR_ENCODER
@@ -106,6 +119,17 @@ jobs:
             --default .dart_tool/inference/handwriting-posformer.json \
             --scalar .dart_tool/inference/handwriting-posformer-scalar.json \
             --output .dart_tool/inference/handwriting-encoder-comparison.json
+      - name: Measure optional MathWriting candidate on all unchanged references
+        if: inputs.mathwriting_candidate == true
+        run: |
+          unset POSFORMER_SCALAR_ENCODER
+          export CRISPMATH_HANDWRITING_ENCODER=default
+          export CRISPMATH_OCR_BRIDGE_SOURCE="$(git -C .ci/CrispEmbed rev-parse HEAD)"
+          export CRISPMATH_OCR_LIBRARY="$PWD/.ci/ocr-build/libcrispembed.so"
+          export CRISPMATH_OCR_MODEL="$PWD/.ci/posformer-mathwriting-v2-f32.gguf"
+          export CRISPMATH_OCR_SHA256=12060161fc6dc3c3fde146532ffade00f8f2286dd5a53e1f8777215afa9193c0
+          export CRISPMATH_HANDWRITING_REPORT=.dart_tool/inference/handwriting-mathwriting-v2.json
+          flutter test --reporter expanded native_test/handwriting_quality_test.dart
       - uses: actions/upload-artifact@v4
         if: always()
         with:

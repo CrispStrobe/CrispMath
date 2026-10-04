@@ -8,13 +8,24 @@ import 'cloud_backup_store.dart';
 enum SyncStatus { uninitialized, initializing, ready, unavailable, failed }
 
 class SyncService extends ChangeNotifier {
-  static final SyncService instance = SyncService._();
-  SyncService._();
+  static final SyncService instance = SyncService();
+
+  /// Uses the saved/build configuration and the application's Supabase instance.
+  SyncService() : _providedClient = null;
+
+  /// Integrates an already configured SDK client. Its owner controls its lifetime.
+  SyncService.withClient(SupabaseClient client) : _providedClient = client {
+    _configured = true;
+    _status = SyncStatus.ready;
+    _initialization = Future<void>.value();
+  }
+
+  final SupabaseClient? _providedClient;
 
   bool _configured = false;
   bool get isConfigured => _configured;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get _client => _providedClient ?? Supabase.instance.client;
   User? get currentUser => isConfigured ? _client.auth.currentUser : null;
 
   SyncStatus _status = SyncStatus.uninitialized;
