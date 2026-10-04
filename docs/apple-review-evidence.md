@@ -114,6 +114,42 @@ sizes are listed in [Apple's screenshot specifications](https://developer.apple.
 Validate the chosen display slots and upload files before submission; these
 captures have not been uploaded as new App Store screenshots.
 
+## Presentation draft
+
+Lead with **editable mathematical worksheets with linked graphs and recoverable
+history**. This describes the connected experience demonstrated above; the
+calculator, CAS and statistics are supporting tools within that workflow.
+
+Proposed store description, pending final screenshot and device verification:
+
+> Build a worksheet from variables, functions and calculations. Change an input
+> and recalculate its dependent results. Link a function to a graph, inspect a
+> coordinate or generate a value table, then export your calculations and plots
+> together. Save checkpoints, compare changes and restore an earlier worksheet.
+> Portable worksheet files preserve editable calculations and are recalculated
+> when imported. Core calculations run on your device. Optional AI assistance
+> and cloud backup use services you configure. Handwriting transcription is
+> experimental and requires review and correction.
+
+Use this screenshot narrative, with the corresponding actual captures selected
+in [the native gallery evidence](native-apple-gallery.md):
+
+| Order | Scene | Suggested caption | What the capture must show |
+| --- | --- | --- | --- |
+| 1 | Evaluated engineering worksheet | Calculate with editable worksheets | Source assignments, dependent results and readable computation evidence |
+| 2 | Multiple-function or traced graph | Turn worksheet functions into graphs | Actual populated curves and a retained worksheet link; a coordinate if using the trace view |
+| 3 | Checkpoint history | Compare changes and recover your work | A real saved checkpoint and available comparison/restore actions |
+| 4 | Worksheet graph export preview | Share calculations and graphs together | An actual export preview containing worksheet content and a graph |
+| 5, optional | Generated value table | Inspect values along a curve | Real generated rows and function labels |
+
+Keep the original native images and their source manifests. Captions are draft
+metadata, not text inserted into the captured application. Do not use the ink
+input scene to imply successful handwriting recognition. On phone, graph
+controls and function chips use horizontal scrolling; select a view whose
+visible controls fit the intended story and verify access rather than interpreting
+an off-screen scroll item as layout overflow. The scene is still subject to
+physical-device verification before App Review.
+
 ## Review notes draft
 
 > CrispMath provides persistent mathematical worksheets whose variables and

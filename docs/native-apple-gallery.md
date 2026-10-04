@@ -3,10 +3,9 @@
 The [latest native GitHub CI gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37202560511)
 captures CrispMath at source `6eff9fb6fa609144fad2844e8e245d430978d3f9`.
 Both jobs pass on 4 October 2026: all **33 images** and native calculation/content
-assertions are verified. Four selected images were visually reviewed: iPhone
-multiple-function graph, iPad evaluated engineering worksheet, and native macOS
-graph and worksheet. The other 29 captures passed hosted tooling assertions;
-they were not individually visually reviewed.
+assertions are verified. All **33 captures have now been individually visually
+reviewed**, including evaluated worksheets, populated graphs, tracing, generated
+tables, saved checkpoints, export previews and actual handwriting strokes.
 
 The capture source and validated documentation revision
 `d4739be9eb26f8bbb8963ca9547df35e6e1480dd` have identical 368-file production
@@ -30,7 +29,7 @@ use simulators; physical-device testing remains for another session.
 Both CI artifacts retain source-tagged manifests, RGB PNG images and
 calculation evidence: `native-apple-screenshot-gallery` and
 `native-macos-screenshot-gallery`. All 33 images remain in remote artifacts.
-Only the needed manifests and four selected PNGs were downloaded for review:
+The first review downloaded the manifests and four selected PNGs:
 
 - `/mnt/storage/CrispMath-stage19-ci/native-gallery/ios/manifest.json`
 - `/mnt/storage/CrispMath-stage19-ci/native-gallery/ios/iphone/multiple-function-graph.png`
@@ -39,14 +38,68 @@ Only the needed manifests and four selected PNGs were downloaded for review:
 - `/mnt/storage/CrispMath-stage19-ci/native-gallery/macos/macos/multiple-function-graph.png`
 - `/mnt/storage/CrispMath-stage19-ci/native-gallery/macos/macos/evaluated-engineering-worksheet.png`
 
-The selected-image review and production parity are recorded in
+The first selected-image review and production parity are recorded in
 `/mnt/storage/CrispMath-stage19-ci/native-gallery/verified-native-gallery-math.json`.
+The subsequent review downloaded the remaining 29 PNGs by exact manifest path,
+excluding duplicate raw simulator images, through partial artifact requests.
+These files are under `native-gallery/remaining-ios` and
+`native-gallery/remaining-macos` on the same CIFS storage. The complete review,
+image hashes, dimensions and proposed sequence are recorded in
+`native-gallery/store-selection-review.json`. App bundles and models were not
+downloaded, and no local app build or screenshot batch was run.
+
 Reviewed graphs contain `cos(x)`, `x^2-2` and linked `3*sin(x)`. The tank
 worksheets show `r=3`, `h=5`, area `28.2743338823`, volume `141.3716694115` and
-volume/1000 `0.1413716694115`, with readable computed-result labels. No blank
-capture or blocking overlay was seen in these four images. The iPhone graph
-toolbar and function chips extend horizontally beyond its viewport; inspect the
-intended store selection/crop before upload.
+volume/1000 `0.1413716694115`, with computed-result labels. No blank capture,
+framework error or unexpected blocking overlay was seen. The expected table,
+history, export and handwriting dialogs contain real content.
+
+## Proposed screenshot sequence
+
+Use the following four unmodified captures for each device profile. They follow
+one document from calculation through inspection, recovery and export. This is
+a reviewed selection; the images have not been uploaded to App Store Connect.
+
+| Order | Filename | What the image establishes |
+| --- | --- | --- |
+| 1 | `connected-worksheet.png` | Evaluated `a=3`, the linked `3 sin(x)` expression, its free x, and the exact integral 1/3 |
+| 2 | `graph-curve-trace.png` | Three populated curves, their worksheet link, a visible sampled coordinate and trace marker |
+| 3 | `worksheet-checkpoint-history.png` | The same document with a saved checkpoint and visible Compare action |
+| 4 | `worksheet-graph-export-preview.png` | Evaluated worksheet content, retained sine graph, numeric samples and HTML/MD/TEX/PDF actions |
+
+The first, third and fourth scenes refer to **Explore a function**. The graph
+adds `cos(x)` and `x²−2` alongside its linked `3 sin(x)`. The trace coordinates
+differ slightly across platforms because sampling uses the real plot geometry.
+The phone readout is `(0, 1)`; tablet and desktop captures show approximately
+`(0.02, 0.9998)`, all consistent with the traced cosine.
+
+The longer `evaluated-engineering-worksheet.png` is a useful optional fifth image
+on iPad and macOS. On iPhone its last result label sits near the lower edge,
+so the shorter connected worksheet is the clearer opening image. The exact
+calculator and generated value table are useful supplementary views.
+`handwriting-editable-input.png` is excluded from the proposed store sequence:
+it visibly says no model is configured and demonstrates pen input, not successful
+recognition. Export previews contain a scrollable sample list; do not imply the
+screen shows every exported row or verifies a physical Files provider.
+
+## Phone graph controls
+
+The phone toolbar is intentionally a bounded horizontal
+[`SingleChildScrollView`](../lib/screens/graphing_screen.dart), and the function
+chips use a horizontal `ListView`. Their partial edge items indicate additional
+content reached by horizontal scrolling; they are not unconstrained layout
+overflow. The trace screenshot shows the toolbar after it has scrolled from
+Bounds/Fit to Trace/Table/Zoom, while the graph itself remains fully within its
+viewport.
+
+The successful native gallery test reveals and taps **Trace curve** and
+**Value table**, then asserts a real trace readout and at least ten generated
+table rows on iPhone, iPad and macOS. That evidence supports reachability of
+those tested commands. It does not independently test every toolbar command
+or dragging the function strip on a physical phone. No inaccessible-control
+defect was established by this review, so no application layout change or new
+release is attributed to the screenshot selection. A visible overflow menu or
+scroll affordance remains a possible later UX improvement, with its own tests.
 
 For historical captures, see [the previous gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37104046317)
 at `2927336`, [the earlier gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37056297272)
