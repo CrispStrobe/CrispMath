@@ -93,6 +93,17 @@ void main() {
         (tester) async {
       final semantics = tester.ensureSemantics();
       try {
+        String? copiedText;
+        final messenger = tester.binding.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedText = (call.arguments as Map)['text'] as String;
+          } else if (call.method == 'Clipboard.getData') {
+            return copiedText == null ? null : {'text': copiedText};
+          }
+          return null;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
         await _bootApp(tester, size: configuration.$1);
         await _gotoNotepad(tester);
         tester.binding.platformDispatcher.textScaleFactorTestValue = configuration.$2;
@@ -124,12 +135,15 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Copy result'));
         await tester.pumpAndSettle();
-        expect((await Clipboard.getData(Clipboard.kTextPlain))?.text, value);
+        expect(copiedText, value);
+        final clipboard = await tester.runAsync(
+            () => Clipboard.getData(Clipboard.kTextPlain));
+        expect(clipboard?.text, value);
         expect(tester.takeException(), isNull);
       } finally {
         semantics.dispose();
       }
-    });
+    }, timeout: const Timeout(Duration(seconds: 30)));
   }
 
   testWidgets('guided creation preserves existing source and cancels stale linking',
