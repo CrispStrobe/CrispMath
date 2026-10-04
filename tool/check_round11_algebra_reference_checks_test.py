@@ -30,6 +30,10 @@ class AlgebraReferenceControls(unittest.TestCase):
     def test_complete_rational_identity_and_source_domain(self):
         evidence={'sourceDomain':'x ≠ -3','accuracy':'symbolic'}
         self.accepts('surviving-exclusion','(x-3)/(x+3)',evidence=evidence)
+        self.accepts('surviving-exclusion','(x-3)/(x+3)',evidence={'sourceDomain':'(x^2+6*x+9) ≠ 0 (x ≠ -3)'})
+        self.accepts('surviving-exclusion','(x-3)/(x+3)',evidence={'sourceDomain':'2*(x+3)^4 != 0'})
+        self.rejects('surviving-exclusion','(x-3)/(x+3)',evidence={'sourceDomain':'(x^2-9) ≠ 0 (x ≠ -3)'})
+        self.rejects('surviving-exclusion','(x-3)/(x+3)',evidence={'sourceDomain':'(x^2+6*x+9) ≠ 0 (x ≠ 3)'})
         self.rejects('surviving-exclusion','(x-3)/(x+3)')
         self.rejects('surviving-exclusion','(x+3)/(x-3)',evidence=evidence)
         self.accepts('scaled-arctangent','3/(9*x^2+1)')

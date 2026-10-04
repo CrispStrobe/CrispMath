@@ -140,6 +140,27 @@ def validate_linsolve(expression):
     assert {m[1]:scalar(m[2])for m in matches}=={'x':F(2),'y':F(1),'z':F(4)},expression
 
 
+def validate_source_domain(domain):
+    """Prove the exclusion -3 from either a root or polynomial condition."""
+    simple=re.fullmatch(r'\s*x\s*(?:≠|!=)\s*(.+?)\s*',domain)
+    if simple:
+        assert scalar(simple[1])==F(-3),domain
+        return
+    condition=re.fullmatch(r'\s*(.*?)\s*(?:≠|!=)\s*0(?:\s*\((x\s*(?:≠|!=)\s*[^()]+)\))?\s*',domain)
+    assert condition,domain
+    if condition[2]:validate_source_domain(condition[2])
+    coefficients=polynomial_coefficients(condition[1])
+    assert 2<=len(coefficients)<=9,domain
+    # A nonzero scalar times (x+3)^m has exactly the required excluded root.
+    while len(coefficients)>1:
+        quotient=[F(0)]*(len(coefficients)-1)
+        quotient[-1]=coefficients[-1]
+        for i in range(len(coefficients)-2,0,-1):quotient[i-1]=coefficients[i]-3*quotient[i]
+        assert coefficients[0]-3*quotient[0]==0,domain
+        coefficients=quotient
+    assert coefficients[0]!=0,domain
+
+
 def validate_result(case,line):
     name,source,(kind,expected)=case
     assert line.get('s')==source and not line.get('e'),(case,line)
@@ -158,7 +179,7 @@ def validate_result(case,line):
         rational_equal(result,expected);free={'x'}
         if name=='surviving-exclusion':
             domain=evidence.get('sourceDomain') or ''
-            assert re.fullmatch(r'\s*x\s*(?:≠|!=)\s*-3\s*',domain),(case,line)
+            validate_source_domain(domain)
     elif kind=='self-power':
         text=normalized(result)
         text=re.sub(r'\bx\*\*x\b','a',text)

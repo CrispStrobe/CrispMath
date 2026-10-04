@@ -50,6 +50,10 @@ on:
         description: 'Run tenth-audit worksheet, statistics, constraints and calculator checks against an immutable validated bundle'
         type: boolean
         default: false
+      probe_round11_math:
+        description: 'Check all frozen eleventh questions with latest tools against an existing immutable app bundle'
+        type: boolean
+        default: false
       probe_round9_constraint_only:
         description: 'Diagnostic only: inspect real constraint result focus/DOM, without claiming full math coverage'
         type: boolean
@@ -375,7 +379,7 @@ jobs:
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
       - name: Probe actual batch UI
-        if: ${{ inputs.probe_math_scope != true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true }}
+        if: ${{ inputs.probe_math_scope != true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true && inputs.probe_round11_math != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           CLIP_LABELS: ${{ inputs.probe_clip_labels }}
@@ -401,18 +405,20 @@ jobs:
           python tool/wait_release_validation.py --run-id "$BUILD_RUN_ID" --package-sha "$GITHUB_SHA" --output browser-results/source-parity.json
           python -m unittest discover -s tool -p '*_test.py'
       - name: Probe actual independent-audit worksheet and statistics UI
-        if: ${{ inputs.probe_round7_math == true || inputs.probe_round8_math == true || inputs.probe_round9_math == true || inputs.probe_round10_math == true }}
+        if: ${{ inputs.probe_round7_math == true || inputs.probe_round8_math == true || inputs.probe_round9_math == true || inputs.probe_round10_math == true || inputs.probe_round11_math == true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           PROBE_ROUND7: ${{ inputs.probe_round7_math }}
           PROBE_ROUND8: ${{ inputs.probe_round8_math }}
           PROBE_ROUND9: ${{ inputs.probe_round9_math }}
           PROBE_ROUND10: ${{ inputs.probe_round10_math }}
+          PROBE_ROUND11: ${{ inputs.probe_round11_math }}
           ROUND9_CONSTRAINT_ONLY: ${{ inputs.probe_round9_constraint_only }}
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
           python tool/check_deployed_bundle.py --url http://localhost:8766/ --source "$APP_SOURCE"
+          python -m unittest discover -s tool -p '*round11*_test.py'
           status=0
           if [ "$PROBE_ROUND7" = "true" ]; then
             python tool/check_round6_statistics_browser.py --expected-source "$APP_SOURCE" --output browser-results/round7-statistics || status=1
@@ -429,9 +435,13 @@ jobs:
           if [ "$PROBE_ROUND10" = "true" ]; then
             python tool/check_round10_math_browser.py --expected-source "$APP_SOURCE" --output browser-results/round10-math || status=1
           fi
+          if [ "$PROBE_ROUND11" = "true" ]; then
+            python tool/check_round11_math_browser.py --expected-source "$APP_SOURCE" --output browser-results/round11-math || status=1
+            python tool/check_guided_worksheet_browser.py --output browser-results/guided-worksheet || status=1
+          fi
           exit "$status"
       - name: Probe actual solve scope UI
-        if: ${{ inputs.probe_math_scope == true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true }}
+        if: ${{ inputs.probe_math_scope == true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true && inputs.probe_round11_math != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
         run: |
