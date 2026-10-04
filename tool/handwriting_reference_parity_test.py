@@ -62,7 +62,7 @@ class NumericalReferenceControls(unittest.TestCase):
         self.assertFalse(compare(a, a[:, :-1], (1e-5, 0), np)['matches'])
         self.assertFalse(compare(a, a + 0.001, (1e-5, 0), np)['matches'])
         with self.assertRaisesRegex(ValueError, 'Nonfinite'):
-            compare(a, a * np.inf, (1e-5, 0), np)
+            compare(a, np.full_like(a, np.inf), (1e-5, 0), np)
 
 
 class ReferenceControls(unittest.TestCase):
@@ -90,7 +90,7 @@ class ReferenceControls(unittest.TestCase):
             path.write_text(json.dumps({'split': 'test', 'cases': []}))
             with self.assertRaisesRegex(ValueError, 'Changed frozen'):
                 validate_manifest(path)
-        for source in ('no marker', 'marker marker'):
+        for source in ('no anchor', 'marker marker'):
             with self.assertRaisesRegex(ValueError, 'anchor changed'):
                 replace_once(source, 'marker', 'replacement')
 
