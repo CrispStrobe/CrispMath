@@ -954,7 +954,9 @@ class NotepadScreenState extends State<NotepadScreen> {
     if (!mounted || generation != _recalcGeneration ||
         _currentDoc?.id != doc.id || doc.scopeRevision != revision ||
         doc.lines.any((line) => line.cachedError != null) ||
-        doc.lines.last.cachedResult == null) return;
+        doc.lines.last.cachedResult == null) {
+      return;
+    }
     try {
       _appState.linkNotepadLine(doc.id, doc.lines[1].id, openGraph: false);
     } on StateError catch (error) {
