@@ -19,6 +19,20 @@ const _unsafeError = 'server-secret-canary-never-show';
 const _loginSuccess = 'Signed in. You can now pull or upload a cloud backup.';
 const _loginFailure = 'Sign in failed. Check your email and password, then try again.';
 
+class _MemoryPkceStorage extends GotrueAsyncStorage {
+  final _items = <String, String>{};
+  @override
+  Future<String?> getItem({required String key}) async => _items[key];
+  @override
+  Future<void> setItem({required String key, required String value}) async {
+    _items[key] = value;
+  }
+  @override
+  Future<void> removeItem({required String key}) async {
+    _items.remove(key);
+  }
+}
+
 class _Backend {
   bool loginFails = false;
   bool readFails = false;
@@ -30,8 +44,14 @@ class _Backend {
   Completer<http.Response>? delayedLogin;
   late final SupabaseClient client = SupabaseClient(
     'https://fixture.invalid', 'public-fixture',
-    authOptions: const AuthClientOptions(autoRefreshToken: false),
-    httpClient: MockClient(handle),
+    authOptions: AuthClientOptions(autoRefreshToken: false,
+        pkceAsyncStorage: _MemoryPkceStorage()),
+    httpClient: MockClient((request) async {
+      final result = await handle(request);
+      // PostgREST parses request method and Accept headers on the response.
+      return http.Response.bytes(result.bodyBytes, result.statusCode,
+          headers: result.headers, request: request);
+    }),
   );
   late final SyncService service = SyncService.withClient(client);
 
@@ -55,7 +75,10 @@ class _Backend {
           : response(session, 200);
     }
     if (request.url.path == '/auth/v1/signup') {
-      return response(signupConfirmation ? {'user': user} : session, 200);
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['code_challenge_method'], 's256');
+      expect(body['code_challenge'], isNotEmpty);
+      return response(signupConfirmation ? user : session, 200);
     }
     if (request.url.path == '/auth/v1/logout') {
       return logoutFails ? response({'msg': _unsafeError}, 500) : http.Response('', 204);
