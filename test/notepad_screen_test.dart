@@ -21,6 +21,7 @@ import 'package:crisp_math/main.dart';
 import 'package:crisp_math/services/engine_service.dart';
 import 'package:crisp_math/widgets/boolean_chip.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -82,6 +83,54 @@ void main() {
       semantics.dispose();
     }
   });
+
+  for (final configuration in [
+    (const Size(390, 844), 1.0),
+    (const Size(390, 844), 2.0),
+    (const Size(1280, 900), 1.0),
+  ]) {
+    testWidgets('long computed math scrolls completely at $configuration',
+        (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await _bootApp(tester, size: configuration.$1);
+        await _gotoNotepad(tester);
+        tester.binding.platformDispatcher.textScaleFactorTestValue = configuration.$2;
+        addTearDown(tester.binding.platformDispatcher.clearTextScaleFactorTestValue);
+        const value = 'x^6 + 6*x^5*y + 15*x^4*y^2 + 20*x^3*y^3 + '
+            '15*x^2*y^4 + 6*x*y^5 + y^6';
+        final state = AppState();
+        final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+        doc.lines.add(NotepadLine(id: 'long-result',
+            source: 'expand((x+y)^6)', cachedResult: value));
+        state.setNotepadDocument(doc);
+        await tester.pumpAndSettle();
+        final result = find.byKey(const ValueKey('notepad-result:long-result'));
+        final viewport = find.byKey(const ValueKey('notepad-result-scroll:long-result'));
+        final scroll = find.descendant(of: viewport, matching: find.byType(Scrollable));
+        expect(tester.takeException(), isNull);
+        expect(tester.getSemantics(result).label, value);
+        final position = tester.state<ScrollableState>(scroll).position;
+        expect(position.maxScrollExtent, greaterThan(0));
+        final bounds = tester.getRect(viewport);
+        expect(bounds.left, greaterThanOrEqualTo(0));
+        expect(bounds.right, lessThanOrEqualTo(configuration.$1.width));
+        await tester.drag(viewport,
+            Offset(-(position.maxScrollExtent + bounds.width), 0));
+        await tester.pumpAndSettle();
+        expect(position.pixels, position.maxScrollExtent);
+        expect(tester.getSemantics(result).label, value);
+        await tester.tap(viewport, buttons: 2);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Copy result'));
+        await tester.pumpAndSettle();
+        expect((await Clipboard.getData(Clipboard.kTextPlain))?.text, value);
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
 
   testWidgets('guided creation preserves existing source and cancels stale linking',
       (tester) async {

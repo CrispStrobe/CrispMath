@@ -7,12 +7,14 @@ import argparse
 import asyncio
 import json
 import re
+import time
 from pathlib import Path
 
 from playwright.async_api import async_playwright, expect
 from benchmark_workflows import next_frames
 from check_feature_browser import labels
 from check_round6_statistics_browser import real_click
+from guided_popup_geometry import stable_popup_window
 
 
 async def snapshot(page):
@@ -57,9 +59,31 @@ async def check(args):
                 await real_click(page, page.get_by_role('button', name=name, exact=True))
                 await next_frames(page)
             async def menu(name):
+                item['stage'] = 'menu: ' + name
                 await button('Document menu')
-                await real_click(page, page.locator('[aria-label='+json.dumps(name)+']'))
+                target = page.locator('[aria-label='+json.dumps(name)+']')
+                await target.wait_for(state='attached')
+                samples = []
+                item.setdefault('menuGeometry', []).append({'action': name, 'samples': samples})
+                for _ in range(120):
+                    count = await target.count()
+                    sample = {'count': count, 'ready': False, 'timeMs': time.monotonic()*1000}
+                    if count == 1:
+                        sample.update(await target.evaluate('''el=>{
+                          const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+                          return {x:r.x,y:r.y,width:r.width,height:r.height,
+                            ready:r.width>0&&r.height>0&&r.x>=0&&r.right<=innerWidth&&r.y>=0&&r.bottom<=innerHeight&&
+                              !!hit&&(hit===el||el.contains(hit))};
+                        }'''))
+                    samples.append(sample)
+                    if stable_popup_window(samples):
+                        break
+                    await next_frames(page)
+                else:
+                    raise AssertionError('Popup item never became unique, unobscured and stable for 250ms')
+                await real_click(page, target)
                 await next_frames(page)
+                await target.wait_for(state='hidden')
             async def edit(value):
                 field = page.get_by_role('textbox').first
                 await real_click(page, field)
@@ -80,6 +104,7 @@ async def check(args):
             async def create():
                 before = await snapshot(page)
                 await menu('Explore a linked worksheet')
+                item['stage'] = 'fresh linked worksheet creation'
                 await page.wait_for_function('''previous=>{
                   const raw=localStorage.getItem('flutter.crisp.currentNotepadDoc');
                   return raw&&JSON.parse(raw)!==previous;
@@ -114,8 +139,12 @@ async def check(args):
                 await edit('sentinel=37')
                 await page.wait_for_function('''id=>{
                   const raw=localStorage.getItem('flutter.crisp.notepadDoc.'+encodeURIComponent(id));
-                  return raw&&JSON.parse(JSON.parse(raw)).l[0].s==='sentinel=37';
+                  if(!raw)return false;const row=JSON.parse(JSON.parse(raw)).l[0];
+                  return row.s==='sentinel=37'&&row.r==='37'&&!row.e;
                 }''', arg=original)
+                await page.wait_for_function('''()=>[...document.querySelectorAll('[aria-label]')]
+                    .some(el=>el.getAttribute('aria-label').split('\\n').includes('37'))||
+                    document.body.innerText.split('\\n').includes('37')''')
                 first = await create()
                 second = await create()
                 assert first != second

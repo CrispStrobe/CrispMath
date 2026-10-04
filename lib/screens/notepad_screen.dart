@@ -2692,6 +2692,15 @@ class _NotepadResultColumn extends StatelessWidget {
     } catch (_) {
       body = Text(res, style: style, textAlign: textAlign);
     }
+    // A typeset expression cannot wrap like ordinary text. Give it its full
+    // intrinsic width and let the user scroll to every term on narrow screens.
+    if (body is Math) {
+      body = SingleChildScrollView(
+        key: ValueKey('notepad-result-scroll:${line.id}'),
+        scrollDirection: Axis.horizontal,
+        child: body,
+      );
+    }
     // Speak the complete computed value, including multi-digit math rendered
     // as separate glyph widgets. The label describes the same visible body.
     body = Semantics(
