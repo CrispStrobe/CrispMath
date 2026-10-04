@@ -5,6 +5,7 @@ import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/services/sync_service.dart';
 import 'package:crisp_math/widgets/sync_dialog.dart';
+import 'package:crisp_math/widgets/workspace_backup_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -164,6 +165,19 @@ void main() {
     await _tap(tester, 'Pull');
     _accessible(tester, 'Cloud backup could not be read. Check your connection and try again.');
     expect(find.text('No cloud backup is available.'), findsNothing);
+    fixture.readFails = false;
+    final doc = AppState().notepadDocuments.values
+        .singleWhere((document) => document.name == 'Local worksheet');
+    fixture.row = {'user_id': 'fixture-user', 'revision': 0,
+      'app_state': jsonEncode({'notepadDocuments': [doc.toJson()]})};
+    await _tap(tester, 'Pull');
+    expect(find.byType(WorkspaceBackupDialog), findsOneWidget);
+    expect(find.text('Local worksheet: 1 rows'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    await tester.tap(find.descendant(of: find.byType(WorkspaceBackupDialog),
+        matching: find.text('Close')));
+    await tester.pumpAndSettle();
+    _accessible(tester, 'Cloud backup loaded for review.');
   });
 
   testWidgets('upload confirmation cancellation is harmless; failure and success are announced', (tester) async {

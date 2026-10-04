@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/sync_service.dart';
+import '../services/cloud_backup_store.dart';
 import '../engine/app_state.dart';
 import 'workspace_backup_dialog.dart';
 
@@ -63,8 +64,15 @@ class _SyncDialogState extends State<SyncDialog> {
     }
   }
 
-  Future<void> _sync(bool push) => _run(() async {
+  Future<void> _sync(bool push) async {
+    if (_isLoading || !mounted) return;
     if (push) {
+      // Confirmation is a decision, not a network operation. Clear stale
+      // feedback without animating a progress indicator beneath its modal.
+      setState(() {
+        _feedback = null;
+        _feedbackIsError = false;
+      });
       final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -81,21 +89,28 @@ class _SyncDialogState extends State<SyncDialog> {
                       child: const Text('Upload backup'))
                 ],
               ));
-      if (confirmed != true || !mounted) return null;
-      await _service.pushState(widget.appState);
-      return 'Cloud backup uploaded.';
+      if (confirmed != true || !mounted) return;
     }
-    final snapshot = await _service.readBackup();
-    if (!mounted) return null;
-    if (snapshot == null) return 'No cloud backup is available.';
-    await showDialog<void>(
-        context: context,
-        builder: (_) => WorkspaceBackupDialog(
-            initialBackup: snapshot.backup, onRestored: widget.onRestored));
-    return 'Cloud backup loaded for review.';
-  }, failureMessage: push
-      ? 'Cloud upload failed. Check your connection, then pull and review the latest backup before trying again.'
-      : 'Cloud backup could not be read. Check your connection and try again.');
+    if (push) {
+      await _run(() async {
+        await _service.pushState(widget.appState);
+        return 'Cloud backup uploaded.';
+      }, failureMessage: 'Cloud upload failed. Check your connection, then pull and review the latest backup before trying again.');
+      return;
+    }
+    CloudBackupSnapshot? incoming;
+    await _run(() async {
+      incoming = await _service.readBackup();
+      return incoming == null
+          ? 'No cloud backup is available.' : 'Cloud backup loaded for review.';
+    }, failureMessage: 'Cloud backup could not be read. Check your connection and try again.');
+    // The fetch has finished. Reviewing a backup is a user decision, so it
+    // must not leave a progress animation running beneath the review dialog.
+    if (incoming != null && mounted) {
+      await showDialog<void>(context: context, builder: (_) => WorkspaceBackupDialog(
+        initialBackup: incoming!.backup, onRestored: widget.onRestored));
+    }
+  }
 
   Future<void> _auth(bool signUp) => _run(() async {
     if (signUp) {
