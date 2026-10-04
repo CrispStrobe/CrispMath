@@ -125,7 +125,13 @@ void main() {
   });
 
   Future<_Backend> backend(WidgetTester tester, {bool signedIn = false}) async {
-    final fixture = _Backend();
+    // Supabase starts a native JSON isolate in its constructor. Construct it
+    // outside FakeAsync so its initialization and shutdown can receive events.
+    final fixture = (await tester.runAsync(() async {
+      final fixture = _Backend();
+      await fixture.service.init();
+      return fixture;
+    }))!;
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
       fixture.service.dispose();

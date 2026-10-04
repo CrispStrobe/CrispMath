@@ -21,14 +21,14 @@ def require(condition, message):
         raise ValueError(message)
 
 
-def validate(report, arm):
+def validate(report, arm, model_sha256=POSFORMER_SHA256, model_filename='posformer-q8.gguf'):
     require(report.get('encoder_arm') == arm, 'Wrong encoder arm')
     require(report.get('encoder_environment') == {
         'POSFORMER_SCALAR_ENCODER': '1' if arm == 'scalar' else None},
         'Wrong encoder environment')
     require(report.get('bridge_source') == BRIDGE_SOURCE, 'Unpinned native bridge')
-    require(report.get('model_sha256') == POSFORMER_SHA256, 'Unpinned weights')
-    require(report.get('model') == 'posformer-q8.gguf', 'Wrong model')
+    require(report.get('model_sha256') == model_sha256, 'Unpinned weights')
+    require(report.get('model') == model_filename, 'Wrong model')
     require(report.get('threads') == 2, 'Thread count changed')
     require(isinstance(report.get('source'), str) and
             re.fullmatch(r'[0-9a-f]{40}', report['source']), 'Missing source identity')

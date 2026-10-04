@@ -168,7 +168,8 @@ async def dismiss_sync(page):
 def inline_feedback(page, message):
     # Flutter also mirrors live-region text into an announcement transport.
     # Prove the actual active dialog content, without selecting that mirror.
-    return page.get_by_role('alertdialog').get_by_text(message, exact=True)
+    return page.get_by_role('alertdialog').locator('span').filter(
+        has_text=re.compile('^' + re.escape(message) + '$'))
 
 
 async def expect_inline_feedback(page, message):

@@ -35,6 +35,7 @@ void main() {
     final hash = sha256.convert(File(model).readAsBytesSync()).toString();
     expect(hash, Platform.environment['CRISPMATH_OCR_SHA256']);
     final records = <Map<String, dynamic>>[];
+    final libraryHash = sha256.convert(File(library).readAsBytesSync()).toString();
     final ocr = CrispEmbedOcr(model, libPath: library, nThreads: 2);
     final report = File(Platform.environment['CRISPMATH_HANDWRITING_REPORT']!);
     report.parent.createSync(recursive: true);
@@ -44,6 +45,9 @@ void main() {
           'model': File(model).uri.pathSegments.last,
           'source': Platform.environment['GITHUB_SHA'],
           'bridge_source': Platform.environment['CRISPMATH_OCR_BRIDGE_SOURCE'],
+          'bridge_patch_sha256':
+              Platform.environment['CRISPMATH_OCR_BRIDGE_PATCH_SHA256'],
+          'library_sha256': libraryHash,
           'encoder_arm': encoderArm,
           'encoder_environment': {'POSFORMER_SCALAR_ENCODER': scalarFlag},
           'corpus_manifest_sha256': sha256

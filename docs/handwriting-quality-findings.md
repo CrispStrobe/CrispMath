@@ -31,6 +31,49 @@ coverage result, not a semantic accuracy ceiling or a recognition guarantee.
 Vocabulary limits explain part of the failure; poor recognition of the
 remaining references still needs investigation.
 
+## Public MathWriting candidate and native forward investigation
+
+[Candidate run 37202122710](https://github.com/CrispStrobe/CrispMath/actions/runs/37202122710)
+at source `864e505964ac1af065714e27ef4a139b829fcc12` tested the publicly
+accessible `posformer-mathwriting_v2-f32.gguf` separately. Actual GGUF metadata
+confirms **186 tokens, dimension 384, eight attention heads, and projection
+`[384, 186]`**. It can assemble **49/50 frozen reference strings**; the remaining
+reference needs `\longrightarrow`. Nevertheless, real native recognition
+measured **0/50 exact matches**, with zero runtime failures and 50 distinct,
+nonempty transcriptions. The unchanged baseline again measured 7/50.
+Every case's image hash, reference, dimensions and scoring matched the baseline.
+
+Candidate identity is pinned to Hugging Face revision
+`45eb7de7d8ae26708701f06cae68d96f1abb0ef7`, model SHA-256
+`12060161fc6dc3c3fde146532ffade00f8f2286dd5a53e1f8777215afa9193c0`, and actual
+tokenizer SHA-256
+`287722dd3f4aa767c208e195d6c2a9c3a653bc9e9bc956f48e4496f3f9f25e44`.
+This closes 26 lexical gaps but does not improve measured recognition. It has
+not replaced production weights or been added to the model catalog.
+
+Source inspection found a concrete forward mismatch: the
+[converter](https://github.com/CrispStrobe/CrispEmbed/blob/11e6d598521976f38081934106b55095b46b40e3/models/convert-posformer-to-gguf.py)
+writes learned `dec.input_norm` weights, and the
+[official decoder](https://github.com/SJTU-DeepVisionLab/PosFormer/blob/802019a0533639f3b0bf18d44e93be073945cac5/Pos_Former/model/decoder.py)
+applies that normalization after positional addition. The pinned native
+decoder omits it. A separate, opt-in hosted diagnostic repairs this ordering
+and compares the real native token-input path with independent LayerNorm
+math before measuring both models on the unchanged 50 drawings. This is not
+yet a validated production repair or full model parity result.
+
+Structural-token coverage masking also uses fixed IDs 82, 83 and 110. These
+identify `^`, `_` and `{` in the original tokenizer, but different symbols in
+the expanded vocabulary. The
+[official ARM implementation](https://github.com/SJTU-DeepVisionLab/PosFormer/blob/802019a0533639f3b0bf18d44e93be073945cac5/Pos_Former/model/transformer/arm.py)
+also uses those fixed IDs, so changing only native masking could disagree with
+training. The normalization diagnostic leaves this masking unchanged.
+
+The [candidate model card](https://huggingface.co/cstr/posformer-mathwriting-GGUF/blob/45eb7de7d8ae26708701f06cae68d96f1abb0ef7/README.md)
+claims BSD licensing and lists the old architecture. Those claims do not
+resolve training provenance or the official repository's academic-use
+wording. Treat this candidate as benchmark evidence, pending provenance and
+licensing clarification before any production adoption.
+
 ## Reproducibility
 
 | Identity | Pinned value |
@@ -62,6 +105,20 @@ Only when another paired encoder diagnostic is needed:
 ```sh
 gh workflow run handwriting-quality.yml --ref feat/graph-workspace-ux \
   -f scalar_posformer=true
+```
+
+To reproduce the separate expanded-vocabulary candidate measurement:
+
+```sh
+gh workflow run handwriting-quality.yml --ref feat/graph-workspace-ux \
+  -f mathwriting_candidate=true
+```
+
+To run the controlled normalization diagnostic on both models:
+
+```sh
+gh workflow run handwriting-quality.yml --ref feat/graph-workspace-ux \
+  -f input_norm_diagnostic=true
 ```
 
 The [workflow](../.github/workflows/handwriting-quality.yml) retains
