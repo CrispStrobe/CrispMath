@@ -48,7 +48,7 @@ concurrency:
 jobs:
   build:
     runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     # Job-level env so the deploy step's `if:` can test for a configured
     # token and skip gracefully when secrets are absent.
@@ -188,6 +188,18 @@ jobs:
           python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
           python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations
           python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery
+      - name: Verify all fifty-two eleventh audit questions and guided workflows
+        if: ${{ !cancelled() && steps.vercel.outputs.url != '' }}
+        env:
+          APP_URL: ${{ steps.vercel.outputs.url }}
+        run: |
+          status=0
+          for area in algebra numeric supplement; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round11_${area}_tasks.json" --output "deployed-results/round11-${area}.json" || status=1
+          done
+          python tool/check_round11_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round11-math-ui || status=1
+          python tool/check_guided_worksheet_browser.py --url "$APP_URL" --output deployed-results/guided-worksheet || status=1
+          exit "$status"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

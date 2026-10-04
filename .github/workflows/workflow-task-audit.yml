@@ -55,6 +55,10 @@ on:
         description: 'Run WASM only; native CLI is covered by a separate run'
         type: boolean
         default: false
+      round11_ui_only:
+        description: 'Retain all 789 runtime tasks; run only new eleventh/guided UI controls'
+        type: boolean
+        default: false
       linux_runner:
         description: 'GitHub-hosted Linux runner (explicit image for queue fallback)'
         type: choice
@@ -94,7 +98,10 @@ jobs:
         run: flutter test --no-pub test/round11_algebra_regressions_test.dart
       - name: Eleventh audit independent-comparator negative controls
         if: ${{ !cancelled() }}
-        run: python -m unittest discover -s tool -p check_round11_algebra_reference_checks_test.py
+        run: python -m unittest discover -s tool -p '*round11*_test.py'
+      - name: Eleventh numeric and guided worksheet focused regressions
+        if: ${{ !cancelled() }}
+        run: flutter test --no-pub test/round11_numeric_regressions_test.dart test/guided_worksheet_test.dart test/round11_statistics_ui_test.dart
       - name: Corpus and comparison unit regressions
         run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart test/round2_graph_regressions_test.dart test/round2_exact_constant_test.dart test/round2_numeric_regressions_test.dart test/round2_algebra_regressions_test.dart test/worksheet_numeric_provenance_test.dart test/workflow_document_provenance_test.dart test/round3_algebra_regressions_test.dart test/round3_numeric_regressions_test.dart test/csp_polynomial_regression_test.dart test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round6_reference_tasks_test.dart test/round7_reference_tasks_test.dart test/round7_precision_regressions_test.dart test/round7_algebra_regressions_test.dart test/round7_numeric_regressions_test.dart test/round7_scientific_scope_test.dart test/round8_factorial_regressions_test.dart test/round8_numeric_regressions_test.dart test/round8_complex_quadratic_regressions_test.dart test/round8_matrix_scope_test.dart test/round9_reference_tasks_test.dart test/round10_reference_tasks_test.dart test/round10_algebra_regressions_test.dart test/round9_numeric_regressions_test.dart test/round9_worksheet_regressions_test.dart test/round6_exact_rounding_test.dart test/round6_numeric_regressions_test.dart test/round6_constraint_regressions_test.dart test/round6_algebra_regressions_test.dart test/round6_worksheet_regressions_test.dart test/round6_series_routing_test.dart test/round5_numeric_regressions_test.dart test/round5_operation_scope_test.dart test/graph_navigation_widget_test.dart
       - name: Run every task against native app engine (strict)
@@ -204,7 +211,7 @@ jobs:
           retention-days: 14
   browser:
     runs-on: ${{ inputs.browser_runner != 'auto' && inputs.browser_runner || inputs.linux_runner || 'ubuntu-latest' }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -338,42 +345,48 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Enter repaired calculations through desktop and phone UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_new_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/new-math-ui
       - name: Enter round two independent arithmetic controls through actual UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round2_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round2-math-ui
       - name: Enter third audit controls through actual desktop and phone UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round3_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round3-math-ui
       - name: Enter fourth audit controls through actual desktop and phone UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round4_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round4-math-ui
       - name: Enter fifth audit controls through actual desktop and phone UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round5_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round5-math-ui
       - name: Sixth independent math worksheet UI controls
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round6_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round6-math-ui
       - name: Extreme samples through the actual statistics screen
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round6_statistics_browser.py --expected-source "$GITHUB_SHA" --output task-results/round6-statistics-ui
 
       - name: Enter solve scope controls through actual desktop and phone UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round5_solve_browser.py --expected-source "$GITHUB_SHA" --output task-results/round5-solve-ui
       - name: Enter seventh independent math controls through actual UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round7_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round7-math-ui
       - name: Enter eighth independent math controls through actual UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round8_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round8-math-ui
       - name: Enter ninth independent math and module controls through actual UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round9_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round9-math-ui
       - name: Enter tenth independent math and module controls through actual UI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && inputs.round11_ui_only != true }}
         run: python tool/check_round10_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round10-math-ui
+      - name: Enter eleventh independent math and complete modules through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round11_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round11-math-ui
+      - name: Create and restore guided worksheets through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_guided_worksheet_browser.py --output task-results/guided-worksheet
       - uses: actions/upload-artifact@v4
         if: always()
         with:
