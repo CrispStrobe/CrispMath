@@ -1,0 +1,110 @@
+{
+  "application_revision": "8a577bb61fbd5130dd6b3097f1767c4957d1e284",
+  "interpretation": "CI browser baseline, automation and persistence included; no physical-device FPS claim",
+  "sources": {
+    "desktop_and_touch_500_run": 36869816911,
+    "touch_2000_run": 36873971337
+  },
+  "desktop": {
+    "startup_cold_ms": {
+      "samples": 3,
+      "median_ms": 1952.6707910000027,
+      "p95_ms": 2015.2143150000086,
+      "max_ms": 2015.2143150000086
+    },
+    "startup_warm_ms": {
+      "samples": 3,
+      "median_ms": 978.8801209999889,
+      "p95_ms": 981.7734789999975,
+      "max_ms": 981.7734789999975
+    },
+    "calculate_ms": {
+      "samples": 5,
+      "median_ms": 105.06296599999132,
+      "p95_ms": 427.845700000006,
+      "max_ms": 427.845700000006
+    },
+    "trace_key_ms": {
+      "samples": 5,
+      "median_ms": 32.71691000000487,
+      "p95_ms": 49.561867999997844,
+      "max_ms": 49.561867999997844
+    },
+    "notepad": [
+      {
+        "rows": 500,
+        "open_ms": 633.1457839999928,
+        "edit_to_saved_result_ms": [
+          14957.712856,
+          14210.965138000007,
+          14207.738566999979,
+          13975.575643000013,
+          14511.727839000003
+        ],
+        "summary": {
+          "samples": 5,
+          "median_ms": 14210.965138000007,
+          "p95_ms": 14957.712856,
+          "max_ms": 14957.712856
+        }
+      },
+      {
+        "rows": 2000,
+        "open_ms": 666.0522640000011,
+        "edit_to_saved_result_ms": [
+          64536.076248,
+          63388.84360999998,
+          63947.20252400004,
+          64163.06886800004,
+          63658.12639800004
+        ],
+        "summary": {
+          "samples": 5,
+          "median_ms": 63947.20252400004,
+          "p95_ms": 64536.076248,
+          "max_ms": 64536.076248
+        }
+      }
+    ]
+  },
+  "phone": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "page_cdp_cpu_throttle": 4,
+    "worker_timing_calibrated": false,
+    "notepad": [
+      {
+        "rows": 500,
+        "open_ms": 1997.1198160000085,
+        "edit_to_saved_result_ms": [
+          35477.177138,
+          33409.751178999955,
+          32986.512895999906,
+          32367.92070299998,
+          31769.926335000036
+        ],
+        "summary": {
+          "samples": 5,
+          "median_ms": 32986.512895999906,
+          "p95_ms": 35477.177138,
+          "max_ms": 35477.177138
+        }
+      },
+      {
+        "rows": 2000,
+        "open_ms": 1843.2728589999954,
+        "edit_to_saved_result_ms": [
+          147070.534182
+        ],
+        "summary": {
+          "samples": 1,
+          "median_ms": 147070.534182,
+          "p95_ms": 147070.534182,
+          "max_ms": 147070.534182
+        }
+      }
+    ]
+  }
+}

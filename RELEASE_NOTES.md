@@ -1,15 +1,21 @@
-# CrispCalc v1.1.1 - The AI & Connectivity Update
+# CrispMath 1.2.0 release candidate
 
-We are incredibly excited to bring you the biggest update to CrispCalc yet! Version 1.1.1 transforms the app from a powerful standalone calculator into an interconnected, hardware-accelerated math workstation.
+This candidate improves calculation and graph responsiveness and connects the
+notepad and graph workspace. Compiled expression caching, persistent workers,
+lazy tabs and document-level storage reduce repeated work.
 
-### What's New:
-- **Cloud Sync:** Never lose your work again. Securely sync your variables, functions, constraints, and notebook documents across all your devices (iOS, Android, Mac, Web, and PC) using your secure CrispAssist account.
-- **Advanced Vector Fields:** Dive into deep mathematics with our new graphing tab. Visualize complex 2D vector fields natively using our lightning-fast rendering engine.
-- **Polymorphic Math AI:** We've laid the groundwork for our future Math NLP and offline Vision models. CrispCalc now ships with an optional, hardware-accelerated ONNX Runtime engine. This powers blazing-fast CoreML (Apple) and NNAPI (Android) inference directly on your device, without sending your data to the cloud.
-- **Notepad PDF Export:** You can now generate high-quality, printable PDFs directly from your interactive Notepad sessions.
+- Inspect curves with touch or keyboard tracing and export value tables.
+- Link notepad expressions to graphs with their document variables.
+- Find commands and modules from a searchable palette.
+- Edit axis bounds, fit finite samples and undo graph changes.
+- Review expressions translated by an optional configured AI provider before
+  calculating. Requests support cancellation, timeout and retry.
+- Restore German, French and Spanish preferences and translated examples.
+- Include the OCR runtime and CPU dependencies in desktop artifacts, with
+  installed-library resolution verified on Linux, Windows and macOS.
+- Recover saved documents if their index is damaged; migrate legacy storage
+  without replacing newer records.
 
-### Under the Hood:
-- **Repaint Boundaries & Caching:** We completely overhauled our internal rendering loop. The app is smoother than ever, effortlessly maintaining 120fps on ProMotion displays even while drawing complex math intersections.
-- **Cross-Platform Parity:** Fixed numerous compilation edges to ensure the web and desktop versions remain fully native and snappy.
-
-Update now and experience the new standard in computational graphing!
+The candidate artifacts use pinned dependency revisions and verified native
+binary checksums. macOS requires version 12 or later. Physical-device coverage
+and AI translation quality are reported separately from build and contract tests.

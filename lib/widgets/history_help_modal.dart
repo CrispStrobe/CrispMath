@@ -1,3 +1,4 @@
+import 'result_evidence_badge.dart';
 // lib/widgets/history_help_modal.dart
 //
 // Round 103 (P6): history-row help modal. The modal explains how a
@@ -118,7 +119,7 @@ HistoryHelpInfo detectHistoryHelp(String raw) {
   if (s.startsWith('integrate(')) {
     final args = _parseCallArgs(s, 'integrate');
     return HistoryHelpInfo._(
-      engineLabel: 'SymEngine.integrate',
+      engineLabel: 'Integration (method not recorded)',
       refId: 'integrate',
       stepKind: HistoryStepKind.integrate,
       stepExpr: args == null || args.isEmpty ? null : args[0],
@@ -343,7 +344,10 @@ class HistoryRowHelpModal extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              if (info.hasEngine) ...[
+              if (entry.resultEvidence != null)
+                ResultEvidenceBadge(
+                    evidence: entry.resultEvidence!, compact: false),
+              if (entry.resultEvidence == null && info.hasEngine) ...[
                 Text(
                   t.historyHelpComputedVia(info.engineLabel!),
                   style: const TextStyle(fontWeight: FontWeight.w600),
@@ -358,7 +362,7 @@ class HistoryRowHelpModal extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(ref.shortDescription),
                 ],
-              ] else
+              ] else if (entry.resultEvidence == null)
                 Text(t.historyHelpDirectEvaluation),
             ],
           ),

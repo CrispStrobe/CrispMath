@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "reference": "Affine absolute value has constant local sign away from its cusp. At center2 abs(x)=x locally; at-2 abs(x)=-x and x*abs(x)=-x^2. Their Taylor polynomials through degree2 are exactly those local polynomials.",
+  "tasks": [
+    {"id":"round6-taylor-01","kind":"engine","title":"Absolute value Taylor on positive branch","operation":"series","args":["abs(x)","x","2","3"],"expected":"x"},
+    {"id":"round6-taylor-02","kind":"engine","title":"Absolute value Taylor on negative branch","operation":"series","args":["abs(x)","x","-2","3"],"expected":"-x"},
+    {"id":"round6-taylor-03","kind":"engine","title":"Polynomial absolute product Taylor on negative branch","operation":"series","args":["x*abs(x)","x","-2","3"],"expected":"-x^2"}
+  ]
+}

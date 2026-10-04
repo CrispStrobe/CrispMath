@@ -14,42 +14,53 @@
 // single dimension category, which covers ~95% of homework and
 // engineering quick-conversion use cases.
 
-enum UnitDimension { length, area, volume, time, mass, temperature, velocity, angle }
+enum UnitDimension {
+  length,
+  area,
+  volume,
+  time,
+  mass,
+  temperature,
+  velocity,
+  angle
+}
 
 /// Vector of integer exponents over the SI base dimensions we track
-/// (length, mass, time, temperature). V5 composite-dimension arithmetic
+/// (length, mass, time, temperature, current). Composite-dimension arithmetic
 /// adds/subtracts these element-wise when quantities multiply / divide.
 ///
 /// `dimensionless` is the all-zero vector — falls out naturally from
 /// `m / m`, the result of dividing same-dimension quantities, angle
 /// units (treated as dimensionless ratios), etc.
 ///
-/// Restricted to the four base dims that cover everything in our
-/// curated catalog plus the V5 derived units (N, J, W, Pa, Hz).
-/// Current/amount/luminosity can join later if we ever add a derived
-/// unit that needs them.
+/// Electrical units add current as an independent dimension, so volts,
+/// amperes and resistance cannot be confused with mechanical quantities.
 class Dimensions {
   final int length;
   final int mass;
   final int time;
   final int temperature;
+  final int current;
 
   const Dimensions({
     this.length = 0,
     this.mass = 0,
     this.time = 0,
     this.temperature = 0,
+    this.current = 0,
   });
 
   static const dimensionless = Dimensions();
 
-  bool get isZero => length == 0 && mass == 0 && time == 0 && temperature == 0;
+  bool get isZero =>
+      length == 0 && mass == 0 && time == 0 && temperature == 0 && current == 0;
 
   Dimensions operator *(Dimensions o) => Dimensions(
         length: length + o.length,
         mass: mass + o.mass,
         time: time + o.time,
         temperature: temperature + o.temperature,
+        current: current + o.current,
       );
 
   Dimensions operator /(Dimensions o) => Dimensions(
@@ -57,6 +68,7 @@ class Dimensions {
         mass: mass - o.mass,
         time: time - o.time,
         temperature: temperature - o.temperature,
+        current: current - o.current,
       );
 
   @override
@@ -65,10 +77,11 @@ class Dimensions {
       length == other.length &&
       mass == other.mass &&
       time == other.time &&
-      temperature == other.temperature;
+      temperature == other.temperature &&
+      current == other.current;
 
   @override
-  int get hashCode => Object.hash(length, mass, time, temperature);
+  int get hashCode => Object.hash(length, mass, time, temperature, current);
 
   /// Compact human-readable form: `m·kg/s²`, `kg·m²·s⁻²`, etc. Falls
   /// back to base-unit symbols (m, kg, s, K) when the dimension vector
@@ -87,11 +100,12 @@ class Dimensions {
     addPart('kg', mass);
     addPart('s', time);
     addPart('K', temperature);
+    addPart('A', current);
 
     if (parts.isEmpty && negs.isEmpty) return ''; // dimensionless
     final num = parts.isEmpty ? '1' : parts.join('·');
     if (negs.isEmpty) return num;
-    return '$num/${negs.join('·')}';
+    return '$num/${negs.join('/')}';
   }
 
   /// Maps a single-dimension [UnitDimension] to its [Dimensions] vector.
@@ -129,7 +143,8 @@ class Dimensions {
 /// Each entry maps a symbol to its (coherent SI) scale factor and the
 /// [Dimensions] vector it carries. Scale is always 1.0 for the base
 /// derived forms; for prefixed versions (kN, MJ, mW) we synthesize the
-/// scale on demand via [DerivedUnits.bySymbolWithPrefixes].
+/// scale on demand via [DerivedUnits.bySymbolWithPrefixes]. Non-coherent
+/// energy units such as Wh carry their conversion factor explicitly.
 class DerivedUnit {
   final String symbol;
   final String name;
@@ -152,6 +167,21 @@ class DerivedUnit {
 
 class DerivedUnits {
   static const Map<String, DerivedUnit> _byName = {
+    'A': DerivedUnit(
+      symbol: 'A', name: 'ampere', dim: Dimensions(current: 1), scale: 1.0,
+    ),
+    'V': DerivedUnit(
+      symbol: 'V', name: 'volt',
+      dim: Dimensions(mass: 1, length: 2, time: -3, current: -1), scale: 1.0,
+    ),
+    'Ω': DerivedUnit(
+      symbol: 'Ω', name: 'ohm',
+      dim: Dimensions(mass: 1, length: 2, time: -3, current: -2), scale: 1.0,
+    ),
+    'ohm': DerivedUnit(
+      symbol: 'Ω', name: 'ohm',
+      dim: Dimensions(mass: 1, length: 2, time: -3, current: -2), scale: 1.0,
+    ),
     'N': DerivedUnit(
       symbol: 'N',
       name: 'newton',
@@ -163,6 +193,18 @@ class DerivedUnits {
       name: 'joule',
       dim: Dimensions(mass: 1, length: 2, time: -2),
       scale: 1.0,
+    ),
+    'Wh': DerivedUnit(
+      symbol: 'Wh',
+      name: 'watt-hour',
+      dim: Dimensions(mass: 1, length: 2, time: -2),
+      scale: 3600.0,
+    ),
+    'erg': DerivedUnit(
+      symbol: 'erg',
+      name: 'erg',
+      dim: Dimensions(mass: 1, length: 2, time: -2),
+      scale: 1e-7,
     ),
     'W': DerivedUnit(
       symbol: 'W',
@@ -176,11 +218,23 @@ class DerivedUnits {
       dim: Dimensions(mass: 1, length: -1, time: -2),
       scale: 1.0,
     ),
+    'bar': DerivedUnit(
+      symbol: 'bar',
+      name: 'bar',
+      dim: Dimensions(mass: 1, length: -1, time: -2),
+      scale: 100000.0,
+    ),
     'Hz': DerivedUnit(
       symbol: 'Hz',
       name: 'hertz',
       dim: Dimensions(time: -1),
       scale: 1.0,
+    ),
+    'atm': DerivedUnit(
+      symbol: 'atm',
+      name: 'standard atmosphere',
+      dim: Dimensions(mass: 1, length: -1, time: -2),
+      scale: 101325.0,
     ),
   };
 
@@ -346,27 +400,99 @@ class UnitCatalog {
     // === Time (base: second) =============================================
     // === Area (base: m²) =================================================
     UnitDimension.area: [
-      Unit(symbol: 'm²', name: 'square metre', dimension: UnitDimension.area, scale: 1.0),
-      Unit(symbol: 'cm²', name: 'square centimetre', dimension: UnitDimension.area, scale: 0.0001),
-      Unit(symbol: 'km²', name: 'square kilometre', dimension: UnitDimension.area, scale: 1e6),
-      Unit(symbol: 'ha', name: 'hectare', dimension: UnitDimension.area, scale: 10000.0),
-      Unit(symbol: 'acre', name: 'acre', dimension: UnitDimension.area, scale: 4046.8564224),
-      Unit(symbol: 'sq ft', name: 'square foot', dimension: UnitDimension.area, scale: 0.09290304),
-      Unit(symbol: 'sq in', name: 'square inch', dimension: UnitDimension.area, scale: 0.00064516),
-      Unit(symbol: 'sq mi', name: 'square mile', dimension: UnitDimension.area, scale: 2589988.110336),
+      Unit(
+          symbol: 'm²',
+          name: 'square metre',
+          dimension: UnitDimension.area,
+          scale: 1.0),
+      Unit(
+          symbol: 'cm²',
+          name: 'square centimetre',
+          dimension: UnitDimension.area,
+          scale: 0.0001),
+      Unit(
+          symbol: 'km²',
+          name: 'square kilometre',
+          dimension: UnitDimension.area,
+          scale: 1e6),
+      Unit(
+          symbol: 'ha',
+          name: 'hectare',
+          dimension: UnitDimension.area,
+          scale: 10000.0),
+      Unit(
+          symbol: 'acre',
+          name: 'acre',
+          dimension: UnitDimension.area,
+          scale: 4046.8564224),
+      Unit(
+          symbol: 'sq ft',
+          name: 'square foot',
+          dimension: UnitDimension.area,
+          scale: 0.09290304),
+      Unit(
+          symbol: 'sq in',
+          name: 'square inch',
+          dimension: UnitDimension.area,
+          scale: 0.00064516),
+      Unit(
+          symbol: 'sq mi',
+          name: 'square mile',
+          dimension: UnitDimension.area,
+          scale: 2589988.110336),
     ],
     // === Volume (base: m³) ===============================================
     UnitDimension.volume: [
-      Unit(symbol: 'm³', name: 'cubic metre', dimension: UnitDimension.volume, scale: 1.0),
-      Unit(symbol: 'cm³', name: 'cubic centimetre', dimension: UnitDimension.volume, scale: 1e-6),
-      Unit(symbol: 'L', name: 'litre', dimension: UnitDimension.volume, scale: 0.001),
-      Unit(symbol: 'mL', name: 'millilitre', dimension: UnitDimension.volume, scale: 1e-6),
-      Unit(symbol: 'gal', name: 'gallon (US)', dimension: UnitDimension.volume, scale: 0.003785411784),
-      Unit(symbol: 'qt', name: 'quart (US)', dimension: UnitDimension.volume, scale: 0.000946352946),
-      Unit(symbol: 'pt', name: 'pint (US)', dimension: UnitDimension.volume, scale: 0.000473176473),
-      Unit(symbol: 'fl oz', name: 'fluid ounce', dimension: UnitDimension.volume, scale: 0.0000295735295625),
-      Unit(symbol: 'cu ft', name: 'cubic foot', dimension: UnitDimension.volume, scale: 0.028316846592),
-      Unit(symbol: 'cu in', name: 'cubic inch', dimension: UnitDimension.volume, scale: 0.000016387064),
+      Unit(
+          symbol: 'm³',
+          name: 'cubic metre',
+          dimension: UnitDimension.volume,
+          scale: 1.0),
+      Unit(
+          symbol: 'cm³',
+          name: 'cubic centimetre',
+          dimension: UnitDimension.volume,
+          scale: 1e-6),
+      Unit(
+          symbol: 'L',
+          name: 'litre',
+          dimension: UnitDimension.volume,
+          scale: 0.001),
+      Unit(
+          symbol: 'mL',
+          name: 'millilitre',
+          dimension: UnitDimension.volume,
+          scale: 1e-6),
+      Unit(
+          symbol: 'gal',
+          name: 'gallon (US)',
+          dimension: UnitDimension.volume,
+          scale: 0.003785411784),
+      Unit(
+          symbol: 'qt',
+          name: 'quart (US)',
+          dimension: UnitDimension.volume,
+          scale: 0.000946352946),
+      Unit(
+          symbol: 'pt',
+          name: 'pint (US)',
+          dimension: UnitDimension.volume,
+          scale: 0.000473176473),
+      Unit(
+          symbol: 'fl oz',
+          name: 'fluid ounce',
+          dimension: UnitDimension.volume,
+          scale: 0.0000295735295625),
+      Unit(
+          symbol: 'cu ft',
+          name: 'cubic foot',
+          dimension: UnitDimension.volume,
+          scale: 0.028316846592),
+      Unit(
+          symbol: 'cu in',
+          name: 'cubic inch',
+          dimension: UnitDimension.volume,
+          scale: 0.000016387064),
     ],
     UnitDimension.time: [
       Unit(
@@ -567,6 +693,7 @@ class UnitCatalog {
   /// which additionally tries to interpret unrecognized symbols as SI
   /// prefix + prefixable base.
   static Unit? bySymbol(String symbol) {
+    if (symbol == 'deg') symbol = '°';
     for (final units in _byDimension.values) {
       for (final u in units) {
         if (u.symbol == symbol) return u;
@@ -601,6 +728,7 @@ class UnitCatalog {
     'c': 1e-2,
     'm': 1e-3,
     'μ': 1e-6,
+    'µ': 1e-6, // Unicode micro sign, commonly pasted instead of Greek mu
     'u': 1e-6, // ASCII alternative for μ
     'n': 1e-9,
     'p': 1e-12,
@@ -617,6 +745,7 @@ class UnitCatalog {
     'm', // metre
     's', // second
     'g', // gram
+    'L', // litre, including millilitres and microlitres
     'K', // kelvin
     'rad', // radian
   };
@@ -626,8 +755,39 @@ class UnitCatalog {
   /// up the remainder against [prefixableSymbols], returning a
   /// synthesized [Unit] with the prefix's scale folded in.
   static Unit? bySymbolWithPrefixes(String symbol) {
+    // A length prefix is raised with the unit: one mm² is 10⁻⁶ m²,
+    // not 10⁻³ m². Normalize the supported keyboard exponent spelling.
+    symbol = symbol.replaceFirst(RegExp(r'\^2$'), '²')
+        .replaceFirst(RegExp(r'\^3$'), '³');
     final direct = bySymbol(symbol);
     if (direct != null) return direct;
+
+    if (symbol.endsWith('²') || symbol.endsWith('³')) {
+      final length = bySymbolWithPrefixes(symbol.substring(0, symbol.length - 1));
+      if (length == null || length.dimension != UnitDimension.length) return null;
+      final cubed = symbol.endsWith('³');
+      return Unit(
+          symbol: symbol,
+          name: '${cubed ? 'cubic' : 'square'} ${length.name}',
+          dimension: cubed ? UnitDimension.volume : UnitDimension.area,
+          scale: length.scale * length.scale * (cubed ? length.scale : 1));
+    }
+
+    final quotient = symbol.split('/');
+    if (quotient.length == 2) {
+      final length = bySymbolWithPrefixes(quotient[0]);
+      final time = bySymbolWithPrefixes(quotient[1]);
+      if (length == null || time == null ||
+          length.dimension != UnitDimension.length ||
+          time.dimension != UnitDimension.time) {
+        return null;
+      }
+      return Unit(
+          symbol: symbol,
+          name: '${length.name} per ${time.name}',
+          dimension: UnitDimension.velocity,
+          scale: length.scale / time.scale);
+    }
 
     // Try every prefix in longest-first order so `da` (deca) is tried
     // before `d` (deci).

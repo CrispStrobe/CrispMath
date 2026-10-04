@@ -1,9 +1,10 @@
+import 'result_evidence.dart';
 // lib/engine/app_state.dart
 //
 // Singleton app state with a small persistence layer on top of
 // shared_preferences. Everything that should survive a relaunch is saved
 // the moment it changes:
-//   - locale (en/de)
+//   - locale (en/de/fr/es)
 //   - number display format
 //   - theme mode (system/light/dark)
 //   - calculation history (capped at 200 entries)
@@ -21,8 +22,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/exact_integer.dart';
 import 'notepad.dart';
+import 'linked_graph.dart';
 import 'scene_3d/scene_object.dart';
 import 'scene_3d/scene_state.dart';
+
+enum AppStateDomain {
+  appearance,
+  settings,
+  history,
+  variables,
+  graphs,
+  documents,
+  scene,
+  navigation
+}
 
 enum HistoryEntryType { calculation, solve }
 
@@ -31,6 +44,7 @@ enum NumberDisplayFormat { integer, oneDecimal, twoDecimal, auto }
 class CalculationEntry {
   final String expression;
   final String result;
+  final ResultEvidence? resultEvidence;
 
   /// The engine's unrounded result string, kept only when display
   /// formatting changed it. `Ans` substitutes this instead of the
@@ -45,6 +59,7 @@ class CalculationEntry {
     required this.expression,
     required this.result,
     this.rawResult,
+    this.resultEvidence,
     this.type = HistoryEntryType.calculation,
     DateTime? lastModified,
   }) : lastModified = lastModified ?? DateTime.now().toUtc();
@@ -53,23 +68,25 @@ class CalculationEntry {
   String get ansValue => rawResult ?? result;
 
   Map<String, dynamic> toJson() => {
-    'e': expression,
-    'r': result,
-    if (rawResult != null) 'raw': rawResult,
-    't': type.name,
-    'lm': lastModified.toIso8601String(),
-  };
+        'e': expression,
+        'r': result,
+        if (resultEvidence != null) 'evidence': resultEvidence!.toJson(),
+        if (rawResult != null) 'raw': rawResult,
+        't': type.name,
+        'lm': lastModified.toIso8601String(),
+      };
 
   static CalculationEntry fromJson(Map<String, dynamic> j) => CalculationEntry(
-    expression: j['e'] as String? ?? '',
-    result: j['r'] as String? ?? '',
-    rawResult: j['raw'] as String?,
-    type: HistoryEntryType.values.firstWhere(
-      (v) => v.name == j['t'],
-      orElse: () => HistoryEntryType.calculation,
-    ),
-    lastModified: j['lm'] != null ? DateTime.tryParse(j['lm']) : null,
-  );
+        expression: j['e'] as String? ?? '',
+        result: j['r'] as String? ?? '',
+        rawResult: j['raw'] as String?,
+        resultEvidence: ResultEvidence.fromJson(j['evidence']),
+        type: HistoryEntryType.values.firstWhere(
+          (v) => v.name == j['t'],
+          orElse: () => HistoryEntryType.calculation,
+        ),
+        lastModified: j['lm'] != null ? DateTime.tryParse(j['lm']) : null,
+      );
 }
 
 /// A named, user-defined function. Stored by AppState and inlined by
@@ -104,8 +121,8 @@ class UserFunction {
     String? paramVar,
     required this.body,
     DateTime? lastModified,
-  }) : params = params ?? [paramVar ?? 'x'],
-       lastModified = lastModified ?? DateTime.now().toUtc();
+  })  : params = params ?? [paramVar ?? 'x'],
+        lastModified = lastModified ?? DateTime.now().toUtc();
 
   /// First parameter — back-compat for single-arg call sites.
   String get paramVar => params.isEmpty ? 'x' : params.first;
@@ -113,23 +130,62 @@ class UserFunction {
   int get arity => params.length;
 
   Map<String, dynamic> toJson() => {
-    'n': name,
-    'p': params,
-    'b': body,
-    'lm': lastModified.toIso8601String(),
-  };
+        'n': name,
+        'p': params,
+        'b': body,
+        'lm': lastModified.toIso8601String(),
+      };
 
   static UserFunction fromJson(Map<String, dynamic> j) => UserFunction(
-    name: (j['n'] as String? ?? '').toLowerCase(),
-    params:
-        (j['p'] as List?)?.cast<String>() ??
-        [j['v'] as String? ?? 'x'], // legacy single-param key
-    body: j['b'] as String? ?? '',
-    lastModified: j['lm'] != null ? DateTime.tryParse(j['lm']) : null,
-  );
+        name: (j['n'] as String? ?? '').toLowerCase(),
+        params: (j['p'] as List?)?.cast<String>() ??
+            [j['v'] as String? ?? 'x'], // legacy single-param key
+        body: j['b'] as String? ?? '',
+        lastModified: j['lm'] != null ? DateTime.tryParse(j['lm']) : null,
+      );
+}
+
+class _StateChannel extends ChangeNotifier {
+  void emit() => notifyListeners();
 }
 
 class AppState extends ChangeNotifier {
+  final _channels = {
+    for (final domain in AppStateDomain.values) domain: _StateChannel()
+  };
+  Listenable changesFor(AppStateDomain domain) => _channels[domain]!;
+  late final appearanceChanges = changesFor(AppStateDomain.appearance);
+  late final settingsChanges = changesFor(AppStateDomain.settings);
+  late final graphChanges = changesFor(AppStateDomain.graphs);
+  late final documentChanges = changesFor(AppStateDomain.documents);
+  late final sceneChanges = changesFor(AppStateDomain.scene);
+  late final navigationChanges = changesFor(AppStateDomain.navigation);
+  late final calculatorChanges = Listenable.merge([
+    changesFor(AppStateDomain.history),
+    changesFor(AppStateDomain.variables),
+    graphChanges,
+    settingsChanges,
+    navigationChanges,
+  ]);
+  late final notepadChanges = Listenable.merge([
+    documentChanges,
+    changesFor(AppStateDomain.variables),
+    graphChanges,
+    settingsChanges,
+  ]);
+
+  void _notify(Set<AppStateDomain> domains) {
+    for (final domain in domains) {
+      _channels[domain]!.emit();
+    }
+    super.notifyListeners();
+  }
+
+  /// Retains the legacy API for imports and callers that mutate collections
+  /// directly, while normal setters notify only their affected UI domains.
+  @override
+  void notifyListeners() => _notify(AppStateDomain.values.toSet());
+
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
 
@@ -152,10 +208,18 @@ class AppState extends ChangeNotifier {
   static const _kOnboardingDismissed = 'crisp.onboardingDismissed';
   static const _kAutoBindSolve = 'crisp.autoBindSolve';
   static const _kUserFunctions = 'crisp.userFunctions';
-  static const _kNotepadDocs = 'crisp.notepadDocs';
+  static const _kNotepadDocs = 'crisp.notepadDocs'; // legacy migration source
+  static const _kNotepadIndex = 'crisp.notepadIndex';
+  static String _docKey(String id) =>
+      'crisp.notepadDoc.${Uri.encodeComponent(id)}';
+  final _dirtyDocIds = <String>{};
+  final _storedDocIds = <String>{};
+  Future<void> _documentWrites = Future.value();
+  int _pendingDocumentWrites = 0;
   static const _kTextScale = 'crisp.textScale';
   static const _kHighContrast = 'crisp.highContrast';
   static const _kCurrentNotepadDoc = 'crisp.currentNotepadDoc';
+  static const _kGraphLinks = 'crisp.graphLinks';
   static const _kScene3D = 'crisp.scene3d';
   static const _kCrispAssistApiUrl = 'crisp.copilot.apiUrl';
   static const _kCrispAssistApiKey = 'crisp.copilot.apiKey';
@@ -249,6 +313,9 @@ class AppState extends ChangeNotifier {
   /// mocked with new values — production callers should leave this alone.
   Future<void> load({bool force = false}) async {
     if (_loaded && !force) return;
+    if (_loaded) await flushPersistence();
+    _dirtyDocIds.clear();
+    _storedDocIds.clear();
     // Reset to defaults before reading so an empty mock prefs map gives
     // defaults instead of whatever the previous test left behind.
     _locale = const Locale('en');
@@ -268,6 +335,8 @@ class AppState extends ChangeNotifier {
     userVariables.clear();
     userFunctions.clear();
     functionParameters.clear();
+    graphLinks.clear();
+    _linkViewSignatures.clear();
     notepadDocuments.clear();
     _currentNotepadDocId = null;
     for (var i = 0; i < graphFunctions.length; i++) {
@@ -280,7 +349,7 @@ class AppState extends ChangeNotifier {
     try {
       _prefs = await SharedPreferences.getInstance();
       final lang = _prefs!.getString(_kLocale);
-      if (lang != null && (lang == 'en' || lang == 'de')) {
+      if (lang != null && const {'en', 'de', 'fr', 'es'}.contains(lang)) {
         _locale = Locale(lang);
       }
       final formatName = _prefs!.getString(_kNumberFormat);
@@ -372,23 +441,69 @@ class AppState extends ChangeNotifier {
           debugPrint('STATE: failed to parse parameters: $e');
         }
       }
-      final notepadJson = _prefs!.getString(_kNotepadDocs);
-      if (notepadJson != null) {
+      final indexJson = _prefs!.getString(_kNotepadIndex);
+      var recoverIndex = false;
+      List<String>? ids;
+      if (indexJson != null) {
         try {
-          final list = jsonDecode(notepadJson) as List<dynamic>;
-          for (final raw in list) {
-            if (raw is Map) {
-              final doc = NotepadDocument.fromJson(
-                Map<String, dynamic>.from(raw),
-              );
-              if (doc.id.isNotEmpty) notepadDocuments[doc.id] = doc;
+          ids = (jsonDecode(indexJson) as List).cast<String>().toList();
+          _storedDocIds.addAll(ids);
+        } catch (e) {
+          // Individual records remain recoverable if the index was damaged.
+          recoverIndex = true;
+          ids = [];
+          for (final key in _prefs!.getKeys()) {
+            if (!key.startsWith('crisp.notepadDoc.')) continue;
+            try {
+              ids.add(Uri.decodeComponent(
+                  key.substring('crisp.notepadDoc.'.length)));
+            } catch (_) {
+              // Ignore malformed keys without discarding valid records.
             }
           }
-        } catch (e) {
-          debugPrint('STATE: failed to parse notepad docs: $e');
+          debugPrint('STATE: recovering document index: $e');
+        }
+        for (final id in ids) {
+          try {
+            final raw = _prefs!.getString(_docKey(id));
+            if (raw == null) continue;
+            final doc = NotepadDocument.fromJson(
+                jsonDecode(raw) as Map<String, dynamic>);
+            if (doc.id == id) notepadDocuments[id] = doc;
+          } catch (e) {
+            debugPrint('STATE: failed to restore document $id: $e');
+          }
+        }
+      }
+      if (indexJson == null || recoverIndex) {
+        final legacy = _prefs!.getString(_kNotepadDocs);
+        if (legacy != null) {
+          try {
+            for (final raw in jsonDecode(legacy) as List) {
+              final doc =
+                  NotepadDocument.fromJson(Map<String, dynamic>.from(raw));
+              if (doc.id.isNotEmpty) {
+                notepadDocuments.putIfAbsent(doc.id, () => doc);
+              }
+            }
+            _dirtyDocIds.addAll(notepadDocuments.keys);
+            await _persistNotepadDocs();
+            // Retain the old blob until every new record and index is durable.
+            await _prefs!.remove(_kNotepadDocs);
+          } catch (e) {
+            debugPrint('STATE: failed to migrate notepad documents: $e');
+          }
+        } else if (recoverIndex && notepadDocuments.isNotEmpty) {
+          _dirtyDocIds.addAll(notepadDocuments.keys);
+          await _persistNotepadDocs();
         }
       }
       _currentNotepadDocId = _prefs!.getString(_kCurrentNotepadDoc);
+      if (notepadDocuments.isNotEmpty &&
+          !notepadDocuments.containsKey(_currentNotepadDocId)) {
+        _currentNotepadDocId = notepadDocuments.keys.first;
+        _persistCurrentNotepadDoc();
+      }
       final sceneJson = _prefs!.getString(_kScene3D);
       if (sceneJson != null) {
         try {
@@ -403,6 +518,22 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       debugPrint('STATE: failed to load prefs: $e');
     }
+    final linksJson = _prefs?.getString(_kGraphLinks);
+    if (linksJson != null) {
+      try {
+        final map = jsonDecode(linksJson) as Map;
+        for (final entry in map.entries) {
+          final slot = int.tryParse(entry.key.toString());
+          if (slot != null && slot >= 0 && slot < graphFunctions.length) {
+            graphLinks[slot] = LinkedGraphSource.fromJson(
+                Map<String, dynamic>.from(entry.value as Map));
+          }
+        }
+        _refreshLinkedGraphs();
+      } catch (e) {
+        debugPrint('STATE: failed to restore graph links: $e');
+      }
+    }
     // First-launch seed (decision #7): empty `Untitled` + the static
     // `Welcome` sample. Runs whenever there are zero notepad docs,
     // not just on a literal first launch — if a user deletes every
@@ -415,7 +546,8 @@ class AppState extends ChangeNotifier {
       notepadDocuments[untitled.id] = untitled;
       notepadDocuments[welcome.id] = welcome;
       _currentNotepadDocId = untitled.id;
-      _persistNotepadDocs();
+      _dirtyDocIds.addAll(notepadDocuments.keys);
+      await _persistNotepadDocs();
       _persistCurrentNotepadDoc();
     }
     _loaded = true;
@@ -445,7 +577,7 @@ class AppState extends ChangeNotifier {
     if (_locale.languageCode == locale.languageCode) return;
     _locale = locale;
     _prefs?.setString(_kLocale, locale.languageCode);
-    notifyListeners();
+    _notify({AppStateDomain.appearance, AppStateDomain.settings});
   }
 
   void setNumberFormat(NumberDisplayFormat format) {
@@ -455,7 +587,7 @@ class AppState extends ChangeNotifier {
     _decimalPlaces = dp;
     _prefs?.setString(_kNumberFormat, format.name);
     _prefs?.setInt(_kDecimalPlaces, dp);
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   /// Canonical API for "render numeric results with N decimal places".
@@ -472,7 +604,7 @@ class AppState extends ChangeNotifier {
     _numberFormat = _decimalPlacesToEnum(n);
     _prefs?.setInt(_kDecimalPlaces, n);
     _prefs?.setString(_kNumberFormat, _numberFormat.name);
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   static int _enumToDecimalPlaces(NumberDisplayFormat f) {
@@ -505,7 +637,7 @@ class AppState extends ChangeNotifier {
     if (_themeMode == mode) return;
     _themeMode = mode;
     _prefs?.setString(_kThemeMode, mode.name);
-    notifyListeners();
+    _notify({AppStateDomain.appearance, AppStateDomain.settings});
   }
 
   void setTextScale(double scale) {
@@ -513,41 +645,41 @@ class AppState extends ChangeNotifier {
     if (_textScale == scale) return;
     _textScale = scale;
     _prefs?.setDouble(_kTextScale, scale);
-    notifyListeners();
+    _notify({AppStateDomain.appearance, AppStateDomain.settings});
   }
 
   void setHighContrast(bool enabled) {
     if (_highContrast == enabled) return;
     _highContrast = enabled;
     _prefs?.setBool(_kHighContrast, enabled);
-    notifyListeners();
+    _notify({AppStateDomain.appearance, AppStateDomain.settings});
   }
 
   void setExactIntegerMode(bool enabled) {
     if (_exactIntegerMode == enabled) return;
     _exactIntegerMode = enabled;
     _prefs?.setBool(_kExactIntegerMode, enabled);
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   void setOnboardingDismissed(bool dismissed) {
     if (_onboardingDismissed == dismissed) return;
     _onboardingDismissed = dismissed;
     _prefs?.setBool(_kOnboardingDismissed, dismissed);
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   void setAutoBindSolve(bool enabled) {
     if (_autoBindSolve == enabled) return;
     _autoBindSolve = enabled;
     _prefs?.setBool(_kAutoBindSolve, enabled);
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   void setHelpMode(bool enabled) {
     if (_helpMode == enabled) return;
     _helpMode = enabled;
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   void toggleHelpMode() => setHelpMode(!_helpMode);
@@ -561,33 +693,33 @@ class AppState extends ChangeNotifier {
     if (_crispAssistApiUrl == url) return;
     _crispAssistApiUrl = url;
     _prefs?.setString(_kCrispAssistApiUrl, url);
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   void setCrispAssistApiKey(String key) {
     if (_crispAssistApiKey == key) return;
     _crispAssistApiKey = key;
     _prefs?.setString(_kCrispAssistApiKey, key);
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   void setCrispAssistModel(String model) {
     if (_crispAssistModel == model) return;
     _crispAssistModel = model;
     _prefs?.setString(_kCrispAssistModel, model);
-    notifyListeners();
+    _notify({AppStateDomain.settings});
   }
 
   void setUserFunction(UserFunction fn) {
     userFunctions[fn.name] = fn;
     _persistUserFunctions();
-    notifyListeners();
+    _notify({AppStateDomain.graphs});
   }
 
   void removeUserFunction(String name) {
     if (userFunctions.remove(name) != null) {
       _persistUserFunctions();
-      notifyListeners();
+      _notify({AppStateDomain.graphs});
     }
   }
 
@@ -598,13 +730,66 @@ class AppState extends ChangeNotifier {
     );
   }
 
-  void _persistNotepadDocs() {
-    _prefs?.setString(
-      _kNotepadDocs,
-      jsonEncode(
-        notepadDocuments.values.map((d) => d.toJson()).toList(growable: false),
-      ),
-    );
+  Future<void> _persistNotepadDocs() {
+    _refreshLinkedGraphs();
+    final prefs = _prefs;
+    if (prefs == null) return Future.value();
+    final ids = notepadDocuments.keys.toSet();
+    final changed = <String, String>{};
+    for (final id in {..._dirtyDocIds, ...ids.difference(_storedDocIds)}) {
+      final doc = notepadDocuments[id];
+      if (doc != null) changed[id] = jsonEncode(doc.toJson());
+    }
+    final removed = _storedDocIds.difference(ids);
+    final indexChanged =
+        ids.length != _storedDocIds.length || !ids.containsAll(_storedDocIds);
+    _dirtyDocIds.clear();
+    _storedDocIds
+      ..clear()
+      ..addAll(ids);
+    if (changed.isEmpty && removed.isEmpty && !indexChanged) {
+      return _pendingDocumentWrites == 0
+          ? Future<void>.value()
+          : _documentWrites;
+    }
+    // Snapshot content now; later edits cannot mutate a queued write. Writes
+    // are serialized so an older save can never overwrite a newer edit.
+    final previous =
+        _pendingDocumentWrites == 0 ? Future<void>.value() : _documentWrites;
+    _pendingDocumentWrites++;
+    final write = previous.then((_) async {
+      for (final entry in changed.entries) {
+        if (!await prefs.setString(_docKey(entry.key), entry.value)) {
+          throw StateError('Failed to save document ${entry.key}');
+        }
+      }
+      if (indexChanged &&
+          !await prefs.setString(_kNotepadIndex, jsonEncode(ids.toList()))) {
+        throw StateError('Failed to save document index');
+      }
+      for (final id in removed) {
+        await prefs.remove(_docKey(id));
+      }
+    });
+    // Keep the queue usable after a failed platform write, while the returned
+    // future still tells explicit flush callers about the failure.
+    _documentWrites = write.catchError((Object error) {
+      _dirtyDocIds.addAll(changed.keys);
+      _storedDocIds.clear();
+      debugPrint('STATE: document save failed: $error');
+    }).whenComplete(() => _pendingDocumentWrites--);
+    return write;
+  }
+
+  /// Flush deferred document edits and the debounced scene viewport.
+  Future<void> flushPersistence() async {
+    _scene3DPersistTimer?.cancel();
+    if (_prefs != null) {
+      await _prefs!.setString(_kScene3D, jsonEncode(_scene3D.toJson()));
+    }
+    if (_pendingDocumentWrites > 0) await _documentWrites;
+    await _persistNotepadDocs();
+    if (_pendingDocumentWrites > 0) await _documentWrites;
   }
 
   void _persistCurrentNotepadDoc() {
@@ -625,16 +810,16 @@ class AppState extends ChangeNotifier {
   /// caller will persist later via [persistNotepadNow].
   void setNotepadDocument(NotepadDocument doc, {bool notify = true}) {
     notepadDocuments[doc.id] = doc;
+    _dirtyDocIds.add(doc.id);
+    _refreshLinkedGraphs();
     if (notify) {
       _persistNotepadDocs();
-      notifyListeners();
+      _notify({AppStateDomain.documents});
     }
   }
 
   /// Flush notepad documents to disk. Call after a debounce window.
-  void persistNotepadNow() {
-    _persistNotepadDocs();
-  }
+  Future<void> persistNotepadNow() => _persistNotepadDocs();
 
   /// Remove a notepad document. If [id] was the current doc, the
   /// next one (alphabetically by id) becomes current, or `null` if
@@ -643,14 +828,14 @@ class AppState extends ChangeNotifier {
   void deleteNotepadDocument(String id) {
     final removed = notepadDocuments.remove(id);
     if (removed == null) return;
+    _refreshLinkedGraphs();
     if (_currentNotepadDocId == id) {
-      _currentNotepadDocId = notepadDocuments.isEmpty
-          ? null
-          : notepadDocuments.keys.first;
+      _currentNotepadDocId =
+          notepadDocuments.isEmpty ? null : notepadDocuments.keys.first;
       _persistCurrentNotepadDoc();
     }
     _persistNotepadDocs();
-    notifyListeners();
+    _notify({AppStateDomain.documents});
   }
 
   void setCurrentNotepadDoc(String? id) {
@@ -658,7 +843,7 @@ class AppState extends ChangeNotifier {
     if (id != null && !notepadDocuments.containsKey(id)) return;
     _currentNotepadDocId = id;
     _persistCurrentNotepadDoc();
-    notifyListeners();
+    _notify({AppStateDomain.documents});
   }
 
   // -- P9-A2: 3D scene mutations ------------------------------------
@@ -668,7 +853,7 @@ class AppState extends ChangeNotifier {
   void addOrUpdateSceneObject(SceneObject obj) {
     _scene3D = _scene3D.withObject(obj);
     _persistScene3D();
-    notifyListeners();
+    _notify({AppStateDomain.scene});
   }
 
   /// Remove the scene object with the given [id]. No-op if it
@@ -678,7 +863,7 @@ class AppState extends ChangeNotifier {
     if (identical(next.objects, _scene3D.objects)) return;
     _scene3D = next;
     _persistScene3D();
-    notifyListeners();
+    _notify({AppStateDomain.scene});
   }
 
   Timer? _scene3DPersistTimer;
@@ -701,7 +886,7 @@ class AppState extends ChangeNotifier {
       const Duration(milliseconds: 500),
       _persistScene3D,
     );
-    notifyListeners();
+    _notify({AppStateDomain.scene});
   }
 
   /// Reorder the scene object list (drag-handle interactions on
@@ -712,7 +897,7 @@ class AppState extends ChangeNotifier {
     if (identical(next.objects, _scene3D.objects)) return;
     _scene3D = next;
     _persistScene3D();
-    notifyListeners();
+    _notify({AppStateDomain.scene});
   }
 
   /// Reset the viewport to the default starting orientation.
@@ -721,7 +906,7 @@ class AppState extends ChangeNotifier {
     _scene3D.elevation = kDefaultSceneElevation;
     _scene3D.zoom = kDefaultSceneZoom;
     _persistScene3D();
-    notifyListeners();
+    _notify({AppStateDomain.scene});
   }
 
   void _persistScene3D() {
@@ -772,7 +957,7 @@ class AppState extends ChangeNotifier {
   /// navigation + insertion happen on the next listener tick.
   void requestInsertExpression(String expression) {
     _pendingInsertExpression = expression;
-    notifyListeners();
+    _notify({AppStateDomain.navigation});
   }
 
   /// One-shot read: returns the pending expression and clears the slot.
@@ -798,7 +983,7 @@ class AppState extends ChangeNotifier {
 
   void requestLoadDslProgram(String id) {
     _pendingDslProgramId = id;
-    notifyListeners();
+    _notify({AppStateDomain.navigation});
   }
 
   String? consumePendingDslProgramId() {
@@ -822,7 +1007,7 @@ class AppState extends ChangeNotifier {
 
   void requestLoadCryptarithm(String puzzle) {
     _pendingCryptarithmPuzzle = puzzle;
-    notifyListeners();
+    _notify({AppStateDomain.navigation});
   }
 
   String? consumePendingCryptarithmPuzzle() {
@@ -844,7 +1029,7 @@ class AppState extends ChangeNotifier {
 
   void requestLoadSudokuPreset(String id) {
     _pendingSudokuPresetId = id;
-    notifyListeners();
+    _notify({AppStateDomain.navigation});
   }
 
   String? consumePendingSudokuPresetId() {
@@ -867,7 +1052,7 @@ class AppState extends ChangeNotifier {
 
   void requestLoadStatisticsTab(String id) {
     _pendingStatisticsTab = id;
-    notifyListeners();
+    _notify({AppStateDomain.navigation});
   }
 
   String? consumePendingStatisticsTab() {
@@ -891,7 +1076,7 @@ class AppState extends ChangeNotifier {
 
   void requestLoadStatisticsPreset(String id) {
     _pendingStatisticsPresetId = id;
-    notifyListeners();
+    _notify({AppStateDomain.navigation});
   }
 
   String? consumePendingStatisticsPresetId() {
@@ -964,6 +1149,7 @@ class AppState extends ChangeNotifier {
     String expression,
     String result, {
     HistoryEntryType type = HistoryEntryType.calculation,
+    ResultEvidence? resultEvidence,
   }) {
     final formatted = formatNumber(result);
     history.insert(
@@ -971,6 +1157,7 @@ class AppState extends ChangeNotifier {
       CalculationEntry(
         expression: expression,
         result: formatted,
+        resultEvidence: resultEvidence,
         // Keep the engine's unrounded string when formatting changed
         // it, so `Ans` can chain at full precision.
         rawResult: formatted == result ? null : result,
@@ -980,9 +1167,17 @@ class AppState extends ChangeNotifier {
     while (history.length > _kHistoryCap) {
       history.removeLast();
     }
-    Future.microtask(_persistHistory);
-    notifyListeners();
+    if (!_historyPersistScheduled) {
+      _historyPersistScheduled = true;
+      Future.microtask(() {
+        _historyPersistScheduled = false;
+        _persistHistory();
+      });
+    }
+    _notify({AppStateDomain.history});
   }
+
+  bool _historyPersistScheduled = false;
 
   void _persistHistory() {
     _prefs?.setString(
@@ -1023,7 +1218,7 @@ class AppState extends ChangeNotifier {
     if (params[name] == value) return;
     params[name] = value;
     _persistParameters();
-    notifyListeners();
+    _notify({AppStateDomain.graphs});
   }
 
   /// Drop any parameters for [slot] that aren't in [keep]. Called by the
@@ -1042,14 +1237,15 @@ class AppState extends ChangeNotifier {
     if (changed) {
       if (params.isEmpty) functionParameters.remove(slot);
       _persistParameters();
-      notifyListeners();
+      _notify({AppStateDomain.graphs});
     }
   }
 
   void setVariable(String name, String value) {
     userVariables[name] = value;
+    _refreshLinkedGraphs();
     _persistVariables();
-    notifyListeners();
+    _notify({AppStateDomain.variables});
   }
 
   String? getVariable(String name) => userVariables[name];
@@ -1057,29 +1253,163 @@ class AppState extends ChangeNotifier {
   void removeVariable(String name) {
     if (userVariables.containsKey(name)) {
       userVariables.remove(name);
+      _refreshLinkedGraphs();
       _persistVariables();
-      notifyListeners();
+      _notify({AppStateDomain.variables});
     }
+  }
+
+  final Map<int, LinkedGraphSource> graphLinks = {};
+  final Map<int, String> _linkViewSignatures = {};
+  int? _requestedTab;
+  String? _requestedNotepadLine;
+  int? consumeRequestedTab() {
+    final tab = _requestedTab;
+    _requestedTab = null;
+    return tab;
+  }
+
+  String? consumeRequestedNotepadLine() {
+    final line = _requestedNotepadLine;
+    _requestedNotepadLine = null;
+    return line;
+  }
+
+  void requestOpenNotepadSource(int slot, {String? variable}) {
+    final link = graphLinks[slot];
+    if (link == null || !notepadDocuments.containsKey(link.documentId)) return;
+    final document = notepadDocuments[link.documentId]!;
+    final target =
+        variable == null ? link.lineId : linkedVariableLine(document, variable);
+    if (target == null || !document.lines.any((line) => line.id == target)) {
+      return;
+    }
+    _requestedNotepadLine = target;
+    _currentNotepadDocId = link.documentId;
+    _persistCurrentNotepadDoc();
+    _requestedTab = 1;
+    _notify({AppStateDomain.documents, AppStateDomain.navigation});
+  }
+
+  LinkedGraphResolution linkedGraphResolution(int slot) {
+    final link = graphLinks[slot]!;
+    return resolveLinkedGraph(notepadDocuments[link.documentId], link.lineId,
+        globals: userVariables);
+  }
+
+  int linkNotepadLine(String documentId, String lineId) {
+    final resolved = resolveLinkedGraph(notepadDocuments[documentId], lineId,
+        globals: userVariables);
+    if (resolved.error != null) throw StateError(resolved.error!);
+    var slot = graphLinks.entries
+        .where(
+            (e) => e.value.documentId == documentId && e.value.lineId == lineId)
+        .map((e) => e.key)
+        .firstOrNull;
+    slot ??= graphFunctions.indexWhere((f) => f.isEmpty);
+    if (slot < 0) {
+      throw StateError(
+          'All graph slots are full. Clear a slot before linking.');
+    }
+    graphLinks[slot] = LinkedGraphSource(documentId, lineId);
+    functionParameters.remove(slot);
+    _persistParameters();
+    _refreshLinkedGraphs();
+    _persistGraphLinks();
+    _notify({AppStateDomain.graphs});
+    _requestedTab = 2;
+    _notify({AppStateDomain.navigation});
+    return slot;
+  }
+
+  void detachGraphSource(int slot) {
+    if (graphLinks.remove(slot) == null) return;
+    _persistGraphLinks();
+    _notify({AppStateDomain.graphs});
+  }
+
+  void _persistGraphLinks() => _prefs?.setString(
+      _kGraphLinks,
+      jsonEncode(graphLinks
+          .map((slot, link) => MapEntry(slot.toString(), link.toJson()))));
+
+  void _refreshLinkedGraphs() {
+    var changed = false, metadataChanged = false;
+    _linkViewSignatures.removeWhere((slot, _) => !graphLinks.containsKey(slot));
+    for (final entry in graphLinks.entries) {
+      final resolution = linkedGraphResolution(entry.key);
+      final expression = resolution.expression ?? '';
+      final signature = jsonEncode([
+        notepadDocuments[entry.value.documentId]?.name,
+        resolution.source,
+        resolution.scope,
+        resolution.error
+      ]);
+      if (_linkViewSignatures[entry.key] != signature) {
+        _linkViewSignatures[entry.key] = signature;
+        metadataChanged = true;
+      }
+      if (graphFunctions[entry.key] != expression) {
+        graphFunctions[entry.key] = expression;
+        changed = true;
+      }
+    }
+    if (changed) _persistFunctions();
+    if (changed || metadataChanged) _notify({AppStateDomain.graphs});
+  }
+
+  Map<String, dynamic> captureGraphWorkspace() => {
+        'functions': List<String>.from(graphFunctions),
+        'parameters': {
+          for (final e in functionParameters.entries)
+            e.key: Map<String, double>.from(e.value)
+        },
+        'links': Map<int, LinkedGraphSource>.from(graphLinks),
+      };
+
+  void restoreGraphWorkspace(Map<String, dynamic> snapshot) {
+    graphFunctions.setAll(0, (snapshot['functions'] as List).cast<String>());
+    functionParameters
+      ..clear()
+      ..addAll((snapshot['parameters'] as Map).map(
+          (k, v) => MapEntry(k as int, Map<String, double>.from(v as Map))));
+    graphLinks
+      ..clear()
+      ..addAll(Map<int, LinkedGraphSource>.from(snapshot['links'] as Map));
+    _refreshLinkedGraphs();
+    _persistFunctions();
+    _persistParameters();
+    _persistGraphLinks();
+    _notify({AppStateDomain.graphs});
   }
 
   void updateFunction(int index, String expression) {
     if (index >= 0 && index < graphFunctions.length) {
+      if (graphLinks.remove(index) != null) {
+        _persistGraphLinks();
+        _notify({AppStateDomain.graphs});
+      }
       if (graphFunctions[index] != expression) {
         graphFunctions[index] = expression;
         _persistFunctions();
-        notifyListeners();
+        _notify({AppStateDomain.graphs});
       }
     }
   }
 
   void clearFunction(int index) {
     if (index >= 0 && index < graphFunctions.length) {
+      final detached = graphLinks.remove(index) != null;
+      if (detached) {
+        _persistGraphLinks();
+        _notify({AppStateDomain.graphs});
+      }
       if (graphFunctions[index].isNotEmpty) {
         graphFunctions[index] = '';
         functionParameters.remove(index);
         _persistFunctions();
         _persistParameters();
-        notifyListeners();
+        _notify({AppStateDomain.graphs});
       }
     }
   }
@@ -1094,7 +1424,7 @@ class AppState extends ChangeNotifier {
   void clearHistory() {
     history.clear();
     _persistHistory();
-    notifyListeners();
+    _notify({AppStateDomain.history});
   }
 
   /// Serialize every piece of user-mutable state into a single JSON
@@ -1194,6 +1524,10 @@ class AppState extends ChangeNotifier {
       imported.add('${userVariables.length} variables');
     }
     if (json['functions'] is List) {
+      if (!merge) {
+        graphLinks.clear();
+        _persistGraphLinks();
+      }
       final list = json['functions'] as List;
       for (var i = 0; i < graphFunctions.length; i++) {
         graphFunctions[i] = i < list.length ? (list[i]?.toString() ?? '') : '';
@@ -1208,9 +1542,8 @@ class AppState extends ChangeNotifier {
         if (slot == null || v is! Map) return;
         functionParameters[slot] = {
           for (final p in v.entries)
-            p.key.toString(): (p.value is num
-                ? (p.value as num).toDouble()
-                : 0.0),
+            p.key.toString():
+                (p.value is num ? (p.value as num).toDouble() : 0.0),
         };
       });
       _persistParameters();
@@ -1226,8 +1559,8 @@ class AppState extends ChangeNotifier {
           if (f.name.isNotEmpty) {
             if (merge && userFunctions.containsKey(f.name)) {
               if (userFunctions[f.name]!.lastModified.isBefore(
-                f.lastModified,
-              )) {
+                    f.lastModified,
+                  )) {
                 userFunctions[f.name] = f;
               }
             } else {
@@ -1259,6 +1592,7 @@ class AppState extends ChangeNotifier {
           }
         }
       }
+      _dirtyDocIds.addAll(notepadDocuments.keys);
       _persistNotepadDocs();
       imported.add('$importedCount notepad documents');
     }
@@ -1282,6 +1616,23 @@ class AppState extends ChangeNotifier {
       }
     }
 
+    if (json['graphLinks'] is Map) {
+      if (!merge) graphLinks.clear();
+      for (final entry in (json['graphLinks'] as Map).entries) {
+        final slot = int.tryParse(entry.key.toString());
+        if (slot != null &&
+            slot >= 0 &&
+            slot < graphFunctions.length &&
+            entry.value is Map) {
+          try {
+            graphLinks[slot] = LinkedGraphSource.fromJson(
+                Map<String, dynamic>.from(entry.value));
+          } catch (_) {}
+        }
+      }
+      _persistGraphLinks();
+      _refreshLinkedGraphs();
+    }
     notifyListeners();
     return imported.isEmpty
         ? 'Nothing recognized in payload'
@@ -1298,12 +1649,13 @@ class AppState extends ChangeNotifier {
       'textScale': _textScale,
       'highContrast': _highContrast,
       'exactIntegerMode': _exactIntegerMode,
-      'userFunctions': userFunctions.values
-          .map((f) => f.toJson())
-          .toList(growable: false),
+      'userFunctions':
+          userFunctions.values.map((f) => f.toJson()).toList(growable: false),
       'history': history.map((e) => e.toJson()).toList(),
       'variables': Map<String, String>.from(userVariables),
       'functions': List<String>.from(graphFunctions),
+      'graphLinks': graphLinks
+          .map((slot, link) => MapEntry(slot.toString(), link.toJson())),
       'parameters': functionParameters.map(
         (slot, params) => MapEntry(slot.toString(), params),
       ),
@@ -1322,15 +1674,18 @@ class AppState extends ChangeNotifier {
 
   void clearAllVariables() {
     userVariables.clear();
+    _refreshLinkedGraphs();
     _persistVariables();
-    notifyListeners();
+    _notify({AppStateDomain.variables});
   }
 
   void clearAllFunctions() {
+    graphLinks.clear();
+    _persistGraphLinks();
     for (int i = 0; i < graphFunctions.length; i++) {
       graphFunctions[i] = '';
     }
     _persistFunctions();
-    notifyListeners();
+    _notify({AppStateDomain.graphs});
   }
 }

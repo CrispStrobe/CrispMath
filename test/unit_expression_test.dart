@@ -318,9 +318,9 @@ void main() {
       expect(_eval('36 km / 1 h'), '10 m/s');
     });
 
-    test('5 m * 3 m → 15 m^2 (length × length)', () {
-      // No catalog match for area; falls through to base-units format.
-      expect(_eval('5 m * 3 m'), '15 m^2');
+    test('5 m * 3 m → 15 m² (length × length)', () {
+      // The area catalog supplies the coherent SI display symbol m².
+      expect(_eval('5 m * 3 m'), '15 m²');
     });
 
     test('quantity / quantity to convert via in', () {

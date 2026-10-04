@@ -1,9 +1,7 @@
 # Web build + Vercel deploy (PLAN P10 Path A). The browser target ships
-# the reduced-capability build: pure-Dart calculator / statistics / matrices
-# / Sudoku-CSP / units work, while the SymEngine CAS, MPFR precision, and
-# FLINT number-theory paths degrade to "Error: requires native library"
-# (no dart:ffi in the browser). The default `flutter build web` is dart2js —
-# correct everywhere; dart_csp falls back to its slower list/interval rep.
+# a WASM CAS worker alongside the pure-Dart calculator, statistics, matrices,
+# Sudoku-CSP and units. dart2js is the default browser target; dart_csp falls
+# back to its slower list/interval representation.
 #
 # Every push/PR builds the bundle and uploads it as an artifact (needs no
 # secrets). Production deploys to https://crisp-math.vercel.app happen
@@ -28,11 +26,29 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      linux_runner:
+        description: 'GitHub-hosted build runner (queue fallback)'
+        type: choice
+        options: [ubuntu-latest, ubuntu-24.04, macos-latest]
+        default: ubuntu-latest
+      deploy:
+        description: 'Deploy the validated bundle to Vercel and run live checks'
+        type: boolean
+        default: false
+      production:
+        description: 'Use the production domain instead of a preview URL'
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
+    timeout-minutes: 30
 
     # Job-level env so the deploy step's `if:` can test for a configured
     # token and skip gracefully when secrets are absent.
@@ -44,6 +60,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -54,10 +81,16 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
 
       - name: Build web (release, dart2js)
-        run: flutter build web --release
+        run: tool/build_web.sh --release
 
       - name: Add Vercel SPA-rewrite config
         run: cp vercel.json build/web/vercel.json
@@ -71,8 +104,94 @@ jobs:
       # Production deploy on release tags only (`v*`). Keeping Vercel off
       # the per-push path keeps us well under its free-tier 100/day cap —
       # GitHub Pages (deploy-pages.yml) is the per-push preview channel.
-      - name: Deploy to Vercel (production)
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && env.VERCEL_TOKEN != ''
+      - name: Deploy to Vercel
+        id: vercel
+        if: (github.event_name == 'workflow_dispatch' && inputs.deploy) || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
         run: |
-          npm install -g vercel@latest
-          vercel deploy build/web --prod --yes --archive=tgz --token="$VERCEL_TOKEN"
+          test -n "$VERCEL_TOKEN"
+          test -n "$VERCEL_ORG_ID"
+          test -n "$VERCEL_PROJECT_ID"
+          FLAGS=()
+          if [ "${{ inputs.production }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
+            FLAGS+=(--prod)
+          fi
+          URL=$(npx --yes vercel@54.11.1 deploy build/web --yes --archive=tgz "${FLAGS[@]}" --token="$VERCEL_TOKEN")
+          echo "deployment_url=$URL" >> "$GITHUB_OUTPUT"
+          if [ "${{ inputs.production }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
+            # Generated deployment URLs retain protection; the production alias is public.
+            echo "url=https://crisp-math.vercel.app" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=$URL" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Deployed: $URL"
+      - name: Verify published Vercel workflows
+        if: steps.vercel.outputs.url != ''
+        env:
+          APP_URL: ${{ steps.vercel.outputs.url }}
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+          python tool/check_deployed_bundle.py --url "$APP_URL" --source "$GITHUB_SHA"
+          python tool/check_notepad_calendar_browser.py --url "$APP_URL" --output deployed-results/calendar.json
+          python tool/check_result_evidence_browser.py --url "$APP_URL" --output deployed-results/provenance
+          python tool/check_integral_syntax_browser.py --url "$APP_URL" --output deployed-results/integral-syntax
+          python tool/check_notepad_batch_browser.py --url "$APP_URL" --output deployed-results/notepad-batch
+          python tool/check_notepad_functions_browser.py --url "$APP_URL" --output deployed-results/notepad-functions
+          python tool/check_workflow_tasks_browser.py --url "$APP_URL" --output deployed-results/workflow-tasks.json
+          python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks test/fixtures/fresh_workflow_tasks.json --output deployed-results/fresh-workflow-tasks.json
+          for area in algebra numeric workflow; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/new_math_${area}_tasks.json" --output "deployed-results/new-math-${area}.json"
+          done
+          for area in algebra numeric workflow native_safety dependency bound; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round2_${area}_tasks.json" --output "deployed-results/round2-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round3_${area}_tasks.json" --output "deployed-results/round3-${area}.json"
+          done
+          for area in algebra numeric scope; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round4_${area}_tasks.json" --output "deployed-results/round4-${area}.json"
+          done
+          for area in algebra numeric scope; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round5_${area}_tasks.json" --output "deployed-results/round5-${area}.json"
+          done
+          for area in algebra numeric domain scope taylor series_scope variable; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round6_${area}_tasks.json" --output "deployed-results/round6-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round7_${area}_tasks.json" --output "deployed-results/round7-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round8_${area}_tasks.json" --output "deployed-results/round8-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round9_${area}_tasks.json" --output "deployed-results/round9-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round10_${area}_tasks.json" --output "deployed-results/round10-${area}.json"
+          done
+          python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
+          python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export
+          python tool/check_document_history_browser.py --url "$APP_URL" --output deployed-results/document-history
+          python tool/check_cloud_disabled_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/cloud-disabled
+          python tool/check_new_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/new-math-ui
+          python tool/check_round2_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round2-math-ui
+          python tool/check_round3_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round3-math-ui
+          python tool/check_round4_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round4-math-ui
+          python tool/check_round5_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-math-ui
+          python tool/check_round6_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round6-math-ui
+          python tool/check_round6_statistics_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round6-statistics-ui
+          python tool/check_round7_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round7-math-ui
+          python tool/check_round8_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round8-math-ui
+          python tool/check_round9_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round9-math-ui
+          python tool/check_round10_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round10-math-ui
+          python tool/check_round5_solve_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-solve-ui
+          python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
+          python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations
+          python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vercel-live-results
+          path: deployed-results
+          if-no-files-found: ignore
+          retention-days: 14

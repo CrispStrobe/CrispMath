@@ -1,0 +1,93 @@
+{
+  "source": "48f0190a2a8776de550c61587ca4a2197ad56adb",
+  "host": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "measured_at": "2026-10-01T20:42:10.412895+00:00",
+  "trials": 3,
+  "measurement": "browser UI latency; not physical FPS; page CDP CPU throttle, worker timing not calibrated",
+  "browser": "149.0.7827.55",
+  "status": "passed",
+  "profiles": [
+    {
+      "profile": "desktop",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "cpu": 1,
+      "status": "passed",
+      "notepad": [
+        {
+          "rows": 500,
+          "open_ms": 676.8950650000534,
+          "edit_to_saved_result_ms": [
+            900.3496839999343,
+            614.9685450000106,
+            650.2195360000087
+          ],
+          "summary": {
+            "samples": 3,
+            "median_ms": 650.2195360000087,
+            "p95_ms": 900.3496839999343,
+            "max_ms": 900.3496839999343
+          }
+        },
+        {
+          "rows": 2000,
+          "open_ms": 676.8468749999101,
+          "edit_to_saved_result_ms": [
+            1847.6661649999642,
+            1627.8606959999706,
+            1565.4088769999817
+          ],
+          "summary": {
+            "samples": 3,
+            "median_ms": 1627.8606959999706,
+            "p95_ms": 1847.6661649999642,
+            "max_ms": 1847.6661649999642
+          }
+        }
+      ]
+    },
+    {
+      "profile": "phone",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "cpu": 4,
+      "status": "passed",
+      "notepad": [
+        {
+          "rows": 500,
+          "open_ms": 1946.9246540000995,
+          "edit_to_saved_result_ms": [
+            6766.312846000005,
+            4309.225621999985,
+            3614.3704009999738
+          ],
+          "summary": {
+            "samples": 3,
+            "median_ms": 4309.225621999985,
+            "p95_ms": 6766.312846000005,
+            "max_ms": 6766.312846000005
+          }
+        },
+        {
+          "rows": 2000,
+          "open_ms": 1997.7678929999456,
+          "edit_to_saved_result_ms": [
+            22817.462820999936,
+            20844.857007999963,
+            19353.809617000024
+          ],
+          "summary": {
+            "samples": 3,
+            "median_ms": 20844.857007999963,
+            "p95_ms": 22817.462820999936,
+            "max_ms": 22817.462820999936
+          }
+        }
+      ]
+    }
+  ]
+}

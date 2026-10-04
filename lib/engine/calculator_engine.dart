@@ -1,3 +1,4 @@
+import 'result_evidence.dart';
 // lib/engine/calculator_engine.dart
 //
 // Dart-side facade for the native symbolic-math bridge. The UI calls these
@@ -5,12 +6,23 @@
 // when it isn't, every call returns a string starting with "Error" so the
 // UI can route it into the history just like any other failure.
 
-import 'package:flutter/foundation.dart';
+import 'engine_signals_worker.dart'
+    if (dart.library.ui) 'engine_signals_flutter.dart';
 import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 import 'matrix_evaluator.dart';
+import 'linear_system_solver.dart';
+import 'rational_equation_solver.dart';
 import 'inequality_solver.dart';
 import 'rational_integrator.dart';
+import 'rational_integral_domain.dart';
+import 'polynomial_quotient_cancellation.dart';
+import 'real_calculus_proofs.dart';
+import 'exact_constant.dart';
+import 'exact_complex_constant.dart';
+import 'complex_quadratic_solver.dart';
+import 'definite_antiderivative.dart';
+import 'function_reference.dart';
 import 'numeric_fallback.dart';
 import 'ode_solver.dart';
 import 'numerical.dart';
@@ -19,6 +31,7 @@ import 'polynomial_mod.dart';
 import 'step_engine.dart';
 import 'symbolic_expr.dart';
 import 'symbolic_limit.dart';
+import 'symbolic_taylor.dart';
 import 'symbolic_web.dart';
 import 'unit_expression.dart';
 
@@ -79,6 +92,8 @@ Future<void> pollForNativeBridge({
 }
 
 class CalculatorEngine {
+  ResultEvidence? lastResultEvidence;
+
   CalculatorEngine() {
     _acquireBridge();
   }
@@ -171,6 +186,56 @@ class CalculatorEngine {
   }
 
   String evaluate(String expression) {
+    // Preserve arbitrary-size integer arithmetic before the bridge converts
+    // numeric expressions to floating point. The bounded rational parser
+    // preserves precedence and never labels a floating-point fallback exact.
+    final exact = ExactConstantEvaluator.evaluate(expression);
+    if (exact != null) {
+      lastResultEvidence = ResultEvidence(
+          ResultAccuracy.exact,
+          exact.contains('/') || RegExp(r'\bsqrt\s*\(').hasMatch(expression)
+              ? ComputationMethod.symbolicEvaluation
+              : ComputationMethod.integerArithmetic);
+      return exact;
+    }
+    final conjugated = ExactComplexConstant.conjugation(expression);
+    if (conjugated != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      return conjugated;
+    }
+    final principal = ExactComplexConstant.principalPower(expression);
+    if (principal != null) return evaluate(principal);
+    // Native evaluation can crash on composed logarithm/absolute-value
+    // constants. Only this bounded, supported real grammar bypasses the CAS;
+    // free symbols and complex expressions retain their normal routing.
+    if (expression.length <= 512 &&
+        RegExp(r'\b(?:ln|log|log2|log10|lg)\s*\(').hasMatch(expression) &&
+        RegExp(r'\babs\s*\(').hasMatch(expression)) {
+      const realConstants = {'pi', 'PI', 'e', 'E', 'tau'};
+      final names = RegExp(
+          r'[A-Za-z_][A-Za-z_0-9]*|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?');
+      final hasFreeSymbol = names.allMatches(expression).any((token) {
+        final name = token[0]!;
+        if (!RegExp(r'^[A-Za-z_]').hasMatch(name)) return false;
+        return !realConstants.contains(name) &&
+            !expression.substring(token.end).trimLeft().startsWith('(');
+      });
+      final compiled = hasFreeSymbol
+          ? null
+          : NumericFallbackEvaluator.compile(expression);
+      if (compiled != null) {
+        final value = compiled.evaluate(const {});
+        if (value == null || !value.isFinite) {
+          lastResultEvidence = null;
+          return 'Error: logarithm/absolute-value expression is undefined '
+              'or nonfinite';
+        }
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+        return NumericFallbackEvaluator.tryEvaluate(expression)!;
+      }
+    }
     // Matrix expressions can't go through SymEngine's text parser — it
     // doesn't recognize `Matrix([[...]])` literals. Route them through the
     // dedicated matrix FFI bindings first; fall back to the scalar parser
@@ -187,7 +252,11 @@ class CalculatorEngine {
     // "needs the native app" message.
     if (!isNativeAvailable) {
       final numeric = NumericFallbackEvaluator.tryEvaluate(expression);
-      if (numeric != null) return numeric;
+      if (numeric != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+        return numeric;
+      }
     }
     final result = _bridgeCall('evaluate', (b) => b.evaluate(expression));
     // If the WASM bridge crashed (RuntimeError / Aborted), try the
@@ -195,7 +264,11 @@ class CalculatorEngine {
     // when the WASM module hits an assertion on certain inputs.
     if (result.startsWith('Error:')) {
       final numeric = NumericFallbackEvaluator.tryEvaluate(expression);
-      if (numeric != null) return numeric;
+      if (numeric != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+        return numeric;
+      }
       // Try pure-Dart symbolic evaluation for polynomial expressions
       final symbolic = SymbolicWeb.expand(expression);
       if (symbolic != null) return symbolic;
@@ -266,13 +339,34 @@ class CalculatorEngine {
   }
 
   String solve(String expression, String symbol) {
+    lastResultEvidence = null;
+    final complex = ComplexQuadraticSolver.solve(expression, symbol);
+    if (complex != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      if (complex.isEmpty) return '$symbol = (no solutions)';
+      return complex.length == 1
+          ? '$symbol = ${complex.single}'
+          : '$symbol = {${complex.join(', ')}}';
+    }
+    final rational = RationalEquationSolver.solve(expression, symbol);
+    if (rational != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      if (rational.isEmpty) return '$symbol = (no solutions)';
+      return rational.length == 1
+          ? '$symbol = ${rational.single}'
+          : '$symbol = {${rational.join(', ')}}';
+    }
+    final candidates = RationalEquationSolver.candidateEquation(expression, symbol)
+        ?? expression;
     final bridge = _liveBridge;
     if (bridge == null) {
       // Web / native-less: solve linear & quadratic polynomials in pure
       // Dart so the browser build isn't limited to "requires native
       // library" for the most common cases. Higher-degree / non-
       // polynomial equations return null and fall through.
-      final web = SymbolicWeb.solveList(expression, symbol);
+      final web = SymbolicWeb.solveList(candidates, symbol);
       if (web != null) {
         if (web.isEmpty) return '$symbol = (no solutions)';
         if (web.length > 1) return '$symbol = {${web.join(', ')}}';
@@ -281,7 +375,7 @@ class CalculatorEngine {
       return 'Error: solve requires native library';
     }
     try {
-      final result = bridge.solve(expression, symbol);
+      final result = bridge.solve(candidates, symbol);
       if (result.startsWith('Error')) return result;
       if (result.startsWith('[') && result.endsWith(']')) {
         final inner = result.substring(1, result.length - 1);
@@ -324,6 +418,12 @@ class CalculatorEngine {
   }
 
   String simplify(String expression) {
+    final cancelled = PolynomialQuotientCancellation.simplify(expression);
+    if (cancelled != null) {
+      lastResultEvidence = ResultEvidence(ResultAccuracy.symbolic,
+          ComputationMethod.simplification, sourceDomain: cancelled.condition);
+      return cancelled.expression;
+    }
     // Native simplify is real since bridge 59ba08c: SymEngine simplify()
     // plus univariate rational cancellation ((x^2-1)/(x-1) -> x+1). It
     // still has no trig/log identity rewriting — that stays visible to the
@@ -331,7 +431,11 @@ class CalculatorEngine {
     // can only expand the polynomial subset in Dart.
     if (!isNativeAvailable) {
       final web = SymbolicWeb.expand(expression);
-      if (web != null) return web;
+      if (web != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.polynomialExpansion);
+        return web;
+      }
     }
     return _bridgeCall('simplify', (b) => b.simplify(expression));
   }
@@ -349,11 +453,45 @@ class CalculatorEngine {
     );
   }
 
-  String substitute(String expression, String variable, String value) =>
-      _bridgeCall(
-        'substitute',
-        (b) => b.substitute(expression, variable, value),
-      );
+  /// Point-aware real differentiation validates cusp domains before evaluating
+  /// a symbolic formula that may be undefined or misleading at that point.
+  String differentiateAt(String expression, String variable, String point) {
+    lastResultEvidence = null;
+    final cusp = RealCalculusProofs.absoluteDerivative(expression, variable, point);
+    if (cusp != null) {
+      if (!cusp.startsWith('Error')) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      }
+      return cusp;
+    }
+    final derivative = differentiate(expression, variable);
+    return derivative.startsWith('Error')
+        ? derivative
+        : evaluate(substitute(derivative, variable, point));
+  }
+
+  String substitute(String expression, String variable, String value) {
+    // Some native builds crash inside substitute() for antiderivatives. A
+    // scalar symbol replacement needs no FFI: preserve whole identifier and
+    // numeric tokens, then let the usual evaluator handle the resulting math.
+    if (!RegExp(r'^[A-Za-z_][A-Za-z_0-9]*$').hasMatch(variable) ||
+        value.trim().isEmpty) {
+      return 'Error: invalid substitution variable or value';
+    }
+    final tokens = RegExp(
+        r'[A-Za-z_][A-Za-z_0-9]*|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?');
+    return expression.replaceAllMapped(tokens, (match) {
+      if (match[0] != variable ||
+          (expression.substring(match.end).trimLeft().startsWith('(') &&
+              FunctionReferences.all.any((function) =>
+                  function.id == variable ||
+                  function.signature.startsWith('$variable(')))) {
+        return match[0]!;
+      }
+      return '($value)';
+    });
+  }
 
   String callUnary(String funcName, String expression) =>
       _bridgeCall(funcName, (b) => b.callUnary(funcName, expression));
@@ -1161,18 +1299,59 @@ class CalculatorEngine {
       InequalitySolver.solve(this, inequality, variable);
 
   /// Taylor/Maclaurin series of [expression] in [variable] about [point],
-  /// truncated at [order] terms (roadmap C2). Native-only: SymEngine C++
-  /// series() via bridge >= 1.4.0; older libs surface the capability error.
+  /// truncated at [order] terms. Uses SymEngine series() where available;
+  /// older native libraries compute exact coefficients by differentiation.
   String series(String expression, String variable,
       {String point = '0', int order = 6}) {
+    lastResultEvidence = null;
+    if (order < 1 || order > 64) return 'Error: order must be in 1..64';
+    // Taylor coefficients require derivatives at the center, not merely
+    // symbolic derivative formulas whose domains may exclude that center.
+    final cusp = RealCalculusProofs.cuspDerivative(
+        expression, variable, point, order: order - 1);
+    if (cusp != null) {
+      if (!cusp.startsWith('Error')) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      }
+      return cusp;
+    }
+    final localPolynomial =
+        RealCalculusProofs.absoluteLocalPolynomial(expression, variable, point);
+    if (localPolynomial != null) {
+      return series(localPolynomial, variable, point: point, order: order);
+    }
+    // A polynomial in a different symbol is an exact coefficient, constant in
+    // this Taylor variable. Some native series implementations require the
+    // requested variable to occur and otherwise fail. Prove this bounded case
+    // directly, retaining the coefficient's actual variable and a real center.
+    if (expression.length <= 512 &&
+        RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(variable) &&
+        ExactConstantEvaluator.evaluate(point) != null) {
+      final expanded = SymbolicWeb.expand(expression);
+      final coefficient = expanded == null ? null : Polynomial.tryParse(expanded);
+      if (coefficient != null &&
+          (coefficient.degree <= 0 || coefficient.variable != variable)) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+        return coefficient.toString();
+      }
+    }
     final bridge = _liveBridge;
     if (bridge == null) return 'Error: series requires native library';
-    if (!bridge.hasSeries) {
-      return 'Error: series requires a newer native library build';
-    }
-    if (order < 1 || order > 64) return 'Error: order must be in 1..64';
     try {
-      return bridge.series(expression, variable, point: point, order: order);
+      if (!bridge.hasSeries) {
+        return symbolicTaylorSeries(expression, variable,
+            point: point,
+            order: order,
+            simplify: bridge.simplify,
+            differentiate: bridge.differentiate,
+            substitute: substitute);
+      }
+      final result = bridge.series(expression, variable, point: point, order: order);
+      return invalidSymbolicTaylorValue(result)
+          ? 'Error: series failed: not expandable at this point'
+          : normalizePolynomialTaylorValue(result, variable);
     } catch (e) {
       _log('series error: $e');
       return 'Error: series failed';
@@ -1181,12 +1360,32 @@ class CalculatorEngine {
 
   /// Symbolic linear-system solve (roadmap C2): SymEngine linsolve() via
   /// bridge >= 1.4.0. Returns "x = v1, y = v2" in [symbols] order, or an
-  /// error for non-linear input / no unique solution. Native-only.
+  /// error for non-linear input / no unique solution. Older libraries and
+  /// native-less platforms use bounded exact rational Gaussian elimination.
   String solveLinearSystem(List<String> equations, List<String> symbols) {
+    lastResultEvidence = null;
+    // A rational linear proof also handles redundant/overdetermined rows.
+    // Some capable bridges reject these valid systems, so do not make the
+    // bounded exact grammar depend on backend matrix-shape restrictions.
+    final exact = LinearSystemSolver.solve(equations, symbols);
+    if (exact != null) {
+      if (!exact.startsWith('Error')) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      }
+      return exact;
+    }
+    // The bundled Linux bridge can dereference a null symbolic result for
+    // rectangular input. A Dart exception handler cannot recover that crash.
+    // Preserve square symbolic CAS support; rectangular systems must first
+    // have a certified result from the bounded exact solver above.
+    if (equations.length != symbols.length) {
+      return 'Error: linsolve requires a certified exact proof for '
+          'rectangular systems';
+    }
     final bridge = _liveBridge;
-    if (bridge == null) return 'Error: linsolve requires native library';
-    if (!bridge.hasLinsolve) {
-      return 'Error: linsolve requires a newer native library build';
+    if (bridge == null || !bridge.hasLinsolve) {
+      return 'Error: linsolve requires a newer native library for this syntax';
     }
     try {
       final raw = bridge.linsolve(equations, symbols); // "[v1, v2, ...]"
@@ -1238,26 +1437,59 @@ class CalculatorEngine {
   ///
   /// Pass `oo` / `inf` / `\infty` for +∞; `-oo` / `-inf` for −∞.
   String limit(String expression, String variable, String point) {
-    final bridge = _liveBridge;
-    if (bridge == null) {
-      return 'Error: limit requires native library';
+    lastResultEvidence = null;
+
+    final radical = RealCalculusProofs.quadraticRadicalLimit(expression, variable, point);
+    if (radical != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      return radical;
+    }
+
+    if (RealCalculusProofs.squeezedZero(expression, variable, point)) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      return '0';
     }
 
     // Tier 1+2: try the symbolic limit engine.
-    final symbolic = SymbolicLimit.compute(
+    final nonsmooth = RegExp(r'\b(?:abs|sign|floor|ceil|Piecewise|Heaviside)\s*\(')
+        .hasMatch(expression);
+    final symbolic = nonsmooth ? null : SymbolicLimit.compute(
       engine: this,
       expression: expression,
       variable: variable,
       point: point,
     );
-    if (symbolic != null) return symbolic.value;
+    if (symbolic != null && !RegExp(
+        r'\b(?:Derivative|Subs|undefined|nan|zoo|Error)\b', caseSensitive: false)
+        .hasMatch(symbolic.value) &&
+        (!RegExp(r'\b(?:oo|inf|infinity)\b', caseSensitive: false).hasMatch(symbolic.value) ||
+            RegExp(r'^[+-]?(?:oo|inf|infinity)$', caseSensitive: false).hasMatch(symbolic.value.trim()))) {
+      // Nested evaluations describe intermediate numerator/denominator
+      // arithmetic. They are not the provenance of the completed limit.
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.symbolic, ComputationMethod.symbolicEvaluation);
+      return symbolic.value;
+    }
+
+    lastResultEvidence = null;
+    final bridge = _liveBridge;
+    final compiled = NumericFallbackEvaluator.compile(expression);
+    if (bridge == null && compiled == null) {
+      return 'Error: limit requires native library';
+    }
 
     // Tier 3: numerical fallback.
     double evalAt(double x) {
       try {
+        if (compiled != null) {
+          final value = compiled.evaluate({variable: x});
+          return value != null && value.isFinite ? value : double.nan;
+        }
         final substituted =
-            bridge.substitute(expression, variable, _formatReal(x));
-        final result = bridge.evaluate(substituted);
+            substitute(expression, variable, _formatReal(x));
+        final result = bridge!.evaluate(substituted);
         return _parseReal(result) ?? double.nan;
       } catch (_) {
         return double.nan;
@@ -1267,18 +1499,26 @@ class CalculatorEngine {
     final pt = point.trim();
     if (pt == 'oo' || pt == 'inf' || pt == 'infinity' || pt == r'\infty') {
       final v = limitAtInfinity(evalAt);
+      if (v != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+      }
       return v != null
           ? _formatReal(v)
           : 'Error: limit at infinity does not converge';
     }
     if (pt == '-oo' || pt == '-inf') {
       final v = limitAtInfinity((x) => evalAt(-x));
+      if (v != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.approximate, ComputationMethod.numericFallback);
+      }
       return v != null
           ? _formatReal(v)
           : 'Error: limit at -infinity does not converge';
     }
 
-    final pointValue = double.tryParse(pt);
+    final pointValue = NumericFallbackEvaluator.evalNumeric(pt);
     if (pointValue == null) {
       return 'Error: limit point must be a real number or ±oo';
     }
@@ -1292,6 +1532,8 @@ class CalculatorEngine {
       return 'Error: left and right limits differ '
           '(left=${_formatReal(l)}, right=${_formatReal(r)})';
     }
+    lastResultEvidence = const ResultEvidence(
+        ResultAccuracy.approximate, ComputationMethod.numericFallback);
     return _formatReal(v);
   }
 
@@ -1307,6 +1549,7 @@ class CalculatorEngine {
   ///     rule with 200 subintervals.
   String integrate(String expression, String variable,
       [String? lower, String? upper]) {
+    lastResultEvidence = null;
     final bridge = _liveBridge;
     final indefinite = lower == null || upper == null;
 
@@ -1321,64 +1564,113 @@ class CalculatorEngine {
       // 1. Exact polynomial antiderivative (consistent format, no engine
       //    round-trips) — reliable on every platform.
       final poly = SymbolicWeb.integrate(expression, variable);
-      if (poly != null) return '$poly + C';
+      if (poly != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.polynomialIntegration);
+        return '$poly + C';
+      }
       // 2. Complete rational-function integrator (roadmap C3): polynomial
       //    part + Hermite-style power reduction + exact log/atan terms
       //    over linear and quadratic irreducible factors. Pure Dart,
       //    exact ℚ arithmetic; uses native FLINT factoring when loaded.
       final rational = RationalIntegrator.integrate(this, expression, variable);
-      if (rational != null) return '$rational + C';
+      if (rational != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.rationalIntegration);
+        return '$rational + C';
+      }
       // 3. Broad textbook integrator (trig/exp/IBP/u-sub/partial fractions).
       //    Resolves on native; on web it handles only what SymbolicWeb can
       //    back its differentiate/simplify checks with.
       final anti = StepEngine.antiderivative(expression, variable, this);
-      if (anti != null) return '$anti + C';
+      if (anti != null) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.symbolic, ComputationMethod.integrationRules);
+        return '$anti + C';
+      }
       return bridge == null
           ? 'Error: integrate requires native library'
           : 'Error: could not integrate (no matching rule)';
     }
 
     // Definite integration.
+    // Endpoint subtraction is valid only across an interval without poles.
+    // Cancel exact common factors first: removable holes may still have a
+    // convergent improper integral, unlike a genuine rational pole.
+    final poles = RationalIntegralDomain.polesWithin(
+        expression, variable, lower, upper);
+    if (poles != null && poles.isNotEmpty) {
+      return 'Error: integration interval contains a divergent pole '
+          'at $variable = ${poles.join(', ')}';
+    }
+    final polynomialPole = RationalIntegralDomain.containsPole(
+        expression, variable, lower, upper);
+    if (polynomialPole == true) {
+      return 'Error: integration interval contains a divergent pole';
+    }
+    if (poles == null && polynomialPole == null &&
+        RationalIntegralDomain.isSupportedQuotient(expression, variable)) {
+      return 'Error: cannot certify the rational integration interval domain';
+    }
+    final elementary = RealCalculusProofs.definite(
+        expression, variable, lower, upper);
+    if (elementary != null) {
+      if (elementary.error != null) return elementary.error!;
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.approximate, ComputationMethod.fundamentalTheorem);
+      return _formatReal(elementary.value!);
+    }
+    // Integrate the exact continuous extension, rather than sampling an
+    // original 0/0 hole. Genuine poles were checked before this substitution.
+    final integrand =
+        RationalIntegralDomain.reducedExpression(expression, variable) ??
+            expression;
     // 1. Exact Dart polynomial definite integral.
     final polyDef =
-        SymbolicWeb.definiteIntegral(expression, variable, lower, upper);
-    if (polyDef != null) return polyDef;
-    // 2. FTC via a StepEngine antiderivative evaluated at the bounds
-    //    (needs the bridge to substitute + evaluate the result).
+        SymbolicWeb.definiteIntegral(integrand, variable, lower, upper);
+    if (polyDef != null) {
+      lastResultEvidence = ResultEvidence(
+          RegExp(r'^[+-]?\d+(?:/\d+)?$').hasMatch(polyDef.trim())
+              ? ResultAccuracy.exact
+              : ResultAccuracy.unknown,
+          ComputationMethod.polynomialIntegration);
+      return polyDef;
+    }
+    // 2. FTC via a StepEngine antiderivative evaluated at the bounds.
+    //    Finite real endpoints use Dart arithmetic to avoid native crashes
+    //    evaluating composed logarithm/absolute-value antiderivatives.
     if (bridge != null) {
-      final anti = StepEngine.antiderivative(expression, variable, this);
+      final anti = StepEngine.antiderivative(integrand, variable, this);
       if (anti != null) {
-        final ftc = _definiteFromAntiderivativeString(
-            bridge, anti, variable, lower, upper);
-        if (ftc != null) return ftc;
+        final ftc =
+            _definiteFromAntiderivativeString(anti, variable, lower, upper);
+        if (ftc != null) {
+          lastResultEvidence = const ResultEvidence(
+              ResultAccuracy.approximate, ComputationMethod.fundamentalTheorem);
+          return ftc;
+        }
       }
       // 3. Numerical Simpson fallback.
-      return _definiteNumerical(bridge, expression, variable, lower, upper);
+      return _definiteNumerical(bridge, integrand, variable, lower, upper);
     }
     return 'Error: integrate requires native library';
   }
 
-  /// FTC for a known antiderivative string: F(upper) − F(lower) via the
-  /// bridge's substitute + evaluate. Returns null on any parse/eval failure
-  /// so the caller can fall back to numerical integration.
-  String? _definiteFromAntiderivativeString(SymbolicMathBridge bridge,
+  /// FTC for a known antiderivative string: finite real F(upper) − F(lower).
+  /// Returns null on unsupported grammar or nonfinite values so the caller
+  /// can fall back to numerical integration.
+  String? _definiteFromAntiderivativeString(
       String antiderivative, String variable, String lower, String upper) {
-    try {
-      // StepEngine renders products with "·"; SymEngine wants "*".
-      final f = antiderivative.replaceAll('·', '*');
-      final atUpper = bridge.substitute(f, variable, '($upper)');
-      final atLower = bridge.substitute(f, variable, '($lower)');
-      final diff = bridge.evaluate('($atUpper) - ($atLower)');
-      if (diff.startsWith('Error')) return null;
-      return diff;
-    } catch (_) {
-      return null;
-    }
+    final difference =
+        DefiniteAntiderivative.evaluate(antiderivative, variable, lower, upper);
+    return difference == null ? null : _formatReal(difference);
   }
 
   String _definiteNumerical(SymbolicMathBridge bridge, String expression,
       String variable, String lower, String upper) {
     double? evalNumeric(String expr) {
+      final numeric = NumericFallbackEvaluator.evalNumeric(expr);
+      if (numeric != null && numeric.isFinite) return numeric;
       try {
         return _parseReal(bridge.evaluate(expr));
       } catch (_) {
@@ -1392,10 +1684,15 @@ class CalculatorEngine {
       return 'Error: integration bounds must evaluate to numbers';
     }
 
+    final compiled = NumericFallbackEvaluator.compile(expression);
     double fAt(double x) {
+      if (compiled != null) {
+        final value = compiled.evaluate({variable: x});
+        return value != null && value.isFinite ? value : double.nan;
+      }
       try {
         final substituted =
-            bridge.substitute(expression, variable, _formatReal(x));
+            substitute(expression, variable, _formatReal(x));
         return _parseReal(bridge.evaluate(substituted)) ?? double.nan;
       } catch (_) {
         return double.nan;
@@ -1406,6 +1703,8 @@ class CalculatorEngine {
     if (result == null) {
       return 'Error: integrand evaluation failed at some sample point';
     }
+    lastResultEvidence = const ResultEvidence(
+        ResultAccuracy.approximate, ComputationMethod.simpsonIntegration);
     return _formatReal(result);
   }
 

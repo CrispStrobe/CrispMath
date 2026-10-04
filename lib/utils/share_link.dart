@@ -13,10 +13,17 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 
 /// Build a shareable URL for the given expression.
-String buildShareUrl(String expression, {int tab = 0}) {
-  final encoded = Uri.encodeComponent(expression);
-  final base = kIsWeb ? Uri.base.origin : 'https://crisp-math.vercel.app';
-  return '$base/?expr=$encoded${tab != 0 ? '&tab=$tab' : ''}';
+String buildShareUrl(String expression, {int tab = 0, Uri? baseUri}) {
+  final base = baseUri ??
+      (kIsWeb ? Uri.base : Uri.parse('https://crisp-math.vercel.app/'));
+  return base
+      .replace(
+        query:
+            'expr=${Uri.encodeComponent(expression)}${tab != 0 ? '&tab=$tab' : ''}',
+        fragment: '',
+      )
+      .removeFragment()
+      .toString();
 }
 
 /// Copy a shareable link to the clipboard. Returns the URL.
@@ -39,12 +46,19 @@ class ShareParams {
   static ShareParams? fromCurrentUrl() {
     if (!kIsWeb) return null;
     try {
-      final uri = Uri.base;
+      return fromUri(Uri.base);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static ShareParams? fromUri(Uri uri) {
+    try {
       final expr = uri.queryParameters['expr'];
       final tabStr = uri.queryParameters['tab'];
       if (expr == null && tabStr == null) return null;
       return ShareParams(
-        expression: expr != null ? Uri.decodeComponent(expr) : null,
+        expression: expr,
         tab: tabStr != null ? int.tryParse(tabStr) : null,
       );
     } catch (_) {

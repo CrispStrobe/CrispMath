@@ -21,6 +21,11 @@ void main() {
     final tag = entry.key;
     final t = entry.value;
 
+    test('$tag returns null for unknown worked-example IDs', () {
+      expect(t.workedExampleTitle('bogus'), isNull);
+      expect(t.workedExampleDescription('bogus'), isNull);
+    });
+
     group('$tag locale translates every worked-example entry', () {
       for (final e in WorkedExamples.all) {
         test('${e.id}: title', () {

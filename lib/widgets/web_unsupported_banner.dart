@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../engine/calculator_engine.dart';
+import 'native_bridge_status_listenable.dart';
 import '../localization/app_localizations.dart';
 
 class WebUnsupportedBanner extends StatelessWidget {
@@ -30,7 +31,7 @@ class WebUnsupportedBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!kIsWeb) return const SizedBox.shrink();
     return ValueListenableBuilder<NativeBridgeStatus>(
-      valueListenable: nativeBridgeStatus,
+      valueListenable: nativeBridgeStatusListenable,
       builder: (context, status, _) {
         final t = AppLocalizations.of(context);
         final scheme = Theme.of(context).colorScheme;

@@ -3,8 +3,17 @@ import 'package:crisp_math/engine/unit_catalog.dart';
 
 void main() {
   group('UnitDimension enum', () {
-    test('has six dimensions', () {
-      expect(UnitDimension.values.length, 6);
+    test('includes all eight supported dimensions', () {
+      expect(UnitDimension.values.toSet(), {
+        UnitDimension.length,
+        UnitDimension.area,
+        UnitDimension.volume,
+        UnitDimension.time,
+        UnitDimension.mass,
+        UnitDimension.temperature,
+        UnitDimension.velocity,
+        UnitDimension.angle,
+      });
     });
 
     test('all dimensions have at least one unit', () {

@@ -1,0 +1,353 @@
+name: Math problem gap audit
+on:
+  push:
+    branches: ['feat/graph-workspace-ux']
+    paths:
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'lib/diagnostics/**'
+      - 'lib/engine/**'
+      - 'lib/services/engine_dispatch.dart'
+      - 'lib/services/integral_arguments.dart'
+      - 'tool/build_web.sh'
+      - 'web/workflow_tasks_worker.js'
+      - 'test/fixtures/*workflow_tasks.json'
+      - 'test/fixtures/new_math_*_tasks.json'
+      - 'test/fixtures/round2_*_tasks.json'
+      - 'test/fixtures/round3_*_tasks.json'
+      - 'test/fixtures/round4_*_tasks.json'
+      - 'test/fixtures/round5_*_tasks.json'
+      - 'test/fixtures/round6_*_tasks.json'
+      - 'test/fixtures/round7_*_tasks.json'
+      - 'test/fixtures/round8_*_tasks.json'
+      - 'test/fixtures/round9_*_tasks.json'
+      - 'test/fixtures/round10_*_tasks.json'
+      - 'test/round2_*_test.dart'
+      - 'test/round3_*_test.dart'
+      - 'test/round4_*_test.dart'
+      - 'test/round5_*_test.dart'
+      - 'test/round6_*_test.dart'
+      - 'test/round7_*_test.dart'
+      - 'test/round8_*_test.dart'
+      - 'test/round9_*_test.dart'
+      - 'test/round10_*_test.dart'
+      - 'test/csp_polynomial_regression_test.dart'
+      - 'test/new_math_*_test.dart'
+      - 'test/fresh_workflow_tasks_test.dart'
+      - 'test/workflow_tasks_test.dart'
+      - 'tool/crispmath_cli*'
+      - 'tool/check_workflow_tasks_browser.py'
+      - 'tool/check_round*_math_browser.py'
+      - 'tool/check_round*_statistics_browser.py'
+      - 'tool/check_round*_math_browser_test.py'
+      - 'tool/round*_reference_checks.py'
+      - '.github/workflows/workflow-task-audit.yml'
+  workflow_dispatch:
+    inputs:
+      browser_runner:
+        description: 'Hosted runner for the WASM audit'
+        type: choice
+        options: [auto, macos-latest]
+        default: auto
+      browser_only:
+        description: 'Run WASM only; native CLI is covered by a separate run'
+        type: boolean
+        default: false
+      linux_runner:
+        description: 'GitHub-hosted Linux runner (explicit image for queue fallback)'
+        type: choice
+        options: [ubuntu-latest, ubuntu-24.04]
+        default: ubuntu-latest
+permissions:
+  contents: read
+jobs:
+  native:
+    if: ${{ inputs.browser_only != true }}
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Corpus and comparison unit regressions
+        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart test/round2_graph_regressions_test.dart test/round2_exact_constant_test.dart test/round2_numeric_regressions_test.dart test/round2_algebra_regressions_test.dart test/worksheet_numeric_provenance_test.dart test/workflow_document_provenance_test.dart test/round3_algebra_regressions_test.dart test/round3_numeric_regressions_test.dart test/csp_polynomial_regression_test.dart test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round6_reference_tasks_test.dart test/round7_reference_tasks_test.dart test/round7_precision_regressions_test.dart test/round7_algebra_regressions_test.dart test/round7_numeric_regressions_test.dart test/round7_scientific_scope_test.dart test/round8_factorial_regressions_test.dart test/round8_numeric_regressions_test.dart test/round8_complex_quadratic_regressions_test.dart test/round8_matrix_scope_test.dart test/round9_reference_tasks_test.dart test/round10_reference_tasks_test.dart test/round10_algebra_regressions_test.dart test/round9_numeric_regressions_test.dart test/round9_worksheet_regressions_test.dart test/round6_exact_rounding_test.dart test/round6_numeric_regressions_test.dart test/round6_constraint_regressions_test.dart test/round6_algebra_regressions_test.dart test/round6_worksheet_regressions_test.dart test/round6_series_routing_test.dart test/round5_numeric_regressions_test.dart test/round5_operation_scope_test.dart test/graph_navigation_widget_test.dart
+      - name: Run every task against native app engine (strict)
+        if: ${{ !cancelled() }}
+        run: tool/crispmath_cli.sh --require-native --report task-results/native.json
+      - name: Run the fresh independent 50 problems (strict)
+        if: ${{ !cancelled() }}
+        run: tool/crispmath_cli.sh --tasks test/fixtures/fresh_workflow_tasks.json --require-native --report task-results/native-fresh.json
+      - name: Run all 100 additional independently drafted problems
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric workflow; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/new_math_${area}_tasks.json" --require-native --report "task-results/native-new-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run round two independent 100 problems against native engine
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric workflow native_safety dependency bound; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round2_${area}_tasks.json" --require-native --report "task-results/native-round2-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run third independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round3_${area}_tasks.json" --require-native --report "task-results/native-round3-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run fourth independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric scope; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round4_${area}_tasks.json" --require-native --report "task-results/native-round4-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run fifth independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric scope; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round5_${area}_tasks.json" --require-native --report "task-results/native-round5-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run sixth independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric domain scope taylor series_scope variable; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round6_${area}_tasks.json" --require-native --report "task-results/native-round6-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run seventh independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round7_${area}_tasks.json" --require-native --report "task-results/native-round7-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run eighth independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round8_${area}_tasks.json" --require-native --report "task-results/native-round8-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run ninth independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round9_${area}_tasks.json" --require-native --report "task-results/native-round9-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run tenth independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round10_${area}_tasks.json" --require-native --report "task-results/native-round10-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Verify exact Taylor compatibility with the native CAS
+        run: tool/crispmath_cli.sh --check-series-compatibility
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workflow-tasks-native
+          path: task-results
+          retention-days: 14
+  browser:
+    runs-on: ${{ inputs.browser_runner != 'auto' && inputs.browser_runner || inputs.linux_runner || 'ubuntu-latest' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Build actual app bundle
+        run: tool/build_web.sh --release --no-wasm-dry-run -O2
+      - name: Run every task against app WASM engine (strict)
+        run: |
+          python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/task-audit-http.log 2>&1 &
+          curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+          python tool/check_workflow_tasks_browser.py --output task-results/browser.json
+          python tool/check_workflow_tasks_browser.py --tasks test/fixtures/fresh_workflow_tasks.json --output task-results/browser-fresh.json
+      - name: Run all 100 additional problems against the actual WASM worker
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric workflow; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/new_math_${area}_tasks.json" --output "task-results/browser-new-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run round two independent 100 problems against actual WASM worker
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric workflow native_safety dependency bound; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round2_${area}_tasks.json" --output "task-results/browser-round2-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run third independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round3_${area}_tasks.json" --output "task-results/browser-round3-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run fourth independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric scope; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round4_${area}_tasks.json" --output "task-results/browser-round4-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run fifth independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric scope; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round5_${area}_tasks.json" --output "task-results/browser-round5-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run sixth independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric domain scope taylor series_scope variable; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round6_${area}_tasks.json" --output "task-results/browser-round6-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run seventh independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round7_${area}_tasks.json" --output "task-results/browser-round7-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run eighth independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round8_${area}_tasks.json" --output "task-results/browser-round8-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run ninth independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round9_${area}_tasks.json" --output "task-results/browser-round9-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run tenth independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round10_${area}_tasks.json" --output "task-results/browser-round10-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Preserve completed browser runtime corpus before UI checks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-tasks-browser-corpus
+          path: task-results/browser*.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Enter repaired calculations through desktop and phone UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_new_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/new-math-ui
+      - name: Enter round two independent arithmetic controls through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round2_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round2-math-ui
+      - name: Enter third audit controls through actual desktop and phone UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round3_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round3-math-ui
+      - name: Enter fourth audit controls through actual desktop and phone UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round4_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round4-math-ui
+      - name: Enter fifth audit controls through actual desktop and phone UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round5_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round5-math-ui
+      - name: Sixth independent math worksheet UI controls
+        if: ${{ !cancelled() }}
+        run: python tool/check_round6_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round6-math-ui
+      - name: Extreme samples through the actual statistics screen
+        if: ${{ !cancelled() }}
+        run: python tool/check_round6_statistics_browser.py --expected-source "$GITHUB_SHA" --output task-results/round6-statistics-ui
+
+      - name: Enter solve scope controls through actual desktop and phone UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round5_solve_browser.py --expected-source "$GITHUB_SHA" --output task-results/round5-solve-ui
+      - name: Enter seventh independent math controls through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round7_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round7-math-ui
+      - name: Enter eighth independent math controls through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round8_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round8-math-ui
+      - name: Enter ninth independent math and module controls through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round9_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round9-math-ui
+      - name: Enter tenth independent math and module controls through actual UI
+        if: ${{ !cancelled() }}
+        run: python tool/check_round10_math_browser.py --expected-source "$GITHUB_SHA" --output task-results/round10-math-ui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workflow-tasks-browser
+          path: task-results
+          retention-days: 14

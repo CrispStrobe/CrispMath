@@ -15,20 +15,44 @@ on:
   pull_request:
     branches: [main, latex-input-field]
   workflow_dispatch:
+    inputs:
+      macos_runner:
+        description: 'GitHub-hosted macOS image (queue fallback)'
+        type: choice
+        options: [macos-14, macos-latest]
+        default: macos-14
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: ${{ inputs.macos_runner || 'macos-14' }}
     timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.0'
           channel: stable
           cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Stage verified OCR runtime libraries
+        run: python tool/stage_ocr_runtime.py --platform macos
 
       - name: Resolve dependencies
         run: flutter pub get
@@ -53,13 +77,13 @@ jobs:
           APP="build/macos/Build/Products/Release/crisp_math.app"
           ls -la "$APP/Contents/MacOS"
           TOTAL=0
-          for bin in $(find "$APP" -type f -perm -u+x); do
+          while IFS= read -r -d '' bin; do
             count=$(nm "$bin" 2>/dev/null | grep -c flutter_symengine || true)
             if [ "$count" -gt 0 ]; then
               echo "  $bin: $count"
               TOTAL=$((TOTAL + count))
             fi
-          done
+          done < <(find "$APP" -type f -perm -u+x -print0)
           echo "Total SymEngine symbols across bundle: $TOTAL"
           if [ "$TOTAL" -lt 30 ]; then
             echo "::error::Expected >= 30 SymEngine symbols across bundle, found $TOTAL"
@@ -86,6 +110,223 @@ jobs:
           set -eu
           BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
           CRISPMATH_DIAGNOSTIC=steps "$BIN"
+
+      - name: Verify exact Taylor compatibility against the release binary
+        run: |
+          set -eu
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          CRISPMATH_DIAGNOSTIC=series "$BIN"
+
+      - name: Run strict 50-task audit against the packaged native app
+        # The release app keeps its sandbox: use inherited pipes rather than
+        # granting it access to arbitrary files in the runner's workspace.
+        run: |
+          set -euo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          cat test/fixtures/workflow_tasks.json | \
+            CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+            CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee task-results/macos.log
+
+      - name: Extract and verify the packaged-app audit report
+        if: always()
+        run: python tool/extract_workflow_report.py --log task-results/macos.log --output task-results/macos.json
+
+      - name: Run the fresh 50 problems against the packaged native app
+        run: |
+          set -euo pipefail
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          cat test/fixtures/fresh_workflow_tasks.json | \
+            CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+            CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee task-results/macos-fresh.log
+          python tool/extract_workflow_report.py --log task-results/macos-fresh.log --output task-results/macos-fresh.json
+
+      - name: Run the 100 additional problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric workflow; do
+            count=40
+            if [ "$area" = workflow ]; then count=20; fi
+            cat "test/fixtures/new_math_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-new-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-new-${area}.log" --output "task-results/macos-new-${area}.json" --expected-count "$count" || status=1
+          done
+          exit "$status"
+
+      - name: Run round two independent 100 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric workflow native_safety dependency bound; do
+            count=40
+            if [ "$area" = workflow ]; then count=20; fi
+            if [ "$area" = native_safety ]; then count=4; fi
+            if [ "$area" = dependency ]; then count=3; fi
+            if [ "$area" = bound ]; then count=3; fi
+            cat "test/fixtures/round2_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round2-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round2-${area}.log" --output "task-results/macos-round2-${area}.json" --expected-count "$count" || status=1
+          done
+          exit "$status"
+
+      - name: Run third independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric; do
+            cat "test/fixtures/round3_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round3-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round3-${area}.log" --output "task-results/macos-round3-${area}.json" --expected-count 25 || status=1
+          done
+          exit "$status"
+
+      - name: Run fourth independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric scope; do
+            count=25
+            if [ "$area" = scope ]; then count=3; fi
+            cat "test/fixtures/round4_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round4-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round4-${area}.log" --output "task-results/macos-round4-${area}.json" --expected-count "$count" || status=1
+          done
+          exit "$status"
+
+      - name: Run fifth independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric scope; do
+            count=25
+            if [ "$area" = scope ]; then count=6; fi
+            cat "test/fixtures/round5_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round5-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round5-${area}.log" --output "task-results/macos-round5-${area}.json" --expected-count "$count" || status=1
+          done
+          exit "$status"
+
+      - name: Run sixth independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric domain scope taylor series_scope variable; do
+            count=25
+            if [ "$area" = domain ]; then count=2; fi
+            if [ "$area" = scope ]; then count=1; fi
+            if [ "$area" = taylor ]; then count=3; fi
+            if [ "$area" = series_scope ]; then count=8; fi
+            if [ "$area" = variable ]; then count=4; fi
+            cat "test/fixtures/round6_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round6-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round6-${area}.log" --output "task-results/macos-round6-${area}.json" --expected-count "$count" || status=1
+          done
+          exit "$status"
+
+      - name: Run seventh independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric; do
+            cat "test/fixtures/round7_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round7-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round7-${area}.log" --output "task-results/macos-round7-${area}.json" --expected-count 25 || status=1
+          done
+          exit "$status"
+
+      - name: Run eighth independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric; do
+            cat "test/fixtures/round8_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round8-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round8-${area}.log" --output "task-results/macos-round8-${area}.json" --expected-count 25 || status=1
+          done
+          exit "$status"
+
+      - name: Run ninth independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric; do
+            cat "test/fixtures/round9_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round9-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round9-${area}.log" --output "task-results/macos-round9-${area}.json" --expected-count 25 || status=1
+          done
+          exit "$status"
+
+      - name: Run tenth independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric; do
+            cat "test/fixtures/round10_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round10-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round10-${area}.log" --output "task-results/macos-round10-${area}.json" --expected-count 25 || status=1
+          done
+          exit "$status"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workflow-tasks-macos
+          path: task-results
+          if-no-files-found: ignore
+
+      - name: Provision OCR test model
+        run: |
+          mkdir -p .ci/ocr-model
+          curl -fL --retry 3 https://huggingface.co/cstr/pix2tex-mfr-gguf/resolve/main/pix2tex-mfr-q4_k.gguf -o .ci/ocr-model/pix2tex-mfr-q4_k.gguf
+          echo '8957d1ec5d1f5983fbdd5f6e819203d7c32079f379563eb61f518221c8c5bdd6  .ci/ocr-model/pix2tex-mfr-q4_k.gguf' | shasum -a 256 -c -
+
+      - name: Recognize an image using the packaged OCR runtime
+        env:
+          CRISPMATH_OCR_APP_EXECUTABLE: build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math
+          CRISPMATH_OCR_MODEL: .ci/ocr-model/pix2tex-mfr-q4_k.gguf
+          CRISPMATH_OCR_LIBRARY: build/macos/Build/Products/Release/crisp_math.app/Contents/Frameworks/libcrispembed.0.dylib
+        run: flutter test --no-pub --reporter expanded native_test/ocr_native_test.dart
 
       - name: Zip the .app for download
         run: |

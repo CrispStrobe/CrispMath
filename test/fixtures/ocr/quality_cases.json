@@ -1,0 +1,143 @@
+[
+  {
+    "id": "font-cm",
+    "kind": "printed-font",
+    "image": "printed-cm.png",
+    "reference": "5+7",
+    "expected": 12
+  },
+  {
+    "id": "font-dejavusans",
+    "kind": "printed-font",
+    "image": "printed-dejavusans.png",
+    "reference": "5+7",
+    "expected": 12
+  },
+  {
+    "id": "font-dejavuserif",
+    "kind": "printed-font",
+    "image": "printed-dejavuserif.png",
+    "reference": "5+7",
+    "expected": 12
+  },
+  {
+    "id": "font-stix",
+    "kind": "printed-font",
+    "image": "printed-stix.png",
+    "reference": "5+7",
+    "expected": 12
+  },
+  {
+    "id": "fractions",
+    "kind": "printed-structure",
+    "image": "fractions.png",
+    "reference": "3/4+1/4",
+    "expected": 1
+  },
+  {
+    "id": "root",
+    "kind": "printed-structure",
+    "image": "root.png",
+    "reference": "sqrt(81)+1",
+    "expected": 10
+  },
+  {
+    "id": "skew",
+    "kind": "image-variation",
+    "image": "skew.png",
+    "reference": "5+7",
+    "expected": 12
+  },
+  {
+    "id": "blur",
+    "kind": "image-variation",
+    "image": "blur.png",
+    "reference": "5+7",
+    "expected": 12
+  },
+  {
+    "id": "low-contrast",
+    "kind": "image-variation",
+    "image": "low-contrast.png",
+    "reference": "5+7",
+    "expected": 12
+  },
+  {
+    "id": "low-resolution",
+    "kind": "image-variation",
+    "image": "low-resolution.png",
+    "reference": "5+7",
+    "expected": 12
+  },
+  {
+    "id": "handwritten-000a4e8ca49c5a1c",
+    "label": "(x-y)/sqrt(2)",
+    "reference": "(x-y)/sqrt(2)",
+    "probes": [
+      {
+        "scope": {
+          "x": 3,
+          "y": 1
+        },
+        "expected": 1.4142135623730951
+      },
+      {
+        "scope": {
+          "x": 5,
+          "y": 1
+        },
+        "expected": 2.8284271247461903
+      }
+    ],
+    "sample_id": "000a4e8ca49c5a1c",
+    "kind": "human-handwriting",
+    "image": "handwritten-000a4e8ca49c5a1c.png",
+    "ink_sha256": "e200b938d6412b47598e812394847da2fad507eefd0407673fb947efeb7e5860"
+  },
+  {
+    "id": "handwritten-00fcddfee1ebfee6",
+    "label": "2sin(x/2)",
+    "reference": "2*sin(x/2)",
+    "probes": [
+      {
+        "scope": {
+          "x": 3.141592653589793
+        },
+        "expected": 2
+      },
+      {
+        "scope": {
+          "x": 0
+        },
+        "expected": 0
+      }
+    ],
+    "sample_id": "00fcddfee1ebfee6",
+    "kind": "human-handwriting",
+    "image": "handwritten-00fcddfee1ebfee6.png",
+    "ink_sha256": "0cba8c0d134b8344ed9b3c801cbcbe50f3120f46cce4cda0a5cbd19a9a760d19"
+  },
+  {
+    "id": "handwritten-0255dc5b14261907",
+    "label": "1+x+\\frac{x^{2}}{2}",
+    "reference": "1+x+x^2/2",
+    "probes": [
+      {
+        "scope": {
+          "x": 2
+        },
+        "expected": 5
+      },
+      {
+        "scope": {
+          "x": -1
+        },
+        "expected": 0.5
+      }
+    ],
+    "sample_id": "0255dc5b14261907",
+    "kind": "human-handwriting",
+    "image": "handwritten-0255dc5b14261907.png",
+    "ink_sha256": "5e02093012e5e11c6ed1bba9fe1eaaade6e1a4dd739d3f8694618f1bd4684e74"
+  }
+]

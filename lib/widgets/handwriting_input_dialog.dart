@@ -1,109 +1,142 @@
-// lib/widgets/handwriting_input_dialog.dart
-//
-// Handwritten math input dialog. Shows a drawing canvas where
-// the user writes a math expression, then sends it to OCR.
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import '../engine/ocr_provider.dart';
+import '../services/ocr_initialization.dart';
 import 'drawing_canvas.dart';
 import 'ocr_capture_dialog.dart';
-import 'ocr_settings_dialog.dart';
+import 'ocr_settings_dialog_stub.dart'
+    if (dart.library.io) 'ocr_settings_dialog.dart';
 
-/// Shows a dialog with a drawing canvas for handwritten math input.
-/// Returns the recognized expression (possibly edited by user), or
-/// null if cancelled.
-Future<String?> showHandwritingInputDialog(BuildContext context) async {
-  return showDialog<String>(
-    context: context,
-    builder: (_) => const _HandwritingDialog(),
-  );
-}
+Future<String?> showHandwritingInputDialog(BuildContext context) =>
+    showDialog<String>(
+        context: context, builder: (_) => const HandwritingInputDialog());
 
-class _HandwritingDialog extends StatefulWidget {
-  const _HandwritingDialog();
-
+class HandwritingInputDialog extends StatefulWidget {
+  /// Inject providers for an explicit fixture; production discovers native/WASM models.
+  final List<OcrProvider>? providers;
+  const HandwritingInputDialog({super.key, this.providers});
   @override
-  State<_HandwritingDialog> createState() => _HandwritingDialogState();
+  State<HandwritingInputDialog> createState() => _HandwritingInputDialogState();
 }
 
-class _HandwritingDialogState extends State<_HandwritingDialog> {
+class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
   final GlobalKey<DrawingCanvasState> _canvasKey = GlobalKey();
+  final Set<String> _acceptedLicenses = {};
+  OcrProvider? _provider;
   bool _recognizing = false;
+  bool _runningInference = false;
+  bool _loading = true;
   String? _error;
+  List<OcrProvider> get _available =>
+      handwritingProviders(widget.providers ?? OcrProviders.available);
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (OcrProviders.active == null) {
-        if (OcrProviders.available.isNotEmpty) {
-          setState(() {
-            OcrProviders.active = OcrProviders.available.first;
-          });
-        } else {
-          _promptDownload();
-        }
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initialize());
   }
 
-  Future<void> _promptDownload() async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => const OcrSettingsDialog(),
-    );
-    if (mounted) setState(() {});
+  Future<void> _initialize() async {
+    try {
+      if (widget.providers == null) await ensureOcrProviders();
+      if (!mounted) return;
+      setState(() {
+        _provider = selectHandwritingProvider(
+            widget.providers ?? OcrProviders.available,
+            preferred: _provider ?? OcrProviders.active);
+        _loading = false;
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = 'Model initialization failed: $error';
+          _loading = false;
+        });
+      }
+    }
   }
+
+  Future<void> _models() async {
+    await showDialog<void>(
+        context: context, builder: (_) => const OcrSettingsDialog());
+    if (mounted) await _initialize();
+  }
+
+  Future<bool> _confirm(String title, String message, String action) async =>
+      await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: Text(title),
+                content: Text(message),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(action)),
+                ],
+              )) ??
+      false;
 
   Future<void> _recognize() async {
     final canvas = _canvasKey.currentState;
-    if (canvas == null || canvas.isEmpty) return;
-
-    final provider = OcrProviders.active;
-    if (provider == null) {
-      setState(() => _error = 'No OCR provider configured. Please download one.');
-      _promptDownload();
+    final provider = _provider;
+    if (canvas == null ||
+        canvas.isEmpty ||
+        provider == null ||
+        !provider.isAvailable ||
+        _recognizing) {
       return;
     }
-
     setState(() {
       _recognizing = true;
       _error = null;
     });
-
     try {
-      // Export canvas to grayscale bitmap
-      final bytes = await canvas.toGrayscaleBytes(384, 384);
-      if (bytes == null) {
-        setState(() {
-          _recognizing = false;
-          _error = 'Failed to export drawing';
-        });
+      final terms = (provider as HandwritingOcrProvider).licenseToAccept;
+      if (terms != null && !_acceptedLicenses.contains(provider.name)) {
+        if (!await _confirm(
+            'Model usage terms',
+            '${provider.name} is provided under $terms. Review its terms and confirm your use complies before downloading.',
+            'Accept model terms')) {
+          return;
+        }
+        _acceptedLicenses.add(provider.name);
+      }
+      if (!mounted) return;
+      if (provider.requiresNetwork &&
+          !await _confirm(
+              'Send drawing to cloud?',
+              'Your drawing will be sent to ${provider.name} for recognition. Review the returned expression before using it.',
+              'Send drawing')) {
         return;
       }
-
-      // Run OCR
+      if (!mounted) return;
+      setState(() => _runningInference = true);
+      final bytes = await canvas.toGrayscaleBytes(384, 384);
+      if (bytes == null) throw StateError('Drawing is empty');
       final result = await provider.recognize(bytes, 384, 384);
       if (!mounted) return;
-
-      setState(() => _recognizing = false);
-
-      if (result == null) {
-        setState(() => _error = 'Could not recognize expression');
+      setState(() => _runningInference = false);
+      if (result == null || result.text.trim().isEmpty) {
+        setState(() => _error =
+            'Could not recognize this drawing. Try clearer strokes or enter the expression directly.');
         return;
       }
-
-      // Show the capture dialog for review/edit
       final expression = await showOcrCaptureDialog(context, result);
       if (expression != null && expression.isNotEmpty && mounted) {
-        Navigator.of(context).pop(expression);
+        Navigator.pop(context, expression);
       }
-    } catch (e) {
+    } catch (error) {
+      if (mounted) setState(() => _error = 'Recognition failed: $error');
+    } finally {
       if (mounted) {
         setState(() {
           _recognizing = false;
-          _error = 'OCR failed: $e';
+          _runningInference = false;
         });
       }
     }
@@ -111,105 +144,83 @@ class _HandwritingDialogState extends State<_HandwritingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final screenSize = MediaQuery.of(context).size;
-    
-    // Scale up to 80% of screen size as requested
-    final maxWidth = screenSize.width * 0.8;
-    // Leave some room for title, buttons, and model selector
-    final canvasHeight = (screenSize.height * 0.8) - 150.0;
-
-    return AlertDialog(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text('Write Math'),
-          if (OcrProviders.available.isNotEmpty)
-            DropdownButton<OcrProvider>(
-              value: OcrProviders.available.contains(OcrProviders.active) 
-                  ? OcrProviders.active 
-                  : (OcrProviders.available.isNotEmpty ? OcrProviders.available.first : null),
-              icon: const Icon(Icons.arrow_drop_down),
-              elevation: 16,
-              style: TextStyle(color: cs.primary, fontSize: 13),
-              underline: Container(height: 1, color: cs.primary),
-              onChanged: (OcrProvider? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    OcrProviders.active = newValue;
-                  });
-                }
-              },
-              items: OcrProviders.available
-                  .map<DropdownMenuItem<OcrProvider>>((OcrProvider value) {
-                return DropdownMenuItem<OcrProvider>(
-                  value: value,
-                  child: Text(value.name),
-                );
-              }).toList(),
-            )
-          else
-            TextButton.icon(
-              icon: const Icon(Icons.download, size: 16),
-              label: const Text('Download Model'),
-              onPressed: _promptDownload,
-            ),
-        ],
-      ),
-      content: SizedBox(
-        width: maxWidth,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: cs.outline),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DrawingCanvas(
-                key: _canvasKey,
-                width: maxWidth,
-                height: canvasHeight > 100 ? canvasHeight : 100,
-                strokeWidth: 5.0, // Thicker stroke for much larger canvas
-                strokeColor: cs.onSurface,
-                backgroundColor: cs.surface,
-              ),
-            ),
+    final screen = MediaQuery.of(context).size;
+    final providers = _available;
+    return Dialog(
+        child: SizedBox(
+      width: math.min(720, screen.width * .9),
+      height: math.min(900, screen.height * .85),
+      child: Padding(
+          padding: const EdgeInsets.all(16),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('Write Math', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
+            if (_loading) const LinearProgressIndicator(),
+            if (providers.isNotEmpty)
+              DropdownButton<OcrProvider>(
+                isExpanded: true,
+                value: providers.contains(_provider) ? _provider : null,
+                hint: const Text('Choose handwriting model'),
+                onChanged:
+                    _recognizing ? null : (p) => setState(() => _provider = p),
+                items: [
+                  for (final provider in providers)
+                    DropdownMenuItem(
+                        value: provider,
+                        child: Text(provider.name,
+                            maxLines: 1, overflow: TextOverflow.ellipsis))
+                ],
+              ),
+            Text(_provider == null
+                ? 'No handwriting model is available. Open Models to configure one.'
+                : _provider!.requiresNetwork
+                    ? 'Cloud recognition sends your drawing only after confirmation.'
+                    : 'Recognition runs on this device. An uncached model may need a download.'),
+            const Text(
+                'Recognition can be wrong. Review and edit the expression before using it.'),
+            const SizedBox(height: 8),
+            Expanded(
+                child: Semantics(
+                    container: true,
+                    label: 'Handwriting canvas',
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => DrawingCanvas(
+                          key: _canvasKey,
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                          strokeWidth: 4,
+                          strokeColor: Colors.black,
+                          backgroundColor: Colors.white),
+                    ))),
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: cs.error, fontSize: 12),
-                ),
-              ),
-            if (_recognizing)
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: CircularProgressIndicator(),
-              ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => _canvasKey.currentState?.clear(),
-          child: const Text('Clear'),
-        ),
-        TextButton(
-          onPressed: () => _canvasKey.currentState?.undo(),
-          child: const Text('Undo'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _recognizing ? null : _recognize,
-          child: const Text('Recognize'),
-        ),
-      ],
-    );
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(_error!, maxLines: 3)),
+            if (_runningInference) const LinearProgressIndicator(),
+            Wrap(alignment: WrapAlignment.end, spacing: 8, children: [
+              TextButton(
+                  onPressed: _recognizing ? null : _models,
+                  child: const Text('Models')),
+              TextButton(
+                  onPressed: _recognizing
+                      ? null
+                      : () => _canvasKey.currentState?.undo(),
+                  child: const Text('Undo')),
+              TextButton(
+                  onPressed: _recognizing
+                      ? null
+                      : () => _canvasKey.currentState?.clear(),
+                  child: const Text('Clear')),
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel')),
+              FilledButton(
+                  onPressed:
+                      _recognizing || _provider == null ? null : _recognize,
+                  child: const Text('Recognize')),
+            ]),
+          ])),
+    ));
   }
 }

@@ -61,3 +61,14 @@ HANDOFF_PRECISION.md
 .vercel
 .env*.local
 handover-prompts/
+
+# Generated browser math worker
+/web/math_worker.dart.js*
+/pubspec_overrides.yaml
+
+/web/math_worker_probe.dart.js*
+
+# CI dependency checkout
+/.ci/
+
+/web/workflow_tasks_worker.dart.js*

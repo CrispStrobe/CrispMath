@@ -17,7 +17,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../engine/calculator_engine.dart';
+import '../services/graph_sampling_service.dart';
 import '../localization/app_localizations.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../widgets/module_help_dialog.dart';
@@ -30,7 +30,8 @@ class Graphing3DScreen extends StatefulWidget {
 }
 
 class _Graphing3DScreenState extends State<Graphing3DScreen> {
-  final _engine = CalculatorEngine();
+  int _sampleGeneration = 0;
+  bool _sampling = false;
   final _functionController = TextEditingController(text: 'sin(x) * cos(y)');
 
   // x/y sampling range.
@@ -51,51 +52,42 @@ class _Graphing3DScreenState extends State<Graphing3DScreen> {
 
   @override
   void dispose() {
+    _sampleGeneration++;
     _functionController.dispose();
     super.dispose();
   }
 
-  void _sample() {
+  Future<void> _sample() async {
     final raw = _functionController.text.trim();
     if (raw.isEmpty) return;
-
-    final zs =
-        List.generate(_grid + 1, (_) => List<double>.filled(_grid + 1, 0));
-    var anyFinite = false;
-    for (var i = 0; i <= _grid; i++) {
-      final x = -_range + (2 * _range) * i / _grid;
-      for (var j = 0; j <= _grid; j++) {
-        final y = -_range + (2 * _range) * j / _grid;
-        final z = _evaluateAt(raw, x, y);
-        zs[i][j] = z;
-        if (z.isFinite) anyFinite = true;
-      }
-    }
-    setState(() {
-      _zs = zs;
-      _sampledRange = _range;
-      _error = anyFinite ? null : 'No finite values in the sampled grid.';
-    });
-  }
-
-  double _evaluateAt(String expr, double x, double y) {
+    final generation = ++_sampleGeneration;
+    final range = _range;
+    setState(() => _sampling = true);
     try {
-      // Substitute x and y values FIRST, before any preprocessor pass
-      // — that way a stored AppState variable named `x` can't shadow
-      // our coordinates. After substitution the expression is pure
-      // arithmetic with no symbolic variables, so we don't need
-      // preprocessExpression at all; just the SymEngine-format pass.
-      final xs = x < 0 ? '($x)' : '$x';
-      final ys = y < 0 ? '($y)' : '$y';
-      var sub = expr.replaceAll(RegExp(r'\bx\b'), xs);
-      sub = sub.replaceAll(RegExp(r'\by\b'), ys);
-      final preprocessed =
-          ExpressionPreprocessingUtils.preprocessNativeExpression(sub);
-      final result = _engine.evaluateForGraphing(preprocessed);
-      if (result.startsWith('Error') || result.isEmpty) return double.nan;
-      return double.tryParse(result) ?? double.nan;
+      final zs = await GraphSamplingService.surface({
+        'expression': ExpressionPreprocessingUtils.preprocessNativeExpression(
+          raw,
+        ),
+        'range': range,
+        'grid': _grid,
+      });
+      if (!mounted || generation != _sampleGeneration) return;
+      setState(() {
+        _zs = zs;
+        _sampledRange = range;
+        _error = zs.any((row) => row.any((z) => z.isFinite))
+            ? null
+            : 'No finite values in the sampled grid.';
+      });
     } catch (_) {
-      return double.nan;
+      if (mounted && generation == _sampleGeneration) {
+        setState(
+            () => _error = AppLocalizations.of(context).graphSamplingFailed);
+      }
+    } finally {
+      if (mounted && generation == _sampleGeneration) {
+        setState(() => _sampling = false);
+      }
     }
   }
 
@@ -109,7 +101,7 @@ class _Graphing3DScreenState extends State<Graphing3DScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: t.module3DResample,
-            onPressed: _sample,
+            onPressed: _sampling ? null : _sample,
           ),
           IconButton(
             icon: const Icon(Icons.center_focus_strong),
@@ -131,8 +123,10 @@ class _Graphing3DScreenState extends State<Graphing3DScreen> {
                 setState(() {
                   // Single-finger drag → rotate. Two-finger pinch → zoom.
                   _azimuth -= d.focalPointDelta.dx * 0.01;
-                  _elevation = (_elevation + d.focalPointDelta.dy * 0.01)
-                      .clamp(-math.pi / 2 + 0.01, math.pi / 2 - 0.01);
+                  _elevation = (_elevation + d.focalPointDelta.dy * 0.01).clamp(
+                    -math.pi / 2 + 0.01,
+                    math.pi / 2 - 0.01,
+                  );
                   if (d.scale != 1.0) {
                     _zoom = (_zoom * d.scale).clamp(0.2, 5.0);
                   }

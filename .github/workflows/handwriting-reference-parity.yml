@@ -1,0 +1,106 @@
+name: Exported handwriting reference parity
+on:
+  workflow_call:
+    inputs:
+      pooling_repair:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  bounded-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      CRISPMATH_REFERENCE_NUMERIC_CONTROLS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+          submodules: recursive
+      - uses: actions/checkout@v4
+        with:
+          repository: SJTU-DeepVisionLab/PosFormer
+          ref: 802019a0533639f3b0bf18d44e93be073945cac5
+          path: .ci/PosFormer
+          sparse-checkout: Pos_Former
+          filter: blob:none
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned CPU-only reference dependencies
+        run: |
+          python3 -m pip install 'torch==2.6.0' --index-url https://download.pytorch.org/whl/cpu
+          python3 -m pip install 'einops==0.8.1' 'gguf==0.19.0' -r tool/inference-requirements.txt
+          python3 -m unittest discover -s tool -p 'handwriting_reference_parity_test.py'
+      - name: Provision unchanged corpus and public benchmark-only FP32 weights
+        run: |
+          python3 tool/provision_handwriting_quality.py
+          curl --fail --location --retry 3 https://huggingface.co/cstr/posformer-mathwriting-GGUF/resolve/45eb7de7d8ae26708701f06cae68d96f1abb0ef7/posformer-mathwriting_v2-f32.gguf --output .ci/reference-f32.gguf
+          echo '12060161fc6dc3c3fde146532ffade00f8f2286dd5a53e1f8777215afa9193c0  .ci/reference-f32.gguf' | sha256sum --check
+          mkdir -p .dart_tool/inference/reference
+      - name: Build retained-output baseline and measure default/scalar against independent reference
+        run: |
+          python3 tool/prepare_handwriting_reference_bridge.py --root .ci/CrispEmbed --report .dart_tool/inference/reference/base-provenance.json
+          cmake -S .ci/CrispEmbed -B .ci/reference-base -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=ON -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build .ci/reference-base --target crispembed-shared --parallel 2
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('.dart_tool/inference/reference/base-provenance.json')
+          report = json.loads(p.read_text())
+          report['library_sha256'] = hashlib.sha256(Path('.ci/reference-base/libcrispembed.so').read_bytes()).hexdigest()
+          p.write_text(json.dumps(report, indent=2) + '\n')
+          PY
+          for encoder in default scalar; do
+            python3 tool/handwriting_reference_parity.py --model .ci/reference-f32.gguf --manifest .dart_tool/inference/handwriting-corpus/manifest.json --reference .ci/PosFormer --library .ci/reference-base/libcrispembed.so --provenance .dart_tool/inference/reference/base-provenance.json --encoder "$encoder" --output ".dart_tool/inference/reference/base-$encoder.json"
+          done
+      - name: Build isolated normalization repair and repeat bounded reference comparison
+        run: |
+          git -C .ci/CrispEmbed restore --source=11e6d598521976f38081934106b55095b46b40e3 -- src/posformer_ocr.cpp
+          python3 tool/prepare_handwriting_reference_bridge.py --root .ci/CrispEmbed --normalized --report .dart_tool/inference/reference/norm-provenance.json
+          cmake -S .ci/CrispEmbed -B .ci/reference-norm -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=ON -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build .ci/reference-norm --target crispembed-shared --parallel 2
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('.dart_tool/inference/reference/norm-provenance.json')
+          report = json.loads(p.read_text())
+          report['library_sha256'] = hashlib.sha256(Path('.ci/reference-norm/libcrispembed.so').read_bytes()).hexdigest()
+          p.write_text(json.dumps(report, indent=2) + '\n')
+          PY
+          for encoder in default scalar; do
+            python3 tool/handwriting_reference_parity.py --model .ci/reference-f32.gguf --manifest .dart_tool/inference/handwriting-corpus/manifest.json --reference .ci/PosFormer --library .ci/reference-norm/libcrispembed.so --provenance .dart_tool/inference/reference/norm-provenance.json --encoder "$encoder" --output ".dart_tool/inference/reference/norm-$encoder.json"
+          done
+      - name: Build measured ceil-pooling plus normalization repair and compare actual native operations
+        if: inputs.pooling_repair == true
+        run: |
+          git -C .ci/CrispEmbed restore --source=11e6d598521976f38081934106b55095b46b40e3 -- src/posformer_ocr.cpp
+          python3 tool/prepare_handwriting_reference_bridge.py --root .ci/CrispEmbed --forward-repair --report .dart_tool/inference/reference/forward-provenance.json
+          cmake -S .ci/CrispEmbed -B .ci/reference-forward -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=ON -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build .ci/reference-forward --target crispembed-shared --parallel 2
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('.dart_tool/inference/reference/forward-provenance.json')
+          report = json.loads(p.read_text())
+          report['library_sha256'] = hashlib.sha256(Path('.ci/reference-forward/libcrispembed.so').read_bytes()).hexdigest()
+          p.write_text(json.dumps(report, indent=2) + '\n')
+          PY
+          python3 tool/check_posformer_pooling.py --library .ci/reference-forward/libcrispembed.so --output .dart_tool/inference/reference/forward-pooling-controls.json
+          python3 tool/check_posformer_input_norm.py --library .ci/reference-forward/libcrispembed.so --output .dart_tool/inference/reference/forward-normalization-controls.json
+          for encoder in default scalar; do
+            python3 tool/handwriting_reference_parity.py --model .ci/reference-f32.gguf --manifest .dart_tool/inference/handwriting-corpus/manifest.json --reference .ci/PosFormer --library .ci/reference-forward/libcrispembed.so --provenance .dart_tool/inference/reference/forward-provenance.json --encoder "$encoder" --output ".dart_tool/inference/reference/forward-$encoder.json"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: handwriting-exported-reference-reports
+          path: .dart_tool/inference/reference/*.json
+          retention-days: 14

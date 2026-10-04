@@ -24,4 +24,8 @@ Future<void> registerNativeLicenses() async {
       debugPrint('LICENSES: failed to load SYMENGINE_STACK.txt: $e');
     }
   });
+  LicenseRegistry.addLicense(() async* {
+    final text = await rootBundle.loadString('assets/licenses/DEJAVU_SANS.txt');
+    yield LicenseEntryWithLineBreaks(const ['DejaVu Sans'], text);
+  });
 }

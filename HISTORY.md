@@ -1,6 +1,716 @@
+## 2026-10-04 — Native presentation, default-off cloud and independent OCR reference
+
+Review all 33 populated native Apple captures and select connected worksheet,
+traced graph, checkpoint history and linked-graph export for each profile.
+Phone graph controls intentionally scroll horizontally; actual hosted actions
+reveal and operate trace/table controls. No inaccessible-control defect is
+established. Prepare connected-workflow captions and a draft store description
+without sending an App Review submission or uploading store images.
+
+There is no Supabase project. Settings and the cloud dialog explain that cloud
+is off by default and local work needs no account. Missing configuration avoids
+SDK initialization. Eleven service/widget groups cover the existing real-SDK
+behavior plus unavailable guards and local backups. Hosted `8818639` unit checks
+pass 5,746 with eight skips, 502 focused checks, 130 executed tooling controls
+(three further numeric controls deliberately skip outside the reference job),
+and zero analysis issues. Its disposable configured-cloud GUI preserves local
+21 and separately imported 23, authenticated reload and verified cleanup.
+A measured popup-selection failure is repaired in the test driver with settled
+real pointer geometry and strict selected-document/source/editor checks.
+
+[Pages 37214651593](https://github.com/CrispStrobe/CrispMath/actions/runs/37214651593)
+and [Vercel 37214653063](https://github.com/CrispStrobe/CrispMath/actions/runs/37214653063)
+each pass 737 runtime questions and all live reports. Fresh desktop, phone and
+tablet cloud-off flows preserve worksheet calculation, checkpoints and backups
+through canonical launch and reload, reject invalid configuration and emit zero
+backend requests or uncaught errors. Deployed `cf0a3a8` and candidate `8818639`
+share all 368 production files, fingerprint
+`0b88cc4432391969cc38261a68b66a436374b1c5c5e6af12cb25426032b177f8`.
+The candidate wording changes are not in approved TestFlight build 22.
+
+Independent hosted exported-weight comparisons account for all 270 FP32 tensors
+and identify missing decoder input normalization and floor instead of ceil
+pooling. Combined diagnostic repairs match every checked encoder/decoder stage;
+the same fifty samples still score 7/50 original and 0/50 candidate. This is
+bounded forward-correctness evidence, not improved recognition or original
+training-checkpoint/full-length decoding parity. Matching production runtime
+binaries/checksums and suitable recognition weights remain work to do. See
+[measured findings](docs/handwriting-quality-findings.md).
+
+PR merge and the guided worksheet/fresh fifty-problem expansion follow these
+checks. Physical iPhone/iPad and App Review remain deferred. All builds, model
+inference and test batches run on hosted CI; only small reports and selected
+images go to CIFS, with resource measurements repeated on the shared VPS.
+
+## 2026-10-04 — Accessible cloud feedback and controlled handwriting diagnostics
+
+Cloud setup, authentication and transfers report safe outcomes inside the dialog
+through a live region. Actions wrap/scroll on narrow screens and Close remains
+available during requests. Confirmation and backup review no longer show network
+progress. Sign-out distinguishes a removed local session from failed server
+confirmation. Nine widget groups use real SDK clients, including pending close,
+large-text/keyboard layout, invalid configuration and real PKCE signup confirmation.
+
+Canonical `d4739be` passes all nine required hosted workflows: 5,744 unit/widget
+passes (eight skips), 500 focused tests, 125 tooling controls and clean analysis.
+Real disposable Auth/PostgREST/PostgreSQL passes five SDK scenarios and desktop/
+phone GUI checks: wrong-password recovery, inline feedback, uploads, conflict
+preservation, recalculation, reload, sign-out, both Close actions and cleanup.
+The HTTP fixture preserves real request metadata; SDK worker setup/disposal runs
+outside widget fake time. Browser checks scope actual routes and wait for route
+closure rather than the disappearance of a replaced action.
+
+Fresh Linux/WASM and packaged macOS checks pass all 737 accumulated problems.
+Pages and Vercel each pass 737 runtime cases, 420 worksheet entries, 26 edits,
+18 statistics checks, six constraints and two calculator/reload checks. Native
+Apple gallery CI retains 33 populated captures, with four graph/notepad images
+visually reviewed. Gallery source `6eff9fb`, deployed source `b84af1f` and release
+source `d4739be` share all 368 production files, SHA256
+`98edb1c4f9ca1064ca37e299b203425398db54622ad9e5d159159933b584d79c`.
+Frozen independent mathematical references remain unchanged.
+
+[Signed release 37206068397](https://github.com/CrispStrobe/CrispMath/actions/runs/37206068397)
+uploads 1.2.0 (22) after signature, purpose-string and live source-parity gates.
+[External verification 37206599650](https://github.com/CrispStrobe/CrispMath/actions/runs/37206599650)
+confirms VALID, APPROVED and Public Beta IN_BETA_TESTING. No App Review submission
+occurs. See [review evidence](docs/apple-review-evidence.md).
+
+The expanded PosFormer vocabulary represents 49/50 references, but its candidate
+scores 0/50. Diagnose a missing learned decoder input normalization and verify
+its isolated repair against independent numerical controls at both actual model
+dimensions. Paired exact recognition stays 7/50 for original weights and 0/50 for
+the candidate. Production weights and bridge remain unchanged; full model parity,
+matching training checkpoints and suitable licensed weights remain unresolved.
+See [measured findings](docs/handwriting-quality-findings.md). Physical-device
+checks, configured two-device cloud deployment and Apple's 4.3(a) finding also
+remain pending. All costly work runs on hosted CI; only selected small reports
+and four native images are downloaded to CIFS.
+
+## 2026-10-04 — Tenth independent audit, exact systems and logarithmic integrals
+
+Freeze fifty independent references at dfc778b before observing app outputs.
+Initial WASM passes 735/737 and packaged Mac 736/737. Native Linux crashes
+in the overdetermined system; its 33 completed reports prove 712/712, with
+the algebra report absent. Preserve original answers and failure evidence.
+
+Route bounded rational Gaussian proofs before native capability selection;
+block unsupported rectangular native inputs after exact decline. Preserve
+square symbolic solving and truthful exact/error evidence. Add affine logarithmic
+quotient proofs with explicit endpoint divergence, exact denominator/domain
+guards and stable near-one and tiny-value evaluation. Nineteen regression
+groups cover genuine mathematical boundaries and arithmetic budgets.
+
+Canonical ca7b6c7 passes 737/737 Linux/WASM/packaged-Mac runtime problems,
+5,735 units (eight skips), 491 focused regressions and 104 tooling controls,
+with clean analysis, release/debug browser, performance and gallery gates.
+Actual UI passes 420 worksheet entries, 26 incremental edits, 18 statistics,
+six constraint and two calculator checks including reload. Correct shared
+measured-click races without weakening independent answer or visibility checks.
+All platform builds and legacy CI pass. Production identity is 368 files,
+SHA256 ab85cee47aeb75df7fd041e6316ad32660dba610e5077f057c8b7518527dacfe.
+Native Apple gallery passes 33 populated views; four graph/notepad captures
+are reviewed. All costly work remains hosted. Cold task cleanup preserves
+hashes and readable symlinks; unrelated disk growth still fills the fast disk.
+
+Pages37184585963 and production Vercel37184586065 each pass all runtime
+and actual UI checks against the published apps with matching source.
+
+Signed [upload 37185726215](https://github.com/CrispStrobe/CrispMath/actions/runs/37185726215)
+validates signature, bundled privacy strings and production parity before
+delivering 1.2.0 (21). Apple processing is VALID and Internal Testers is assigned.
+[External verification/submission 37186277329](https://github.com/CrispStrobe/CrispMath/actions/runs/37186277329)
+confirms APPROVED beta review and Public Beta IN_BETA_TESTING, build UUID
+971c1bb2-df76-4993-b841-03c6dce32a6e. The public
+[TestFlight link](https://testflight.apple.com/join/E6HdVhTx) remains active.
+Apple's submittedDate is null; no App Review submission occurs.
+
+
+Physical Apple, real Siri/Files-provider, two-device cloud, handwriting accuracy
+and Apple's 4.3(a) finding remain open. No App Review submission occurs.
+See [round-ten evidence](docs/round10-math-audit-50.md).
+
+## 2026-10-03 — Ninth independent audit, electrical units and grouped objectives
+
+Freeze fifty independently derived references at 3bc82de before observing app
+outputs. Initial native Linux, packaged Mac and WASM pass 684/687: every previous
+637 and all 25 new algebra cases pass; three numeric questions fail. Preserve
+the original references and reports. Add coherent electrical current/ampere,
+volt/ohm dimensions and prefixes, share bounded standalone/compound unit-power
+resolution, and parse grouped integer-polynomial objectives with exact bounded
+coefficients. Unit checks uncover cancellation and linear-fast-path source-budget
+bypasses; retain 64-source-term limits before simplification. Preserve finite
+display conversion, constant/reduced-linear routing and domain guards.
+
+Actual worksheets expose a correct constant Taylor result with a false free-x
+badge. Filter formal-output names by the computed result and apply the same rule
+during incremental Taylor refresh, preserving ordinary reactive dependencies,
+evidence and no-redispatch behavior. Add five classification regression groups.
+A separate CSP driver failure is diagnosed from saved DOM: a real click on the
+measured semantic parent populates Flutter's SelectableText value. Strict result,
+input, clipboard and geometry checks pass on desktop/phone; no math assertions
+or frozen answers are relaxed.
+
+Final production cd1991d has 368 files, fingerprint
+66b34f42dc4df8b0d371e50e0c9b49567d2bc7a37ac9b4e17d33e92f2f8c475f.
+Full feature37148985902 passes clean analysis, 5,714 units (eight skips), 470
+focused tests, release/debug browser, four performance gates and twelve web
+views. Native job37148985883 passes 687/687 and 436 focused tests (one skip);
+packaged Mac37149045651 and final WASM37151622061 each pass 687/687. Helper-only
+7c0f244 retains identical production; complete immutable probe37151620364 passes
+92 tooling controls, 66 worksheet entries, four statistics and two constraint
+checks. Pages37151623602 and production Vercel37151625320 each pass all 687
+runtime cases, 350 worksheet entries, 26 incremental edit states, 14 statistics
+checks and two constraint checks. Native gallery37149047636 passes 33 populated
+Apple views; four selected final graph/notepad captures are visually reviewed.
+
+Signed upload37152766933 validates privacy/version/signature and production
+parity, then delivers 1.2.0 (20); Apple processing is VALID and Internal Testers
+is assigned. External37153462920 confirms APPROVED beta review and Public Beta
+IN_BETA_TESTING, build UUID11d2c137-1b71-42d2-8399-2e0bc6b66f87. submittedDate
+is null. No App Review submission occurs. All costly work stays hosted; selected
+reports/images stay on CIFS. Safely relocate 301 cold task files (112,677,506
+bytes) with verified hashes/readable symlinks; preserve active source and other
+projects. Physical Apple, real Siri/Files-provider, two-device cloud, handwriting
+accuracy and Apple's 4.3(a) finding remain open.
+See [round-nine evidence](docs/round9-math-audit-50.md).
+
+## 2026-10-03 — Eighth independent audit, factorials and normal accuracy
+
+Freeze fifty fresh independently derived questions before observing app outputs.
+Native, packaged Mac and WASM initially pass 47/50 each; four distinct questions
+fail on at least one platform, while all previous 587 pass. Preserve references
+and initial evidence. Repair bounded exact factorial expressions/postfix grammar,
+normal CDF and direct tails/quantiles, compound product-unit targets and shared
+Gaussian-rational quadratic solving. Unit checks uncover degree cancellation in
+fixed coefficient buffers; actual worksheets uncover trace's false free-variable
+badge. Repair growable bounded buffers and share matrix operation names between
+evaluation and worksheet classification, with reactive and negative controls.
+
+Final production c02ae7b has 368 files and fingerprint
+862243195034f245e44e3fc881a9a26a982f561709f29a96a913158ce305b5af.
+Full feature CI37138935788 passes clean analysis, 5,677 unit/widget tests (eight
+skips), 433 focused regressions, release/debug browser checks, four paired
+same-host performance gates and twelve populated web views. Linux/WASM
+37138931799 and packaged Mac37138933578 pass all 637 runtime cases, including
+all fifty new ones. Helper-only d6319e6 preserves production parity; immutable
+probe37139929279 passes 77 tooling checks, 70 actual worksheet entries, four
+reactive trace edits and two Normal CDF screens. Pages37139286564 and
+Vercel37139288891 each pass 637 runtime cases, 284 worksheet entries, 26 edit
+states and ten statistics-screen checks. Tiny evidence is retained on CIFS;
+app binaries and full galleries stay in hosted artifacts.
+
+Native gallery37139012893 passes 33 populated final-source Apple views; four
+selected graph/worksheet captures are visually reviewed. A first iOS attempt
+stalls after compilation before VM-driver connection; preserve logs, then retry
+only iOS on a fresh hosted runner. The retry connects and passes actual native
+tests without product/assertion changes. Signed release37143330448 verifies
+bundle privacy/version/signature and production parity, then uploads build 19.
+Apple processing is VALID; external verification37144064147 confirms APPROVED
+beta review and Public Beta IN_BETA_TESTING at the existing public link. Build
+UUID is a2e86e31-bf31-429c-bc93-2a83f1afd2dc; submittedDate is null. No App Review
+submission occurs. Physical Apple, real Siri/Files-provider, two-device cloud, handwriting accuracy and
+Apple's 4.3(a) App Review finding remain open.
+See [round-eight evidence](docs/round8-math-audit-50.md).
+
+## 2026-10-03 — Seventh independent audit, exact inputs and stable tails
+
+Freeze fifty independently derived questions before app outputs. Initial Linux,
+packaged macOS and WASM results are 34/50, 33/50 and 31/50 respectively; nineteen
+distinct questions fail on at least one platform, while the previous 537 pass.
+Preserve all references and initial evidence. Repair shared bounded proofs for
+complex conjugation/principal powers, forbidden equation roots, affine logarithm
+endpoints, irrational poles, polynomial absolute-value calculus and rationalized
+infinity limits. Preserve scientific literals and decimal matrix cells as exact
+rationals before CAS/FFI; certify closed rational matrix evidence and singular
+errors. Replace cancellation-prone t tails and chi-square integration with stable
+survival/gamma routines shared by hypothesis tests. Add erg/atm in the dimension
+catalog. Actual worksheets reveal additional scientific-token and builtin-name
+scope gaps; fix shared name/dependency/substitution/template scanning with reactive
+and negative controls rather than editing the frozen answers.
+
+Final production b299ab1 has 366 files and fingerprint
+0aab8294a63dddff32cd7ef62a6f473aab4fd8480f30525dc7ca0359c51e03e5.
+Native Linux, packaged Mac and WASM each pass all 587 runtime cases, including
+50/50 new questions. Full feature CI37120276425 passes clean analysis, 5,648
+unit/widget tests with eight skips, 404 focused regressions, release/debug
+browser checks, four same-host paired performance gates and twelve web views.
+Helper-only abf3d3e preserves exact production parity; immutable-bundle probe
+37123152551 passes all 64 tooling controls, 54 new actual worksheet entries,
+four edits and eight statistics checks on desktop/phone. Driver fixes wait for
+real field focus, read back both inputs, use actual semantic labels and accept
+equivalent lowercase imaginary notation with wrong-value/sign controls intact.
+Cumulative actual worksheet coverage is 214 entries and 22 binding-edit states.
+Final native gallery37121956172 passes 33 populated iPhone/iPad simulator/native
+Mac views; four graph/worksheet captures are visually reviewed. Full artifacts
+stay hosted; only small evidence and selected images are downloaded to CIFS.
+
+Pages37123153962 and Vercel37123155237 pass all runtime/live checks on abf3d3e.
+Signed build18 run37124118509 passes privacy/version/signature and exact
+production-source validation before upload. Apple processing is VALID and
+Internal Testers are assigned. External verification37124700154 confirms build
+f26bb783-4db8-4916-9b2d-66fee7405d2f APPROVED and Public Beta IN_BETA_TESTING,
+with external group assigned and submittedDate null. No App Review submission
+occurs. Public beta https://testflight.apple.com/join/E6HdVhTx now offers build18.
+
+[round-seven audit](docs/round7-math-audit-50.md) records initial evidence,
+bounded coverage, final runs and release state. Task-only cold archival frees
+115.93 MiB net by hashing and relocating 4,462 historical files with readable
+symlinks. Shared fast storage remains constrained; no other project or process
+is touched. Physical-device, handwriting accuracy and App Review 4.3(a) remain
+separate open items.
+
+## 2026-10-03 — Fifth independent audit, build 16 and truthful beta metadata
+
+Freeze another 50 independently derived questions. Linux, WASM and packaged
+macOS each initially pass 49/50; all algebra questions pass, and the sole gap
+is conversion from compound pressure to bar. Add bar with pressure dimensions
+and scale 100000 Pa, retaining canonical Pa formatting. Eleven focused controls
+cover prefixes, signed values, reverse conversion, compound rates, mismatched
+dimensions and unknown words. All original reference answers remain unchanged.
+Add live controls with global bar/m variables to protect unit syntax.
+
+The first repaired suite passes 463 runtime cases and 5,524 unit/widget tests,
+with release/debug and live deployments green. Further saved-report review
+reveals solve scope incorrectly depends on the solved variable. Immutable live
+probe `37102252890` confirms a global x causes solve failure. Protect explicit
+solve variables and adjacent differentiation/indefinite-integral declarations,
+while retaining their symbolic-output free-variable semantics. Add actual
+routing, nested/alias scope controls and six further runtime fixtures.
+A final lifecycle review catches stale formal-variable badges after incremental
+rename/removal/failure/restoration of a global binding. Refresh only badge
+metadata after edited bindings settle; retain cached symbolic values, evidence
+and operation counts. Twelve focused scope controls and actual desktop/phone
+binding edits cover these paths. Final CI at `1afa020` passes 5,536 tests with eight skips, 52 tooling tests,
+analysis, release/debug browser/performance and the populated web gallery.
+Linux/WASM, packaged macOS, Pages and production Vercel pass all 469 runtime
+cases; live desktop/phone paths pass 124 entries and fourteen binding edit
+states with unchanged references and strict reload/evidence assertions.
+Refresh the native gallery at `2927336` (unchanged production source): all
+33 populated iPhone/iPad simulator/native Mac images and CAS/content assertions
+pass. Inspect manifests and visually review three Mac captures. A further cold
+OCR archive reclaims 18.33 MiB from root, preserving hash-verified readable
+symlinks and avoiding active files or other projects.
+
+Correct the existing English TestFlight description's all-on-device claim through
+an explicit metadata-only path. Hosted CI `37100740297` passes 52 tooling tests
+before writing to Apple; read-back confirms only the description changed. Other
+locale attributes/privacy fields, custom notes, groups and review records remain
+intact. Uploaded build 15 remains VALID, APPROVED and IN_BETA_TESTING. No binary
+upload or App Review submission occurs in that metadata update.
+
+Signed build 16 at exact source `1afa020` passes 52 tooling tests, signed-bundle
+privacy/version checks and production parity with green browser/gallery CI.
+Release `37105698802` uploads successfully, confirms Apple VALID and Internal
+Testers assignment. External verification `37106359044` confirms beta review
+APPROVED and Public Beta IN_BETA_TESTING. The corrected beta description is
+retained; no App Review submission occurs.
+
+Validation and build-16 delivery are recorded in
+[the fifth audit](docs/round5-math-audit-50.md). All costly execution remains on
+hosted CI; physical testing, real cloud round trips and handwriting training
+remain deferred or dependent on external resources.
+
+## 2026-10-03 — Fourth independent 50-problem audit and scope/graph follow-up
+
+Two agents independently derive 50 fresh references; Linux, WASM and packaged
+macOS each initially pass 46/50. Preserve the answers and fix exact rational
+perfect-square roots, regression cancellation at large offsets and compound
+pressure targets. BigInt roots retain bounded cost; centered/scaled regression
+handles extreme magnitudes; unit targets compose prefix scales and dimensions.
+Add 22 focused regressions.
+
+Review of actual successful UI screenshots additionally reveals unit tokens and
+limit dummy variables incorrectly treated as free worksheet symbols. Preserve
+lexical unit/calculus syntax under global collisions while retaining reactive
+coefficients, approach points and quantity/scalar magnitudes. Add nine scope
+regressions, parser controls and three runtime fixtures, with actual unit dispatch
+and injected headless limit routing independently covered by native/WASM CAS.
+Debug live testing exposes a graph race: applying entered bounds after controller
+cleanup lets Fit use old bounds. Apply bounds immediately, defer only disposal,
+and add a rendered-viewport timing regression without hiding the real browser race.
+
+All 413 accumulated runtime checks pass on Linux, WASM, packaged macOS,
+Pages and Vercel. The full suite passes 5,511 unit/widget tests with eight
+explicit skips, 48 tooling tests, analysis, release/debug browser checks,
+performance gates and the populated 12-scene web gallery. All 82 actual
+desktop/phone worksheet entries pass, including globals colliding with unit
+and limit syntax. Signed build 15 passes the privacy/version and identical-source
+publication gates at `39c3591`, uploads successfully and reaches Apple VALID
+processing with Internal Testers assignment. Release CI `37099298115` and external
+CI `37099901727` confirm beta review APPROVED and Public Beta IN_BETA_TESTING.
+No App Review submission occurred; physical testing remains deferred and the
+4.3(a) finding remains open. See [the fourth audit](docs/round4-math-audit-50.md).
+
+## 2026-10-03 — Third independent 50-problem audit
+
+Two agents draft 50 fresh references before consulting prior fixtures. Linux,
+WASM and packaged macOS each initially pass 46/50. Fix all four findings:
+continuous-extension integration through removable holes, undefined R² for
+constant responses, prefixed litres and a bounded integer-polynomial constraint
+adapter shared by enumeration, optimization, explanations and propagation.
+Retain independent reference answers and original-domain checks for genuine poles.
+
+All 360 accumulated runtime checks pass on Linux, WASM, packaged macOS,
+GitHub Pages and Vercel. Analysis and 5,478 unit/widget tests pass with eight
+explicit skips. Sixty-four actual desktop/phone worksheet entries pass, along
+with release/debug browser checks, touch tracing, performance gates and the
+12-scene web gallery. Correct toolbar visibility readiness in the mobile trace
+helper without bypassing real pointer actionability. Archive 268.84 MiB of cold
+CrispMath artifacts to CIFS with verified hashes and readable symlinks.
+Signed build 14 includes these fixes. Release CI `37094979914` passes 48 tooling
+checks, signed photo/camera purpose strings and version/build checks, and a
+browser/gallery production-source/dependency parity gate before upload. Apple
+processing is VALID and Internal Testers assignment is confirmed. External CI
+`37095571010` confirms beta review APPROVED and Public Beta IN_BETA_TESTING.
+No App Review submission occurred; the earlier 4.3(a) finding remains open.
+See [the third audit](docs/round3-math-audit-50.md). Physical testing remains deferred.
+
+## 2026-10-02 — Second independent audit and populated native galleries
+
+Draft another 100 problems with independent algebra/calculus, numeric/statistics/
+units/constraints and worksheet/graph/export references. Initial WASM execution
+passes 93/100; native integration exposes two unrecoverable FFI crashes. Fix exact
+remainders and nested/negative powers, undefined singleton sample statistics,
+watt-hours and compound unit targets, scalar substitution and finite real FTC
+endpoint evaluation. Preserve truthful approximate evidence for numeric methods.
+
+Native screenshot review additionally catches false exact evidence in derived
+cached decimals and global substitution of definite-integral dummy variables.
+Preserve source uncertainty through dependent values/functions, bind integration
+variables locally, retain reactive bounds and evaluate rational expression bounds
+exactly with bounded cost. Add four crash, three provenance and three integral
+binding runtime controls, actual dispatcher regressions and fifteen desktop/phone
+worksheet entry controls.
+
+Linux CLI, browser WASM and the packaged sandboxed macOS app each pass all 310
+accumulated runtime checks. The full unit/widget suite passes 5,446 tests with
+eight documented skips. Analysis, focused regressions, release/debug browser
+checks, performance gates, Pages/Vercel live validation, 12 web gallery scenes
+and 33 populated native screenshots pass in CI;
+see [the second-round audit](docs/round2-math-audit-100.md) and
+[native Apple gallery](docs/native-apple-gallery.md). All heavy work runs remotely.
+Physical iPhone/iPad checks remain deferred, and these changes are later than
+submitted TestFlight build 13.
+
+## 2026-10-02 — Additional independent 100-case math audit
+
+- Draft 40 algebra/calculus/complex, 40 arithmetic/statistics/units/constraints
+  and 20 worksheet/graph/export problems with two agents and independent
+  references. Preserve the initial 87/100 packaged-app findings.
+- Fix bounded exact integer/rational cancellation, negative quantities and
+  temperatures, repeated CSP factors, rational equations with original poles,
+  symbolic removable limits, additive integration-constant domain evidence,
+  chained-power precedence and final-operation provenance. Bound coefficient
+  cost before exact polynomial powers/products and safely decline zero division.
+- Tighten comparisons for independent symbols, full complex residuals, root
+  multiplicity, undefined answers and rational coefficient notation. Preserve
+  the unsupported imperative reassignment request and verify its circular-error
+  policy; a separate reactive `next=n+1` calculation/edit regression passes.
+- Add eleven actual worksheet-entry controls on desktop and phone, provenance
+  assertions, reload checks and eight screenshots. Repair host-specific browser
+  selectors and moving handwriting crops without weakening their assertions.
+
+The new corpus contains 99 positive calculation/workflow cases and one expected
+feature rejection. Linux CLI, browser WASM and the sandboxed packaged macOS app
+pass this corpus and both preceding 50-problem sets (200 runtime checks each).
+Full analysis and 5,367 unit/widget tests pass, with eight explicitly skipped
+checks; real native/WASM execution separately covers native bridge behavior.
+Pages and Vercel also pass all 200 runtime checks and desktop/phone UI controls.
+The broader release/debug browser checks, performance gates and 12-scene gallery
+also pass on hosted Linux. Sources,
+CI links, commands and the feature boundary are recorded in
+[the audit](docs/new-math-audit-100.md). All heavy workloads run on hosted CI;
+the idle task-owned local SDK was removed to reclaim 1.1 GiB. Physical device
+checks remain deferred. These math changes are later than TestFlight build 13.
+
+## 2026-10-02 — Apple worksheet workflows, portable recovery and fresh audit
+
+- Add bounded source-only worksheet Files import/export, native workflow URLs,
+  iOS Shortcuts intents, keyboard navigation and responsive tablet/phone layouts.
+  Imports discard cached answers and recalculate after switching documents.
+- Export one captured worksheet, linked plots and sampled values to HTML,
+  Markdown, LaTeX and PDF, with an actual preview and bundled licensed PDF font.
+  Preserve undefined points, discontinuities, original-domain warnings and errors.
+- Add retained source checkpoints, comparisons, pre-restore checkpoints, portable
+  SHA-256 backups, conflict-preserving imports and previous-workspace recovery.
+  Surface quota/persistence failures. Cloud setup accepts public HTTPS credentials;
+  server revision checks reject stale writes and the migration enforces owner RLS.
+  The PostgreSQL contract CI passes; no real project credentials were supplied.
+- Repair live ink repainting, decimal dots and dark-theme normalization. Select
+  compatible handwriting providers without changing the photo provider, require
+  network/model-term consent and review transcription before inserting it.
+  Three real models on 50 human drawings give 7/50, 0/50 and 0/50 exact answers;
+  recognition remains experimental, with no reliability claim.
+- Draft 50 independent problems, derive references with SymPy/SciPy/calendar and
+  exhaustive constraint enumeration, then run actual native/WASM/module paths.
+  Fix exact large integers, numeric-cell eigenvalues, rational source-domain
+  evidence, Student-t tails, arithmetic not-equal constraints, a pinned upstream
+  dart2js CSP allocation fix and exact linear systems on older Apple libraries.
+  Tighten the comparator to reject error strings before assignment equivalence.
+- Fix an empty Flutter web overlay semantics leaf blocking worksheet clicks
+  after dialogs close. The real backup round trip is a regression control.
+
+Validation for `34bb88f`: 5,293 unit/widget tests pass with seven opt-in skips,
+22 Python tooling tests and 237 focused feature checks pass, and analysis has
+no issues. Native OCR, release/debug Playwright, performance and both galleries
+pass. Linux CLI, packaged sandboxed macOS, Pages WASM and Vercel WASM each pass
+both corpora (50/50 original and 50/50 fresh). Deployed UI checks verify import,
+export, checkpoint recovery, conflict preservation, visible ink, exact integer,
+eigenvalues, original-domain details and reload without injected fixes.
+The galleries retain 12 browser scenes and 14 actual iPhone/iPad simulator
+captures, source/dimensions and native CAS assertions. The 500/2,000-row edit
+medians are 0.59s/0.98s desktop and 2.43s/5.66s with 4× browser CPU throttling,
+versus baseline 0.65s/1.63s and 4.31s/20.84s. All platform builds pass.
+
+Apple rejected delivery 1.2.0 (12) with ITMS-90683 because the photo-library
+purpose string was absent. Replacement build 13 adds clear photo-library and
+camera explanations for formula recognition in the calculator and worksheets.
+The release pipeline checks both strings and version/build in the signed app
+before upload. All 32 release-tool unit checks pass, including missing-purpose
+negative controls. [Release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37028331142) passed for source
+`7247074`: the signed 1.2.0 (13) bundle passed the purpose/version gate, upload
+succeeded without errors, Apple processing is VALID and assignment to the
+existing Internal Testers group is confirmed. No App Review submission was made.
+Physical iPhone/iPad, Siri/Files provider checks, better handwriting weights,
+a real sync backend and Apple's 4.3(a) review decision remain pending.
+
+## 2026-10-02 — External TestFlight submission for build 13
+
+- Submitted 1.2.0 (13), binary source `7247074`, to TestFlight beta review at
+  16:17 UTC. Apple reports WAITING_FOR_REVIEW / WAITING_FOR_BETA_REVIEW.
+- Assigned the build to the existing Public Beta group and preserved its link:
+  https://testflight.apple.com/join/E6HdVhTx. External availability awaits approval.
+- Added worksheet, graph/export, checkpoint, Files and formula-photo test notes,
+  explicitly identifying handwriting transcription as experimental. Existing
+  review contacts and app descriptions were retained.
+- [API-only CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37032322549) passed all 37 release-tool tests and
+  verified the submission and group assignment by reading them back from Apple.
+  Guards cover wrong app/build, internal-only builds, missing review metadata,
+  ambiguous groups and repeat submissions. No App Store review was submitted.
+- Used a GitHub macOS runner after the Ubuntu metadata check remained queued;
+  no local build or browser workload ran.
+
+## 2026-10-02 — Native CAS parity and inline worksheet functions
+
+- Restore the Linux C++ CAS wrapper and ship its CI-built library: FLINT
+  factoring, rational cancellation and native series now satisfy the strict
+  audit's requested result forms. Pin the bridge and dependency manifest to
+  the same reviewed commit; retain binary provenance and direct runtime tests.
+- Restore macOS vendored-framework paths inside the CocoaPods source root.
+  Keep the packaged release app sandbox enabled; run the complete task corpus
+  through stdin and extract a framed stdout report. Reject fallback, partial,
+  duplicate or failing reports while retaining their evidence.
+- Compute exact Taylor coefficients with native symbolic differentiation and
+  substitution on Apple libraries lacking the series entry point. Prefer the
+  dedicated series implementation when available. Bound orders, reject poles
+  and run ten forced compatibility cases against real native CAS.
+- Add inline worksheet definitions and calls, including lexical parameters,
+  captured bindings, nested/forward calls, incremental edits and persistence.
+  Report invalid bodies, arity errors and dependency cycles; bound expansion
+  and clear stale results after failures. Link single-parameter definitions
+  directly to graphs, including parameters named `t`.
+- Add unit regressions and release/debug desktop/phone Playwright checks for
+  function edits, captured values, reload, error recovery and linked graphs.
+  Pages and Vercel now also enforce the same strict 50-task corpus after deploy.
+- Retain real iPhone/iPad simulator screenshots and a 12-scene browser gallery
+  as downloadable CI artifacts. Physical iPhone/iPad tests remain deferred.
+
+Validation for `2daed84`: native Linux, browser WASM and the sandboxed
+packaged macOS app each pass 50/50 with no failed/unsupported tasks. The
+forced Taylor compatibility battery passes all ten cases on Linux and macOS.
+5,250 unit/widget tests pass with seven opt-in skips; 22 Python tooling tests
+and 194 focused feature checks pass. Pages and Vercel each pass the strict
+50-task audit and two desktop/phone function UI checks after deployment. Release/debug Playwright and the performance gate pass. Final three-trial
+dependent-edit medians for 500/2,000 rows are 0.56s/0.81s desktop and
+2.05s/4.78s with 4× page CPU throttling, versus baseline 0.65s/1.63s
+and 4.31s/20.84s. These are browser measurements. Physical-device testing
+remains deferred. All platform builds pass. The refreshed CI galleries contain
+12 browser scenes and six native iPhone/iPad captures from `2daed84`.
+
+## 2026-10-02 — Cancellable incremental document batches
+
+- Observe source/cache/list mutations through a transient document revision;
+  replace per-row whole-document guard scans with constant-time revision checks.
+  Imports and unsafe symbolic/duplicate bindings retain guarded fallbacks.
+- Union rapid edits and interrupted pending rows; retain old-name dependents on
+  rename and recalculate all rows after structural changes or import edits.
+- Include implicit `Ans`, aggregate inputs and aggregate aliases in dependencies;
+  avoid repeated graph ordering and shifting the topological queue.
+- Add batch cancellation that discards late results and constraint exports,
+  preserves completed rows and clears stale pending caches. Keep worker commands
+  serialized: cancellation does not terminate an individual native operation.
+- Preserve the editing connection and focus when blank/heading/expression
+  layouts change, using a stable editor key. A widget negative control
+  reproduced the replaced editor behind the calendar live-test failure. Keep
+  blank/expression editor ancestry stable for the browser editing element too.
+- Give the batch evaluator sole ownership of cooperative scheduling; retain
+  dispatcher yielding for standalone calls so two wall-clock budgets cannot
+  repeatedly trigger one another.
+- Show localized row progress, Cancel calculation and Retry; yield between row
+  batches and rebuild only activity/changed visible rows for progress, leaving document
+  indexes and controllers intact. Limit live-region announcements to status
+  text so cancellation keeps an independent accessible hit target. No persisted-schema change.
+- Clip web semantic button/link text to its actual hit rectangle; a CI negative
+  control reproduced the overflowing Help label intercepting Cancel. Accessible
+  labels remain complete.
+- Add unit regressions and a 2,000-row release phone-profile Playwright cancel/retry test,
+  plus rapid independent edits, to feature CI and Pages/Vercel post-deploy checks.
+  Debug correctness uses 200 rows with real CAS calls on each row; release performance retains 500/2,000 rows.
+  Full-suite, live and performance evidence is collected in GitHub CI.
+
+Validation for `911f035`: 5,231 unit/widget tests passed with seven opt-in
+skips; 19 Python tooling tests, 175 focused checks, analysis, native OCR,
+release/debug Playwright, web gallery, all platform builds and Pages/Vercel
+post-deploy checks passed. Three-trial dependent-edit medians for 500/2,000
+rows were 0.60s/0.98s desktop and 2.58s/6.34s at 4× page CPU throttling,
+versus baseline 0.65s/1.63s and 4.31s/20.84s. These are browser workflow
+measurements, not physical-device claims. The independent strict 50-task
+audit retains its four known capability gaps; Apple physical tests remain
+deferred.
+
+## 2026-10-01 — Calendar arithmetic in conditional branches
+
+- Preserve the selected `if(...)` branch before LaTeX whitespace normalization,
+  while normalizing only its condition for worker evaluation. Date differences
+  and duration offsets now work inside true and false branches.
+- Add dispatcher regressions for both branches, LaTeX conditions and selected
+  math expressions; extend release/debug live entry-and-save calendar checks.
+
+## 2026-10-01 — Calendar routing regression
+
+Calendar input is recognized before LaTeX whitespace normalization and bounded
+integer arithmetic. Bare ISO dates, date differences and duration offsets keep
+their calendar meaning; explicitly spaced subtraction remains arithmetic.
+Conditional date branches retain their existing handling. Added unit coverage
+and real document-entry/save checks in both release and debug browser CI.
+
+## 2026-10-01 — Numeric scope indexing
+
+Documents with unique numeric assignments reuse a scope index instead of
+rebuilding all bindings per row. Source identity, cached values and imports are
+checked between rows; numeric edits rebuild a fresh index, while symbolic
+results, duplicate names and FlatZinc retain full-scope behavior. Filtered scope
+construction also preserves binding precedence and live edits. Broader notepad
+regressions: 297 passed; source/cache/import mutation checks pass after index
+rebuilding. Separate local JIT 2,000-row edit: 0.39s, excluding UI and worker
+latency. Live touch validation remains required; earlier versions still exceeded
+the 200-second timeout.
+
+## 2026-10-01 — Bounded arithmetic and final workflow checks
+
+Short integer addition/subtraction expressions reuse the numeric parser when
+all intermediate values are provably exact. Larger integers, fractions and
+other operations keep existing engine routing. An 8 ms work budget yields to
+the UI without scheduling a timer for every cheap dependent row. Dispatcher,
+document and screen regression coverage: 125 passed; static analysis clean.
+The first local 500-row edit-to-saved-tail measurement was 9.5 seconds versus
+36.7 seconds before this routing change (single trials on a variable-load VPS,
+O2/O4 builds respectively; not a controlled comparison). CI measures both desktop and touch.
+The connected-workflow browser check now waits for the linked-source dialog
+to render before inspecting its restored value.
+
+## 2026-10-01 — Maintenance and measured evaluator optimization
+
+Extracted notepad worker dispatch and syntax/scope primitives from large screen
+and evaluator files. Added classification reuse keyed by source/position/directive
+position, plus one-scan numeric binding substitution with the original symbolic
+replacement fallback. Regression coverage includes duplicates, forward references,
+cycles, FlatZinc, aggregates, partial input, cache invalidation and CAS routing.
+196 focused tests pass. Sequential same-host JIT 2,000-row edit: 13.4s → 2.7s;
+application latency remains separately measured. CI cancels superseded native
+builds while retaining installed-runtime checks and exhaustive workflow translation
+coverage. Real OCR scoring also exposed spaced-token conversion gaps; production
+OCR conversion now preserves bare fraction arguments and digit/function spacing.
+
+## 2026-10-01 — Core workflow UX
+
+Calculator entry now offers a native text editor for typing, selection and
+paste, with synchronized keypad edits and Enter submission. Linked-source
+inspection can navigate directly to the effective variable assignment, including
+forward definitions. Clarification requests remain questions instead of being
+inserted into calculator input. Notepad recalculation announces progress and
+unexpected failures offer retry. Extracted the source dialog and activity UI;
+new workflow labels have exhaustive en/de/fr/es coverage. Seventeen focused
+unit/widget tests pass; connected mobile browser checks added to CI.
+
+## 2026-10-01 — Real inference corpus
+
+Added strict real-provider scoring for 14 translations and scored native OCR
+for 13 reproducible images including actual MathWriting human ink. Reports keep
+wrong answers separate from transport failures. Local Qwen2.5 0.5B: 2/14 correct;
+pix2tex: 10/13 correct, all three handwriting samples failed validation. Added
+provider safeguards for truncated responses and reasoning markup, with unit
+coverage. Corpus downloads verify a pinned SHA256 and preserve attribution;
+handwriting raster assets are confined to ignored evaluation storage.
+
 # CrispCalc — History
 
 Completed work, newest first.
+
+## 2026-10-01 — Release candidate readiness
+
+- Prepare version 1.2.0 build 11 as candidate v1.2.0-rc.1. Pin CrispEmbed and
+  the symbolic bridge to complete commit revisions, Flutter to 3.44.0 and the
+  browser test runner to Playwright 1.61.0. Record dependency/native hashes.
+- Verify native OCR archives before staging on all five native platforms.
+  Repair dependency setup in tag-release and signed iOS build workflows.
+- Manual candidate runs produce artifacts and a source/dependency manifest;
+  publishing requires a tag event and all platform builds to succeed.
+- Test clean install, legacy upgrade and edited-document restoration in a live
+  browser. Repair recovery from a damaged document index and stale active ID,
+  retaining newer records when a legacy backup also exists.
+- Live clean-install, legacy-upgrade and damaged-index restoration checks passed
+  with zero framework errors. Signed iOS dry-run build and signature validation
+  passed, and App Store upload was skipped.
+- Upgrade/persistence/link regression tests: 81 passed. Staging and candidate
+  metadata unit tests: 8 passed. Actionlint validates every workflow.
+- Replace obsolete ONNX and unmeasured frame-rate release claims with the
+  current candidate behavior and explicit validation scope.
+
+## 2026-10-01 — Resolve installed OCR libraries
+
+- Resolve OCR libraries relative to the installed desktop executable. macOS
+  CocoaPods embeds `libcrispembed.0.dylib`, so asking for the unversioned default
+  prevented OCR from loading despite the native library being present.
+- Use the resolved path in all native OCR providers and the persistent worker;
+  preserve default plugin lookup for mobile and development installations.
+- Nine path-resolution tests plus OCR provider/worker regressions passed (43
+  total). Changed files analyzed cleanly. Actual recognition passed using the
+  downloaded, corrected Linux build artifact and its resolved runtime path.
+- Desktop native recognition checks now verify the app resolves the packaged
+  file, with the same check added to the macOS workflow.
+
+## 2026-10-01 — Desktop OCR packaging
+
+- Artifact inspection found that Linux and Windows builds omitted the native
+  OCR runtime. Stage the CPU release matching the CrispEmbed plugin version,
+  and bundle all shared-library dependencies through the desktop CMake rules.
+- Add three staging unit tests and actual image recognition using the final
+  packaged library in Linux/Windows CI. The model checksum is verified before
+  recognition; the calculator must evaluate recognized `5 + 7` to exactly `12`.
+- Local staging tests passed for Linux dependency aliases and Windows DLLs.
+  Recognition through the staged Linux release library passed.
+- Set the macOS deployment target to 12, matching the OCR plugin requirement.
+- At f5e6fe4 all eight workflows passed: full analysis, 5,158 unit/widget tests
+  (7 existing skips), 113 focused regressions, native OCR, release/debug live
+  browser checks, and six platform builds. macOS matrix and step-engine runtime
+  diagnostics passed. Subsequent desktop packaging checks validate this fix.
+
+## 2026-10-01 — Pull request validation cleanup
+
+- Fixed the Flutter UI's observable native-engine status contract while retaining
+  the plain Dart worker implementation. Added a listener transition/removal test.
+- Removed obsolete synchronous preview and unused OCR model initialization;
+  retained recognition through the persistent worker. Guarded async download and
+  sync notifications against disposed contexts, and updated Supabase's key API.
+- Corrected analyzer findings throughout the application and command-line tools.
+  Feature CI now analyzes the whole repository rather than selected new files.
+- Added the missing CrispEmbed checkout to Android, iOS, Linux, macOS and Windows
+  build workflows, aligned them on Flutter 3.44, and made the dependency path
+  consistent with CI. Documented the corresponding local checkout.
+- Focused engine status and OCR handoff checks: 9 passed. Actual native OCR and
+  persistent worker error handling: 2 passed. Browser worker compilation passed.
+
 
 ## 2026-07-04 (cont. 17) — Distribution prep
 
@@ -8519,3 +9229,85 @@ macOS Release.
 
 ### Static analysis
 - 210 issues (1 error) → 19 info-only hints by the end of this round.
+
+### October release candidate validation
+
+Candidate `v1.2.0-rc.1` (`1.2.0+11`, source `72a1791`) built successfully
+for Linux, Windows, macOS, Android, iOS and web in Release run
+[36864508436](https://github.com/CrispStrobe/CrispMath/actions/runs/36864508436).
+The manifest records full dependency revisions and verified native-library
+checksums. Publishing was skipped for this manual candidate build. Signed iOS
+dry run [36864512187](https://github.com/CrispStrobe/CrispMath/actions/runs/36864512187)
+passed signing, export and signature checks; App Store upload was skipped.
+Unit checks and live browser checks cover clean installation, legacy migration,
+damaged-index recovery, editing and reload restoration. The browser harness
+correction is in `8a577bb`; it does not alter the candidate application.
+
+### October workflow baseline
+
+Reproducible browser profiling and pure-helper tests now cover cold/warm
+startup, calculation through saved history, tracing, verified graph pans and
+editing the head of 500/2,000-row dependency chains through the saved tail.
+The numerical baseline is committed in `tool/workflow_baseline.json`; full
+reports are retained as CI artifacts. Twelve profiling/release-tool unit tests
+pass. The isolated Dart evaluator benchmark verifies initial and edited values
+for 100/500/2,000 rows, independently of browser or worker overhead.
+
+CI desktop medians: cold startup 1.95 s, warm startup 0.98 s, calculation
+105 ms and keyboard trace 33 ms. Dependent edits take 14.2 s for 500 rows
+and 63.9 s for 2,000 rows (five trials each). The 390×844 touch profile with
+4× page CDP CPU throttling takes 33.0 s for 500 rows (five trials) and
+147.1 s for 2,000 rows (one trial), with correct final results saved. This
+identifies large dependent recalculation as the primary remaining bottleneck.
+These browser/automation measurements include debounce and storage and do not
+certify physical-device performance. Worker timing is not calibrated.
+
+The desktop/touch-500 report comes from run
+[36869816911](https://github.com/CrispStrobe/CrispMath/actions/runs/36869816911),
+cancelled when its harness was superseded after those cases passed. The
+complete touch-2,000 run
+[36873971337](https://github.com/CrispStrobe/CrispMath/actions/runs/36873971337)
+passed. Input replacement waits for Flutter focus synchronization; graph
+measurements also wait for route transitions and verify each pan changes
+bounds. Dialog interaction is excluded from pan timing/frame probes. CI
+can reuse an existing validated web artifact for targeted profiles.
+
+### Sixth independent mathematical audit — October 3, 2026
+
+Fifty hand-derived references were frozen before app evaluation. Initial native
+and packaged macOS checks passed 39/50; WASM passed 40/50. The references remain
+unchanged. Shared fixes address exact rational rounding, extreme finite
+statistics, degree aliases, bounded nonlinear objectives, multivariate
+cancellation with source domains, convergent endpoint integrals, squeeze proofs
+and point/Taylor cusp semantics. Further live and negative controls repair
+worksheet Taylor routing/reactivity, readable output, shared polynomial variable
+preservation and foreign-symbol Taylor coefficients. Details and coverage
+bounds are in [the sixth audit](docs/round6-math-audit-50.md).
+
+Final production source `73ca7815dd3b875e93a46f9dd3004ccb3b735550` passes all
+537 accumulated runtime checks on Linux, WASM, packaged macOS, Pages and public
+Vercel. Actual desktop/phone UI checks pass 160 worksheet entries, eighteen
+binding-edit states and four statistics-screen checks on the browser audit and
+both deployments. Hosted analysis is clean; 5,599 unit/widget tests pass with
+eight skips, plus 52 tooling checks and 355 focused regressions. Release/debug
+browser checks, all four performance gates and twelve web-gallery scenes pass. Desktop 500/2,000-row edit medians are 0.623/1.275 s;
+CPU-throttled phone medians are 1.749/4.598 s. These are hosted browser
+latencies, not physical-device frame-rate measurements.
+
+Fresh native gallery run 37112800752 passes 33 populated captures at the same
+source: eleven iPhone, eleven iPad and eleven native macOS. Four selected graph
+and notepad images are visually reviewed as populated and legible. Simulator
+checks remain distinct from deferred physical-device checks.
+
+[Signed release 37114719521](https://github.com/CrispStrobe/CrispMath/actions/runs/37114719521)
+uploads 1.2.0 (17) after privacy-string, signature, version and exact
+production-source validation. [External verification 37115481288](https://github.com/CrispStrobe/CrispMath/actions/runs/37115481288)
+confirms VALID processing, the actual beta submission APPROVED and Public Beta
+IN_BETA_TESTING. The [public beta](https://testflight.apple.com/join/E6HdVhTx)
+now offers build 17. No App Review submission occurs.
+
+All expensive work remains on GitHub-hosted runners. An additional 52.39 MiB of
+cold task screenshots/logs was moved to CIFS with SHA-256 verification and
+readable source symlinks. Active sources/reports stay on fast storage; unrelated
+projects remain untouched. Real handwriting accuracy, physical devices and
+Apple's App Review 4.3(a) finding remain pending outside this mathematical audit.

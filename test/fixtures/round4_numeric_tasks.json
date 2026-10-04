@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent arithmetic and dimensional conversion; centered sample statistics and exact line coefficients; binomial support, closed-form Cauchy/t(2) probabilities; matrix algebra and complete finite constraints.",
+  "tasks": [
+    {
+      "id": "round4-numeric-01",
+      "title": "Decimal reciprocal square",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(0.25)^(-2)"
+      ],
+      "expected": "16",
+      "exact": true
+    },
+    {
+      "id": "round4-numeric-02",
+      "title": "Negative decimal odd power",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(-0.5)^3"
+      ],
+      "expected": "-1/8",
+      "exact": true
+    },
+    {
+      "id": "round4-numeric-03",
+      "title": "Huge integer shifted remainder",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(10^20+3)%7"
+      ],
+      "expected": "5",
+      "exact": true
+    },
+    {
+      "id": "round4-numeric-04",
+      "title": "Rational base zero exponent",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(5/7)^0"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "round4-numeric-05",
+      "title": "Perfect square root exact quotient",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(49)/sqrt(121)"
+      ],
+      "expected": "7/11",
+      "exact": true
+    },
+    {
+      "id": "round4-numeric-06",
+      "title": "Euclidean negative remainder six",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(-20)%6"
+      ],
+      "expected": "4",
+      "exact": true
+    },
+    {
+      "id": "round4-numeric-07",
+      "title": "Sparse outlier descriptive sample",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        1,
+        1,
+        1,
+        9
+      ],
+      "expected": {
+        "mean": 3,
+        "median": 1,
+        "sampleStddev": 4
+      }
+    },
+    {
+      "id": "round4-numeric-08",
+      "title": "Centered decimal descriptive sample",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        -0.5,
+        0,
+        0.5
+      ],
+      "expected": {
+        "mean": 0,
+        "median": 0,
+        "sampleStddev": 0.5
+      }
+    },
+    {
+      "id": "round4-numeric-09",
+      "title": "Regression with large predictor offset",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        1000000000,
+        1000000001,
+        1000000002
+      ],
+      "ys": [
+        1,
+        3,
+        5
+      ],
+      "expected": {
+        "slope": 2,
+        "intercept": -1999999999,
+        "rSquared": 1
+      }
+    },
+    {
+      "id": "round4-numeric-10",
+      "title": "Regression with large response offset",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        0,
+        1,
+        2
+      ],
+      "ys": [
+        1000000000,
+        1000000002,
+        1000000004
+      ],
+      "expected": {
+        "slope": 2,
+        "intercept": 1000000000,
+        "rSquared": 1
+      }
+    },
+    {
+      "id": "round4-numeric-11",
+      "title": "Zero trial binomial",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 0,
+      "p": 0.3,
+      "k": 0,
+      "expected": 1
+    },
+    {
+      "id": "round4-numeric-12",
+      "title": "Negative binomial support",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 4,
+      "p": 0.3,
+      "k": -1,
+      "expected": 0
+    },
+    {
+      "id": "round4-numeric-13",
+      "title": "Cauchy central two thirds",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 1,
+      "lower": -1.7320508075688772,
+      "upper": 1.7320508075688772,
+      "expected": 0.6666666666666666
+    },
+    {
+      "id": "round4-numeric-14",
+      "title": "Two degree t positive interval",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 2,
+      "lower": 0,
+      "upper": 1.4142135623730951,
+      "expected": 0.3535533905932738
+    },
+    {
+      "id": "round4-numeric-15",
+      "title": "Milliwatt explicit target",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "250 mW in W",
+      "expected": "0.25 W"
+    },
+    {
+      "id": "round4-numeric-16",
+      "title": "Pressure compound target square centimetres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 kPa in N/cm^2",
+      "expected": "0.1 N/cm²"
+    },
+    {
+      "id": "round4-numeric-17",
+      "title": "Millilitres to cubic millimetres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 mL in mm^3",
+      "expected": "1000 mm³"
+    },
+    {
+      "id": "round4-numeric-18",
+      "title": "Energy over time gives power",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "3 Wh / 2 h in W",
+      "expected": "1.5 W"
+    },
+    {
+      "id": "round4-numeric-19",
+      "title": "Two micro prefix velocity",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "2 µm/ms in m/s",
+      "expected": "0.002 m/s"
+    },
+    {
+      "id": "round4-numeric-20",
+      "title": "Signed matrix determinant",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[-1,2],[3,-4]]))"
+      ],
+      "expected": "-2"
+    },
+    {
+      "id": "round4-numeric-21",
+      "title": "Involutory swap inverse",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "inv(Matrix([[0,1],[1,0]]))"
+      ],
+      "expected": "Matrix([[0,1],[1,0]])"
+    },
+    {
+      "id": "round4-numeric-22",
+      "title": "Signed product negative four",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in -2..2\nx*y == -4",
+      "unordered": true,
+      "expected": [
+        {
+          "x": -2,
+          "y": 2
+        },
+        {
+          "x": 2,
+          "y": -2
+        }
+      ]
+    },
+    {
+      "id": "round4-numeric-23",
+      "title": "Bounded sum of squares five",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 0..3\nx*x+y*y == 5",
+      "unordered": true,
+      "expected": [
+        {
+          "x": 1,
+          "y": 2
+        },
+        {
+          "x": 2,
+          "y": 1
+        }
+      ]
+    },
+    {
+      "id": "round4-numeric-24",
+      "title": "Fourth power signed roots",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -4..4\nx*x*x*x == 16",
+      "unordered": true,
+      "expected": [
+        {
+          "x": -2
+        },
+        {
+          "x": 2
+        }
+      ]
+    },
+    {
+      "id": "round4-numeric-25",
+      "title": "Signed difference minimum",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -2..2\nx+y == 1\nminimize x-y",
+      "expected": -3
+    }
+  ]
+}

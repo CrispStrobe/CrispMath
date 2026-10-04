@@ -43,7 +43,11 @@ void _injectFetchHelpers() {
 }
 
 /// Cloud LLM OCR provider for web — uses browser fetch() API.
-class CloudLlmOcrProviderWeb implements OcrProvider {
+class CloudLlmOcrProviderWeb implements OcrProvider, HandwritingOcrProvider {
+  @override
+  bool get supportsHandwriting => true;
+  @override
+  String? get licenseToAccept => null;
   @override
   String get name => 'Cloud LLM (handwritten + printed)';
 
@@ -57,8 +61,9 @@ class CloudLlmOcrProviderWeb implements OcrProvider {
   bool get requiresApiKey => true;
 
   @override
-  Future<OcrResult?> recognize(
-      Uint8List imageBytes, int width, int height) async {
+  Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
+      {void Function(int, int, double, double, double, double)?
+          onProgress}) async {
     final appState = AppState();
     if (!appState.crispAssistEnabled) return null;
 

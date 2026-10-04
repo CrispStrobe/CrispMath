@@ -1,0 +1,135 @@
+name: Sync database contract
+on:
+  push:
+    branches: [main, 'feat/**']
+    paths:
+      - 'supabase/**'
+      - 'tool/sync_contract/**'
+      - 'tool/sync_live_environment_test.py'
+      - 'lib/services/cloud_backup_store.dart'
+      - 'lib/services/sync_service.dart'
+      - 'lib/widgets/sync_dialog.dart'
+      - 'test/sync_dialog_test.dart'
+      - 'native_test/cloud_backup_live_test.dart'
+      - 'tool/check_cloud_sync_browser.py'
+      - 'tool/check_cloud_disabled_browser.py'
+      - '.github/workflows/sync-backend-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sync-contract-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-password
+          POSTGRES_DB: crispmath_contract
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: crispmath_contract
+      PGUSER: postgres
+      PGPASSWORD: fixture-password
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check actual row policies and concurrent-write guards
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tool/sync_contract/bootstrap.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261002_user_sync_data.sql
+          psql -v ON_ERROR_STOP=1 -f tool/sync_contract/assertions.sql
+  authenticated-clients:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CRISPMATH_SYNC_CLI_VERSION: '2.119.0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: supabase/setup-cli@v1
+        with:
+          version: '2.119.0'
+      - name: Resolve the application SDK
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Start an isolated real Auth and PostgREST backend
+        run: |
+          python3 -m unittest discover -s tool -p 'sync_live_environment_test.py'
+          mkdir -p "$RUNNER_TEMP/crispmath-sync"
+          supabase init --workdir "$RUNNER_TEMP/crispmath-sync"
+          mkdir -p "$RUNNER_TEMP/crispmath-sync/supabase/migrations"
+          cp supabase/migrations/20261002_user_sync_data.sql "$RUNNER_TEMP/crispmath-sync/supabase/migrations/20261002000000_user_sync_data.sql"
+          supabase start --workdir "$RUNNER_TEMP/crispmath-sync" \
+            --exclude realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
+            > "$RUNNER_TEMP/crispmath-sync-start.log"
+          supabase status --workdir "$RUNNER_TEMP/crispmath-sync" --output json \
+            > "$RUNNER_TEMP/crispmath-sync-status.json"
+          python3 tool/sync_contract/export_live_environment.py "$RUNNER_TEMP/crispmath-sync-status.json"
+      - name: Verify independent sessions, real races and owner isolation
+        run: |
+          flutter analyze --no-pub native_test/cloud_backup_live_test.dart
+          flutter test --reporter expanded native_test/cloud_backup_live_test.dart
+      - name: Build the app for the disposable backend
+        run: |
+          tool/build_web.sh --release --no-wasm-dry-run -O2 \
+            --dart-define="SUPABASE_URL=$CRISPMATH_SYNC_API_URL" \
+            --dart-define="SUPABASE_ANON_KEY=$CRISPMATH_SYNC_PUBLIC_KEY"
+      - name: Install browser test tools
+        run: |
+          python3 -m pip install -r tool/browser-requirements.txt
+          python3 -m playwright install --with-deps chromium
+      - name: Verify actual cloud UI in independent browser sessions
+        run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 --directory build/web \
+            > "$RUNNER_TEMP/crispmath-sync-browser-server.log" 2>&1 &
+          curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors \
+            --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+          python3 tool/check_cloud_sync_browser.py --url http://127.0.0.1:8766/ \
+            --expected-source "$GITHUB_SHA" --output .dart_tool/sync-live/browser
+      - name: Preserve credential-free live report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-sync-live-report
+          path: .dart_tool/sync-live/report.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Preserve actual cloud UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-sync-browser-report
+          path: .dart_tool/sync-live/browser/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Stop only the disposable runner stack
+        if: always()
+        run: supabase stop --workdir "$RUNNER_TEMP/crispmath-sync" --no-backup

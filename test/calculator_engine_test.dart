@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crisp_math/engine/calculator_engine.dart';
+import 'package:crisp_math/engine/result_evidence.dart';
 
 // These tests run without the native bridge available (the test host doesn't
 // load the SymEngine dylib). Every method should return cleanly — typically a
@@ -49,8 +50,10 @@ void main() {
       expect(engine.fibonacci(-1), startsWith('Error'));
     });
 
-    test('limit() is documented as not yet implemented', () {
-      expect(engine.limit('x', 'x', '0'), startsWith('Error'));
+    test('real numeric limit works without a native bridge', () {
+      expect(engine.limit('x', 'x', '0'), '0');
+      expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.approximate);
+      expect(engine.lastResultEvidence?.method, ComputationMethod.numericFallback);
     });
 
     test('integrate() resolves the polynomial case in pure Dart', () {

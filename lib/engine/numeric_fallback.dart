@@ -40,13 +40,28 @@ class NumericFallbackEvaluator {
   /// unbound identifiers (other than known constants) make the parse
   /// fail and yield null. Returns null on any parse/eval failure.
   static double? evalNumeric(String expression, [Map<String, double>? vars]) {
-    try {
-      final parser = _Parser(expression, vars ?? const {});
-      final result = parser.parse();
-      return result;
-    } catch (_) {
-      return null;
+    return compile(expression)?.evaluate(vars ?? const {});
+  }
+
+  static final _cache = <String, CompiledNumericExpression?>{};
+
+  /// Parse once, bind variables on every evaluation. The bounded cache is
+  /// shared by plotting modes so a moving coordinate never changes its key.
+  static CompiledNumericExpression? compile(String expression) {
+    if (_cache.containsKey(expression)) {
+      final hit = _cache.remove(expression);
+      _cache[expression] = hit;
+      return hit;
     }
+    CompiledNumericExpression? compiled;
+    try {
+      compiled = CompiledNumericExpression._(_Parser(expression).parse());
+    } catch (_) {
+      compiled = null;
+    }
+    _cache[expression] = compiled;
+    if (_cache.length > 128) _cache.remove(_cache.keys.first);
+    return compiled;
   }
 
   static String _format(double v) {
@@ -158,14 +173,28 @@ double _gamma(double x) {
 
 /// Recursive-descent parser/evaluator over the SymEngine-flavoured
 /// numeric dialect. Tokenizes lazily via index walking on the source.
+typedef _NumericNode = double Function(Map<String, double> vars);
+
+class CompiledNumericExpression {
+  final _NumericNode _root;
+  CompiledNumericExpression._(this._root);
+
+  double? evaluate([Map<String, double> vars = const {}]) {
+    try {
+      return _root(vars);
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
 class _Parser {
   final String src;
-  final Map<String, double> vars;
   int _pos = 0;
 
-  _Parser(this.src, this.vars);
+  _Parser(this.src);
 
-  double parse() {
+  _NumericNode parse() {
     final v = _parseExpr();
     _skipWs();
     if (_pos != src.length) {
@@ -175,17 +204,21 @@ class _Parser {
   }
 
   // expr := term (('+' | '-') term)*
-  double _parseExpr() {
+  _NumericNode _parseExpr() {
     var value = _parseTerm();
     while (true) {
       _skipWs();
       final c = _peek();
       if (c == '+') {
         _pos++;
-        value += _parseTerm();
+        final left = value;
+        final right = _parseTerm();
+        value = (vars) => left(vars) + right(vars);
       } else if (c == '-') {
         _pos++;
-        value -= _parseTerm();
+        final left = value;
+        final right = _parseTerm();
+        value = (vars) => left(vars) - right(vars);
       } else {
         return value;
       }
@@ -193,23 +226,31 @@ class _Parser {
   }
 
   // term := unary (('*' | '/' | '%') unary | implicit-mult unary)*
-  double _parseTerm() {
+  _NumericNode _parseTerm() {
     var value = _parseUnary();
     while (true) {
       _skipWs();
       final c = _peek();
       if (c == '*') {
         _pos++;
-        value *= _parseUnary();
+        final left = value;
+        final right = _parseUnary();
+        value = (vars) => left(vars) * right(vars);
       } else if (c == '/') {
         _pos++;
-        value /= _parseUnary();
+        final left = value;
+        final right = _parseUnary();
+        value = (vars) => left(vars) / right(vars);
       } else if (c == '%') {
         _pos++;
-        value = value % _parseUnary();
+        final left = value;
+        final right = _parseUnary();
+        value = (vars) => left(vars) % right(vars);
       } else if (_startsImplicitFactor(c)) {
         // Implicit multiplication: `2pi`, `2sin(1)`, `(1+1)pi`.
-        value *= _parseUnary();
+        final left = value;
+        final right = _parseUnary();
+        value = (vars) => left(vars) * right(vars);
       } else {
         return value;
       }
@@ -222,7 +263,7 @@ class _Parser {
   }
 
   // unary := ('+' | '-')* power
-  double _parseUnary() {
+  _NumericNode _parseUnary() {
     _skipWs();
     final c = _peek();
     if (c == '+') {
@@ -231,25 +272,26 @@ class _Parser {
     }
     if (c == '-') {
       _pos++;
-      return -_parseUnary();
+      final inner = _parseUnary();
+      return (vars) => -inner(vars);
     }
     return _parsePower();
   }
 
   // power := primary ('^' unary)?   (right-associative; `2^-3`, `-2^2`)
-  double _parsePower() {
+  _NumericNode _parsePower() {
     final base = _parsePrimary();
     _skipWs();
     if (_peek() == '^') {
       _pos++;
       final exp = _parseUnary();
-      return math.pow(base, exp).toDouble();
+      return (vars) => math.pow(base(vars), exp(vars)).toDouble();
     }
     return base;
   }
 
   // primary := number | constant | func '(' expr ')' | '(' expr ')' | var
-  double _parsePrimary() {
+  _NumericNode _parsePrimary() {
     _skipWs();
     final c = _peek();
     if (c == null) throw _EvalException('unexpected end');
@@ -266,7 +308,7 @@ class _Parser {
     throw _EvalException('unexpected "$c"');
   }
 
-  double _parseNumber() {
+  _NumericNode _parseNumber() {
     final start = _pos;
     while (_pos < src.length && _isDigit(src[_pos])) {
       _pos++;
@@ -295,10 +337,10 @@ class _Parser {
     final text = src.substring(start, _pos);
     final v = double.tryParse(text);
     if (v == null) throw _EvalException('bad number "$text"');
-    return v;
+    return (_) => v;
   }
 
-  double _parseIdentifier() {
+  _NumericNode _parseIdentifier() {
     final start = _pos;
     while (_pos < src.length && _isWordChar(src[_pos])) {
       _pos++;
@@ -316,16 +358,17 @@ class _Parser {
       if (_peek() == ',') throw _EvalException('multi-arg "$name"');
       if (_peek() != ')') throw _EvalException('expected ) after $name(');
       _pos++;
-      return fn(arg);
+      return (vars) => fn(arg(vars));
     }
     // Constant?
     final konst = _constants[name];
-    if (konst != null) return konst;
+    if (konst != null) return (_) => konst;
     // Bound variable?
-    final bound = vars[name];
-    if (bound != null) return bound;
-    // Free variable / unknown symbol → not numeric.
-    throw _EvalException('free symbol "$name"');
+    return (vars) {
+      final bound = vars[name];
+      if (bound != null) return bound;
+      throw _EvalException('free symbol "$name"');
+    };
   }
 
   String? _peek() => _pos < src.length ? src[_pos] : null;

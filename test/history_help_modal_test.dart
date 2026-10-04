@@ -39,7 +39,7 @@ void main() {
 
     test('integrate(...) is SymEngine.integrate with integrate step kind', () {
       final info = detectHistoryHelp('integrate(x^2, x)');
-      expect(info.engineLabel, equals('SymEngine.integrate'));
+      expect(info.engineLabel, equals('Integration (method not recorded)'));
       expect(info.stepKind, equals(HistoryStepKind.integrate));
     });
 

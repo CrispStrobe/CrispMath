@@ -3,9 +3,9 @@ import 'dart:io';
 void main() {
   final file = File('lib/main.dart');
   var content = file.readAsStringSync();
-  
+
   if (!content.contains('_OnnxSettingsCard')) {
-    final onnxCardCode = '''
+    const onnxCardCode = '''
 class _OnnxSettingsCard extends StatefulWidget {
   @override
   State<_OnnxSettingsCard> createState() => _OnnxSettingsCardState();
@@ -52,15 +52,17 @@ class _OnnxSettingsCardState extends State<_OnnxSettingsCard> {
 ''';
 
     // Insert before _CrispAssistSettingsCard
-    content = content.replaceFirst('class _CrispAssistSettingsCard', onnxCardCode + '\nclass _CrispAssistSettingsCard');
-    
+    content = content.replaceFirst('class _CrispAssistSettingsCard',
+        '$onnxCardCode\nclass _CrispAssistSettingsCard');
+
     // Add the card to the list view right before CrispAssist
-    content = content.replaceFirst('_CrispAssistSettingsCard(appState: appState),', 
-                                  '_OnnxSettingsCard(),\n              const SizedBox(height: 16),\n              _CrispAssistSettingsCard(appState: appState),');
-    
+    content = content.replaceFirst(
+        '_CrispAssistSettingsCard(appState: appState),',
+        '_OnnxSettingsCard(),\n              const SizedBox(height: 16),\n              _CrispAssistSettingsCard(appState: appState),');
+
     file.writeAsStringSync(content);
-    print("Added _OnnxSettingsCard to lib/main.dart");
+    stdout.writeln("Added _OnnxSettingsCard to lib/main.dart");
   } else {
-    print("Already added.");
+    stdout.writeln("Already added.");
   }
 }

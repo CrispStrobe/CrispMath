@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "reference": "Frozen exact arithmetic and Euclidean integer identities; nilpotent matrix series and pivot operations; sample moment definitions and independent closed-form probabilities; dimensional energy/impulse/volume scales; complete finite solution sets and proven polynomial optima.",
+  "tasks": [
+    {
+      "id": "round8-numeric-01",
+      "title": "Nested signed reciprocal power",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(((-3)/2)^(-2))^(-1)"
+      ],
+      "expected": "9/4",
+      "exact": true
+    },
+    {
+      "id": "round8-numeric-02",
+      "title": "Consecutive factorial quotient",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "factorial(30)/factorial(29)"
+      ],
+      "expected": "30",
+      "exact": true
+    },
+    {
+      "id": "round8-numeric-03",
+      "title": "Negative-input greatest common divisor",
+      "kind": "engine",
+      "operation": "gcd",
+      "args": [
+        "-84",
+        "30"
+      ],
+      "expected": "6",
+      "exact": true
+    },
+    {
+      "id": "round8-numeric-04",
+      "title": "Three-number least common multiple composition",
+      "kind": "module",
+      "operation": "chain",
+      "steps": [
+        {
+          "operation": "lcm",
+          "args": [
+            "12",
+            "18"
+          ]
+        },
+        {
+          "operation": "lcm",
+          "args": [
+            "@previous",
+            "30"
+          ]
+        }
+      ],
+      "expected": [
+        "36",
+        "180"
+      ]
+    },
+    {
+      "id": "round8-numeric-05",
+      "title": "Rational sum within exact root",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(4/9+5/9)"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "round8-numeric-06",
+      "title": "Triangular matrix diagonal trace",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "trace(Matrix([[-2,1],[0,3]]))"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "round8-numeric-07",
+      "title": "Four-step nilpotent triangular inverse",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "inv(Matrix([[1,1,0,0],[0,1,1,0],[0,0,1,1],[0,0,0,1]]))"
+      ],
+      "expected": "Matrix([[1,-1,1,-1],[0,1,-1,1],[0,0,1,-1],[0,0,0,1]])"
+    },
+    {
+      "id": "round8-numeric-08",
+      "title": "Nilpotent matrix third power",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "Matrix([[0,1],[0,0]])^3"
+      ],
+      "expected": "Matrix([[0,0],[0,0]])"
+    },
+    {
+      "id": "round8-numeric-09",
+      "title": "Permutation pivots row reduction",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "rref(Matrix([[0,1,0],[0,0,1],[1,0,0]]))"
+      ],
+      "expected": "Matrix([[1,0,0],[0,1,0],[0,0,1]])"
+    },
+    {
+      "id": "round8-numeric-10",
+      "title": "Asymmetric sample with integer deviation",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        -3,
+        -1,
+        1,
+        1,
+        2
+      ],
+      "expected": {
+        "mean": 0,
+        "median": 1,
+        "sampleStddev": 2
+      }
+    },
+    {
+      "id": "round8-numeric-11",
+      "title": "Seven observation fractional sample deviation",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "expected": {
+        "mean": 0.14285714285714285,
+        "median": 0,
+        "sampleStddev": 0.3779644730092272
+      }
+    },
+    {
+      "id": "round8-numeric-12",
+      "title": "Even response has zero linear correlation",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        -2,
+        -1,
+        1,
+        2
+      ],
+      "ys": [
+        4,
+        1,
+        1,
+        4
+      ],
+      "expected": {
+        "slope": 0,
+        "intercept": 2.5,
+        "rSquared": 0
+      }
+    },
+    {
+      "id": "round8-numeric-13",
+      "title": "Two-point decreasing line",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        1,
+        2
+      ],
+      "ys": [
+        10,
+        -10
+      ],
+      "expected": {
+        "slope": -20,
+        "intercept": 30,
+        "rSquared": 1
+      }
+    },
+    {
+      "id": "round8-numeric-14",
+      "title": "One matching outcome in fifty two trials",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 52,
+      "p": 0.019230769230769232,
+      "k": 1,
+      "expected": 0.3714569219134604
+    },
+    {
+      "id": "round8-numeric-15",
+      "title": "Translated normal negative standardized coordinate",
+      "kind": "module",
+      "operation": "normalCdf",
+      "mean": 2,
+      "stddev": 3,
+      "x": 0,
+      "expected": 0.2524925375469229
+    },
+    {
+      "id": "round8-numeric-16",
+      "title": "Four-degree Student t closed interval",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 4,
+      "lower": 0,
+      "upper": 2,
+      "expected": 0.4419417382415922
+    },
+    {
+      "id": "round8-numeric-17",
+      "title": "Exact-fit chi-square zero statistic",
+      "kind": "module",
+      "operation": "chiSquare",
+      "observed": [
+        10,
+        10,
+        10
+      ],
+      "counts": [
+        10,
+        10,
+        10
+      ],
+      "expected": {
+        "statistic": 0,
+        "df": 2,
+        "pValue": 1
+      }
+    },
+    {
+      "id": "round8-numeric-18",
+      "title": "Noncoherent energy per hour prefix target",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 kWh / 1 h in kW",
+      "expected": "1 kW"
+    },
+    {
+      "id": "round8-numeric-19",
+      "title": "Impulse target with numerator product",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 N * 1 s in kg*m/s",
+      "expected": "1 kg*m/s"
+    },
+    {
+      "id": "round8-numeric-20",
+      "title": "Area times length gives litres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 m² * 1 m in L",
+      "expected": "1000 L"
+    },
+    {
+      "id": "round8-numeric-21",
+      "title": "Specific energy into CGS quotient",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 J / 2 kg in erg/g",
+      "expected": "5000 erg/g"
+    },
+    {
+      "id": "round8-numeric-22",
+      "title": "Zero factor under sum constraint",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 0..3\nx+y == 3\nx*y == 0",
+      "unordered": true,
+      "expected": [
+        {
+          "x": 0,
+          "y": 3
+        },
+        {
+          "x": 3,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "round8-numeric-23",
+      "title": "Squared norm with one-sided variable bounds",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -2..2\nx >= 1\ny <= -1\nminimize x*x+y*y",
+      "expected": 2
+    },
+    {
+      "id": "round8-numeric-24",
+      "title": "Three-variable polynomial objective with distinct values",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y, z in 0..2\nallDifferent(x, y, z)\nmaximize x*y-z*z",
+      "expected": 2
+    },
+    {
+      "id": "round8-numeric-25",
+      "title": "Nonzero integer points inside squared interval",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -2..2\nx*x <= 1\nx != 0",
+      "unordered": true,
+      "expected": [
+        {
+          "x": -1
+        },
+        {
+          "x": 1
+        }
+      ]
+    }
+  ]
+}

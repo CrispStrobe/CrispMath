@@ -1,0 +1,133 @@
+name: Native Apple screenshot gallery
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/graph-workspace-ux']
+    paths:
+      - '.github/workflows/apple-screenshot-gallery.yml'
+      - 'integration_test/product_gallery_test.dart'
+      - 'ios/Runner/AppDelegate.swift'
+      - 'ios/Runner/Info.plist'
+      - 'lib/services/apple_workflow.dart'
+      - 'test_driver/product_gallery_driver.dart'
+      - 'macos/Runner/MainFlutterWindow.swift'
+      - 'tool/verify_native_gallery.py'
+      - 'tool/run_native_gallery.py'
+      - 'tool/run_native_gallery_test.py'
+permissions:
+  contents: read
+jobs:
+  gallery:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+          submodules: recursive
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Build real OCR library for the simulator SDK
+        run: |
+          cmake -S .ci/CrispEmbed -B .ci/simulator-build \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
+            -DCMAKE_OSX_ARCHITECTURES="$(uname -m)" \
+            -DCMAKE_OSX_SYSROOT="$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+            -DCMAKE_C_COMPILER="$(xcrun --sdk iphonesimulator -f clang)" \
+            -DCMAKE_CXX_COMPILER="$(xcrun --sdk iphonesimulator -f clang++)" \
+            -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=OFF \
+            -DGGML_NATIVE=OFF -DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON
+          cmake --build .ci/simulator-build --target crispembed --parallel 3
+          mkdir -p .ci/CrispEmbed/flutter/crispembed/ios/Libs
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+          archives=sorted(Path('.ci/simulator-build').rglob('*.a'))
+          assert archives, 'Simulator static libraries missing'
+          subprocess.run(['xcrun','libtool','-static','-o', '.ci/CrispEmbed/flutter/crispembed/ios/Libs/libcrispembed-static.a', *map(str,archives)],check=True)
+          PY
+      - name: Resolve simulator dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Validate bounded native capture tooling
+        run: python3 -m unittest discover -s tool -p "run_native_gallery_test.py"
+      - name: Select actual iPhone and iPad simulators
+        run: |
+          mkdir -p native-gallery
+          xcrun simctl list devices available --json > native-gallery/simulators.json
+          python3 - <<'PY'
+          import json, os
+          data=json.load(open('native-gallery/simulators.json'))
+          devices=[d for runtime,items in data['devices'].items() if 'iOS' in runtime for d in items if d.get('isAvailable')]
+          phone=next(d for d in devices if 'iPhone' in d['name'] and ('Pro Max' in d['name'] or 'Plus' in d['name']))
+          tablet=next(d for d in devices if 'iPad' in d['name'] and ('13-inch' in d['name'] or '12.9-inch' in d['name']))
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+            f.write('GALLERY_IPHONE='+phone['udid']+'\nGALLERY_IPAD='+tablet['udid']+'\n')
+          json.dump({'source':os.environ['GITHUB_SHA'],'kind':'native-ios-simulator','iphone':phone,'ipad':tablet,'physicalDeviceTest':False},open('native-gallery/manifest.json','w'),indent=2)
+          PY
+      - name: Capture iPhone with bounded native launch and real CAS assertions
+        timeout-minutes: 20
+        run: |
+          unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
+          python3 tool/run_native_gallery.py --profile iphone --simulator "$GALLERY_IPHONE"
+      - name: Capture iPad with bounded native launch and real CAS assertions
+        timeout-minutes: 20
+        run: |
+          unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
+          python3 tool/run_native_gallery.py --profile ipad --simulator "$GALLERY_IPAD"
+      - name: Verify native images and record pixel dimensions
+        run: python3 tool/verify_native_gallery.py native-gallery iphone ipad
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-apple-screenshot-gallery
+          path: native-gallery
+          retention-days: 14
+  macos-gallery:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Stage verified native OCR runtime
+        run: python tool/stage_ocr_runtime.py --platform macos
+      - name: Resolve native desktop dependencies
+        run: flutter pub get
+      - name: Capture actual macOS application views
+        run: |
+          unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
+          mkdir -p native-gallery/macos
+          CRISPMATH_GALLERY_OUTPUT=native-gallery/macos flutter drive \
+            --driver=test_driver/product_gallery_driver.dart \
+            --target=integration_test/product_gallery_test.dart -d macos
+      - name: Verify real desktop images and source provenance
+        run: python tool/verify_native_gallery.py native-gallery macos
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-macos-screenshot-gallery
+          path: native-gallery
+          retention-days: 14

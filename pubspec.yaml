@@ -2,7 +2,7 @@ name: crisp_math
 description: CAS calculator with SymEngine
 publish_to: 'none'
 
-version: 1.1.1+10
+version: 1.2.0+22
 
 environment:
   # 3.3.0 floor: package:web ^1.0.0 (pulled in by the symbolic_math_bridge
@@ -11,6 +11,10 @@ environment:
   flutter: ">=3.16.0"
 
 dependencies:
+  args: ^2.7.0
+  http: ^1.6.0
+  meta: ^1.18.0
+  web: ^1.1.1
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -28,14 +32,17 @@ dependencies:
   symbolic_math_bridge:
     git:
       url: https://github.com/CrispStrobe/symbolic_math_bridge.git
-      ref: "d5ff0b4"   # bridge v1.5.0 + clarified bundled native library notices
+      ref: "e75dbbe916c238e6a109ba85aac227fe9bbe34b7"   # bridge v1.5.0 + clarified bundled native library notices
 
   # Constraint Satisfaction Problem solver — pure Dart, no native
   # deps. Powers the Analysis-hub "Constraints" module (Diophantine
   # equations, cryptarithms in V1; Sudoku and a generic mini-DSL in
   # follow-up rounds). Now published on pub.dev; bump the version
   # constraint when CSP-engine features we depend on grow.
-  dart_csp: ^2.2.0
+  dart_csp:
+    git:
+      url: https://github.com/CrispStrobe/dart_csp.git
+      ref: ce10138a4bc857847429b9cfa3d4071854a5bbca
 
   # Math rendering
   flutter_math_fork: ^0.7.2
@@ -61,12 +68,12 @@ dependencies:
   # Provides CrispEmbedOcr (math OCR), CrispOcrPipeline (general OCR),
   # CrispLayout (document layout), CrispTextDetect (text detection).
   crispembed:
-    path: ../CrispEmbed/flutter/crispembed
+    path: .ci/CrispEmbed/flutter/crispembed
   image: ^4.10.1
   supabase_flutter: ^2.17.2
-  onnxruntime: ^1.4.1
-  onnx_runtime_dart: ^0.10.7
   desktop_drop: ^0.8.4
+  file_picker: 11.0.3
+  crypto: 3.0.7
 
 dev_dependencies:
   flutter_test:
@@ -79,3 +86,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/licenses/
+    - assets/fonts/

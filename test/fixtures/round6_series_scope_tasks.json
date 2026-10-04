@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "reference": "At nonzero real centers, abs(x) has the exact local branches x or -x. At center -2, x*abs(x) is locally -x^2. A series formal variable is local in its expression/declaration; coefficients, center and order remain reactive ordinary scope inputs. These document controls additionally exercise real worksheet operation routing.",
+  "tasks": [
+    {
+      "id": "round6-series-scope-01", "kind": "document",
+      "title": "Positive Taylor branch ignores a same-name global scalar",
+      "lines": ["x=9", "series(abs(x),x,2,3)"],
+      "expected": ["9", "x"], "expectedFreeVars": [[], []]
+    },
+    {
+      "id": "round6-series-scope-02", "kind": "document",
+      "title": "Taylor alias keeps negative polynomial branch symbolic",
+      "lines": ["x=9", "taylor(x*abs(x),x,-2,3)"],
+      "expected": ["9", "-x^2"], "expectedFreeVars": [[], []]
+    },
+    {
+      "id": "round6-series-scope-03", "kind": "document",
+      "title": "Taylor coefficients remain reactive under formal-variable shadowing",
+      "lines": ["a=2", "p=2", "n=3", "x=9", "series(a*abs(x),x,p,n)"],
+      "edit": {"index": 0, "source": "a=3"},
+      "expected": ["3", "2", "3", "9", "3*x"],
+      "expectedFreeVars": [[], [], [], [], []]
+    },
+    {
+      "id": "round6-series-scope-04", "kind": "document",
+      "title": "Editing a Taylor center switches exact local branches",
+      "lines": ["p=2", "x=9", "series(abs(x),x,p,3)"],
+      "edit": {"index": 0, "source": "p=-2"},
+      "expected": ["-2", "9", "-x"], "expectedFreeVars": [[], [], []]
+    },
+    {
+      "id": "round6-series-scope-05", "kind": "document",
+      "title": "Formal variable remains local while same-name center uses global x",
+      "lines": ["x=9", "series(abs(x),x,x,3)"],
+      "expected": ["9", "x"], "expectedFreeVars": [[], []]
+    },
+    {
+      "id": "round6-series-scope-06", "kind": "document",
+      "title": "Taylor output retains an actually unbound symbolic variable",
+      "lines": ["series(abs(x),x,2,3)"],
+      "expected": ["x"], "expectedFreeVars": [["x"]]
+    },
+    {
+      "id": "round6-series-scope-07", "kind": "document",
+      "title": "Editing term count restores the exact quadratic local branch",
+      "lines": ["n=2", "series(x*abs(x),x,-2,n)"],
+      "edit": {"index": 0, "source": "n=3"},
+      "expected": ["3", "-x^2"], "expectedFreeVars": [[], ["x"]]
+    },
+    {
+      "id": "round6-series-scope-08", "kind": "document",
+      "title": "Fractional Taylor order is an error rather than a silent default",
+      "lines": ["series(abs(x),x,2,3/2)"],
+      "expected": [null], "expectedErrorContains": ["series order must be an integer"],
+      "expectedFreeVars": [["x"]]
+    }
+  ]
+}

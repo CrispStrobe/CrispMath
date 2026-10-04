@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "reference": "Additional negative controls; frozen fifty unchanged. abs(x) is not differentiable at zero.",
+  "tasks": [
+    {
+      "id": "round6-domain-01",
+      "kind": "module",
+      "title": "Undefined cusp derivative",
+      "operation": "differentiateAt",
+      "expression": "abs(x)",
+      "variable": "x",
+      "point": "0",
+      "errorContains": "does not exist"
+    },
+    {
+      "id": "round6-domain-02",
+      "kind": "engine",
+      "title": "Taylor series cannot fabricate cusp derivatives",
+      "operation": "series",
+      "args": [
+        "abs(x)",
+        "x",
+        "0",
+        "3"
+      ],
+      "errorContains": "does not exist"
+    }
+  ]
+}

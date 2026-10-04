@@ -10,7 +10,8 @@ import 'package:crisp_math/widgets/drawing_canvas.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('WASM OCR (OMR) E2E: fetch model, draw minus sign, recognize', (tester) async {
+  testWidgets('WASM OCR (OMR) E2E: fetch model, draw minus sign, recognize',
+      (tester) async {
     // 1. Init WASM Module
     final ok = await CrispEmbedOcrWasm.initModule();
     expect(ok, isTrue, reason: 'WASM module should initialize');
@@ -19,8 +20,9 @@ void main() {
     final variant = OcrModelCatalog.printedMath.first; // pix2tex-mfr-q4k
     final uri = Uri.parse(variant.url);
     final response = await http.get(uri);
-    expect(response.statusCode, 200, reason: 'Should download model successfully');
-    
+    expect(response.statusCode, 200,
+        reason: 'Should download model successfully');
+
     // 3. Load model
     final ocr = CrispEmbedOcrWasm.loadModel(
       response.bodyBytes,
@@ -63,9 +65,10 @@ void main() {
 
     // 7. Recognize
     final result = ocr!.recognizeGray(pixels, 384, 384);
-    expect(result, isNotNull, reason: 'Recognition should return a string (even if empty)');
+    expect(result, isNotNull,
+        reason: 'Recognition should return a string (even if empty)');
     // Just verifying it doesn't crash and returns some LaTeX (e.g., '-')
-    print('OCR Result: $result');
+    debugPrint('OCR Result: $result');
 
     ocr.dispose();
   });

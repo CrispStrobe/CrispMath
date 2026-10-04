@@ -18,6 +18,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      linux_runner:
+        description: 'GitHub-hosted build runner (queue fallback)'
+        type: choice
+        options: [ubuntu-latest, ubuntu-24.04, macos-latest]
+        default: ubuntu-latest
 
 # The deploy-pages action needs these to mint the Pages OIDC token.
 permissions:
@@ -32,14 +38,25 @@ concurrency:
 
 jobs:
   build-deploy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: ${{ inputs.linux_runner || 'ubuntu-latest' }}
+    timeout-minutes: 30
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Checkout CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -50,10 +67,16 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
 
       - name: Build web (release, dart2js, Pages base-href)
-        run: flutter build web --release --base-href /CrispMath/
+        run: tool/build_web.sh --release --no-wasm-dry-run -O2 --base-href /CrispMath/
 
       - name: SPA 404 fallback
         run: cp build/web/index.html build/web/404.html
@@ -66,3 +89,74 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published Pages workflows
+        env:
+          APP_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+          python tool/check_deployed_bundle.py --url "$APP_URL" --source "$GITHUB_SHA"
+          python tool/check_notepad_calendar_browser.py --url "$APP_URL" --output deployed-results/calendar.json
+          python tool/check_result_evidence_browser.py --url "$APP_URL" --output deployed-results/provenance
+          python tool/check_integral_syntax_browser.py --url "$APP_URL" --output deployed-results/integral-syntax
+          python tool/check_notepad_batch_browser.py --url "$APP_URL" --output deployed-results/notepad-batch
+          python tool/check_notepad_functions_browser.py --url "$APP_URL" --output deployed-results/notepad-functions
+          python tool/check_workflow_tasks_browser.py --url "$APP_URL" --output deployed-results/workflow-tasks.json
+          python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks test/fixtures/fresh_workflow_tasks.json --output deployed-results/fresh-workflow-tasks.json
+          for area in algebra numeric workflow; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/new_math_${area}_tasks.json" --output "deployed-results/new-math-${area}.json"
+          done
+          for area in algebra numeric workflow native_safety dependency bound; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round2_${area}_tasks.json" --output "deployed-results/round2-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round3_${area}_tasks.json" --output "deployed-results/round3-${area}.json"
+          done
+          for area in algebra numeric scope; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round4_${area}_tasks.json" --output "deployed-results/round4-${area}.json"
+          done
+          for area in algebra numeric scope; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round5_${area}_tasks.json" --output "deployed-results/round5-${area}.json"
+          done
+          for area in algebra numeric domain scope taylor series_scope variable; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round6_${area}_tasks.json" --output "deployed-results/round6-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round7_${area}_tasks.json" --output "deployed-results/round7-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round8_${area}_tasks.json" --output "deployed-results/round8-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round9_${area}_tasks.json" --output "deployed-results/round9-${area}.json"
+          done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round10_${area}_tasks.json" --output "deployed-results/round10-${area}.json"
+          done
+          python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
+          python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export
+          python tool/check_document_history_browser.py --url "$APP_URL" --output deployed-results/document-history
+          python tool/check_cloud_disabled_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/cloud-disabled
+          python tool/check_new_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/new-math-ui
+          python tool/check_round2_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round2-math-ui
+          python tool/check_round3_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round3-math-ui
+          python tool/check_round4_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round4-math-ui
+          python tool/check_round5_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-math-ui
+          python tool/check_round6_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round6-math-ui
+          python tool/check_round6_statistics_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round6-statistics-ui
+          python tool/check_round7_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round7-math-ui
+          python tool/check_round8_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round8-math-ui
+          python tool/check_round9_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round9-math-ui
+          python tool/check_round10_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round10-math-ui
+          python tool/check_round5_solve_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-solve-ui
+          python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
+          python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations
+          python tool/capture_product_gallery.py --url "$APP_URL" --source "$GITHUB_SHA" --output deployed-results/gallery
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pages-live-results
+          path: deployed-results
+          if-no-files-found: ignore
+          retention-days: 14

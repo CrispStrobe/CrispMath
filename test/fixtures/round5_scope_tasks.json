@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent solve-scope references frozen before output: x\u00b2-1 roots\u00b11; rational x-1=2(x+2) root-5, excluding-2; a*x=6 at a3 root2. Explicit variables bind only within solve; coefficients remain reactive. Formal derivative 3*x\u00b2 and antiderivative x\u00b3/3+C remain symbolic under global x=9; alias components are syntax locally.",
+  "tasks": [
+    {
+      "id": "round5-scope-01",
+      "kind": "document",
+      "title": "Explicit quadratic solve shadows global x",
+      "lines": [
+        "x=9",
+        "solve(x^2-1,x)"
+      ],
+      "expected": [
+        "9",
+        "x = {-1, 1}"
+      ],
+      "expectedFreeVars": [
+        [],
+        []
+      ]
+    },
+    {
+      "id": "round5-scope-02",
+      "kind": "document",
+      "title": "Rational solved variable stays local",
+      "lines": [
+        "x=9",
+        "solve((x-1)/(x+2)-2,x)"
+      ],
+      "expected": [
+        "9",
+        "x = -5"
+      ],
+      "expectedFreeVars": [
+        [],
+        []
+      ]
+    },
+    {
+      "id": "round5-scope-03",
+      "kind": "document",
+      "title": "Solve coefficient edits react while dummy variable stays local",
+      "lines": [
+        "a=2",
+        "x=9",
+        "solve(a*x=6,x)"
+      ],
+      "edit": {
+        "index": 0,
+        "source": "a=3"
+      },
+      "expected": [
+        "3",
+        "9",
+        "x = 2"
+      ],
+      "expectedFreeVars": [
+        [],
+        [],
+        []
+      ]
+    },
+    {
+      "id": "round5-scope-04",
+      "kind": "document",
+      "title": "Derivative retains formal variable under a global x",
+      "lines": [
+        "x=9",
+        "diff(x^3,x)"
+      ],
+      "expected": [
+        "9",
+        "3*x^2"
+      ],
+      "expectedFreeVars": [
+        [],
+        []
+      ]
+    },
+    {
+      "id": "round5-scope-05",
+      "kind": "document",
+      "title": "Indefinite integral retains its formal variable",
+      "lines": [
+        "x=9",
+        "integrate(x^2,x)"
+      ],
+      "expected": [
+        "9",
+        "x^3/3+C"
+      ],
+      "expectedFreeVars": [
+        [],
+        []
+      ]
+    },
+    {
+      "id": "round5-scope-06",
+      "kind": "document",
+      "title": "Differentiation alias syntax ignores ordinary same-name globals",
+      "lines": [
+        "d=7",
+        "dx=8",
+        "x=9",
+        "d/dx(x^3,x)"
+      ],
+      "expected": [
+        "7",
+        "8",
+        "9",
+        "3*x^2"
+      ],
+      "expectedFreeVars": [
+        [],
+        [],
+        [],
+        []
+      ]
+    }
+  ]
+}

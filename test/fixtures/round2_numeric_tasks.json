@@ -1,0 +1,576 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent fresh draft: exact arithmetic, empty-product power convention, sample deviation denominator n-1, normal symmetry, closed-form Student t(2), SI conversion, complete finite constraint sets and an independent integer objective bound.",
+  "tasks": [
+    {
+      "id": "round2-numeric-01",
+      "title": "Odd powers with opposite signs",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(-2)^11+2^11"
+      ],
+      "expected": "0",
+      "exact": true
+    },
+    {
+      "id": "round2-numeric-02",
+      "title": "Nested rational quotient",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(3/8-5/12)/(7/24)"
+      ],
+      "expected": "-1/7",
+      "exact": true
+    },
+    {
+      "id": "round2-numeric-03",
+      "title": "Huge integer decimal remainder",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(10^40-1)%9"
+      ],
+      "expected": "0",
+      "exact": true
+    },
+    {
+      "id": "round2-numeric-04",
+      "title": "Zero power empty-product convention",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "0^0"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "round2-numeric-05",
+      "title": "Rational perfect square root",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(81/16)"
+      ],
+      "expected": "9/4"
+    },
+    {
+      "id": "round2-numeric-06",
+      "title": "Sum of rational magnitudes",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "abs(-5/6)+abs(7/9)"
+      ],
+      "expected": "29/18",
+      "exact": true
+    },
+    {
+      "id": "round2-numeric-07",
+      "title": "Seven choose three",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "7!/(3!*4!)"
+      ],
+      "expected": "35"
+    },
+    {
+      "id": "round2-numeric-08",
+      "title": "Right associated powers",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "2^(3^2)"
+      ],
+      "expected": "512",
+      "exact": true
+    },
+    {
+      "id": "round2-numeric-09",
+      "title": "Nested parenthesized powers",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(2^3)^2"
+      ],
+      "expected": "64",
+      "exact": true
+    },
+    {
+      "id": "round2-numeric-10",
+      "title": "Negative base negative exponent",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "(-3)^(-2)"
+      ],
+      "expected": "1/9",
+      "exact": true
+    },
+    {
+      "id": "round2-numeric-11",
+      "title": "Singleton sample deviation is undefined",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        7
+      ],
+      "expected": {
+        "mean": 7,
+        "median": 7,
+        "sampleStddev": null
+      }
+    },
+    {
+      "id": "round2-numeric-12",
+      "title": "Mixed signed descriptive sample",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        -5,
+        -1,
+        3,
+        7
+      ],
+      "expected": {
+        "mean": 1,
+        "median": 1,
+        "sampleStddev": 5.163977794943222
+      }
+    },
+    {
+      "id": "round2-numeric-13",
+      "title": "Large offset small sample dispersion",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        1000001,
+        1000002,
+        1000003
+      ],
+      "expected": {
+        "mean": 1000002,
+        "median": 1000002,
+        "sampleStddev": 1
+      }
+    },
+    {
+      "id": "round2-numeric-14",
+      "title": "Negative slope exact regression",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        -2,
+        -1,
+        0,
+        1,
+        2
+      ],
+      "ys": [
+        8,
+        5,
+        2,
+        -1,
+        -4
+      ],
+      "expected": {
+        "slope": -3,
+        "intercept": 2,
+        "rSquared": 1
+      }
+    },
+    {
+      "id": "round2-numeric-15",
+      "title": "Degenerate binomial zero success",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 5,
+      "p": 0,
+      "k": 0,
+      "expected": 1
+    },
+    {
+      "id": "round2-numeric-16",
+      "title": "Degenerate binomial impossible failure",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 5,
+      "p": 1,
+      "k": 4,
+      "expected": 0
+    },
+    {
+      "id": "round2-numeric-17",
+      "title": "Asymmetric binomial single success",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 3,
+      "p": 0.25,
+      "k": 1,
+      "expected": 0.421875
+    },
+    {
+      "id": "round2-numeric-18",
+      "title": "Binomial outside support",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 3,
+      "p": 0.5,
+      "k": 4,
+      "expected": 0
+    },
+    {
+      "id": "round2-numeric-19",
+      "title": "Narrow shifted normal symmetry",
+      "kind": "module",
+      "operation": "normalCdf",
+      "mean": -6,
+      "stddev": 0.125,
+      "x": -6,
+      "expected": 0.5
+    },
+    {
+      "id": "round2-numeric-20",
+      "title": "Student t two degree central interval",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 2,
+      "lower": -1,
+      "upper": 1,
+      "expected": 0.5773502691896257
+    },
+    {
+      "id": "round2-numeric-21",
+      "title": "Megajoule to watt-hours",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "1 MJ in Wh",
+      "expected": "277.7777777778 Wh"
+    },
+    {
+      "id": "round2-numeric-22",
+      "title": "Micrometres to metres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "500 μm in m",
+      "expected": "0.0005 m"
+    },
+    {
+      "id": "round2-numeric-23",
+      "title": "Pressure SI prefix",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "2.5 kPa in Pa",
+      "expected": "2500 Pa"
+    },
+    {
+      "id": "round2-numeric-24",
+      "title": "Squared centimetre prefix conversion",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "5 cm^2 in mm^2",
+      "expected": "500 mm²"
+    },
+    {
+      "id": "round2-numeric-25",
+      "title": "Cubic centimetres to litres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "125 cm^3 in L",
+      "expected": "0.125 L"
+    },
+    {
+      "id": "round2-numeric-26",
+      "title": "Kilometres per second",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "3.6 km/s in m/s",
+      "expected": "3600 m/s"
+    },
+    {
+      "id": "round2-numeric-27",
+      "title": "Negative Fahrenheit temperature",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "-22 °F in °C",
+      "expected": "-30 °C"
+    },
+    {
+      "id": "round2-numeric-28",
+      "title": "Body temperature Fahrenheit",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "310.15 K in °F",
+      "expected": "98.6 °F"
+    },
+    {
+      "id": "round2-numeric-29",
+      "title": "Derived velocity to road units",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "12 m / 3 s in km/h",
+      "expected": "14.4 km/h"
+    },
+    {
+      "id": "round2-numeric-30",
+      "title": "Force displacement work",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "15 N * 2 m in J",
+      "expected": "30 J"
+    },
+    {
+      "id": "round2-numeric-31",
+      "title": "Signed ordered sum partitions",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in -3..3\nx + y == -2\nx < y",
+      "expected": [
+        {
+          "x": -3,
+          "y": 1
+        },
+        {
+          "x": -2,
+          "y": 0
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round2-numeric-32",
+      "title": "Signed product zero axes",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in -3..3\nx * y == 0",
+      "expected": [
+        {
+          "x": -3,
+          "y": 0
+        },
+        {
+          "x": -2,
+          "y": 0
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": -3
+        },
+        {
+          "x": 0,
+          "y": -2
+        },
+        {
+          "x": 0,
+          "y": -1
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 2
+        },
+        {
+          "x": 0,
+          "y": 3
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": 0
+        },
+        {
+          "x": 3,
+          "y": 0
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round2-numeric-33",
+      "title": "Outer signed square bounds",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -4..4\nx*x >= 9",
+      "expected": [
+        {
+          "x": -4
+        },
+        {
+          "x": -3
+        },
+        {
+          "x": 3
+        },
+        {
+          "x": 4
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round2-numeric-34",
+      "title": "Positive cube in signed domain",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -3..3\nx*x*x == 8",
+      "expected": [
+        {
+          "x": 2
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round2-numeric-35",
+      "title": "Distinct bounded sum permutations",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: a, b, c in 0..3\nallDifferent(a,b,c)\na + b + c == 3",
+      "expected": [
+        {
+          "a": 0,
+          "b": 1,
+          "c": 2
+        },
+        {
+          "a": 0,
+          "b": 2,
+          "c": 1
+        },
+        {
+          "a": 1,
+          "b": 0,
+          "c": 2
+        },
+        {
+          "a": 1,
+          "b": 2,
+          "c": 0
+        },
+        {
+          "a": 2,
+          "b": 0,
+          "c": 1
+        },
+        {
+          "a": 2,
+          "b": 1,
+          "c": 0
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round2-numeric-36",
+      "title": "Infeasible domain lower sum",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 2..4\nx + y == 1",
+      "expected": [],
+      "unordered": true
+    },
+    {
+      "id": "round2-numeric-37",
+      "title": "Exactly one of four binary decisions",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: a, b, c, d in 0..1\na + b + c + d == 1",
+      "expected": [
+        {
+          "a": 1,
+          "b": 0,
+          "c": 0,
+          "d": 0
+        },
+        {
+          "a": 0,
+          "b": 1,
+          "c": 0,
+          "d": 0
+        },
+        {
+          "a": 0,
+          "b": 0,
+          "c": 1,
+          "d": 0
+        },
+        {
+          "a": 0,
+          "b": 0,
+          "c": 0,
+          "d": 1
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round2-numeric-38",
+      "title": "Bounded cost minimization",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in 0..5\n2*x + y >= 7\nminimize x + y",
+      "expected": 4
+    },
+    {
+      "id": "round2-numeric-39",
+      "title": "Repeated product zero with nonzero root",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in -2..2\nx*x*y == 0\nx != 0",
+      "expected": [
+        {
+          "x": -2,
+          "y": 0
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": 0
+        }
+      ],
+      "unordered": true
+    },
+    {
+      "id": "round2-numeric-40",
+      "title": "Mixed signed coefficient equation",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in 0..5\n3*x - 2*y == 1",
+      "expected": [
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 3,
+          "y": 4
+        }
+      ],
+      "unordered": true
+    }
+  ]
+}

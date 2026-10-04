@@ -1,0 +1,79 @@
+--- a/src/posformer_ocr.cpp
++++ b/src/posformer_ocr.cpp
+@@ -91,6 +91,8 @@
+     struct ggml_tensor * word_embed_w;
+     struct ggml_tensor * word_embed_ln_w;
+     struct ggml_tensor * word_embed_ln_b;
++    struct ggml_tensor * input_norm_w;
++    struct ggml_tensor * input_norm_b;
+     struct ggml_tensor * pos_enc;
+     struct ggml_tensor * proj_w;
+     struct ggml_tensor * proj_b;
+@@ -253,6 +255,8 @@
+     ctx->word_embed_w = find(m, "dec.word_embed.weight");
+     ctx->word_embed_ln_w = find(m, "dec.word_embed_ln.weight");
+     ctx->word_embed_ln_b = find(m, "dec.word_embed_ln.bias");
++    ctx->input_norm_w = find(m, "dec.input_norm.weight");
++    ctx->input_norm_b = find(m, "dec.input_norm.bias");
+     ctx->pos_enc = find(m, "dec.pos_enc");
+     ctx->proj_w = find(m, "dec.proj.weight");
+     ctx->proj_b = find(m, "dec.proj.bias");
+@@ -290,8 +294,15 @@
+     ctx->arm.proj_w = find(m, "arm.proj.weight");
+     ctx->arm.proj_b = find(m, "arm.proj.bias");
+ 
+-    if (!ctx->stem_conv_w || !ctx->word_embed_w || !ctx->proj_w || !ctx->arm.conv_w) {
++    if (!ctx->stem_conv_w || !ctx->word_embed_w || !ctx->proj_w || !ctx->arm.conv_w ||
++        !ctx->input_norm_w || !ctx->input_norm_b || !ctx->pos_enc) {
+         fprintf(stderr, "posformer_ocr: missing critical tensors\n");
++        return false;
++    }
++    if (ggml_nelements(ctx->input_norm_w) != hp.d_model ||
++        ggml_nelements(ctx->input_norm_b) != hp.d_model ||
++        ctx->pos_enc->ne[0] != hp.d_model || ctx->pos_enc->ne[1] < hp.max_len) {
++        fprintf(stderr, "posformer_ocr: invalid input normalization or position shape\n");
+         return false;
+     }
+     return true;
+@@ -769,6 +780,24 @@
+ }
+ 
+ // ---------------------------------------------------------------------------
++// Diagnostic-only patch: shared token-input path used by real decode and probe.
++static void prepare_token_input(float * x, int d, const float * word_w, const float * word_b,
++                                const float * position, const float * input_w, const float * input_b) {
++    layernorm(x, d, word_w, word_b);
++    if (position) for (int i = 0; i < d; ++i) x[i] += position[i];
++    layernorm(x, d, input_w, input_b);
++}
++
++extern "C" __attribute__((visibility("default"))) int crispembed_posformer_input_norm_probe(const float * embedding, const float * position,
++    const float * word_w, const float * word_b, const float * input_w, const float * input_b,
++    float * output, int d) {
++    if (!embedding || !position || !word_w || !word_b || !input_w || !input_b || !output ||
++        d < 1 || d > 4096) return 0;
++    memcpy(output, embedding, d * sizeof(float));
++    prepare_token_input(output, d, word_w, word_b, position, input_w, input_b);
++    return 1;
++}
++
+ // Transformer decoder with ARM (greedy, incremental)
+ // ---------------------------------------------------------------------------
+ 
+@@ -829,12 +858,10 @@
+             const float * emb = tf32(ctx, ctx->word_embed_w);
+             memcpy(ds.x.data(), emb + prev_token * D, D * sizeof(float));
+         }
+-        layernorm(ds.x.data(), D, tf32(ctx, ctx->word_embed_ln_w), tf32(ctx, ctx->word_embed_ln_b));
+-
+-        if (ctx->pos_enc && step < 500) {
+-            const float * pe = tf32(ctx, ctx->pos_enc);
+-            for (int i = 0; i < D; i++) ds.x[i] += pe[step * D + i];
+-        }
++        const float * position = ctx->pos_enc && step < ctx->pos_enc->ne[1] ? tf32(ctx, ctx->pos_enc) + step * D : nullptr;
++        prepare_token_input(ds.x.data(), D, tf32(ctx, ctx->word_embed_ln_w),
++            tf32(ctx, ctx->word_embed_ln_b), position,
++            tf32(ctx, ctx->input_norm_w), tf32(ctx, ctx->input_norm_b));
+ 
+         memset(ds.prev_layer_ca_weights.data(), 0, nhead * n_enc * sizeof(float));
+ 

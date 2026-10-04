@@ -6,4 +6,4 @@
 // dart.library.io is absent (dart2js / dart2wasm).
 
 /// No-op on web: there is no process to inspect or exit.
-void runDiagnosticsIfRequested() {}
+Future<void> runDiagnosticsIfRequested() async {}

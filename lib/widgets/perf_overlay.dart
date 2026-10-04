@@ -1,11 +1,11 @@
 // lib/widgets/perf_overlay.dart
 //
-// Developer performance overlay — frame timing + jank detection.
+// Developer performance overlay — UI/raster timings and vsync budgets.
 //
 // Toggle via Settings or the debug shortcut Ctrl+Shift+P.
 // Shows a compact bar at the top with:
-//   - Current FPS (rolling average over 60 frames)
-//   - Jank count (frames > 16.67ms since last reset)
+//   - UI and raster p95 work times over the last 60 frames
+//   - Jank count against the display refresh-rate budget
 //   - Worst frame time
 //
 // Lightweight: uses SchedulerBinding.addTimingsCallback which is
@@ -13,6 +13,7 @@
 // a single Text widget — no custom painting or expensive layout.
 
 import 'dart:collection';
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -24,9 +25,17 @@ class PerfStats {
   static final PerfStats instance = PerfStats._();
 
   static const int _windowSize = 60;
-  static const Duration _jankThreshold = Duration(microseconds: 16667);
+  double _refreshRate = 60;
+  double get refreshRate => _refreshRate;
+  Duration get frameBudget =>
+      Duration(microseconds: (1e6 / _refreshRate).round());
+  void setRefreshRate(double hz) {
+    if (hz.isFinite && hz > 0) _refreshRate = hz;
+  }
 
   final Queue<Duration> _frameTimes = Queue();
+  final Queue<Duration> _buildTimes = Queue();
+  final Queue<Duration> _rasterTimes = Queue();
   int _jankCount = 0;
   Duration _worstFrame = Duration.zero;
   bool _listening = false;
@@ -35,6 +44,8 @@ class PerfStats {
   Duration get worstFrame => _worstFrame;
   int get frameCount => _frameTimes.length;
 
+  /// Estimated processing capacity, retained for compatibility. This is not
+  /// presentation FPS: idle intervals and missed vsyncs are not represented.
   double get fps {
     if (_frameTimes.isEmpty) return 0;
     final total = _frameTimes.fold<int>(0, (sum, d) => sum + d.inMicroseconds);
@@ -46,6 +57,15 @@ class PerfStats {
     if (_frameTimes.isEmpty) return 0;
     final total = _frameTimes.fold<int>(0, (sum, d) => sum + d.inMicroseconds);
     return total / _frameTimes.length / 1000;
+  }
+
+  double get buildP95Ms => _percentile(_buildTimes);
+  double get rasterP95Ms => _percentile(_rasterTimes);
+
+  double _percentile(Queue<Duration> values) {
+    if (values.isEmpty) return 0;
+    final sorted = values.map((d) => d.inMicroseconds).toList()..sort();
+    return sorted[(sorted.length * 0.95).ceil() - 1] / 1000;
   }
 
   void start() {
@@ -62,25 +82,37 @@ class PerfStats {
 
   void reset() {
     _frameTimes.clear();
+    _buildTimes.clear();
+    _rasterTimes.clear();
     _jankCount = 0;
     _worstFrame = Duration.zero;
   }
 
   void _onTimings(List<FrameTiming> timings) {
     for (final t in timings) {
-      final total = t.totalSpan;
-      _frameTimes.addLast(total);
-      while (_frameTimes.length > _windowSize) {
-        _frameTimes.removeFirst();
-      }
-      if (total > _jankThreshold) _jankCount++;
-      if (total > _worstFrame) _worstFrame = total;
+      recordFrame(t.buildDuration, t.rasterDuration);
     }
+  }
+
+  /// UI and raster have separate vsync budgets; totalSpan includes pipeline
+  /// latency and must not be used as a proxy for either phase's workload.
+  void recordFrame(Duration build, Duration raster) {
+    final work = build > raster ? build : raster;
+    _frameTimes.addLast(work);
+    _buildTimes.addLast(build);
+    _rasterTimes.addLast(raster);
+    while (_frameTimes.length > _windowSize) {
+      _frameTimes.removeFirst();
+      _buildTimes.removeFirst();
+      _rasterTimes.removeFirst();
+    }
+    if (build > frameBudget || raster > frameBudget) _jankCount++;
+    if (work > _worstFrame) _worstFrame = work;
   }
 }
 
 /// Compact performance overlay widget. Rebuilds every ~500ms via a
-/// periodic ticker to avoid per-frame rebuilds.
+/// periodic timer to avoid scheduling unnecessary animation frames.
 class PerfOverlay extends StatefulWidget {
   const PerfOverlay({super.key});
 
@@ -89,34 +121,36 @@ class PerfOverlay extends StatefulWidget {
 }
 
 class _PerfOverlayState extends State<PerfOverlay> {
-  late final Ticker _ticker;
-  int _tickCount = 0;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     PerfStats.instance.start();
-    _ticker = Ticker((_) {
-      _tickCount++;
-      // Rebuild every ~30 ticks (~500ms at 60fps).
-      if (_tickCount % 30 == 0 && mounted) {
-        setState(() {});
-      }
-    })
-      ..start();
+    _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    PerfStats.instance.setRefreshRate(View.of(context).display.refreshRate);
   }
 
   @override
   void dispose() {
-    _ticker.dispose();
+    _timer?.cancel();
+    PerfStats.instance.stop();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final stats = PerfStats.instance;
-    final fps = stats.fps.toStringAsFixed(0);
-    final avg = stats.avgFrameMs.toStringAsFixed(1);
+    final ui = stats.buildP95Ms.toStringAsFixed(1);
+    final raster = stats.rasterP95Ms.toStringAsFixed(1);
+    final hz = stats.refreshRate.toStringAsFixed(0);
     final worst = (stats.worstFrame.inMicroseconds / 1000).toStringAsFixed(1);
     final janks = stats.jankCount;
     final cs = Theme.of(context).colorScheme;
@@ -131,7 +165,7 @@ class _PerfOverlayState extends State<PerfOverlay> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       color: cs.surfaceContainerHighest.withValues(alpha: 0.9),
       child: Text(
-        '$fps fps  |  avg ${avg}ms  |  worst ${worst}ms  |  janks: $janks',
+        'UI p95 ${ui}ms  |  raster p95 ${raster}ms  |  ${hz}Hz  |  worst ${worst}ms  |  janks: $janks',
         style: TextStyle(
           fontFamily: 'monospace',
           fontSize: 11,

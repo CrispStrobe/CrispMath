@@ -1,0 +1,432 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independently drafted algebra/calculus identities and manual exact derivations; see docs/new-math-audit-algebra.md. No app output used for expected values.",
+  "tasks": [
+    {
+      "id": "new-algebra-01",
+      "kind": "engine",
+      "title": "Adjacent 127-bit integers",
+      "operation": "evaluate",
+      "args": [
+        "(2^127-1)-(2^127-2)"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "new-algebra-02",
+      "kind": "engine",
+      "title": "Huge factorial cancellation",
+      "operation": "evaluate",
+      "args": [
+        "100!/(98!*99*100)"
+      ],
+      "expected": "1",
+      "exact": true
+    },
+    {
+      "id": "new-algebra-03",
+      "kind": "engine",
+      "title": "Rational ratio",
+      "operation": "evaluate",
+      "args": [
+        "(1/3+1/7)/(1/3-1/7)"
+      ],
+      "expected": "5/2"
+    },
+    {
+      "id": "new-algebra-04",
+      "kind": "engine",
+      "title": "Radical cancellation",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(50)-5*sqrt(2)"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "new-algebra-05",
+      "kind": "engine",
+      "title": "Principal rational square root",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(81/16)"
+      ],
+      "expected": "9/4"
+    },
+    {
+      "id": "new-algebra-06",
+      "kind": "engine",
+      "title": "Logarithm of real exponential",
+      "operation": "evaluate",
+      "args": [
+        "ln(exp(-7/3))"
+      ],
+      "expected": "-7/3"
+    },
+    {
+      "id": "new-algebra-07",
+      "kind": "engine",
+      "title": "Two-argument logarithm",
+      "operation": "evaluate",
+      "args": [
+        "log(64,2)"
+      ],
+      "expected": "6"
+    },
+    {
+      "id": "new-algebra-08",
+      "kind": "engine",
+      "title": "Trigonometric identity at nonstandard angle",
+      "operation": "evaluate",
+      "args": [
+        "sin(pi/12)^2+cos(pi/12)^2"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "new-algebra-09",
+      "kind": "engine",
+      "title": "Half-angle tangent",
+      "operation": "evaluate",
+      "args": [
+        "tan(pi/8)"
+      ],
+      "expected": "sqrt(2)-1"
+    },
+    {
+      "id": "new-algebra-10",
+      "kind": "engine",
+      "title": "Principal inverse sine",
+      "operation": "evaluate",
+      "args": [
+        "asin(1/2)"
+      ],
+      "expected": "pi/6"
+    },
+    {
+      "id": "new-algebra-11",
+      "kind": "engine",
+      "title": "Hyperbolic cosine of logarithm",
+      "operation": "evaluate",
+      "args": [
+        "cosh(ln(3))"
+      ],
+      "expected": "5/3"
+    },
+    {
+      "id": "new-algebra-12",
+      "kind": "engine",
+      "title": "Hyperbolic sine of logarithm",
+      "operation": "evaluate",
+      "args": [
+        "sinh(ln(3))"
+      ],
+      "expected": "4/3"
+    },
+    {
+      "id": "new-algebra-13",
+      "kind": "engine",
+      "title": "Inverse tangent sum with branches",
+      "operation": "evaluate",
+      "args": [
+        "atan(1)+atan(2)+atan(3)"
+      ],
+      "expected": "pi"
+    },
+    {
+      "id": "new-algebra-14",
+      "kind": "engine",
+      "title": "Complex eighth power",
+      "operation": "evaluate",
+      "args": [
+        "(1+I)^8"
+      ],
+      "expected": "16"
+    },
+    {
+      "id": "new-algebra-15",
+      "kind": "engine",
+      "title": "Complex conjugate ratio",
+      "operation": "evaluate",
+      "args": [
+        "(3+4*I)/(3-4*I)"
+      ],
+      "expected": "-7/25+24*I/25"
+    },
+    {
+      "id": "new-algebra-16",
+      "kind": "engine",
+      "title": "Large imaginary exponent",
+      "operation": "evaluate",
+      "args": [
+        "I^2027"
+      ],
+      "expected": "-I"
+    },
+    {
+      "id": "new-algebra-17",
+      "kind": "engine",
+      "title": "Negative real principal square root",
+      "operation": "evaluate",
+      "args": [
+        "sqrt(-16)"
+      ],
+      "expected": "4*I"
+    },
+    {
+      "id": "new-algebra-18",
+      "kind": "engine",
+      "title": "Euler identity",
+      "operation": "evaluate",
+      "args": [
+        "exp(I*pi)+1"
+      ],
+      "expected": "0"
+    },
+    {
+      "id": "new-algebra-19",
+      "kind": "engine",
+      "title": "Pythagorean complex magnitude",
+      "operation": "evaluate",
+      "args": [
+        "abs(5-12*I)"
+      ],
+      "expected": "13"
+    },
+    {
+      "id": "new-algebra-20",
+      "kind": "engine",
+      "title": "Principal negative-real logarithm",
+      "operation": "evaluate",
+      "args": [
+        "ln(-1)"
+      ],
+      "expected": "pi*I"
+    },
+    {
+      "id": "new-algebra-21",
+      "kind": "module",
+      "title": "Variable power derivative at one",
+      "operation": "differentiateAt",
+      "expression": "x^x",
+      "variable": "x",
+      "point": "1",
+      "expected": "1"
+    },
+    {
+      "id": "new-algebra-22",
+      "kind": "module",
+      "title": "Logarithmic chain rule at two",
+      "operation": "differentiateAt",
+      "expression": "ln(1+x^2)",
+      "variable": "x",
+      "point": "2",
+      "expected": "4/5"
+    },
+    {
+      "id": "new-algebra-23",
+      "kind": "module",
+      "title": "Oscillatory chain rule at one",
+      "operation": "differentiateAt",
+      "expression": "sin(x^2)",
+      "variable": "x",
+      "point": "1",
+      "expected": "2*cos(1)"
+    },
+    {
+      "id": "new-algebra-24",
+      "kind": "module",
+      "title": "Gaussian derivative at two",
+      "operation": "differentiateAt",
+      "expression": "exp(-x^2)",
+      "variable": "x",
+      "point": "2",
+      "expected": "-4*exp(-4)"
+    },
+    {
+      "id": "new-algebra-25",
+      "kind": "module",
+      "title": "Inverse tangent derivative at three",
+      "operation": "differentiateAt",
+      "expression": "atan(x)",
+      "variable": "x",
+      "point": "3",
+      "expected": "1/10"
+    },
+    {
+      "id": "new-algebra-26",
+      "kind": "module",
+      "title": "Rational quotient derivative at two",
+      "operation": "differentiateAt",
+      "expression": "x/(1+x^2)",
+      "variable": "x",
+      "point": "2",
+      "expected": "-3/25"
+    },
+    {
+      "id": "new-algebra-27",
+      "kind": "module",
+      "title": "Radical chain rule at three",
+      "operation": "differentiateAt",
+      "expression": "sqrt(1+x^2)",
+      "variable": "x",
+      "point": "3",
+      "expected": "3/sqrt(10)"
+    },
+    {
+      "id": "new-algebra-28",
+      "kind": "engine",
+      "title": "Signed polynomial integral",
+      "operation": "integrate",
+      "args": [
+        "x^3-2*x+1",
+        "x",
+        "-2",
+        "3"
+      ],
+      "expected": "65/4"
+    },
+    {
+      "id": "new-algebra-29",
+      "kind": "engine",
+      "title": "Inverse tangent definite integral",
+      "operation": "integrate",
+      "args": [
+        "1/(1+x^2)",
+        "x",
+        "0",
+        "1"
+      ],
+      "expected": "pi/4"
+    },
+    {
+      "id": "new-algebra-30",
+      "kind": "engine",
+      "title": "Sine squared period integral",
+      "operation": "integrate",
+      "args": [
+        "sin(x)^2",
+        "x",
+        "0",
+        "pi"
+      ],
+      "expected": "pi/2"
+    },
+    {
+      "id": "new-algebra-31",
+      "kind": "engine",
+      "title": "Integration by parts exponential",
+      "operation": "integrate",
+      "args": [
+        "x*exp(x)",
+        "x",
+        "0",
+        "1"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "new-algebra-32",
+      "kind": "engine",
+      "title": "Natural logarithm definite integral",
+      "operation": "integrate",
+      "args": [
+        "ln(x)",
+        "x",
+        "1",
+        "E"
+      ],
+      "expected": "1"
+    },
+    {
+      "id": "new-algebra-33",
+      "kind": "engine",
+      "title": "Scaled sine limit",
+      "operation": "limit",
+      "args": [
+        "sin(3*x)/x",
+        "x",
+        "0"
+      ],
+      "expected": "3"
+    },
+    {
+      "id": "new-algebra-34",
+      "kind": "engine",
+      "title": "Second-order cosine limit",
+      "operation": "limit",
+      "args": [
+        "(1-cos(x))/x^2",
+        "x",
+        "0"
+      ],
+      "expected": "1/2"
+    },
+    {
+      "id": "new-algebra-35",
+      "kind": "engine",
+      "title": "Radical removable limit",
+      "operation": "limit",
+      "args": [
+        "(sqrt(1+x)-1)/x",
+        "x",
+        "0"
+      ],
+      "expected": "1/2"
+    },
+    {
+      "id": "new-algebra-36",
+      "kind": "engine",
+      "title": "Quadratic integer roots",
+      "operation": "solve",
+      "args": [
+        "x^2-5*x+6",
+        "x"
+      ],
+      "expected": "x = {2, 3}"
+    },
+    {
+      "id": "new-algebra-37",
+      "kind": "engine",
+      "title": "Rational equation with forbidden denominator",
+      "operation": "solve",
+      "args": [
+        "(x-1)/(x+2)-2",
+        "x"
+      ],
+      "expected": "x = -5"
+    },
+    {
+      "id": "new-algebra-38",
+      "kind": "engine",
+      "title": "Three by three cofactor determinant",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[1,2,3],[0,4,5],[1,0,6]]))"
+      ],
+      "expected": "22"
+    },
+    {
+      "id": "new-algebra-39",
+      "kind": "engine",
+      "title": "Coupled symmetric eigenvalues",
+      "operation": "evaluate",
+      "args": [
+        "eigenvalues(Matrix([[2,1],[1,2]]))"
+      ],
+      "expected": "{1, 3}"
+    },
+    {
+      "id": "new-algebra-40",
+      "kind": "engine",
+      "title": "Two-variable elimination",
+      "operation": "linsolve",
+      "args": [
+        "2*x+y-5;x-y-1",
+        "x,y"
+      ],
+      "expected": "x = 2, y = 1"
+    }
+  ]
+}
