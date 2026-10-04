@@ -13,6 +13,12 @@ from round11_algebra_reference_checks import (CASES as ALGEBRA_CASES,
 
 
 async def check(args):
+    failures=[]
+    async def stage(name, operation):
+        try:
+            await operation()
+        except Exception as error:
+            failures.append({'stage':name,'error':repr(error)})
     cases=list(ALGEBRA_CASES)
     numeric_validator=None
     numeric_modules=None
@@ -31,12 +37,12 @@ async def check(args):
     controls.CASES=cases
     controls.validate_result=validate
     controls.AFTER_ENTRY=None
-    await controls.check(args)
+    await stage('worksheet',lambda:controls.check(args))
     calculator_controls.LINSOLVE_SOURCE=LINSOLVE_SOURCE
     calculator_controls.validate_linsolve=validate_linsolve
-    await calculator_controls.check_calculator(args)
+    await stage('linear-system-calculator',lambda:calculator_controls.check_calculator(args))
     if numeric_modules is not None:
-        await numeric_modules(args)
+        await stage('compact-descriptive-and-optima',lambda:numeric_modules(args))
         report_path=Path(args.output)/'modules'/'report.json'
         report=json.loads(report_path.read_text())
         report['coverage']='round11: two compact descriptive samples and two integer optima'
@@ -44,7 +50,11 @@ async def check(args):
         report_path.write_text(json.dumps(report,indent=2)+'\n')
     if numeric_modules is not None:
         from check_round11_modules_browser import check_modules
-        await check_modules(args)
+        await stage('complete-additional-modules',lambda:check_modules(args))
+    summary={'passed':not failures,'toolSource':os.environ.get('GITHUB_SHA'),
+             'failures':failures,'coverage':'Separate actual worksheet, linear system, descriptive/optima, and remaining module reports provide measured coverage.'}
+    (Path(args.output)/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+    assert not failures,failures
 
 
 if __name__=='__main__':
