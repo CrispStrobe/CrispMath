@@ -84,6 +84,8 @@ async def semantics(page):
 async def menu(page, label):
     await real_click(page, page.get_by_role('button', name='Document menu', exact=True))
     await real_click(page, page.get_by_label(label, exact=True))
+    await page.get_by_label('Popup menu', exact=True).wait_for(state='hidden')
+    await next_frames(page)
 
 
 async def notepad(page):
@@ -103,7 +105,9 @@ async def worksheet_result(page, name, first, expected):
         doc.l[2].s==='f(4)' && doc.l[2].r===expected.result;
     }""", arg={'name': name, 'first': first, 'result': expected})
     fields = page.get_by_role('textbox')
-    assert await fields.count() == 3, 'Expected the three real worksheet editors'
+    # Imported source can be persisted before the popup route's accessibility
+    # surface has closed and exposed the three worksheet editors.
+    await expect(fields).to_have_count(3)
     for index, source in enumerate([first, 'f(t)=t^2+a', 'f(4)']):
         field = fields.nth(index)
         # Flutter fills its native editing element when the real controller
