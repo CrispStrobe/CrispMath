@@ -9,6 +9,26 @@ import tempfile
 import urllib.request
 
 ASSETS = ('crispembed_ocr.js', 'crispembed_ocr.wasm')
+UTF8_BEFORE = b'UTF8Decoder.decode(heapOrArray.subarray(idx,endPtr))'
+UTF8_AFTER = b'UTF8Decoder.decode(heapOrArray.buffer.resizable?heapOrArray.slice(idx,endPtr):heapOrArray.subarray(idx,endPtr))'
+PATCH_RULE_SHA256 = hashlib.sha256(UTF8_BEFORE + b'\n' + UTF8_AFTER).hexdigest()
+PATCHED_17_12_JS_SHA256 = 'b5116b0625c30bc5be2f0ebcd9aae096936de7cb7fc4cf04cb9a096cd5e46407'
+PATCH_SOURCE = 'https://github.com/emscripten-core/emscripten/pull/27242'
+PATCH_SOURCE_COMMIT = 'a41c221fbe7b99bf2f0d7e84990f90b5bf2fd9f3'
+
+
+def patch_loader(script):
+    if script.count(UTF8_BEFORE) != 1 or UTF8_AFTER in script:
+        raise ValueError('Expected exactly one known Emscripten UTF8 decoder call')
+    return script.replace(UTF8_BEFORE, UTF8_AFTER)
+
+
+def staged_checksums(version, published):
+    result = published.copy()
+    if version == '0.17.12':
+        result['crispembed_ocr.js'] = PATCHED_17_12_JS_SHA256
+    return result
+
 REQUIRED_EXPORTS = ('_wasm_ocr_version', '_wasm_ocr_init',
                     '_wasm_ocr_recognize_gray', '_wasm_ocr_recognize',
                     '_wasm_ocr_free', '_malloc', '_free')
@@ -56,6 +76,12 @@ def stage(root=Path('.'), *, fetch=download, source_revision=None, environment=N
         if hashlib.sha256(data).hexdigest() != expected:
             raise ValueError(f'Checksum mismatch for {asset}')
         files[asset] = data
+    downloaded = {name: hashlib.sha256(data).hexdigest() for name, data in files.items()}
+    patch = None
+    if version == '0.17.12':
+        files['crispembed_ocr.js'] = patch_loader(files['crispembed_ocr.js'])
+        patch = {'upstream': PATCH_SOURCE, 'sourceCommit': PATCH_SOURCE_COMMIT,
+                 'ruleSha256': PATCH_RULE_SHA256, 'replacements': 1}
     validate_runtime(files)
     web = root / 'web'
     web.mkdir(exist_ok=True)
@@ -69,7 +95,8 @@ def stage(root=Path('.'), *, fetch=download, source_revision=None, environment=N
               'version': version, 'release': f'https://github.com/CrispStrobe/CrispEmbed/releases/tag/v{version}',
               'assets': {name: {'sha256': hashlib.sha256((web / name).read_bytes()).hexdigest(),
                                 'bytes': (web / name).stat().st_size} for name in ASSETS},
-              'checksumsVerified': True,
+              'checksumsVerified': True, 'downloadedAssets': downloaded,
+              'compatibilityPatch': patch,
               'runtimeCompatibility': 'Factory/export presence verified; live module initialization is a separate browser check.'}
     (web / 'crispembed-ocr-runtime.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report))

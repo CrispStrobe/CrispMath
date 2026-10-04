@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from stage_ocr_wasm_runtime import REQUIRED_EXPORTS, stage
+from stage_ocr_wasm_runtime import REQUIRED_EXPORTS, UTF8_BEFORE, UTF8_AFTER, patch_loader, stage
 
 REVISION = 'a' * 40
 
@@ -22,7 +22,7 @@ class StageOcrWasmRuntimeTest(unittest.TestCase):
         (self.root / 'tool/dependency_lock.json').write_text(json.dumps(
             {'crispembed': {'revision': REVISION, 'version': '0.17.12'}}))
         self.files = {'crispembed_ocr.js': ('CrispEmbedOCR ' + ' '.join(REQUIRED_EXPORTS)
-                      + ' ccall UTF8ToString FS HEAPF32 HEAPU8').encode(),
+                      + ' ccall UTF8ToString FS HEAPF32 HEAPU8 ').encode() + UTF8_BEFORE,
                       'crispembed_ocr.wasm': b'\x00asm\x01\x00\x00\x00fixture'}
         self.write_checksums()
         self.calls = []
@@ -54,9 +54,16 @@ class StageOcrWasmRuntimeTest(unittest.TestCase):
         self.assertEqual(report['crispembedSource'], REVISION)
         self.assertEqual(len(self.calls), 2)
         for name, data in self.files.items():
-            self.assertEqual((self.root / 'web' / name).read_bytes(), data)
-            self.assertEqual(report['assets'][name]['sha256'], hashlib.sha256(data).hexdigest())
+            actual = patch_loader(data) if name.endswith('.js') else data
+            self.assertEqual((self.root / 'web' / name).read_bytes(), actual)
+            self.assertEqual(report['assets'][name]['sha256'], hashlib.sha256(actual).hexdigest())
+            self.assertEqual(report['downloadedAssets'][name], hashlib.sha256(data).hexdigest())
             self.assertIn('/v0.17.12/', next(url for url in self.calls if url.endswith(name)))
+
+    def test_unknown_duplicate_and_already_patched_calls_reject(self):
+        for script in (b'unknown', UTF8_BEFORE + UTF8_BEFORE, UTF8_AFTER):
+            with self.subTest(script=script), self.assertRaises(ValueError):
+                patch_loader(script)
 
     def test_local_execution_cannot_download_or_fall_back(self):
         with self.assertRaisesRegex(ValueError, 'GitHub-hosted'):
