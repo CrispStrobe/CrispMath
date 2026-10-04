@@ -176,11 +176,34 @@ async def login(page, email, password):
     await expect(page.get_by_text('Logged in as ' + email, exact=True)).to_be_visible()
 
 
-async def push(page):
+async def push(page, first, revision):
     await real_click(page, page.get_by_role('button', name='Push', exact=True))
-    await real_click(page, page.get_by_role('button', name='Upload backup', exact=True))
-    await expect(page.get_by_text('Cloud backup uploaded.', exact=True)).to_be_visible()
+    api = urlparse(os.environ['CRISPMATH_SYNC_API_URL'])
+    method = 'POST' if revision == 0 else 'PATCH'
+
+    def actual_upload(response):
+        target = urlparse(response.url)
+        return (target.scheme == api.scheme and target.netloc == api.netloc
+                and target.path == '/rest/v1/user_sync_data'
+                and response.request.method == method)
+
+    # Scaffold snackbars behind the still-open Flutter alertdialog are excluded
+    # from its active accessibility surface. Observe the real GUI-triggered SDK
+    # write and then prove persistence with the other browser's Pull/import.
+    async with page.expect_response(actual_upload) as observed:
+        await real_click(page, page.get_by_role('button', name='Upload backup', exact=True))
+    response = await observed.value
+    assert response.status == (201 if revision == 0 else 200), 'Cloud write did not succeed'
+    data = response.request.post_data_json
+    assert isinstance(data, dict) and data['revision'] == revision, 'Incorrect cloud write revision'
+    state = json.loads(data['app_state'])
+    doc = next(d for d in state['notepadDocuments'] if d['n'] == 'Cloud source')
+    assert [row['s'] for row in doc['l']] == [first, 'f(t)=t^2+a', 'f(4)'], 'Wrong uploaded worksheet source'
+    assert all('r' not in row for row in doc['l']), 'Cloud upload trusted computed cache'
     await page.get_by_role('button', name='Pull', exact=True).wait_for()
+    await expect(page.get_by_role('button', name='Pull', exact=True)).to_be_enabled()
+    return {'responseStatus': response.status, 'revision': revision,
+            'source': first, 'sourceVerified': True, 'cachedResultsExcluded': True}
 
 
 async def pull_import(page, expected_name):
@@ -248,7 +271,7 @@ async def check(args):
                     await login(page, email, password)
                 first, second = pages
                 stage = 'GUI desktop push'
-                await push(first)
+                upload = await push(first, 'a=3', 0)
                 await dismiss_sync(first)
                 stage = 'GUI phone pull and review/import'
                 await pull_import(second, 'Cloud source')
@@ -262,7 +285,7 @@ async def check(args):
                 await worksheet_result(second, 'Cloud source', 'a=3', '19')
                 report['checks'].append({'independentProfiles': ['desktop', 'phone'],
                     'guiSignInPushPullReviewImport': True, 'importSourceRecalculated': True,
-                    'unrelatedPhoneWorksheetPreserved': True})
+                    'unrelatedPhoneWorksheetPreserved': True, 'uploadResponse': upload})
                 stage = 'conflicting independent edits'
                 await edit(second, 'a=5')
                 await worksheet_result(second, 'Cloud source', 'a=5', '21')
@@ -270,7 +293,7 @@ async def check(args):
                 await edit(first, 'a=7')
                 await worksheet_result(first, 'Cloud source', 'a=7', '23')
                 await open_sync(first)
-                await push(first)
+                upload = await push(first, 'a=7', 1)
                 await dismiss_sync(first)
                 await open_sync(second)
                 await pull_import(second, 'Cloud source')
@@ -295,7 +318,7 @@ async def check(args):
                 report['checks'].append({'sameIdConflictPreserved': True,
                     'localSource': 'a=5', 'localResultBeforeImport': '21',
                     'importedSource': 'a=7', 'importedResult': '23',
-                    'reloadPreservesBothVersions': True})
+                    'reloadPreservesBothVersions': True, 'uploadResponse': upload})
                 stage = 'GUI sign-out in both independent profiles'
                 for page in pages:
                     await open_sync(page)
