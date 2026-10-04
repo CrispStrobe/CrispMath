@@ -66,7 +66,85 @@ were accepted by its linear-system argument reader. `7c5dc72` accepts bounded
 list-of-equations/list-of-symbols inputs as well, retaining the old form and
 rejecting malformed or duplicate symbols. Complete complex-number comparison
 supports numerical lowercase `i` without treating its result as exact.
-Final source and deployed live validation remain pending.
+Final production source `e8920a3dbaf669032901b44d4a00a25fee0c8d8e` passed
+[37228244814](https://github.com/CrispStrobe/CrispMath/actions/runs/37228244814):
+all 789 Linux and all 789 WASM answers, with zero failed or unsupported cases.
+All 52 independently referenced questions also passed through the actual
+desktop and phone interfaces, including complete matrix/constraint output,
+source-domain annotations, tiny nonzero magnitudes and full-precision statistics.
+The guided worksheet passed desktop, phone and tablet creation, editing,
+graph linking, checkpoint recovery, Markdown download and reload while preserving
+existing documents. No stored answers or result injection were used.
+
+Packaged macOS run
+[37228248552](https://github.com/CrispStrobe/CrispMath/actions/runs/37228248552)
+passed all 789 cases at the same final `e8920a3` source, and checked the actual
+package version `1.2.0+23` and pinned dependency source.
+
+The hosted feature unit jobs at `e8920a3` passed 5,774 Dart tests with eight skips,
+511 focused feature regressions, 19 guided/audit regressions, 11 cloud-widget
+tests and 166 of 169 Python controls. Three numeric reference controls run
+separately with their CPU dependencies. These invocations overlap and their
+counts must not be summed as unique tests. Merged-main unit/feature jobs confirm
+the same Dart counts and 169 of 172 Python controls after three native-startup
+controls were added; the three numeric-reference skips remain separate. Static
+analysis found no issues.
+
+The new browser packaging gate exposed another underlying defect: production
+web builds retained old OCR assets despite the new native dependency pin.
+Shared hosted builds now download the exact checksummed `0.17.12` JS/WASM pair
+and record its provenance. Executing that pair revealed Emscripten 6.0.2's
+resizable-buffer UTF-8 decoder bug. A source-bound, single-call compatibility
+repair follows the official
+[Emscripten fix](https://github.com/emscripten-core/emscripten/pull/27242),
+preserving the published WASM binary and native libraries. Provenance records
+both the downloaded and staged JS hashes. Actual module initialization, heap
+round-trip, long Unicode decoding on fixed/resizable buffers and rejection of
+the unpatched decoder pass; no model is downloaded by this gate. This establishes
+runtime compatibility, not improved handwriting recognition accuracy.
+
+Broader release/debug coverage exposed two presentation defects beyond the
+runtime answers: a long typeset phone result overflowed by 26 pixels, and the
+shared result-action sheet overflowed by 22 pixels at doubled text scale.
+Typeset results now scroll horizontally; the shared action list scrolls
+vertically. Three hosted widget regressions cover phone at both text scales and
+desktop, including reaching the final term, the complete accessible label,
+the final action's viewport bounds and the actual clipboard payload. A platform
+clipboard fixture follows Flutter's own test boundary and each case has a
+30-second timeout.
+
+The combined release UI step also recorded a missed guide-menu action before
+the synchronous create handler ran. The driver now observes the actual completed
+sentinel value, then requires a unique, unobscured, fully visible target whose
+bounds remain stable for at least 250 ms before one physical click. Moving,
+clipped, duplicate and obscured controls reject readiness. It does not retry
+creation or inject data. The `0813ace` audit passes all 789 native/WASM cases,
+all 52 actual GUI questions and all three guided profiles, including the
+recorded stable phone targets. The final shared-action-sheet revision `e8920a3` also passes the complete
+release/debug feature workflow
+[37227986057](https://github.com/CrispStrobe/CrispMath/actions/runs/37227986057),
+including all three cloud-off and guided profiles without backend requests or
+uncaught errors. PR #2 is merged as `637b07e`; its production inputs match this
+source. The intervening `18092e4` changes only the native capture helper and its
+tests. Final gallery
+[37230024733](https://github.com/CrispStrobe/CrispMath/actions/runs/37230024733)
+passes all 33 populated captures; both fresh iOS simulators pass on their first
+attempt, with no recovery retry.
+[Signed upload 37230996262](https://github.com/CrispStrobe/CrispMath/actions/runs/37230996262)
+verifies purpose strings and processing VALID for build 23;
+[external verification 37231506974](https://github.com/CrispStrobe/CrispMath/actions/runs/37231506974)
+confirms APPROVED and Public Beta IN_BETA_TESTING at merge source `637b07e`.
+Physical checks and App Review remain deferred.
+
+[Pages 37230602299](https://github.com/CrispStrobe/CrispMath/actions/runs/37230602299)
+and [Vercel 37230684265](https://github.com/CrispStrobe/CrispMath/actions/runs/37230684265)
+both finish successfully at `637b07e`, including all 789 runtime questions,
+all 52 actual UI questions, three guided profiles, default-off cloud and the
+actual published OCR module gates. Final main
+[Feature run 37230602280](https://github.com/CrispStrobe/CrispMath/actions/runs/37230602280)
+finishes successfully, including release/debug browser assertions and the web
+gallery. All main platform, CI/CD, format and database checks also pass. The
+automatic web build is superseded by the successful explicit production deploy.
 
 Small initial and repaired JSON reports are retained under
 `/mnt/storage/CrispMath-stage21-ci/`; application bundles and large runtime/model

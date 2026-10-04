@@ -1,3 +1,65 @@
+## 2026-10-04 — Guided worksheets, eleventh math audit and verified OCR packaging
+
+The guided worksheet creates a fresh linked parameter/function/result document
+and connects graphing, checkpoints and Markdown export while preserving existing
+work. Source identity guards cancel stale links. Full-value accessibility,
+localized actions and phone scrolling/wrapping repairs pass actual UI checks.
+Student-t interval calculation is now available through the statistics interface.
+Supabase remains off without configuration; local work needs no account.
+
+The frozen fifty references plus two independently frozen supplements expose and
+close equation-routing, half-line integration, genuine factorization, electrical
+and magnetic unit, tiny-number formatting, linear-system entry and full-precision
+presentation gaps. Final production source `e8920a3` passes hosted audit
+37228244814: all 789 native and WASM cases and all 52 questions through
+desktop/phone UI. Packaged macOS run 37228248552 passes 789 cases at the same
+source, including actual `1.2.0+23` and dependency metadata.
+Hosted unit checks at `e8920a3` pass 5,774/eight skips, 511 focused feature tests,
+19 guided/audit tests, 11 cloud-widget tests and 166 Python controls/three separate
+numeric-reference skips, with no analysis issues. These invocations overlap.
+Merged main confirms the same Dart/feature counts and 169 Python passes/three separate numeric-reference skips, including the
+three added native-startup controls.
+
+Verified `0.17.12` native libraries contain the independently measured decoder
+normalization and ceil-pooling corrections. Shared hosted web builds now stage
+the matching checksummed JS/WASM assets instead of old tracked files. The actual
+module gate exposes Emscripten's resizable-buffer UTF-8 defect; the official
+single-call compatibility repair preserves the original WASM binary and records
+published versus staged JS hashes. Fixed/resizable Unicode, actual native heap
+decoding, initialization and heap round-trip pass without downloading a model.
+Recognition remains 7/50 original and 0/50 candidate; no new weights or accuracy
+claim is shipped.
+
+Final native gallery 37230024733 passes 33 captures: iPhone 1290×2796, iPad
+2048×2732 and macOS 2560×1800. Twelve selected worksheet → traced graph →
+checkpoint → export images are visually reviewed. Source `18092e4` changes only
+the capture helper and its tests after `e8920a3`. Fresh owned iOS simulators
+connect on their first attempt; no recovery retry is used. Startup diagnostics
+and three startup controls distinguish pre-VM discovery stalls from app failures.
+These are internal captures, with no store-image upload or App Review submission.
+Physical iPhone/iPad testing and Apple's 4.3(a) finding remain open.
+
+PR #2 is merged as `637b07e`; its production inputs match the validated source.
+Signed upload 37230996262 verifies both privacy purpose strings and Apple
+processing VALID for 1.2.0 (23). External verification/submission 37231506974
+confirms APPROVED, Public Beta assignment and IN_BETA_TESTING. No App Review
+submission is made; physical device testing remains deferred.
+
+[Pages 37230602299](https://github.com/CrispStrobe/CrispMath/actions/runs/37230602299)
+and [Vercel 37230684265](https://github.com/CrispStrobe/CrispMath/actions/runs/37230684265)
+both finish successfully at `637b07e`, including all 789 runtime questions,
+all 52 actual UI questions, three guided profiles, default-off cloud and the
+actual published OCR module gates. Final main Feature run 37230602280 passes
+all required unit, focused, OCR, release/debug browser and web-gallery jobs. All
+main build/format/database workflows pass; the automatic web build is superseded
+by the successful explicit production deployment.
+
+See [the immutable audit and measured repairs](docs/round11-math-audit-52.md)
+and [bounded handwriting findings](docs/handwriting-quality-findings.md).
+All builds and test batches run on GitHub-hosted runners. Small reports and
+selected images are retained on CIFS; no full bundle/model downloads or local
+compute workloads are used.
+
 ## 2026-10-04 — Native presentation, default-off cloud and independent OCR reference
 
 Review all 33 populated native Apple captures and select connected worksheet,

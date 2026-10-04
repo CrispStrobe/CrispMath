@@ -316,9 +316,9 @@ preserving these frozen references and reporting both coverage and accuracy.
 
 The diagnostic GGML pooling repair now has bounded independent stage
 agreement and preserves all seven correct original-model cases in the
-unchanged 50-case measurement. A production correction still requires new
-matching runtime binaries and checksums; recognition quality has not
-improved on this benchmark.
+unchanged 50-case measurement. Matching runtime binaries and checksums are now
+published and pinned as described below; recognition quality has not improved
+on this benchmark.
 
 Original-checkpoint conversion and training parity still require the
 corresponding checkpoint. The published checkpoint repository returned
@@ -357,7 +357,25 @@ and [WASM run 37222310650](https://github.com/CrispStrobe/CrispEmbed/actions/run
 Their SHA-256 values are respectively
 `28f92e668558c2dfa0c8e0f7e47dbe5929715fc1e69bbe9af87df37e7d37a52f`
 and `4c842768092059b3db9286e43a28e9e3fded3dce4333534a3609edd6c84aa6cd`.
-The next CrispMath candidate pins the source, plugin lock and actual published
-checksums together and uses build 23. App-level final validation and upload are
-still pending; uploaded build 22 contains the previous runtime. Recognition
+The merged CrispMath candidate pins the source, plugin lock and actual published
+checksums together and uses build 23. Final app runtime, feature and native gallery
+validation passes at production source `e8920a3` and its CI-helper successor
+`18092e4`; merge `637b07e` preserves those production inputs.
+[Signed build-23 upload](https://github.com/CrispStrobe/CrispMath/actions/runs/37230996262)
+verifies privacy purpose strings and Apple processing VALID.
+[External TestFlight verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37231506974)
+confirms APPROVED, Public Beta assignment and IN_BETA_TESTING. Build 22 contains
+the previous runtime; physical device checks remain deferred. Recognition
 quality remains 7/50 and the candidate model remains unshipped.
+
+Shared hosted web builds also stage the exact published JS/WASM pair and record
+both asset hashes. Executing that pair exposed Emscripten 6.0.2's failure to
+decode a resizable ArrayBuffer. The app applies the official
+[conditional-copy UTF-8 repair](https://github.com/emscripten-core/emscripten/pull/27242)
+to exactly one known call after verifying the published JS checksum. The staged
+JS hash is `b5116b0625c30bc5be2f0ebcd9aae096936de7cb7fc4cf04cb9a096cd5e46407`;
+the WASM binary remains unchanged. Provenance distinguishes published and staged
+bytes and identifies the upstream fix and patch rule. The actual module passes
+fixed/resizable long Unicode, heap round-trip and initialization checks in
+[final app audit 37228244814](https://github.com/CrispStrobe/CrispMath/actions/runs/37228244814).
+These model-free checks establish browser compatibility, not recognition quality.

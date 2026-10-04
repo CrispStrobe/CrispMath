@@ -15,12 +15,21 @@ Completed items with details are in `HISTORY.md`.
 - [x] Clarify default-off cloud behavior and validate local-only startup, guards,
   checkpoint/backup workflows and zero backend requests on hosted CI.
 - [x] Merge PR #1 after complete validation (23f1470); physical/App Review remain deferred.
-- [~] Resume feature expansion with a guided connected worksheet and fifty
+- [x] Resume feature expansion with a guided connected worksheet and fifty
   fresh independently referenced mathematical problems, preserving unit/live
-  CI, Pages and Vercel checks.
-- [ ] Promote the proven handwriting runtime corrections only with matching
+  CI, Pages and Vercel checks. PR #2 merged as 637b07e; final public deployment
+  and build-23 TestFlight verification are tracked below.
+- [x] Promote the proven handwriting runtime corrections only with matching
   platform binaries, checksums and regression evidence. Recognition quality and
-  original training-checkpoint parity remain unresolved; do not ship the candidate.
+  original training-checkpoint parity remain unresolved; the candidate model is
+  unshipped. Published runtime 0.17.12 passes native/WASM/reference and app checks.
+- [x] Upload signed build 23 and verify VALID, APPROVED and Public Beta
+  IN_BETA_TESTING (37230996262 / 37231506974).
+- [x] Verify final main Pages/Vercel deployments (37230602299 / 37230684265),
+  including 789 runtime questions, 52 real UI questions and guided/cloud-off flows.
+- [x] Verify the complete final-main Feature validation workflow (37230602280),
+  including release/debug browser assertions and the populated web gallery.
+  Physical iPhone/iPad checks and App Review remain deferred.
 
 ## Cloud feedback and handwriting diagnostics
 
