@@ -73,8 +73,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     final state = AppState();
-    expect(state.notepadDocuments[state.currentNotepadDocId]!.lines.first.cachedResult, '39');
-    expect(find.bySemanticsLabel('39'), findsOneWidget);
+    final line = state.notepadDocuments[state.currentNotepadDocId]!.lines.first;
+    expect(line.cachedResult, '39');
+    final result = find.byKey(ValueKey('notepad-result:${line.id}'));
+    expect(result, findsOneWidget);
+    expect(tester.getSemantics(result).label, '39');
   });
 
   testWidgets('guided creation preserves existing source and cancels stale linking',

@@ -1815,7 +1815,7 @@ class NotepadScreenState extends State<NotepadScreen> {
                     size: 18,
                     semanticLabel: doc.useLatexInput ? 'Checked' : 'Unchecked'),
                 const SizedBox(width: 8),
-                const Text('LaTeX input'),
+                const Flexible(child: Text('LaTeX input')),
               ]),
             ));
             items.add(PopupMenuItem(
@@ -2694,7 +2694,9 @@ class _NotepadResultColumn extends StatelessWidget {
     }
     // Speak the complete computed value, including multi-digit math rendered
     // as separate glyph widgets. The label describes the same visible body.
-    body = Semantics(label: res, excludeSemantics: true, child: body);
+    body = Semantics(
+      key: ValueKey('notepad-result:${line.id}'),
+      container: true, label: res, excludeSemantics: true, child: body);
     return LongPressDraggable<String>(
       data: res,
       feedback: Material(
