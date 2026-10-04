@@ -21,6 +21,7 @@ on:
       - 'test/fixtures/round7_*_tasks.json'
       - 'test/fixtures/round8_*_tasks.json'
       - 'test/fixtures/round9_*_tasks.json'
+      - 'test/fixtures/round10_*_tasks.json'
       - 'test/round2_*_test.dart'
       - 'test/round3_*_test.dart'
       - 'test/round4_*_test.dart'
@@ -29,6 +30,7 @@ on:
       - 'test/round7_*_test.dart'
       - 'test/round8_*_test.dart'
       - 'test/round9_*_test.dart'
+      - 'test/round10_*_test.dart'
       - 'test/csp_polynomial_regression_test.dart'
       - 'test/new_math_*_test.dart'
       - 'test/fresh_workflow_tasks_test.dart'
@@ -83,7 +85,7 @@ jobs:
           YAML
           flutter pub get
       - name: Corpus and comparison unit regressions
-        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart test/round2_graph_regressions_test.dart test/round2_exact_constant_test.dart test/round2_numeric_regressions_test.dart test/round2_algebra_regressions_test.dart test/worksheet_numeric_provenance_test.dart test/workflow_document_provenance_test.dart test/round3_algebra_regressions_test.dart test/round3_numeric_regressions_test.dart test/csp_polynomial_regression_test.dart test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round6_reference_tasks_test.dart test/round7_reference_tasks_test.dart test/round7_precision_regressions_test.dart test/round7_algebra_regressions_test.dart test/round7_numeric_regressions_test.dart test/round7_scientific_scope_test.dart test/round8_factorial_regressions_test.dart test/round8_numeric_regressions_test.dart test/round8_complex_quadratic_regressions_test.dart test/round8_matrix_scope_test.dart test/round9_reference_tasks_test.dart test/round9_numeric_regressions_test.dart test/round9_worksheet_regressions_test.dart test/round6_exact_rounding_test.dart test/round6_numeric_regressions_test.dart test/round6_constraint_regressions_test.dart test/round6_algebra_regressions_test.dart test/round6_worksheet_regressions_test.dart test/round6_series_routing_test.dart test/round5_numeric_regressions_test.dart test/round5_operation_scope_test.dart test/graph_navigation_widget_test.dart
+        run: flutter test --no-pub test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/new_math_modules_test.dart test/new_math_comparison_test.dart test/new_math_engine_regressions_test.dart test/new_math_numeric_regressions_test.dart test/new_math_document_regressions_test.dart test/new_math_result_evidence_regressions_test.dart test/round2_numeric_modules_test.dart test/round2_graph_regressions_test.dart test/round2_exact_constant_test.dart test/round2_numeric_regressions_test.dart test/round2_algebra_regressions_test.dart test/worksheet_numeric_provenance_test.dart test/workflow_document_provenance_test.dart test/round3_algebra_regressions_test.dart test/round3_numeric_regressions_test.dart test/csp_polynomial_regression_test.dart test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round6_reference_tasks_test.dart test/round7_reference_tasks_test.dart test/round7_precision_regressions_test.dart test/round7_algebra_regressions_test.dart test/round7_numeric_regressions_test.dart test/round7_scientific_scope_test.dart test/round8_factorial_regressions_test.dart test/round8_numeric_regressions_test.dart test/round8_complex_quadratic_regressions_test.dart test/round8_matrix_scope_test.dart test/round9_reference_tasks_test.dart test/round10_reference_tasks_test.dart test/round9_numeric_regressions_test.dart test/round9_worksheet_regressions_test.dart test/round6_exact_rounding_test.dart test/round6_numeric_regressions_test.dart test/round6_constraint_regressions_test.dart test/round6_algebra_regressions_test.dart test/round6_worksheet_regressions_test.dart test/round6_series_routing_test.dart test/round5_numeric_regressions_test.dart test/round5_operation_scope_test.dart test/graph_navigation_widget_test.dart
       - name: Run every task against native app engine (strict)
         if: ${{ !cancelled() }}
         run: tool/crispmath_cli.sh --require-native --report task-results/native.json
@@ -160,6 +162,14 @@ jobs:
           status=0
           for area in algebra numeric; do
             tool/crispmath_cli.sh --tasks "test/fixtures/round9_${area}_tasks.json" --require-native --report "task-results/native-round9-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run tenth independent 50 problems against native
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            tool/crispmath_cli.sh --tasks "test/fixtures/round10_${area}_tasks.json" --require-native --report "task-results/native-round10-${area}.json" || status=1
           done
           exit "$status"
       - name: Verify exact Taylor compatibility with the native CAS
@@ -276,6 +286,14 @@ jobs:
           status=0
           for area in algebra numeric; do
             python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round9_${area}_tasks.json" --output "task-results/browser-round9-${area}.json" || status=1
+          done
+          exit "$status"
+      - name: Run tenth independent 50 problems against browser
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --tasks "test/fixtures/round10_${area}_tasks.json" --output "task-results/browser-round10-${area}.json" || status=1
           done
           exit "$status"
       - name: Preserve completed browser runtime corpus before UI checks
