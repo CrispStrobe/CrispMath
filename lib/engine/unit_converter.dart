@@ -63,6 +63,7 @@ class UnitConverter {
 
   /// Shared numeric presentation for catalog and composite derived units.
   static String formatNumber(double value) {
+    if (!value.isFinite) return value.toString();
     final abs = value.abs();
     String text;
     if (abs == 0) {

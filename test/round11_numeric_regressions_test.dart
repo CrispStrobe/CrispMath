@@ -48,7 +48,9 @@ void main() {
         final rendered = double.parse(UnitConverter.formatNumber(value));
         expect(rendered / value, closeTo(1, 1e-11));
       }
-      expect(UnitConverter.formatNumber(0), '0');
+    expect(UnitConverter.formatNumber(0), '0');
+    expect(UnitConverter.formatNumber(double.infinity), 'Infinity');
+    expect(UnitConverter.formatNumber(double.nan), 'NaN');
     },
   );
   test('temperature spellings and incompatible dimensions remain guarded', () {
