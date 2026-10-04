@@ -20,7 +20,10 @@ class FactorEchoEngine extends CalculatorEngine {
 void main() {
   test('explicit polynomial equality uses both sides on every platform', () {
     final engine = CalculatorEngine();
-    expect(engine.solve('(x-4)^2=25', 'x'), anyOf('x = {9, -1}', 'x = {-1, 9}'));
+    expect(
+      engine.solve('(x-4)^2=25', 'x'),
+      anyOf('x = {9, -1}', 'x = {-1, 9}'),
+    );
     expect(engine.solve('(t+2)^2=9', 't'), anyOf('t = {1, -5}', 't = {-5, 1}'));
     expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
     expect(engine.solve('3*x+1=10', 'x'), 'x = 3');
@@ -34,8 +37,18 @@ void main() {
     expect(ElementaryEquationSolver.solve('5^(2*x)=1/25', 'x'), ['-1']);
     expect(ElementaryEquationSolver.solve('2^x=-3', 'x'), isEmpty);
     expect(ElementaryEquationSolver.solve('2^x=0', 'x'), isEmpty);
-    for (final source in ['2^x=3', '1^x=1', '(-2)^x=4', '2^(x*x)=16', '2^x=4=8']) {
-      expect(ElementaryEquationSolver.solve(source, 'x'), isNull, reason: source);
+    for (final source in [
+      '2^x=3',
+      '1^x=1',
+      '(-2)^x=4',
+      '2^(x*x)=16',
+      '2^x=4=8',
+    ]) {
+      expect(
+        ElementaryEquationSolver.solve(source, 'x'),
+        isNull,
+        reason: source,
+      );
     }
     final engine = CalculatorEngine();
     expect(engine.solve('2^(x+1)=32', 'x'), 'x = 4');
@@ -55,29 +68,84 @@ void main() {
     expect(engine.solve('log(x)=log(-x)', 'x'), 'x = (no solutions)');
   });
 
-  test('ordinary exponential half-line integrals retain exact moments and signs', () {
-    expect(ImproperExponentialIntegral.definite('x*exp(-2*x)', 'x', '0', 'oo'), '1/4');
-    expect(ImproperExponentialIntegral.definite('(x^2+3*x+2)*exp(-2*x)', 'x', '0', 'inf'), '2');
-    expect(ImproperExponentialIntegral.definite('x*exp(-2*x)', 'x', 'oo', '0'), '-1/4');
-    expect(ImproperExponentialIntegral.definite('x*exp(2*x)', 'x', '-oo', '0'), '-1/4');
-    expect(ImproperExponentialIntegral.definite('x*exp(2*x)', 'x', '0', '-oo'), '1/4');
-    expect(ImproperExponentialIntegral.definite('exp(-3*t)', 't', '0', '+infinity'), '1/3');
-    final engine = CalculatorEngine();
-    expect(engine.integrate('x*exp(-2*x)', 'x', '0', 'oo'), '1/4');
-    expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
-  });
+  test(
+    'ordinary exponential half-line integrals retain exact moments and signs',
+    () {
+      expect(
+        ImproperExponentialIntegral.definite('x*exp(-2*x)', 'x', '0', 'oo'),
+        '1/4',
+      );
+      expect(
+        ImproperExponentialIntegral.definite(
+          '(x^2+3*x+2)*exp(-2*x)',
+          'x',
+          '0',
+          'inf',
+        ),
+        '2',
+      );
+      expect(
+        ImproperExponentialIntegral.definite('x*exp(-2*x)', 'x', 'oo', '0'),
+        '-1/4',
+      );
+      expect(
+        ImproperExponentialIntegral.definite('x*exp(2*x)', 'x', '-oo', '0'),
+        '-1/4',
+      );
+      expect(
+        ImproperExponentialIntegral.definite('x*exp(2*x)', 'x', '0', '-oo'),
+        '1/4',
+      );
+      expect(
+        ImproperExponentialIntegral.definite(
+          'exp(-3*t)',
+          't',
+          '0',
+          '+infinity',
+        ),
+        '1/3',
+      );
+      final engine = CalculatorEngine();
+      expect(engine.integrate('x*exp(-2*x)', 'x', '0', 'oo'), '1/4');
+      expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
+    },
+  );
 
-  test('growth is divergent and unsupported improper forms do not gain exact proofs', () {
-    expect(ImproperExponentialIntegral.definite('x*exp(2*x)', 'x', '0', 'oo'), contains('divergent'));
-    expect(ImproperExponentialIntegral.definite('exp(-x)', 'x', '-oo', '0'), contains('divergent'));
-    for (final source in ['exp(-x^2)', 'sin(x)*exp(-x)', 'x*exp(-x+1)', 'x^9*exp(-x)']) {
-      expect(ImproperExponentialIntegral.definite(source, 'x', '0', 'oo'), isNull, reason: source);
-    }
-    expect(ImproperExponentialIntegral.definite('x*exp(-2*x)', 'x', '1', 'oo'), isNull);
-    final engine = CalculatorEngine();
-    expect(engine.integrate('x*exp(2*x)', 'x', '0', 'oo'), contains('divergent'));
-    expect(engine.lastResultEvidence, isNull);
-  });
+  test(
+    'growth is divergent and unsupported improper forms do not gain exact proofs',
+    () {
+      expect(
+        ImproperExponentialIntegral.definite('x*exp(2*x)', 'x', '0', 'oo'),
+        contains('divergent'),
+      );
+      expect(
+        ImproperExponentialIntegral.definite('exp(-x)', 'x', '-oo', '0'),
+        contains('divergent'),
+      );
+      for (final source in [
+        'exp(-x^2)',
+        'sin(x)*exp(-x)',
+        'x*exp(-x+1)',
+        'x^9*exp(-x)',
+      ]) {
+        expect(
+          ImproperExponentialIntegral.definite(source, 'x', '0', 'oo'),
+          isNull,
+          reason: source,
+        );
+      }
+      expect(
+        ImproperExponentialIntegral.definite('x*exp(-2*x)', 'x', '1', 'oo'),
+        isNull,
+      );
+      final engine = CalculatorEngine();
+      expect(
+        engine.integrate('x*exp(2*x)', 'x', '0', 'oo'),
+        contains('divergent'),
+      );
+      expect(engine.lastResultEvidence, isNull);
+    },
+  );
 
   test('Sophie Germain factoring returns genuine quadratic factors', () {
     final engine = CalculatorEngine();
@@ -85,43 +153,64 @@ void main() {
       final factors = engine.factor(source);
       expect(factors, contains('('));
       expect(factors, isNot(contains('^4')));
-      expect(MultivariatePolynomial.tryParse(factors), MultivariatePolynomial.tryParse(source));
+      expect(
+        MultivariatePolynomial.tryParse(factors),
+        MultivariatePolynomial.tryParse(source),
+      );
     }
     // Neighboring quartic coefficients must not receive the identity's factors.
     expect(MultivariateFactoring.factor('x^4+5*y^4'), isNull);
   });
 
-  test('runtime factor audits reject unchanged expansions and retain irreducible controls', () async {
-    Future<String> status(String actual, String expected) async {
-      final report = await WorkflowTasks(FactorEchoEngine(actual)).run([{
-        'id': 'factor-control', 'kind': 'engine', 'operation': 'factor',
-        'args': ['x^4+4*y^4'], 'expected': expected,
-      }]);
-      return (report['results'] as List).single['status'] as String;
-    }
-    const factors = '(x^2-2*x*y+2*y^2)*(x^2+2*x*y+2*y^2)';
-    expect(await status('x^4+4*y^4', factors), 'failed');
-    expect(await status(factors, factors), 'passed');
-    expect(await status('x^4+2*x^2+1', '(x^2+1)^2'), 'failed');
-    expect(await status('(x^2+1)*(x^2+1)', '(x^2+1)^2'), 'passed');
-    expect(await status('x^2+1', 'x^2+1'), 'passed');
-    expect(await status('2*x^2+2', '2*(x^2+1)'), 'failed');
-    expect(await status('2*(x^2+1)', '2*(x^2+1)'), 'passed');
-  });
+  test(
+    'runtime factor audits reject unchanged expansions and retain irreducible controls',
+    () async {
+      Future<String> status(String actual, String expected) async {
+        final report = await WorkflowTasks(FactorEchoEngine(actual)).run([
+          {
+            'id': 'factor-control',
+            'kind': 'engine',
+            'operation': 'factor',
+            'args': ['x^4+4*y^4'],
+            'expected': expected,
+          },
+        ]);
+        return (report['results'] as List).single['status'] as String;
+      }
 
-  test('solve audits compare complete sets independent of assignment printing', () async {
-    Future<String> status(String actual, String expected) async {
-      final report = await WorkflowTasks(FactorEchoEngine(actual)).run([{
-        'id': 'solve-control', 'kind': 'engine', 'operation': 'solve',
-        'args': ['(x-4)^2=25', 'x'], 'expected': expected,
-      }]);
-      return (report['results'] as List).single['status'] as String;
-    }
-    expect(await status('x = {9, -1}', '{-1,9}'), 'passed');
-    expect(await status('x = 4', '{4}'), 'passed');
-    expect(await status('x = {9, -1}', 'x = {-1, 9}'), 'passed');
-    expect(await status('x = 9', '{-1,9}'), 'failed');
-    expect(await status('x = {9, -1, -1}', '{-1,9}'), 'failed');
-    expect(await status('Error: x = 4', '{4}'), 'failed');
-  });
+      const factors = '(x^2-2*x*y+2*y^2)*(x^2+2*x*y+2*y^2)';
+      expect(await status('x^4+4*y^4', factors), 'failed');
+      expect(await status(factors, factors), 'passed');
+      expect(await status('x^4+2*x^2+1', '(x^2+1)^2'), 'failed');
+      expect(await status('(x^2+1)*(x^2+1)', '(x^2+1)^2'), 'passed');
+      expect(await status('x^2+1', 'x^2+1'), 'passed');
+      expect(await status('2*x^2+2', '2*(x^2+1)'), 'failed');
+      expect(await status('2*(x^2+1)', '2*(x^2+1)'), 'passed');
+    },
+  );
+
+  test(
+    'solve audits compare complete sets independent of assignment printing',
+    () async {
+      Future<String> status(String actual, String expected) async {
+        final report = await WorkflowTasks(FactorEchoEngine(actual)).run([
+          {
+            'id': 'solve-control',
+            'kind': 'engine',
+            'operation': 'solve',
+            'args': ['(x-4)^2=25', 'x'],
+            'expected': expected,
+          },
+        ]);
+        return (report['results'] as List).single['status'] as String;
+      }
+
+      expect(await status('x = {9, -1}', '{-1,9}'), 'passed');
+      expect(await status('x = 4', '{4}'), 'passed');
+      expect(await status('x = {9, -1}', 'x = {-1, 9}'), 'passed');
+      expect(await status('x = 9', '{-1,9}'), 'failed');
+      expect(await status('x = {9, -1, -1}', '{-1,9}'), 'failed');
+      expect(await status('Error: x = 4', '{4}'), 'failed');
+    },
+  );
 }

@@ -6,7 +6,10 @@ void checkQuantity(String source, double expected, String unit) {
   final result = UnitExpressionEvaluator.tryEvaluate(source);
   expect(result, isNotNull, reason: source);
   final parts = result!.split(' ');
-  expect(parts.skip(1).join(' ').replaceAll('μ', 'µ'), unit.replaceAll('μ', 'µ'));
+  expect(
+    parts.skip(1).join(' ').replaceAll('μ', 'µ'),
+    unit.replaceAll('μ', 'µ'),
+  );
   final value = double.parse(parts.first);
   expect(value.isFinite, isTrue);
   if (expected == 0) {
@@ -34,20 +37,42 @@ void main() {
     checkQuantity('1 pA * 1 ps', 1e-24, 'C');
     checkQuantity('1 pN * 1 pm', 1e-24, 'J');
   });
-  test('scientific presentation preserves relative accuracy at both extremes', () {
-    for (final value in [6.408706536e-19, 1.23456789012e-200, 1.23456789012e200]) {
-      final rendered = double.parse(UnitConverter.formatNumber(value));
-      expect(rendered / value, closeTo(1, 1e-11));
-    }
-    expect(UnitConverter.formatNumber(0), '0');
-  });
+  test(
+    'scientific presentation preserves relative accuracy at both extremes',
+    () {
+      for (final value in [
+        6.408706536e-19,
+        1.23456789012e-200,
+        1.23456789012e200,
+      ]) {
+        final rendered = double.parse(UnitConverter.formatNumber(value));
+        expect(rendered / value, closeTo(1, 1e-11));
+      }
+      expect(UnitConverter.formatNumber(0), '0');
+    },
+  );
   test('temperature spellings and incompatible dimensions remain guarded', () {
     checkQuantity('32 °F in K', 273.15, 'K');
     checkQuantity('0 °C in K', 273.15, 'K');
-    expect(UnitExpressionEvaluator.tryEvaluate('2 F in °F'), startsWith('Error:'));
-    expect(UnitExpressionEvaluator.tryEvaluate('2 C in °C'), startsWith('Error:'));
-    expect(UnitExpressionEvaluator.tryEvaluate('2 C + 3 V'), startsWith('Error:'));
-    expect(UnitExpressionEvaluator.tryEvaluate('2 °C * 3 V'), startsWith('Error:'));
-    expect(UnitExpressionEvaluator.tryEvaluate('2 mH in h'), startsWith('Error:'));
+    expect(
+      UnitExpressionEvaluator.tryEvaluate('2 F in °F'),
+      startsWith('Error:'),
+    );
+    expect(
+      UnitExpressionEvaluator.tryEvaluate('2 C in °C'),
+      startsWith('Error:'),
+    );
+    expect(
+      UnitExpressionEvaluator.tryEvaluate('2 C + 3 V'),
+      startsWith('Error:'),
+    );
+    expect(
+      UnitExpressionEvaluator.tryEvaluate('2 °C * 3 V'),
+      startsWith('Error:'),
+    );
+    expect(
+      UnitExpressionEvaluator.tryEvaluate('2 mH in h'),
+      startsWith('Error:'),
+    );
   });
 }
