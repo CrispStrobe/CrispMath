@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/CrispMath/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="crisp_math">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>CrispMath</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Flutter's transparent DOM button labels can wrap beyond their native
+       hit rectangles and intercept adjacent controls. Clip their paint/hit
+       overflow while preserving the complete labels for assistive technology. -->
+  <style>
+    flt-semantics[role="button"], flt-semantics[role="link"] {
+      overflow: hidden !important;
+    }
+    /* Flutter can retain an empty overlay semantics leaf after closing a
+       dialog. It has no control or label, but its default pointer-events:auto
+       covers the whole view. Keep labelled nodes and interactive barriers. */
+    flt-semantics:empty:not([role]):not([aria-label]):not([flt-tappable]) {
+      pointer-events: none !important;
+    }
+  </style>
+
+  <!-- Preload WASM binaries so the browser fetches them in parallel with
+       HTML parsing, before the JS loaders request them. -->
+  <link rel="preload" href="symengine.wasm" as="fetch" crossorigin>
+</head>
+<body>
+  <!-- SymEngine WASM: defer so it doesn't block HTML parsing. The factory
+       returns a promise; Dart's pollForNativeBridge handles the async
+       handshake once it resolves. -->
+  <script>
+    var symEngineReady = false;
+    var symEngineInstance = null;
+  </script>
+  <script src="symengine.js" defer></script>
+  <!-- Handshake must be a FILE script: `defer` is ignored on inline
+       scripts, so an inline handshake races symengine.js and loses
+       (SymEngineModule not defined -> web CAS silently dead). -->
+  <script src="symengine_boot.js" defer></script>
+  <!-- OCR loader and WASM are fetched when the user opens OCR. -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
