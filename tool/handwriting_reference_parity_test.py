@@ -83,6 +83,13 @@ class ReferenceControls(unittest.TestCase):
         validate_provenance(p, 'lib', 'tool', 'patch')
         with self.assertRaises(ValueError):
             validate_provenance(p, 'lib', 'tool', 'wrong-patch')
+        p.update(mathematical_change='post-position normalization and ceil pooling',
+                 forward_repair_patch_sha256='forward')
+        validate_provenance(p, 'lib', 'tool', 'patch', 'forward')
+        with self.assertRaises(ValueError):
+            validate_provenance(p, 'lib', 'tool', 'patch', 'wrong-forward')
+        with self.assertRaises(ValueError):
+            validate_provenance(p, 'lib', 'tool', 'patch')
 
     def test_corpus_mutation_and_changed_native_anchors_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

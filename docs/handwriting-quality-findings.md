@@ -102,6 +102,56 @@ resolve training provenance or the official repository's academic-use
 wording. Treat this candidate as benchmark evidence, pending provenance and
 licensing clarification before any production adoption.
 
+## Independent exported-weight reference comparison
+
+[Hosted run 37213652595](https://github.com/CrispStrobe/CrispMath/actions/runs/37213652595)
+at `6a02c4d7e5785f59f42667167e056d0220d2add6` reconstructed the public
+MathWriting v2 FP32 export in the
+[official PosFormer encoder](https://github.com/SJTU-DeepVisionLab/PosFormer/blob/802019a0533639f3b0bf18d44e93be073945cac5/Pos_Former/model/encoder.py)
+and [decoder](https://github.com/SJTU-DeepVisionLab/PosFormer/blob/802019a0533639f3b0bf18d44e93be073945cac5/Pos_Former/model/decoder.py).
+All 270 exported tensors were consumed exactly once with checked names,
+shapes and FP32 types. Every initialized reference parameter was replaced;
+folded convolution/batch-normalization tensors were used as exported, with
+no random weights or invented original batch-normalization statistics.
+
+The comparison used the first five cases of the unchanged frozen manifest,
+at most five decoder steps each, baseline and normalization repair, and both
+default and scalar encoders. Independent grayscale/polarity preprocessing
+agreed in all 20 case/arm comparisons. These binary inputs do not trigger
+resizing, so resizing and nonbinary image preprocessing remain unverified.
+The scalar encoder agreed at every captured stage, including positional
+encoding and normalization; the largest absolute error was `3.8147e-6`.
+
+The default GGML encoder first diverged in shape at the initial max pool for
+two cases, the first transition average pool for two, and the second
+transition average pool for one. It uses floor pooling; the official and
+scalar implementations use `ceil_mode=True`. Consequently it drops odd
+edge rows or columns. Earlier stages agreed within the fixed default-path
+tolerance; that path explicitly uses FP16 convolutions, unlike the FP32
+scalar/reference paths. This identifies a concrete pooling mismatch rather
+than attributing all encoder differences to arithmetic precision.
+
+The baseline decoder first diverged at its missing post-position input
+normalization. With the isolated normalization repair, every captured
+token-input, transformer-layer normalization and logit stage agreed across
+all 50 case/step comparisons (25 default and 25 scalar), with maximum
+absolute error `5.7220e-6`. Decoder checks deliberately use native encoded
+features and native token prefixes to isolate decoder behavior. Combined
+with the independently checked scalar encoder, this establishes bounded
+exported-weight forward parity for the normalization-repaired scalar path.
+It does not establish original-checkpoint conversion/training parity,
+full-length decoding parity or improved 50-case recognition accuracy.
+
+Artifact `11307279136`, `handwriting-exported-reference-reports`, contains
+four comparisons and two source/library provenance records. The retained
+baseline library SHA-256 is
+`55f4daccf2aaf5fc78d4a8daa235a7bdb2840a76572d7d8b38041f7426a8d7e5`;
+the normalization-repaired library is
+`4c415f21635a30285d156b532e9bfaf24452cf902698f374ec149ffdff3ae897`.
+Both records identify the original `11e6d5…` source, actual instrumented
+source, instrumentation tool and normalization patch hashes. Production
+bridge/model pins remain unchanged.
+
 ## Reproducibility
 
 | Identity | Pinned value |
@@ -149,6 +199,46 @@ gh workflow run handwriting-quality.yml --ref feat/graph-workspace-ux \
   -f input_norm_diagnostic=true
 ```
 
+To run the bounded exported-FP32 reference comparison on hosted CPU:
+
+```sh
+gh workflow run handwriting-quality.yml --ref feat/graph-workspace-ux \
+  -f reference_parity=true
+```
+
+This explicitly selects the separate
+[reference job](../.github/workflows/handwriting-reference-parity.yml),
+without repeating the baseline quality batch. The
+[reference helper](../tool/handwriting_reference_parity.py),
+[native instrumentation](../tool/prepare_handwriting_reference_bridge.py)
+and [negative controls](../tool/handwriting_reference_parity_test.py) reject
+changed corpus/model/source identities, missing or extra tensors, wrong
+shapes, truncated/nonfinite traces and mismatched library/patch provenance.
+Numeric controls run only in that hosted job; ordinary tool discovery
+requires no PyTorch, GGUF or NumPy installation. A completed diagnostic run
+does not mean all stage comparisons passed: measured mismatches stay in its
+reports.
+
+To measure the diagnostic normalization-plus-ceil-pooling repair alongside
+the same-source baseline and normalization-only arms, and repeat the
+bounded independent reference checks:
+
+```sh
+gh workflow run handwriting-quality.yml --ref feat/graph-workspace-ux \
+  -f forward_repair_diagnostic=true -f input_norm_diagnostic=true
+```
+
+The [combined diagnostic patch](../tool/patches/posformer-forward-repair.patch)
+replicates only missing odd edges before pooling, preserving valid-sample
+averages at the last row, column and corner. Its real native helper is
+exercised by [16 PyTorch pooling controls](../tool/check_posformer_pooling.py),
+including multiple channels, negative edges, even/odd dimensions and
+single-row/column inputs. The
+[paired comparator](../tool/compare_handwriting_forward_repair.py) additionally
+checks actual repaired-source/patch/library provenance and all frozen 50
+references. These are diagnostic changes; results determine any later
+production decision.
+
 The [workflow](../.github/workflows/handwriting-quality.yml) retains
 `handwriting-vocabulary.json`, the three baseline reports, and optional paired
 reports in `real-handwriting-quality`. The
@@ -168,9 +258,13 @@ and trained embedding/output weights; changing only tokenizer metadata cannot
 teach those symbols. Validate such a model on independent held-out samples,
 preserving these frozen references and reporting both coverage and accuracy.
 
-Before attributing the remaining errors solely to training, obtain the
-corresponding checkpoint and reproduce the same inputs and decoding in an
-independent Python reference. The published checkpoint repository returned
+The measured GGML pooling mismatch warrants a controlled ceil-pooling
+repair, followed by independent stage comparisons and an unchanged 50-case
+accuracy measurement. No production recognition improvement has yet been
+established by that repair.
+
+Original-checkpoint conversion and training parity still require the
+corresponding checkpoint. The published checkpoint repository returned
 HTTP 401 to anonymous access. No usable Hugging Face training credentials or
 Kaggle credentials were available during this session. No training was
 started, and no additional blind encoder ablation is warranted by the current

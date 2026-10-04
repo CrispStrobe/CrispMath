@@ -1,6 +1,10 @@
 name: Exported handwriting reference parity
 on:
   workflow_call:
+    inputs:
+      pooling_repair:
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -73,6 +77,26 @@ jobs:
           PY
           for encoder in default scalar; do
             python3 tool/handwriting_reference_parity.py --model .ci/reference-f32.gguf --manifest .dart_tool/inference/handwriting-corpus/manifest.json --reference .ci/PosFormer --library .ci/reference-norm/libcrispembed.so --provenance .dart_tool/inference/reference/norm-provenance.json --encoder "$encoder" --output ".dart_tool/inference/reference/norm-$encoder.json"
+          done
+      - name: Build measured ceil-pooling plus normalization repair and compare actual native operations
+        if: inputs.pooling_repair == true
+        run: |
+          git -C .ci/CrispEmbed restore --source=11e6d598521976f38081934106b55095b46b40e3 -- src/posformer_ocr.cpp
+          python3 tool/prepare_handwriting_reference_bridge.py --root .ci/CrispEmbed --forward-repair --report .dart_tool/inference/reference/forward-provenance.json
+          cmake -S .ci/CrispEmbed -B .ci/reference-forward -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=ON -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build .ci/reference-forward --target crispembed-shared --parallel 2
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p = Path('.dart_tool/inference/reference/forward-provenance.json')
+          report = json.loads(p.read_text())
+          report['library_sha256'] = hashlib.sha256(Path('.ci/reference-forward/libcrispembed.so').read_bytes()).hexdigest()
+          p.write_text(json.dumps(report, indent=2) + '\n')
+          PY
+          python3 tool/check_posformer_pooling.py --library .ci/reference-forward/libcrispembed.so --output .dart_tool/inference/reference/forward-pooling-controls.json
+          python3 tool/check_posformer_input_norm.py --library .ci/reference-forward/libcrispembed.so --output .dart_tool/inference/reference/forward-normalization-controls.json
+          for encoder in default scalar; do
+            python3 tool/handwriting_reference_parity.py --model .ci/reference-f32.gguf --manifest .dart_tool/inference/handwriting-corpus/manifest.json --reference .ci/PosFormer --library .ci/reference-forward/libcrispembed.so --provenance .dart_tool/inference/reference/forward-provenance.json --encoder "$encoder" --output ".dart_tool/inference/reference/forward-$encoder.json"
           done
       - uses: actions/upload-artifact@v4
         if: always()

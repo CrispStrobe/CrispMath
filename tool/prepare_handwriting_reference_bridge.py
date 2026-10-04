@@ -47,11 +47,14 @@ static void reference_decoder_trace(const char * stage, int layer, int step,
         '        }\n    };\n    trace_graph("pool0");\n'
         '    int cur_ch = init_ch;\n    auto dense_block')
     # Add retained graph outputs at the real stage boundaries.
+    pool_call = ('pf_pool_ceil(g, x, GGML_OP_POOL_MAX' if
+                 'static ggml_tensor * pf_pool_ceil(' in source else
+                 'ggml_pool_2d(g, x, GGML_OP_POOL_MAX')
     for before, after in [
-        ('    x = ggml_relu(g, x);\n    x = ggml_pool_2d(g, x, GGML_OP_POOL_MAX',
+        ('    x = ggml_relu(g, x);\n    x = ' + pool_call,
          '    x = ggml_relu(g, x);\n    if (getenv("POSFORMER_REFERENCE_TRACE")) {\n'
          '        ggml_set_name(x, "stem"); ggml_set_output(x); ggml_build_forward_expand(gf, x);\n'
-         '    }\n    x = ggml_pool_2d(g, x, GGML_OP_POOL_MAX'),
+         '    }\n    x = ' + pool_call),
         ('    dense_block(ctx->block1);\n    transition(ctx->trans1);\n'
          '    dense_block(ctx->block2);\n    transition(ctx->trans2);\n    dense_block(ctx->block3);',
          '    dense_block(ctx->block1); trace_graph("block1");\n'
@@ -113,7 +116,7 @@ static void reference_decoder_trace(const char * stage, int layer, int step,
     return source
 
 
-def prepare(root, normalized, report):
+def prepare(root, normalized, report, forward_repair=False):
     root = Path(root)
     base = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip()
     require(base == BRIDGE_SOURCE, 'Unpinned bridge source')
@@ -121,16 +124,20 @@ def prepare(root, normalized, report):
     pristine = subprocess.check_output(['git', '-C', str(root), 'show',
                                        BRIDGE_SOURCE + ':src/posformer_ocr.cpp'])
     require(path.read_bytes() == pristine, 'Native source already modified')
-    patch = Path(__file__).parent / 'patches/posformer-input-norm.patch'
-    if normalized:
+    patch = Path(__file__).parent / 'patches' / ('posformer-forward-repair.patch' if forward_repair
+                                               else 'posformer-input-norm.patch')
+    if normalized or forward_repair:
         subprocess.run(['git', '-C', str(root), 'apply', '--check', str(patch.resolve())], check=True)
         subprocess.run(['git', '-C', str(root), 'apply', str(patch.resolve())], check=True)
     path.write_text(instrument(path.read_text()))
     result = {'bridge_source': base, 'original_source_sha256': hashlib.sha256(pristine).hexdigest(),
               'instrumented_source_sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
               'instrumentation_tool_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-              'input_norm_patch_sha256': hashlib.sha256(patch.read_bytes()).hexdigest() if normalized else None,
-              'mathematical_change': 'post-position learned normalization' if normalized else 'none',
+              'input_norm_patch_sha256': (hashlib.sha256((Path(__file__).parent / 'patches/posformer-input-norm.patch').read_bytes()).hexdigest()
+                                         if normalized or forward_repair else None),
+              'forward_repair_patch_sha256': hashlib.sha256(patch.read_bytes()).hexdigest() if forward_repair else None,
+              'mathematical_change': ('post-position normalization and ceil pooling' if forward_repair else
+                                     'post-position learned normalization' if normalized else 'none'),
               'trace_scope': 'Actual operators, retained encoder outputs, first five decoder steps only.'}
     Path(report).write_text(json.dumps(result, indent=2) + '\n')
 
@@ -139,6 +146,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', required=True)
     parser.add_argument('--normalized', action='store_true')
+    parser.add_argument('--forward-repair', action='store_true')
     parser.add_argument('--report', required=True)
     args = parser.parse_args()
-    prepare(args.root, args.normalized, args.report)
+    prepare(args.root, args.normalized, args.report, args.forward_repair)

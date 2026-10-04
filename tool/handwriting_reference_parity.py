@@ -184,15 +184,21 @@ def compare(native, reference, tolerance, np):
             'mean_abs': float(delta.mean())}
 
 
-def validate_provenance(provenance, library_hash, instrumentation_hash, patch_hash):
+def validate_provenance(provenance, library_hash, instrumentation_hash, patch_hash, forward_hash=None):
     require(provenance.get('bridge_source') == BRIDGE_SOURCE, 'Wrong native base source')
     require(provenance.get('library_sha256') == library_hash, 'Trace library provenance mismatch')
     require(provenance.get('instrumentation_tool_sha256') == instrumentation_hash,
             'Trace instrumentation provenance mismatch')
     change = provenance.get('mathematical_change')
-    require(change in ('none', 'post-position learned normalization'), 'Unknown mathematical change')
+    require(change in ('none', 'post-position learned normalization',
+                       'post-position normalization and ceil pooling'), 'Unknown mathematical change')
     expected = None if change == 'none' else patch_hash
     require(provenance.get('input_norm_patch_sha256') == expected, 'Wrong normalization patch')
+    require(provenance.get('forward_repair_patch_sha256') ==
+            (forward_hash if change == 'post-position normalization and ceil pooling' else None),
+            'Wrong forward repair patch')
+    if change == 'post-position normalization and ceil pooling':
+        require(forward_hash is not None, 'Missing forward patch identity')
     require(provenance.get('instrumented_source_sha256') != provenance.get('original_source_sha256'),
             'Uninstrumented source reported')
 
@@ -313,7 +319,8 @@ def run(args):
     provenance = json.loads(Path(args.provenance).read_text())
     validate_provenance(provenance, file_hash(args.library),
         file_hash(Path(__file__).parent / 'prepare_handwriting_reference_bridge.py'),
-        file_hash(Path(__file__).parent / 'patches/posformer-input-norm.patch'))
+        file_hash(Path(__file__).parent / 'patches/posformer-input-norm.patch'),
+        file_hash(Path(__file__).parent / 'patches/posformer-forward-repair.patch'))
     if args.encoder == 'scalar':
         os.environ['POSFORMER_SCALAR_ENCODER'] = '1'
     else:

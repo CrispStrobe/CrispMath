@@ -14,6 +14,9 @@ on:
       - 'tool/compare_handwriting_input_norm*.py'
       - 'tool/check_posformer_input_norm.py'
       - 'tool/patches/posformer-input-norm.patch'
+      - 'tool/patches/posformer-forward-repair.patch'
+      - 'tool/check_posformer_pooling.py'
+      - 'tool/compare_handwriting_forward_repair*.py'
       - '.github/workflows/handwriting-quality.yml'
   workflow_dispatch:
     inputs:
@@ -33,6 +36,10 @@ on:
         description: 'Run bounded independent exported-FP32 reference comparison instead of baseline quality batch'
         type: boolean
         default: false
+      forward_repair_diagnostic:
+        description: 'Measure diagnostic ceil-pooling plus normalization on the unchanged 50 and independent reference'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -40,8 +47,10 @@ concurrency:
   cancel-in-progress: true
 jobs:
   reference:
-    if: inputs.reference_parity == true
+    if: inputs.reference_parity == true || inputs.forward_repair_diagnostic == true
     uses: ./.github/workflows/handwriting-reference-parity.yml
+    with:
+      pooling_repair: ${{ inputs.forward_repair_diagnostic == true }}
   measured:
     if: inputs.reference_parity != true
     runs-on: ubuntu-latest
@@ -78,6 +87,7 @@ jobs:
           python3 -m unittest discover -s tool -p 'compare_handwriting_encoders_test.py'
           python3 -m unittest discover -s tool -p 'audit_handwriting_vocabulary_test.py'
           python3 -m unittest discover -s tool -p 'compare_handwriting_input_norm_test.py'
+          python3 -m unittest discover -s tool -p 'compare_handwriting_forward_repair_test.py'
           python3 tool/provision_handwriting_quality.py
       - name: Download pinned benchmark weights
         run: |
@@ -94,7 +104,7 @@ jobs:
             --manifest .dart_tool/inference/handwriting-corpus/manifest.json \
             --output .dart_tool/inference/handwriting-vocabulary.json
       - name: Download and inspect optional MathWriting v2 candidate
-        if: inputs.mathwriting_candidate == true || inputs.input_norm_diagnostic == true
+        if: inputs.mathwriting_candidate == true || inputs.input_norm_diagnostic == true || inputs.forward_repair_diagnostic == true
         run: |
           curl --fail --location --retry 3 https://huggingface.co/cstr/posformer-mathwriting-GGUF/resolve/45eb7de7d8ae26708701f06cae68d96f1abb0ef7/posformer-mathwriting_v2-f32.gguf --output .ci/posformer-mathwriting-v2-f32.gguf
           echo '12060161fc6dc3c3fde146532ffade00f8f2286dd5a53e1f8777215afa9193c0  .ci/posformer-mathwriting-v2-f32.gguf' | sha256sum --check
@@ -136,7 +146,7 @@ jobs:
             --scalar .dart_tool/inference/handwriting-posformer-scalar.json \
             --output .dart_tool/inference/handwriting-encoder-comparison.json
       - name: Measure optional MathWriting candidate on all unchanged references
-        if: inputs.mathwriting_candidate == true || inputs.input_norm_diagnostic == true
+        if: inputs.mathwriting_candidate == true || inputs.input_norm_diagnostic == true || inputs.forward_repair_diagnostic == true
         run: |
           unset POSFORMER_SCALAR_ENCODER
           export CRISPMATH_HANDWRITING_ENCODER=default
@@ -187,6 +197,51 @@ jobs:
             --controls .dart_tool/inference/handwriting-input-norm-controls.json \
             --patch-file tool/patches/posformer-input-norm.patch --model-id mathwriting-v2 \
             --output .dart_tool/inference/handwriting-mathwriting-input-norm-comparison.json
+      - name: Build controlled ceil-pooling plus normalization repair and verify native helper math
+        if: inputs.forward_repair_diagnostic == true
+        run: |
+          git -C .ci/CrispEmbed restore --source=11e6d598521976f38081934106b55095b46b40e3 -- src/posformer_ocr.cpp
+          test "$(git -C .ci/CrispEmbed rev-parse HEAD)" = 11e6d598521976f38081934106b55095b46b40e3
+          git -C .ci/CrispEmbed apply --check "$PWD/tool/patches/posformer-forward-repair.patch"
+          git -C .ci/CrispEmbed apply "$PWD/tool/patches/posformer-forward-repair.patch"
+          test "$(git -C .ci/CrispEmbed diff --name-only)" = src/posformer_ocr.cpp
+          cmake -S .ci/CrispEmbed -B .ci/ocr-forward-build -DCMAKE_BUILD_TYPE=Release -DCRISPEMBED_BUILD_SHARED=ON -DGGML_NATIVE=OFF -DGGML_BLAS=OFF
+          cmake --build .ci/ocr-forward-build --target crispembed-shared --parallel 2
+          python3 -m pip install 'torch==2.6.0' --index-url https://download.pytorch.org/whl/cpu
+          python3 tool/check_posformer_pooling.py --library .ci/ocr-forward-build/libcrispembed.so --output .dart_tool/inference/handwriting-forward-pooling-controls.json
+          python3 tool/check_posformer_input_norm.py --library .ci/ocr-forward-build/libcrispembed.so --output .dart_tool/inference/handwriting-forward-normalization-controls.json
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+          bridge = '11e6d598521976f38081934106b55095b46b40e3'
+          original = subprocess.check_output(['git', '-C', '.ci/CrispEmbed', 'show', bridge + ':src/posformer_ocr.cpp'])
+          report = {'source': os.environ['GITHUB_SHA'], 'bridge_source': bridge,
+                    'original_source_sha256': hashlib.sha256(original).hexdigest(),
+                    'patched_source_sha256': sha('.ci/CrispEmbed/src/posformer_ocr.cpp'),
+                    'patch_sha256': sha('tool/patches/posformer-forward-repair.patch'),
+                    'library_sha256': sha('.ci/ocr-forward-build/libcrispembed.so')}
+          Path('.dart_tool/inference/handwriting-forward-provenance.json').write_text(json.dumps(report, indent=2) + '\n')
+          PY
+      - name: Measure normalization and ceil-pooling repair on both unchanged models and references
+        if: inputs.forward_repair_diagnostic == true
+        run: |
+          unset POSFORMER_SCALAR_ENCODER POSFORMER_REFERENCE_STEPS POSFORMER_REFERENCE_TRACE
+          export CRISPMATH_HANDWRITING_ENCODER=default
+          export CRISPMATH_OCR_BRIDGE_SOURCE="$(git -C .ci/CrispEmbed rev-parse HEAD)"
+          export CRISPMATH_OCR_BRIDGE_PATCH_SHA256="$(sha256sum tool/patches/posformer-forward-repair.patch | cut -d ' ' -f 1)"
+          export CRISPMATH_OCR_LIBRARY="$PWD/.ci/ocr-forward-build/libcrispembed.so"
+          export CRISPMATH_OCR_MODEL="$PWD/.ci/posformer-q8.gguf"
+          export CRISPMATH_OCR_SHA256=450211ad27ce19e2f30651e69fdc77ea76a13b66e29e045858286024864bf4a4
+          export CRISPMATH_HANDWRITING_REPORT=.dart_tool/inference/handwriting-posformer-forward-repair.json
+          flutter test --reporter expanded native_test/handwriting_quality_test.dart
+          python3 tool/compare_handwriting_forward_repair.py --baseline .dart_tool/inference/handwriting-posformer.json --patched .dart_tool/inference/handwriting-posformer-forward-repair.json --normalization-controls .dart_tool/inference/handwriting-forward-normalization-controls.json --pooling-controls .dart_tool/inference/handwriting-forward-pooling-controls.json --patch-file tool/patches/posformer-forward-repair.patch --provenance .dart_tool/inference/handwriting-forward-provenance.json --model-id crohme-q8 --output .dart_tool/inference/handwriting-posformer-forward-comparison.json
+          export CRISPMATH_OCR_MODEL="$PWD/.ci/posformer-mathwriting-v2-f32.gguf"
+          export CRISPMATH_OCR_SHA256=12060161fc6dc3c3fde146532ffade00f8f2286dd5a53e1f8777215afa9193c0
+          export CRISPMATH_HANDWRITING_REPORT=.dart_tool/inference/handwriting-mathwriting-forward-repair.json
+          flutter test --reporter expanded native_test/handwriting_quality_test.dart
+          python3 tool/compare_handwriting_forward_repair.py --baseline .dart_tool/inference/handwriting-mathwriting-v2.json --patched .dart_tool/inference/handwriting-mathwriting-forward-repair.json --normalization-controls .dart_tool/inference/handwriting-forward-normalization-controls.json --pooling-controls .dart_tool/inference/handwriting-forward-pooling-controls.json --patch-file tool/patches/posformer-forward-repair.patch --provenance .dart_tool/inference/handwriting-forward-provenance.json --model-id mathwriting-v2 --output .dart_tool/inference/handwriting-mathwriting-forward-comparison.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
