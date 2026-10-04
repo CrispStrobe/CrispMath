@@ -217,23 +217,31 @@ async def check_calculator(args):
                     assert re.sub(r'\s+','',entry['e']).replace('×','*').replace('·','*')==re.sub(r'\s+','',LINSOLVE_SOURCE),entry
                     validate_linsolve(entry['r'])
                     assert (entry.get('evidence')or{}).get('accuracy')=='exact',entry
-                    # Actual visible history text must correspond to the persisted result.
-                    result=page.get_by_text('= '+entry['r'],exact=True)
+                    # Flutter merges expression and result into the actual
+                    # history row's semantic label, rather than a DOM Text.
+                    label=entry['e']+'\n= '+entry['r']
+                    result=page.get_by_label(label,exact=True)
                     await result.wait_for(state='attached')
+                    assert await result.count()==1,label
                     box=await result.bounding_box()
-                    assert box and box['width']>0 and box['height']>0 and box['y']>=0 and box['y']+box['height']<=height,box
+                    assert box and box['width']>0 and box['height']>0 and box['x']>=0 and box['x']+box['width']<=width and box['y']>=0 and box['y']+box['height']<=height,box
                     item['resultGeometry']=box
-                    item['visibleResult']=await result.inner_text()
-                    validate_linsolve(item['visibleResult'][2:])
+                    item['visibleHistoryLabel']=await result.get_attribute('aria-label')
+                    assert item['visibleHistoryLabel']==label,item
+                    item['visibleResult']=item['visibleHistoryLabel'].split('\n= ')[1]
+                    validate_linsolve(item['visibleResult'])
                     await page.reload(wait_until='domcontentloaded')
                     await page.locator('canvas').first.wait_for()
                     await page.locator('flt-semantics-placeholder').evaluate('(element)=>element.click()')
                     restored=await page.evaluate("()=>JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0]")
                     assert restored==entry,(entry,restored)
                     item['reload']=True
-                    result=page.get_by_text('= '+restored['r'],exact=True)
+                    result=page.get_by_label(label,exact=True)
                     await result.wait_for(state='attached')
-                    validate_linsolve((await result.inner_text())[2:])
+                    assert await result.count()==1,label
+                    item['restoredHistoryLabel']=await result.get_attribute('aria-label')
+                    assert item['restoredHistoryLabel']==label,item
+                    validate_linsolve(item['restoredHistoryLabel'].split('\n= ')[1])
                     await page.screenshot(path=str(output/f'linsolve-{width}.png'))
                     assert not errors,errors
                     item['passed']=True
