@@ -105,8 +105,17 @@ async def worksheet_result(page, name, first, expected):
     fields = page.get_by_role('textbox')
     assert await fields.count() == 3, 'Expected the three real worksheet editors'
     for index, source in enumerate([first, 'f(t)=t^2+a', 'f(4)']):
-        await expect(fields.nth(index)).to_have_value(source)
-    result = page.get_by_text(expected, exact=True)
+        field = fields.nth(index)
+        # Flutter fills its native editing element when the real controller
+        # gains focus; unfocused semantic textareas intentionally have no value.
+        await real_click(page, field)
+        await next_frames(page)
+        await expect(field).to_have_value(source)
+    # Math.tex digits are separate semantic children merged with the row's
+    # drag control, e.g. 'Drag to reorder\n1\n9'. Anchor the entire rendered
+    # numeric sequence so adjacent or extra digits cannot pass.
+    digits = r'\s*'.join(re.escape(char) for char in expected)
+    result = page.get_by_label(re.compile(r'^Drag to reorder\s+' + digits + r'$'))
     await expect(result).to_have_count(1)
     await expect(result).to_be_visible()
     box = await result.bounding_box()
