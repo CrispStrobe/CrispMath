@@ -183,7 +183,9 @@ void main() {
     _accessible(tester, 'Cloud backup uploaded.');
     expect(fixture.writes, 2);
     final state = jsonDecode(fixture.row!['app_state'] as String);
-    expect((state['notepadDocuments'] as List).single['l'][0]['s'], '2+3');
+    final uploaded = (state['notepadDocuments'] as List)
+        .where((document) => document['n'] == 'Local worksheet').single;
+    expect(uploaded['l'][0]['s'], '2+3');
   });
 
   testWidgets('sign out announces local preservation and keeps a normal Close action', (tester) async {
