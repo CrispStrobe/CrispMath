@@ -83,8 +83,37 @@ async def semantics(page):
 
 async def menu(page, label):
     await real_click(page, page.get_by_role('button', name='Document menu', exact=True))
-    await real_click(page, page.get_by_label(label, exact=True))
-    await page.get_by_label('Popup menu', exact=True).wait_for(state='hidden')
+    popup = page.get_by_label('Popup menu', exact=True)
+    await popup.wait_for()
+    # Flutter exposes final semantic bounds during its 300 ms canvas popup
+    # transition. Let that transition finish before using semantic hit geometry.
+    await page.wait_for_timeout(350)
+    target = page.get_by_label(label, exact=True)
+    await target.wait_for(state='attached')
+    width, height = page.viewport_size['width'], page.viewport_size['height']
+    for _ in range(20):
+        await expect(target).to_have_count(1)
+        async def measure():
+            return await target.evaluate('''el => {
+              const r=el.getBoundingClientRect(), x=r.x+r.width/2, y=r.y+r.height/2;
+              const hit=document.elementFromPoint(x,y);
+              return {ready:r.width>0&&r.height>0&&x>0&&x<innerWidth&&y>0&&y<innerHeight&&
+                !!hit&&(hit===el||el.contains(hit)),x,y};
+            }''')
+        before = await measure()
+        await next_frames(page)
+        after = await measure()
+        if (before['ready'] and after['ready']
+                and abs(before['x']-after['x']) < .5 and abs(before['y']-after['y']) < .5):
+            await page.mouse.click(after['x'], after['y'])
+            break
+        await page.mouse.move(width * .8, height * .65)
+        await page.mouse.wheel(0, -220 if after['y'] < 140 else 220)
+        # Wait for the actual Flutter scroll animation before remeasuring.
+        await page.wait_for_timeout(180)
+    else:
+        raise AssertionError('Document menu action did not settle at an unobscured position')
+    await popup.wait_for(state='hidden')
     await next_frames(page)
 
 
@@ -360,7 +389,29 @@ async def check(args):
                 assert imported['i'] != original['i'] and imported['l'][0]['s'] == 'a=7'
                 assert any(d['i'] == local['i'] for d in docs)
                 await notepad(second)
+                stage = 'select imported conflict worksheet before recalculation'
                 await menu(second, 'Cloud source (imported)')
+                # Closing menu semantics can precede the selected document's
+                # persisted state and editor-controller rebuild. Require both
+                # before opening the next action menu; never recalc an old sheet.
+                await second.wait_for_function('''expected => {
+                  const rawId=localStorage.getItem('flutter.crisp.currentNotepadDoc');
+                  if (!rawId || JSON.parse(rawId)!==expected.id) return false;
+                  const raw=localStorage.getItem('flutter.crisp.notepadDoc.'+encodeURIComponent(expected.id));
+                  if (!raw) return false;
+                  const doc=JSON.parse(JSON.parse(raw));
+                  return doc.n===expected.name && doc.l.length===3 &&
+                    doc.l.every((line,index)=>line.s===expected.sources[index]);
+                }''', arg={'id': imported['i'], 'name': imported['n'],
+                          'sources': ['a=7', 'f(t)=t^2+a', 'f(4)']})
+                imported_fields = second.get_by_role('textbox')
+                await expect(imported_fields).to_have_count(3)
+                for index, source in enumerate(['a=7', 'f(t)=t^2+a', 'f(4)']):
+                    field = imported_fields.nth(index)
+                    await real_click(second, field)
+                    await next_frames(second)
+                    await expect(field).to_have_value(source)
+                stage = 'recalculate selected imported conflict worksheet'
                 await menu(second, 'Recalculate all')
                 await worksheet_result(second, 'Cloud source (imported)', 'a=7', '23')
                 stage = 'reload persisted imported worksheet and authenticated session'
@@ -407,7 +458,14 @@ async def check(args):
                             label = re.sub(r'eyJ[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+){1,2}',
                                            '[redacted token]', label)
                             clean.append(label[:1000])
-                        views.append({'viewport': page.viewport_size, 'labels': clean})
+                        view = {'viewport': page.viewport_size, 'labels': clean}
+                        # Generated worksheet metadata only, never auth storage.
+                        current = await current_document(page)
+                        if current:
+                            view['currentWorksheet'] = {'id': current['i'], 'name': current['n'],
+                                'sources': [row['s'] for row in current['l'][:3]],
+                                'results': [row.get('r') for row in current['l'][:3]]}
+                        views.append(view)
                     except Exception:
                         views.append({'diagnosticUnavailable': True})
                 report['failureViews'] = views
