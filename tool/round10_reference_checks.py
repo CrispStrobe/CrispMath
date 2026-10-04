@@ -162,7 +162,12 @@ def real_constant(expression):
 def validate_domain(domain):
     match=re.fullmatch(r'\s*(.*?)\s*(?:≠|!=)\s*0\s*',domain)
     assert match,domain
-    assert multivariate_coefficients(match[1])==multivariate_coefficients('a+b'),domain
+    assert not re.search(r'[≠!;=]',match[1]),domain
+    try:
+        coefficients=multivariate_coefficients(match[1])
+    except (SyntaxError,ValueError) as error:
+        raise AssertionError(domain) from error
+    assert coefficients==multivariate_coefficients('a+b'),domain
 
 
 def validate_result(case,line):
