@@ -353,8 +353,9 @@ class WorkflowTasks {
     try {
       final node = SymParser(expression.replaceAll('**', '^')).parse().simplify();
       int count(SymExpr part) {
-        if (part is SymNum) return !part.value.isZero &&
-            part.value.abs != Rational.one ? 1 : 0;
+        if (part is SymNum) {
+          return !part.value.isZero && part.value.abs != Rational.one ? 1 : 0;
+        }
         if (part is SymMul) return part.factors.fold(0, (sum, child) => sum+count(child));
         final polynomial = MultivariatePolynomial.tryParse(renderSymExpr(part));
         if (polynomial == null || polynomial.totalDegree <= 0) return 0;

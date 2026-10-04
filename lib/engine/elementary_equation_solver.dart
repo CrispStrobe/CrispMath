@@ -8,7 +8,9 @@ import 'symbolic_input_budget.dart';
 class ElementaryEquationSolver {
   static List<String>? solve(String source, String variable) {
     if (source.length > 512 || !boundedSymbolicLiterals(source) ||
-        !RegExp(r'^[A-Za-z_][A-Za-z_0-9]*$').hasMatch(variable)) return null;
+        !RegExp(r'^[A-Za-z_][A-Za-z_0-9]*$').hasMatch(variable)) {
+      return null;
+    }
     final sides = source.split('=');
     if (sides.length != 2 || sides.any((side) => side.trim().isEmpty)) return null;
     try {
@@ -26,7 +28,9 @@ class ElementaryEquationSolver {
         final root = -intercept / slope;
         // Injectivity applies only on the intersection of both real domains.
         if ((a.$1 + a.$2 * root).sign <= 0 ||
-            (b.$1 + b.$2 * root).sign <= 0) return <String>[];
+            (b.$1 + b.$2 * root).sign <= 0) {
+          return <String>[];
+        }
         return [root.toString()];
       }
       List<String>? power(SymExpr node, SymExpr target) {

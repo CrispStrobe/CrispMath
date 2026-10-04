@@ -30,7 +30,9 @@ class ImproperExponentialIntegral {
       final exponential = exponentials.single;
       final exponent = RealCalculusProofs.polynomial(renderSymExpr(exponential.args.single), variable);
       if (exponent == null || exponent.degree != 1 ||
-          !exponent.coeffs[0].isZero) return null;
+          !exponent.coeffs[0].isZero) {
+        return null;
+      }
       final rest = factors.where((node) => !identical(node, exponential)).toList();
       final polynomial = RealCalculusProofs.polynomial(
           rest.isEmpty ? '1' : renderSymExpr(SymMul(rest)), variable);
@@ -39,7 +41,9 @@ class ImproperExponentialIntegral {
       if (polynomial.isZero) return '0';
       if (rate.sign <= 0) return 'Error: divergent ordinary improper exponential integral';
       if (rate.numerator.abs().bitLength > 2048 || rate.denominator.bitLength > 2048 ||
-          polynomial.coeffs.any((c) => c.numerator.abs().bitLength > 2048 || c.denominator.bitLength > 2048)) return null;
+          polynomial.coeffs.any((c) => c.numerator.abs().bitLength > 2048 || c.denominator.bitLength > 2048)) {
+        return null;
+      }
       var value = Rational.zero, factorial = Rational.one, ratePower = rate;
       for (var k = 0; k < polynomial.coeffs.length; k++) {
         if (k > 0) factorial = factorial * Rational.fromInt(k);

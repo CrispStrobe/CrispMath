@@ -385,7 +385,9 @@ class MultivariateFactoring {
       final (ae, ac) = terms[order];
       final (be, bc) = terms[1-order];
       if (ac.sign <= 0 || bc.sign <= 0 ||
-          ae.any((e) => e % 4 != 0) || be.any((e) => e % 4 != 0)) continue;
+          ae.any((e) => e % 4 != 0) || be.any((e) => e % 4 != 0)) {
+        continue;
+      }
       final aSquared = _rationalSqrt(ac);
       final bSquared = _rationalSqrt(bc / Rational.fromInt(4));
       if (aSquared == null || bSquared == null) continue;
