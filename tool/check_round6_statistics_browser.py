@@ -46,11 +46,13 @@ async def real_click(page, locator, *, horizontal=False):
               const r=el.getBoundingClientRect(), x=r.x+r.width/2,y=r.y+r.height/2;
               const hit=document.elementFromPoint(x,y);
               return {ready:r.width>0&&r.height>0&&x>0&&x<innerWidth&&y>0&&y<innerHeight&&
-                !!hit&&(hit===el||el.contains(hit)),y};
+                !!hit&&(hit===el||el.contains(hit)),x,y};
             }""")
             if state['ready']:
-                await locator.click(trial=True, timeout=3000)
-                await locator.click()
+                # A trial hover can rebuild Flutter tooltip semantics and
+                # invalidate the locator before a second lookup. Use one real
+                # pointer click on the unique, measured, unobscured control.
+                await page.mouse.click(state['x'],state['y'])
                 return
         else:
             state = {}
