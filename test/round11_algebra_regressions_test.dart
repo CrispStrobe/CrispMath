@@ -6,6 +6,7 @@ import 'package:crisp_math/engine/result_evidence.dart';
 import 'package:crisp_math/diagnostics/workflow_tasks.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
 import 'package:crisp_math/services/notepad_dispatcher.dart';
+import 'package:crisp_math/services/linear_system_arguments.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class FactorEchoEngine extends CalculatorEngine {
@@ -20,6 +21,29 @@ class FactorEchoEngine extends CalculatorEngine {
 }
 
 void main() {
+  test('public linear-system list and semicolon forms preserve all equations', () {
+    final engine = CalculatorEngine();
+    for (final source in [
+      'linsolve([2*x-y+z=7,x+3*y-2*z=-3,3*x+y+z=11],[x,y,z])',
+      'linsolve(2*x-y+z=7;x+3*y-2*z=-3;3*x+y+z=11,x,y,z)',
+    ]) {
+      final args = parseLinearSystemArguments(source)!;
+      expect(args.equations, hasLength(3));
+      expect(args.symbols, ['x', 'y', 'z']);
+      expect(engine.solveLinearSystem(args.equations, args.symbols),
+          'x = 2, y = 1, z = 4');
+    }
+    final nested = parseLinearSystemArguments('linsolve([f(x,y)=2,x+y=3],[x,y])')!;
+    expect(nested.equations, ['f(x,y)=2', 'x+y=3']);
+    for (final source in [
+      'linsolve([x=1],[x,x])', 'linsolve([x=1],x)',
+      'linsolve([x=1,],[x])', 'linsolve([x=1],[x],y)',
+      'linsolve([x=1],[x+y])', 'linsolve([x=1=2],[x])',
+      'linsolve([x=],[x])', 'linsolve([x=1),[x])',
+    ]) {
+      expect(parseLinearSystemArguments(source), isNull, reason: source);
+    }
+  });
   test('actual worksheet equality binder retains certified elementary proofs', () async {
     final engine = CalculatorEngine();
     final dispatcher = NotepadDispatcher(

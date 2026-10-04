@@ -61,6 +61,9 @@ class AlgebraReferenceControls(unittest.TestCase):
         self.accepts('supplement-principal-root-product','-35')
         self.rejects('supplement-principal-root-product','35')
         self.accepts('supplement-nonunit-log-modulus','ln(2)-I*pi/2')
+        self.accepts('supplement-nonunit-log-modulus','0.693147180559945 - 1.5707963267949i',evidence={'accuracy':'unknown'})
+        self.rejects('supplement-nonunit-log-modulus','0.693147180559945 + 1.5707963267949i',evidence={'accuracy':'unknown'})
+        self.rejects('supplement-nonunit-log-modulus','0.693147180559945 - 1.5707963267949i',evidence={'accuracy':'exact'})
         self.rejects('supplement-nonunit-log-modulus','-I*pi/2')
         self.rejects('supplement-nonunit-log-modulus','ln(2)+I*pi/2')
 

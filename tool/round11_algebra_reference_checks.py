@@ -107,6 +107,9 @@ def rational_equal(actual,expected):
 
 def real_constant(expression,complex_mode=False):
     text=normalized(expression);assert len(text)<=512,expression
+    if complex_mode:
+        text=re.sub(r'(?<=[0-9)])i\b','*I',text)
+        text=re.sub(r'\bi\b','I',text)
     tree=ast.parse(text,mode='eval');assert sum(1 for _ in ast.walk(tree))<=100,expression
     def parse(node):
         if isinstance(node,ast.Constant) and type(node.value) in {int,float}:return float(scalar(ast.get_source_segment(text,node)))

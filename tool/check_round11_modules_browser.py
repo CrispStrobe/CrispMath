@@ -13,7 +13,7 @@ from urllib.parse import urljoin
 
 from playwright.async_api import async_playwright, expect
 import check_new_math_browser as controls
-from check_round6_statistics_browser import real_click, check_hypothesis
+from check_round6_statistics_browser import real_click
 from check_round10_math_browser import reveal_tab
 
 from round11_module_reference_checks import STATISTICS, ENUMERATIONS, NUMBER, validate_enumeration
@@ -108,7 +108,15 @@ async def check_modules(args):
                             item['header']=label
                             item['result']=await enumeration_result(page,header,refs)
                         elif tab=='Tests':
-                            await check_hypothesis(page,'chi-square-empty-bin',inputs,refs,item,output,width)
+                            await real_click(page,page.get_by_label('Tests',exact=True),horizontal=True)
+                            choice='χ² goodness-of-fit'
+                            await real_click(page,page.get_by_label(choice,exact=True).or_(page.get_by_text(choice,exact=True)).first)
+                            item['inputsReadBack']=await fill_fields(page,inputs)
+                            item['rows']={label:await visible_row(page,label,value)for label,value in refs.items()}
+                            group=page.get_by_label(re.compile(r'^χ² statistic\s'))
+                            assert await group.count()==1
+                            item['renderedTable']=await group.get_attribute('aria-label')
+                            assert 'Fail to reject H₀ at α' in item['renderedTable'],item
                         else:
                             await real_click(page,page.get_by_label(tab,exact=True),horizontal=True)
                             item['inputsReadBack']=await fill_fields(page,inputs)
