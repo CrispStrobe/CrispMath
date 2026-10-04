@@ -46,6 +46,7 @@ class _WorksheetExportDialogState extends State<WorksheetExportDialog> {
   Widget build(BuildContext context) {
     final bundle = widget.bundle;
     return AlertDialog(
+      scrollable: true,
       title: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetExport)),
       content: SizedBox(
           width: 720,

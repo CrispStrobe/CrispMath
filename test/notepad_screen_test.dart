@@ -66,7 +66,7 @@ void main() {
   testWidgets('computed multi-digit result exposes its complete accessible value',
       (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
+    try {
     await _bootApp(tester, size: const Size(390, 844));
     await _gotoNotepad(tester);
     await tester.enterText(find.byType(TextField).first, '2+37');
@@ -78,6 +78,9 @@ void main() {
     final result = find.byKey(ValueKey('notepad-result:${line.id}'));
     expect(result, findsOneWidget);
     expect(tester.getSemantics(result).label, '39');
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('guided creation preserves existing source and cancels stale linking',
