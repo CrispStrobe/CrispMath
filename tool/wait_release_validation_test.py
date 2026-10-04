@@ -21,7 +21,8 @@ def tree():
         {'path': path, 'type': 'blob', 'mode': '100644', 'sha': BLOB}
         for path in ('lib/main.dart', 'pubspec.yaml', 'pubspec.lock',
                      'ios/Runner/Info.plist', 'assets/model.onnx',
-                     'tool/stage_ocr_runtime.py', 'tool/ocr_runtime_checksums.json',
+                     'tool/stage_ocr_runtime.py', 'tool/stage_ocr_wasm_runtime.py',
+                     'tool/build_web.sh', 'tool/ocr_runtime_checksums.json',
                      'tool/dependency_lock.json')]}
 
 
@@ -126,7 +127,8 @@ class ReleaseValidationTest(unittest.TestCase):
     def test_runtime_changes_additions_and_deletions_block_release(self):
         for path in ('lib/main.dart', 'pubspec.lock', 'ios/Runner/Info.plist',
                      'assets/model.onnx', 'tool/stage_ocr_runtime.py',
-                     'tool/ocr_runtime_checksums.json'):
+                     'tool/ocr_runtime_checksums.json', 'tool/stage_ocr_wasm_runtime.py',
+                     'tool/build_web.sh'):
             self.api.packaged = tree()
             next(entry for entry in self.api.packaged['tree'] if entry['path'] == path)['sha'] = 'd' * 40
             with self.subTest(path=path), self.assertRaisesRegex(ValidationError, 'source differs'):

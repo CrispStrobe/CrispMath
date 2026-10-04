@@ -243,6 +243,7 @@ jobs:
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/task-audit-http.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+          python tool/check_ocr_wasm_runtime_browser.py --expected-source "$GITHUB_SHA" --output task-results/ocr-runtime.json
           python tool/check_workflow_tasks_browser.py --output task-results/browser.json
           python tool/check_workflow_tasks_browser.py --tasks test/fixtures/fresh_workflow_tasks.json --output task-results/browser-fresh.json
       - name: Run all 100 additional problems against the actual WASM worker
