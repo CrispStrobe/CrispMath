@@ -1,86 +1,71 @@
 # Native Apple screenshot evidence
 
-The [latest native GitHub CI gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37202560511)
-captures CrispMath at source `6eff9fb6fa609144fad2844e8e245d430978d3f9`.
-Both jobs pass on 4 October 2026: all **33 images** and native calculation/content
-assertions are verified. All **33 captures have now been individually visually
-reviewed**, including evaluated worksheets, populated graphs, tracing, generated
-tables, saved checkpoints, export previews and actual handwriting strokes.
+The [fresh native GitHub CI gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37239843806)
+captures CrispMath at source `20dafd33b80ef8f0cd6f8811164e6d84eefd904e`.
+Its completed Mac job verifies eleven **2560×1600** native renders, actual CAS
+linkage, derivative cos(x), exact integral 1/3 and the real guided result 19.
+Four selected Mac views are visually reviewed without a new clipping defect.
+The complete workflow passes all 33 captures and sixteen tool controls. Both
+iOS simulators pass on their first attempt, with no recovery retry. Only the
+four new Mac scenes have been visually reviewed in this recapture; all33 pass
+hosted content/image verification. Previous twelve-view review is retained.
 
-The capture source and validated documentation revision
-`d4739be9eb26f8bbb8963ca9547df35e6e1480dd` have identical 368-file production
-trees, SHA256
-`98edb1c4f9ca1064ca37e299b203425398db54622ad9e5d159159933b584d79c`.
-This also matches uploaded 1.2.0 (22), source `d4739be`. The intervening changes
-affect CI helpers and documentation. See [the current review packet](apple-review-evidence.md)
-for signed-binary and external TestFlight evidence; beta approval does not
-resolve the earlier App Review 4.3(a) finding.
+The only application-source change after approved build 23 is the existing
+`#if DEBUG` capture channel's window size, from 1280×900 to 1280×800 logical
+points. The release window behavior is unchanged. The verifier accepts only
+Apple's four listed Mac upload dimensions and rejects the old internal size.
+The new PNGs are native renders, not resized or cropped older screenshots.
+
+Uploaded **1.2.0 (23)** and public deployment source `637b07e` preserve validated
+production source `e8920a3`. The signed gate checks 372 production files,
+fingerprint `e320ae453970fea84b86c094acc86fe9df0c275e74a92aca90ded84f07800859`.
+The older [33-capture gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37230024733)
+at `18092e4` remains valid internal evidence; its 2560×1800 Mac images are not
+Mac upload files. See [the review packet](apple-review-evidence.md) for build23.
+Beta approval does not resolve the earlier App Review 4.3(a) finding.
 
 | Profile | Capture | Images | Pixel dimensions |
 | --- | --- | ---: | --- |
 | iPhone 15 Pro Max | Native iOS simulator | 11 | 1290 × 2796 |
 | iPad Pro 13-inch (M4) | Native iOS simulator | 11 | 2048 × 2732 |
-| macOS | Actual native Flutter application render tree, at 2× | 11 | 2560 × 1800 |
+| macOS | Actual native Flutter application render tree, at 2× | 11 | 2560 × 1600 |
 
-The macOS images contain the application content without operating-system
-window chrome. They are not browser screenshots. The iPhone and iPad checks
-use simulators; physical-device testing remains for another session.
+The macOS images contain application content without OS window chrome.
+Their dimensions match Apple's listed 2560×1600 Mac size. They have not been
+uploaded to App Store Connect, so no successful upload claim is made.
+iPhone/iPad use simulators; physical tests remain for another session.
 
-Both CI artifacts retain source-tagged manifests, RGB PNG images and
-calculation evidence: `native-apple-screenshot-gallery` and
-`native-macos-screenshot-gallery`. All 33 images remain in remote artifacts.
-The first review downloaded the manifests and four selected PNGs:
+Complete capture sets and source-tagged manifests remain in remote CI artifacts.
+Only small JSON and selected PNG members are retained on CIFS:
 
-- `/mnt/storage/CrispMath-stage19-ci/native-gallery/ios/manifest.json`
-- `/mnt/storage/CrispMath-stage19-ci/native-gallery/ios/iphone/multiple-function-graph.png`
-- `/mnt/storage/CrispMath-stage19-ci/native-gallery/ios/ipad/evaluated-engineering-worksheet.png`
-- `/mnt/storage/CrispMath-stage19-ci/native-gallery/macos/manifest.json`
-- `/mnt/storage/CrispMath-stage19-ci/native-gallery/macos/macos/multiple-function-graph.png`
-- `/mnt/storage/CrispMath-stage19-ci/native-gallery/macos/macos/evaluated-engineering-worksheet.png`
+- New Mac selection: `/mnt/storage/CrispMath-round11-guided/native-20dafd3/verified-macos-selection.json`
+- New Mac originals: `/mnt/storage/CrispMath-round11-guided/native-20dafd3/macos/macos/`
+- Previous twelve-view selection: `/mnt/storage/CrispMath-round11-guided/native-18092e4/verified-gallery-selection.json`
 
-The first selected-image review and production parity are recorded in
-`/mnt/storage/CrispMath-stage19-ci/native-gallery/verified-native-gallery-math.json`.
-The subsequent review downloaded the remaining 29 PNGs by exact manifest path,
-excluding duplicate raw simulator images, through partial artifact requests.
-These files are under `native-gallery/remaining-ios` and
-`native-gallery/remaining-macos` on the same CIFS storage. The complete review,
-image hashes, dimensions and proposed sequence are recorded in
-`native-gallery/store-selection-review.json`. App bundles and models were not
-downloaded, and no local app build or screenshot batch was run.
+The new Mac selection records exact paths, dimensions, source and SHA-256
+hashes; four PNGs and two JSON files cost 616,778 bounded artifact bytes.
+No bundle/model download or local build/capture batch was used. The previous
+iOS/Mac selections retain their original sources; they are not relabeled as
+new captures.
 
-Reviewed graphs contain `cos(x)`, `x^2-2` and linked `3*sin(x)`. The tank
-worksheets show `r=3`, `h=5`, area `28.2743338823`, volume `141.3716694115` and
-volume/1000 `0.1413716694115`, with computed-result labels. No blank capture,
-framework error or unexpected blocking overlay was seen. The expected table,
-history, export and handwriting dialogs contain real content.
+## Selected sequence for each profile
 
-## Proposed screenshot sequence
-
-Use the following four unmodified captures for each device profile. They follow
-one document from calculation through inspection, recovery and export. This is
-a reviewed selection; the images have not been uploaded to App Store Connect.
-
-| Order | Filename | What the image establishes |
+| Order | Filename | Actual visible content |
 | --- | --- | --- |
-| 1 | `connected-worksheet.png` | Evaluated `a=3`, the linked `3 sin(x)` expression, its free x, and the exact integral 1/3 |
-| 2 | `graph-curve-trace.png` | Three populated curves, their worksheet link, a visible sampled coordinate and trace marker |
-| 3 | `worksheet-checkpoint-history.png` | The same document with a saved checkpoint and visible Compare action |
-| 4 | `worksheet-graph-export-preview.png` | Evaluated worksheet content, retained sine graph, numeric samples and HTML/MD/TEX/PDF actions |
+| 1 | `connected-worksheet.png` | Three real guided rows a=3, f(x)=x²+a and f(4), result 19, and contextual worksheet actions |
+| 2 | `graph-curve-trace.png` | cos(x), x²−2 and worksheet-linked x²+3, with trace marker and coordinate |
+| 3 | `worksheet-checkpoint-history.png` | Populated saved checkpoint with Compare, Close and Save checkpoint actions |
+| 4 | `worksheet-graph-export-preview.png` | Evaluated worksheet/result19, retained parabola, sampled values and HTML/MD/TEX/PDF save actions |
 
-The first, third and fourth scenes refer to **Explore a function**. The graph
-adds `cos(x)` and `x²−2` alongside its linked `3 sin(x)`. The trace coordinates
-differ slightly across platforms because sampling uses the real plot geometry.
-The phone readout is `(0, 1)`; tablet and desktop captures show approximately
-`(0.02, 0.9998)`, all consistent with the traced cosine.
+The same guided document connects these four scenes. Phone actions wrap and
+export values scroll; each screenshot shows its actual viewport, not every
+export row. The ink scene is excluded from the proposed store sequence: it
+shows editable strokes and no configured recognition model. These captures have
+not been uploaded as App Store screenshots.
 
-The longer `evaluated-engineering-worksheet.png` is a useful optional fifth image
-on iPad and macOS. On iPhone its last result label sits near the lower edge,
-so the shorter connected worksheet is the clearer opening image. The exact
-calculator and generated value table are useful supplementary views.
-`handwriting-editable-input.png` is excluded from the proposed store sequence:
-it visibly says no model is configured and demonstrates pen input, not successful
-recognition. Export previews contain a scrollable sample list; do not imply the
-screen shows every exported row or verifies a physical Files provider.
+Earlier fully reviewed build-22 captures and selection records remain at
+`/mnt/storage/CrispMath-stage19-ci/native-gallery/`. Their linked sine worksheet
+and sources are historical evidence, not the current guided workflow.
 
 ## Phone graph controls
 
@@ -109,9 +94,9 @@ evidence, not the current production source.
 | Scene filename, without `.png` | Visible content |
 | --- | --- |
 | `calculator-exact-integral` | Actual history result: integral of x² from 0 to 1 equals 1/3 |
-| `connected-worksheet` | Evaluated assignments, linked sine function, and exact integral |
-| `linked-function-graph` | Sampled curves, including the worksheet-linked 3 sin(x) |
-| `multiple-function-graph` | cos(x), x² − 2, and the linked 3 sin(x) |
+| `connected-worksheet` | Guided parameter/function rows, linked parabola, and result 19 |
+| `linked-function-graph` | Sampled curves, including the worksheet-linked x²+3 |
+| `multiple-function-graph` | cos(x), x² − 2, and the linked x²+3 |
 | `graph-curve-trace` | A live sampled coordinate and visible trace marker |
 | `generated-graph-value-table` | Eleven generated function values, from −5 to 5 |
 | `shortcuts-created-worksheet` | Evaluated f(t) = t² + 3 and f(4) = 19 |
@@ -122,8 +107,8 @@ evidence, not the current production source.
 
 Assertions exercise the linked native CAS (`differentiate(sin(x)) = cos(x)`),
 the exact integral, populated curve geometry, tracing, generated table rows,
-and evaluated worksheets. The definite integral must have no free x; its
-linked sine-function control must still retain x. The π-dependent tank volume
+and evaluated worksheets. The definite integral must have no free x; the
+linked function control must still retain x. The π-dependent tank volume
 must remain readable numeric data near 45π, with computed evidence rather than
 an exact label. Literal radius and height retain exact evidence.
 

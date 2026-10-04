@@ -1,3 +1,27 @@
+## 2026-10-04 — Build-23 review evidence and native Mac upload dimensions
+
+Refresh the App Review draft for approved build 23 and its guided worksheet,
+correct stale build 22/source/runtime statements, and prepare a clearly pending
+physical iPhone/iPad matrix. No App Review correspondence, submission or store
+screenshot upload is made.
+
+Apple's listed Mac screenshot sizes exclude the old 2560×1800 internal captures.
+The existing DEBUG-only capture channel now sizes the native window at 1280×800
+logical points, producing actual 2560×1600 renders at 2×. Release window behavior
+is unchanged. The verifier rejects unsupported sizes; three dimension controls
+include the old internal size, transposition and malformed/unsupported sizes.
+
+Hosted native gallery 37239843806 passes all 33 captures and 16 tooling controls
+at `20dafd3`. Both iOS simulators pass first attempt without recovery. All eleven
+Mac images are 2560×1600; four selected worksheet/trace/history/export scenes
+are visually reviewed without new clipping. Full PR unit/platform checks and
+focused feature validation 37239892247 pass. Only small reports and four selected
+Mac PNGs are retained on CIFS. No local build or capture batch is run.
+
+See [the review packet](docs/apple-review-evidence.md) and
+[native gallery provenance](docs/native-apple-gallery.md). Physical device tests,
+handwriting quality and the earlier App Review finding remain open.
+
 ## 2026-10-04 — Guided worksheets, eleventh math audit and verified OCR packaging
 
 The guided worksheet creates a fresh linked parameter/function/result document

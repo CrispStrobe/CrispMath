@@ -4,7 +4,24 @@ import sys
 import tempfile
 import unittest
 from run_native_gallery import run_phase, capture, pre_vm_discovery_failure, allow_discovery_recovery
-from verify_native_gallery import verify_connected_worksheet
+from verify_native_gallery import verify_connected_worksheet, verify_dimensions
+
+
+class GalleryDimensionsTest(unittest.TestCase):
+    def test_supported_mac_upload_sizes_are_accepted(self):
+        for size in [(1280, 800), (1440, 900), (2560, 1600), (2880, 1800)]:
+            with self.subTest(size=size):
+                verify_dimensions('macos', *size)
+
+    def test_old_internal_and_invalid_mac_sizes_are_rejected(self):
+        for size in [(2560, 1800), (1600, 2560), (2560, 1599), (3200, 2000)]:
+            with self.subTest(size=size):
+                with self.assertRaises(AssertionError):
+                    verify_dimensions('macos', *size)
+
+    def test_native_ios_portrait_profiles_remain_accepted(self):
+        verify_dimensions('iphone', 1290, 2796)
+        verify_dimensions('ipad', 2048, 2732)
 
 
 class ConnectedGalleryEvidenceTest(unittest.TestCase):

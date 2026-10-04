@@ -16,6 +16,17 @@ SCENES = {
 }
 
 
+def verify_dimensions(profile, width, height):
+    if profile == 'macos':
+        # Apple's Mac upload sizes all have a 16:10 aspect ratio. Reject the
+        # old 2560x1800 internal gallery instead of calling it upload-ready.
+        assert (width, height) in {
+            (1280, 800), (1440, 900), (2560, 1600), (2880, 1800),
+        }, f'Unsupported Mac screenshot size: {width}x{height}'
+    else:
+        assert height > width and width >= 1200
+
+
 def verify_connected_worksheet(document):
     """Validate the guide actually created through the native document menu."""
     lines = document['l']
@@ -68,10 +79,7 @@ def main():
             assert data[:8] == b'\x89PNG\r\n\x1a\n'
             assert data[25] == 2, 'Screenshot must be RGB without alpha'
             width, height = struct.unpack('>II', data[16:24])
-            if profile == 'macos':
-                assert width > height and width >= 2200 and height >= 1200
-            else:
-                assert height > width and width >= 1200
+            verify_dimensions(profile, width, height)
             images.append({'file': str(file.relative_to(root)),
                            'width': width, 'height': height,
                            'captureKind': evidence['captureKind']})
