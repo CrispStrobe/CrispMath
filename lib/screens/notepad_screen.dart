@@ -941,10 +941,15 @@ class NotepadScreenState extends State<NotepadScreen> {
     FocusScope.of(context).unfocus();
     _appState.setNotepadDocument(doc);
     _appState.setCurrentNotepadDoc(doc.id);
-    final revision = doc.scopeRevision;
+    // scopeRevision also changes when calculation caches update. Guard the
+    // ordered source/identity snapshot instead, so real results can complete.
+    final sources = [for (final line in doc.lines) (line.id, line.source)];
+    bool sourceUnchanged() => doc.lines.length == sources.length &&
+        doc.lines.indexed.every((row) =>
+            (row.$2.id, row.$2.source) == sources[row.$1]);
     // Let the document/controller switch finish before using the real pipeline.
     await WidgetsBinding.instance.endOfFrame;
-    if (!mounted || _currentDoc?.id != doc.id || doc.scopeRevision != revision) {
+    if (!mounted || _currentDoc?.id != doc.id || !sourceUnchanged()) {
       return;
     }
     _recalcTimer?.cancel();
@@ -952,7 +957,7 @@ class NotepadScreenState extends State<NotepadScreen> {
     final generation = _recalcGeneration;
     await calculation;
     if (!mounted || generation != _recalcGeneration ||
-        _currentDoc?.id != doc.id || doc.scopeRevision != revision ||
+        _currentDoc?.id != doc.id || !sourceUnchanged() ||
         doc.lines.any((line) => line.cachedError != null) ||
         doc.lines.last.cachedResult == null) {
       return;
