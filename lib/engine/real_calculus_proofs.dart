@@ -313,6 +313,11 @@ class RealCalculusProofs {
       return null;
     }
     final body = strip(source).replaceAll(' ', '').replaceAll('**', '^');
+    final logarithmicQuotient = _logarithmicQuotient(
+        body, variable, lower, upper);
+    if (logarithmicQuotient != null) {
+      return logarithmicQuotient;
+    }
     final call = RegExp(r'^(1/)?(sqrt|ln|log)\((.*)\)(?:\^(\d+)|\^\((\d+)\))?$').firstMatch(body);
     if (call == null || (call[1] != null && call[2] != 'sqrt')) {
       return null;
@@ -361,5 +366,153 @@ class RealCalculusProofs {
     }
     final result = antiderivative(to) - antiderivative(from);
     return result.isFinite ? (value: result, error: null) : null;
+  }
+
+  /// For affine u, log(u)^n/(k*u) has primitive
+  /// log(u)^(n+1)/(k*u'*(n+1)). A zero endpoint diverges for every n>=0;
+  /// this differs from the integrable bare log(u)^n endpoint family.
+  static ({double? value, String? error})? _logarithmicQuotient(
+      String body, String variable, String lower, String upper) {
+    var depth = 0;
+    var slash = -1;
+    for (var i = 0; i < body.length; i++) {
+      if (body[i] == '(') depth++;
+      if (body[i] == ')') depth--;
+      if (depth < 0) return null;
+      if (body[i] == '/' && depth == 0) {
+        if (slash >= 0) return null;
+        slash = i;
+      }
+    }
+    if (depth != 0 || slash < 0) return null;
+    final numerator = strip(body.substring(0, slash));
+    final call = RegExp(r'^(?:ln|log)\((.*)\)(?:\^(\d+)|\^\((\d+)\))?$')
+        .firstMatch(numerator);
+    if (call == null) return null;
+    final power = int.tryParse(call[2] ?? call[3] ?? '1');
+    if (power == null || power > 8) return null;
+    final inner = polynomial(call[1]!, variable);
+    final denominator = polynomial(body.substring(slash + 1), variable);
+    if (inner == null || inner.degree != 1 ||
+        denominator == null || denominator.degree != 1 ||
+        denominator.coeffs[0] * inner.coeffs[1] !=
+            denominator.coeffs[1] * inner.coeffs[0]) {
+      return null;
+    }
+    Rational? bound(String source) {
+      final exact = ExactConstantEvaluator.evaluate(source);
+      if (exact == null) return null;
+      final parts = exact.split('/');
+      return Rational(BigInt.parse(parts[0]),
+          parts.length == 1 ? BigInt.one : BigInt.parse(parts[1]));
+    }
+    final a = bound(lower), b = bound(upper);
+    if (a == null || b == null || a == b) return null;
+    // Classify zeros and signs exactly, before converting finite values for
+    // the numerical primitive. Underflow cannot invent a divergent endpoint.
+    final from = inner.coeffs[1] * a + inner.coeffs[0];
+    final to = inner.coeffs[1] * b + inner.coeffs[0];
+    if (from.numerator.sign < 0 || to.numerator.sign < 0) {
+      return (value: null,
+          error: 'Error: integration interval leaves the real integrand domain');
+    }
+    if (from.isZero || to.isZero) {
+      return (value: null,
+          error: 'Error: logarithmic endpoint integral is divergent');
+    }
+    double integerLog(BigInt integer) {
+      final shift = math.max(0, integer.bitLength - 53);
+      return math.log((integer >> shift).toDouble()) + shift * math.ln2;
+    }
+    double? logarithm(Rational value) {
+      final offset = value.numerator - value.denominator;
+      if (offset == BigInt.zero) return 0;
+      if (offset.abs() * BigInt.from(8) <= value.denominator) {
+        // log(1+delta), using the exact offset before any conversion. This
+        // keeps 1+1e-100 distinct from 1 even though their doubles coincide.
+        var delta = offset.toDouble() / value.denominator.toDouble();
+        if (!delta.isFinite || delta == 0) {
+          delta = math.exp(integerLog(offset.abs()) -
+              integerLog(value.denominator)) * offset.sign;
+        }
+        if (!delta.isFinite || delta == 0) return null;
+        var term = delta;
+        var sum = delta;
+        for (var degree = 2; degree <= 32; degree++) {
+          term *= -delta;
+          final next = sum + term / degree;
+          if (next == sum) break;
+          sum = next;
+        }
+        return sum;
+      }
+      final ratio = value.numerator.toDouble() / value.denominator.toDouble();
+      if (ratio.isFinite && ratio > 0) return math.log(ratio);
+      // A positive rational can underflow a double while its logarithm is
+      // finite. Leading bits bound conversion work independently of magnitude.
+      return integerLog(value.numerator) - integerLog(value.denominator);
+    }
+    // Guard products before constructing the exact endpoint ratio or checking
+    // reciprocal symmetry. These quantities may grow beyond the input bounds.
+    bool fits(BigInt a, BigInt b) => a.bitLength + b.bitLength <= 32768;
+    if (!fits(to.numerator, from.denominator) ||
+        !fits(to.denominator, from.numerator) ||
+        !fits(to.numerator, from.numerator) ||
+        !fits(to.denominator, from.denominator)) {
+      return null;
+    }
+    final degree = power + 1;
+    if (degree.isEven && to.numerator * from.numerator ==
+        to.denominator * from.denominator) {
+      // Odd log moments cancel on reciprocal endpoints, proved exactly.
+      return (value: 0, error: null);
+    }
+    final fromLog = logarithm(from), toLog = logarithm(to);
+    final difference = logarithm(to / from);
+    if (fromLog == null || toLog == null || difference == null ||
+        !fromLog.isFinite || !toLog.isFinite || !difference.isFinite ||
+        difference == 0) {
+      return null;
+    }
+    // b^n-a^n=(b-a)*sum(b^(n-1-k)*a^k). Normalize before taking
+    // powers, and combine scale factors in log space: neither tiny primitive
+    // powers nor nearly equal primitives may round a nonzero integral to zero.
+    final scale = math.max(fromLog.abs(), toLog.abs());
+    if (scale == 0 || !scale.isFinite) return null;
+    final aLog = fromLog / scale, bLog = toLog / scale;
+    var sum = 0.0;
+    var scalePower = degree - 1;
+    var extraLog = 0.0;
+    var extraSign = 1.0;
+    if (degree.isEven && fromLog.sign != toLog.sign) {
+      // For opposite signs, factor out (a+b) as well. Obtain that sum from
+      // log(from*to), retaining a tiny departure from reciprocal endpoints.
+      final logProduct = logarithm(from * to);
+      if (logProduct == null || logProduct == 0 || !logProduct.isFinite) {
+        return null;
+      }
+      extraLog = math.log(logProduct.abs());
+      extraSign = logProduct.sign;
+      scalePower = degree - 2;
+      for (var k = 0; k < degree ~/ 2; k++) {
+        sum += (math.pow(bLog, degree - 2 - 2 * k) *
+            math.pow(aLog, 2 * k)).toDouble();
+      }
+    } else {
+      for (var k = 0; k < degree; k++) {
+        sum += (math.pow(bLog, degree - 1 - k) * math.pow(aLog, k)).toDouble();
+      }
+    }
+    if (sum == 0 || !sum.isFinite) return null;
+    final slope = denominator.coeffs[1];
+    final slopeLog = integerLog(slope.numerator.abs()) -
+        integerLog(slope.denominator);
+    final magnitude = math.exp(math.log(difference.abs()) +
+        scalePower * math.log(scale) + extraLog + math.log(sum.abs()) -
+        slopeLog - math.log(degree));
+    if (!magnitude.isFinite || magnitude == 0) return null;
+    final result = magnitude * difference.sign * sum.sign * extraSign *
+        slope.numerator.sign;
+    return (value: result, error: null);
   }
 }

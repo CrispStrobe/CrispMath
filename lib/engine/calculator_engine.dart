@@ -1363,16 +1363,28 @@ class CalculatorEngine {
   /// error for non-linear input / no unique solution. Older libraries and
   /// native-less platforms use bounded exact rational Gaussian elimination.
   String solveLinearSystem(List<String> equations, List<String> symbols) {
+    lastResultEvidence = null;
+    // A rational linear proof also handles redundant/overdetermined rows.
+    // Some capable bridges reject these valid systems, so do not make the
+    // bounded exact grammar depend on backend matrix-shape restrictions.
+    final exact = LinearSystemSolver.solve(equations, symbols);
+    if (exact != null) {
+      if (!exact.startsWith('Error')) {
+        lastResultEvidence = const ResultEvidence(
+            ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      }
+      return exact;
+    }
+    // The bundled Linux bridge can dereference a null symbolic result for
+    // rectangular input. A Dart exception handler cannot recover that crash.
+    // Preserve square symbolic CAS support; rectangular systems must first
+    // have a certified result from the bounded exact solver above.
+    if (equations.length != symbols.length) {
+      return 'Error: linsolve requires a certified exact proof for '
+          'rectangular systems';
+    }
     final bridge = _liveBridge;
     if (bridge == null || !bridge.hasLinsolve) {
-      final exact = LinearSystemSolver.solve(equations, symbols);
-      if (exact != null) {
-        if (!exact.startsWith('Error')) {
-          lastResultEvidence = const ResultEvidence(
-              ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
-        }
-        return exact;
-      }
       return 'Error: linsolve requires a newer native library for this syntax';
     }
     try {

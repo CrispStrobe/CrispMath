@@ -28,6 +28,10 @@ class LinearSystemSolver {
       }
       final row = List<Rational>.filled(symbols.length + 1, Rational.zero);
       for (final (powers, coefficient) in poly.terms) {
+        if (coefficient.numerator.bitLength > 4096 ||
+            coefficient.denominator.bitLength > 4096) {
+          return null;
+        }
         final index = powers.indexWhere((power) => power != 0);
         if (index < 0) {
           row.last = row.last - coefficient;
@@ -53,13 +57,31 @@ class LinearSystemSolver {
       rows[found] = temporary;
       final pivot = rows[pivotRow][column];
       for (var c = column; c <= symbols.length; c++) {
+        if (!_productFits(rows[pivotRow][c].numerator, pivot.denominator) ||
+            !_productFits(rows[pivotRow][c].denominator, pivot.numerator)) {
+          return null;
+        }
         rows[pivotRow][c] = rows[pivotRow][c] / pivot;
       }
       for (var r = 0; r < rows.length; r++) {
         if (r == pivotRow || rows[r][column].isZero) continue;
         final factor = rows[r][column];
         for (var c = column; c <= symbols.length; c++) {
-          rows[r][c] = rows[r][c] - factor * rows[pivotRow][c];
+          final value = rows[pivotRow][c];
+          if (!_productFits(factor.numerator, value.numerator) ||
+              !_productFits(factor.denominator, value.denominator)) {
+            return null;
+          }
+          final product = factor * value;
+          final original = rows[r][c];
+          if (!_productFits(original.numerator, product.denominator,
+                  carry: 1) ||
+              !_productFits(product.numerator, original.denominator,
+                  carry: 1) ||
+              !_productFits(original.denominator, product.denominator)) {
+            return null;
+          }
+          rows[r][c] = original - product;
         }
       }
       pivots.add(column);
@@ -79,4 +101,10 @@ class LinearSystemSolver {
     return List.generate(symbols.length, (i) => '${symbols[i]} = ${values[i]}')
         .join(', ');
   }
+
+  // Conservative checks happen before BigInt multiplication, including the
+  // possible carry from subtraction. Decline oversized exact proofs rather
+  // than constructing arbitrarily large Gaussian-elimination intermediates.
+  static bool _productFits(BigInt a, BigInt b, {int carry = 0}) =>
+      a.bitLength + b.bitLength + carry <= 16384;
 }
