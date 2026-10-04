@@ -16,7 +16,7 @@ import check_new_math_browser as controls
 from check_round6_statistics_browser import real_click
 from check_round10_math_browser import reveal_tab
 
-from round11_module_reference_checks import STATISTICS, ENUMERATIONS, NUMBER, validate_enumeration
+from round11_module_reference_checks import STATISTICS, ENUMERATIONS, NUMBER, validate_enumeration, validate_full_precision
 
 
 async def fill_fields(page,inputs):
@@ -125,12 +125,7 @@ async def check_modules(args):
                                 content=page.get_by_text(re.compile(r'^Mean:')).first
                                 await content.wait_for(state='attached')
                                 text=await content.inner_text();item['fullPrecisionText']=text
-                                values={}
-                                for label,expected in refs.items():
-                                    matches=re.findall(rf'(?:^|\n){re.escape(label)}:\s*({NUMBER})(?=\n|$)',text)
-                                    assert len(matches)==1 and float(matches[0])==expected,(name,label,text,expected)
-                                    values[label]=matches[0]
-                                item['fullPrecisionValues']=values
+                                item['fullPrecisionValues']=validate_full_precision(text,refs)
                             else:item['rows']={label:await visible_row(page,label,value)for label,value in refs.items()}
                         assert not errors,errors
                         await page.screenshot(path=str(output/f'{name}-{width}.png'));item['passed']=True

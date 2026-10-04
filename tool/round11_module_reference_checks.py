@@ -27,6 +27,16 @@ ENUMERATIONS=[
 NUMBER=r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?'
 
 
+def validate_full_precision(text,expected):
+    """Consume the complete dialog text, retaining every double value."""
+    pattern=r'\s*'+r'\s+'.join(re.escape(label)+r':\s*('+NUMBER+r')'for label in expected)+r'\s*'
+    match=re.fullmatch(pattern,text)
+    assert match,(text,expected)
+    values=dict(zip(expected,match.groups()))
+    assert all(float(values[label])==value for label,value in expected.items()),(text,expected)
+    return values
+
+
 def validate_enumeration(text,expected):
     """Compare the entire numbered assignment list, never just its first row."""
     lines=text.strip().splitlines();assert len(lines)==len(expected),(text,expected)
@@ -44,5 +54,4 @@ def validate_enumeration(text,expected):
     assert len({keys(row)for row in found})==len(found),text
     assert {keys(row)for row in found}=={keys(row)for row in expected},(text,expected)
     return found
-
 
