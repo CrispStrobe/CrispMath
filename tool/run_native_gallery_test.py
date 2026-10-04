@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from run_native_gallery import run_phase, capture
+from run_native_gallery import run_phase, capture, pre_vm_discovery_failure, allow_discovery_recovery
 from verify_native_gallery import verify_connected_worksheet
 
 
@@ -44,6 +44,32 @@ class ConnectedGalleryEvidenceTest(unittest.TestCase):
 
 
 class NativeGalleryPhaseTest(unittest.TestCase):
+    def test_missing_vm_discovery_is_bounded_and_collects_health_before_stop(self):
+        diagnostics=[]
+        with tempfile.TemporaryDirectory() as directory:
+            result=run_phase([sys.executable,'-c','import time; print("Waiting for VM Service port to be available...",flush=True); time.sleep(30)'],
+                timeout=5,log=Path(directory)/'discovery.log',discovery_timeout=.2,
+                before_discovery_stop=lambda:diagnostics.append('health before stop'))
+            self.assertTrue(result['discoveryTimedOut'])
+            self.assertEqual(diagnostics,['health before stop'])
+            self.assertLess(result['elapsedSeconds'],4)
+
+    def test_observed_vm_disables_only_discovery_watchdog(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result=run_phase([sys.executable,'-c','import time; print("Waiting for VM Service port to be available...\\nConnecting to VM Service",flush=True); time.sleep(.3)'],
+                timeout=5,log=Path(directory)/'ready.log',discovery_timeout=.1)
+            self.assertTrue(result['vmServiceObserved'])
+            self.assertFalse(result['timedOut'])
+
+    def test_recovery_requires_first_pre_vm_attempt_alive_without_crash_or_assertion(self):
+        waiting='Waiting for VM Service port to be available...'
+        self.assertTrue(allow_discovery_recovery(1,{'discoveryTimedOut':True},{'alive':True,'crashReports':[]},waiting))
+        self.assertFalse(allow_discovery_recovery(2,{'discoveryTimedOut':True},{'alive':True},waiting))
+        for health in [{'alive':False},{'alive':True,'crashReports':['Runner.ips']}]:
+            self.assertFalse(allow_discovery_recovery(1,{'discoveryTimedOut':True},health,waiting))
+        for progress in ['Connecting to VM Service','00:00 +0: actual test','EXCEPTION CAUGHT','Some tests failed','[E]']:
+            self.assertFalse(pre_vm_discovery_failure(waiting+'\n'+progress))
+
     def test_streamed_output_and_success(self):
         with tempfile.TemporaryDirectory() as directory:
             log=Path(directory)/'output.log'
