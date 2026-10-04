@@ -61,6 +61,34 @@ and compares the real native token-input path with independent LayerNorm
 math before measuring both models on the unchanged 50 drawings. This is not
 yet a validated production repair or full model parity result.
 
+[Normalization diagnostic run 37203847497](https://github.com/CrispStrobe/CrispMath/actions/runs/37203847497)
+at source `3b1813bc86fe2b78145257a415ccca26c8195457` passed both builds,
+independent native-path controls and strict paired measurements. The actual
+patched decoder input path agrees with independent, biased-variance
+LayerNorm math to maximum absolute errors **2.16 × 10⁻⁷ at dimension 256** and
+**3.18 × 10⁻⁷ at dimension 384**. Negative controls for omitted normalization,
+wrong ordering and missing learned affine parameters differ substantially.
+
+Recognition accuracy did **not** improve: original Q8 weights remained
+**7/50**, with exactly the same seven matches and **35 changed token outputs**;
+the expanded-vocabulary F32 candidate remained **0/50**, with **49 changed token
+outputs**. Both patched measurements completed all 50 drawings with zero
+runtime failures. Source, frozen manifest, model, image hashes, references,
+dimensions and scoring were checked across each pair. This isolates a real
+forward mismatch without showing a useful quality gain. Production bridge
+and model pins remain unchanged; full independent encoder and decoder parity
+is still needed before attributing the remaining failures to the weights.
+
+The diagnostic records base bridge
+`11e6d598521976f38081934106b55095b46b40e3` plus patch SHA-256
+`2c571c78296f6e062cf81003405c274b1cda9706facc930256ba9e1cbc9b10ff`.
+The baseline library SHA-256 is
+`f826642932f9777aabd2705ca6b04c881c039275ff04b569728dd5ac239001c9`;
+the separately built patched library is
+`00750559035493538c8eb977f6b70af4c0259cd310d2a9f95bcebf445501eddb`.
+The independent controls exercised that same patched library. Model hashes
+are unchanged from the baseline and candidate identities above.
+
 Structural-token coverage masking also uses fixed IDs 82, 83 and 110. These
 identify `^`, `_` and `{` in the original tokenizer, but different symbols in
 the expanded vocabulary. The
