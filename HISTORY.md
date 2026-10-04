@@ -1,3 +1,46 @@
+## 2026-10-04 — Tenth independent audit, exact systems and logarithmic integrals
+
+Freeze fifty independent references at dfc778b before observing app outputs.
+Initial WASM passes 735/737 and packaged Mac 736/737. Native Linux crashes
+in the overdetermined system; its 33 completed reports prove 712/712, with
+the algebra report absent. Preserve original answers and failure evidence.
+
+Route bounded rational Gaussian proofs before native capability selection;
+block unsupported rectangular native inputs after exact decline. Preserve
+square symbolic solving and truthful exact/error evidence. Add affine logarithmic
+quotient proofs with explicit endpoint divergence, exact denominator/domain
+guards and stable near-one and tiny-value evaluation. Nineteen regression
+groups cover genuine mathematical boundaries and arithmetic budgets.
+
+Canonical ca7b6c7 passes 737/737 Linux/WASM/packaged-Mac runtime problems,
+5,735 units (eight skips), 491 focused regressions and 104 tooling controls,
+with clean analysis, release/debug browser, performance and gallery gates.
+Actual UI passes 420 worksheet entries, 26 incremental edits, 18 statistics,
+six constraint and two calculator checks including reload. Correct shared
+measured-click races without weakening independent answer or visibility checks.
+All platform builds and legacy CI pass. Production identity is 368 files,
+SHA256 ab85cee47aeb75df7fd041e6316ad32660dba610e5077f057c8b7518527dacfe.
+Native Apple gallery passes 33 populated views; four graph/notepad captures
+are reviewed. All costly work remains hosted. Cold task cleanup preserves
+hashes and readable symlinks; unrelated disk growth still fills the fast disk.
+
+Pages37184585963 and production Vercel37184586065 each pass all runtime
+and actual UI checks against the published apps with matching source.
+
+Signed [upload 37185726215](https://github.com/CrispStrobe/CrispMath/actions/runs/37185726215)
+validates signature, bundled privacy strings and production parity before
+delivering 1.2.0 (21). Apple processing is VALID and Internal Testers is assigned.
+[External verification/submission 37186277329](https://github.com/CrispStrobe/CrispMath/actions/runs/37186277329)
+confirms APPROVED beta review and Public Beta IN_BETA_TESTING, build UUID
+971c1bb2-df76-4993-b841-03c6dce32a6e. The public
+[TestFlight link](https://testflight.apple.com/join/E6HdVhTx) remains active.
+Apple's submittedDate is null; no App Review submission occurs.
+
+
+Physical Apple, real Siri/Files-provider, two-device cloud, handwriting accuracy
+and Apple's 4.3(a) finding remain open. No App Review submission occurs.
+See [round-ten evidence](docs/round10-math-audit-50.md).
+
 ## 2026-10-03 — Ninth independent audit, electrical units and grouped objectives
 
 Freeze fifty independently derived references at 3bc82de before observing app

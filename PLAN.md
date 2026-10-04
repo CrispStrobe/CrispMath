@@ -5,6 +5,19 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Tenth independent mathematical audit
+
+- [x] Freeze fifty fresh independent references at dfc778b before app outputs.
+- [x] Preserve initial WASM 735/737, Mac 736/737 and incomplete native
+  712/712 evidence with the overdetermined-system crash and missing report.
+- [x] Repair exact linear-system routing/native shape safety and logarithmic
+  endpoint divergence, retaining bounded positive/negative controls.
+- [x] Pass hosted unit, runtime and actual UI/deployed checks.
+- [x] Verify green GitHub CI checks on the actual final PR revision.
+- [x] Refresh Apple evidence and external beta if production changes.
+
+See [round-ten evidence](docs/round10-math-audit-50.md).
+
 ## Ninth independent mathematical audit
 
 - [x] Freeze fifty fresh independent references at 3bc82de before app outputs.
