@@ -5,6 +5,19 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Approved release follow-up
+
+- [x] Review all 33 native captures and select worksheet → traced graph →
+  checkpoint history → export preview; prepare connected-workflow presentation.
+- [~] Compare native handwriting with an independent implementation using
+  public exported weights; measure actual preprocessing/encoder/decoder stages.
+- [~] Clarify default-off cloud behavior and validate local-only startup, guards,
+  checkpoint/backup workflows and zero backend requests on hosted CI.
+- [ ] Merge PR #1 after complete validation; physical/App Review remain deferred.
+- [ ] Resume feature expansion with a guided connected worksheet and fifty
+  fresh independently referenced mathematical problems, preserving unit/live
+  CI, Pages and Vercel checks.
+
 ## Cloud feedback and handwriting diagnostics
 
 - [x] Add accessible inline cloud feedback, narrow-screen scrolling/wrapping,
@@ -21,8 +34,9 @@ Completed items with details are in `HISTORY.md`.
   normalization repair without changing production models or bridge.
 - [ ] Establish full encoder/decoder reference parity and suitable trained,
   licensed weights: recognition remains 7/50 original and 0/50 candidate.
-- [ ] Physical iPhone/iPad checks, configured two-device cloud deployment and
-  resolution of Apple's App Review 4.3(a) finding remain pending.
+- [ ] Physical iPhone/iPad checks and resolution of Apple's App Review 4.3(a)
+  finding remain pending. There is no Supabase project; cloud is optional and
+  stays off by default. A configured two-device check applies only if chosen.
 
 ## Tenth independent mathematical audit
 
@@ -250,7 +264,8 @@ Physical iPhone/iPad testing is deferred to a separate session.
    actual two-context GUI coverage, wrong-password recovery, accessible inline
    feedback and both Close actions. Nine real-SDK widget groups verify error,
    signup, cancellation and pending-request behavior; see `docs/workspace-backups.md`.
-   A real Supabase project and two-device account round trip await credentials.
+   No Supabase project exists. Cloud stays off by default; real-project and
+   physical two-device verification are optional future work if cloud is chosen.
 6. [~] Handwriting: visible ink/dots, provider selection, consent and editable
    review pass unit/live checks. The real 50-human-sample benchmark gives only
    7/50 exact PosFormer transcriptions, 0/50 for BTTR/HMER.

@@ -93,14 +93,14 @@ production fingerprint above. It retains **33 populated captures**:
 | iPad Pro 13-inch (M4) simulator | 11 | 2048 × 2732 |
 | Native macOS application render tree, at 2× | 11 | 2560 × 1800 |
 
-Four selected images were visually reviewed: iPhone multiple-function graph,
-iPad evaluated engineering worksheet, and macOS graph/worksheet. The graphs
-contain `cos(x)`, `x^2-2` and worksheet-linked `3*sin(x)`. The tank worksheet
-shows `r=3`, `h=5`, area **28.2743338823**, volume **141.3716694115**, and
-volume/1000 **0.1413716694115**, with computed-result evidence. Other views
-passed hosted capture assertions but were not individually visually reviewed.
-The iPhone graph's toolbar/function chips extend horizontally beyond the
-viewport; review the intended crop before selecting that image for the store.
+All 33 captures have now been individually visually reviewed. The selected
+sequence for each profile is connected worksheet, graph with tracing, checkpoint
+history and worksheet graph export preview; see [the complete selection](native-apple-gallery.md).
+Graphs contain `cos(x)`, `x^2-2` and worksheet-linked `3*sin(x)`. The optional tank
+worksheet shows `r=3`, `h=5`, area **28.2743338823**, volume **141.3716694115**, and
+volume/1000 **0.1413716694115**, with computed-result evidence. The phone graph
+controls use bounded horizontal scrolling; hosted checks reveal and activate
+trace/table controls. No inaccessible-control defect was established.
 
 Use the evaluated worksheet, multiple-function graph, worksheet graph export
 preview, and checkpoint-history scenes to show actual use. Keep originals and
@@ -176,8 +176,9 @@ are unrelated.
 
 - Physical iPhone/iPad testing is deferred to another session, including Siri,
   Files-provider behavior, Apple Pencil and multitasking.
-- A configured cloud project and real two-device account check remain pending.
-  Local checkpoints and portable backups work independently of that service;
+- No Supabase project exists for this release; Cloud Sync stays off by default.
+  Local worksheets, checkpoints and portable backups need no account. A real
+  project/two-device check is optional future work if cloud setup is chosen;
   do not claim verified deployed cloud sync or invent review credentials.
 - Handwriting is an editable transcription aid. The 50-human-sample benchmark
   achieved only **7/50** exact transcriptions for PosFormer and **0/50** for

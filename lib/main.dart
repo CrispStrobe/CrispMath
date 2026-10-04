@@ -939,6 +939,14 @@ class SettingsScreen extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(Icons.cloud_sync, semanticLabel: 'Sync'),
                   title: const Text('Cloud Sync'),
+                  subtitle: ListenableBuilder(
+                    listenable: SyncService.instance,
+                    builder: (context, _) => Text(
+                      SyncService.instance.isConfigured
+                          ? 'Configured · transfer workspace backups'
+                          : 'Off · local work needs no account',
+                    ),
+                  ),
                   trailing: const Icon(Icons.arrow_forward_ios,
                       size: 16, semanticLabel: 'Open'),
                   onTap: () {

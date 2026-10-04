@@ -167,6 +167,47 @@ void main() {
     return fixture;
   }
 
+  test('fresh cloud service stays off and guards remote operations without changing local work', () async {
+    final service = SyncService();
+    addTearDown(service.dispose);
+    await service.init();
+    expect(service.status, SyncStatus.unavailable);
+    expect(service.isConfigured, isFalse);
+    expect(service.currentUser, isNull);
+    await expectLater(service.signInWithEmail(_email, _password), throwsException);
+    await expectLater(service.signUp(_email, _password), throwsException);
+    await expectLater(service.readBackup(), throwsStateError);
+    await expectLater(service.pushState(AppState()), throwsStateError);
+    await service.signOut();
+    expect(service.status, SyncStatus.unavailable);
+    expect(service.isConfigured, isFalse);
+    expect(AppState().notepadDocuments.values.singleWhere(
+        (doc) => doc.name == 'Local worksheet').lines.first.source, '2+3');
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.containsKey('crisp.syncProjectUrl'), isFalse);
+    expect(prefs.containsKey('crisp.syncPublicKey'), isFalse);
+  });
+
+  testWidgets('off dialog offers local backups without authentication or activating cloud', (tester) async {
+    final service = SyncService();
+    addTearDown(service.dispose);
+    await _show(tester, service);
+    expect(find.text('Cloud sync is off. Your work stays on this device. Local worksheets, checkpoints and backup files work without an account. Configure your own project only if you want cloud backups.'), findsOneWidget);
+    expect(find.text('Log In'), findsNothing);
+    expect(find.text('Push'), findsNothing);
+    expect(find.text('Pull'), findsNothing);
+    await _tap(tester, 'Workspace backups');
+    expect(find.byType(WorkspaceBackupDialog), findsOneWidget);
+    expect(find.text('Save backup'), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byType(WorkspaceBackupDialog),
+        matching: find.text('Close')));
+    await tester.pumpAndSettle();
+    expect(service.isConfigured, isFalse);
+    expect(AppState().notepadDocuments.values.any((doc) => doc.name == 'Local worksheet'), isTrue);
+    await _tap(tester, 'Close');
+    expect(find.byType(SyncDialog), findsNothing);
+  });
+
   testWidgets('bad credentials announce safe inline error; retry clears it and signs in', (tester) async {
     final fixture = await backend(tester);
     fixture.loginFails = true;

@@ -1,7 +1,7 @@
 name: Sync database contract
 on:
   push:
-    branches: ['feat/graph-workspace-ux']
+    branches: [main, 'feat/**']
     paths:
       - 'supabase/**'
       - 'tool/sync_contract/**'
@@ -12,6 +12,7 @@ on:
       - 'test/sync_dialog_test.dart'
       - 'native_test/cloud_backup_live_test.dart'
       - 'tool/check_cloud_sync_browser.py'
+      - 'tool/check_cloud_disabled_browser.py'
       - '.github/workflows/sync-backend-contract.yml'
   workflow_dispatch:
 permissions:

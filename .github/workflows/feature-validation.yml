@@ -1,7 +1,7 @@
 name: Feature validation
 on:
   push:
-    branches: ['feat/graph-workspace-ux']
+    branches: [main, 'feat/**']
   workflow_dispatch:
     inputs:
       checks_only:
@@ -264,6 +264,7 @@ jobs:
           python tool/check_apple_workflows_browser.py
           python tool/check_worksheet_export_browser.py
           python tool/check_document_history_browser.py
+          python tool/check_cloud_disabled_browser.py --expected-source "$GITHUB_SHA"
           python tool/check_handwriting_browser.py
           python tool/check_fresh_calculations_browser.py
           python tool/check_new_math_browser.py
@@ -284,6 +285,7 @@ jobs:
           python tool/check_apple_workflows_browser.py --output browser-results/debug/apple-workflows
           python tool/check_worksheet_export_browser.py --output browser-results/debug/worksheet-export
           python tool/check_document_history_browser.py --output browser-results/debug/document-history
+          python tool/check_cloud_disabled_browser.py --expected-source "$GITHUB_SHA" --output browser-results/debug/cloud-disabled
           python tool/check_handwriting_browser.py --output browser-results/debug/handwriting
           python tool/check_fresh_calculations_browser.py --output browser-results/debug/fresh-calculations
           python tool/check_new_math_browser.py --output browser-results/debug/new-math

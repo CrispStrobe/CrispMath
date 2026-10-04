@@ -27,6 +27,17 @@ provider. It does not provide automatic cloud synchronization.
 
 ## Optional Supabase cloud backup
 
+There is no deployed Supabase project for this release. Cloud Sync is **off by
+default** when no saved or build-time project settings exist. Startup leaves the
+service unavailable before creating an SDK client; worksheets, checkpoints and
+backup files need no account. The settings row and setup dialog make this state
+explicit. Rejected configuration does not activate or persist a backend.
+
+Cloud setup is an optional choice for someone supplying their own backend.
+Previously saved valid project settings reconnect on later launches; the app
+does not provision a project or silently upload a workspace. The hosted cloud
+contract uses a disposable test stack, not a backend shipped with the app.
+
 Cloud Sync accepts an HTTPS project URL and a public publishable/legacy anon key.
 Existing build-time `SUPABASE_URL`/`SUPABASE_ANON_KEY` settings still take precedence.
 Local setup persists independently of workspace backups. Sign in uses Supabase

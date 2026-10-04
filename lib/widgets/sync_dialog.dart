@@ -189,7 +189,7 @@ class _SyncDialogState extends State<SyncDialog> {
               }, failureMessage: 'Cloud sync could not connect. Try again when you are online.'),
                 child: const Text('Retry')),
             ] else if (!initializing && !_service.isConfigured) ...[
-              const Text('Cloud sync is unavailable until a backend is configured. Your work is saved on this device. You can transfer a workspace backup through Files.'),
+              const Text('Cloud sync is off. Your work stays on this device. Local worksheets, checkpoints and backup files work without an account. Configure your own project only if you want cloud backups.'),
               const SizedBox(height: 16),
               TextField(controller: _urlCtl, enabled: !_isLoading,
                 decoration: const InputDecoration(labelText: 'Supabase project URL')),
