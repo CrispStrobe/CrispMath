@@ -9,8 +9,14 @@ on:
       - 'lib/engine/ocr_providers_init*.dart'
       - 'native_test/handwriting_quality_test.dart'
       - 'tool/provision_handwriting_quality.py'
+      - 'tool/compare_handwriting_encoders*.py'
       - '.github/workflows/handwriting-quality.yml'
   workflow_dispatch:
+    inputs:
+      scalar_posformer:
+        description: 'Also diagnose scalar/default encoder parity on the same 50 PosFormer samples'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -48,6 +54,7 @@ jobs:
       - name: Provision fixed test drawings
         run: |
           python3 -m pip install -r tool/inference-requirements.txt
+          python3 -m unittest discover -s tool -p 'compare_handwriting_encoders_test.py'
           python3 tool/provision_handwriting_quality.py
       - name: Download pinned benchmark weights
         run: |
@@ -59,6 +66,9 @@ jobs:
           echo '565bc4e4250213871fc01d0683fe8457a8bf9b187b96b6999e05f28615b8f6d7  .ci/hmer-q8.gguf' | sha256sum --check
       - name: Measure each model on identical human test samples
         run: |
+          unset POSFORMER_SCALAR_ENCODER
+          export CRISPMATH_HANDWRITING_ENCODER=default
+          export CRISPMATH_OCR_BRIDGE_SOURCE="$(git -C .ci/CrispEmbed rev-parse HEAD)"
           export CRISPMATH_OCR_LIBRARY="$PWD/.ci/ocr-build/libcrispembed.so"
           export CRISPMATH_OCR_MODEL="$PWD/.ci/posformer-q8.gguf"
           export CRISPMATH_OCR_SHA256=450211ad27ce19e2f30651e69fdc77ea76a13b66e29e045858286024864bf4a4
@@ -72,6 +82,21 @@ jobs:
           export CRISPMATH_OCR_SHA256=565bc4e4250213871fc01d0683fe8457a8bf9b187b96b6999e05f28615b8f6d7
           export CRISPMATH_HANDWRITING_REPORT=.dart_tool/inference/handwriting-hmer.json
           flutter test --reporter expanded native_test/handwriting_quality_test.dart
+      - name: Diagnose PosFormer scalar encoder on unchanged samples
+        if: inputs.scalar_posformer == true
+        run: |
+          export CRISPMATH_OCR_LIBRARY="$PWD/.ci/ocr-build/libcrispembed.so"
+          export CRISPMATH_OCR_MODEL="$PWD/.ci/posformer-q8.gguf"
+          export CRISPMATH_OCR_SHA256=450211ad27ce19e2f30651e69fdc77ea76a13b66e29e045858286024864bf4a4
+          export CRISPMATH_OCR_BRIDGE_SOURCE="$(git -C .ci/CrispEmbed rev-parse HEAD)"
+          export CRISPMATH_HANDWRITING_ENCODER=scalar
+          export POSFORMER_SCALAR_ENCODER=1
+          export CRISPMATH_HANDWRITING_REPORT=.dart_tool/inference/handwriting-posformer-scalar.json
+          flutter test --reporter expanded native_test/handwriting_quality_test.dart
+          python3 tool/compare_handwriting_encoders.py \
+            --default .dart_tool/inference/handwriting-posformer.json \
+            --scalar .dart_tool/inference/handwriting-posformer-scalar.json \
+            --output .dart_tool/inference/handwriting-encoder-comparison.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

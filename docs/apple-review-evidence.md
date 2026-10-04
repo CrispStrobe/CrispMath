@@ -1,129 +1,152 @@
-# CrispMath review evidence draft
+# CrispMath App Review preparation packet
 
-This document is preparation for a future submission, not a message sent to App
-Review. The September 14 rejection of 1.0.3 (7), guideline 4.3(a), remains open.
-Build 12 was rejected at delivery for ITMS-90683 (missing photo-library purpose).
-Replacement 1.2.0 (13) adds photo-library/camera explanations and a signed-bundle
-privacy gate. [Release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37028331142) verifies the signed
-bundle and successful upload, Apple VALID processing and existing Internal
-Testers assignment for source `7247074`. This is TestFlight delivery evidence;
-no App Store review submission was made.
-Build 13 was subsequently [submitted to external TestFlight beta review](https://github.com/CrispStrobe/CrispMath/actions/runs/37032322549)
-on October 2 at 16:17 UTC, initially WAITING_FOR_REVIEW with Public Beta
-assignment confirmed. [Read-only API verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37092308470)
-on October 3 confirms beta review APPROVED and both internal and external
-IN_BETA_TESTING. The [public beta](https://testflight.apple.com/join/E6HdVhTx) is
-available. The later mathematical fixes are not in build 13. Beta approval
-does not resolve the earlier 4.3(a) rejection.
-Build 14 now includes the later mathematical fixes. [Signed release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37094979914)
-passes for source `e0a0614999ba5f22c592b8fd61c18a2c9aacaa71`, version 1.2.0 (14):
-48 tooling tests, signed photo/camera purpose strings and version/build checks,
-production-source/dependency parity with green browser/gallery CI, successful
-upload, Apple VALID processing and Internal Testers assignment.
-[External TestFlight CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37095571010)
-confirms beta review APPROVED and internal/external IN_BETA_TESTING with Public
-Beta assignment. The existing public link offered build 14. The submission record
-matches build ID `26a96c77-406f-4bf0-8571-68834fe068e5`; Apple returns no submission
-timestamp. No App Review submission occurred. See [the third audit](round3-math-audit-50.md).
-Build 15 includes the fourth independent audit and worksheet-scope/graph fixes.
-[Signed release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37099298115)
-passes 48 tooling tests, signed photo/camera purpose strings and version checks,
-and identical-source production validation for
-`39c3591576bd0ab2d82e9a4e28ac1fd76e336d1e`, version 1.2.0 (15).
-Upload succeeds, Apple processing is VALID and Internal Testers are assigned.
-[External verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37099901727)
-confirms beta review APPROVED, internal/external IN_BETA_TESTING and Public Beta
-assignment. The submission record matches build ID
-`a33926e8-4a4f-4112-96fa-8345c1c537ea`; Apple returns no submission timestamp.
-The public link offered build 15. All 413 accumulated runtime cases pass on
-Linux, WASM, packaged macOS, Pages and Vercel, together with 5,511 unit/widget
-tests (eight documented skips) and 82 actual desktop/phone worksheet entries.
-See [the fourth audit](round4-math-audit-50.md). No App Review submission occurred.
-Beta approval does not resolve guideline 4.3(a).
+Updated 4 October 2026. This is a draft for a future App Review submission;
+no message or App Review submission has been sent. The September 14 rejection
+of 1.0.3 (7) under guideline 4.3(a) remains unresolved. External TestFlight
+approval does not resolve that rejection.
 
-The English beta description is corrected in
-[metadata-only CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37100740297)
-after 52 tooling tests pass. It now describes core calculations on-device and
-optional configured connected AI/cloud services. Actual read-back confirms that
-only the description changes; custom release notes, locale/privacy fields,
-groups and submission records remain intact. Build 15 retains its approved beta
-state. See [the fifth audit](round5-math-audit-50.md).
+## Current build and evidence
 
-Build 16 includes the fifth independent audit and formal-scope/badge fixes.
-[Signed release CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37105698802)
-passes all 52 tooling tests, signed photo-library/camera purpose strings,
-version 1.2.0/build 16 and identical production source/dependency validation for
-`1afa020420871204fbda9fec577ee3c908d59015`. Upload succeeds, Apple processing is
-VALID and Internal Testers are assigned.
-[External beta verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37106359044)
-confirms APPROVED, internal/external IN_BETA_TESTING and Public Beta assignment.
-The build/submission record is `1b484f10-8f35-4311-b549-28c22289b8a4`, with no
-submission timestamp returned by Apple. The public link now offers build 16.
-All 469 accumulated runtime checks pass across Linux/WASM, packaged macOS,
-Pages and Vercel; full CI passes 5,536 unit/widget tests (eight skips), 124 actual
-desktop/phone entries plus fourteen binding-edit states, release/debug assertions
-and performance/gallery checks. The truthful beta description is retained.
-No App Review submission occurs; beta approval does not resolve guideline 4.3(a).
+Version **1.2.0 (21)** is available through the
+[public TestFlight beta](https://testflight.apple.com/join/E6HdVhTx).
+[Signed upload CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37185726215)
+checks the signed photo-library/camera purpose strings, version/build and
+production-source parity before upload. This replaces the build 12 delivery
+that was rejected for ITMS-90683.
+[External beta verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37186277329)
+records Apple processing **VALID**, beta review **APPROVED**, both audiences
+**IN_BETA_TESTING**, and assignment to **Public Beta**. The build ID is
+`971c1bb2-df76-4993-b841-03c6dce32a6e`; Apple's `submittedDate` is null.
+No App Review submission occurred.
 
-Physical iPhone/iPad checks are explicitly deferred to another session.
+The final documented source is
+`438c3e516b0ddc32c589b8d12ae2a62d2e9216da`; the uploaded source is
+`ca7b6c7ee205c7c73da2a4a783cba1e9b2977c5e`. Their 368 production files are
+identical, with production-tree SHA256
+`ab85cee47aeb75df7fd041e6316ad32660dba610e5077f057c8b7518527dacfe`.
+The native gallery source below has the same production fingerprint.
 
-Apple asks for distinct functionality and accurate metadata in its
-[App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#spam).
-A source repository, test count or changed screenshots alone cannot establish
-that Apple will accept the app. The earlier suggestion that the finding was an
-automated similarity check is unverified.
+| Evidence | Verified result |
+| --- | --- |
+| [Final-source feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/37186428965) | Full feature, browser, native OCR and gallery jobs pass; all required platform checks are green on `438c3e5` |
+| [Math audit](https://github.com/CrispStrobe/CrispMath/actions/runs/37184040061) | 737 accumulated cases pass on Linux, WebAssembly and packaged macOS |
+| [Pages](https://github.com/CrispStrobe/CrispMath/actions/runs/37184585963) / [Vercel](https://github.com/CrispStrobe/CrispMath/actions/runs/37184586065) | Each published site passes 737 runtime cases and actual Playwright checks: 420 worksheet entries, 26 edits, 18 statistics, six constraint solves and two calculator linear-system/reload checks |
+| Full hosted test suite | 5,735 unit/widget tests pass, eight documented skips; 491 focused and 104 tooling tests pass; analysis reports zero issues |
 
-The concrete workflow to demonstrate is a persistent mathematical worksheet:
-create `a=3`, `f(t)=t^2+a`, `f(4)` and obtain 19; change `a` and recalculate;
-link an expression to a graph; export the calculation, graph and values from a
-single preview; save a checkpoint, compare it and restore it; transfer the
-source worksheet through Files and recalculate its results locally.
-Calculator, worksheet, graph, checkpoint and export screens should show this
-connected workflow. The native URL bridge can create the same worksheet.
+See [the tenth audit](round10-math-audit-50.md) for frozen independent references,
+production fixes and evidence limits. Earlier release history remains in
+[HISTORY.md](../HISTORY.md) and the individual audit documents.
 
-The latest [33-image native gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37104046317)
-passes for capture source `2927336`, with 11 populated scenes each on iPhone/iPad
-simulators and the real native macOS application. Evaluated engineering
-worksheets, sampled graphs, tracing, value tables, export/history and visible
-handwriting are asserted; selected macOS graph/worksheet/table images are
-visually reviewed, and iPhone/iPad manifests/evidence are inspected. See
-[the capture evidence and limitations](native-apple-gallery.md). The subsequent
-`1afa020` changes only the live-test helper; production code remains unchanged.
+## What to demonstrate to review
 
-The native gallery workflow captures actual iPhone/iPad simulator screens and
-retains CAS assertions (the derivative of sin(x) is cos(x); the integral of
-x² from zero to one is 1/3). It adds the export preview, history and handwriting
-input to the prior calculator, worksheet, graph and workflow-link scenes.
-The 14-image native gallery passed in
-[run 37020555224](https://github.com/CrispStrobe/CrispMath/actions/runs/37020555224)
-for source `34bb88f`. Its manifest records the source revision, actual dimensions
-and simulator identity. Original captures are retained. The upload images preserve their RGB
-pixels, remove redundant alpha and follow
-[Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/).
-Simulator checks do not establish actual Siri invocation, Files provider
-behavior, Apple Pencil behavior, physical multitasking or App Store approval.
+Present the connected, persistent worksheet workflow as the concrete product
+experience. A public repository, test count, new screenshots or a list of CAS
+operations does not by itself establish distinctiveness. The suggestion that
+Apple's finding was an automated similarity check is unverified and should not
+appear in the response.
 
-Review notes draft:
+These steps use existing, tested actions; the combined sequence is a proposed
+review demonstration, not a claim that a physical-device walkthrough has run:
 
-> CrispMath lets users build and retain mathematical worksheets whose variables
-> and functions drive subsequent calculations and linked graphs. Worksheets can
-> be transferred through Files; imported calculations are recalculated on the
-> device. Export preview produces calculations, linked plots and sampled values
-> together. Checkpoints offer comparisons and restore, and portable workspace
-> backups preserve conflicting copies rather than selecting a device clock as
-> the winner. Core calculator, worksheet and graph workflows work offline.
-> The public source and reproducible CI evidence are available at
+1. Open **Notepad** and enter three lines: `a=3`, `f(t)=t^2+a`, `f(4)`.
+   In **Document menu**, choose **Recalculate all**. The last result is **19**.
+2. Choose **Document history**, then **Save checkpoint**, and close the dialog.
+   Change the first line to `a=5`; the dependent result becomes **21**.
+3. Open **Document history**, select **Compare** on the saved checkpoint and
+   choose **Restore checkpoint**. The worksheet returns to `a=3` and **19**;
+   the pre-restore state is retained as another checkpoint.
+4. Use **Link line to graph** on the function line. Inspect its sampled curve,
+   trace a coordinate and generate a value table. Return to the worksheet;
+   the graph is linked to that worksheet rather than a pasted picture.
+5. From **Document menu**, open **Worksheet export preview**. Show the evaluated
+   calculations and linked graph. Save HTML, Markdown, LaTeX or PDF. The
+   downloaded export includes sampled values; undefined points remain marked.
+6. Choose **Save worksheet file**, then **Open worksheet file** to import it.
+   Imported source calculations are recalculated rather than trusting cached
+   results. This browser file round trip is verified; exercising an actual
+   iPhone/iPad Files provider remains deferred.
+7. In **Settings → Workspace backups**, use **Save backup** and **Open backup**
+   to demonstrate portable workspace recovery. Importing conflicting documents
+   preserves both versions. This is separate from configured cloud sync.
+
+The exact 19 → 21 → 19 history/restore behavior is checked by
+[the history test](../tool/check_document_history_browser.py).
+[Worksheet export](../tool/check_worksheet_export_browser.py) checks downloaded
+formats, a linked graph and undefined values using `f(x)=3/x`.
+[Workflow import](../tool/check_apple_workflows_browser.py) checks the 19-result
+worksheet, real downloads/uploads and rejection of a forged cached result of
+999. Native graph sampling, trace/table content and the iOS worksheet URL
+handler are checked in [the native integration test](../integration_test/product_gallery_test.dart).
+Siri invocation itself has not been physically tested.
+
+## Screenshot selection
+
+[Native gallery CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37178578571)
+passes at source `da75490b48bf1a9548e68fafce45e8c5769e749c`, with the identical
+production fingerprint above. It retains **33 populated captures**:
+
+| Profile | Captures | Dimensions |
+| --- | ---: | --- |
+| iPhone 15 Pro Max simulator | 11 | 1290 × 2796 |
+| iPad Pro 13-inch (M4) simulator | 11 | 2048 × 2732 |
+| Native macOS application render tree, at 2× | 11 | 2560 × 1800 |
+
+Four selected images were visually reviewed: iPhone multiple-function graph,
+iPad evaluated engineering worksheet, and macOS graph/worksheet. The graphs
+contain `cos(x)`, `x^2-2` and worksheet-linked `3*sin(x)`. The tank worksheet
+shows `r=3`, `h=5`, area **28.2743338823**, volume **141.3716694115**, and
+volume/1000 **0.1413716694115**, with computed-result evidence. Other views
+passed hosted capture assertions but were not individually visually reviewed.
+The iPhone graph's toolbar/function chips extend horizontally beyond the
+viewport; review the intended crop before selecting that image for the store.
+
+Use the evaluated worksheet, multiple-function graph, worksheet graph export
+preview, and checkpoint-history scenes to show actual use. Keep originals and
+source manifests. The macOS captures contain application content without OS
+window chrome. Simulator images and native macOS captures do not establish
+physical iPhone/iPad behavior.
+
+Apple's [accurate-metadata guidance, including 2.3.3](https://developer.apple.com/app-store/review/guidelines/#accurate-metadata)
+requires screenshots to represent the app in use. The captured iPhone/iPad
+sizes are listed in [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/).
+Validate the chosen display slots and upload files before submission; these
+captures have not been uploaded as new App Store screenshots.
+
+## Review notes draft
+
+> CrispMath provides persistent mathematical worksheets whose variables and
+> functions drive later calculations and linked graphs. Try a=3, f(t)=t^2+a,
+> f(4): the result is 19. Save a checkpoint, change a to 5 to obtain 21, then
+> compare and restore the checkpoint to recover 19. Link the function to a
+> sampled graph and use Worksheet export preview to export calculations,
+> plots and values together. Worksheet files retain editable source and are
+> recalculated on import. Core calculator, worksheet and graph calculations
+> run on-device. Optional AI assistance and cloud sync use configured services.
+> Handwriting transcription is experimental and must be reviewed before use.
+> Public source and reproducible evidence:
 > https://github.com/CrispStrobe/CrispMath.
 
-The optional handwriting feature is an editable transcription aid. It requires
-review before insertion; local model weights are optional downloads. Cloud
-recognition requires explicit confirmation and a configured provider. The
-50-human-sample benchmark measured only 7/50 exact transcriptions for PosFormer
-and 0/50 for BTTR/HMER. Do not advertise handwriting as reliable or show an
-unverified recognition success in store images. Dataset and weight licenses
-remain separate from application code; benchmark weights are not shipped as
-app assets.
+Before sending a response, confirm that the selected screenshots and metadata
+match this build and any enabled review services are accessible.
+[Apple's 4.3 guidance](https://developer.apple.com/app-store/review/guidelines/#spam)
+addresses duplicate app variants and experiences indistinguishable from
+widely available apps. This packet supplies a concrete workflow for assessment;
+it does not predict Apple's decision or establish that other submitted apps
+are unrelated.
 
-A configured cloud project and a real two-device account check remain pending.
-Portable Files backups and local checkpoints are independently usable without
-that service. Do not claim deployed cloud sync or invent review credentials.
+## Remaining verification
+
+- Physical iPhone/iPad testing is deferred to another session, including Siri,
+  Files-provider behavior, Apple Pencil and multitasking.
+- A configured cloud project and real two-device account check remain pending.
+  Local checkpoints and portable backups work independently of that service;
+  do not claim verified deployed cloud sync or invent review credentials.
+- Handwriting is an editable transcription aid. The 50-human-sample benchmark
+  achieved only **7/50** exact transcriptions for PosFormer and **0/50** for
+  BTTR/HMER. Do not advertise reliable recognition or show an unverified
+  recognition success. Local model weights are optional downloads; cloud
+  recognition requires explicit confirmation and a configured provider.
+  Dataset/weight licenses remain separate from application code, and benchmark
+  weights are not shipped as app assets.
+- The original guideline 4.3(a) App Review finding remains open. No new App
+  Review submission or correspondence is authorized by this preparation file.

@@ -1,13 +1,21 @@
 # Native Apple screenshot evidence
 
-The [latest GitHub CI gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37104046317)
-captures the real CrispMath application at source
-`29273367886684638798575dec2050746752aacc`.
-Both jobs pass on 3 October 2026: all 33 images and native calculation/content
-assertions are verified. Three selected macOS graph, engineering worksheet and
-value-table images are visually reviewed. The subsequent `1afa020` changes only
-the live test helper; production code is unchanged. iPhone/iPad manifests and
-calculation reports are inspected without downloading their images or app bundles.
+The [latest native GitHub CI gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37178578571)
+captures CrispMath at source `da75490b48bf1a9548e68fafce45e8c5769e749c`.
+Both jobs pass on 4 October 2026: all **33 images** and native calculation/content
+assertions are verified. Four selected images were visually reviewed: iPhone
+multiple-function graph, iPad evaluated engineering worksheet, and native macOS
+graph and worksheet. The other 29 captures passed hosted tooling assertions;
+they were not individually visually reviewed.
+
+The capture source and final documented source
+`438c3e516b0ddc32c589b8d12ae2a62d2e9216da` have identical 368-file production
+trees, SHA256
+`ab85cee47aeb75df7fd041e6316ad32660dba610e5077f057c8b7518527dacfe`.
+This also matches uploaded 1.2.0 (21), source `ca7b6c7`. The intervening changes
+affect CI helpers and documentation. See [the current review packet](apple-review-evidence.md)
+for signed-binary and external TestFlight evidence; beta approval does not
+resolve the earlier App Review 4.3(a) finding.
 
 | Profile | Capture | Images | Pixel dimensions |
 | --- | --- | ---: | --- |
@@ -19,13 +27,31 @@ The macOS images contain the application content without operating-system
 window chrome. They are not browser screenshots. The iPhone and iPad checks
 use simulators; physical-device testing remains for another session.
 
-Both CI artifacts include a source-tagged `manifest.json`, RGB PNG images,
-and calculator evidence: `native-apple-screenshot-gallery` and
-`native-macos-screenshot-gallery`. Selected macOS images and platform manifests are in
-`.dart_tool/stage12-ci/final-incremental-gallery/`; all 33 images remain in the
-remote artifacts. The [earlier gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37056297272),
-source `c5955f2`, retains the prior visual review across all three profiles in
-`.dart_tool/stage9-ci/apple-native-final/`.
+Both CI artifacts retain source-tagged manifests, RGB PNG images and
+calculation evidence: `native-apple-screenshot-gallery` and
+`native-macos-screenshot-gallery`. All 33 images remain in remote artifacts.
+Only the needed manifests and four selected PNGs were downloaded for review:
+
+- `/mnt/storage/CrispMath-stage17-ci/final-da75490-gallery-ios/manifest.json`
+- `/mnt/storage/CrispMath-stage17-ci/final-da75490-gallery-ios/iphone/multiple-function-graph.png`
+- `/mnt/storage/CrispMath-stage17-ci/final-da75490-gallery-ios/ipad/evaluated-engineering-worksheet.png`
+- `/mnt/storage/CrispMath-stage17-ci/final-da75490-gallery-macos/manifest.json`
+- `/mnt/storage/CrispMath-stage17-ci/final-da75490-gallery-macos/macos/multiple-function-graph.png`
+- `/mnt/storage/CrispMath-stage17-ci/final-da75490-gallery-macos/macos/evaluated-engineering-worksheet.png`
+
+The selected-image review and production parity are recorded in
+`/mnt/storage/CrispMath-stage17-ci/final-da75490-gallery-review.json`.
+Reviewed graphs contain `cos(x)`, `x^2-2` and linked `3*sin(x)`. The tank
+worksheets show `r=3`, `h=5`, area `28.2743338823`, volume `141.3716694115` and
+volume/1000 `0.1413716694115`, with readable computed-result labels. No blank
+capture or blocking overlay was seen in these four images. The iPhone graph
+toolbar and function chips extend horizontally beyond its viewport; inspect the
+intended store selection/crop before upload.
+
+For historical captures, see [the previous gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37104046317)
+at `2927336`, [the earlier gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37056297272)
+at `c5955f2`, and [release history](../HISTORY.md). Those runs are archived
+evidence, not the current production source.
 
 | Scene filename, without `.png` | Visible content |
 | --- | --- |
@@ -57,3 +83,9 @@ The [workflow](../.github/workflows/apple-screenshot-gallery.yml),
 [native integration test](../integration_test/product_gallery_test.dart), and
 [artifact verifier](../tool/verify_native_gallery.py) run on GitHub-hosted macOS
 runners. No local VPS build or screenshot batch is required.
+
+Apple's [screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/)
+list the captured iPhone and iPad dimensions. Confirm the selected display
+slots and actual upload files before submission. These new captures have not
+been uploaded to App Store Connect. Simulator evidence does not verify physical
+Siri invocation, Files providers, Apple Pencil or device multitasking.

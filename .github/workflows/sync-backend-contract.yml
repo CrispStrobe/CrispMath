@@ -5,7 +5,9 @@ on:
     paths:
       - 'supabase/**'
       - 'tool/sync_contract/**'
+      - 'tool/sync_live_environment_test.py'
       - 'lib/services/cloud_backup_store.dart'
+      - 'native_test/cloud_backup_live_test.dart'
       - '.github/workflows/sync-backend-contract.yml'
   workflow_dispatch:
 permissions:
@@ -42,3 +44,59 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f tool/sync_contract/bootstrap.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261002_user_sync_data.sql
           psql -v ON_ERROR_STOP=1 -f tool/sync_contract/assertions.sql
+  authenticated-clients:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CRISPMATH_SYNC_CLI_VERSION: '2.119.0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: 11e6d598521976f38081934106b55095b46b40e3
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - uses: supabase/setup-cli@v1
+        with:
+          version: '2.119.0'
+      - name: Resolve the application SDK
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Start an isolated real Auth and PostgREST backend
+        run: |
+          python3 -m unittest discover -s tool -p 'sync_live_environment_test.py'
+          mkdir -p "$RUNNER_TEMP/crispmath-sync"
+          supabase init --workdir "$RUNNER_TEMP/crispmath-sync"
+          mkdir -p "$RUNNER_TEMP/crispmath-sync/supabase/migrations"
+          cp supabase/migrations/20261002_user_sync_data.sql "$RUNNER_TEMP/crispmath-sync/supabase/migrations/20261002000000_user_sync_data.sql"
+          supabase start --workdir "$RUNNER_TEMP/crispmath-sync" \
+            --exclude realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
+            > "$RUNNER_TEMP/crispmath-sync-start.log"
+          supabase status --workdir "$RUNNER_TEMP/crispmath-sync" --output json \
+            > "$RUNNER_TEMP/crispmath-sync-status.json"
+          python3 tool/sync_contract/export_live_environment.py "$RUNNER_TEMP/crispmath-sync-status.json"
+      - name: Verify independent sessions, real races and owner isolation
+        run: |
+          flutter analyze --no-pub native_test/cloud_backup_live_test.dart
+          flutter test --reporter expanded native_test/cloud_backup_live_test.dart
+      - name: Preserve credential-free live report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-sync-live-report
+          path: .dart_tool/sync-live/report.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Stop only the disposable runner stack
+        if: always()
+        run: supabase stop --workdir "$RUNNER_TEMP/crispmath-sync" --no-backup

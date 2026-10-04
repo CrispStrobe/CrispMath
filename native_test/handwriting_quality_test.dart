@@ -19,6 +19,17 @@ void main() {
         '.dart_tool/inference/handwriting-corpus';
     final manifest =
         jsonDecode(File('$directory/manifest.json').readAsStringSync()) as Map;
+    final encoderArm =
+        Platform.environment['CRISPMATH_HANDWRITING_ENCODER'] ?? 'default';
+    expect(encoderArm, anyOf('default', 'scalar'));
+    final scalarFlag = Platform.environment['POSFORMER_SCALAR_ENCODER'];
+    if (encoderArm == 'scalar') {
+      expect(scalarFlag, '1');
+      expect(File(model).uri.pathSegments.last, 'posformer-q8.gguf');
+    } else {
+      // The pinned PosFormer implementation checks presence, including "0".
+      expect(scalarFlag, isNull);
+    }
     expect(manifest['split'], 'test');
     expect(manifest['cases'], hasLength(50));
     final hash = sha256.convert(File(model).readAsBytesSync()).toString();
@@ -32,6 +43,12 @@ void main() {
           'model_sha256': hash,
           'model': File(model).uri.pathSegments.last,
           'source': Platform.environment['GITHUB_SHA'],
+          'bridge_source': Platform.environment['CRISPMATH_OCR_BRIDGE_SOURCE'],
+          'encoder_arm': encoderArm,
+          'encoder_environment': {'POSFORMER_SCALAR_ENCODER': scalarFlag},
+          'corpus_manifest_sha256': sha256
+              .convert(File('$directory/manifest.json').readAsBytesSync())
+              .toString(),
           'corpus': manifest,
           'threads': 2,
           'measured_at': DateTime.now().toUtc().toIso8601String(),
@@ -51,8 +68,11 @@ void main() {
         };
         final watch = Stopwatch()..start();
         try {
-          final image = img.decodePng(
-              File('$directory/${item['image']}').readAsBytesSync())!;
+          final bytes = File('$directory/${item['image']}').readAsBytesSync();
+          record['image_sha256'] = sha256.convert(bytes).toString();
+          final image = img.decodePng(bytes)!;
+          record['image_width'] = image.width;
+          record['image_height'] = image.height;
           final latex = ocr.recognizeGray(
                   toGrayscaleForIsolate(
                       image.getBytes(order: img.ChannelOrder.rgba),
