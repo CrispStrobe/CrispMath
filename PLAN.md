@@ -35,8 +35,10 @@ Completed items with details are in `HISTORY.md`.
 
 - [x] Refresh review notes, release evidence and guided-workflow demonstration
   for build 23; record a pending physical iPhone/iPad checklist.
-- [~] Replace unsupported 2560×1800 internal macOS capture size with real
+- [x] Replace unsupported 2560×1800 internal macOS capture size with real
   2560×1600 native renders; reject unsupported dimensions in the verifier.
+  CI37239843806 passes all33 captures and16 tool controls; four new Mac views
+  are visually reviewed. All PR platform/unit checks and focused CI pass.
 - [ ] Perform the deferred device checks and review/upload store screenshots
   before a future App Review submission.
 

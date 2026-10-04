@@ -134,7 +134,12 @@ Apple's [accurate-metadata guidance, including 2.3.3](https://developer.apple.co
 requires screenshots to represent the app in use. The captured iPhone/iPad
 sizes are listed in [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/).
 The current 2560×1800 macOS internal images do not match the listed Mac sizes.
-A debug-only 2560×1600 native recapture is being verified separately.
+A fresh debug-only native recapture now passes all eleven Mac renders at
+2560×1600; four selected views are visually reviewed without new clipping.
+[Capture CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37239843806)
+also passes all22 iPhone/iPad captures and16 capture-tool controls; both fresh
+simulators pass first attempt with no recovery. See the gallery selection for
+exact original sources; the new Mac images are not resized older captures.
 Validate the chosen display slots and upload files before submission; these
 captures have not been uploaded as new App Store screenshots.
 
@@ -160,7 +165,7 @@ in [the native gallery evidence](native-apple-gallery.md):
 
 | Order | Scene | Suggested caption | What the capture must show |
 | --- | --- | --- | --- |
-| 1 | Evaluated engineering worksheet | Calculate with editable worksheets | Source assignments, dependent results and readable computation evidence |
+| 1 | Guided connected worksheet | Calculate with editable worksheets | Parameter/function rows, result 19 and contextual graph/history/export actions |
 | 2 | Multiple-function or traced graph | Turn worksheet functions into graphs | Actual populated curves and a retained worksheet link; a coordinate if using the trace view |
 | 3 | Checkpoint history | Compare changes and recover your work | A real saved checkpoint and available comparison/restore actions |
 | 4 | Worksheet graph export preview | Share calculations and graphs together | An actual export preview containing worksheet content and a graph |
@@ -234,7 +239,7 @@ starting; attach the first failing screen and steps rather than marking it passe
 | Link graph, trace and generate table | Pending | Pending | Linked parabola, coordinate and populated table; toolbar commands reachable |
 | Background/relaunch and rotate | Pending | Pending | Sources/checkpoints preserved; calculation and graph usable |
 | Files worksheet/export/backup round trips | Pending | Pending | Real Files provider saves/imports; source recalculates; backup preserves documents |
-| Photo/camera permission allow and deny | Pending | Pending | Clear purpose prompt; cancellation/denial preserves work and app remains usable |
+| Photo/camera access, allow/deny where requested | Pending | Pending | Clear purpose text when access is requested; picker cancellation/denial preserves work and app remains usable |
 | Large text and VoiceOver | Pending | Pending | Full result announced; long result/action sheet can scroll; Copy copies full value |
 | Native worksheet shortcut/URL | Pending | Pending | Actual handler opens evaluated worksheet; record Siri separately if configured |
 | Pencil and supported multitasking | Not applicable unless supported | Pending | Ink remains editable; split view/stage changes preserve work |

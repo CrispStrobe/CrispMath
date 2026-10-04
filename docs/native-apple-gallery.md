@@ -1,46 +1,52 @@
 # Native Apple screenshot evidence
 
-The [final native GitHub CI gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37230024733)
-captures CrispMath at source `18092e4a75d1de62601793358c6687e2b9a48eea`.
-All **33 captures** pass hosted image and native calculation/content verification.
-Twelve selected views are visually reviewed: worksheet, traced graph, checkpoint
-history and graph export preview on each platform.
+The [fresh native GitHub CI gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37239843806)
+captures CrispMath at source `20dafd33b80ef8f0cd6f8811164e6d84eefd904e`.
+Its completed Mac job verifies eleven **2560×1600** native renders, actual CAS
+linkage, derivative cos(x), exact integral 1/3 and the real guided result 19.
+Four selected Mac views are visually reviewed without a new clipping defect.
+The complete workflow passes all 33 captures and sixteen tool controls. Both
+iOS simulators pass on their first attempt, with no recovery retry. Only the
+four new Mac scenes have been visually reviewed in this recapture; all33 pass
+hosted content/image verification. Previous twelve-view review is retained.
 
-The capture helper and its tests are the only two changes from production source
-`e8920a3dbaf669032901b44d4a00a25fee0c8d8e`. Uploaded build **1.2.0 (23)** and
-public deployment source `637b07e` preserve those application production inputs.
-The signed release gate checks 372 production files, fingerprint
-`e320ae453970fea84b86c094acc86fe9df0c275e74a92aca90ded84f07800859`.
-See [the review preparation packet](apple-review-evidence.md) for signed-binary
-and external TestFlight evidence. Beta approval does not resolve the earlier
-App Review 4.3(a) finding.
+The only application-source change after approved build 23 is the existing
+`#if DEBUG` capture channel's window size, from 1280×900 to 1280×800 logical
+points. The release window behavior is unchanged. The verifier accepts only
+Apple's four listed Mac upload dimensions and rejects the old internal size.
+The new PNGs are native renders, not resized or cropped older screenshots.
+
+Uploaded **1.2.0 (23)** and public deployment source `637b07e` preserve validated
+production source `e8920a3`. The signed gate checks 372 production files,
+fingerprint `e320ae453970fea84b86c094acc86fe9df0c275e74a92aca90ded84f07800859`.
+The older [33-capture gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/37230024733)
+at `18092e4` remains valid internal evidence; its 2560×1800 Mac images are not
+Mac upload files. See [the review packet](apple-review-evidence.md) for build23.
+Beta approval does not resolve the earlier App Review 4.3(a) finding.
 
 | Profile | Capture | Images | Pixel dimensions |
 | --- | --- | ---: | --- |
 | iPhone 15 Pro Max | Native iOS simulator | 11 | 1290 × 2796 |
 | iPad Pro 13-inch (M4) | Native iOS simulator | 11 | 2048 × 2732 |
-| macOS | Actual native Flutter application render tree, at 2× | 11 | 2560 × 1800 |
+| macOS | Actual native Flutter application render tree, at 2× | 11 | 2560 × 1600 |
 
-The macOS images contain application content without operating-system window
-chrome. They are internal native captures, not verified App Store upload files.
-iPhone/iPad use fresh owned simulators. Both connect and pass on their first
-attempt, with no recovery retry; physical testing remains for another session.
+The macOS images contain application content without OS window chrome.
+Their dimensions match Apple's listed 2560×1600 Mac size. They have not been
+uploaded to App Store Connect, so no successful upload claim is made.
+iPhone/iPad use simulators; physical tests remain for another session.
 
-Source-tagged manifests and the complete 33-image sets remain in the remote
-`native-apple-screenshot-gallery` and `native-macos-screenshot-gallery` artifacts.
-Selected images and bounded JSON reports are retained on CIFS:
+Complete capture sets and source-tagged manifests remain in remote CI artifacts.
+Only small JSON and selected PNG members are retained on CIFS:
 
-- `/mnt/storage/CrispMath-round11-guided/native-18092e4/verified-gallery-selection.json`
-- `/mnt/storage/CrispMath-round11-guided/native-18092e4/ios/iphone/`
-- `/mnt/storage/CrispMath-round11-guided/native-18092e4/ios/ipad/`
-- `/mnt/storage/CrispMath-round11-guided/native-e8920a3/macos/macos/`
+- New Mac selection: `/mnt/storage/CrispMath-round11-guided/native-20dafd3/verified-macos-selection.json`
+- New Mac originals: `/mnt/storage/CrispMath-round11-guided/native-20dafd3/macos/macos/`
+- Previous twelve-view selection: `/mnt/storage/CrispMath-round11-guided/native-18092e4/verified-gallery-selection.json`
 
-The selected iOS originals are from 18092e4. Four macOS originals are reused from
-e8920a3 under the two-file CI-helper parity proof, with the latest macOS manifest
-independently checking eleven captures. The selection record includes exact
-paths, source, dimensions and SHA-256 hashes for all twelve reviewed images.
-Only needed JSON/selected PNG members were fetched using bounded artifact
-requests; no bundle/model download or local build/capture batch was used.
+The new Mac selection records exact paths, dimensions, source and SHA-256
+hashes; four PNGs and two JSON files cost 616,778 bounded artifact bytes.
+No bundle/model download or local build/capture batch was used. The previous
+iOS/Mac selections retain their original sources; they are not relabeled as
+new captures.
 
 ## Selected sequence for each profile
 
