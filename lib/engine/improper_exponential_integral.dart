@@ -24,8 +24,9 @@ class ImproperExponentialIntegral {
         'infinity',
         '+infinity',
         r'\infty',
-      ].contains(text))
+      ].contains(text)) {
         return 1;
+      }
       if (['-oo', '-inf', '-infinity', r'-\infty'].contains(text)) return -1;
       return 0;
     }
@@ -64,8 +65,9 @@ class ImproperExponentialIntegral {
       if (polynomial == null || polynomial.degree > 8) return null;
       final rate = -exponent.coeffs[1] * Rational.fromInt(direction);
       if (polynomial.isZero) return '0';
-      if (rate.sign <= 0)
+      if (rate.sign <= 0) {
         return 'Error: divergent ordinary improper exponential integral';
+      }
       if (rate.numerator.abs().bitLength > 2048 ||
           rate.denominator.bitLength > 2048 ||
           polynomial.coeffs.any(

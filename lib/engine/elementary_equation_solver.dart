@@ -13,8 +13,9 @@ class ElementaryEquationSolver {
       return null;
     }
     final sides = source.split('=');
-    if (sides.length != 2 || sides.any((side) => side.trim().isEmpty))
+    if (sides.length != 2 || sides.any((side) => side.trim().isEmpty)) {
       return null;
+    }
     try {
       final left = SymParser(sides[0]).parse().simplify();
       final right = SymParser(sides[1]).parse().simplify();
@@ -37,8 +38,9 @@ class ElementaryEquationSolver {
         return [root.toString()];
       }
       List<String>? power(SymExpr node, SymExpr target) {
-        if (node is! SymPow || node.base is! SymNum || target is! SymNum)
+        if (node is! SymPow || node.base is! SymNum || target is! SymNum) {
           return null;
+        }
         final base = (node.base as SymNum).value;
         final value = target.value;
         if (base.sign <= 0 || base == Rational.one) return null;
@@ -76,8 +78,9 @@ class ElementaryEquationSolver {
 
   static (Rational, Rational)? _affine(SymExpr node, String variable) {
     final p = RealCalculusProofs.polynomial(renderSymExpr(node), variable);
-    if (p == null || p.degree > 1 || p.coeffs.any((c) => !_bounded(c)))
+    if (p == null || p.degree > 1 || p.coeffs.any((c) => !_bounded(c))) {
       return null;
+    }
     return (
       p.coeffs.isEmpty ? Rational.zero : p.coeffs[0],
       p.coeffs.length < 2 ? Rational.zero : p.coeffs[1],
