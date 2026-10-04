@@ -8,6 +8,7 @@ on:
       - 'tool/sync_live_environment_test.py'
       - 'lib/services/cloud_backup_store.dart'
       - 'native_test/cloud_backup_live_test.dart'
+      - 'tool/check_cloud_sync_browser.py'
       - '.github/workflows/sync-backend-contract.yml'
   workflow_dispatch:
 permissions:
@@ -61,6 +62,9 @@ jobs:
           flutter-version: '3.44.0'
           channel: stable
           cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: supabase/setup-cli@v1
         with:
           version: '2.119.0'
@@ -89,12 +93,37 @@ jobs:
         run: |
           flutter analyze --no-pub native_test/cloud_backup_live_test.dart
           flutter test --reporter expanded native_test/cloud_backup_live_test.dart
+      - name: Build the app for the disposable backend
+        run: |
+          tool/build_web.sh --release --no-wasm-dry-run -O2 \
+            --dart-define="SUPABASE_URL=$CRISPMATH_SYNC_API_URL" \
+            --dart-define="SUPABASE_ANON_KEY=$CRISPMATH_SYNC_PUBLIC_KEY"
+      - name: Install browser test tools
+        run: |
+          python3 -m pip install -r tool/browser-requirements.txt
+          python3 -m playwright install --with-deps chromium
+      - name: Verify actual cloud UI in independent browser sessions
+        run: |
+          python3 -m http.server 8766 --bind 127.0.0.1 --directory build/web \
+            > "$RUNNER_TEMP/crispmath-sync-browser-server.log" 2>&1 &
+          curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors \
+            --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+          python3 tool/check_cloud_sync_browser.py --url http://127.0.0.1:8766/ \
+            --expected-source "$GITHUB_SHA" --output .dart_tool/sync-live/browser
       - name: Preserve credential-free live report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: authenticated-sync-live-report
           path: .dart_tool/sync-live/report.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Preserve actual cloud UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-sync-browser-report
+          path: .dart_tool/sync-live/browser/
           if-no-files-found: ignore
           retention-days: 14
       - name: Stop only the disposable runner stack

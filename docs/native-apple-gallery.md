@@ -8,7 +8,7 @@ multiple-function graph, iPad evaluated engineering worksheet, and native macOS
 graph and worksheet. The other 29 captures passed hosted tooling assertions;
 they were not individually visually reviewed.
 
-The capture source and final documented source
+The capture source and validated documentation revision
 `438c3e516b0ddc32c589b8d12ae2a62d2e9216da` have identical 368-file production
 trees, SHA256
 `ab85cee47aeb75df7fd041e6316ad32660dba610e5077f057c8b7518527dacfe`.

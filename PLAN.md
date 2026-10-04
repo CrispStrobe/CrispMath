@@ -226,10 +226,16 @@ Physical iPhone/iPad testing is deferred to a separate session.
 5. [~] Document history: checkpoints, comparisons, restore and portable
    backups pass unit and desktop/phone live checks. Runtime cloud setup,
    revision conflict checks and database owner isolation are implemented/tested;
-   a real Supabase project and two-device account round trip await credentials.
+   hosted disposable Auth/PostgREST checks now pass five real SDK scenarios,
+   including competing sessions and sign-out. The same hosted workflow adds
+   actual two-context GUI coverage; see `docs/workspace-backups.md`.
+   A real Supabase project and two-device account round trip await credentials.
 6. [~] Handwriting: visible ink/dots, provider selection, consent and editable
    review pass unit/live checks. The real 50-human-sample benchmark gives only
-   7/50 exact PosFormer transcriptions, 0/50 for BTTR/HMER. Better trained
+   7/50 exact PosFormer transcriptions, 0/50 for BTTR/HMER.
+   Actual pinned vocabulary cannot emit 27/50 frozen reference strings;
+   paired encoders retain the same seven matches with 22 differing outputs.
+   See `docs/handwriting-quality-findings.md` for proof and limits. Better trained
    weights/GPU work remains pending; reliable recognition is not established.
 7. [x] Fresh independent 50-problem audit: close exact-integer, matrix,
    rational-domain, Student-t, CSP/web and older-Apple linear-system gaps.

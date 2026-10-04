@@ -1,7 +1,8 @@
 # CrispMath App Review preparation packet
 
 Updated 4 October 2026. This is a draft for a future App Review submission;
-no message or App Review submission has been sent. The September 14 rejection
+this packet has not been sent to Apple and no new App Review submission has
+been made during this work. The September 14 rejection
 of 1.0.3 (7) under guideline 4.3(a) remains unresolved. External TestFlight
 approval does not resolve that rejection.
 
@@ -19,7 +20,7 @@ records Apple processing **VALID**, beta review **APPROVED**, both audiences
 `971c1bb2-df76-4993-b841-03c6dce32a6e`; Apple's `submittedDate` is null.
 No App Review submission occurred.
 
-The final documented source is
+The validated documentation revision is
 `438c3e516b0ddc32c589b8d12ae2a62d2e9216da`; the uploaded source is
 `ca7b6c7ee205c7c73da2a4a783cba1e9b2977c5e`. Their 368 production files are
 identical, with production-tree SHA256
@@ -29,7 +30,7 @@ The native gallery source below has the same production fingerprint.
 | Evidence | Verified result |
 | --- | --- |
 | [Final-source feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/37186428965) | Full feature, browser, native OCR and gallery jobs pass; all required platform checks are green on `438c3e5` |
-| [Math audit](https://github.com/CrispStrobe/CrispMath/actions/runs/37184040061) | 737 accumulated cases pass on Linux, WebAssembly and packaged macOS |
+| [Linux/WASM math audit](https://github.com/CrispStrobe/CrispMath/actions/runs/37184040061) / [packaged macOS](https://github.com/CrispStrobe/CrispMath/actions/runs/37184042305) | 737 accumulated cases pass on each platform |
 | [Pages](https://github.com/CrispStrobe/CrispMath/actions/runs/37184585963) / [Vercel](https://github.com/CrispStrobe/CrispMath/actions/runs/37184586065) | Each published site passes 737 runtime cases and actual Playwright checks: 420 worksheet entries, 26 edits, 18 statistics, six constraint solves and two calculator linear-system/reload checks |
 | Full hosted test suite | 5,735 unit/widget tests pass, eight documented skips; 491 focused and 104 tooling tests pass; analysis reports zero issues |
 

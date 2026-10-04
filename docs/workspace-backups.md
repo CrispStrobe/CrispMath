@@ -43,8 +43,21 @@ A unique user ID prevents concurrent initial uploads from overwriting each other
 Subsequent writes match and increment the previously observed server revision,
 so stale writes fail even when device timestamps are identical.
 
-No real project credentials were supplied for this work. Client tests use the
-real Supabase SDK with explicit HTTP fixtures; the database CI workflow applies
-the migration to PostgreSQL with two authenticated user identities and anonymous
-access assertions. A real project, sign-in and two-device round trip remain
-separate deployment checks. Physical iPhone/iPad checks are deferred.
+No deployed project credentials were supplied for this work. Besides SDK HTTP
+fixtures and PostgreSQL policy tests, the
+[hosted live contract](https://github.com/CrispStrobe/CrispMath/actions/runs/37197856171)
+starts a disposable Supabase 2.119.0 stack with real Auth, PostgREST and PostgreSQL.
+Five production-store checks pass: independent authenticated sessions, source
+round trips and secret filtering, racing first uploads, racing revision updates,
+owner/anonymous isolation, and refresh/sign-out. Fixture cleanup is also verified.
+
+The [same workflow](../.github/workflows/sync-backend-contract.yml) additionally
+builds a test app with the runner's loopback URL and public key. Its
+[Playwright flow](../tool/check_cloud_sync_browser.py) uses independent desktop
+and phone browser contexts for GUI sign-in, Push confirmation, Pull preview,
+worksheet import/recalculation, conflicting source preservation, reload and
+sign-out. It does not inject workspace or session state. Admin access is used
+only to create/delete the throwaway test account; keys and sessions are excluded
+from reports. The test build is not a deployed production backend or a physical
+device check. A configured user project and physical iPhone/iPad round trip
+remain separate deployment checks.
