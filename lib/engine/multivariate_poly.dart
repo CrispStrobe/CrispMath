@@ -364,9 +364,37 @@ class MultivariateFactoring {
   static List<MultivariatePolynomial>? _tryPatterns(MultivariatePolynomial p) {
     final result = _tryDifferenceOfSquares(p) ??
         _trySumDifferenceCubes(p) ??
+        _trySophieGermain(p) ??
         _tryPerfectSquare(p) ??
         _tryGrouping(p);
     return result;
+  }
+
+  /// a^4+4b^4=(a^2-2ab+2b^2)(a^2+2ab+2b^2).
+  /// Exact rational fourth roots and multiplication certify every coefficient.
+  static List<MultivariatePolynomial>? _trySophieGermain(MultivariatePolynomial p) {
+    if (p.termCount != 2 || p.totalDegree > 16) return null;
+    final terms = p.terms.toList();
+    for (var order = 0; order < 2; order++) {
+      final (ae, ac) = terms[order];
+      final (be, bc) = terms[1-order];
+      if (ac.sign <= 0 || bc.sign <= 0 ||
+          ae.any((e) => e % 4 != 0) || be.any((e) => e % 4 != 0)) continue;
+      final aSquared = _rationalSqrt(ac);
+      final bSquared = _rationalSqrt(bc / Rational.fromInt(4));
+      if (aSquared == null || bSquared == null) continue;
+      final aRoot = _rationalSqrt(aSquared), bRoot = _rationalSqrt(bSquared);
+      if (aRoot == null || bRoot == null) continue;
+      final a = MultivariatePolynomial.monomial(p.variables, ae.map((e) => e ~/ 4).toList(), aRoot);
+      final b = MultivariatePolynomial.monomial(p.variables, be.map((e) => e ~/ 4).toList(), bRoot);
+      final twice = MultivariatePolynomial.monomial(p.variables,
+          List.filled(p.numVars, 0), Rational.fromInt(2));
+      final squareSum = a*a + twice*b*b;
+      final cross = twice*a*b;
+      final first = squareSum-cross, second = squareSum+cross;
+      if (first*second == p) return [first,second];
+    }
+    return null;
   }
 
   /// a^2 - b^2 = (a+b)(a-b) where a,b are monomials.
