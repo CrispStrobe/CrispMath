@@ -2789,7 +2789,9 @@ class _NotepadResultColumn extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
-        child: Column(
+        child: SingleChildScrollView(
+          key: const ValueKey('notepad-result-actions-scroll'),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
@@ -2877,6 +2879,7 @@ class _NotepadResultColumn extends StatelessWidget {
                 },
               ),
           ],
+          ),
         ),
       ),
     );

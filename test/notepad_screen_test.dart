@@ -133,6 +133,17 @@ void main() {
         expect(tester.getSemantics(result).label, value);
         await tester.tap(viewport, buttons: 2);
         await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final actions = find.byKey(const ValueKey('notepad-result-actions-scroll'));
+        expect(actions, findsOneWidget);
+        final lastAction = find.descendant(of: actions, matching: find.byType(ListTile)).last;
+        await tester.ensureVisible(lastAction);
+        await tester.pumpAndSettle();
+        final lastBounds = tester.getRect(lastAction);
+        expect(lastBounds.top, greaterThanOrEqualTo(0));
+        expect(lastBounds.bottom, lessThanOrEqualTo(configuration.$1.height));
+        await tester.ensureVisible(find.text('Copy result'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Copy result'));
         await tester.pumpAndSettle();
         expect(copiedText, value);
