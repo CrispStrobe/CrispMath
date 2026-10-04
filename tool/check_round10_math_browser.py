@@ -144,7 +144,21 @@ async def check_modules(args):
                             assert box['x']>=0 and box['x']+box['width']<=width
                             assert header_box['y']>=140 and header_box['y']+header_box['height']<=height
                             await context.grant_permissions(['clipboard-read','clipboard-write'])
-                            await real_click(page,page.get_by_role('button',name='Copy solutions',exact=True))
+                            copy_button=page.get_by_role('button',name='Copy solutions',exact=True)
+                            await copy_button.wait_for(state='attached')
+                            assert await copy_button.count()==1,'Unique actual copy control required'
+                            # Hovering during a trial locator click can rebuild
+                            # Flutter tooltip semantics before its second lookup.
+                            # Click the measured visible control once physically.
+                            state=await copy_button.evaluate('''el=>{
+                              const r=el.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;
+                              const hit=document.elementFromPoint(x,y);
+                              return {x,y,width:r.width,height:r.height,
+                                ready:r.width>0&&r.height>0&&r.x>=0&&r.right<=innerWidth&&r.y>=0&&r.bottom<=innerHeight&&!!hit&&(hit===el||el.contains(hit))};
+                            }''')
+                            assert state['ready'],state
+                            item['copyControlGeometry']=state
+                            await page.mouse.click(state['x'],state['y'])
                             item['clipboardAssignment']=await page.evaluate('()=>navigator.clipboard.readText()')
                             assert item['clipboardAssignment']==item['assignment']
                             validate_optimum(name,item['header'],item['clipboardAssignment'])
