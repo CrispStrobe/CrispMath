@@ -4,6 +4,43 @@ import sys
 import tempfile
 import unittest
 from run_native_gallery import run_phase, capture
+from verify_native_gallery import verify_connected_worksheet
+
+
+class ConnectedGalleryEvidenceTest(unittest.TestCase):
+    def document(self):
+        return {'l': [{'s': 'a=3', 'r': '3'},
+                      {'s': 'f(x)=x^2+a', 'r': 'x^2+(3)'},
+                      {'s': 'f(4)', 'r': '19', 'evidence': {'accuracy': 'exact'}}]}
+
+    def test_actual_three_row_guide_is_accepted(self):
+        verify_connected_worksheet(self.document())
+
+    def test_wrong_source_or_missing_row_is_rejected(self):
+        for kind in ['source', 'missing']:
+            with self.subTest(kind=kind):
+                document = self.document()
+                if kind == 'source':
+                    document['l'][0]['s'] = 'a=5'
+                else:
+                    document['l'].pop()
+                with self.assertRaises(AssertionError):
+                    verify_connected_worksheet(document)
+
+    def test_wrong_result_error_or_inexact_evidence_is_rejected(self):
+        for key, value in [('r', '21'), ('e', 'Evaluation failed'),
+                           ('evidence', {'accuracy': 'approximate'})]:
+            with self.subTest(key=key):
+                document = self.document()
+                document['l'][2][key] = value
+                with self.assertRaises(AssertionError):
+                    verify_connected_worksheet(document)
+
+    def test_function_variable_loss_is_rejected(self):
+        document = self.document()
+        document['l'][1]['r'] = '3'
+        with self.assertRaises(AssertionError):
+            verify_connected_worksheet(document)
 
 
 class NativeGalleryPhaseTest(unittest.TestCase):
