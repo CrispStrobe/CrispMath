@@ -46,6 +46,10 @@ on:
         description: 'Run strict ninth-audit worksheet/statistics/constraint checks against an immutable validated bundle'
         type: boolean
         default: false
+      probe_round10_math:
+        description: 'Run tenth-audit worksheet, statistics, constraints and calculator checks against an immutable validated bundle'
+        type: boolean
+        default: false
       probe_round9_constraint_only:
         description: 'Diagnostic only: inspect real constraint result focus/DOM, without claiming full math coverage'
         type: boolean
@@ -109,7 +113,7 @@ jobs:
           test/symbolic_taylor_test.dart test/result_evidence_test.dart test/workflow_tasks_test.dart test/fresh_workflow_tasks_test.dart test/integral_arguments_test.dart
           test/notepad_functions_test.dart test/notepad_batch_test.dart test/notepad_scope_cache_test.dart test/notepad_activity_test.dart
           test/selected_listenable_builder_test.dart test/notepad_dispatcher_test.dart
-          test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round6_reference_tasks_test.dart test/round7_reference_tasks_test.dart test/round7_precision_regressions_test.dart test/round7_algebra_regressions_test.dart test/round7_numeric_regressions_test.dart test/round7_scientific_scope_test.dart test/round8_factorial_regressions_test.dart test/round8_numeric_regressions_test.dart test/round8_complex_quadratic_regressions_test.dart test/round8_matrix_scope_test.dart test/round9_reference_tasks_test.dart test/round10_reference_tasks_test.dart test/round9_numeric_regressions_test.dart test/round9_worksheet_regressions_test.dart test/round6_exact_rounding_test.dart test/round6_numeric_regressions_test.dart test/round6_constraint_regressions_test.dart test/round6_algebra_regressions_test.dart test/round6_worksheet_regressions_test.dart test/round6_series_routing_test.dart test/round5_numeric_regressions_test.dart test/round5_operation_scope_test.dart
+          test/round4_algebra_regressions_test.dart test/round4_numeric_regressions_test.dart test/round4_worksheet_scope_test.dart test/round5_reference_tasks_test.dart test/round6_reference_tasks_test.dart test/round7_reference_tasks_test.dart test/round7_precision_regressions_test.dart test/round7_algebra_regressions_test.dart test/round7_numeric_regressions_test.dart test/round7_scientific_scope_test.dart test/round8_factorial_regressions_test.dart test/round8_numeric_regressions_test.dart test/round8_complex_quadratic_regressions_test.dart test/round8_matrix_scope_test.dart test/round9_reference_tasks_test.dart test/round10_reference_tasks_test.dart test/round10_algebra_regressions_test.dart test/round9_numeric_regressions_test.dart test/round9_worksheet_regressions_test.dart test/round6_exact_rounding_test.dart test/round6_numeric_regressions_test.dart test/round6_constraint_regressions_test.dart test/round6_algebra_regressions_test.dart test/round6_worksheet_regressions_test.dart test/round6_series_routing_test.dart test/round5_numeric_regressions_test.dart test/round5_operation_scope_test.dart
   unit:
     if: ${{ !inputs.probe_build_run_id && !inputs.browser_only && !inputs.checks_only }}
     runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
@@ -342,7 +346,7 @@ jobs:
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
       - name: Probe actual batch UI
-        if: ${{ inputs.probe_math_scope != true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true }}
+        if: ${{ inputs.probe_math_scope != true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           CLIP_LABELS: ${{ inputs.probe_clip_labels }}
@@ -360,7 +364,7 @@ jobs:
             python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
           fi
       - name: Validate production parity and browser comparison controls
-        if: ${{ inputs.probe_round7_math == true || inputs.probe_round8_math == true || inputs.probe_round9_math == true }}
+        if: ${{ inputs.probe_round7_math == true || inputs.probe_round8_math == true || inputs.probe_round9_math == true || inputs.probe_round10_math == true }}
         env:
           BUILD_RUN_ID: ${{ inputs.probe_build_run_id }}
           GH_TOKEN: ${{ github.token }}
@@ -368,12 +372,13 @@ jobs:
           python tool/wait_release_validation.py --run-id "$BUILD_RUN_ID" --package-sha "$GITHUB_SHA" --output browser-results/source-parity.json
           python -m unittest discover -s tool -p '*_test.py'
       - name: Probe actual independent-audit worksheet and statistics UI
-        if: ${{ inputs.probe_round7_math == true || inputs.probe_round8_math == true || inputs.probe_round9_math == true }}
+        if: ${{ inputs.probe_round7_math == true || inputs.probe_round8_math == true || inputs.probe_round9_math == true || inputs.probe_round10_math == true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           PROBE_ROUND7: ${{ inputs.probe_round7_math }}
           PROBE_ROUND8: ${{ inputs.probe_round8_math }}
           PROBE_ROUND9: ${{ inputs.probe_round9_math }}
+          PROBE_ROUND10: ${{ inputs.probe_round10_math }}
           ROUND9_CONSTRAINT_ONLY: ${{ inputs.probe_round9_constraint_only }}
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
@@ -392,9 +397,12 @@ jobs:
             if [ "$ROUND9_CONSTRAINT_ONLY" = "true" ]; then ROUND9_ARGS+=(--constraint-only); fi
             python tool/check_round9_math_browser.py "${ROUND9_ARGS[@]}" --expected-source "$APP_SOURCE" --output browser-results/round9-math || status=1
           fi
+          if [ "$PROBE_ROUND10" = "true" ]; then
+            python tool/check_round10_math_browser.py --expected-source "$APP_SOURCE" --output browser-results/round10-math || status=1
+          fi
           exit "$status"
       - name: Probe actual solve scope UI
-        if: ${{ inputs.probe_math_scope == true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true }}
+        if: ${{ inputs.probe_math_scope == true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
         run: |

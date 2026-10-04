@@ -166,6 +166,9 @@ jobs:
           for area in algebra numeric; do
             python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round9_${area}_tasks.json" --output "deployed-results/round9-${area}.json"
           done
+          for area in algebra numeric; do
+            python tool/check_workflow_tasks_browser.py --url "$APP_URL" --tasks "test/fixtures/round10_${area}_tasks.json" --output "deployed-results/round10-${area}.json"
+          done
           python tool/check_apple_workflows_browser.py --url "$APP_URL" --output deployed-results/apple-workflows
           python tool/check_worksheet_export_browser.py --url "$APP_URL" --output deployed-results/worksheet-export
           python tool/check_document_history_browser.py --url "$APP_URL" --output deployed-results/document-history
@@ -179,6 +182,7 @@ jobs:
           python tool/check_round7_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round7-math-ui
           python tool/check_round8_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round8-math-ui
           python tool/check_round9_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round9-math-ui
+          python tool/check_round10_math_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round10-math-ui
           python tool/check_round5_solve_browser.py --url "$APP_URL" --expected-source "$GITHUB_SHA" --output deployed-results/round5-solve-ui
           python tool/check_handwriting_browser.py --url "$APP_URL" --output deployed-results/handwriting
           python tool/check_fresh_calculations_browser.py --url "$APP_URL" --output deployed-results/fresh-calculations
