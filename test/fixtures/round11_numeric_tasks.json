@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent arithmetic, exact matrix identities, centered moments, distribution formulas, coherent SI electrical/magnetic dimensions and complete finite-domain proofs frozen before app observation. See docs/round11-math-numeric.md.",
+  "tasks": [
+    {
+      "id": "round11-numeric-01",
+      "title": "Eight-element subsets of seventeen",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "factorial(17)/(factorial(8)*factorial(9))"
+      ],
+      "exact": true,
+      "expected": "24310"
+    },
+    {
+      "id": "round11-numeric-02",
+      "title": "Exact small-decimal quotient",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "0.00625/0.0005"
+      ],
+      "exact": true,
+      "expected": "25/2"
+    },
+    {
+      "id": "round11-numeric-03",
+      "title": "Three labelled groups of three",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "factorial(9)/(factorial(3)*factorial(3)*factorial(3))"
+      ],
+      "exact": true,
+      "expected": "1680"
+    },
+    {
+      "id": "round11-numeric-04",
+      "title": "Block-diagonal four-dimensional determinant",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "det(Matrix([[2,1,0,0],[3,4,0,0],[0,0,5,2],[0,0,1,3]]))"
+      ],
+      "exact": true,
+      "expected": "65"
+    },
+    {
+      "id": "round11-numeric-05",
+      "title": "Three-level triangular rational inverse",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "inv(Matrix([[2,1,0],[0,3,4],[0,0,5]]))"
+      ],
+      "expected": "Matrix([[1/2,-1/6,2/15],[0,1/3,-4/15],[0,0,1/5]])"
+    },
+    {
+      "id": "round11-numeric-06",
+      "title": "Three-by-four rectangular contraction",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "Matrix([[2,-1],[0,3],[-2,4]])*Matrix([[1,0,2,-1],[3,5,-2,4]])"
+      ],
+      "expected": "Matrix([[-1,-5,6,-6],[9,15,-6,12],[10,20,-12,18]])"
+    },
+    {
+      "id": "round11-numeric-07",
+      "title": "Dependent rectangular augmented pivots",
+      "kind": "engine",
+      "operation": "evaluate",
+      "args": [
+        "rref(Matrix([[1,2,-1,3],[2,4,-2,6],[0,1,1,2]]))"
+      ],
+      "expected": "Matrix([[1,0,-3,-1],[0,1,1,2],[0,0,0,0]])"
+    },
+    {
+      "id": "round11-numeric-08",
+      "title": "Exact eighth-spaced dispersion",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        0.125,
+        0.25,
+        0.375
+      ],
+      "expected": {
+        "mean": 0.25,
+        "median": 0.25,
+        "sampleStddev": 0.125
+      }
+    },
+    {
+      "id": "round11-numeric-09",
+      "title": "Unit dispersion around a trillion",
+      "kind": "module",
+      "operation": "describe",
+      "data": [
+        1000000000000,
+        1000000000001,
+        1000000000002
+      ],
+      "expected": {
+        "mean": 1000000000001,
+        "median": 1000000000001,
+        "sampleStddev": 1
+      }
+    },
+    {
+      "id": "round11-numeric-10",
+      "title": "Perfect decreasing centered regression",
+      "kind": "module",
+      "operation": "regression",
+      "xs": [
+        -2,
+        -1,
+        0,
+        1,
+        2
+      ],
+      "ys": [
+        9,
+        6,
+        3,
+        0,
+        -3
+      ],
+      "expected": {
+        "slope": -3,
+        "intercept": 3,
+        "rSquared": 1
+      }
+    },
+    {
+      "id": "round11-numeric-11",
+      "title": "No successes in twelve fifth-probability trials",
+      "kind": "module",
+      "operation": "binomial",
+      "n": 12,
+      "p": 0.2,
+      "k": 0,
+      "expected": 0.068719476736
+    },
+    {
+      "id": "round11-numeric-12",
+      "title": "Translated eight-sigma Gaussian lower tail",
+      "kind": "module",
+      "operation": "normalCdf",
+      "mean": 10,
+      "stddev": 3,
+      "x": -14,
+      "expected": 6.220960574271784e-16
+    },
+    {
+      "id": "round11-numeric-13",
+      "title": "Positive Cauchy interval to square root three",
+      "kind": "module",
+      "operation": "tInterval",
+      "df": 1,
+      "lower": 0,
+      "upper": 1.7320508075688772,
+      "expected": 0.3333333333333333
+    },
+    {
+      "id": "round11-numeric-14",
+      "title": "Three-bin chi-square exponential tail",
+      "kind": "module",
+      "operation": "chiSquare",
+      "observed": [
+        4,
+        8,
+        12
+      ],
+      "counts": [
+        8,
+        8,
+        8
+      ],
+      "expected": {
+        "statistic": 4,
+        "df": 2,
+        "pValue": 0.1353352832366127
+      }
+    },
+    {
+      "id": "round11-numeric-15",
+      "title": "Capacitor charge with micro prefixes",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "3 µF * 12 V in µC",
+      "expected": "36 µC"
+    },
+    {
+      "id": "round11-numeric-16",
+      "title": "Inductive voltage from current ramp",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "2 mH * 3 A / 4 ms in V",
+      "expected": "1.5 V"
+    },
+    {
+      "id": "round11-numeric-17",
+      "title": "Magnetic flux density through square centimetres",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "6 mWb / 3 cm² in T",
+      "expected": "20 T"
+    },
+    {
+      "id": "round11-numeric-18",
+      "title": "Integrated current as electric charge",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "2 A * 3 s in C",
+      "expected": "6 C"
+    },
+    {
+      "id": "round11-numeric-19",
+      "title": "Four electronvolts in coherent energy",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "4 eV in J",
+      "expected": "6.408706536e-19 J"
+    },
+    {
+      "id": "round11-numeric-20",
+      "title": "Millilitre flow as litres per minute",
+      "kind": "module",
+      "operation": "unit",
+      "expression": "250 mL / 2 s in L/min",
+      "expected": "7.5 L/min"
+    },
+    {
+      "id": "round11-numeric-21",
+      "title": "Negative horizontal integer circle",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y in -4..4\nx*x+y*y == 10\nx < 0",
+      "unordered": true,
+      "expected": [
+        {
+          "x": -3,
+          "y": -1
+        },
+        {
+          "x": -3,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": -3
+        },
+        {
+          "x": -1,
+          "y": 3
+        }
+      ]
+    },
+    {
+      "id": "round11-numeric-22",
+      "title": "Ordered nonnegative triple of sum six",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x, y, z in 0..6\nx+y+z == 6\nx < y\ny < z",
+      "unordered": true,
+      "expected": [
+        {
+          "x": 0,
+          "y": 1,
+          "z": 5
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 4
+        },
+        {
+          "x": 1,
+          "y": 2,
+          "z": 3
+        }
+      ]
+    },
+    {
+      "id": "round11-numeric-23",
+      "title": "Offset least-squares integer allocation",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in 0..6\nx+y == 6\nminimize (x-1)*(x-1)+(y-2)*(y-2)",
+      "expected": 5
+    },
+    {
+      "id": "round11-numeric-24",
+      "title": "Shifted product under zero sum",
+      "kind": "module",
+      "operation": "constraintObjective",
+      "program": "vars: x, y in -3..3\nx+y == 0\nmaximize (x+2)*(y+2)",
+      "expected": 4
+    },
+    {
+      "id": "round11-numeric-25",
+      "title": "Negative root selected by explicit exclusion",
+      "kind": "module",
+      "operation": "constraint",
+      "program": "vars: x in -5..5\nx*x == 9\nx != 3",
+      "unordered": true,
+      "expected": [
+        {
+          "x": -3
+        }
+      ]
+    }
+  ]
+}
