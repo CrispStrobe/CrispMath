@@ -4,7 +4,12 @@ import 'dart:io';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/services/cloud_backup_store.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/io_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// Widget-test bindings intentionally replace HTTP with a fake 400 response.
+// This separate live suite injects a real transport without changing globals.
+class _LiveHttpOverrides extends HttpOverrides {}
 
 /// A real, disposable Auth/PostgREST/PostgreSQL stack is required. Never run
 /// this fixture-administration test against a user's configured project.
@@ -14,21 +19,45 @@ void main() {
   final uri = Uri.parse(environment['CRISPMATH_SYNC_API_URL'] ?? '');
   if (environment['CRISPMATH_SYNC_LIVE'] != 'disposable' ||
       uri.scheme != 'http' ||
-      !{'localhost', '127.0.0.1'}.contains(uri.host)) {
+      !{'localhost', '127.0.0.1'}.contains(uri.host) ||
+      uri.userInfo.isNotEmpty || uri.hasQuery || uri.hasFragment ||
+      !{'', '/'}.contains(uri.path)) {
     throw StateError('Cloud live tests require the disposable loopback CI stack');
   }
   final publicKey = environment['CRISPMATH_SYNC_PUBLIC_KEY']!;
-  final admin = SupabaseClient(
-      uri.toString(), environment['CRISPMATH_SYNC_FIXTURE_ADMIN_KEY']!);
+  final transports = <IOClient>[];
+  SupabaseClient liveClient(String key) {
+    final transport = IOClient(_LiveHttpOverrides().createHttpClient(null));
+    transports.add(transport);
+    return SupabaseClient(uri.toString(), key, httpClient: transport);
+  }
+
+  final admin = liveClient(environment['CRISPMATH_SYNC_FIXTURE_ADMIN_KEY']!);
   final clients = <SupabaseClient>[];
   final userIds = <String>[];
   final checks = <Map<String, dynamic>>[];
   final report = File(environment['CRISPMATH_SYNC_REPORT'] ??
       '.dart_tool/sync-live/report.json');
   var sequence = 0;
+  var cleanupPassed = false;
+
+  void writeReport() {
+    report.parent.createSync(recursive: true);
+    report.writeAsStringSync(const JsonEncoder.withIndent('  ').convert({
+      'source': environment['GITHUB_SHA'],
+      'backend': 'disposable Supabase Auth/PostgREST/PostgreSQL',
+      'cliVersion': environment['CRISPMATH_SYNC_CLI_VERSION'],
+      'physicalDeviceTest': false,
+      'deployedUserProjectTest': false,
+      'fixtureCleanupPassed': cleanupPassed,
+      'passed': cleanupPassed && checks.length == 5 &&
+          checks.every((c) => c['passed'] == true),
+      'checks': checks,
+    }));
+  }
 
   SupabaseClient client() {
-    final result = SupabaseClient(uri.toString(), publicKey);
+    final result = liveClient(publicKey);
     clients.add(result);
     return result;
   }
@@ -86,28 +115,27 @@ void main() {
         await body();
         record['passed'] = true;
       } finally {
-        report.parent.createSync(recursive: true);
-        report.writeAsStringSync(const JsonEncoder.withIndent('  ').convert({
-          'source': environment['GITHUB_SHA'],
-          'backend': 'disposable Supabase Auth/PostgREST/PostgreSQL',
-          'cliVersion': environment['CRISPMATH_SYNC_CLI_VERSION'],
-          'physicalDeviceTest': false,
-          'deployedUserProjectTest': false,
-          'passed': checks.length == 5 && checks.every((c) => c['passed'] == true),
-          'checks': checks,
-        }));
+        writeReport();
       }
     }, timeout: const Timeout(Duration(minutes: 2)));
   }
 
   tearDownAll(() async {
-    for (final id in userIds) {
-      await admin.auth.admin.deleteUser(id);
+    try {
+      for (final id in userIds) {
+        await admin.auth.admin.deleteUser(id);
+      }
+      for (final current in clients) {
+        await current.dispose();
+      }
+      await admin.dispose();
+      cleanupPassed = true;
+    } finally {
+      for (final transport in transports) {
+        transport.close();
+      }
+      writeReport();
     }
-    for (final current in clients) {
-      await current.dispose();
-    }
-    await admin.dispose();
   });
 
   liveTest('independent authenticated sessions round-trip source and filter secrets',
