@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent principal-branch derivations frozen before these two supplemental questions are observed. See docs/round11-math-supplement.md; original fifty references remain unchanged.",
+  "tasks": [
+    {
+      "id": "round11-supplement-01",
+      "kind": "engine",
+      "title": "Principal imaginary-root product with distinct radicands",
+      "operation": "evaluate",
+      "args": ["sqrt(-25)*sqrt(-49)"],
+      "expected": "-35"
+    },
+    {
+      "id": "round11-supplement-02",
+      "kind": "engine",
+      "title": "Negative imaginary logarithm with nonunit modulus",
+      "operation": "evaluate",
+      "args": ["ln(-2*I)"],
+      "expected": "ln(2)-I*pi/2"
+    }
+  ]
+}
