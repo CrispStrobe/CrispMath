@@ -201,8 +201,16 @@ def validate_result(case,line):
                 assert not re.search(r'[/^]|simplify|Error',result),(case,line)
                 validate_domain(evidence.get('sourceDomain') or '')
         elif kind=='real-constant':
-            actual=real_constant(result)
-            assert abs(actual-expected[1])<=1e-11*abs(expected[1]),(case,line)
+            if re.fullmatch(r'[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?',result):
+                # Calculator numerical integration displays ten decimal places,
+                # trimming trailing zeros. Compare its exact displayed decimal
+                # to the independently derived reference rounded to that grid.
+                # Do not demand hidden precision or accept an adjacent digit.
+                assert scalar(result)==Fraction(f'{expected[1]:.10f}'),(case,line)
+                assert evidence.get('accuracy')=='approximate',(case,line)
+            else:
+                actual=real_constant(result)
+                assert abs(actual-expected[1])<=1e-11*abs(expected[1]),(case,line)
         elif kind=='unit':
             suffix=' '+expected[2]
             assert result.endswith(suffix) and scalar(result[:-len(suffix)].strip())==Fraction(expected[1]),(case,line)

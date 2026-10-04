@@ -76,6 +76,22 @@ class RoundTenReferencesTest(unittest.TestCase):
             with self.subTest(expression=expression),self.assertRaises((AssertionError,ValueError)):
                 real_constant(expression)
 
+    def test_integral_display_rounding_preserves_value_and_approximate_evidence(self):
+        displays={'regular-log-primitive':'0.3465735903',
+                  'upper-log-endpoint':'0.147918433',
+                  'outside-irrational-poles':'-0.3006198874'}
+        for name,result in displays.items():
+            case,line=self.line(name,result,evidence={'accuracy':'approximate'})
+            validate_result(case,line)
+            for accuracy in ['exact','unknown']:
+                with self.subTest(name=name,accuracy=accuracy),self.assertRaises(AssertionError):
+                    validate_result(case,{**line,'evidence':{'accuracy':accuracy}})
+        case,line=self.line('regular-log-primitive',displays['regular-log-primitive'],
+                            evidence={'accuracy':'approximate'})
+        for result in ['0.3465735902','0.3465735904','0.3466','0.34657359027997264','0','1']:
+            with self.subTest(result=result),self.assertRaises(AssertionError):
+                validate_result(case,{**line,'r':result})
+
     def test_exact_values_evidence_dimensions_and_free_variables(self):
         case,line=self.line('reciprocal-exact-decimals','40/13',evidence={'accuracy':'exact'})
         validate_result(case,line)

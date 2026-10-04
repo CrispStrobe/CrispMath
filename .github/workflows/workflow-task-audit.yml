@@ -37,6 +37,9 @@ on:
       - 'test/workflow_tasks_test.dart'
       - 'tool/crispmath_cli*'
       - 'tool/check_workflow_tasks_browser.py'
+      - 'tool/check_round*_math_browser.py'
+      - 'tool/check_round*_math_browser_test.py'
+      - 'tool/round*_reference_checks.py'
       - '.github/workflows/workflow-task-audit.yml'
   workflow_dispatch:
     inputs:
