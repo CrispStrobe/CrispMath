@@ -54,6 +54,11 @@ class AlgebraReferenceControls(unittest.TestCase):
         self.rejects('gaussian-sixth-power','1-8*I')
         self.accepts('principal-root-product','-12+0*I')
         self.rejects('principal-root-product','12')
+        self.accepts('supplement-principal-root-product','-35')
+        self.rejects('supplement-principal-root-product','35')
+        self.accepts('supplement-nonunit-log-modulus','ln(2)-I*pi/2')
+        self.rejects('supplement-nonunit-log-modulus','-I*pi/2')
+        self.rejects('supplement-nonunit-log-modulus','ln(2)+I*pi/2')
 
     def test_matrix_shape_every_entry_and_exact_system(self):
         self.accepts('nonuniform-shear-cube','Matrix([[1,6,18],[0,1,9],[0,0,1]])')

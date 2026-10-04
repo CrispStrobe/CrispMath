@@ -3,7 +3,19 @@ import 'package:crisp_math/engine/elementary_equation_solver.dart';
 import 'package:crisp_math/engine/improper_exponential_integral.dart';
 import 'package:crisp_math/engine/multivariate_poly.dart';
 import 'package:crisp_math/engine/result_evidence.dart';
+import 'package:crisp_math/diagnostics/workflow_tasks.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class FactorEchoEngine extends CalculatorEngine {
+  FactorEchoEngine(this.answer);
+  final String answer;
+  @override
+  bool get isNativeAvailable => false;
+  @override
+  String factor(String expression) => answer;
+  @override
+  String solve(String expression, String symbol) => answer;
+}
 
 void main() {
   test('explicit polynomial equality uses both sides on every platform', () {
@@ -76,8 +88,40 @@ void main() {
       expect(MultivariatePolynomial.tryParse(factors), MultivariatePolynomial.tryParse(source));
     }
     // Neighboring quartic coefficients must not receive the identity's factors.
-    final neighbor = engine.factor('x^4+5*y^4');
-    expect(MultivariatePolynomial.tryParse(neighbor), MultivariatePolynomial.tryParse('x^4+5*y^4'));
-    expect(MultivariatePolynomial.tryParse(neighbor), isNot(MultivariatePolynomial.tryParse('x^4+4*y^4')));
+    expect(MultivariateFactoring.factor('x^4+5*y^4'), isNull);
+  });
+
+  test('runtime factor audits reject unchanged expansions and retain irreducible controls', () async {
+    Future<String> status(String actual, String expected) async {
+      final report = await WorkflowTasks(FactorEchoEngine(actual)).run([{
+        'id': 'factor-control', 'kind': 'engine', 'operation': 'factor',
+        'args': ['x^4+4*y^4'], 'expected': expected,
+      }]);
+      return (report['results'] as List).single['status'] as String;
+    }
+    const factors = '(x^2-2*x*y+2*y^2)*(x^2+2*x*y+2*y^2)';
+    expect(await status('x^4+4*y^4', factors), 'failed');
+    expect(await status(factors, factors), 'passed');
+    expect(await status('x^4+2*x^2+1', '(x^2+1)^2'), 'failed');
+    expect(await status('(x^2+1)*(x^2+1)', '(x^2+1)^2'), 'passed');
+    expect(await status('x^2+1', 'x^2+1'), 'passed');
+    expect(await status('2*x^2+2', '2*(x^2+1)'), 'failed');
+    expect(await status('2*(x^2+1)', '2*(x^2+1)'), 'passed');
+  });
+
+  test('solve audits compare complete sets independent of assignment printing', () async {
+    Future<String> status(String actual, String expected) async {
+      final report = await WorkflowTasks(FactorEchoEngine(actual)).run([{
+        'id': 'solve-control', 'kind': 'engine', 'operation': 'solve',
+        'args': ['(x-4)^2=25', 'x'], 'expected': expected,
+      }]);
+      return (report['results'] as List).single['status'] as String;
+    }
+    expect(await status('x = {9, -1}', '{-1,9}'), 'passed');
+    expect(await status('x = 4', '{4}'), 'passed');
+    expect(await status('x = {9, -1}', 'x = {-1, 9}'), 'passed');
+    expect(await status('x = 9', '{-1,9}'), 'failed');
+    expect(await status('x = {9, -1, -1}', '{-1,9}'), 'failed');
+    expect(await status('Error: x = 4', '{4}'), 'failed');
   });
 }

@@ -180,7 +180,12 @@ class MultivariatePolynomial {
   /// Format as string. Terms sorted by total degree descending, then
   /// lexicographic on exponent vector.
   @override
-  String toString() {
+  String toString() => _format();
+
+  /// Machine-consumable products retain boundaries between variable names.
+  String toExplicitString() => _format(explicit: true);
+
+  String _format({bool explicit = false}) {
     if (isZero) return '0';
     final sorted = _terms.entries.toList()
       ..sort((a, b) {
@@ -206,6 +211,7 @@ class MultivariatePolynomial {
       final monBuf = StringBuffer();
       for (var i = 0; i < variables.length; i++) {
         if (exps[i] == 0) continue;
+        if (explicit && monBuf.isNotEmpty) monBuf.write('*');
         monBuf.write(variables[i]);
         if (exps[i] > 1) monBuf.write('^${exps[i]}');
       }
@@ -215,14 +221,14 @@ class MultivariatePolynomial {
       if (isFirst) {
         if (c.sign < 0) buf.write('-');
         if (mon.isEmpty || mag != Rational.one) buf.write(mag);
-        if (mon.isNotEmpty && mag != Rational.one && !mag.isInteger) {
+        if (mon.isNotEmpty && mag != Rational.one && (explicit || !mag.isInteger)) {
           buf.write('*');
         }
         buf.write(mon);
       } else {
         buf.write(c.sign < 0 ? ' - ' : ' + ');
         if (mon.isEmpty || mag != Rational.one) buf.write(mag);
-        if (mon.isNotEmpty && mag != Rational.one && !mag.isInteger) {
+        if (mon.isNotEmpty && mag != Rational.one && (explicit || !mag.isInteger)) {
           buf.write('*');
         }
         buf.write(mon);
@@ -830,7 +836,7 @@ class MultivariateFactoring {
   }
 
   static String _formatFactor(MultivariatePolynomial f) {
-    final s = f.toString();
+    final s = f.toExplicitString();
     // Wrap in parens if it has more than one term.
     if (f.termCount > 1) return '($s)';
     return s;

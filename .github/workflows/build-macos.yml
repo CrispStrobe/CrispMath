@@ -323,6 +323,18 @@ jobs:
           done
           exit "$status"
 
+      - name: Run two independently frozen supplemental questions against packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          cat test/fixtures/round11_supplement_tasks.json | \
+            CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+            CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee task-results/macos-round11-supplement.log || status=1
+          python tool/extract_workflow_report.py --log task-results/macos-round11-supplement.log --output task-results/macos-round11-supplement.json --expected-count 2 || status=1
+          exit "$status"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

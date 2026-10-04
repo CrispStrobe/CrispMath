@@ -39,6 +39,8 @@ CASES = [
     ('cyclic-symbolic-determinant', 'det(Matrix([[x,1,0],[0,x,1],[1,0,x]]))', ('poly', (1,0,0,1))),
     ('nonuniform-shear-cube', 'Matrix([[1,2,0],[0,1,3],[0,0,1]])^3', ('matrix', ((1,6,18),(0,1,9),(0,0,1)))),
     ('nonuniform-shear-inverse', 'inv(Matrix([[1,2,0],[0,1,3],[0,0,1]]))', ('matrix', ((1,-2,6),(0,1,-3),(0,0,1)))),
+    ('supplement-principal-root-product', 'sqrt(-25)*sqrt(-49)', ('scalar', F(-35))),
+    ('supplement-nonunit-log-modulus', 'ln(-2*I)', ('complex-constant', (math.log(2),-math.pi/2))),
 ]
 LINSOLVE_SOURCE='linsolve([2*x-y+z=7,x+3*y-2*z=-3,3*x+y+z=11],[x,y,z])'
 
@@ -103,14 +105,14 @@ def rational_equal(actual,expected):
     assert mul(p,b)==mul(a,q),(actual,expected)
 
 
-def real_constant(expression):
+def real_constant(expression,complex_mode=False):
     text=normalized(expression);assert len(text)<=512,expression
     tree=ast.parse(text,mode='eval');assert sum(1 for _ in ast.walk(tree))<=100,expression
     def parse(node):
         if isinstance(node,ast.Constant) and type(node.value) in {int,float}:return float(scalar(ast.get_source_segment(text,node)))
         if isinstance(node,ast.Name):
-            assert node.id=='pi',expression
-            return math.pi
+            assert node.id=='pi' or (complex_mode and node.id=='I'),expression
+            return 1j if node.id=='I' else math.pi
         if isinstance(node,ast.UnaryOp) and isinstance(node.op,(ast.UAdd,ast.USub)):
             a=parse(node.operand);return -a if isinstance(node.op,ast.USub) else a
         if isinstance(node,ast.Call):
@@ -125,9 +127,9 @@ def real_constant(expression):
         else:
             assert isinstance(node.op,ast.Pow) and float(b).is_integer() and abs(b)<=8,expression
             r=a**int(b)
-        assert math.isfinite(r),expression
+        assert math.isfinite(r.real) and math.isfinite(r.imag),expression
         return r
-    value=parse(tree.body);assert math.isfinite(value),expression
+    value=parse(tree.body);assert math.isfinite(value.real) and math.isfinite(value.imag),expression
     return value
 
 
@@ -170,6 +172,10 @@ def validate_result(case,line):
     elif kind=='matrix':assert matrix_values(result)==tuple(tuple(F(v)for v in row)for row in expected),(case,line)
     elif kind=='complex':assert complex_components(result)==tuple(F(v)for v in expected),(case,line)
     elif kind=='imaginary-pi':imaginary_pi_value(result,expected)
+    elif kind=='complex-constant':
+        value=complex(real_constant(result,complex_mode=True))
+        assert abs(value.real-expected[0])<=1e-12 and abs(value.imag-expected[1])<=1e-12,(case,line)
+        if not re.search(r'\b(?:log|ln|pi)\b|π',result):assert evidence.get('accuracy')!='exact',(case,line)
     elif kind in {'pi','constant'}:
         ref=float(expected)*math.pi if kind=='pi' else expected
         if re.fullmatch(r'[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?',result):

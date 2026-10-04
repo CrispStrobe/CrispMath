@@ -8,6 +8,9 @@ import '../engine/notepad_evaluator.dart';
 import '../engine/notepad_export.dart';
 import '../engine/numeric_fallback.dart';
 import '../engine/rational_domain.dart';
+import '../engine/symbolic_expr.dart';
+import '../engine/multivariate_poly.dart';
+import '../engine/polynomial.dart' show Rational;
 import '../services/engine_dispatch.dart';
 import '../services/engine_op.dart';
 import '../services/integral_arguments.dart';
@@ -108,10 +111,17 @@ class WorkflowTasks {
                 result.value.contains(task['errorContains'])
             : task['exact'] == true
                 ? result.value == task['expected']
-                : _matches(result.value, task['expected']);
+                : task['operation'] == 'solve'
+                    ? _solveMatches(result.value, task['expected'] as String, args[1])
+                    : _matches(result.value, task['expected']);
         if (task['resultPattern'] != null) {
           pass = pass &&
               RegExp(task['resultPattern'] as String).hasMatch(result.value);
+        }
+        if (task['operation'] == 'factor' && task['expected'] is String &&
+            _polynomialFactorCount(task['expected'] as String) >= 2) {
+          pass = pass && _polynomialFactorCount(result.value) >=
+              _polynomialFactorCount(task['expected'] as String);
         }
         return {
           'status': unsupported
@@ -333,6 +343,46 @@ class WorkflowTasks {
         };
     }
     throw StateError('Unhandled task');
+  }
+
+  /// Algebraic equality alone cannot certify that factoring actually happened.
+  /// Require a genuine polynomial product/power when the reference has one;
+  /// irreducible references remain valid in expanded form.
+  static int _polynomialFactorCount(String expression) {
+    if (expression.length > 512) return 0;
+    try {
+      final node = SymParser(expression.replaceAll('**', '^')).parse().simplify();
+      int count(SymExpr part) {
+        if (part is SymNum) return !part.value.isZero &&
+            part.value.abs != Rational.one ? 1 : 0;
+        if (part is SymMul) return part.factors.fold(0, (sum, child) => sum+count(child));
+        final polynomial = MultivariatePolynomial.tryParse(renderSymExpr(part));
+        if (polynomial == null || polynomial.totalDegree <= 0) return 0;
+        if (part is SymPow && part.exponent is SymNum) {
+          final exponent = (part.exponent as SymNum).value;
+          if (exponent.isInteger && exponent.sign > 0 &&
+              exponent.numerator <= BigInt.from(32)) {
+            return exponent.numerator.toInt()*count(part.base);
+          }
+        }
+        return 1;
+      }
+      return count(node);
+    } catch (_) {}
+    return 0;
+  }
+
+  /// A solve reference may state its complete root set without an assignment.
+  /// Printed singleton roots and unordered brace sets represent the same set.
+  bool _solveMatches(String actual, String expected, String variable) {
+    String roots(String value) {
+      var text = value.trim().replaceFirst(
+          RegExp('^${RegExp.escape(variable)}\\s*=\\s*'), '');
+      if (text == '(no solutions)') return '{}';
+      if (!text.startsWith('{')) text = '{$text}';
+      return text;
+    }
+    return _matches(roots(actual), roots(expected));
   }
 
   // Compare original values first. Explicit diagnostic strings preserve a
