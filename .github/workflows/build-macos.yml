@@ -65,6 +65,20 @@ jobs:
           unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
           flutter build macos --release
 
+      - name: Verify actual package version and app/plugin provenance
+        run: |
+          python -m unittest discover -s tool -p 'check_macos_package_metadata_test.py' -v
+          python tool/check_macos_package_metadata.py --app build/macos/Build/Products/Release/crisp_math.app --expected-source "$GITHUB_SHA" --output macos-package-metadata.json
+
+      - name: Preserve small actual package metadata
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-package-metadata
+          path: macos-package-metadata.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Verify SymEngine symbols are linked
         # Scan every Mach-O in the .app bundle. Different Flutter versions
         # put the Dart VM in different files, so we just look everywhere
