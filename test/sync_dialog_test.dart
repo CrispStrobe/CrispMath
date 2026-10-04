@@ -129,7 +129,8 @@ void main() {
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
       fixture.service.dispose();
-      await fixture.client.dispose();
+      // Native SDK JSON-isolate shutdown requires real event-loop progress.
+      await tester.runAsync(() => fixture.client.dispose());
     });
     if (signedIn) {
       await tester.runAsync(() => fixture.client.auth.signInWithPassword(email: _email, password: _password));
@@ -138,8 +139,6 @@ void main() {
   }
 
   testWidgets('bad credentials announce safe inline error; retry clears it and signs in', (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     final fixture = await backend(tester);
     fixture.loginFails = true;
     await _show(tester, fixture.service);
@@ -156,7 +155,6 @@ void main() {
   });
 
   testWidgets('pull reports empty backup and safe read failure inside its dialog', (tester) async {
-    final semantics = tester.ensureSemantics(); addTearDown(semantics.dispose);
     final fixture = await backend(tester, signedIn: true);
     await _show(tester, fixture.service);
     await _tap(tester, 'Pull');
@@ -181,7 +179,6 @@ void main() {
   });
 
   testWidgets('upload confirmation cancellation is harmless; failure and success are announced', (tester) async {
-    final semantics = tester.ensureSemantics(); addTearDown(semantics.dispose);
     final fixture = await backend(tester, signedIn: true);
     await _show(tester, fixture.service);
     await _tap(tester, 'Push');
@@ -203,7 +200,6 @@ void main() {
   });
 
   testWidgets('sign out announces local preservation and keeps a normal Close action', (tester) async {
-    final semantics = tester.ensureSemantics(); addTearDown(semantics.dispose);
     final fixture = await backend(tester, signedIn: true);
     await _show(tester, fixture.service);
     await _tap(tester, 'Sign Out');
@@ -216,7 +212,6 @@ void main() {
   });
 
   testWidgets('server sign-out failure truthfully distinguishes the already removed local session', (tester) async {
-    final semantics = tester.ensureSemantics(); addTearDown(semantics.dispose);
     final fixture = await backend(tester, signedIn: true);
     fixture.logoutFails = true;
     await _show(tester, fixture.service);
@@ -255,7 +250,6 @@ void main() {
   });
 
   testWidgets('invalid public configuration is explained inline without exposing supplied private key', (tester) async {
-    final semantics = tester.ensureSemantics(); addTearDown(semantics.dispose);
     final service = SyncService();
     addTearDown(service.dispose);
     await _show(tester, service);
@@ -267,7 +261,6 @@ void main() {
   });
 
   testWidgets('signup requiring confirmation does not claim an authenticated session', (tester) async {
-    final semantics = tester.ensureSemantics(); addTearDown(semantics.dispose);
     final fixture = await backend(tester);
     fixture.signupConfirmation = true;
     await _show(tester, fixture.service);

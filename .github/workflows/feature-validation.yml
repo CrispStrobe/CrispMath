@@ -143,6 +143,9 @@ jobs:
           flutter pub get
       - name: Profiling and release-tool unit tests
         run: python -m unittest discover -s tool -p '*_test.py'
+      - name: Cloud dialog widget regressions
+        run: flutter test --concurrency=1 --reporter expanded test/sync_dialog_test.dart
+        timeout-minutes: 5
       - name: Unit and widget tests
         run: flutter test --concurrency=2 --reporter expanded
       - name: Profile dependency evaluator separately

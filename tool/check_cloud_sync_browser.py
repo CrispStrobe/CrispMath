@@ -165,6 +165,26 @@ async def dismiss_sync(page):
     await page.wait_for_timeout(500)
 
 
+def inline_feedback(page, message):
+    # Flutter also mirrors live-region text into an announcement transport.
+    # Prove the actual active dialog content, without selecting that mirror.
+    return page.get_by_role('alertdialog').get_by_text(message, exact=True)
+
+
+async def expect_inline_feedback(page, message):
+    dialog = page.get_by_role('alertdialog')
+    await expect(dialog).to_have_count(1)
+    feedback = inline_feedback(page, message)
+    await expect(feedback).to_have_count(1)
+    await expect(feedback).to_be_visible()
+    box = await feedback.bounding_box()
+    viewport = page.viewport_size
+    assert box and viewport and box['width'] > 0 and box['height'] > 0, 'Inline feedback has no visible geometry'
+    assert (box['x'] >= 0 and box['y'] >= 0
+            and box['x'] + box['width'] <= viewport['width']
+            and box['y'] + box['height'] <= viewport['height']), 'Inline feedback is clipped outside the viewport'
+
+
 async def login(page, email, password):
     await open_sync(page)
     async def fill(label, value):
@@ -176,17 +196,17 @@ async def login(page, email, password):
     await fill('Email', email)
     await fill('Password', password + '-wrong')
     await real_click(page, page.get_by_role('button', name='Log In', exact=True))
-    failure = page.get_by_text('Sign in failed. Check your email and password, then try again.', exact=True)
-    await expect(failure).to_be_visible()
+    failure = inline_feedback(page, 'Sign in failed. Check your email and password, then try again.')
+    await expect_inline_feedback(page, 'Sign in failed. Check your email and password, then try again.')
     await expect(page.get_by_role('button', name='Pull', exact=True)).to_have_count(0)
     await fill('Password', password)
     await real_click(page, page.get_by_role('button', name='Log In', exact=True))
     await page.get_by_role('button', name='Pull', exact=True).wait_for()
     await expect(failure).to_have_count(0)
-    await expect(page.get_by_text('Signed in. You can now pull or upload a cloud backup.', exact=True)).to_be_visible()
+    await expect_inline_feedback(page, 'Signed in. You can now pull or upload a cloud backup.')
     await expect(page.get_by_text('Logged in as ' + email, exact=True)).to_be_visible()
     await real_click(page, page.get_by_role('button', name='Pull', exact=True))
-    await expect(page.get_by_text('No cloud backup is available.', exact=True)).to_be_visible()
+    await expect_inline_feedback(page, 'No cloud backup is available.')
 
 
 async def push(page, first, revision):
@@ -212,7 +232,7 @@ async def push(page, first, revision):
     doc = next(d for d in state['notepadDocuments'] if d['n'] == 'Cloud source')
     assert [row['s'] for row in doc['l']] == [first, 'f(t)=t^2+a', 'f(4)'], 'Wrong uploaded worksheet source'
     assert all('r' not in row for row in doc['l']), 'Cloud upload trusted computed cache'
-    await expect(page.get_by_text('Cloud backup uploaded.', exact=True)).to_be_visible()
+    await expect_inline_feedback(page, 'Cloud backup uploaded.')
     await page.get_by_role('button', name='Pull', exact=True).wait_for()
     await expect(page.get_by_role('button', name='Pull', exact=True)).to_be_enabled()
     return {'responseStatus': response.status, 'revision': revision,
@@ -342,7 +362,7 @@ async def check(args):
                     await page.get_by_role('button', name='Sign Out', exact=True).wait_for()
                     await real_click(page, page.get_by_role('button', name='Sign Out', exact=True))
                     await page.get_by_role('button', name='Log In', exact=True).wait_for()
-                    await expect(page.get_by_text('Signed out. Your workspace remains saved on this device.', exact=True)).to_be_visible()
+                    await expect_inline_feedback(page, 'Signed out. Your workspace remains saved on this device.')
                     await expect(page.get_by_role('button', name='Pull', exact=True)).to_have_count(0)
                     await real_click(page, page.get_by_role('button', name='Close', exact=True))
                     await page.get_by_role('button', name='Log In', exact=True).wait_for(state='hidden')
