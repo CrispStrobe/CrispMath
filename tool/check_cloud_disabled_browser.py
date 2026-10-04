@@ -131,7 +131,15 @@ async def check(args):
                         await dismiss_sync(page)
                         await expect(page.get_by_text('Off · local work needs no account', exact=True)).to_be_visible()
 
-                        stage = profile + ': fresh reload remains off'
+                        stage = profile + ': canonical launch and reload remain off'
+                        # A worksheet creation link is an action on every launch.
+                        # Navigate normally to the app root before testing reload,
+                        # so this verifies saved work rather than replaying it.
+                        await page.goto(args.url, wait_until='domcontentloaded')
+                        await semantics(page)
+                        await notepad(page)
+                        await worksheet_result(page, name, 'a=3', '19')
+                        assert (await current_document(page))['i'] == original['i']
                         await page.reload(wait_until='domcontentloaded')
                         await semantics(page)
                         await notepad(page)
@@ -149,6 +157,18 @@ async def check(args):
                             'worksheetRecalculated': True, 'checkpointRestored': True,
                             'backupDownloadedAndSourceVerified': True, 'localWorkspacePreserved': True,
                             'pageErrors': 0})
+                    except Exception:
+                        # Bounded accessibility diagnostics only: no input
+                        # values, cookies, tokens or auth storage are recorded.
+                        try:
+                            labels = await page.locator('[aria-label]').evaluate_all(
+                                'els => els.slice(0, 400).map(el => el.getAttribute("aria-label"))')
+                            diagnostic = '\n'.join(str(label) for label in labels)
+                            diagnostic = diagnostic.replace('sb_secret_rejected_fixture', '[invalid fixture key]')
+                            report['failureAccessibilityLabels'] = diagnostic[:1000]
+                        except Exception:
+                            report['failureAccessibilityUnavailable'] = True
+                        raise
                     finally:
                         await context.close()
             finally:
