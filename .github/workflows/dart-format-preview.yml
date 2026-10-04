@@ -1,0 +1,42 @@
+name: Dart format preview
+on:
+  push:
+    branches: [main, 'feat/**']
+    paths: ['**/*.dart', '.github/workflows/dart-format-preview.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Produce a reviewable patch on the runner
+        env:
+          FORMAT_BASE: 23f1470df0a0853234880ac7e0c6135fd4c02f59
+        run: |
+          git merge-base --is-ancestor "$FORMAT_BASE" HEAD
+          mkdir format-results
+          git diff --name-only --diff-filter=ACMR "$FORMAT_BASE" HEAD -- '*.dart' > format-results/files.txt
+          mapfile -t files < format-results/files.txt
+          if (( ${#files[@]} )); then dart format "${files[@]}"; fi
+          git diff --binary -- '*.dart' > format-results/dart-format.patch
+          python - <<'PY'
+          import hashlib,json,os,pathlib
+          p=pathlib.Path('format-results')
+          (p/'report.json').write_text(json.dumps({'source':os.environ['GITHUB_SHA'],'base':os.environ['FORMAT_BASE'],
+            'files':(p/'files.txt').read_text().splitlines(),'patchSha256':hashlib.sha256((p/'dart-format.patch').read_bytes()).hexdigest()},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dart-format-preview
+          path: format-results
+          retention-days: 7

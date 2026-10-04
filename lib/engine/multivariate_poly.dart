@@ -180,7 +180,12 @@ class MultivariatePolynomial {
   /// Format as string. Terms sorted by total degree descending, then
   /// lexicographic on exponent vector.
   @override
-  String toString() {
+  String toString() => _format();
+
+  /// Machine-consumable products retain boundaries between variable names.
+  String toExplicitString() => _format(explicit: true);
+
+  String _format({bool explicit = false}) {
     if (isZero) return '0';
     final sorted = _terms.entries.toList()
       ..sort((a, b) {
@@ -206,6 +211,7 @@ class MultivariatePolynomial {
       final monBuf = StringBuffer();
       for (var i = 0; i < variables.length; i++) {
         if (exps[i] == 0) continue;
+        if (explicit && monBuf.isNotEmpty) monBuf.write('*');
         monBuf.write(variables[i]);
         if (exps[i] > 1) monBuf.write('^${exps[i]}');
       }
@@ -215,14 +221,14 @@ class MultivariatePolynomial {
       if (isFirst) {
         if (c.sign < 0) buf.write('-');
         if (mon.isEmpty || mag != Rational.one) buf.write(mag);
-        if (mon.isNotEmpty && mag != Rational.one && !mag.isInteger) {
+        if (mon.isNotEmpty && mag != Rational.one && (explicit || !mag.isInteger)) {
           buf.write('*');
         }
         buf.write(mon);
       } else {
         buf.write(c.sign < 0 ? ' - ' : ' + ');
         if (mon.isEmpty || mag != Rational.one) buf.write(mag);
-        if (mon.isNotEmpty && mag != Rational.one && !mag.isInteger) {
+        if (mon.isNotEmpty && mag != Rational.one && (explicit || !mag.isInteger)) {
           buf.write('*');
         }
         buf.write(mon);
@@ -364,9 +370,39 @@ class MultivariateFactoring {
   static List<MultivariatePolynomial>? _tryPatterns(MultivariatePolynomial p) {
     final result = _tryDifferenceOfSquares(p) ??
         _trySumDifferenceCubes(p) ??
+        _trySophieGermain(p) ??
         _tryPerfectSquare(p) ??
         _tryGrouping(p);
     return result;
+  }
+
+  /// a^4+4b^4=(a^2-2ab+2b^2)(a^2+2ab+2b^2).
+  /// Exact rational fourth roots and multiplication certify every coefficient.
+  static List<MultivariatePolynomial>? _trySophieGermain(MultivariatePolynomial p) {
+    if (p.termCount != 2 || p.totalDegree > 16) return null;
+    final terms = p.terms.toList();
+    for (var order = 0; order < 2; order++) {
+      final (ae, ac) = terms[order];
+      final (be, bc) = terms[1-order];
+      if (ac.sign <= 0 || bc.sign <= 0 ||
+          ae.any((e) => e % 4 != 0) || be.any((e) => e % 4 != 0)) {
+        continue;
+      }
+      final aSquared = _rationalSqrt(ac);
+      final bSquared = _rationalSqrt(bc / Rational.fromInt(4));
+      if (aSquared == null || bSquared == null) continue;
+      final aRoot = _rationalSqrt(aSquared), bRoot = _rationalSqrt(bSquared);
+      if (aRoot == null || bRoot == null) continue;
+      final a = MultivariatePolynomial.monomial(p.variables, ae.map((e) => e ~/ 4).toList(), aRoot);
+      final b = MultivariatePolynomial.monomial(p.variables, be.map((e) => e ~/ 4).toList(), bRoot);
+      final twice = MultivariatePolynomial.monomial(p.variables,
+          List.filled(p.numVars, 0), Rational.fromInt(2));
+      final squareSum = a*a + twice*b*b;
+      final cross = twice*a*b;
+      final first = squareSum-cross, second = squareSum+cross;
+      if (first*second == p) return [first,second];
+    }
+    return null;
   }
 
   /// a^2 - b^2 = (a+b)(a-b) where a,b are monomials.
@@ -802,7 +838,7 @@ class MultivariateFactoring {
   }
 
   static String _formatFactor(MultivariatePolynomial f) {
-    final s = f.toString();
+    final s = f.toExplicitString();
     // Wrap in parens if it has more than one term.
     if (f.termCount > 1) return '($s)';
     return s;

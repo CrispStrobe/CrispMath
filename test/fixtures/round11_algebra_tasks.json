@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "reference": "Independent binomial and Sophie Germain identities, domain-aware algebra, exact linear substitution, chain/product rules, substitution and ordinary improper integrals, Taylor limits, principal complex branches, and matrix identities. Drafted before app observation; derivations in docs/round11-math-algebra.md.",
+  "tasks": [
+    {"id":"round11-algebra-01","title":"Mixed-variable signed cubic expansion","kind":"engine","operation":"expand","args":["(2*x-3*y)^3"],"expected":"8*x^3-36*x^2*y+54*x*y^2-27*y^3"},
+    {"id":"round11-algebra-02","title":"Sophie Germain quartic factorization","kind":"engine","operation":"factor","args":["x^4+4*y^4"],"expected":"(x^2-2*x*y+2*y^2)*(x^2+2*x*y+2*y^2)"},
+    {"id":"round11-algebra-03","title":"Repeated denominator cancellation with surviving exclusion","kind":"engine","operation":"simplify","args":["(x^2-9)/(x^2+6*x+9)"],"expected":"(x-3)/(x+3)"},
+    {"id":"round11-algebra-04","title":"Both roots of a shifted square","kind":"engine","operation":"solve","args":["(x-4)^2=25","x"],"expected":"{-1,9}"},
+    {"id":"round11-algebra-05","title":"Shifted exponential equation","kind":"engine","operation":"solve","args":["2^(x+1)=32","x"],"expected":"{4}"},
+    {"id":"round11-algebra-06","title":"Logarithmic equation with intersected real domains","kind":"engine","operation":"solve","args":["log(x-2)=log(7-x)","x"],"expected":"{9/2}"},
+    {"id":"round11-algebra-07","title":"Nonsymmetric three-variable linear system","kind":"engine","operation":"linsolve","args":["2*x-y+z=7;x+3*y-2*z=-3;3*x+y+z=11","x,y,z"],"expected":"x=2,y=1,z=4"},
+    {"id":"round11-algebra-08","title":"Scaled arctangent derivative","kind":"engine","operation":"differentiate","args":["atan(3*x)","x"],"expected":"3/(1+9*x^2)"},
+    {"id":"round11-algebra-09","title":"Self-power logarithmic derivative","kind":"engine","operation":"differentiate","args":["x^x","x"],"expected":"x^x*(log(x)+1)"},
+    {"id":"round11-algebra-10","title":"Nested logarithm and radical derivative","kind":"engine","operation":"differentiate","args":["log(sqrt(x^2+4))","x"],"expected":"x/(x^2+4)"},
+    {"id":"round11-algebra-11","title":"Logarithmic rational definite integral","kind":"engine","operation":"integrate","args":["x/(x^2+7)","x","0","3"],"expected":"log(16/7)/2"},
+    {"id":"round11-algebra-12","title":"Ordinary improper exponential first moment","kind":"engine","operation":"integrate","args":["x*exp(-2*x)","x","0","oo"],"expected":"1/4"},
+    {"id":"round11-algebra-13","title":"Convergent singularities at both finite endpoints","kind":"engine","operation":"integrate","args":["1/sqrt(1-x^2)","x","-1","1"],"expected":"pi"},
+    {"id":"round11-algebra-14","title":"First sine moment over a half-period","kind":"engine","operation":"integrate","args":["x*sin(x)","x","0","pi"],"expected":"pi"},
+    {"id":"round11-algebra-15","title":"Cubic radical substitution at rational endpoints","kind":"engine","operation":"integrate","args":["x^2/sqrt(1+x^3)","x","0","2"],"expected":"4/3"},
+    {"id":"round11-algebra-16","title":"Cubic cancellation between tangent and sine","kind":"engine","operation":"limit","args":["(tan(x)-sin(x))/x^3","x","0"],"expected":"1/2"},
+    {"id":"round11-algebra-17","title":"Rationalized radical difference at positive infinity","kind":"engine","operation":"limit","args":["sqrt(x^2+5)-x","x","oo"],"expected":"0"},
+    {"id":"round11-algebra-18","title":"Scaled cosine second-order limit","kind":"engine","operation":"limit","args":["(1-cos(4*x))/x^2","x","0"],"expected":"8"},
+    {"id":"round11-algebra-19","title":"Exponential-cosine Taylor product through degree four","kind":"engine","operation":"series","args":["exp(x)*cos(x)","x","0","5"],"expected":"1+x-x^3/3-x^4/6"},
+    {"id":"round11-algebra-20","title":"Product of two principal negative square roots","kind":"engine","operation":"evaluate","args":["sqrt(-16)*sqrt(-9)"],"expected":"-12"},
+    {"id":"round11-algebra-21","title":"Principal logarithm on the negative imaginary axis","kind":"engine","operation":"evaluate","args":["log(-I)"],"expected":"-I*pi/2"},
+    {"id":"round11-algebra-22","title":"Sixth power of a Gaussian integer","kind":"engine","operation":"evaluate","args":["(1+I)^6"],"expected":"-8*I"},
+    {"id":"round11-algebra-23","title":"Symbolic cyclic three-dimensional determinant","kind":"engine","operation":"evaluate","args":["det(Matrix([[x,1,0],[0,x,1],[1,0,x]]))"],"expected":"x^3+1"},
+    {"id":"round11-algebra-24","title":"Third power of a nonuniform unipotent shear","kind":"engine","operation":"evaluate","args":["Matrix([[1,2,0],[0,1,3],[0,0,1]])^3"],"expected":"Matrix([[1,6,18],[0,1,9],[0,0,1]])"},
+    {"id":"round11-algebra-25","title":"Exact inverse with a second-superdiagonal contribution","kind":"engine","operation":"evaluate","args":["inv(Matrix([[1,2,0],[0,1,3],[0,0,1]]))"],"expected":"Matrix([[1,-2,6],[0,1,-3],[0,0,1]])"}
+  ]
+}

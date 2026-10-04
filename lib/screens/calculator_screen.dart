@@ -1,6 +1,7 @@
 import '../engine/result_evidence.dart';
 import '../services/engine_dispatch.dart';
 import '../services/integral_arguments.dart';
+import '../services/linear_system_arguments.dart';
 import '../widgets/result_evidence_badge.dart';
 // lib/screens/calculator_screen.dart
 
@@ -1901,25 +1902,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
   /// each equation may be "lhs = rhs" or an expression implicitly = 0.
   Future<String> _handleLinsolveFunction(String expression) async {
     try {
-      final open = expression.indexOf('(');
-      final content =
-          expression.substring(open + 1, expression.length - 1).trim();
-      final parts = content.split(',').map((s) => s.trim()).toList();
-      if (parts.length < 2) {
-        return 'Error: linsolve(eq1; eq2, x, y) expected';
+      final args = parseLinearSystemArguments(expression);
+      if (args == null) {
+        return 'Error: linsolve([eq1,eq2],[x,y]) or linsolve(eq1;eq2,x,y) expected';
       }
-      final equations = parts[0]
-          .split(';')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-      final symbols = parts.sublist(1);
-      if (equations.isEmpty) {
-        return 'Error: linsolve(eq1; eq2, x, y) expected';
-      }
-      return _runEngineOpMaybeAsync('linsolve', equations.join('; '),
-          arg2: symbols.join(', '),
-          fallback: () => _engine.solveLinearSystem(equations, symbols));
+      return _runEngineOpMaybeAsync('linsolve', args.equations.join('; '),
+          arg2: args.symbols.join(', '),
+          fallback: () => _engine.solveLinearSystem(args.equations, args.symbols));
     } catch (e) {
       return 'Error: Invalid linsolve() syntax';
     }

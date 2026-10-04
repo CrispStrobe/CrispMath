@@ -63,12 +63,21 @@ class UnitConverter {
 
   /// Shared numeric presentation for catalog and composite derived units.
   static String formatNumber(double value) {
+    if (!value.isFinite) return value.toString();
     final abs = value.abs();
     String text;
     if (abs == 0) {
       text = '0';
     } else if (abs >= 1e9 || (abs > 0 && abs < 1e-4)) {
-      text = value.toStringAsExponential(6);
+      final parts = value.toStringAsExponential(11).split('e');
+      var mantissa = parts.first;
+      final decimal = mantissa.indexOf('.');
+      // Preserve the established six-place presentation for exact powers,
+      // while retaining additional significant digits when they carry data.
+      while (mantissa.endsWith('0') && mantissa.length - decimal - 1 > 6) {
+        mantissa = mantissa.substring(0, mantissa.length - 1);
+      }
+      text = '${mantissa}e${parts.last}';
     } else {
       // Up to ~10 significant digits, then strip trailing zeros.
       text = value.toStringAsFixed(10);

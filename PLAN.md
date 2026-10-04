@@ -14,8 +14,8 @@ Completed items with details are in `HISTORY.md`.
   and isolated normalization/ceil-pooling repairs on the unchanged fifty samples.
 - [x] Clarify default-off cloud behavior and validate local-only startup, guards,
   checkpoint/backup workflows and zero backend requests on hosted CI.
-- [ ] Merge PR #1 after complete validation; physical/App Review remain deferred.
-- [ ] Resume feature expansion with a guided connected worksheet and fifty
+- [x] Merge PR #1 after complete validation (23f1470); physical/App Review remain deferred.
+- [~] Resume feature expansion with a guided connected worksheet and fifty
   fresh independently referenced mathematical problems, preserving unit/live
   CI, Pages and Vercel checks.
 - [ ] Promote the proven handwriting runtime corrections only with matching

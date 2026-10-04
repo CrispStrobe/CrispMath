@@ -171,6 +171,7 @@ class _DescriptiveTabState extends State<_DescriptiveTab> {
       err = e.toString();
     }
 
+    final summary = stats;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -201,8 +202,24 @@ class _DescriptiveTabState extends State<_DescriptiveTab> {
           if (err != null)
             Text('Error: $err',
                 style: TextStyle(color: Theme.of(context).colorScheme.error))
-          else if (stats != null)
-            _StatsTable(stats)
+          else if (summary != null) ...[
+            _StatsTable(summary),
+            TextButton.icon(
+              icon: const Icon(Icons.more_horiz),
+              label: const Text('Full precision'),
+              onPressed: () => showDialog<void>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Summary at full precision'),
+                  content: Text('Mean: ${summary.mean}\n'
+                      'Median: ${summary.median}\n'
+                      'Sample standard deviation: ${summary.sampleStddev}'),
+                  actions: [TextButton(onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'))],
+                ),
+              ),
+            ),
+          ]
           else
             const Text('Enter at least one number above.'),
         ],
@@ -521,6 +538,10 @@ class _DistributionsTabState extends State<_DistributionsTab> {
   final _binP = TextEditingController(text: '0.5');
   final _binK = TextEditingController(text: '5');
 
+  final _tDf = TextEditingController(text: '5');
+  final _tLower = TextEditingController(text: '0');
+  final _tUpper = TextEditingController(text: '1');
+
   @override
   void initState() {
     super.initState();
@@ -541,7 +562,8 @@ class _DistributionsTabState extends State<_DistributionsTab> {
 
   @override
   void dispose() {
-    for (final c in [_normMean, _normSd, _normX, _normP, _binN, _binP, _binK]) {
+    for (final c in [_normMean, _normSd, _normX, _normP, _binN, _binP, _binK,
+      _tDf, _tLower, _tUpper]) {
       c.dispose();
     }
     super.dispose();
@@ -568,6 +590,11 @@ class _DistributionsTabState extends State<_DistributionsTab> {
     final x = double.tryParse(_normX.text);
     final p = double.tryParse(_normP.text);
     final k = int.tryParse(_binK.text);
+    final df = int.tryParse(_tDf.text);
+    final lower = double.tryParse(_tLower.text);
+    final upper = double.tryParse(_tUpper.text);
+    final validInterval = df != null && df > 0 && lower != null &&
+        lower.isFinite && upper != null && upper.isFinite && lower <= upper;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -612,6 +639,25 @@ class _DistributionsTabState extends State<_DistributionsTab> {
               ),
             ),
           ),
+          const SizedBox(height: 24),
+          Text('Student t distribution',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _field(_tDf, 'Degrees of freedom ν'),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _field(_tLower, 'Interval lower bound')),
+            const SizedBox(width: 8),
+            Expanded(child: _field(_tUpper, 'Interval upper bound')),
+          ]),
+          const SizedBox(height: 8),
+          Card(child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: validInterval
+                ? _resultRow('P(lower ≤ T ≤ upper)',
+                    _fmt(TDistribution(df: df).intervalProbability(lower, upper)))
+                : const Text('Enter a positive integer ν and finite bounds with lower ≤ upper.'),
+          )),
           const SizedBox(height: 24),
           Text('Binomial distribution',
               style: Theme.of(context).textTheme.titleMedium),

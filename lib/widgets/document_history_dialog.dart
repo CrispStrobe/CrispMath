@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../engine/notepad.dart';
+import '../localization/workflow_localizations.dart';
 import '../services/document_history.dart';
 
 class DocumentHistoryDialog extends StatefulWidget {
@@ -52,25 +53,24 @@ class _DocumentHistoryDialogState extends State<DocumentHistoryDialog> {
     final restore = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-              title: const Text('Compare checkpoint'),
+              title: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historyCompare)),
               content: SizedBox(
                   width: 520,
                   height:
                       (128 + changes.length * 30).clamp(160, 320).toDouble(),
                   child: ListView(children: [
-                    const Text('Changes since this checkpoint:'),
-                    if (changes.isEmpty) const Text('No source changes'),
+                    Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historyChanges)),
+                    if (changes.isEmpty) Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historyNoChanges)),
                     for (final change in changes) Text(change),
-                    const Text(
-                        'Restore saves a checkpoint of your current work first and recalculates results.'),
+                    Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historyRestoreNotice)),
                   ])),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancel')),
+                    child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.cancel))),
                 FilledButton(
                     onPressed: () => Navigator.pop(context, true),
-                    child: const Text('Restore checkpoint'))
+                    child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historyRestore)))
               ],
             ));
     if (restore != true || !mounted) return;
@@ -79,7 +79,7 @@ class _DocumentHistoryDialogState extends State<DocumentHistoryDialog> {
       _error = null;
     });
     try {
-      await _history.save(widget.currentDocument(), label: 'Before restore');
+      await _history.save(widget.currentDocument(), label: WorkflowLocalizations.of(context).text(WorkflowLabel.historyBeforeRestore));
       final doc = checkpoint.document..updatedAt = DateTime.now().toUtc();
       widget.onRestore(doc);
       if (mounted) Navigator.pop(context);
@@ -92,49 +92,38 @@ class _DocumentHistoryDialogState extends State<DocumentHistoryDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Document history'),
+        title: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetHistory)),
         content: SizedBox(
             width: 600,
             height:
                 (140 + (_entries?.length ?? 1) * 76).clamp(180, 400).toDouble(),
-            child: Column(children: [
-              const Text(
-                  'Up to 20 checkpoints per document, 100 in total, within 1 MB. Older checkpoints expire as the limit is reached.'),
+            child: ListView(children: [
+              Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historyLimits)),
               if (_error != null) Text(_error!),
-              Expanded(
-                  child: _entries == null
-                      ? (_error == null
-                          ? const Center(child: CircularProgressIndicator())
-                          : const SizedBox.shrink())
-                      : _entries!.isEmpty
-                          ? const Center(
-                              child: Text(
-                                  'No checkpoints yet. Save one to keep a version of this worksheet.'))
-                          : ListView.builder(
-                              itemCount: _entries!.length,
-                              itemBuilder: (context, index) {
-                                final entry = _entries![index];
-                                return ListTile(
-                                    title: Text(entry.label),
-                                    subtitle: Text(entry.createdAt
-                                        .toLocal()
-                                        .toString()
-                                        .split('.')
-                                        .first),
-                                    trailing: TextButton(
-                                        onPressed: _busy
-                                            ? null
-                                            : () => _compare(entry),
-                                        child: const Text('Compare')));
-                              })),
+              if (_entries == null && _error == null)
+                const Center(child: CircularProgressIndicator()),
+              if (_entries?.isEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historyEmpty)),
+                ),
+              for (final entry in _entries ?? <DocumentCheckpoint>[])
+                ListTile(
+                  title: Text(entry.label),
+                  subtitle: Text(entry.createdAt.toLocal().toString().split('.').first),
+                  trailing: TextButton(
+                    onPressed: _busy ? null : () => _compare(entry),
+                    child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historyCompareButton)),
+                  ),
+                ),
             ])),
         actions: [
           TextButton(
               onPressed: _busy ? null : () => Navigator.pop(context),
-              child: const Text('Close')),
+              child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.close))),
           FilledButton(
               onPressed: _busy ? null : _save,
-              child: const Text('Save checkpoint'))
+              child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.historySave)))
         ],
       );
 }

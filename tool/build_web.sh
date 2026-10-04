@@ -2,6 +2,7 @@
 set -euo pipefail
 # Run from the repository root. Flutter copies the compiled worker into the
 # web bundle alongside the launcher and WASM assets.
+python3 tool/stage_ocr_wasm_runtime.py
 dart compile js -O2 -Ddart.vm.product=true lib/services/math_worker_entry.dart -o web/math_worker.dart.js
 dart compile js -O2 -Ddart.vm.product=true lib/diagnostics/workflow_tasks_worker.dart -o web/workflow_tasks_worker.dart.js
 flutter build web "$@"

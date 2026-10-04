@@ -40,31 +40,7 @@ void main() {
     expect(integral.value, '1/3');
     state.addHistoryEntry('integrate(x^2,x,0,1)', integral.value,
         resultEvidence: integral.evidence);
-    final doc = NotepadDocument.fresh(name: 'Explore a function');
-    doc.lines.clear();
-    for (final source in [
-      '## Explore a function',
-      'a=3',
-      'f=a*sin(x)',
-      'integrate(x^2,x,0,1)'
-    ]) {
-      doc.lines.add(NotepadLine.fresh(source: source));
-    }
     final dispatcher = NotepadDispatcher(formatNumber: state.formatNumber);
-    await NotepadEvaluator(
-            dispatcher: dispatcher.evaluate,
-            detailedDispatcher: dispatcher.evaluateDetailed)
-        .evaluateAll(doc);
-    expect(doc.lines[1].cachedResult, '3');
-    expect(doc.lines[3].cachedResult, '1/3');
-    expect(doc.lines[3].cachedFreeVars, isEmpty,
-        reason: 'The definite integral binds x and returns a constant');
-    expect(doc.lines[2].cachedFreeVars, contains('x'),
-        reason: 'The linked sine function still depends on x');
-    expect(doc.lines.any((l) => l.cachedError != null), isFalse);
-    state.setNotepadDocument(doc);
-    state.setCurrentNotepadDoc(doc.id);
-    state.linkNotepadLine(doc.id, doc.lines[2].id);
     final galleryKey = GlobalKey();
     await tester.pumpWidget(RepaintBoundary(
         key: galleryKey, child: const CrispMathApp()));
@@ -101,6 +77,28 @@ void main() {
     await screenshot('calculator-exact-integral');
     await tester.tap(find.text('Notepad').first);
     await settle();
+    final preserved = Map<String, NotepadDocument>.from(state.notepadDocuments);
+    await tester.tap(find.byTooltip('Document menu'));
+    await settle();
+    await tester.ensureVisible(find.text('Explore a linked worksheet'));
+    await tester.tap(find.text('Explore a linked worksheet'));
+    for (var i = 0; i < 100; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      final current = state.notepadDocuments[state.currentNotepadDocId];
+      if (current?.lines.last.cachedResult == '19' &&
+          state.graphLinks.values.any((link) => link.documentId == current?.id)) {
+        break;
+      }
+    }
+    final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+    expect(doc.lines.map((line) => line.source), ['a=3', 'f(x)=x^2+a', 'f(4)']);
+    expect(doc.lines.last.cachedResult, '19');
+    expect(doc.lines.any((line) => line.cachedError != null), isFalse);
+    expect(state.graphLinks.values.any((link) => link.documentId == doc.id), isTrue);
+    for (final previous in preserved.entries) {
+      expect(state.notepadDocuments[previous.key], same(previous.value));
+    }
+    expect(find.text('View linked graph'), findsOneWidget);
     await screenshot('connected-worksheet');
     await tester.tap(find.text('Graphing').first);
     await settle();

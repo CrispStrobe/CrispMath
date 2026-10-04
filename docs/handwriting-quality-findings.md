@@ -326,3 +326,38 @@ HTTP 401 to anonymous access. No usable Hugging Face training credentials or
 Kaggle credentials were available during this session. No training was
 started, and no additional blind encoder ablation is warranted by the current
 evidence.
+
+## Validated runtime hotfix for the next app candidate
+
+The minimal normalization/ceil-pooling repair is published as
+[CrispEmbed 0.17.12](https://github.com/CrispStrobe/CrispEmbed/releases/tag/v0.17.12),
+at exact source `78493a31fc3043f3af4ab6fd2f197a32da6f07f0`. It starts from the
+retained 11e6d598 baseline, excluding unrelated newer-main changes. Seven CPU
+native archives and the OCR/embedding WASM packages were rebuilt; this specific
+hotfix release contains no CUDA/Vulkan assets. All 14 public asset SHA-256 digests
+match the actual tag-build provenance manifests, including primary loader names
+and symlink targets. No model or reference-probe payload is packaged.
+
+Final [runtime/reference run 37221078035](https://github.com/CrispStrobe/CrispEmbed/actions/runs/37221078035)
+used the normal public API on Linux and macOS. Both retain the same seven correct
+questions out of fifty, with 38 changed outputs and zero runtime failures. Logs
+confirm actual GGML encoding for all 100 baseline/corrected calls per platform,
+without scalar fallback. Printed recognition has ten correct results and three
+invalid expressions; this is not a claim of perfect recognition.
+
+The separate test-only exported-weight reference consumes all 270 FP32 tensors.
+All 45 encoder and 275 bounded decoder stage comparisons per arm agree: default
+maximum errors are 0.00198865 and 7.6294e-6; scalar maxima are 3.8147e-6 for both.
+All 16 synthetic pooling controls match exactly; normalization controls for
+D=256/384 have maximum error 3.1788e-7. These are bounded exported-weight tests,
+not original training-checkpoint or full-sequence accuracy parity.
+
+Published package manifests come from [native run 37222310628](https://github.com/CrispStrobe/CrispEmbed/actions/runs/37222310628)
+and [WASM run 37222310650](https://github.com/CrispStrobe/CrispEmbed/actions/runs/37222310650).
+Their SHA-256 values are respectively
+`28f92e668558c2dfa0c8e0f7e47dbe5929715fc1e69bbe9af87df37e7d37a52f`
+and `4c842768092059b3db9286e43a28e9e3fded3dce4333534a3609edd6c84aa6cd`.
+The next CrispMath candidate pins the source, plugin lock and actual published
+checksums together and uses build 23. App-level final validation and upload are
+still pending; uploaded build 22 contains the previous runtime. Recognition
+quality remains 7/50 and the candidate model remains unshipped.

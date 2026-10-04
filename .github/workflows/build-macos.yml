@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 11e6d598521976f38081934106b55095b46b40e3
+          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
           path: .ci/CrispEmbed
 
       - name: Set up Flutter
@@ -64,6 +64,20 @@ jobs:
         run: |
           unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
           flutter build macos --release
+
+      - name: Verify actual package version and app/plugin provenance
+        run: |
+          python -m unittest discover -s tool -p 'check_macos_package_metadata_test.py' -v
+          python tool/check_macos_package_metadata.py --app build/macos/Build/Products/Release/crisp_math.app --expected-source "$GITHUB_SHA" --output macos-package-metadata.json
+
+      - name: Preserve small actual package metadata
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-package-metadata
+          path: macos-package-metadata.json
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Verify SymEngine symbols are linked
         # Scan every Mach-O in the .app bundle. Different Flutter versions
@@ -306,6 +320,33 @@ jobs:
               CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round10-${area}.log" || status=1
             python tool/extract_workflow_report.py --log "task-results/macos-round10-${area}.log" --output "task-results/macos-round10-${area}.json" --expected-count 25 || status=1
           done
+          exit "$status"
+
+      - name: Run eleventh independent 50 problems against the packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          mkdir -p task-results
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          for area in algebra numeric; do
+            cat "test/fixtures/round11_${area}_tasks.json" | \
+              CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+              CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee "task-results/macos-round11-${area}.log" || status=1
+            python tool/extract_workflow_report.py --log "task-results/macos-round11-${area}.log" --output "task-results/macos-round11-${area}.json" --expected-count 25 || status=1
+          done
+          exit "$status"
+
+      - name: Run two independently frozen supplemental questions against packaged native app
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          BIN="build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math"
+          status=0
+          cat test/fixtures/round11_supplement_tasks.json | \
+            CRISPMATH_DIAGNOSTIC=workflows CRISPMATH_TASKS_FILE=- \
+            CRISPMATH_TASK_REPORT=- "$BIN" 2>&1 | tee task-results/macos-round11-supplement.log || status=1
+          python tool/extract_workflow_report.py --log task-results/macos-round11-supplement.log --output task-results/macos-round11-supplement.json --expected-count 2 || status=1
           exit "$status"
 
       - uses: actions/upload-artifact@v4

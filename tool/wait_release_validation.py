@@ -33,7 +33,7 @@ def production_path(path):
                 'test_driver'}:
         return False
     if root == 'tool':
-        return path in {'tool/stage_ocr_runtime.py',
+        return path in {'tool/stage_ocr_runtime.py', 'tool/stage_ocr_wasm_runtime.py',
                         'tool/ocr_runtime_checksums.json', 'tool/dependency_lock.json',
                         'tool/build_web.sh'}
     if '/' not in path and (path.lower().endswith('.md') or path in {

@@ -50,6 +50,10 @@ on:
         description: 'Run tenth-audit worksheet, statistics, constraints and calculator checks against an immutable validated bundle'
         type: boolean
         default: false
+      probe_round11_math:
+        description: 'Check all frozen eleventh questions with latest tools against an existing immutable app bundle'
+        type: boolean
+        default: false
       probe_round9_constraint_only:
         description: 'Diagnostic only: inspect real constraint result focus/DOM, without claiming full math coverage'
         type: boolean
@@ -78,7 +82,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 11e6d598521976f38081934106b55095b46b40e3
+          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
           path: .ci/CrispEmbed
       - uses: actions/setup-python@v5
         with:
@@ -98,6 +102,14 @@ jobs:
           flutter pub get
       - name: Analyze entire application
         run: flutter analyze --no-pub
+      - name: Guided worksheet and eleventh math focused regressions
+        run: >-
+          flutter test --no-pub --concurrency=2 --reporter expanded
+          test/guided_worksheet_test.dart test/round11_algebra_regressions_test.dart
+          test/round11_numeric_regressions_test.dart test/round11_statistics_ui_test.dart
+      - name: Eleventh independent comparison negative controls
+        if: ${{ !cancelled() }}
+        run: python -m unittest discover -s tool -p '*round11*_test.py'
       - name: Feature and optimization regression tests
         run: >-
           flutter test --concurrency=2 --reporter expanded
@@ -123,7 +135,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 11e6d598521976f38081934106b55095b46b40e3
+          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
           path: .ci/CrispEmbed
       - uses: actions/setup-python@v5
         with:
@@ -163,7 +175,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 11e6d598521976f38081934106b55095b46b40e3
+          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
           path: .ci/CrispEmbed
           submodules: recursive
       - uses: actions/setup-python@v5
@@ -210,13 +222,13 @@ jobs:
   browser:
     if: ${{ !inputs.probe_build_run_id && !inputs.checks_only }}
     runs-on: ${{ inputs.desktop_runner != 'auto' && inputs.desktop_runner || inputs.linux_runner || 'ubuntu-latest' }}
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 11e6d598521976f38081934106b55095b46b40e3
+          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
           path: .ci/CrispEmbed
       - uses: actions/setup-python@v5
         with:
@@ -250,6 +262,7 @@ jobs:
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+          python tool/check_ocr_wasm_runtime_browser.py --expected-source "$GITHUB_SHA" --output browser-results/ocr-runtime.json
           python tool/ai_contract_fixture.py > /tmp/crispmath-ai-fixture.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8769/requests > /dev/null
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
@@ -271,9 +284,19 @@ jobs:
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
           python tool/check_workflow_performance.py --report browser-results/workflow-performance.json
+      - name: Eleventh independent math and guided worksheet release UI
+        if: ${{ !cancelled() }}
+        run: |
+          status=0
+          python tool/check_round11_math_browser.py --expected-source "$GITHUB_SHA" --output browser-results/round11-math-ui || status=1
+          python tool/check_guided_worksheet_browser.py --output browser-results/guided-worksheet || status=1
+          exit "$status"
       - name: Debug build and framework assertion checks
+        id: debug_checks
+        if: ${{ !cancelled() }}
         run: |
           tool/build_web.sh --debug --no-wasm-dry-run
+          python tool/check_ocr_wasm_runtime_browser.py --expected-source "$GITHUB_SHA" --output browser-results/debug/ocr-runtime.json
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
           python tool/check_mobile_trace.py --screenshots browser-results/debug
           python tool/check_catalog_browser.py --screenshots browser-results/debug
@@ -289,6 +312,13 @@ jobs:
           python tool/check_handwriting_browser.py --output browser-results/debug/handwriting
           python tool/check_fresh_calculations_browser.py --output browser-results/debug/fresh-calculations
           python tool/check_new_math_browser.py --output browser-results/debug/new-math
+      - name: Eleventh independent math and guided worksheet debug UI
+        if: ${{ !cancelled() && steps.debug_checks.outcome == 'success' }}
+        run: |
+          status=0
+          python tool/check_round11_math_browser.py --expected-source "$GITHUB_SHA" --output browser-results/debug/round11-math-ui || status=1
+          python tool/check_guided_worksheet_browser.py --output browser-results/debug/guided-worksheet || status=1
+          exit "$status"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -351,7 +381,7 @@ jobs:
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
       - name: Probe actual batch UI
-        if: ${{ inputs.probe_math_scope != true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true }}
+        if: ${{ inputs.probe_math_scope != true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true && inputs.probe_round11_math != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           CLIP_LABELS: ${{ inputs.probe_clip_labels }}
@@ -377,18 +407,20 @@ jobs:
           python tool/wait_release_validation.py --run-id "$BUILD_RUN_ID" --package-sha "$GITHUB_SHA" --output browser-results/source-parity.json
           python -m unittest discover -s tool -p '*_test.py'
       - name: Probe actual independent-audit worksheet and statistics UI
-        if: ${{ inputs.probe_round7_math == true || inputs.probe_round8_math == true || inputs.probe_round9_math == true || inputs.probe_round10_math == true }}
+        if: ${{ inputs.probe_round7_math == true || inputs.probe_round8_math == true || inputs.probe_round9_math == true || inputs.probe_round10_math == true || inputs.probe_round11_math == true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
           PROBE_ROUND7: ${{ inputs.probe_round7_math }}
           PROBE_ROUND8: ${{ inputs.probe_round8_math }}
           PROBE_ROUND9: ${{ inputs.probe_round9_math }}
           PROBE_ROUND10: ${{ inputs.probe_round10_math }}
+          PROBE_ROUND11: ${{ inputs.probe_round11_math }}
           ROUND9_CONSTRAINT_ONLY: ${{ inputs.probe_round9_constraint_only }}
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
           python tool/check_deployed_bundle.py --url http://localhost:8766/ --source "$APP_SOURCE"
+          python -m unittest discover -s tool -p '*round11*_test.py'
           status=0
           if [ "$PROBE_ROUND7" = "true" ]; then
             python tool/check_round6_statistics_browser.py --expected-source "$APP_SOURCE" --output browser-results/round7-statistics || status=1
@@ -405,9 +437,13 @@ jobs:
           if [ "$PROBE_ROUND10" = "true" ]; then
             python tool/check_round10_math_browser.py --expected-source "$APP_SOURCE" --output browser-results/round10-math || status=1
           fi
+          if [ "$PROBE_ROUND11" = "true" ]; then
+            python tool/check_round11_math_browser.py --expected-source "$APP_SOURCE" --output browser-results/round11-math || status=1
+            python tool/check_guided_worksheet_browser.py --output browser-results/guided-worksheet || status=1
+          fi
           exit "$status"
       - name: Probe actual solve scope UI
-        if: ${{ inputs.probe_math_scope == true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true }}
+        if: ${{ inputs.probe_math_scope == true && inputs.probe_round7_math != true && inputs.probe_round8_math != true && inputs.probe_round9_math != true && inputs.probe_round10_math != true && inputs.probe_round11_math != true }}
         env:
           APP_SOURCE: ${{ steps.app-source.outputs.source }}
         run: |

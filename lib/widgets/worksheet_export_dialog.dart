@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../engine/worksheet_bundle.dart';
+import '../localization/workflow_localizations.dart';
 
 class WorksheetExportDialog extends StatefulWidget {
   final WorksheetBundle bundle;
@@ -35,7 +36,7 @@ class _WorksheetExportDialogState extends State<WorksheetExportDialog> {
           allowedExtensions: [format],
           bytes: bytes);
     } catch (error) {
-      if (mounted) setState(() => _error = 'Export failed: $error');
+      if (mounted) setState(() => _error = WorkflowLocalizations.of(context).text(WorkflowLabel.exportFailed, '$error'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -45,7 +46,8 @@ class _WorksheetExportDialogState extends State<WorksheetExportDialog> {
   Widget build(BuildContext context) {
     final bundle = widget.bundle;
     return AlertDialog(
-      title: const Text('Worksheet export preview'),
+      scrollable: true,
+      title: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetExport)),
       content: SizedBox(
           width: 720,
           height: 480,
@@ -61,8 +63,7 @@ class _WorksheetExportDialogState extends State<WorksheetExportDialog> {
                     style: Theme.of(context).textTheme.titleLarge);
               }
               if (index == 1) {
-                return const Text(
-                    'Snapshot of calculations and linked graphs. Graph x/y range: -5 to 5; table x range: -5 to 5.');
+                return Text(WorkflowLocalizations.of(context).text(WorkflowLabel.exportSnapshot));
               }
               index -= 2;
               if (index < bundle.warnings.length) {
@@ -88,7 +89,7 @@ class _WorksheetExportDialogState extends State<WorksheetExportDialog> {
                           width: double.infinity,
                           child: CustomPaint(painter: _GraphPainter(graph))),
                       for (final row in graph.values)
-                        Text('x = ${row.$1}, y = ${row.$2 ?? "Undefined"}'),
+                        Text('x = ${row.$1}, y = ${row.$2 ?? WorkflowLocalizations.of(context).text(WorkflowLabel.exportUndefined)}'),
                     ]);
               }
               return Text(_error!);
@@ -103,11 +104,11 @@ class _WorksheetExportDialogState extends State<WorksheetExportDialog> {
             children: [
               TextButton(
                   onPressed: _busy ? null : () => Navigator.pop(context),
-                  child: const Text('Close')),
+                  child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.close))),
               for (final format in ['html', 'md', 'tex', 'pdf'])
                 TextButton(
                     onPressed: _busy ? null : () => _save(format),
-                    child: Text('Save ${format.toUpperCase()}')),
+                    child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.exportSave, format.toUpperCase()))),
             ],
           ),
         ),

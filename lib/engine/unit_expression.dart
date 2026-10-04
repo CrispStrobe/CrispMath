@@ -334,10 +334,10 @@ class UnitExpressionEvaluator {
     // Derived-unit table.
     final derived = DerivedUnits.matchingBaseDim(dim);
     if (derived != null) {
-      return '${_formatNumber(derived.fromSi(siValue))} ${derived.symbol}';
+      return '${UnitConverter.formatNumber(derived.fromSi(siValue))} ${derived.symbol}';
     }
     // Base-unit string fallback.
-    return '${_formatNumber(siValue)} ${dim.toBaseUnitsString()}';
+    return '${UnitConverter.formatNumber(siValue)} ${dim.toBaseUnitsString()}';
   }
 
   static bool _hasNonZeroOffset(Unit? u) => u != null && u.offset != 0.0;
@@ -357,23 +357,6 @@ class UnitExpressionEvaluator {
     dimension: UnitDimension.angle,
     scale: 1.0,
   );
-
-  /// Display a double cleanly — drops trailing zeros, keeps integer
-  /// results as integers. Mirrors what `UnitConverter.format` does
-  /// internally, but we need it standalone for the derived-unit and
-  /// base-units paths since those bypass the curated formatter.
-  static String _formatNumber(double v) {
-    if (!v.isFinite) return v.toString();
-    if (v == v.roundToDouble() && v.abs() < 1e15) {
-      return v.toInt().toString();
-    }
-    var s = v.toStringAsFixed(6);
-    if (s.contains('.')) {
-      s = s.replaceAll(RegExp(r'0+$'), '');
-      if (s.endsWith('.')) s = s.substring(0, s.length - 1);
-    }
-    return s;
-  }
 
   // Catalog and prefix spellings are immutable; share the matcher order.
   static final List<String> _symbolsLongestFirst = (() {

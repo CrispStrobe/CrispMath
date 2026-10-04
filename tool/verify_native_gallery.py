@@ -16,6 +16,17 @@ SCENES = {
 }
 
 
+def verify_connected_worksheet(document):
+    """Validate the guide actually created through the native document menu."""
+    lines = document['l']
+    assert [line['s'] for line in lines] == ['a=3', 'f(x)=x^2+a', 'f(4)']
+    assert all(not line.get('e') for line in lines), 'Guide must evaluate without errors'
+    assert lines[0]['r'] == '3'
+    assert lines[1]['r'] == 'x^2+(3)', 'Function must preserve its independent variable'
+    assert lines[2]['r'] == '19', 'Function application must use the linked parameter'
+    assert lines[2]['evidence']['accuracy'] == 'exact'
+
+
 def main():
     root = Path(sys.argv[1])
     profiles = sys.argv[2:]
@@ -33,9 +44,8 @@ def main():
             assert evidence[key] is True, (profile, key)
         assert evidence['nativeDerivative'] == 'cos(x)'
         assert evidence['integral']['value'] == '1/3'
-        document = evidence['document']['l']
-        assert document[3].get('f', []) == [], 'Definite integral must bind x'
-        assert 'x' in document[2]['f'], 'Linked sine function must retain x'
+        assert evidence['integral']['evidence']['accuracy'] == 'exact'
+        verify_connected_worksheet(evidence['document'])
         if profile != 'macos':
             assert evidence['nativeWorkflowUrl'] is True
             assert evidence['nativeWorkflowUrlSupported'] is True

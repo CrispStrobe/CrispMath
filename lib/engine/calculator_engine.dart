@@ -13,6 +13,9 @@ import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 import 'matrix_evaluator.dart';
 import 'linear_system_solver.dart';
 import 'rational_equation_solver.dart';
+import 'elementary_equation_solver.dart';
+import 'improper_exponential_integral.dart';
+import 'multivariate_poly.dart';
 import 'inequality_solver.dart';
 import 'rational_integrator.dart';
 import 'rational_integral_domain.dart';
@@ -360,6 +363,16 @@ class CalculatorEngine {
     }
     final candidates = RationalEquationSolver.candidateEquation(expression, symbol)
         ?? expression;
+    final elementary = ElementaryEquationSolver.solve(expression, symbol);
+    final polynomial = elementary ?? SymbolicWeb.solveList(candidates, symbol);
+    if (polynomial != null) {
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.exact, ComputationMethod.symbolicEvaluation);
+      if (polynomial.isEmpty) return '$symbol = (no solutions)';
+      return polynomial.length == 1
+          ? '$symbol = ${polynomial.single}'
+          : '$symbol = {${polynomial.join(', ')}}';
+    }
     final bridge = _liveBridge;
     if (bridge == null) {
       // Web / native-less: solve linear & quadratic polynomials in pure
@@ -391,6 +404,8 @@ class CalculatorEngine {
   }
 
   String factor(String expression) {
+    final multivariate = MultivariateFactoring.factor(expression);
+    if (multivariate != null) return multivariate;
     // Native builds (bridge ≥ the FLINT-factor release) do COMPLETE
     // univariate-over-ℤ factorization via FLINT — it splits irreducible
     // quadratics (x⁴+4) and non-monic integer factors that the Dart
@@ -1594,6 +1609,14 @@ class CalculatorEngine {
     }
 
     // Definite integration.
+    final improper = ImproperExponentialIntegral.definite(
+        expression, variable, lower, upper);
+    if (improper != null) {
+      if (improper.startsWith('Error')) return improper;
+      lastResultEvidence = const ResultEvidence(
+          ResultAccuracy.exact, ComputationMethod.fundamentalTheorem);
+      return improper;
+    }
     // Endpoint subtraction is valid only across an interval without poles.
     // Cancel exact common factors first: removable holes may still have a
     // convergent improper integral, unlike a genuine rational pole.

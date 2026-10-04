@@ -14,11 +14,14 @@
 
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
+import 'package:crisp_math/localization/workflow_localizations.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/services/engine_service.dart';
 import 'package:crisp_math/widgets/boolean_chip.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,6 +63,173 @@ void main() {
   tearDown(() async {
     await EngineService.shutdownForTest();
   });
+
+  testWidgets('computed multi-digit result exposes its complete accessible value',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    await tester.enterText(find.byType(TextField).first, '2+37');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    final state = AppState();
+    final line = state.notepadDocuments[state.currentNotepadDocId]!.lines.first;
+    expect(line.cachedResult, '39');
+    final result = find.byKey(ValueKey('notepad-result:${line.id}'));
+    expect(result, findsOneWidget);
+    expect(tester.getSemantics(result).label, '39');
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  for (final configuration in [
+    (const Size(390, 844), 1.0),
+    (const Size(390, 844), 2.0),
+    (const Size(1280, 900), 1.0),
+  ]) {
+    testWidgets('long computed math scrolls completely at $configuration',
+        (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        String? copiedText;
+        final messenger = tester.binding.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedText = (call.arguments as Map)['text'] as String;
+          } else if (call.method == 'Clipboard.getData') {
+            return copiedText == null ? null : {'text': copiedText};
+          }
+          return null;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+        await _bootApp(tester, size: configuration.$1);
+        await _gotoNotepad(tester);
+        tester.binding.platformDispatcher.textScaleFactorTestValue = configuration.$2;
+        addTearDown(tester.binding.platformDispatcher.clearTextScaleFactorTestValue);
+        const value = 'x^6 + 6*x^5*y + 15*x^4*y^2 + 20*x^3*y^3 + '
+            '15*x^2*y^4 + 6*x*y^5 + y^6';
+        final state = AppState();
+        final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+        doc.lines.add(NotepadLine(id: 'long-result',
+            source: 'expand((x+y)^6)', cachedResult: value));
+        state.setNotepadDocument(doc);
+        await tester.pumpAndSettle();
+        final result = find.byKey(const ValueKey('notepad-result:long-result'));
+        final viewport = find.byKey(const ValueKey('notepad-result-scroll:long-result'));
+        final scroll = find.descendant(of: viewport, matching: find.byType(Scrollable));
+        expect(tester.takeException(), isNull);
+        expect(tester.getSemantics(result).label, value);
+        final position = tester.state<ScrollableState>(scroll).position;
+        expect(position.maxScrollExtent, greaterThan(0));
+        final bounds = tester.getRect(viewport);
+        expect(bounds.left, greaterThanOrEqualTo(0));
+        expect(bounds.right, lessThanOrEqualTo(configuration.$1.width));
+        await tester.drag(viewport,
+            Offset(-(position.maxScrollExtent + bounds.width), 0));
+        await tester.pumpAndSettle();
+        expect(position.pixels, position.maxScrollExtent);
+        expect(tester.getSemantics(result).label, value);
+        await tester.tap(viewport, buttons: 2);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final actions = find.byKey(const ValueKey('notepad-result-actions-scroll'));
+        expect(actions, findsOneWidget);
+        final lastAction = find.descendant(of: actions, matching: find.byType(ListTile)).last;
+        await tester.ensureVisible(lastAction);
+        await tester.pumpAndSettle();
+        final lastBounds = tester.getRect(lastAction);
+        expect(lastBounds.top, greaterThanOrEqualTo(0));
+        expect(lastBounds.bottom, lessThanOrEqualTo(configuration.$1.height));
+        await tester.ensureVisible(find.text('Copy result'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Copy result'));
+        await tester.pumpAndSettle();
+        expect(copiedText, value);
+        final clipboard = await tester.runAsync(
+            () => Clipboard.getData(Clipboard.kTextPlain));
+        expect(clipboard?.text, value);
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    }, timeout: const Timeout(Duration(seconds: 30)));
+  }
+
+  testWidgets('guided creation preserves existing source and cancels stale linking',
+      (tester) async {
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    final state = AppState();
+    final existing = state.notepadDocuments[state.currentNotepadDocId]!;
+    existing.lines.first.source = '// My existing work';
+    state.setNotepadDocument(existing);
+    await tester.pumpAndSettle();
+    final created = <String>[];
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Explore a linked worksheet'));
+      final id = state.currentNotepadDocId!;
+      created.add(id);
+      expect(id, isNot(existing.id));
+      expect(state.notepadDocuments[id]!.lines.map((line) => line.source),
+          ['a=3', 'f(x)=x^2+a', 'f(4)']);
+      // Switch before the creation continuation's real evaluation starts.
+      state.setCurrentNotepadDoc(existing.id);
+      await tester.pumpAndSettle();
+      expect(state.graphLinks.values.where((link) => link.documentId == id), isEmpty);
+    }
+    expect(created.toSet().length, 2);
+    expect(state.notepadDocuments[existing.id]!.lines.first.source, '// My existing work');
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final locale in ['en', 'de', 'fr', 'es']) {
+    testWidgets('worksheet actions wrap accessibly in $locale at phone text scale 2',
+        (tester) async {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      tester.binding.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.binding.platformDispatcher.clearTextScaleFactorTestValue);
+      final state = AppState();
+      state.setLocale(Locale(locale));
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      doc.lines.first.source = '// Existing source';
+      state.setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      final labels = WorkflowLocalizations(locale);
+      for (final label in [WorkflowLabel.worksheetHistory, WorkflowLabel.worksheetExport]) {
+        final button = find.widgetWithText(OutlinedButton, labels.text(label));
+        expect(button, findsOneWidget);
+        final bounds = tester.getRect(button);
+        expect(bounds.height, greaterThanOrEqualTo(48));
+        expect(bounds.left, greaterThanOrEqualTo(0));
+        expect(bounds.right, lessThanOrEqualTo(390));
+      }
+      await tester.tap(find.widgetWithText(OutlinedButton,
+          labels.text(WorkflowLabel.worksheetHistory)));
+      await tester.pumpAndSettle();
+      expect(find.text(labels.text(WorkflowLabel.historySave)), findsOneWidget);
+      expect(tester.takeException(), isNull,
+          reason: 'History instructions must scroll instead of overflowing');
+      await tester.tap(find.text(labels.text(WorkflowLabel.close)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(OutlinedButton,
+          labels.text(WorkflowLabel.worksheetExport)));
+      await tester.pumpAndSettle();
+      expect(find.text(labels.text(WorkflowLabel.exportSave, 'MD')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text(labels.text(WorkflowLabel.close)));
+      await tester.pumpAndSettle();
+      final context = tester.element(find.byType(AppBar).first);
+      await tester.tap(find.byTooltip(AppLocalizations.of(context).notepadDocumentMenu));
+      await tester.pumpAndSettle();
+      expect(find.text(labels.text(WorkflowLabel.exploreWorksheet)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   group('NotepadScreen — breakpoints', () {
     testWidgets('tab visible at narrow (bottom nav) breakpoint',

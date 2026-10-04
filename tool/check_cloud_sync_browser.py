@@ -123,6 +123,8 @@ async def notepad(page):
 
 
 async def worksheet_result(page, name, first, expected):
+    assert {'a=3': '19', 'a=5': '21', 'a=7': '23'}.get(first) == expected, \
+        'Unknown worksheet reference or mismatched expected value'
     await page.wait_for_function("""expected=>{
       const rawId=localStorage.getItem('flutter.crisp.currentNotepadDoc');
       if(!rawId)return false;
@@ -144,11 +146,17 @@ async def worksheet_result(page, name, first, expected):
         await real_click(page, field)
         await next_frames(page)
         await expect(field).to_have_value(source)
-    # Math.tex digits are separate semantic children merged with the row's
-    # drag control, e.g. 'Drag to reorder\n1\n9'. Anchor the entire rendered
-    # numeric sequence so adjacent or extra digits cannot pass.
-    digits = r'\s*'.join(re.escape(char) for char in expected)
-    result = page.get_by_label(re.compile(r'^Drag to reorder\s+' + digits + r'$'))
+    # Current results expose their complete value in a separate semantic node.
+    # The observed DOM uses text content; allow an exact aria-label only when
+    # that DOM representation exists. Scope to the third verified source row,
+    # and reject duplicate nodes instead of picking a convenient first match.
+    rows = page.get_by_label('Drag to reorder', exact=True)
+    await expect(rows).to_have_count(3)
+    row = rows.nth(2)
+    text_result = row.get_by_text(expected, exact=True)
+    label_result = row.get_by_label(expected, exact=True)
+    await expect(text_result.or_(label_result)).to_have_count(1)
+    result = text_result if await text_result.count() == 1 else label_result
     await expect(result).to_have_count(1)
     await expect(result).to_be_visible()
     box = await result.bounding_box()
@@ -156,6 +164,16 @@ async def worksheet_result(page, name, first, expected):
     assert box and box['width'] > 0 and box['height'] > 0
     assert 0 <= box['x'] and box['x'] + box['width'] <= viewport['width']
     assert 0 <= box['y'] and box['y'] + box['height'] <= viewport['height']
+    # Static text may pass pointer hits to its own draggable row. Accept that
+    # same row as the carrier, but reject an unrelated overlay or backdrop.
+    geometry = await result.evaluate("""el => {
+      const r=el.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;
+      const hit=document.elementFromPoint(x,y);
+      const row=el.closest('[aria-label="Drag to reorder"]');
+      return {unobscured:!!hit&&(hit===el||el.contains(hit)||
+        (!!row&&row.contains(el)&&row.contains(hit)))};
+    }""")
+    assert geometry['unobscured'], 'Computed result is covered by another surface'
     return await current_document(page)
 
 

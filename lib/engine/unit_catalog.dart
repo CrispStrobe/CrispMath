@@ -167,6 +167,30 @@ class DerivedUnit {
 
 class DerivedUnits {
   static const Map<String, DerivedUnit> _byName = {
+    'C': DerivedUnit(
+      symbol: 'C', name: 'coulomb',
+      dim: Dimensions(time: 1, current: 1), scale: 1.0,
+    ),
+    'F': DerivedUnit(
+      symbol: 'F', name: 'farad',
+      dim: Dimensions(length: -2, mass: -1, time: 4, current: 2), scale: 1.0,
+    ),
+    'H': DerivedUnit(
+      symbol: 'H', name: 'henry',
+      dim: Dimensions(length: 2, mass: 1, time: -2, current: -2), scale: 1.0,
+    ),
+    'Wb': DerivedUnit(
+      symbol: 'Wb', name: 'weber',
+      dim: Dimensions(length: 2, mass: 1, time: -2, current: -1), scale: 1.0,
+    ),
+    'T': DerivedUnit(
+      symbol: 'T', name: 'tesla',
+      dim: Dimensions(mass: 1, time: -2, current: -1), scale: 1.0,
+    ),
+    'eV': DerivedUnit(
+      symbol: 'eV', name: 'electronvolt',
+      dim: Dimensions(length: 2, mass: 1, time: -2), scale: 1.602176634e-19,
+    ),
     'A': DerivedUnit(
       symbol: 'A', name: 'ampere', dim: Dimensions(current: 1), scale: 1.0,
     ),

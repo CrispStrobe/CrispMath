@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 11e6d598521976f38081934106b55095b46b40e3
+          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
           path: .ci/CrispEmbed
 
       - name: Install Linux build deps
