@@ -16,5 +16,21 @@
     "crispembed-windows-x86_64.zip": "46a70c42eb1bfd079332e63ce41683fe48bf12d8dbba262de2a00ba87cbfff15",
     "crispembed_ocr.js": "e35942986fcac5b42ba5647c270a5793874b8de5006cbd2f313ab97799017ccc",
     "crispembed_ocr.wasm": "6d4c71246bd0bed8ea2769dc2e5a750928ebc990e3b69dca4e6e72d388a9c695"
+  },
+  "0.17.12": {
+    "crispembed-android-arm64-v8a.tar.gz": "a02ecbfc37906ba04bc6867dc7c7af753315ae0ad96d07ed62e102815ad21555",
+    "crispembed-android-armeabi-v7a.tar.gz": "fa233e95b8631dac5fe9f5d93f9ff18cf4feeaa4d6e70d888147ec36ee916c02",
+    "crispembed-embed-wasm.tar.gz": "bfd22d2d4ae7c05218c8cc14646aac9dc214951e5f1d4a971ea09ce345cc13ba",
+    "crispembed-ios-arm64.tar.gz": "a54fac7c4cf7042f8c81cf239d5c79a1845e115ac43608fa7a45cb303f5c07b8",
+    "crispembed-linux-arm64.tar.gz": "38cbaaa020cd17d4cd4f0b78003c79fba7a1051628b06b8e39734c39f15032bb",
+    "crispembed-linux-x86_64.tar.gz": "1e53efd8d78e6f6abeed252e3f715c5c34c8b97508922c5983285400c96e2b63",
+    "crispembed-macos-arm64.tar.gz": "6bdbf65587eac063ec6658d9e03345a63614cee680ea887ef51eaabcc72f7a56",
+    "crispembed-ocr-wasm.tar.gz": "acfb0dedc9abdfa0dc5eaa78ef38afc9e8a3870270a6b4a435b96328202648a2",
+    "crispembed-ocr.js": "f4d7a196227ba1650f1f5d5a22af2b0f5c70df70e035ef0504d9bb995cd96925",
+    "crispembed-windows-x86_64.zip": "49a1e4a89bf6f7d2df100794914f15aeb9a2b69513c3dbfb93364208994cc717",
+    "crispembed_ocr.js": "e35942986fcac5b42ba5647c270a5793874b8de5006cbd2f313ab97799017ccc",
+    "crispembed_ocr.wasm": "e6965be85330280175e57055e7d688cb9e2ea7decacd6f7a157e5048a4e0f577",
+    "runtime-artifact-manifest.json": "28f92e668558c2dfa0c8e0f7e47dbe5929715fc1e69bbe9af87df37e7d37a52f",
+    "wasm-release-artifact-manifest.json": "4c842768092059b3db9286e43a28e9e3fded3dce4333534a3609edd6c84aa6cd"
   }
 }

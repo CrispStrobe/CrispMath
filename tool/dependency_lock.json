@@ -1,8 +1,8 @@
 {
   "flutter": "3.44.0",
   "crispembed": {
-    "revision": "11e6d598521976f38081934106b55095b46b40e3",
-    "version": "0.17.11"
+    "revision": "78493a31fc3043f3af4ab6fd2f197a32da6f07f0",
+    "version": "0.17.12"
   },
   "symbolic_math_bridge": {
     "revision": "e75dbbe916c238e6a109ba85aac227fe9bbe34b7"
