@@ -11,6 +11,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // This separate live suite injects a real transport without changing globals.
 class _LiveHttpOverrides extends HttpOverrides {}
 
+bool _anonymousPolicyDenial(PostgrestException error) {
+  const message = 'permission denied for table user_sync_data';
+  if (error.code == '42501') return error.message == message;
+  if (error.code != '401') return false;
+  // maybeSingle's error parsing can retain the SQL denial inside
+  // the HTTP 401 body. Require that exact database denial, not any HTTP error.
+  try {
+    final body = jsonDecode(error.message);
+    return body is Map && body['code'] == '42501' && body['message'] == message;
+  } catch (_) {
+    return false;
+  }
+}
+
 /// A real, disposable Auth/PostgREST/PostgreSQL stack is required. Never run
 /// this fixture-administration test against a user's configured project.
 void main() {
@@ -203,6 +217,10 @@ void main() {
   });
 
   liveTest('real JWT row policies isolate owners and reject anonymous access', () async {
+    expect(_anonymousPolicyDenial(const PostgrestException(
+        message: 'invalid credentials', code: '401')), isFalse);
+    expect(_anonymousPolicyDenial(const PostgrestException(
+        message: 'unavailable backend', code: '503')), isFalse);
     final owner = await signIn(await account());
     final stranger = await signIn(await account());
     final ownerId = owner.auth.currentUser!.id;
@@ -218,7 +236,8 @@ void main() {
         throwsStateError);
     await expectLater(
         store(client(), userId: ownerId).read(),
-        throwsA(isA<PostgrestException>().having((e) => e.code, 'code', '42501')));
+        throwsA(isA<PostgrestException>().having(
+            _anonymousPolicyDenial, 'verified anonymous SQL denial', isTrue)));
     expect((await store(owner).read())!.revision, 0);
     expect((await store(owner).read())!.backup.documents.single.name,
         'Private worksheet');
@@ -236,6 +255,7 @@ void main() {
     await restarted.auth.signOut();
     expect(restarted.auth.currentUser, isNull);
     await expectLater(store(restarted, userId: userId).read(),
-        throwsA(isA<PostgrestException>().having((e) => e.code, 'code', '42501')));
+        throwsA(isA<PostgrestException>().having(
+            _anonymousPolicyDenial, 'verified anonymous SQL denial', isTrue)));
   });
 }

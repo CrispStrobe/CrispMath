@@ -10,6 +10,7 @@ on:
       - 'native_test/handwriting_quality_test.dart'
       - 'tool/provision_handwriting_quality.py'
       - 'tool/compare_handwriting_encoders*.py'
+      - 'tool/audit_handwriting_vocabulary*.py'
       - '.github/workflows/handwriting-quality.yml'
   workflow_dispatch:
     inputs:
@@ -54,7 +55,9 @@ jobs:
       - name: Provision fixed test drawings
         run: |
           python3 -m pip install -r tool/inference-requirements.txt
+          python3 -m pip install 'gguf==0.19.0'
           python3 -m unittest discover -s tool -p 'compare_handwriting_encoders_test.py'
+          python3 -m unittest discover -s tool -p 'audit_handwriting_vocabulary_test.py'
           python3 tool/provision_handwriting_quality.py
       - name: Download pinned benchmark weights
         run: |
@@ -64,6 +67,12 @@ jobs:
           echo '450211ad27ce19e2f30651e69fdc77ea76a13b66e29e045858286024864bf4a4  .ci/posformer-q8.gguf' | sha256sum --check
           echo '2482a774f239c4a8a8552e50b369a15f4dd87aec10c2787ccdfa1678985c5537  .ci/bttr-q8.gguf' | sha256sum --check
           echo '565bc4e4250213871fc01d0683fe8457a8bf9b187b96b6999e05f28615b8f6d7  .ci/hmer-q8.gguf' | sha256sum --check
+      - name: Audit actual pinned tokenizer against frozen references
+        run: |
+          python3 tool/audit_handwriting_vocabulary.py \
+            --model .ci/posformer-q8.gguf \
+            --manifest .dart_tool/inference/handwriting-corpus/manifest.json \
+            --output .dart_tool/inference/handwriting-vocabulary.json
       - name: Measure each model on identical human test samples
         run: |
           unset POSFORMER_SCALAR_ENCODER
