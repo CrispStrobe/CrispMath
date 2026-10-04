@@ -5,6 +5,25 @@ Completed items with details are in `HISTORY.md`.
 
 ---
 
+## Cloud feedback and handwriting diagnostics
+
+- [x] Add accessible inline cloud feedback, narrow-screen scrolling/wrapping,
+  safe errors and Close during requests; separate network progress from review.
+- [x] Pass nine real-SDK widget groups and actual desktop/phone cloud GUI on a
+  disposable Auth/PostgREST/PostgreSQL backend, with verified cleanup.
+- [x] Pass all nine release-source workflows, 5,744 unit/widget tests (eight
+  skips), 500 focused tests, 125 tooling controls and clean analysis.
+- [x] Refresh 737-case Linux/WASM/Mac audits, both deployments and 33 native
+  captures; visually review four populated graph/notepad views.
+- [x] Upload signed 1.2.0 (22); verify VALID, APPROVED and Public Beta
+  IN_BETA_TESTING without an App Review submission.
+- [x] Measure expanded handwriting vocabulary and controlled decoder input
+  normalization repair without changing production models or bridge.
+- [ ] Establish full encoder/decoder reference parity and suitable trained,
+  licensed weights: recognition remains 7/50 original and 0/50 candidate.
+- [ ] Physical iPhone/iPad checks, configured two-device cloud deployment and
+  resolution of Apple's App Review 4.3(a) finding remain pending.
+
 ## Tenth independent mathematical audit
 
 - [x] Freeze fifty fresh independent references at dfc778b before app outputs.
@@ -228,15 +247,21 @@ Physical iPhone/iPad testing is deferred to a separate session.
    revision conflict checks and database owner isolation are implemented/tested;
    hosted disposable Auth/PostgREST checks now pass five real SDK scenarios,
    including competing sessions and sign-out. The same hosted workflow adds
-   actual two-context GUI coverage; see `docs/workspace-backups.md`.
+   actual two-context GUI coverage, wrong-password recovery, accessible inline
+   feedback and both Close actions. Nine real-SDK widget groups verify error,
+   signup, cancellation and pending-request behavior; see `docs/workspace-backups.md`.
    A real Supabase project and two-device account round trip await credentials.
 6. [~] Handwriting: visible ink/dots, provider selection, consent and editable
    review pass unit/live checks. The real 50-human-sample benchmark gives only
    7/50 exact PosFormer transcriptions, 0/50 for BTTR/HMER.
    Actual pinned vocabulary cannot emit 27/50 frozen reference strings;
    paired encoders retain the same seven matches with 22 differing outputs.
-   See `docs/handwriting-quality-findings.md` for proof and limits. Better trained
-   weights/GPU work remains pending; reliable recognition is not established.
+   An expanded-vocabulary candidate can represent 49/50 references but scores
+   0/50. A controlled native decoder input-normalization repair passes numerical
+   controls while recognition stays 7/50 and 0/50 respectively. Neither candidate
+   nor diagnostic bridge is promoted. See `docs/handwriting-quality-findings.md`.
+   Full encoder/decoder reference parity, matching checkpoints and better trained
+   weights/GPU work remain pending; reliable recognition is not established.
 7. [x] Fresh independent 50-problem audit: close exact-integer, matrix,
    rational-domain, Student-t, CSP/web and older-Apple linear-system gaps.
    Both original and fresh corpora pass 50/50 on Linux, packaged macOS and

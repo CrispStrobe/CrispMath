@@ -8,31 +8,32 @@ approval does not resolve that rejection.
 
 ## Current build and evidence
 
-Version **1.2.0 (21)** is available through the
+Version **1.2.0 (22)** is available through the
 [public TestFlight beta](https://testflight.apple.com/join/E6HdVhTx).
-[Signed upload CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37185726215)
+[Signed upload CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37206068397)
 checks the signed photo-library/camera purpose strings, version/build and
 production-source parity before upload. This replaces the build 12 delivery
 that was rejected for ITMS-90683.
-[External beta verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37186277329)
+[External beta verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37206599650)
 records Apple processing **VALID**, beta review **APPROVED**, both audiences
 **IN_BETA_TESTING**, and assignment to **Public Beta**. The build ID is
-`971c1bb2-df76-4993-b841-03c6dce32a6e`; Apple's `submittedDate` is null.
+`6ece5e52-41bd-4601-bbe2-c3b9736efbe2`; Apple's `submittedDate` is null.
 No App Review submission occurred.
 
-The validated documentation revision is
-`438c3e516b0ddc32c589b8d12ae2a62d2e9216da`; the uploaded source is
-`ca7b6c7ee205c7c73da2a4a783cba1e9b2977c5e`. Their 368 production files are
-identical, with production-tree SHA256
-`ab85cee47aeb75df7fd041e6316ad32660dba610e5077f057c8b7518527dacfe`.
-The native gallery source below has the same production fingerprint.
+The release source is `d4739be9eb26f8bbb8963ca9547df35e6e1480dd`.
+Its 368 production files are identical to gallery/math source
+`6eff9fb6fa609144fad2844e8e245d430978d3f9` and deployed Pages/Vercel source
+`b84af1f36310622ebdb813e11e07068665ba8502`, with production-tree SHA256
+`98edb1c4f9ca1064ca37e299b203425398db54622ad9e5d159159933b584d79c`.
+Subsequent documentation edits do not change this production tree.
 
 | Evidence | Verified result |
 | --- | --- |
-| [Final-source feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/37186428965) | Full feature, browser, native OCR and gallery jobs pass; all required platform checks are green on `438c3e5` |
-| [Linux/WASM math audit](https://github.com/CrispStrobe/CrispMath/actions/runs/37184040061) / [packaged macOS](https://github.com/CrispStrobe/CrispMath/actions/runs/37184042305) | 737 accumulated cases pass on each platform |
-| [Pages](https://github.com/CrispStrobe/CrispMath/actions/runs/37184585963) / [Vercel](https://github.com/CrispStrobe/CrispMath/actions/runs/37184586065) | Each published site passes 737 runtime cases and actual Playwright checks: 420 worksheet entries, 26 edits, 18 statistics, six constraint solves and two calculator linear-system/reload checks |
-| Full hosted test suite | 5,735 unit/widget tests pass, eight documented skips; 491 focused and 104 tooling tests pass; analysis reports zero issues |
+| [Release-source feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/37205254896) | Full feature, release/debug browser, native OCR and gallery jobs pass; all nine required workflow gates are green on `d4739be` |
+| [Linux/WASM math audit](https://github.com/CrispStrobe/CrispMath/actions/runs/37202543185) / [packaged macOS](https://github.com/CrispStrobe/CrispMath/actions/runs/37202546133) | 737 accumulated cases pass on each platform |
+| [Pages](https://github.com/CrispStrobe/CrispMath/actions/runs/37204455016) / [Vercel](https://github.com/CrispStrobe/CrispMath/actions/runs/37204456455) | Each published site passes 737 runtime cases and actual Playwright checks: 420 worksheet entries, 26 edits, 18 statistics, six constraint solves and two calculator linear-system/reload checks |
+| [Cloud contract and GUI](https://github.com/CrispStrobe/CrispMath/actions/runs/37205254939) | Five real SDK scenarios and desktop/phone GUI pass with wrong-password recovery, inline feedback, conflict preservation, both Close actions and verified cleanup; no application state injection |
+| Full hosted test suite | 5,744 unit/widget tests pass, eight documented skips; 500 focused and 125 tooling tests pass; analysis reports zero issues; nine new real-SDK widget groups cover cloud-dialog behavior |
 
 See [the tenth audit](round10-math-audit-50.md) for frozen independent references,
 production fixes and evidence limits. Earlier release history remains in
@@ -82,8 +83,8 @@ Siri invocation itself has not been physically tested.
 
 ## Screenshot selection
 
-[Native gallery CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37178578571)
-passes at source `da75490b48bf1a9548e68fafce45e8c5769e749c`, with the identical
+[Native gallery CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37202560511)
+passes at source `6eff9fb6fa609144fad2844e8e245d430978d3f9`, with the identical
 production fingerprint above. It retains **33 populated captures**:
 
 | Profile | Captures | Dimensions |
@@ -147,6 +148,11 @@ are unrelated.
   BTTR/HMER. Do not advertise reliable recognition or show an unverified
   recognition success. Local model weights are optional downloads; cloud
   recognition requires explicit confirmation and a configured provider.
+  An expanded-vocabulary candidate scores 0/50 despite 49/50 representable
+  references. A controlled decoder normalization repair passes numerical controls
+  but leaves the original/candidate exact scores unchanged. Full model/reference
+  parity and suitable trained weights remain open; production weights and the
+  bridge pin are unchanged. See [handwriting findings](handwriting-quality-findings.md).
   Dataset/weight licenses remain separate from application code, and benchmark
   weights are not shipped as app assets.
 - The original guideline 4.3(a) App Review finding remains open. No new App

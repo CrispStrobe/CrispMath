@@ -1,3 +1,47 @@
+## 2026-10-04 — Accessible cloud feedback and controlled handwriting diagnostics
+
+Cloud setup, authentication and transfers report safe outcomes inside the dialog
+through a live region. Actions wrap/scroll on narrow screens and Close remains
+available during requests. Confirmation and backup review no longer show network
+progress. Sign-out distinguishes a removed local session from failed server
+confirmation. Nine widget groups use real SDK clients, including pending close,
+large-text/keyboard layout, invalid configuration and real PKCE signup confirmation.
+
+Canonical `d4739be` passes all nine required hosted workflows: 5,744 unit/widget
+passes (eight skips), 500 focused tests, 125 tooling controls and clean analysis.
+Real disposable Auth/PostgREST/PostgreSQL passes five SDK scenarios and desktop/
+phone GUI checks: wrong-password recovery, inline feedback, uploads, conflict
+preservation, recalculation, reload, sign-out, both Close actions and cleanup.
+The HTTP fixture preserves real request metadata; SDK worker setup/disposal runs
+outside widget fake time. Browser checks scope actual routes and wait for route
+closure rather than the disappearance of a replaced action.
+
+Fresh Linux/WASM and packaged macOS checks pass all 737 accumulated problems.
+Pages and Vercel each pass 737 runtime cases, 420 worksheet entries, 26 edits,
+18 statistics checks, six constraints and two calculator/reload checks. Native
+Apple gallery CI retains 33 populated captures, with four graph/notepad images
+visually reviewed. Gallery source `6eff9fb`, deployed source `b84af1f` and release
+source `d4739be` share all 368 production files, SHA256
+`98edb1c4f9ca1064ca37e299b203425398db54622ad9e5d159159933b584d79c`.
+Frozen independent mathematical references remain unchanged.
+
+[Signed release 37206068397](https://github.com/CrispStrobe/CrispMath/actions/runs/37206068397)
+uploads 1.2.0 (22) after signature, purpose-string and live source-parity gates.
+[External verification 37206599650](https://github.com/CrispStrobe/CrispMath/actions/runs/37206599650)
+confirms VALID, APPROVED and Public Beta IN_BETA_TESTING. No App Review submission
+occurs. See [review evidence](docs/apple-review-evidence.md).
+
+The expanded PosFormer vocabulary represents 49/50 references, but its candidate
+scores 0/50. Diagnose a missing learned decoder input normalization and verify
+its isolated repair against independent numerical controls at both actual model
+dimensions. Paired exact recognition stays 7/50 for original weights and 0/50 for
+the candidate. Production weights and bridge remain unchanged; full model parity,
+matching training checkpoints and suitable licensed weights remain unresolved.
+See [measured findings](docs/handwriting-quality-findings.md). Physical-device
+checks, configured two-device cloud deployment and Apple's 4.3(a) finding also
+remain pending. All costly work runs on hosted CI; only selected small reports
+and four native images are downloaded to CIFS.
+
 ## 2026-10-04 — Tenth independent audit, exact systems and logarithmic integrals
 
 Freeze fifty independent references at dfc778b before observing app outputs.

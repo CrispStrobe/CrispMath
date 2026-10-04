@@ -53,7 +53,7 @@ so stale writes fail even when device timestamps are identical.
 
 No deployed project credentials were supplied for this work. Besides SDK HTTP
 fixtures and PostgreSQL policy tests, the
-[hosted live contract](https://github.com/CrispStrobe/CrispMath/actions/runs/37197856171)
+[hosted live contract](https://github.com/CrispStrobe/CrispMath/actions/runs/37205254939)
 starts a disposable Supabase 2.119.0 stack with real Auth, PostgREST and PostgreSQL.
 Five production-store checks pass: independent authenticated sessions, source
 round trips and secret filtering, racing first uploads, racing revision updates,
@@ -62,9 +62,11 @@ owner/anonymous isolation, and refresh/sign-out. Fixture cleanup is also verifie
 The [same workflow](../.github/workflows/sync-backend-contract.yml) additionally
 builds a test app with the runner's loopback URL and public key. Its
 [Playwright flow](../tool/check_cloud_sync_browser.py) uses independent desktop
-and phone browser contexts for GUI sign-in, Push confirmation, Pull preview,
+and phone browser contexts for wrong-password recovery, accessible inline
+feedback, GUI sign-in, Push confirmation, Pull preview,
 worksheet import/recalculation, conflicting source preservation, reload and
-sign-out. It does not inject workspace or session state. Admin access is used
+sign-out and both dialog Close actions. Cleanup and zero uncaught browser
+errors are verified. It does not inject workspace or session state. Admin access is used
 only to create/delete the throwaway test account; keys and sessions are excluded
 from reports. The test build is not a deployed production backend or a physical
 device check. A configured user project and physical iPhone/iPad round trip
