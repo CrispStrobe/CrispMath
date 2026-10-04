@@ -29,13 +29,21 @@ on:
         description: 'Compare diagnostic-only post-position normalization repair on both unchanged models'
         type: boolean
         default: false
+      reference_parity:
+        description: 'Run bounded independent exported-FP32 reference comparison instead of baseline quality batch'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
   group: handwriting-quality-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  reference:
+    if: inputs.reference_parity == true
+    uses: ./.github/workflows/handwriting-reference-parity.yml
   measured:
+    if: inputs.reference_parity != true
     runs-on: ubuntu-latest
     timeout-minutes: 75
     steps:
