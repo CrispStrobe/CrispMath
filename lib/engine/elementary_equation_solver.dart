@@ -13,6 +13,34 @@ class ElementaryEquationSolver {
       return null;
     }
     final sides = source.split('=');
+    if (sides.length == 1) {
+      // Worksheet/calculator binders preserve their existing zero-form
+      // contract. Reconstruct the two exact sides before applying the same
+      // domain and monotonicity proof; never use numerical root guesses.
+      try {
+        final zeroForm = SymParser(source).parse().simplify();
+        if (zeroForm is! SymAdd || zeroForm.terms.length != 2) {
+          return null;
+        }
+        for (var i = 0; i < 2; i++) {
+          final left = zeroForm.terms[i];
+          final right = SymMul([
+            SymNum.fromInt(-1),
+            zeroForm.terms[1 - i],
+          ]).simplify();
+          final roots = solve(
+            '${renderSymExpr(left)}=${renderSymExpr(right)}',
+            variable,
+          );
+          if (roots != null) {
+            return roots;
+          }
+        }
+      } catch (_) {
+        return null;
+      }
+      return null;
+    }
     if (sides.length != 2 || sides.any((side) => side.trim().isEmpty)) {
       return null;
     }

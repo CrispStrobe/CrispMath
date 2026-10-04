@@ -4,6 +4,8 @@ import 'package:crisp_math/engine/improper_exponential_integral.dart';
 import 'package:crisp_math/engine/multivariate_poly.dart';
 import 'package:crisp_math/engine/result_evidence.dart';
 import 'package:crisp_math/diagnostics/workflow_tasks.dart';
+import 'package:crisp_math/services/engine_dispatch.dart';
+import 'package:crisp_math/services/notepad_dispatcher.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class FactorEchoEngine extends CalculatorEngine {
@@ -18,6 +20,25 @@ class FactorEchoEngine extends CalculatorEngine {
 }
 
 void main() {
+  test('actual worksheet equality binder retains certified elementary proofs', () async {
+    final engine = CalculatorEngine();
+    final dispatcher = NotepadDispatcher(
+      formatNumber: (value) => value,
+      runDetailedOperation: (op) async => runEngineOpDetailed(engine, op),
+    );
+    for (final entry in {
+      'solve(2^(x+1)=32,x)': 'x = 4',
+      'solve(log(x-2)=log(7-x),x)': 'x = 9/2',
+      'solve(log(x)=log(-x),x)': 'x = (no solutions)',
+    }.entries) {
+      final result = await dispatcher.evaluateDetailed(entry.key);
+      expect(result.value, entry.value, reason: entry.key);
+      expect(result.evidence?.accuracy, ResultAccuracy.exact);
+    }
+    expect(ElementaryEquationSolver.solve('(2^x)-(3)', 'x'), isNull);
+    expect(ElementaryEquationSolver.solve('(log(x*x))-(log(4))', 'x'), isNull);
+    expect(ElementaryEquationSolver.solve('2^x+3^x-32', 'x'), isNull);
+  });
   test('explicit polynomial equality uses both sides on every platform', () {
     final engine = CalculatorEngine();
     expect(
