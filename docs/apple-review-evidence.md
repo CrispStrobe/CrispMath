@@ -98,25 +98,27 @@ Siri invocation itself has not been physically tested.
 
 ## Screenshot selection
 
-[Final native gallery CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37230024733)
-passes at source `18092e4a75d1de62601793358c6687e2b9a48eea`. The only changes
-from validated production source e8920a3 are two native capture helper/test files.
+[Fresh native gallery CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37239843806)
+passes at source `20dafd33b80ef8f0cd6f8811164e6d84eefd904e`. The application
+change from build23 is confined to the DEBUG-only Mac capture-window size;
+release window behavior is unchanged. The stricter verifier rejects unsupported
+Mac dimensions.
 It retains **33 populated captures**:
 
 | Profile | Captures | Dimensions |
 | --- | ---: | --- |
 | iPhone 15 Pro Max simulator | 11 | 1290 × 2796 |
 | iPad Pro 13-inch (M4) simulator | 11 | 2048 × 2732 |
-| Native macOS application render tree, at 2× | 11 | 2560 × 1800 |
+| Native macOS application render tree, at 2× | 11 | 2560 × 1600 |
 
-All 33 captures pass hosted content/image verification. Twelve selected views
-are visually reviewed: connected worksheet, traced graph, checkpoint history
-and graph export preview for each profile. The latest iOS originals are from
-18092e4; the selected macOS images are reused from e8920a3 with exact production
-parity and the refreshed macOS manifest independently verified. See
+All 33 fresh captures pass hosted content/image verification. Four new Mac
+worksheet/trace/history/export scenes are visually reviewed. The earlier twelve-
+view selection retains its original eight iOS views from 18092e4 and four Mac
+views from e8920a3; those images are not relabeled as the new capture source.
+Use the new 2560×1600 originals for Mac upload preparation. See
 [the selection and provenance](native-apple-gallery.md).
-Both fresh owned iOS simulators connect and pass on their first attempt; no
-recovery retry is used. This is simulator evidence, not physical-device proof.
+Both fresh owned iOS simulators pass on their first attempt without recovery.
+This is simulator evidence, not physical-device proof.
 
 The guided worksheet shows a=3, f(x)=x²+a and f(4)=19. Graphs contain cos(x),
 x²−2 and the worksheet-linked x²+3. Export previews retain the evaluated
@@ -133,7 +135,7 @@ physical iPhone/iPad behavior.
 Apple's [accurate-metadata guidance, including 2.3.3](https://developer.apple.com/app-store/review/guidelines/#accurate-metadata)
 requires screenshots to represent the app in use. The captured iPhone/iPad
 sizes are listed in [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/).
-The current 2560×1800 macOS internal images do not match the listed Mac sizes.
+The older 2560×1800 macOS internal images do not match the listed Mac sizes.
 A fresh debug-only native recapture now passes all eleven Mac renders at
 2560×1600; four selected views are visually reviewed without new clipping.
 [Capture CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37239843806)
