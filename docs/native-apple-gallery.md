@@ -35,18 +35,17 @@ Their dimensions match Apple's listed 2560×1600 Mac size. They have not been
 uploaded to App Store Connect, so no successful upload claim is made.
 iPhone/iPad use simulators; physical tests remain for another session.
 
-Complete capture sets and source-tagged manifests remain in remote CI artifacts.
-Only small JSON and selected PNG members are retained on CIFS:
+Complete capture sets and source-tagged manifests are in the public workflow's
+native-apple-screenshot-gallery and native-macos-screenshot-gallery artifacts.
+The new Mac artifact contains eleven 2560×1600 images at 20dafd3. Four selected
+PNG originals and JSON were fetched for review, with source/dimension/hash records;
+no app bundle/model download or local build/capture batch was used. Host archive
+locations remain in private operator notes. Retrieve only needed members from
+[the exact capture run](https://github.com/CrispStrobe/CrispMath/actions/runs/37239843806).
 
-- New Mac selection: `/mnt/storage/CrispMath-round11-guided/native-20dafd3/verified-macos-selection.json`
-- New Mac originals: `/mnt/storage/CrispMath-round11-guided/native-20dafd3/macos/macos/`
-- Previous twelve-view selection: `/mnt/storage/CrispMath-round11-guided/native-18092e4/verified-gallery-selection.json`
-
-The new Mac selection records exact paths, dimensions, source and SHA-256
-hashes; four PNGs and two JSON files cost 616,778 bounded artifact bytes.
-No bundle/model download or local build/capture batch was used. The previous
-iOS/Mac selections retain their original sources; they are not relabeled as
-new captures.
+The previous [twelve-view selection run](https://github.com/CrispStrobe/CrispMath/actions/runs/37230024733)
+retains original 18092e4 iOS and e8920a3 Mac provenance. Those images are not relabeled
+as new captures; Mac store preparation uses the fresh 2560×1600 originals.
 
 ## Selected sequence for each profile
 
@@ -63,9 +62,10 @@ export row. The ink scene is excluded from the proposed store sequence: it
 shows editable strokes and no configured recognition model. These captures have
 not been uploaded as App Store screenshots.
 
-Earlier fully reviewed build-22 captures and selection records remain at
-`/mnt/storage/CrispMath-stage19-ci/native-gallery/`. Their linked sine worksheet
-and sources are historical evidence, not the current guided workflow.
+Earlier fully reviewed build-22 captures remain in
+[their original CI run](https://github.com/CrispStrobe/CrispMath/actions/runs/37202560511).
+Their linked sine worksheet and sources are historical evidence, not the current
+guided workflow. Artifact retention may expire; do not promise permanent downloads.
 
 ## Phone graph controls
 

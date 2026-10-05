@@ -1,3 +1,23 @@
+## 2026-10-05 — Public state and actionable lane handoff
+
+All post-merge checks at4f45017 are green, including full Feature validation,
+CI/CD, platform builds and Pages. Public Pages reports4f45017; Vercel remains
+at637b07e. TestFlight build23 remains VALID/APPROVED and externally available.
+The DEBUG-only screenshot-window change does not require another Apple binary.
+
+Publish a shared public handoff for CrispMath and CrispEmbed with twelve bounded
+lanes, starting actions, real source/workflow links, dependencies and completion
+criteria. Record the vendor macOS arm64 Python-wheel failure separately from its
+successful native/WASM release. Keep the frozen789-case audit and handwriting
+7/50 baseline distinct from proposed work. Device testing/App Review, original
+checkpoint parity, suitable weights and optional cloud remain open.
+
+Move host-specific Markdown references to private operator notes outside both
+repositories. Carry only Markdown changes; no code, release tag, dependency pin,
+model or App Store metadata is changed by this handoff update.
+
+[Read the current state and next steps](https://github.com/CrispStrobe/CrispMath/blob/main/docs/current-state-and-next-steps.md).
+
 ## 2026-10-04 — Build-23 review evidence and native Mac upload dimensions
 
 Refresh the App Review draft for approved build 23 and its guided worksheet,
@@ -1022,9 +1042,9 @@ calculator or created in the Functions dialog.
 - 14 new unit tests + a native integration test (dist(3,4)→5,
   add(dist(3,4),10)→15 through real SymEngine). Full suite green.
 
-(Note: this work was first done on the /Volumes/backups drive, which
+(Note: this work was first done on the PRIVATE_OPERATOR_ARCHIVE drive, which
 hard-failed with I/O errors before commit; reconstructed from the
-session transcript on the ~/code/CrispCalc-local clone and re-verified.)
+session transcript on the PRIVATE_OPERATOR_ARCHIVE clone and re-verified.)
 
 ## 2026-07-04 (cont. 7) — Separable / variable-coefficient ODEs
 
@@ -1379,7 +1399,8 @@ Structure parsing rates on GT: `\sum` 100%, `\lim` 100%, `\int` 94%.
 ### CROHME benchmark (all 986 test images × 3 models)
 Full evaluation pipeline: CrispEmbed C++ inference → `latexToEngineSyntax`
 parser → compare against CROHME ground truth. Per-image results saved to
-`/mnt/storage/crohme_eval/results_v2.jsonl`, CSV at `summary_v2.csv`.
+Benchmark JSONL and CSV reports were retained; machine-specific archive
+locations are maintained in private operator notes.
 
 | Model | Raw match | Parsed match | Size (Q8_0) |
 |-------|-----------|--------------|-------------|
@@ -4477,11 +4498,11 @@ and an MPFR-computed √2 value matching A002193.
 
 Mid-round, parallel session hit a CocoaPods bootstrap failure
 caused by a Ruby 3.1.3 → 4.0.3 homebrew upgrade. User gems at
-`~/.gem/ruby/3.1.3/` shadowed the bundled ones; the
+`PRIVATE_OPERATOR_ARCHIVE` shadowed the bundled ones; the
 homebrew-cocoapods bottle's libexec gem dir was missing
 `bigdecimal` and `nkf` (kconv stdlib removal in Ruby 4.0).
 Fix: uninstall bigdecimal 3.2.2 + 3.2.3 from
-`~/.gem/ruby/3.1.3/`, `brew reinstall cocoapods`, then
+`PRIVATE_OPERATOR_ARCHIVE`, `brew reinstall cocoapods`, then
 install `bigdecimal`, `nkf`, and a fresh `unf_ext` into
 `/opt/homebrew/Cellar/cocoapods/1.16.2_2/libexec` via
 `/opt/homebrew/opt/ruby/bin/gem install ... --install-dir
@@ -9130,7 +9151,7 @@ macOS Release.
 
 ### macOS build & native bridge linkage
 - Installed CocoaPods correctly (the Homebrew install was already there but
-  was tripping over a stale `~/.gem/ruby/3.1.3/gems/bigdecimal` from a Ruby
+  was tripping over a stale `PRIVATE_OPERATOR_ARCHIVE` from a Ruby
   upgrade — `flutter build macos` now runs with `GEM_HOME` / `GEM_PATH`
   unset so `pod` uses its bundled gems).
 - `symbolic_math_bridge` plugin was missing its macOS bits. Fixed by:
@@ -9250,7 +9271,7 @@ macOS Release.
 
 ### Build / dependency
 - Restored the missing `symbolic_math_bridge` path dependency from backup so
-  `flutter pub get` succeeds. Moved the project to `/Volumes/backups/code/`
+  `flutter pub get` succeeds. Moved the project to `PRIVATE_OPERATOR_ARCHIVE`
   to free space on the cramped main volume.
 - Fixed the only compile-error in the test suite (`test/widget_test.dart`
   referenced the non-existent `MyApp` class).

@@ -207,6 +207,6 @@ beta approval does not resolve Apple's earlier guideline 4.3(a) rejection.
 
 The follow-up cold-artifact audit archives two unopened OCR files to CIFS and
 reclaims a further 18.33 MiB from root. Original paths remain readable symlinks;
-SHA-256 source/destination/symlink reads match. The manifest is
-`/mnt/storage/moved_from_root/2026-10-03-crispmath-ocr-followup/manifest.jsonl`.
+SHA-256 source/destination/symlink reads match. The migration manifest is retained in private operator notes outside the public
+repository.
 Active reports, source/toolchains and other projects are untouched.

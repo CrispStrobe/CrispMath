@@ -3,6 +3,36 @@
 Living worklist. `[ ]` pending · `[~]` in-progress · `[x]` done.
 Completed items with details are in `HISTORY.md`.
 
+## Current handoff — 5 October 2026
+
+Application main 4f45017 has green post-merge CI, including Feature validation,
+all platforms and Pages. Approved external TestFlight remains 1.2.0 (23),
+source637b07e. Pages currently reports4f45017; Vercel reports637b07e. The intervening
+application change is confined to the DEBUG-only Mac capture-window size.
+No production cloud project exists; cloud stays off by default.
+
+Use the [canonical task descriptions](https://github.com/CrispStrobe/CrispMath/blob/main/docs/current-state-and-next-steps.md) rather than old session prompts.
+Each lane specifies first actions, public entry points, dependencies and done checks.
+
+| Lane | Next task | Readiness |
+| --- | --- | --- |
+| W1 | Fix macOS arm64 Python-wheel repair in CrispEmbed | Ready; one vendor release job failed |
+| V1 | Reconcile minimal published runtime correction with vendor main | Ready; keep unrelated main changes separate |
+| M1 | Freeze and exercise fifty new math problems, fix systemic causes | Ready; retain all 789 previous cases |
+| U1 | Cover accessibility, localization and remaining narrow layouts | Ready; fix observed defects with real UI controls |
+| O1 | Extend handwriting diagnosis to complete decoded reference parity | Exported-weight diagnostics ready; original checkpoint requires access |
+| O2 | Evaluate licensed recognition weights/training | Requires O1, provenance/access and authorized remote resources |
+| P1 | Physical Apple device matrix | Deferred device session |
+| A1 | Final store presentation and 4.3(a) response | Drafts ready; device checks and authorized submission still pending |
+| R1 | Next production release | After a validated production change; no new binary for docs/capture sizing |
+| C1 | Optional deployed cloud/two-device check | Requires explicit backend choice; default remains off |
+| B1 | Optional math-stack capability/performance investigation | Start with a bounded measured need |
+| F1 | Multi-user collaboration prototype | Requires separate product/backend decision |
+
+The sections below retain completed work and older backlog context. Their historical
+counts/sources are not the current status; the handoff links exact current evidence.
+
+
 ---
 
 ## Approved release follow-up
@@ -37,7 +67,7 @@ Completed items with details are in `HISTORY.md`.
   for build 23; record a pending physical iPhone/iPad checklist.
 - [x] Replace unsupported 2560×1800 internal macOS capture size with real
   2560×1600 native renders; reject unsupported dimensions in the verifier.
-  CI37239843806 passes all33 captures and16 tool controls; four new Mac views
+  CI 37239843806 passes all 33 captures and 16 tool controls; four new Mac views
   are visually reviewed. All PR platform/unit checks and focused CI pass.
 - [ ] Perform the deferred device checks and review/upload store screenshots
   before a future App Review submission.
@@ -523,7 +553,7 @@ CrispAssist remains the escape hatch (as verifier/frontend).
 
 The user's chosen order for finishing the roadmap. Do them in sequence;
 each ships as its own arc (feature branch → SymPy-certified corpus /
-tests → full suite → merge → CI green) from `~/code/CrispMath-local`.
+tests → full suite → merge → CI green) from `PRIVATE_OPERATOR_ARCHIVE`.
 
 1. [x] **Exact ODEs.** Landed 2026-07-04. `M + N·y' = 0` with
    ∂M/∂y = ∂N/∂x → implicit potential `F(x,y) = C1`, all on a bivariate
@@ -748,8 +778,8 @@ display can't do justice.
 ### C10 — Dev-environment note
 
 - [x] **CoreSimulator device set moved off the failing USB drive**
-  (2026-07-19). `~/Library/Developer/CoreSimulator` was a symlink into
-  `/Volumes/backups` (99% full, intermittent I/O), which broke `simctl
+  (2026-07-19). `PRIVATE_OPERATOR_ARCHIVE` was a symlink into
+  `PRIVATE_OPERATOR_ARCHIVE` (99% full, intermittent I/O), which broke `simctl
   create` every session; repointed to local disk. See
   `project_repo_location_drive_failure` memory.
 
@@ -799,7 +829,8 @@ display can't do justice.
   BTTR, +25 HMER, +33 pix2tex) via brace-balanced `\frac`/`\sqrt`,
   space-tolerant subscripts, Greek differentials, bare-arg functions,
   non-greedy captures, `\ldots`, trig powers, BPE normalization.
-  Results: `/mnt/storage/crohme_eval/results_v2.jsonl`.
+  Historical results were retained as benchmark reports; private archive locations
+  are kept outside the public repository.
   **Future providers**: Poe, Langdock, Requesty (keys available).
 - [x] **ggml graph decoder.** Merged to CrispEmbed main. 27x speedup
   via single-thread optimization. Cosine >0.99 on all test images,
@@ -1105,5 +1136,5 @@ User input → classifyNotepadLine → preprocessNotepadLine →
 - GGUF weight convention: transpose 2D matrices in converter so
   ggml_mul_mat produces correct results
 - Feature branches for CrispEmbed/CrispASR, never commit to main
-- Build on /mnt/volume1 (not CIFS), use ninja + ccache
-- Large files on /mnt/storage or /mnt/volume1, never /tmp
+- Run builds and large workloads on hosted CI; use the appropriate project build
+  tooling there. Keep machine storage conventions in private operator notes.

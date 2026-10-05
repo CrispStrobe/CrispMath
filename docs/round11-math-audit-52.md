@@ -146,6 +146,6 @@ finishes successfully, including release/debug browser assertions and the web
 gallery. All main platform, CI/CD, format and database checks also pass. The
 automatic web build is superseded by the successful explicit production deploy.
 
-Small initial and repaired JSON reports are retained under
-`/mnt/storage/CrispMath-stage21-ci/`; application bundles and large runtime/model
-artifacts remain on GitHub. No local full suite, build or browser batch was run.
+Initial and repaired JSON reports are retained in the linked GitHub workflow
+artifacts; private archive locations are documented outside the repository.
+Application bundles and large runtime/model artifacts remain on GitHub. No local full suite, build or browser batch was run.
