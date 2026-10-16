@@ -191,9 +191,20 @@ records and independently replays all12 logs. Existing settings retain5/6/5/8
 prefill failures despite improved merger errors; original-input block11 down
 error0.00268554688 remains and no single causal defect is proved. All280 conditional
 attention vectors pass raw0.002. All34 source controls and frozen preparation
-replay pass; PR62 platform/secret checks are queued. Continue independent-document
+replay pass; all ten PR62 Build jobs (including Flutter), WASM, contract and
+secret checks now pass at17b4b7dc. [Platform evidence38922363407](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38922363407).
+Latest PR63/main broader checks remain pending. Continue independent-document
 quantized evaluation while retaining projection/reduction attribution as open
 numerical debt. No runtime/default/weight/release/app-pin promotion.
+The first [independent Q8 inventory audit](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-inventory-table.json)
+atcbd3852f/[run38924337127](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38924337127)
+reproduces original/F16 controls and all quantized file/protected tensor identities.
+Q8 preserves248 IDs/text/EOS,15/15 cells and zero ordered CER/WER, but retains75
+prefill/248 score failures (min cosine0.999256611, worst abs0.440546274). All41
+source controls, frozen preparation and source secret scan pass; all five logs
+independently reparse. PR63 merges asd34a64d2; receipt is running, book queued
+in its isolated CI lane, mixed/Q4 pending. This controlled
+table does not establish natural-document quality, speed or numerical promotion.
 
 The iOS standalone-target repair now passes the complete
 [ten-job main platform workflow](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38697864752),
@@ -216,9 +227,9 @@ follow-ups in PLAN. [UltraBERT](https://github.com/CrispStrobe/CrispEmbed/blob/m
 audit and a proposed port order, but no native implementation or weight download.
 Indra remains public-code analysis only under the selected permissive-model scope.
 
-The next vendor work follows PLAN's order: localize the independent book's strict
-upstream vision/embedding drift, then validate
-quantization/publication, UltraBERT and the permissive OCR queue while preserving
+The next vendor work follows PLAN's order: complete the independent-document
+quantization panel and validate publication, then UltraBERT and the permissive OCR
+queue. Projection/reduction attribution remains open independently; preserve
 all existing numerical failures and frozen quality inputs. The consumer lanes below remain separate, with
 their original verification dates.
 

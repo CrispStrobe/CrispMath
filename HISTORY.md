@@ -1,3 +1,23 @@
+## 2026-10-16 — Mirror first independent Q8 inventory evidence
+
+[Vendor PR63](https://github.com/CrispStrobe/CrispEmbed/pull/63), merge
+`d34a64d2234d0bc185d1341fefec37b8356d5c74`, adds a guarded per-document quantization
+audit and retains its first [complete Q8 result](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-inventory-table.json).
+[ARM64 run38924337127](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38924337127)
+reproduces original/F16 controls and the earlier1.213GB Q8 file. All248 IDs/text/
+EOS/teacher argmaxes and15/15 cells match; ordered CER/WER are zero. All41 source
+controls pass. Numerical failures remain75 prefill/248 scores, minimum score
+cosine0.999256611 and worst absolute error0.440546274, so no numerical promotion
+or broader accuracy claim follows. The controlled inventory is not a natural-
+document benchmark. Remaining Q8 receipt/book and mixed/Q4 work stays in vendor
+PLAN. PR62's ten-job Build/Flutter, WASM, contract and secret read-back now passes;
+latest PR63/main broader checks remain pending.
+
+The shared vendor section mirrors [source4c2463ad](https://github.com/CrispStrobe/CrispEmbed/tree/4c2463ada47113ebd1427ef26cd245c08d8b232d).
+Only documentation changes here: application state, immutable0.17.12 dependency,
+weights, releases and store status are preserved. No new app inference or UI
+validation is claimed.
+
 ## 2026-10-16 — Mirror current vendor diagnostics and remaining work
 
 The [shared handoff](docs/current-state-and-next-steps.md#vendor-status--16-october-2026)

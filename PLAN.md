@@ -21,9 +21,18 @@ records reproduced. Existing precision settings retain5/6/5/8 prefill failures;
 no runtime correction or decoded-quality improvement is claimed. Independent
 quantized-document evaluation, validated publication, UltraBERT and the permissive
 OCR queue follow [the vendor plan](https://github.com/CrispStrobe/CrispEmbed/blob/main/PLAN.md).
-Projection/reduction attribution and broader queued PR checks remain open there.
+Projection/reduction attribution remains open there. PR62 platform checks now
+pass; latest PR63/main broader checks remain pending.
 This documentation refresh does not change the app's immutable0.17.12 dependency,
 release/store state or the application-owned lanes below.
+
+The [first Q8 inventory result](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-inventory-table.json)
+is now complete in [PR63](https://github.com/CrispStrobe/CrispEmbed/pull/63):248
+IDs/text/EOS and15/15 cells match, with75 prefill/248 score failures retained.
+All41 source controls and original/F16/quantized-weight replay pass. Remaining
+Q8 receipt/book audits are running/queued; six mixed/Q4 cases and latest broader
+CI conclusions remain vendor todos. No candidate is promoted or published, and
+the app pin stays0.17.12. Use the vendor plan for current run states.
 
 | Lane | Next task | Readiness |
 | --- | --- | --- |
