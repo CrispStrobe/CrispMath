@@ -41,8 +41,8 @@ at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
 separate. UltraBERT [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69) implements
 strict conversion and original24-layer F32 eager captures;
-[hosted verification38968978701](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38968978701)
-is queued at e828f233. Native implementation/parity and publication are not claimed.
+[hosted verification38969507642](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38969507642)
+is queued at 0dddbd2b. Native implementation/parity and publication are not claimed.
 Numerical attribution, broader independent OCR quality and conditional publication
 remain open.
 No held-out calibration, runtime/default/weight promotion or app change; the
