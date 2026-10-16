@@ -39,8 +39,12 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. UltraBERT is the next independent vendor implementation lane; numerical
-attribution, broader independent quality and conditional publication remain open.
+separate. UltraBERT [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69) implements
+strict conversion and original24-layer F32 eager captures;
+[hosted verification38968978701](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38968978701)
+is queued at e828f233. Native implementation/parity and publication are not claimed.
+Numerical attribution, broader independent OCR quality and conditional publication
+remain open.
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 
