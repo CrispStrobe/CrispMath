@@ -26,15 +26,15 @@ pass; latest PR63/main broader checks remain pending.
 This documentation refresh does not change the app's immutable0.17.12 dependency,
 release/store state or the application-owned lanes below.
 
-The completed [Q8 inventory result](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-inventory-table.json)
-preserves248 IDs/text/EOS and15/15 cells, retaining75 prefill/248 score failures.
-The completed [Q8 receipt result](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-historical-receipt.json)
-in [vendor PR64](https://github.com/CrispStrobe/CrispEmbed/pull/64) changes8PK→SPK;
-content CER/WER worsen3.39%/13.19%→3.52%/13.89%. Both reach EOS; original/F16/weight
-replay and independent log verification pass. Q8 retains75/473 numerical failures
-versus F16's1/0. Q8 book is running; mixed/Q4 and remaining broader CI conclusions
-stay vendor todos. No artifact/default is promoted; the app pin stays0.17.12.
-Use the vendor plan for current run states.
+The independent Q8 panel is complete in [vendor PR65](https://github.com/CrispStrobe/CrispEmbed/pull/65):
+all3 cases reach EOS, but only inventory matches original IDs/text. Receipt changes
+8PK→SPK and regresses gold errors; book text changes with slightly lower aggregate
+CER/WER. [Book evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-two-column-page.json)
+retains75/683 prefill/score failures; across Q8 cases retain225/1,404 versus F16's6/13.
+All original/F16/weight replays and independent log verification pass. Three
+preselected Q8/Q6 cases are queued atf43c4b77; Q4 follows their review. No held-out
+calibration or artifact/default promotion; the app pin stays0.17.12. Remaining
+broader CI conclusions stay vendor todos. Use the vendor plan for current run states.
 
 | Lane | Next task | Readiness |
 | --- | --- | --- |

@@ -1,3 +1,22 @@
+## 2026-10-16 — Mirror completed independent Q8 panel
+
+[Vendor PR65](https://github.com/CrispStrobe/CrispEmbed/pull/65) retains the completed
+[ARM64 book audit38931861995](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38931861995)
+at `a42a28b76570c9468add0affd44576fe5ee96881`. Original/F16 output/confidence/CPU
+records, all473 tensor schemas,286 protected payloads and the prior Q8 file hash
+reproduce; every raw report/log record independently reparses. Q8 reaches EOS with
+684 versus683 tokens, first divergence130. Book content CER/WER decrease slightly
+11.47%/17.63%→11.20%/17.45%, while English/French text changes and recognition
+errors persist. Q8 retains75 prefill/683 score failures versus F16's5/13; no gates
+are relaxed. [Full evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-two-column-page.json).
+
+All three Q8 cases reach EOS; only inventory matches original IDs/text, receipt
+regresses and book text changes. All225 Q8 prefill/1,404 score failures remain.
+Three preselected Q8/Q6 cases are queued, with Q4 after review; no recipe is
+selected/calibrated using these inputs. Shared vendor handoff/PLAN reflect the
+completed panel and remaining work. Documentation only: no application inference/
+UI validation, runtime, weights, release, store status or immutable0.17.12 pin change.
+
 ## 2026-10-16 — Mirror independent Q8 receipt regression
 
 [Vendor PR64](https://github.com/CrispStrobe/CrispEmbed/pull/64) retains the completed
