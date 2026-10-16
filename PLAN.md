@@ -18,25 +18,31 @@ Vendor-only status is refreshed16 October2026 in the [mirrored handoff](docs/cur
 CrispEmbed PR61 repairs prompt/registry CI; PR62 completes the frozen book vision
 diagnostic with24 exact native controls and434 original CPU/77 baseline prefill
 records reproduced. Existing precision settings retain5/6/5/8 prefill failures;
-no runtime correction or decoded-quality improvement is claimed. Independent
-quantized-document evaluation, validated publication, UltraBERT and the permissive
-OCR queue follow [the vendor plan](https://github.com/CrispStrobe/CrispEmbed/blob/main/PLAN.md).
-Projection/reduction attribution remains open there. PR62 platform checks now
-pass; latest PR63/main broader checks remain pending.
+no runtime correction or decoded-quality improvement is claimed. Completed quantized-document evidence and remaining conditional publication,
+UltraBERT and permissive OCR work follow [the vendor plan](https://github.com/CrispStrobe/CrispEmbed/blob/main/PLAN.md).
+Projection/reduction attribution remains open there. PR62/PR63 platform checks pass; latest PR67/main broader checks remain pending.
 This documentation refresh does not change the app's immutable0.17.12 dependency,
 release/store state or the application-owned lanes below.
 
-The independent Q8 and mixed Q8/Q6 panels are complete in
-[vendor PR66](https://github.com/CrispStrobe/CrispEmbed/pull/66). Mixed reaches EOS
-on3/3 and matches original IDs/text on1/3, retaining225 prefill/1404
-score failures under unchanged gates. All original/F16/weight replays and raw-log
-verification pass. Exact inventory cells and small aggregate receipt/book error
-changes do not establish a general recognition improvement. See the
-[vendor evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/PERFORMANCE.md)
-for full decoded/errors/confidence/timing limits and remaining Q4 runs. PR63's
-complete Build/Flutter, WASM, contract and secret checks now pass; newer CI
-conclusions remain separate. No held-out calibration or artifact/default promotion;
-the app pin stays0.17.12. Use the vendor plan for current run states.
+The independent Q8, mixed Q8/Q6 and Q4 panels are complete in
+[vendor PR67](https://github.com/CrispStrobe/CrispEmbed/pull/67), merged at
+5ca657f809e8113a111154f116e680a8b4868afe. Each recipe matches original IDs/text
+on1/3 frozen documents; Q8/mixed reach EOS on3/3, Q4 on2/3. Q4 receipt reaches the
+unchanged1024-token cap without EOS and produces unclosed HTML; content/table
+scores remain unscored. Each quantized panel retains225 prefill/1404 teacher-score
+failures under unchanged gates. All original/F16/weight replays and raw-log checks
+pass; evidence verification does not waive model failures. No tested quantized
+recipe qualifies for promotion or publication from this panel. See
+[vendor measurements](https://github.com/CrispStrobe/CrispEmbed/blob/main/PERFORMANCE.md)
+for full outputs, errors, confidence alignment and timing limits.
+The new public model-free auditor and all50 quality controls pass in
+[38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
+at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
+code/tests/workflow and add reports/documentation. Latest platform checks remain
+separate. UltraBERT is the next independent vendor implementation lane; numerical
+attribution, broader independent quality and conditional publication remain open.
+No held-out calibration, runtime/default/weight promotion or app change; the
+immutable app pin stays0.17.12. Use the vendor plan for current run states.
 
 | Lane | Next task | Readiness |
 | --- | --- | --- |

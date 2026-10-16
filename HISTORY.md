@@ -1,3 +1,39 @@
+## 2026-10-16 — Complete vendor quantization panel and evidence auditor
+
+[Vendor PR67](https://github.com/CrispStrobe/CrispEmbed/pull/67), merged at
+5ca657f809e8113a111154f116e680a8b4868afe, completes all nine recipe evaluations
+on three unique frozen documents. This is not a corpus benchmark.
+
+| Recipe | GGUF bytes | EOS | Exact original IDs/text | Prefill / teacher-score failures |
+| --- | ---: | --- | --- | --- |
+| F16 baseline | 1,918,139,328 | 3/3 | 3/3 | 6 /13 |
+| Q8 | 1,213,238,272 | 3/3 | 1/3 | 225 /1,404 |
+| Q8/Q6 | 1,149,795,328 | 3/3 | 1/3 | 225 /1,404 |
+| Q4 | 964,430,848 | 2/3 | 1/3 | 225 /1,404 |
+
+The Q4 [receipt](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38951920308)
+reaches the unchanged1024-token cap without EOS and leaves unclosed HTML;
+content/cell metrics remain unscored. The Q4
+[book](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38951924206)
+reaches EOS with changed English/French text. Both retain every raw field and
+all473 schema/286 protected-payload records; original/F16 replay and the prior
+whole-file/hash match. Minimum Q4 teacher-score cosine is0.928607225; worst
+absolute error is7.40867901. The unchanged0.99999/0.002 gates remain failed.
+Full texts, earliest captured differences, norms, confidence alignment and timing
+limits are in the [vendor evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/PERFORMANCE.md).
+
+The public model-free report auditor independently reparses all five logs;
+evidence-verification success preserves all model failures. All50 quality/auditor
+controls and frozen preparation pass in
+[38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
+at5dbabaa15b27d95782e4491bb13efbe775c869c2. Later report/doc changes preserve
+that code/test/workflow source exactly. Latest platform conclusions remain
+separate. No tested quantized recipe qualifies for promotion; no held-out
+calibration or weight/default/release change. UltraBERT is the next independent
+vendor lane while numerical attribution and broader quality remain open.
+Documentation only: no new application inference/UI validation, store status,
+release or immutable0.17.12 pin change.
+
 ## 2026-10-16 — Mirror completed independent mixed Q8/Q6 panel
 
 [Vendor PR66](https://github.com/CrispStrobe/CrispEmbed/pull/66) retains all three
