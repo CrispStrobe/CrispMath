@@ -1,3 +1,19 @@
+## 2026-10-16 — Mirror current vendor diagnostics and remaining work
+
+The [shared handoff](docs/current-state-and-next-steps.md#vendor-status--16-october-2026)
+now mirrors the current public CrispEmbed vendor snapshot through
+[sourcebfb28f0b](https://github.com/CrispStrobe/CrispEmbed/tree/bfb28f0b).
+[PR61](https://github.com/CrispStrobe/CrispEmbed/pull/61) repairs prompt/registry CI;
+[PR62](https://github.com/CrispStrobe/CrispEmbed/pull/62) completes the frozen book
+vision diagnostic. The [model audit](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38917305082)
+passes24 exact native controls and reproduces434 original CPU/77 baseline prefill
+records, but retains5/6/5/8 prefill failures across existing settings. All34 source
+controls pass; broader PR checks remain queued. No numerical/default promotion,
+new app inference validation, weight upload, runtime release or dependency update.
+Vendor PLAN retains projection/reduction attribution and the agreed independent
+quantization/publication/UltraBERT/permissive-model order; application tasks and
+immutable0.17.12 remain unchanged. This is a documentation-only mirror.
+
 ## 2026-10-05 — Public state and actionable lane handoff
 
 All post-merge checks at4f45017 are green, including full Feature validation,

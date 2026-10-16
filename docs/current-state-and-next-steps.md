@@ -1,6 +1,7 @@
 # CrispMath and CrispEmbed: current state and executable lanes
 
-Verified 5 October 2026. This handoff scopes follow-up work; it does not say the
+Consumer snapshot verified5 October2026; vendor roadmap updated16 October2026.
+This handoff scopes follow-up work; it does not say the
 lanes below have been implemented. Read the status, choose one lane, and record
 its exact source, evidence and remaining dependencies before handing it on.
 All references are public repository paths, workflow runs or published services.
@@ -70,6 +71,156 @@ Every finished lane delivers a bounded patch, meaningful positive/negative
 regressions, exact source/workflow links, retained initial/final evidence and
 updated status here and in both affected PLAN files. Never publish host paths,
 credentials, private service references or operator contact details.
+
+## Vendor status — 16 October 2026
+
+Use [PLAN.md](https://github.com/CrispStrobe/CrispEmbed/blob/main/PLAN.md) for active tasks and ownership, [HISTORY.md](https://github.com/CrispStrobe/CrispEmbed/blob/main/HISTORY.md)
+for completed work and frozen handoffs, and [PERFORMANCE.md](https://github.com/CrispStrobe/CrispEmbed/blob/main/PERFORMANCE.md)
+for measured quality/timing. The earlier vendor milestones are now archived;
+this status does not promote experimental vendor main into the app's pinned release.
+
+LightOnOCR-3-0.8B has a native Qwen3.5 engine and public C/orchestrator/CLI/server/
+Python/Rust/Dart wiring. The [external-document panel](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38674281196)
+finds exact F16 outputs/stops on4 cases, but three exceed the prior0.002 cache-key
+budget (worst0.00622). Q8 matches2/3 EOS-completed cases; Q8/Q6 matches1/3.
+All receipt arms truncate at384 tokens. The completed
+[larger-input controls](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38698415749)
+show that all-F32 text and precise RMS do not remove strict failures: worst key
+errors remain 0.00620–0.00625. Original CPU-backend variation also exceeds0.002;
+no tolerance is relaxed. The completed
+[operator audit](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38719205543)
+reproduces the baseline exactly; both existing vision precision gates reduce20
+prefill failures to11, while attention alone regresses to23. Same-input operators
+mostly satisfy raw0.002. The completed
+[native block audit](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38726666455)
+passes678 exact controls: original block inputs reduce final-block error sharply,
+but ordinary prefill failures remain20/11 and two earlier suffix resets regress.
+The [completed native norm audit](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38764189561)
+passes 225 exact controls and reproduces693 prior prefill records. Actual computed
+cascade outputs match75 original-input norms exactly; split variance rounding
+resolves the earlier validation-code mismatch and compiler output confirms it.
+Prefill failures remain20/11/14 for baseline/cascade/cascade-attention; the older
+combined F64 arm also had 11, with different trade-offs. Three small-document
+ID/text/EOS arms pass, but no large-document quality or default promotion follows.
+The [four-arm block replay](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38775800804)
+passes 1,356 exact controls and preserves 924 prior prefill records. Both cascade
+arms make all 36 original-input norm1 outputs exact, but local block11 errors
+remain and cascade's early suffix resets still fail twice. All four small-fixture
+ID/text/EOS arms pass; the sweep retains 56 prefill and four suffix failures.
+The [completed attention trace](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38800963470)
+passes all 72 native equality controls and preserves924 prefill, 108 shared vision
+and 1,302 original CPU-control records. Two compiler-rounding differences in the
+validation copy are corrected; production kernels remain unchanged. All 840
+conditional vectors pass raw 0.002. Original-input F32 sampled QK scores and
+original-probability pooling are exact; softmax probability errors reach 1.88e-6.
+The sweep retains 56 prefill failures and passes four small-fixture ID/text/EOS
+arms. The [completed decoded panel](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/decoded-panel.json)
+now matches all 16 fixed-cap ID/text/stop comparisons and 2,216 teacher argmaxes
+across all four arithmetic settings. Each arm reaches EOS on three inputs;
+receipt outputs remain 384-token prefixes. Confidence error is at most 3.28822e-6,
+all 924 prefill and 1,302 original CPU-control records remain exact, and all 56
+prefill failures remain. The first run times out after 14 cases; a bounded
+[completion run](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38830295916)
+finishes only the missing two, reproducing original references/confidence/CPU
+controls exactly. Reference parity does not establish transcription accuracy;
+existing form/receipt gold errors remain. Native baseline receipt recognition
+takes 585.82 s in that single observation. The completed
+[profiling audit](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38850631263)
+at `6895c69a` reproduces all prior controls and 56 failures, with zero output or
+reproduction failures. All 18 paired runs preserve IDs/text/stops and native
+probabilities. F32 projection materialization consumes 62–88% of profiled wall time;
+head materialization alone 28–40%. Unprofiled medians are 225.81s form, 38.65s German,
+67.33s for a 32-token receipt prefix. Counter overhead is 4.46–9.79%; peak child RSS
+is 3723.38–3725.35 MiB including load; those nested timings measure attribution.
+The completed [parallel-F16 trial](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38860469683)
+at `1e75f698` verifies all 473 converted tensors/852,985,920 F32 values bitwise
+against NumPy and native serial values, with zero new output/reproduction failures.
+All 924 prefill and 1,302 CPU-control records and four baseline full frozen-cap
+outputs reproduce. Unprofiled paired speedups are 1.67× form, 1.37× German and 1.41×
+for a 32-token receipt prefix; medians fall 225.89→135.21s, 39.16→28.50s and 68.01→48.09s.
+Peak child RSS stays around 3725.36 MiB including load; incremental inference memory
+is not isolated. All 37 Python and Linux/macOS/Windows native controls pass;
+all 56 numerical failures and 384-token receipt truncation remain. The conversion
+gate stays default-off. The completed
+[receipt/prompt audit](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38870347237)
+at `a07e83fb` reaches EOS at455/434 tokens (image-only/literal), with exact original
+Python IDs/text/stops and all889 teacher-score vectors passing unchanged gates.
+Both outputs still contain HTML tables. Lower raw CER is a serialization change,
+not proof of improved recognition. All308 earlier receipt prefill records reproduce
+with27 failures; the literal prompt adds77 records/seven failures. This workflow
+correctly fails for34 prefill failures, with zero incomplete/output/teacher-score
+failures. Other616 historical prefill records were not rerun; full-panel56 failures
+remain retained. All46 Python and Linux/macOS/Windows native controls pass
+[38870034506](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38870034506).
+The [v1 independent quality contract](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/ocr-quality.md) now freezes two real-document
+transcripts and an owned table before model output, with raw CER/WER, ordered
+content and position-indexed cell comparisons. [Completed x86 preparation](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38879605915)
+and [independent ARM preparation](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38879334940)
+produce identical PNG/RGB/font/source/gold/split hashes. All three images are
+visually reviewed; [the retained report](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/ocr-quality-prepared.json)
+keeps the receipt damage/clipped footer and small book text unchanged. Unavailable
+table annotations stay unmeasured. The guarded original/F16 driver requires those
+reviewed hashes before model imports/downloads. All22 hosted controls and frozen
+image/scorer/hash replay pass [38882346793](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38882346793); the completed
+[F16 audit](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38882488689) at
+`4c4b3ee4` reaches all3 EOS outputs with exact1,404 IDs/text/stops/teacher argmaxes.
+Inventory ordered content and15/15 cells are exact; receipt/book retain recognition
+errors shared with Python. The workflow correctly fails for6 new prefill and13
+book-logit failures, worst0.0060377121 against unchanged0.002. Zero incomplete,
+output or quality-parser failures. [Full report](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality.json),
+[raw/secondary scores and timing limits](https://github.com/CrispStrobe/CrispEmbed/blob/main/PERFORMANCE.md). Archived924/56
+prefill debt was not rerun or waived. The completed
+[book continuation isolation](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/book-isolation.json) at
+`4323dc67` reproduces the composed baseline and removes all book prefill/score/
+selected-probe failures with original prefill embeddings. Worst isolated score
+error0.00012421608; all683 argmaxes match. This identifies an upstream boundary,
+not a production correction. All30 hosted controls, frozen replay and three-OS
+native controls pass. Bounded CI drift is now repaired in
+[PR61](https://github.com/CrispStrobe/CrispEmbed/pull/61): all six affected artifacts
+independently byte-verified, previous digests retained, strict304/304 freshness
+replay and all PR build/regression/WASM/packaging checks pass.
+[Verification](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/evidence/registry-pin-verified.json),
+[complete freshness](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/evidence/registry-pin-current.json). Quantized quality runs,
+larger pages, further materialization/default adoption and HF publication remain
+open;1024 patches is the native bound.
+[Detailed evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/qwen35-ocr.md). The completed
+[book vision trace](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/book-vision.json) ataccd903c/
+[run38917305082](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38917305082)
+passes24 exact native controls, reproduces434 original CPU/77 baseline prefill
+records and independently replays all12 logs. Existing settings retain5/6/5/8
+prefill failures despite improved merger errors; original-input block11 down
+error0.00268554688 remains and no single causal defect is proved. All280 conditional
+attention vectors pass raw0.002. All34 source controls and frozen preparation
+replay pass; PR62 platform/secret checks are queued. Continue independent-document
+quantized evaluation while retaining projection/reduction attribution as open
+numerical debt. No runtime/default/weight/release/app-pin promotion.
+
+The iOS standalone-target repair now passes the complete
+[ten-job main platform workflow](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38697864752),
+including Flutter bundling. All 38 bundled native library entries match the seven
+platform artifacts by size/ZIP CRC. The scoped 18-case position probe and initial
+failures remain in HISTORY. This does not change the app's runtime pin or establish
+installed-plugin/device inference validation.
+
+The [same-input decoder experiment](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38702930399)
+removes all 20 strict stage failures when original embeddings are supplied only
+to diagnostic decoder arms; worst F16 key error becomes 0.0000406504. The composed
+baseline exactly reproduces its prior failures. The subsequent fixed-cap decoded
+A/B now passes on the four-document panel while retaining numerical debt. Use the
+faithful attention trace for any new divergence; the receipt now completes, while
+broader accuracy and performance remain open.
+
+LFM2.5 Encoder and EmbeddingGemma typed-decision integration/publication are
+archived as complete, with GPU, independent task-quality and long-context/perf
+follow-ups in PLAN. [UltraBERT](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/ultrabert.md) has a pinned source/metadata feasibility
+audit and a proposed port order, but no native implementation or weight download.
+Indra remains public-code analysis only under the selected permissive-model scope.
+
+The next vendor work follows PLAN's order: localize the independent book's strict
+upstream vision/embedding drift, then validate
+quantization/publication, UltraBERT and the permissive OCR queue while preserving
+all existing numerical failures and frozen quality inputs. The consumer lanes below remain separate, with
+their original verification dates.
 
 ## Recommended order and dependencies
 

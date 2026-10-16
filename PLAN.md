@@ -14,6 +14,17 @@ No production cloud project exists; cloud stays off by default.
 Use the [canonical task descriptions](https://github.com/CrispStrobe/CrispMath/blob/main/docs/current-state-and-next-steps.md) rather than old session prompts.
 Each lane specifies first actions, public entry points, dependencies and done checks.
 
+Vendor-only status is refreshed16 October2026 in the [mirrored handoff](docs/current-state-and-next-steps.md#vendor-status--16-october-2026).
+CrispEmbed PR61 repairs prompt/registry CI; PR62 completes the frozen book vision
+diagnostic with24 exact native controls and434 original CPU/77 baseline prefill
+records reproduced. Existing precision settings retain5/6/5/8 prefill failures;
+no runtime correction or decoded-quality improvement is claimed. Independent
+quantized-document evaluation, validated publication, UltraBERT and the permissive
+OCR queue follow [the vendor plan](https://github.com/CrispStrobe/CrispEmbed/blob/main/PLAN.md).
+Projection/reduction attribution and broader queued PR checks remain open there.
+This documentation refresh does not change the app's immutable0.17.12 dependency,
+release/store state or the application-owned lanes below.
+
 | Lane | Next task | Readiness |
 | --- | --- | --- |
 | W1 | Fix macOS arm64 Python-wheel repair in CrispEmbed | Ready; one vendor release job failed |
