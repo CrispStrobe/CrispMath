@@ -26,15 +26,17 @@ pass; latest PR63/main broader checks remain pending.
 This documentation refresh does not change the app's immutable0.17.12 dependency,
 release/store state or the application-owned lanes below.
 
-The independent Q8 panel is complete in [vendor PR65](https://github.com/CrispStrobe/CrispEmbed/pull/65):
-all3 cases reach EOS, but only inventory matches original IDs/text. Receipt changes
-8PK→SPK and regresses gold errors; book text changes with slightly lower aggregate
-CER/WER. [Book evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-two-column-page.json)
-retains75/683 prefill/score failures; across Q8 cases retain225/1,404 versus F16's6/13.
-All original/F16/weight replays and independent log verification pass. Three
-preselected Q8/Q6 cases are queued atf43c4b77; Q4 follows their review. No held-out
-calibration or artifact/default promotion; the app pin stays0.17.12. Remaining
-broader CI conclusions stay vendor todos. Use the vendor plan for current run states.
+The independent Q8 and mixed Q8/Q6 panels are complete in
+[vendor PR66](https://github.com/CrispStrobe/CrispEmbed/pull/66). Mixed reaches EOS
+on3/3 and matches original IDs/text on1/3, retaining225 prefill/1404
+score failures under unchanged gates. All original/F16/weight replays and raw-log
+verification pass. Exact inventory cells and small aggregate receipt/book error
+changes do not establish a general recognition improvement. See the
+[vendor evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/PERFORMANCE.md)
+for full decoded/errors/confidence/timing limits and remaining Q4 runs. PR63's
+complete Build/Flutter, WASM, contract and secret checks now pass; newer CI
+conclusions remain separate. No held-out calibration or artifact/default promotion;
+the app pin stays0.17.12. Use the vendor plan for current run states.
 
 | Lane | Next task | Readiness |
 | --- | --- | --- |

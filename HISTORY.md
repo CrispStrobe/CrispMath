@@ -1,3 +1,29 @@
+## 2026-10-16 — Mirror completed independent mixed Q8/Q6 panel
+
+[Vendor PR66](https://github.com/CrispStrobe/CrispEmbed/pull/66) retains all three
+preselected mixed recipe audits atf43c4b7714da91ad7479120bb3005817c7ae6aed.
+Original/F16 output/confidence/CPU records, all473 tensor schemas,286 protected
+payloads and the prior1,149,795,328-byte mixed file/hash reproduce for each case;
+every raw report/log record independently reparses. Recipe types remain79 Q8,
+72 Q6 FFNs,36 F16 A/B controls and286 F32 tensors.
+
+| Case | Tokens / stop | Exact original IDs/text | Content CER / WER | Prefill / score failures |
+| --- | --- | --- | --- | --- |
+| inventory-table | 248 / EOS | True | 0.00000000 / 0.00000000 | 75 / 248 |
+| historical-receipt | 471 / EOS | False | 0.03255208 / 0.13194444 | 75 / 473 |
+| two-column-page | 685 / EOS | False | 0.11506206 / 0.17446043 | 75 / 683 |
+
+Full texts, first divergences, native/reference magnitudes, confidence alignment,
+initial failures and timing limits remain in the [vendor evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/PERFORMANCE.md).
+The unchanged0.99999/0.002 gates receive no generated-score allowance. Smaller
+storage and partial gold-error improvements are not general OCR/speed/RAM proof.
+Three unchanged Q4 cases are queued independently at8bf55424; no recipe is selected
+or calibrated using held-out inputs.
+PR63 full Build/Flutter, WASM, contract and secret read-back now passes; newer
+revision CI remains separate. Shared vendor handoff/PLAN mirror this evidence.
+Documentation only: no application inference/UI validation, runtime, weights,
+release, store status or immutable0.17.12 pin change.
+
 ## 2026-10-16 — Mirror completed independent Q8 panel
 
 [Vendor PR65](https://github.com/CrispStrobe/CrispEmbed/pull/65) retains the completed
