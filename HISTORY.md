@@ -1,3 +1,16 @@
+## 2026-10-16 — UltraBERT source controls verified; native prototype pending
+
+All14 vendor source/schema controls pass in
+[38969505679](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38969505679)
+at0dddbd2b61740c0f25482b2afb428b815b5c85ac; the actual log confirms14 tests.
+[PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69) adds a test-only ggml
+prototype covering all24 layers with292 numerical and50 exact controls per case.
+The original model job, native build and expanded22-test contract remain pending.
+Full native inference requires exact frozen original-array/conversion replay.
+Prepared IDs do not establish tokenizer/public API or retrieval quality. No
+production native backend, measured parity, weights or app update is claimed.
+Documentation only: immutable app0.17.12 and application-owned lanes preserved.
+
 ## 2026-10-16 — Complete vendor quantization panel and evidence auditor
 
 [Vendor PR67](https://github.com/CrispStrobe/CrispEmbed/pull/67), merged at
