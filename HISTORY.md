@@ -1,3 +1,18 @@
+## 2026-10-16 — Mirror independent Q8 receipt regression
+
+[Vendor PR64](https://github.com/CrispStrobe/CrispEmbed/pull/64) retains the completed
+[ARM64 receipt audit38928823914](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38928823914)
+at `fdf83339f0a99fdc0648eb4a9f00c261c14aae64`. Original/F16 output/confidence/CPU
+records, all473 tensor schemas,286 protected payloads and the earlier Q8 file hash
+reproduce; every raw report/log record independently reparses. Both arms reach EOS,
+but Q8 changes8PK→SPK at token303 and worsens content CER/WER from3.39%/13.19%
+to3.52%/13.89%. Q8 retains75 prefill/473 score failures, F16 retains1/0; no gates
+are relaxed. The completed workflow correctly fails for measured numerical/output
+debt. [Full evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/quality-quant-q8-historical-receipt.json).
+Q8 book and mixed/Q4 evaluation remain open. Shared vendor handoff/PLAN now reflect
+these results. Documentation only: no application inference/UI validation, runtime,
+weights, release, store status or immutable0.17.12 dependency change.
+
 ## 2026-10-16 — Mirror first independent Q8 inventory evidence
 
 [Vendor PR63](https://github.com/CrispStrobe/CrispEmbed/pull/63), merge
