@@ -275,13 +275,20 @@ archived as complete, with GPU, independent task-quality and long-context/perf
 follow-ups in PLAN. [UltraBERT](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/ultrabert.md) has a pinned source/metadata feasibility
 audit and a proposed port order. [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69)
 adds strict conversion and all24-layer original-Python reference captures;
-[hosted verification](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38969507642)
-is queued at0dddbd2b. All14 source/schema controls pass. PR69 also adds a
-test-only all24-layer ggml graph over prepared IDs; its
 [hosted build](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38972505497)
-and22-test contract are pending. Full model comparisons require exact frozen
-original-array replay. No production native backend, measured parity or weight
-publication is claimed.
+and24 source/log/operator-parser controls pass at a8b129f4. The
+[complete original panel38997562520](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38997562520)
+freezes all seven cases/2,730 stages and both218-tensor conversions after repairing
+a negative-control inference-tensor mutation. The
+[first native panel38997900303](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38997900303)
+completes all14 arms and700 exact controls. F32 final CLS cosines round1.0, worst
+raw error0.000067234;183 intermediate failures first exceed budget at layer14
+FFN output. F16 retains1,294 failures and worse raw CLS errors. All measurements
+and unchanged0.99999/0.002 failures remain in PR69; no candidate is promoted.
+The [original-input operator audit38998432137](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38998432137)
+is pending. It must preserve ordinary native metrics/exit while narrowing local
+error versus upstream amplification. Native tokenization, production backend,
+public interfaces, task retrieval, quantized quality and publication remain open.
 Indra remains public-code analysis only under the selected permissive-model scope.
 
 The independent-document quantization panel is complete. No tested quantized

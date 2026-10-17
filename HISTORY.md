@@ -1,3 +1,19 @@
+## 2026-10-17 — UltraBERT original reference and first native panel retained
+
+The vendor's [original audit38997562520](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38997562520)
+passes both218-tensor conversions and seven cases/2,730 original stages at
+0573f1847db68914052a98341a22fceeb1358518. Earlier dependency/capture failures are
+retained in [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69).
+The [native panel38997900303](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38997900303)
+verifies original archive/conversion bytes, completes all14 arms and700 exact
+controls, and retains183 F32/1,294 F16 intermediate failures under unchanged
+gates. F32 final CLS cosines round1.0 with worst raw absolute error0.000067234;
+final-vector proximity does not waive intermediate or task-quality debt.
+All24 model-free controls pass at a8b129f4; separate operator attribution is
+pending. This is a test-only prepared-ID graph, not native tokenizer/public API
+support or a retrieval benchmark. Documentation only: application-owned lanes
+and immutable runtime0.17.12 remain unchanged.
+
 ## 2026-10-16 — UltraBERT source controls verified; native prototype pending
 
 All14 vendor source/schema controls pass in
