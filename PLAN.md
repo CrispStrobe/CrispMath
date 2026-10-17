@@ -46,13 +46,17 @@ reproduces all14 ordinary arms/700 exact controls and183 F32/1,294 F16 numerical
 failures; all28 logs/84 local records verify. F32 passes41/42 local probes;
 Unicode MLP error0.0048828125 from original norm drops to0.000671386719 with original
 gate/up. F16 retains24 local failures. All24 model-free controls pass at a8b129f4.
-The [isolated SiLU/product/down audit39000683936](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39000683936)
-is queued at c7c5ef30254dac9eddc854a8c702f59512a5ee16; new compile,25 model-free/
-three Torch controls and measurements are pending. Separate original-module
-captures must preserve the frozen gate/up/output anchors bit-for-bit. Native
-public backend/tokenization/bindings, task quality, long-context/quantized checks
-and publication remain open. The [three-PR review](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/pr-review-2026-10-17.md)
-is complete: PR68 fork workflows approved/queued, PR60 wheel11/12 target mismatch
+The [isolated linear audit39000683936](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39000683936)
+compiles and passes25 model-free/three Torch controls atc7c5ef30, then rejects
+empty-case original gate drift2.0265579223632812e-6 before new native comparisons.
+The cause is unproved and full raw failure records remain in PR69. The
+[full-forward observer39002679659](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39002679659)
+is queued at504508673a73485fe4c897a23ab7a2bb77e3852c: all386 old payloads must
+remain exact, with additional-hook neutrality and a fourth Torch control.
+Isolated mode/failure remains available. Public backend/tokenizer integration,
+retrieval quality, long context, quantization and publication remain pending.
+The [three-PR review](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/pr-review-2026-10-17.md)
+is complete: PR68 WASM passes while approved Build/secret remain pending; PR60 wheel11/12 target mismatch
 retained, PR69 draft. No merge or immutable app0.17.12 pin change.
 Vendor [PR70](https://github.com/CrispStrobe/CrispEmbed/pull/70) now implements
 the isolated W1 packaging correction: cibuildwheel macOS12.0 matches the existing

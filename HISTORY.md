@@ -1,3 +1,15 @@
+## 2026-10-17 — Vendor capture guard rejects drift; PR68 WASM passes
+
+[UltraBERT linear39000683936](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39000683936)
+atc7c5ef30 builds and passes25 model-free/three Torch controls, then rejects the
+first isolated empty-case gate anchor by2.0265579223632812e-6. No new native arm
+ran or frozen anchor changed. Complete initial reports remain in vendor PR69;
+the next full-forward observer is pending and the drift's cause is unproved.
+The independent source contract also passes14+11 controls at that source.
+PR68 [WASM38968549080](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38968549080)
+passes at ebcadb1f; approved Build/secret checks remain pending. Documentation
+only: no merge, runtime release or immutable app0.17.12 pin change.
+
 ## 2026-10-17 — Vendor operator attribution and three-PR review complete
 
 The vendor [operator audit38998432137](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38998432137)
