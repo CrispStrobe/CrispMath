@@ -61,6 +61,12 @@ The [full four-platform wheel matrix39001056271](https://github.com/CrispStrobe/
 is queued at56b5af0c6464047f774de5ad6a7ba7da8bb2b157. Repaired wheel artifacts,
 installed-load success and aggregation remain unverified. No PyPI publication,
 runtime release or immutable0.17.12 app update.
+A separate [native UltraBERT tokenizer audit39001522903](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001522903)
+is queued at0f9d0a4433cdad10bbef1e5f6b26d1a761848858. It checks native BPE plus
+explicit single/pair/query/BOS/padding templates against all8 frozen original
+text rows, with terminal-SEP/zero-ID-mask negatives and4 model-free log controls.
+No checkpoint weights or model inference are used. Compilation/parity remain
+pending; public integration and the queued immutable linear audit are unchanged.
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 
