@@ -39,21 +39,21 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. UltraBERT [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69) completes
-both218-tensor conversions and all seven original cases/2,730 stages at immutable
-0573f1847db68914052a98341a22fceeb1358518 in
-[38997562520](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38997562520).
-The [first native panel](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38997900303)
-completes all14 F32/F16 arms and700 exact controls. F32 final CLS cosine rounds1.0,
-worst raw error0.000067234, but183 intermediate failures remain; F16 retains1,294.
-All24 model-free controls pass at a8b129f4 in
-[38998432321](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38998432321).
-The [original-input operator audit](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38998432137)
-is queued; it must preserve ordinary metrics and exits exactly while isolating
-local error versus upstream amplification. Native tokenization, public backend,
-bindings, retrieval quality, long-context/quantized validation and publication
-remain open. Review the three vendor PRs after this UltraBERT lane, confirming
-the open set then (currently60/68/69). The immutable app0.17.12 stays pinned.
+separate. UltraBERT [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69) has complete
+original references/conversions and a test-only native operator audit at a8b129f4.
+[38998432137](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38998432137)
+reproduces all14 ordinary arms/700 exact controls and183 F32/1,294 F16 numerical
+failures; all28 logs/84 local records verify. F32 passes41/42 local probes;
+Unicode MLP error0.0048828125 from original norm drops to0.000671386719 with original
+gate/up. F16 retains24 local failures. All24 model-free controls pass at a8b129f4.
+The [isolated SiLU/product/down audit39000683936](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39000683936)
+is queued at c7c5ef30254dac9eddc854a8c702f59512a5ee16; new compile,25 model-free/
+three Torch controls and measurements are pending. Separate original-module
+captures must preserve the frozen gate/up/output anchors bit-for-bit. Native
+public backend/tokenization/bindings, task quality, long-context/quantized checks
+and publication remain open. The [three-PR review](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/pr-review-2026-10-17.md)
+is complete: PR68 fork workflows approved/queued, PR60 wheel11/12 target mismatch
+retained, PR69 draft. No merge or immutable app0.17.12 pin change.
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 

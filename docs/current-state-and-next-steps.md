@@ -286,8 +286,17 @@ raw error0.000067234;183 intermediate failures first exceed budget at layer14
 FFN output. F16 retains1,294 failures and worse raw CLS errors. All measurements
 and unchanged0.99999/0.002 failures remain in PR69; no candidate is promoted.
 The [original-input operator audit38998432137](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38998432137)
-is pending. It must preserve ordinary native metrics/exit while narrowing local
-error versus upstream amplification. Native tokenization, production backend,
+completes at a8b129f4 with all ordinary metrics/exits reproduced exactly. All28
+logs/84 local records verify: F32 passes41/42 probes and F16 retains24 failures.
+Unicode whole-MLP error0.0048828125 falls to0.000671386719 with original gate/up;
+local norm probes pass. Next capture original SiLU/product/down inputs and inspect
+projection rounding before selecting a correction; preserve all initial debt.
+The [isolated linear audit39000683936](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39000683936)
+is queued at c7c5ef30. It adds separate original-module SiLU/product observations
+with bit-exact old gate/up/output anchors, then isolates native down projection;
+new controls, compilation and measurements are pending. The requested
+[three-PR review](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/pr-review-2026-10-17.md) is complete; PR68 fork CI is now approved
+and queued, PR60 wheel11/12 target inconsistency remains, and PR69 stays draft. Native tokenization, production backend,
 public interfaces, task retrieval, quantized quality and publication remain open.
 Indra remains public-code analysis only under the selected permissive-model scope.
 

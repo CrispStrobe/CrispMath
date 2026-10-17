@@ -1,3 +1,17 @@
+## 2026-10-17 — Vendor operator attribution and three-PR review complete
+
+The vendor [operator audit38998432137](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38998432137)
+compiles/completes at a8b129f4 with original references/conversion bytes preserved.
+All28 logs/84 local records independently verify; ordinary probe-on/off metrics
+and exits match exactly, retaining183 F32/1,294 F16 numerical failures. F32 local
+checks pass41/42; original gate/up reduce Unicode MLP error0.0048828125 to
+0.000671386719. Norm probes pass, but a single faulty reduction is not proven.
+All24 model-free controls pass. The next isolated-linear audit is queued; no
+numerical failure is waived. The [three-PR source/evidence review](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/pr-review-2026-10-17.md)
+then records PR60 packaging debt, PR68 static/visual review with approved queued
+CI, and PR69's remaining parity/production limits. No PR merge or runtime release;
+app-owned lanes and immutable0.17.12 remain unchanged.
+
 ## 2026-10-17 — UltraBERT original reference and first native panel retained
 
 The vendor's [original audit38997562520](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38997562520)
