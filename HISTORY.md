@@ -1,3 +1,16 @@
+## 2026-10-17 — Vendor macOS wheels load; ARM64 link failure retained
+
+Vendor [matrix39001056271](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001056271)
+at56b5af0c completes its macOS ARM64 job: all5 CPython3.9–3.13 wheels repair with
+macOS12 tags, install, load the actual bundled library and call the C ABI.
+[Evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/packaging/wheel-target-initial.json)
+retains producer wheel hashes/log hashes; wheel artifact bytes remain remote and
+were not independently downloaded/hash-verified here. Initial Linux ARM64
+standalone Qwen3.5 tests fail unresolved pthread_create while the shared runtime
+builds. PR70 adds the missing Threads dependency; fresh full matrix is pending.
+PR68's secret scan now passes alongside WASM; native Build remains pending.
+No merge, new runtime/PyPI release or immutable app0.17.12 pin change.
+
 ## 2026-10-17 — Vendor capture guard rejects drift; PR68 WASM passes
 
 [UltraBERT linear39000683936](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39000683936)

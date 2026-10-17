@@ -56,15 +56,17 @@ remain exact, with additional-hook neutrality and a fourth Torch control.
 Isolated mode/failure remains available. Public backend/tokenizer integration,
 retrieval quality, long context, quantization and publication remain pending.
 The [three-PR review](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/pr-review-2026-10-17.md)
-is complete: PR68 WASM passes while approved Build/secret remain pending; PR60 wheel11/12 target mismatch
+is complete: PR68 WASM/secret pass while approved native Build remains pending; PR60 wheel11/12 target mismatch
 retained, PR69 draft. No merge or immutable app0.17.12 pin change.
-Vendor [PR70](https://github.com/CrispStrobe/CrispEmbed/pull/70) now implements
-the isolated W1 packaging correction: cibuildwheel macOS12.0 matches the existing
-native target, and installed-wheel checks load the bundled library/call the C ABI.
-The [full four-platform wheel matrix39001056271](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001056271)
-is queued at56b5af0c6464047f774de5ad6a7ba7da8bb2b157. Repaired wheel artifacts,
-installed-load success and aggregation remain unverified. No PyPI publication,
-runtime release or immutable0.17.12 app update.
+Vendor [PR70](https://github.com/CrispStrobe/CrispEmbed/pull/70) now verifies
+all5 macOS CPython3.9–3.13 repaired-wheel installs/bundled native loads/C-ABI calls
+in [39001056271](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001056271)
+at56b5af0c. The initial ARM64 standalone Qwen3.5 tests fail missing pthread linkage;
+shared runtime builds. The diagnostic target now declares Threads::Threads.
+[Fresh full matrix39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)
+is queued at e75a32f1882a00389bac1304797f44c08ce372d4. Retain both initial failures;
+other initial legs, corrected full matrix and aggregation remain unverified.
+No PyPI/runtime release or immutable app0.17.12 update.
 A separate [native UltraBERT tokenizer audit39001522903](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001522903)
 is queued at0f9d0a4433cdad10bbef1e5f6b26d1a761848858. It checks native BPE plus
 explicit single/pair/query/BOS/padding templates against all8 frozen original
