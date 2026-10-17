@@ -54,6 +54,13 @@ public backend/tokenization/bindings, task quality, long-context/quantized check
 and publication remain open. The [three-PR review](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/pr-review-2026-10-17.md)
 is complete: PR68 fork workflows approved/queued, PR60 wheel11/12 target mismatch
 retained, PR69 draft. No merge or immutable app0.17.12 pin change.
+Vendor [PR70](https://github.com/CrispStrobe/CrispEmbed/pull/70) now implements
+the isolated W1 packaging correction: cibuildwheel macOS12.0 matches the existing
+native target, and installed-wheel checks load the bundled library/call the C ABI.
+The [full four-platform wheel matrix39001056271](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001056271)
+is queued at56b5af0c6464047f774de5ad6a7ba7da8bb2b157. Repaired wheel artifacts,
+installed-load success and aggregation remain unverified. No PyPI publication,
+runtime release or immutable0.17.12 app update.
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 
