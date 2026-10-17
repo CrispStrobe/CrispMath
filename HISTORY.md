@@ -1,3 +1,19 @@
+## 2026-10-17 — Vendor packaging complete; test-only UltraBERT tools integrated
+
+Vendor main integrates PR68/69/70 and the final executable handoff. All four
+wheel legs,23 installed native-load/C-ABI checks and aggregation pass
+[39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)
+at e75a32f1. Native BPE/test-template parity passes all eight original rows and
+both wrong alternatives fail all eight at d7b84d1d/39007901207. All producer
+failures remain archived. Local audit39008070299 passes compilation,25 model-free/
+five Torch controls and seven local captures, then fails on interleaved logging;
+sourcef6f84aba flushes before reference loading and corrected39009703362 is queued.
+No completed new native panel, production UltraBERT support, runtime/PyPI release
+or app pin change is claimed. PR60 remains a selective-backport task; actual
+Pages deployment/new main CI and original-array preservation are scoped in the
+[vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+Consumer task sections and immutable0.17.12 remain unchanged.
+
 ## 2026-10-17 — Four vendor wheel legs verified; UltraBERT replay failures retained
 
 Vendor [39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)

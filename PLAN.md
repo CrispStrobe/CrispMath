@@ -39,34 +39,32 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. UltraBERT [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69) retains the
-complete original reference/conversions,183 F32/1,294 F16 native failures and
-both rejected strict replay attempts. Full replay39002679659 passes25+4 controls
-and hook neutrality, then rejects287 empty-case old-anchor differences, first
-layer0 Q5.960464477539062e-7. Cause remains unproved; no new native arm ran.
-[Local operator39008070299](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39008070299)
-is queued at a349539e01701f53144b100623b67bcd62489436, with identical fixed inputs
-for original/native operators and separately named local_down targets. It never
-substitutes new full-model references or waives ordinary gates. Tokenizer39001522903
-passes4 controls then fails C++ APIs before IDs; the
-[repair39007901207](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39007901207)
-is queued at d7b84d1d4714b0d906518bbbbda21aa558d54a74. Public support, bindings,
-retrieval quality, long context, quantization and publication remain pending.
+separate. Vendor PR68/69/70 are merged on main. UltraBERT reference/conversion and
+native tokenizer/template tooling pass their scoped controls; production model
+support remains pending. All183 F32/1,294 F16 native numerical failures and both
+strict replay failures remain archived. Local audit39008070299 passed build,
+25 model-free/five Torch controls and seven local captures, then failed on
+interleaved logging. A flush correction is in sourcef6f84aba; corrected
+[39009703362](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39009703362)
+is queued at that exact source. Native BPE/template
+[39007901207](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39007901207)
+passes all eight frozen ID/mask rows and both wrong alternatives fail8/8.
 
-Vendor [PR70](https://github.com/CrispStrobe/CrispEmbed/pull/70) now passes all4
-wheel build legs/23 installed native-load/C-ABI checks in
-[39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)
-at e75a32f1. [Evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/packaging/wheel-matrix.json)
-retains producer/log hashes and remote-artifact limits; aggregation stays queued.
-Old delocate/pthread failures remain retained. PR68 full Build/Flutter, WASM and
-secret checks pass at ebcadb1f; no merge/Pages deployment. No runtime/PyPI release
-or immutable app0.17.12 pin change.
+Wheel [39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)
+at e75a32f1 passes all four platform legs,23 actual installed native-load/C-ABI
+checks and aggregation. No runtime/PyPI release or app pin change. PR68's source
+checks pass; actual Pages deployment and new merged-head CI remain separate.
+
+Execute vendor tasks from [the bounded handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md):
+corrected audit, numerical attribution, production profile/all bindings,
+independent quality/quantization/publication, and preserving the original arrays
+remotely before31 October2026 expiry. PR60 stays draft for selective trained
+input LayerNorm/ceil-pool backport with fresh original/reference/decoded evidence.
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 
 | Lane | Next task | Readiness |
 | --- | --- | --- |
-| W1 | Fix macOS arm64 Python-wheel repair in CrispEmbed | Ready; one vendor release job failed |
 | V1 | Reconcile minimal published runtime correction with vendor main | Ready; keep unrelated main changes separate |
 | M1 | Freeze and exercise fifty new math problems, fix systemic causes | Ready; retain all 789 previous cases |
 | U1 | Cover accessibility, localization and remaining narrow layouts | Ready; fix observed defects with real UI controls |
