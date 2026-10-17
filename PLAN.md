@@ -39,40 +39,28 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. UltraBERT [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69) has complete
-original references/conversions and a test-only native operator audit at a8b129f4.
-[38998432137](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38998432137)
-reproduces all14 ordinary arms/700 exact controls and183 F32/1,294 F16 numerical
-failures; all28 logs/84 local records verify. F32 passes41/42 local probes;
-Unicode MLP error0.0048828125 from original norm drops to0.000671386719 with original
-gate/up. F16 retains24 local failures. All24 model-free controls pass at a8b129f4.
-The [isolated linear audit39000683936](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39000683936)
-compiles and passes25 model-free/three Torch controls atc7c5ef30, then rejects
-empty-case original gate drift2.0265579223632812e-6 before new native comparisons.
-The cause is unproved and full raw failure records remain in PR69. The
-[full-forward observer39002679659](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39002679659)
-is queued at504508673a73485fe4c897a23ab7a2bb77e3852c: all386 old payloads must
-remain exact, with additional-hook neutrality and a fourth Torch control.
-Isolated mode/failure remains available. Public backend/tokenizer integration,
+separate. UltraBERT [PR69](https://github.com/CrispStrobe/CrispEmbed/pull/69) retains the
+complete original reference/conversions,183 F32/1,294 F16 native failures and
+both rejected strict replay attempts. Full replay39002679659 passes25+4 controls
+and hook neutrality, then rejects287 empty-case old-anchor differences, first
+layer0 Q5.960464477539062e-7. Cause remains unproved; no new native arm ran.
+[Local operator39008070299](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39008070299)
+is queued at a349539e01701f53144b100623b67bcd62489436, with identical fixed inputs
+for original/native operators and separately named local_down targets. It never
+substitutes new full-model references or waives ordinary gates. Tokenizer39001522903
+passes4 controls then fails C++ APIs before IDs; the
+[repair39007901207](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39007901207)
+is queued at d7b84d1d4714b0d906518bbbbda21aa558d54a74. Public support, bindings,
 retrieval quality, long context, quantization and publication remain pending.
-The [three-PR review](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/pr-review-2026-10-17.md)
-is complete: PR68 WASM/secret pass while approved native Build remains pending; PR60 wheel11/12 target mismatch
-retained, PR69 draft. No merge or immutable app0.17.12 pin change.
-Vendor [PR70](https://github.com/CrispStrobe/CrispEmbed/pull/70) now verifies
-all5 macOS CPython3.9–3.13 repaired-wheel installs/bundled native loads/C-ABI calls
-in [39001056271](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001056271)
-at56b5af0c. The initial ARM64 standalone Qwen3.5 tests fail missing pthread linkage;
-shared runtime builds. The diagnostic target now declares Threads::Threads.
-[Fresh full matrix39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)
-is queued at e75a32f1882a00389bac1304797f44c08ce372d4. Retain both initial failures;
-other initial legs, corrected full matrix and aggregation remain unverified.
-No PyPI/runtime release or immutable app0.17.12 update.
-A separate [native UltraBERT tokenizer audit39001522903](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001522903)
-is queued at0f9d0a4433cdad10bbef1e5f6b26d1a761848858. It checks native BPE plus
-explicit single/pair/query/BOS/padding templates against all8 frozen original
-text rows, with terminal-SEP/zero-ID-mask negatives and4 model-free log controls.
-No checkpoint weights or model inference are used. Compilation/parity remain
-pending; public integration and the queued immutable linear audit are unchanged.
+
+Vendor [PR70](https://github.com/CrispStrobe/CrispEmbed/pull/70) now passes all4
+wheel build legs/23 installed native-load/C-ABI checks in
+[39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)
+at e75a32f1. [Evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/packaging/wheel-matrix.json)
+retains producer/log hashes and remote-artifact limits; aggregation stays queued.
+Old delocate/pthread failures remain retained. PR68 full Build/Flutter, WASM and
+secret checks pass at ebcadb1f; no merge/Pages deployment. No runtime/PyPI release
+or immutable app0.17.12 pin change.
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 

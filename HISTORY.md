@@ -1,3 +1,16 @@
+## 2026-10-17 — Four vendor wheel legs verified; UltraBERT replay failures retained
+
+Vendor [39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)
+at e75a32f1 passes all4 wheel legs and23 installed bundled-native-load/C-ABI checks.
+Producer/log hashes are retained; artifact bytes stay remote and aggregation is
+pending. PR68's full ten-job Build/Flutter now passes alongside WASM and secrets;
+no merge/deployment occurred. UltraBERT full replay retains287 old-anchor differences,
+first layer0 Q5.960464477539062e-7, despite25+4 controls/hook neutrality passing.
+Its cause is unproved. Tokenizer4 controls pass then initial C++ build fails;
+API repairs and a separate same-input local operator diagnostic are queued, with
+all original references/gates/failures intact. Public support is not established.
+Application-owned lanes and immutable0.17.12 remain unchanged.
+
 ## 2026-10-17 — Vendor macOS wheels load; ARM64 link failure retained
 
 Vendor [matrix39001056271](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39001056271)
