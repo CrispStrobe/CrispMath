@@ -1,3 +1,19 @@
+## 2026-10-23 — Vendor Ovis experimental export merged; native frontend gated
+
+Vendor PR77 merged2f8b5354 after full F32/F16 export and473-tensor original-cast
+roundtrip39992662147, all platform checks, and independent source/manifest/schema
+and producer-hash review. Reported sizes are3.422GB/1.717GB. Large weights remain
+remote; independent review used small reports and did not rehash full payloads.
+[Evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/ovisocr2-export.json).
+
+DraftPR78 at48aefc30 adds a separately gated native frontend. Hosted40004747653
+compares frozen original packed pixels/grids/IDs/masks/modalities/template and
+negative profile/gate/stop controls. The duplicate push-only controls were
+cancelled before execution. Original C++ prompt bytes match the frozen625-byte
+template. Compilation/pixel parity await hosted completion; native model loader
+still requires format1. No native Ovis alias, decoded-quality claim, release,
+model publication, consumer-source or app-pin change follows.
+
 ## 2026-10-23 — Vendor consumer audits merged; bounded GPU timings reviewed
 
 UltraBERT PR75 merged2f078406 after actual Rust/Dart39979622930 and independent

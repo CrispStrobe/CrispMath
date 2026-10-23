@@ -52,12 +52,14 @@ configure/build/smoke/install checks39979940916. Actual successor release
 assets/hashes and installed cross-host consumers remain required. The app
 remains pinned immutable0.17.12; no new tag or model publication follows.
 
-OvisOCR2 weight-free metadata/schema/processor39983101540 passes all473 shapes,
-original packed inputs and minimum-pixel counterfactual. DraftPR77 implements
-an exact-source experimental profile. Initial export39991277170 was cancelled
-while its weight job remained queued to strengthen independent shape/precision
-and duplicate-name checks. Replacement39992662147 at5e197bae is pending;
-no conversion/native alias/decoded-quality qualification is claimed.
+OvisOCR2 original metadata39983101540 and full473-tensor F32/F16 conversion
+and roundtrip39992662147 pass. Independent small-report review checks source,
+manifest, schema/precision and per-tensor hash declarations; GGUF payloads stay
+remote. PR77 merged2f8b5354. DraftPR78 at48aefc30 adds a separately gated native
+frontend; hosted40004747653 is queued against frozen original packed-image
+arrays. Exact original prompt/IDs/masks/modalities and pixels, dual stops and
+negative profile/gate checks are required. Native model loader still admits
+format1 only; no Ovis alias, model decode, quality or publication is claimed.
 
 Paired LFM F16 CPU/CUDA performance v2/7a17864f completes four blocks/15 cases.
 Independent review checks420 timing samples, pinned sources, selected logs and
