@@ -40,51 +40,34 @@ The new public model-free auditor and all50 quality controls pass in
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
 separate. Vendor packaging/platform integration and live Pages checks are archived in the
-vendor HISTORY. UltraBERT original arrays were preserved without regeneration
-through21 January2027. Original-backend39915714794 retains layer0 Q/287-stage
-differences in all four arms;183 F32/1,294 F16 native failures remain. The user
-has completed the bounded [M1 audit](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/handover-m1-validation.md)
-atf0dbe58d. Independent review checks all28 case records/10808 stage identities,
-112 same-input projection records and56 raw/normalized CLS comparisons. Original
-Python hidden error0.00579 coexists with raw/normalized CLS6.52e-5/6.41e-7.
-Existing native F32 pooled outputs pass their fixed seven-case gates; proceed
-with a separately scoped gated F32 API/retrieval lane, preserving183 intermediate
-failures. F16 raw CLS0.0185 remains outside its gate. No repeated backend arms.
-[DraftPR74](https://github.com/CrispStrobe/CrispEmbed/pull/74) at4be9f864 adds the
-default-off CPU/F32 public text profile. Hosted39943940607 passes all twelve
-pooled checks/seven actual ID rows and Python/CLI/HTTP at the unchanged gates:
-raw CLS max6.72340393e-5, normalized5.94183803e-7, reported cosine rounds1.0.
-Raw producer fields, log/source fingerprints and actual artifact receipt are
-independently checked and archived; initial harness-only CLI-name failure is
-retained. Remaining exact-source platform checks precede merge. The
-[owned retrieval smoke](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/ultrabert-retrieval-smoke.md)
-freezes eight questions/24 documents, gold and a tested executable scorer before
-any task outputs. The original-first producer and immutable-original reuse are
-integrated at40ff3d6c, with actual binding/library identity guards at71daebea;
-hosted39947939925 passes all four scorer/seven producer groups. Model run
-39949129060 failed before model construction because published wheel files use
-CRLF while inspected tagged sources use LF. Both wrapper/Pooling are otherwise
-byte-identical; the producer now pins exact wheel bytes, with initial evidence
-retained. Corrected retry39950831201 at812e56e5 against native4be9f864 is queued.
-No task score is claimed and no model/input/gold/budget changed.
-The optional M1 native handover adds complementary Apple CPU
-coverage; model-backed/task qualification and public pair/Rust/Dart checks remain.
-
-PosFormer PR72 merged7f1ecd33 after all sourcef7c53803 checks; historical PR60
-is closed. Actual published Linux0.17.12 and the trained candidate match all50
-IDs/text/EOS stops. Confidence drift remains measured, without fitted tolerance.
-[PR73](https://github.com/CrispStrobe/CrispEmbed/pull/73) at790f9a6b restores the
-released default while retaining literal0 and merged75e87ea6 after all source
-790f9a6b checks, including ten Build/Flutter39933251542 jobs and dedicated
-39933245147. Actual Linux default/release outputs and bounded references pass.
-Successor actual assets/hashes/consumer qualification remains open; no tag,
-publication or app pin change follows.
-
-The genuine LFM2.5 Encoder F16 CUDA T4 run passes594 direct CPU/CUDA checks and
-both15-case ordinary API panels, including masks/vocabulary. Independent log/hash
-and scheduler checks pass; GPU defaults stay unchanged. Other devices/precision,
-MMQ, paired performance, long contexts and task quality remain separate.
+vendor HISTORY. UltraBERT default-off CPU/F32 public text API is merged via
+[PR74](https://github.com/CrispStrobe/CrispEmbed/pull/74) at3f3d023a after all exact-source
+4be9f864 checks, including ten Build/Flutter39943915528 jobs and API39943940607.
+Original-first retrieval39950831201 at812e56e5/native4be9f864 passes all32 IDs/
+64 vector checks and8/8 top1; original/native Recall@1/MRR@10/NDCG@10 all1.0.
+Raw/normalized maxima7.343292236328125e-5/5.513429641723633e-7 and minimum
+cosine0.999999999999019 satisfy unchanged gates. Every vector/score record and
+artifact byte is independently reviewed. The owned smoke is not MTEB/BEIR;
+183 F32/1294 F16 intermediate failures and strict original replay remain red.
+Initial CLI-name and wheel-line-ending failures are retained. Next actual
+Rust/Dart model-backed checks and a separately frozen licensed representative
+retrieval benchmark, then long-context/GPU/performance/validated publication.
+Original arrays and first retrieval vectors stay remotely preserved through
+21 January2027; do not regenerate anchors or repeat completed M1/backend arms.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+
+PosFormer source/default PR72/73 merged7f1ecd33/75e87ea6 after complete exact-
+source checks. Actual Linux released/default50-case IDs/text/EOS/confidence,
+gates and bounded original/exported references pass; recognition remains7/50.
+Successor actual portable native/WASM release assets/hashes and consumers,
+including Apple released/default comparison, remain separate before any tag.
+Development Linux/Windows bundle CPU-baseline alignment remains pending.
+
+LFM2.5 official F16 CPU/CUDA T4 audit passes594 direct checks and both15-case
+ordinary API panels. Other devices/precision/MMQ, paired performance, long
+contexts and independent quality remain separate. OCR quantization selects no
+candidate; permissive OCR queue remains scoped. No runtime release, registry
+alias/model publication or app pin change follows the experimental API merge.
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 

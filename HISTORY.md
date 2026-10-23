@@ -1,3 +1,20 @@
+## 2026-10-23 — Vendor UltraBERT F32 API merged; owned retrieval qualified
+
+Vendor PR74 merged3f3d023a after all exact-source4be9f864 checks, including
+all ten Build/Flutter39943915528 jobs, WASM/style/security and actual public
+API39943940607. The CPU/F32 text path remains default-off and512-token bounded.
+Original-first39950831201 at812e56e5/native4be9f864 passes all32 IDs/64 vectors
+and8/8 top1; original/native Recall@1/MRR@10/NDCG@10 all1.0. Raw/normalized
+maxima7.34e-5/5.51e-7, cosine minimum0.999999999999019. Full matrices/vector
+records/source/payload/artifact hashes independently reviewed and archived in
+[vendor evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/ultrabert/retrieval-smoke.json).
+
+The owned smoke is not representative MTEB/BEIR; historical183/1294 numerical
+failures remain. Both initial harness failures retained; no gold/prompt/budget
+changes. Rust/Dart model-backed execution and representative retrieval remain
+next. Original vectors/logs stay remote through21 January2027. No release/tag,
+alias/model publication or consumer-owned task/source/app-pin change.
+
 ## 2026-10-23 — Vendor F32 API qualification and independent retrieval dispatch
 
 Vendor PR73 merged75e87ea6 after all exact-source790f9a6b checks, including ten
