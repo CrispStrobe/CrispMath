@@ -45,8 +45,10 @@ exact-source4be9f864 checks. Original-first retrieval39950831201 passes all32
 IDs/64 vectors and8/8 top1, original/native Recall@1/MRR@10/NDCG@10 all1.0.
 This authored smoke is not MTEB/BEIR;183/1294 intermediate failures and strict
 replay failures remain. Original arrays/vectors are preserved through21 January2027.
-DraftPR75 atd01249af/run39972325056 awaits actual Rust/Dart model execution;
-binding controls pass. Ovis source trace narrows MTP/fallback/dual-stop behavior;
+DraftPR75 at391df2ca/retry39979622930 awaits actual Rust/Dart execution.
+Initial39972325056 built Rust/library but stopped before inference on a
+versioned-SONAME checker bug; raw evidence retained. Five binding/five API
+control groups pass; exact resolved-file checking remains enforced. Ovis source trace narrows MTP/fallback/dual-stop behavior;
 weight-free metadata/meta-schema/processor39974181719 at60679016 is queued.
 No installed-vLLM/inference/conversion/alias claim follows. Paired LFM2 F16
 CPU/CUDA performance recipe9fd70ce5/v1 is running on one authorized GPU slot;
@@ -57,8 +59,8 @@ PosFormer PR72/73 source/default restoration merged7f1ecd33/75e87ea6 after
 complete exact-source checks. Actual Linux released/default50-case IDs/text/EOS/
 confidence and bounded references pass; recognition remains7/50. Actual successor
 portable native/WASM assets/hashes and consumers, including Apple comparison,
-remain required before any tag. Development bundle CPU-baseline alignment remains
-open. No model publication, runtime release or app-pin change follows.
+remain required before any tag. Development CPU-baseline alignment is prepared in draftPR76 atf61de665;
+YAML/pin guards pass, actual hosted baseline/platform reports remain pending. No model publication, runtime release or app-pin change follows.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
 
 No held-out calibration, runtime/default/weight promotion or app change; the
