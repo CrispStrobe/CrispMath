@@ -1,3 +1,24 @@
+## 2026-10-23 — Vendor M1 review and bounded F32/Ovis follow-ups
+
+Vendor PosFormer PR72 merged7f1ecd33 after complete sourcef7c53803 platform,
+Flutter, security and bounded original/exported-F32 checks. Historical PR60 is
+closed; immutable0.17.12/app pin remain unchanged. Actual published Linux binary
+and trained candidate match all50 IDs/text/EOS stops; confidence drift is retained.
+PR73 at790f9a6b proposes restoring that released default with literal0 fallback;
+exact-source CI is queued, not qualified by this documentation update.
+
+The LFM2.5 Encoder F16 T4 audit passes594 direct CPU/CUDA checks, both15-case
+ordinary API panels and independent raw log/hash/scheduler verification. This is
+bounded reference accuracy, not independent task quality or paired latency.
+Returned M1 UltraBERT reports are now integrated after independent structural/
+hash review. Original Python hidden error0.00579 retains its failed audit, while
+raw/normalized CLS6.52e-5/6.41e-7 support separately scoped gated F32 API/retrieval
+qualification. All original gates/anchors and183/1294 native failures remain.
+OvisOCR2 pinned Apache/base/config/473-tensor header audit is complete; MTP/schema,
+missing metadata and actual prompt/pixel/EOS contracts precede conversion. See the
+[vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+Consumer-owned tasks, application source and release pins remain unchanged.
+
 ## 2026-10-23 — Vendor source integration, CUDA and actual released-binary evidence
 
 Vendor PosFormer PR72 merged7f1ecd33 after complete sourcef7c53803 platform,

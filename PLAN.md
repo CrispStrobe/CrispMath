@@ -43,8 +43,13 @@ separate. Vendor packaging/platform integration and live Pages checks are archiv
 vendor HISTORY. UltraBERT original arrays were preserved without regeneration
 through21 January2027. Original-backend39915714794 retains layer0 Q/287-stage
 differences in all four arms;183 F32/1,294 F16 native failures remain. The user
-is executing the bounded [M1 audit](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/handover-m1-validation.md)
-atf0dbe58d; do not duplicate it or infer production qualification.
+has completed the bounded [M1 audit](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/handover-m1-validation.md)
+atf0dbe58d. Independent review checks all28 case records/10808 stage identities,
+112 same-input projection records and56 raw/normalized CLS comparisons. Original
+Python hidden error0.00579 coexists with raw/normalized CLS6.52e-5/6.41e-7.
+Existing native F32 pooled outputs pass their fixed seven-case gates; proceed
+with a separately scoped gated F32 API/retrieval lane, preserving183 intermediate
+failures. F16 raw CLS0.0185 remains outside its gate. No repeated backend arms.
 
 PosFormer PR72 merged7f1ecd33 after all sourcef7c53803 checks; historical PR60
 is closed. Actual published Linux0.17.12 and the trained candidate match all50
