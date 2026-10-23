@@ -52,13 +52,16 @@ Original report/input/log bytes are preserved at immutable fixture602a3645.
 The eleven-case original GPU quality reference4a616a8f also completes: eleven
 EOS248046, no cap hits, eight authored cases WER0 with paragraph-break CER.
 The unchanged strict parser rejects table border attributes in two documents;
-those failures/raw metrics remain retained. Exact outputs are preserved at
+those failures/raw metrics remain retained. A separate versioned Ovis presentation
+view freezes before native outputs, accepts only integer opening-table borders,
+and confirms all15 inventory cells while preserving raw scores. Exact outputs are preserved at
 fixture a2902f8e with anonymous readback. This is not native or benchmark quality.
 
 Native initial40034685690 at468f5504 stops before forward on raw Python
 processor tuple/list equality despite all three exact original input hashes.
-Correction d0f64542 compares exact archived JSON values and logs each field/type;
-retry40039159696 is dispatched, not qualified. Keep every initial failure.
+Correction d0f64542 is confirmed by40039159696 before a second generation-default
+guard stops forward. Source13a093ea checks original AutoConfig and actual raw
+config fallback separately and exactly; retry40040392649 is pending, unqualified. Keep every initial failure.
 All-layer/cache/logit/decoded/raw-vector proofs precede actual C/Python/CLI/HTTP/
 Rust/Dart checks, original-HF/native quality, protected Q8/Q4 and development-only
 calibration. Publication stays conditional on all actual outcomes, qualified
