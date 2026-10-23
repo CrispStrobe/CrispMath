@@ -62,8 +62,11 @@ freezes eight questions/24 documents, gold and a tested executable scorer before
 any task outputs. The original-first producer and immutable-original reuse are
 integrated at40ff3d6c, with actual binding/library identity guards at71daebea;
 hosted39947939925 passes all four scorer/seven producer groups. Model run
-39949129060 was dispatched once at producer2f871a3e against qualified
-native4be9f864 after API success and is queued. No task score is claimed.
+39949129060 failed before model construction because published wheel files use
+CRLF while inspected tagged sources use LF. Both wrapper/Pooling are otherwise
+byte-identical; the producer now pins exact wheel bytes, with initial evidence
+retained. Corrected retry39950831201 at812e56e5 against native4be9f864 is queued.
+No task score is claimed and no model/input/gold/budget changed.
 The optional M1 native handover adds complementary Apple CPU
 coverage; model-backed/task qualification and public pair/Rust/Dart checks remain.
 
