@@ -1,3 +1,31 @@
+## 2026-10-23 — Vendor F32 API qualification and independent retrieval dispatch
+
+Vendor PR73 merged75e87ea6 after all exact-source790f9a6b checks, including ten
+Build/Flutter39933251542 jobs, WASM/style/security and dedicated39933245147.
+Actual Linux released/default50-case IDs/text/EOS/confidence, gates and bounded
+reference paths pass. Recognition remains7/50. Successor actual release assets,
+hashes and consumers remain separate; app0.17.12 and all tags remain unchanged.
+
+UltraBERT API39939481805 builds all required targets but stops before model-backed
+comparisons because the harness looks for target crispembed-cli instead of emitted
+crispembed. Initial raw evidence is retained; PR74 at4be9f864 fixes only that
+lookup. Corrected39943940607 passes all twelve pooled comparisons/seven ID rows
+and actual C API/Python/CLI/HTTP. Independently reviewed raw producer fields and
+source/log/artifact fingerprints are archived in vendor public-f32-api.json.
+Raw CLS max6.72340393e-5 and normalized5.94183803e-7 pass unchanged gates.
+PR74 remains draft pending remaining platform checks; original183/1294
+intermediate failures remain unchanged.
+
+The owned eight-query/24-document retrieval producer is integrated at40ff3d6c.
+Hosted controls-only39947939925 passes four scorer/seven producer groups,
+including actual native binding/library identity. Exact-source API qualification is
+required before models/builds. First original wrapper vectors/rankings precede
+native work, and verified byte-for-byte original reuse preserves failures on
+retries. Model run39949129060 was dispatched once at producer2f871a3e against
+qualified native4be9f864 and remains queued; no task score is claimed. See the
+[vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+All consumer-owned tasks/source/pins remain unchanged.
+
 ## 2026-10-23 — Vendor PosFormer default merged; guarded retrieval producer ready
 
 Vendor PR73 merged75e87ea6 after all exact-source790f9a6b checks, including ten

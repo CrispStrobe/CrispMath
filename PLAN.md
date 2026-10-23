@@ -51,14 +51,19 @@ Existing native F32 pooled outputs pass their fixed seven-case gates; proceed
 with a separately scoped gated F32 API/retrieval lane, preserving183 intermediate
 failures. F16 raw CLS0.0185 remains outside its gate. No repeated backend arms.
 [DraftPR74](https://github.com/CrispStrobe/CrispEmbed/pull/74) at4be9f864 adds the
-default-off CPU/F32 public text profile; hosted39943940607 is queued after a
-harness-only CLI-output-name correction. The initial build passed; no API
-comparison ran before that failure. The
+default-off CPU/F32 public text profile. Hosted39943940607 passes all twelve
+pooled checks/seven actual ID rows and Python/CLI/HTTP at the unchanged gates:
+raw CLS max6.72340393e-5, normalized5.94183803e-7, reported cosine rounds1.0.
+Raw producer fields, log/source fingerprints and actual artifact receipt are
+independently checked and archived; initial harness-only CLI-name failure is
+retained. Remaining exact-source platform checks precede merge. The
 [owned retrieval smoke](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/ultrabert-retrieval-smoke.md)
 freezes eight questions/24 documents, gold and a tested executable scorer before
 any task outputs. The original-first producer and immutable-original reuse are
-integrated at40ff3d6c; hosted controls39945740758/39946699080 pass all ten groups.
-No retrieval model job was dispatched before API qualification.
+integrated at40ff3d6c, with actual binding/library identity guards at71daebea;
+hosted39947939925 passes all four scorer/seven producer groups. Model run
+39949129060 was dispatched once at producer2f871a3e against qualified
+native4be9f864 after API success and is queued. No task score is claimed.
 The optional M1 native handover adds complementary Apple CPU
 coverage; model-backed/task qualification and public pair/Rust/Dart checks remain.
 
