@@ -39,48 +39,32 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. Vendor packaging/platform integration and preview wheels are archived in vendor
-HISTORY. UltraBERT default-off CPU/F32 C/Python/CLI/HTTP and actual Rust/Dart
-consumers are merged via PR74/75 (3f3d023a/2f078406). Binding39979622930 passes
-42 metrics/14 ID rows; minimum cosine0.999999999994188 and raw maximum absolute
-error6.72340393e-5. Initial SONAME failure,183/1294 intermediate failures and
-strict replay drift remain preserved. Representative quality, pairs, GPU and
-release gates remain; the authored retrieval smoke is not MTEB/BEIR.
+separate. Vendor default-off UltraBERT CPU/F32 API and Rust/Dart support are merged
+PR74/75; independent authored retrieval smoke passes. Strict183/1294 numerical
+failures, reference replay drift, representative quality, pairs and release
+qualification remain separate. Development desktop CPU-baseline PR76 passes
+actual three-platform builds; successor assets and app upgrade remain pending.
 
-Development CPU-baseline PR76 merged1f8ff4d5 with actual Linux/macOS/Windows
-configure/build/smoke/install checks39979940916. Actual successor release
-assets/hashes and installed cross-host consumers remain required. The app
-remains pinned immutable0.17.12; no new tag or model publication follows.
+OvisOCR2 original metadata/schema and all473-tensor F32/F16 export roundtrips
+pass; PR77 merged2f8b5354. Frontend PR78 merged918c1c8d after exact original
+packed pixels (max error0), tokens/grids/masks/modalities/template, Unicode and
+negative controls40017014043. Original vLLM GPU attempt50ce5e52 installs pinned
+Torch2.11/CUDA12.9, matches all three original processor anchors and passes
+actual FP16 CUDA control; FlashInfer JIT linking fails before decoded output.
+Initial transport/bootstrap/linker failures remain public vendor receipts.
+Recipec819ea5a corrects real-driver linker discovery without model/kernel/dtype
+changes. Native draftPR79 prepares all-layer/cache/logit/decoded/owning-context
+F32/F16 audits gated on a positive original-GPU receipt. Quality, bindings,
+critical-tensor quantization and conditional HF publication follow; no Ovis
+model alias, quality claim or published weights yet.
 
-OvisOCR2 original metadata39983101540 and full473-tensor F32/F16 conversion
-and roundtrip39992662147 pass. Independent small-report review checks source,
-manifest, schema/precision and per-tensor hash declarations; GGUF payloads stay
-remote. PR77 merged2f8b5354. DraftPR78 atccb6059a adds a separately gated native
-frontend; hosted40017014043 is queued against frozen original packed-image
-arrays. Exact original prompt/IDs/masks/modalities and pixels, dual stops and
-negative profile/gate checks are required. Native model loader still admits
-format1 only; no Ovis alias, model decode, quality or publication is claimed.
-
-Paired LFM F16 CPU/CUDA performance v2/7a17864f completes four blocks/15 cases.
-Independent review checks420 timing samples, pinned sources, selected logs and
-actual CPU0/CUDA180 scheduler matmul assignments. Single-session9-token medians
-are136.542/4.889ms;649-token9667.336/80.488ms. Process RSS is not VRAM; raw CLS
-arrays were not retained by this performance recipe. Separate594-stage
-numerical audit, initial v1 pre-inference timeout and all limitations remain.
-Wider hardware/precision/task quality/throughput and GPU defaults stay open.
-
-PosFormer PR72/73 source/default restoration and actual50-case released/default
-IDs/text/EOS comparison pass; recognition remains7/50. Successor assets and
-consumer qualification remain separate. SAM stays with its existing owner.
+LFM official F16 CPU/CUDA numerical and paired timing audits pass, with all
+420 timing samples reviewed. Single-session speedups are scoped; wider GPU,
+precision, throughput and task quality remain open. PosFormer source/default
+restoration and Linux released/default50-case IDs/text/EOS pass; recognition
+stays7/50. Actual successor assets and consumer qualification remain required.
+App stays pinned immutable0.17.12; SAM stays with its existing owner.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
-
-Initial frontend40004747653 compiled but stopped before comparisons because
-Ovis includes combining-mark classes in its tokenizer regex. The corrected
-profile selects that exact regex and mark-aware BPE; LightOn remains unchanged.
-Twelve original tokenizers0.23.3 Unicode probes and16 profile rejections extend
-the hosted comparison. Initial producer/reference/log hashes remain preserved;
-image fixtures and numeric budgets are unchanged. No corrected native pass is
-claimed while40017014043 remains queued.
 
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.

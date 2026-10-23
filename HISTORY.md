@@ -1,3 +1,15 @@
+## 2026-10-23 — Vendor Ovis frontend merged; original GPU startup remains gated
+
+Vendor PR78 merged918c1c8d after exact frontend parity40017014043 and all
+platform checks. All three packed-image captures have zero maximum error;
+tokens/grids/masks/template and all Unicode/profile/gate controls pass.
+Original GPU attempt50ce5e52 passes pinned installation, original processor
+anchors and actual FP16 CUDA control, but FlashInfer JIT cannot link libcuda
+before decoded generation. Initial failures are preserved in vendor HISTORY.
+Correctedc819ea5a exposes the actual driver without system/kernel/dtype changes.
+Native draftPR79 is unqualified until original/full-stage/decoded audits pass.
+No OCR quality/publication or app-runtime upgrade is inferred.
+
 ## 2026-10-23 — Vendor original tokenizer mismatch localized
 
 Vendor initial Ovis frontend40004747653 at48aefc30 compiled and passed its
