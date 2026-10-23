@@ -40,27 +40,36 @@ The new public model-free auditor and all50 quality controls pass in
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
 separate. Vendor packaging/platform integration and preview wheels are archived in vendor
-HISTORY. UltraBERT default-off CPU/F32 API mergedPR74 at3f3d023a after all
-exact-source4be9f864 checks. Original-first retrieval39950831201 passes all32
-IDs/64 vectors and8/8 top1, original/native Recall@1/MRR@10/NDCG@10 all1.0.
-This authored smoke is not MTEB/BEIR;183/1294 intermediate failures and strict
-replay failures remain. Original arrays/vectors are preserved through21 January2027.
-DraftPR75 at391df2ca/retry39979622930 awaits actual Rust/Dart execution.
-Initial39972325056 built Rust/library but stopped before inference on a
-versioned-SONAME checker bug; raw evidence retained. Five binding/five API
-control groups pass; exact resolved-file checking remains enforced. Ovis source trace narrows MTP/fallback/dual-stop behavior;
-weight-free metadata/meta-schema/processor39974181719 at60679016 is queued.
-No installed-vLLM/inference/conversion/alias claim follows. Paired LFM2 F16
-CPU/CUDA performance recipe9fd70ce5/v1 is running on one authorized GPU slot;
-submitted/pulled script bytes match. Review timing/RSS/CLS/placement reports
-before any speed claim. Both original structural API/retrieval failures remain.
+HISTORY. UltraBERT default-off CPU/F32 C/Python/CLI/HTTP and actual Rust/Dart
+consumers are merged via PR74/75 (3f3d023a/2f078406). Binding39979622930 passes
+42 metrics/14 ID rows; minimum cosine0.999999999994188 and raw maximum absolute
+error6.72340393e-5. Initial SONAME failure,183/1294 intermediate failures and
+strict replay drift remain preserved. Representative quality, pairs, GPU and
+release gates remain; the authored retrieval smoke is not MTEB/BEIR.
 
-PosFormer PR72/73 source/default restoration merged7f1ecd33/75e87ea6 after
-complete exact-source checks. Actual Linux released/default50-case IDs/text/EOS/
-confidence and bounded references pass; recognition remains7/50. Actual successor
-portable native/WASM assets/hashes and consumers, including Apple comparison,
-remain required before any tag. Development CPU-baseline alignment is prepared in draftPR76 atf61de665;
-YAML/pin guards pass, actual hosted baseline/platform reports remain pending. No model publication, runtime release or app-pin change follows.
+Development CPU-baseline PR76 merged1f8ff4d5 with actual Linux/macOS/Windows
+configure/build/smoke/install checks39979940916. Actual successor release
+assets/hashes and installed cross-host consumers remain required. The app
+remains pinned immutable0.17.12; no new tag or model publication follows.
+
+OvisOCR2 weight-free metadata/schema/processor39983101540 passes all473 shapes,
+original packed inputs and minimum-pixel counterfactual. DraftPR77 implements
+an exact-source experimental profile. Initial export39991277170 was cancelled
+while its weight job remained queued to strengthen independent shape/precision
+and duplicate-name checks. Replacement39992662147 at5e197bae is pending;
+no conversion/native alias/decoded-quality qualification is claimed.
+
+Paired LFM F16 CPU/CUDA performance v2/7a17864f completes four blocks/15 cases.
+Independent review checks420 timing samples, pinned sources, selected logs and
+actual CPU0/CUDA180 scheduler matmul assignments. Single-session9-token medians
+are136.542/4.889ms;649-token9667.336/80.488ms. Process RSS is not VRAM; raw CLS
+arrays were not retained by this performance recipe. Separate594-stage
+numerical audit, initial v1 pre-inference timeout and all limitations remain.
+Wider hardware/precision/task quality/throughput and GPU defaults stay open.
+
+PosFormer PR72/73 source/default restoration and actual50-case released/default
+IDs/text/EOS comparison pass; recognition remains7/50. Successor assets and
+consumer qualification remain separate. SAM stays with its existing owner.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
 
 No held-out calibration, runtime/default/weight promotion or app change; the

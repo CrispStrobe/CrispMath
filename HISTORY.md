@@ -1,3 +1,19 @@
+## 2026-10-23 — Vendor consumer audits merged; bounded GPU timings reviewed
+
+UltraBERT PR75 merged2f078406 after actual Rust/Dart39979622930 and independent
+artifact/metric review; PR76 merged1f8ff4d5 after all desktop platform baseline
+checks39979940916. Representative quality, strict replay and release gates
+remain. LFM paired performance v2 completes15 cases/four blocks with420 timing
+samples independently checked; scheduler participation and one-session latency
+are documented without changing GPU defaults. The initial build timeout remains.
+[Full performance evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/lfm2-encoder/cuda-f16-performance.json).
+
+Ovis metadata/schema/processor39983101540 passes. DraftPR77 export source5e197bae
+strengthens independent shape/precision/duplicate checks. Superseded39991277170
+was cancelled before queued weight execution; replacement39992662147 remains
+pending. No native alias/decoded quality, release/model publication, consumer
+source or app-pin change follows.
+
 ## 2026-10-23 — Vendor binding loader corrected; development baseline prepared
 
 Initial binding39972325056 built Rust/library but stopped before inference on
