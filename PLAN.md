@@ -39,27 +39,22 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. Vendor PR68/69/70 are merged on main. UltraBERT reference/conversion and
-native tokenizer/template tooling pass their scoped controls; production model
-support remains pending. All183 F32/1,294 F16 native numerical failures and both
-strict replay failures remain archived. Local audit39008070299 passed build,
-25 model-free/five Torch controls and seven local captures, then failed on
-interleaved logging. A flush correction is in sourcef6f84aba; corrected
-[39009703362](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39009703362)
-is queued at that exact source. Native BPE/template
-[39007901207](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39007901207)
-passes all eight frozen ID/mask rows and both wrong alternatives fail8/8.
+separate. Vendor PR68/69/70 are merged; full integration Build/Flutter/WASM/lint and
+live Pages HTML/PNG verification pass. Corrected local UltraBERT audit39009703362
+completes14 arms/700 passing exact controls and reproduces all183 F32/1,294 F16
+ordinary failures. All21 F32 local probes pass; six F16 down probes fail against
+original F32 targets. Fresh Python local/frozen output gaps remain visible;
+production model support and independent retrieval quality are still pending.
 
-Wheel [39003273845](https://github.com/CrispStrobe/CrispEmbed/actions/runs/39003273845)
-at e75a32f1 passes all four platform legs,23 actual installed native-load/C-ABI
-checks and aggregation. No runtime/PyPI release or app pin change. PR68's source
-checks pass; actual Pages deployment and new merged-head CI remain separate.
-
-Execute vendor tasks from [the bounded handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md):
-corrected audit, numerical attribution, production profile/all bindings,
-independent quality/quantization/publication, and preserving the original arrays
-remotely before31 October2026 expiry. PR60 stays draft for selective trained
-input LayerNorm/ceil-pool backport with fresh original/reference/decoded evidence.
+Original arrays were verified/copied by39913800444, remote artifact12483912080,
+expiry21 January2027. Original source/manifest/payload identities are unchanged.
+Original-backend reproducibility39915714794 is queued at8031ae1c; its fixed
+thread/MKLDNN/F64/F16-weight diagnostics do not replace frozen references.
+Selective opt-in PosFormer [PR72](https://github.com/CrispStrobe/CrispEmbed/pull/72)
+is draft at0b73f5f9 with Linux/macOS normal-API/reference/gate validation39916014523
+pending. Its branch development manifests0.17.13 imply no tag, release, package
+publication or app upgrade. PR60 remains open for reconciliation after validation.
+[Exact executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 

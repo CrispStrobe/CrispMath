@@ -1,3 +1,19 @@
+## 2026-10-23 — Vendor evidence closed; frozen arrays preserved remotely
+
+Merged-source Build/Flutter/WASM/lint and Pages deployment pass; actual public
+HTML/PNG metadata, HTTP type/dimensions and committed bytes verify23 October.
+Corrected UltraBERT audit39009703362 completes14 arms/700 exact controls, retains
+183 F32/1,294 F16 ordinary failures and adds21/21 passing F32 local probes/six
+failed F16 down probes. All28 raw log hashes and prior records independently
+verify. No production-model or independent-quality claim follows.
+
+Reference preservation39913800444 verifies seven archives/2730 stage payloads
+and original conversion records before a90-day remote copy, expiry21 January2027.
+No original reference was regenerated. Backend reproducibility39915714794 and
+selective opt-in PosFormer PR72/39916014523 are pending with exact sources in
+[the vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+Consumer-owned tasks, immutable app0.17.12 and release tags remain unchanged.
+
 ## 2026-10-17 — Vendor packaging complete; test-only UltraBERT tools integrated
 
 Vendor main integrates PR68/69/70 and the final executable handoff. All four
