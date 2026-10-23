@@ -1,3 +1,19 @@
+## 2026-10-23 — Vendor binding audit and Ovis metadata probe queued
+
+UltraBERT F32 API/owned retrieval remain merged and qualified within their
+recorded limits. Draft vendorPR75 atd01249af adds actual Rust/Dart consumers;
+hosted39972325056 is queued, with four binding/five API control groups passing
+locally. No model-backed binding success is claimed before returned reports.
+
+OvisOCR2 pinned vLLM0.22.1 source narrows ordinary/speculative MTP, missing
+metadata fallback and primary248046/additional248044 stopping. An isolated
+original stop-method probe supports that union without installed vLLM claims.
+Weight-free HF metadata/meta-schema/processor39974181719 at60679016 is queued;
+three model-free groups pass. No OCR weights/forward/conversion/alias occurred.
+Duplicate push-only controls were cancelled; runtime acceptance remains strict.
+See the [vendor executable handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+Consumer source/pin and owned app tasks remain unchanged.
+
 ## 2026-10-23 — Vendor UltraBERT F32 API merged; owned retrieval qualified
 
 Vendor PR74 merged3f3d023a after all exact-source4be9f864 checks, including

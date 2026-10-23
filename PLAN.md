@@ -68,6 +68,20 @@ ordinary API panels. Other devices/precision/MMQ, paired performance, long
 contexts and independent quality remain separate. OCR quantization selects no
 candidate; permissive OCR queue remains scoped. No runtime release, registry
 alias/model publication or app pin change follows the experimental API merge.
+Current executable vendor lanes: [draftPR75](https://github.com/CrispStrobe/CrispEmbed/pull/75)
+atd01249af/model39972325056 awaits actual Rust/Dart results. Ovis source analysis
+identifies distinct stop IDs248044/248046; weight-free HF metadata/meta-schema/
+processor39974181719 at60679016 is queued. Three model-free controls pass; no
+installed-vLLM/inference/conversion/alias success is claimed. Existing OCR
+numerical/quality debt remains. Inspect queued runs instead of duplicating them.
+
+Current executable vendor lanes: [draftPR75](https://github.com/CrispStrobe/CrispEmbed/pull/75)
+atd01249af/model39972325056 awaits actual Rust/Dart results. Ovis source analysis
+identifies distinct stop IDs248044/248046; weight-free HF metadata/meta-schema/
+processor39974181719 at60679016 is queued. Three model-free controls pass; no
+installed-vLLM/inference/conversion/alias success is claimed. Existing OCR
+numerical/quality debt remains. Inspect queued runs instead of duplicating them.
+
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 
