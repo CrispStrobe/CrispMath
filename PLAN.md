@@ -59,9 +59,10 @@ Selective opt-in PosFormer [PR72](https://github.com/CrispStrobe/CrispEmbed/pull
 is draft atf7c53803. Linux/macOS50-case normal-API/gate checks pass at the same
 runtime C++ source0b73f5f9 (7/50 preserved,38 opt-in transcription changes,
 unset/zero baseline-exact). Initial Linux reference instrumentation fails before
-inference; its test-only anchor adapter is corrected, seven controls pass, and
-Linux retry39918191021 is queued. Actual reference/required checks are needed
-before merge. Branch manifests0.17.13 create no tag/publication/app pin change.
+inference; its test-only anchor adapter is corrected. Linux39918191021 passes
+both five-case/five-step reference arms:270 tensors,45 encoder/275 decoder
+stages and25 argmax matches per arm, plus16 pool/two normalization controls.
+Remaining platform/secret conclusions are required before merge. Branch manifests0.17.13 create no tag/publication/app pin change.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.

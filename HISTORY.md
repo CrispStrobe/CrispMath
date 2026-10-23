@@ -10,6 +10,24 @@ Selective PosFormer PR72 preserves Linux/macOS7/50 original matches and all
 unset/zero baseline outputs at source0b73f5f9. Its Linux reference phase rejects
 a test-only gated-pool trace anchor before inference. Adapter-only correction
 f7c53803 preserves the runtime source and both branch selections; seven local
+controls pass. Corrected Linux39918191021 passes all bounded reference stages,
+argmax/primitive controls and public-API/gate regressions; platform/secret checks
+remain pending. All initial raw
+reports/hashes are archived, with no numerical waiver or production/default
+promotion. App pin0.17.12 and all consumer-owned tasks remain unchanged.
+
+## 2026-10-23 — Vendor numerical controls retained; M1 and backport qualification scoped
+
+Original-backend39915714794 completes four arms without recovering frozen
+UltraBERT anchors; all seven cases retain layer0 Q/287-stage differences. Full
+raw measurements and independent CPU/BLAS follow-up are retained in the
+[vendor M1 handover](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/handover-m1-validation.md).
+Original arrays were verified/copied through21 January2027 without regeneration.
+
+Selective PosFormer PR72 preserves Linux/macOS7/50 original matches and all
+unset/zero baseline outputs at source0b73f5f9. Its Linux reference phase rejects
+a test-only gated-pool trace anchor before inference. Adapter-only correction
+f7c53803 preserves the runtime source and both branch selections; seven local
 controls pass and corrected Linux39918191021 remains queued. All initial raw
 reports/hashes are archived, with no numerical waiver or production/default
 promotion. App pin0.17.12 and all consumer-owned tasks remain unchanged.
