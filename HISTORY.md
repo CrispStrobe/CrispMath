@@ -1,3 +1,20 @@
+## 2026-10-23 — Vendor source integration, CUDA and actual released-binary evidence
+
+Vendor PosFormer PR72 merged7f1ecd33 after complete sourcef7c53803 platform,
+Flutter, security and bounded original/exported-F32 checks. Historical PR60 is
+closed; immutable0.17.12/app pin remain unchanged. Actual published Linux binary
+and trained candidate match all50 IDs/text/EOS stops; confidence drift is retained.
+PR73 at790f9a6b proposes restoring that released default with literal0 fallback;
+exact-source CI is queued, not qualified by this documentation update.
+
+The LFM2.5 Encoder F16 T4 audit passes594 direct CPU/CUDA checks, both15-case
+ordinary API panels and independent raw log/hash/scheduler verification. This is
+bounded reference accuracy, not independent task quality or paired latency.
+The M1 UltraBERT experiment is externally owned and retains all original gates,
+anchors and183/1294 numerical failures pending actual reports. See the
+[vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+Consumer-owned tasks, application source and release pins remain unchanged.
+
 ## 2026-10-23 — Vendor numerical controls retained; M1 and backport qualification scoped
 
 Original-backend39915714794 completes four arms without recovering frozen
