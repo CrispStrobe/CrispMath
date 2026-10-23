@@ -40,39 +40,90 @@ The new public model-free auditor and all50 quality controls pass in
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
 separate. Vendor UltraBERT default-off CPU/F32 API, retrieval smoke and Rust/Dart support
-are merged PR74/75. Strict183/1294 intermediate failures, reference replay drift
-and representative quality/pairs/release gates remain. Development CPU-baseline
-PR76 passes three-platform builds; successor assets/app upgrade stay pending.
+are merged PR74/75. Strict183/1294 intermediate failures, reference replay drift,
+representative quality/pairs/release gates stay open. Development CPU-baseline
+PR76 passes three-platform builds; successor assets/app upgrade remain separate.
 The app stays on immutable0.17.12.
 
-OvisOCR2 full473-tensor F32/F16 export and frontend PR78 pass. Controlled original
-T4/FP16 GPU execution at5fe3fc90 passes with TRITON_ATTN decoder, Torch-SDPA
-vision and Triton GDN. The original auto-FlashInfer warmup failure remains.
-Original report/input/log bytes are preserved at immutable fixture602a3645.
-The eleven-case original GPU quality reference4a616a8f also completes: eleven
-EOS248046, no cap hits, eight authored cases WER0 with paragraph-break CER.
-The unchanged strict parser rejects table border attributes in two documents;
-those failures/raw metrics remain retained. A separate versioned Ovis presentation
-view freezes before native outputs, accepts only integer opening-table borders,
-and confirms all15 inventory cells while preserving raw scores. Exact outputs are preserved at
-fixture a2902f8e with anonymous readback. This is not native or benchmark quality.
+Original Ovis controlled GPU reference and eleven-case quality are preserved;
+CPU/F32 forward completes, with a retained cache-observer failure. The following
+vendor-owned execution sequence is mirrored directly from current vendor PLAN.
+It is not model qualification, model publication or an app runtime upgrade.
 
-Native initial40034685690 at468f5504 stops before forward on raw Python
-processor tuple/list equality despite all three exact original input hashes.
-Correction d0f64542 is confirmed by40039159696 before a second generation-default
-guard stops forward. Source13a093ea checks original AutoConfig and actual raw
-config fallback separately and exactly; retry40040392649 is pending, unqualified. Keep every initial failure.
-All-layer/cache/logit/decoded/raw-vector proofs precede actual C/Python/CLI/HTTP/
-Rust/Dart checks, original-HF/native quality, protected Q8/Q4 and development-only
-calibration. Publication stays conditional on all actual outcomes, qualified
-hashes and immutable empty-cache readback. No Ovis alias or model weights are
-published. Multiple Ovis stage paths have a prepared cache correction/probe;
-legacy caches remain separate. Do not duplicate the current model retry.
+## Active Ovis completion sequence — one coordinated lane
+
+Original controlled GPU execution is complete; source5fe3fc90, exact saved
+inputs/stops/IDs/text and immutable preservation are archived in HISTORY.
+The original automatic FlashInfer T4 failure remains retained. Continue:
+
+1. **Full native model audit:** draft [PR79](https://github.com/CrispStrobe/CrispEmbed/pull/79),
+   source cc038b00, [40041958521](https://github.com/CrispStrobe/CrispEmbed/actions/runs/40041958521)
+   dispatched through `ovisocr2-metadata.yml`, phase=model. Do not duplicate it.
+   Initial40034685690 stopped before forward on a raw Python tuple/list processor
+   guard; [initial evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-processor-contract-failure.json)
+   preserves all three exact processor anchors and source hashes. The correction
+   compares exact JSON values, as the original metadata producer does, and logs
+   each field/type without changing any mathematical budget. Second40039159696
+   confirms that correction, then stops at the generation-config assumption.
+   Sourcecc038b00 checks metadata AutoConfig and actual HF raw-config fallback
+   contracts separately and exactly; [second initial evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-generation-contract-failure.json).
+   Third40040392649 confirms both contracts and completes original forward,
+   nine IDs/text/EOS and exact observation controls, but omits72 dictionary cache
+   fields. [Retained capture](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-cache-observer-failure.json).
+   Current cc038b00 observes integer0 cache entries and requires all871 prior
+   NPY members unchanged plus exactly72 new cache stages before native work.
+   Keep artifact12539012965 (1,264,893,857 ZIP bytes) remote; it expires21 January
+   2027. Preserve it remotely before expiry. On replay drift, retain first-stage
+   absolute errors/norms/IDs and stop; do not replace the frozen arrays.
+   Review original HF CPU/F32 modules, every vision/text layer/cache/logit,
+   all generated scores, IDs/EOS/raw text, owning repeat/two-context and negative
+   controls. Preserve earliest absolute errors/norms and all failed arms. Raw
+   actual native vectors stay remote in `ovisocr2-native-diff-RUN`; download
+   only needed reports/images. Existing named original backend-control budgets
+   apply; keep all raw strict-absolute flags and prior LightOn numerical debt.
+2. **Complete actual public checks:** C/Python/CLI/HTTP/Rust/Dart prepared tools
+   require a reviewed positive native receipt before weights. Keep the three
+   Ovis gates, fixed task prompt and1024-patch rejection. Validate both selector
+   profile guards, prompt/gate resets, ABI/layout, source/library identity,
+   independent contexts and multiple Ovis stage model paths. No invented URL,
+   checksum, registry default or production alias before qualified artifacts.
+3. **Independent quality:** the eleven-case original controlled GPU reference
+   is complete ([evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/ovisocr2-vllm-quality-reference.json));
+   retain its strict table-attribute parse failures and separate
+   [presentation view](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/ovisocr2-vllm-quality-presentation.json).
+   Freeze source02ea6144 policy `ovisocr2-table-border-presentation-v1` before
+   CPU/native quality: only integer table border is presentation; raw metrics
+   and unchanged strict-v1 results remain. Every arm and paired screen must use
+   the same policy, with exact archived original-score reuse. Run original HF once on the frozen four-development/
+   four-heldout synthetic inputs and three separately licensed documents, then
+   retain its exact artifact/source/hash and reuse it for precision arms.
+   Require raw/cleaned CER/WER, completion/EOS/caps, format, fifteen owned table
+   cells, confidence, timings and RSS. Authored smoke is not a benchmark.
+4. **Critical precision and calibration:** run `crispembed-quantize` Q8 protected,
+   Q4 attention-Q8 and a separate four-development-image/72-FFN-vector imatrix
+   arm after reviewed Q8 diagnostic completion. Q8 failure is retained and does
+   not prohibit the authorized Q4 diagnostic. Preserve original/native
+   crispembed-diff stage magnitudes/raw vectors, decoded quality and all failures.
+   A failed numerical or quality candidate is not eligible for publication.
+5. **Conditional publication and integration:** select only a qualified F16 or
+   quantized artifact after reviewing every planned quantization outcome.
+   Prepared publisher requires exact original/native/public/quality/selection
+   receipts and licensed base provenance; only calibrated Q4 needs actual
+   importance evidence. Verify immutable HF bytes through an empty cache, then
+   add pinned experimental registry/catalog entries and actual empty-cache
+   consumer checks. Keep probes outside production distribution. No runtime
+   tag, default flip or app pin change follows from prepared tools alone.
+
+Continue through the final qualification/publication decision; queued jobs and
+prepared tooling are not completed model support. The actual single-model
+math audit is independent from the later pipeline model-path cache correction;
+record both sources and their actual hosted checks.
+
 
 LFM official F16 CPU/CUDA numerical and paired session timing audits pass;
 wider hardware/precision/throughput/task quality remain. PosFormer source/default
 restoration and Linux released/default50-case IDs/text/EOS pass; recognition7/50.
-Successor assets/consumers remain separate; SAM stays with its existing owner.
+Successor assets/consumers remain separate. SAM stays with its existing owner.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
 
 No held-out calibration, runtime/default/weight promotion or app change; the

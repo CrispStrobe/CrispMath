@@ -1,3 +1,14 @@
+## 2026-10-23 — Vendor Ovis original F32 forward preserved before cache completion
+
+Original HF CPU/F32 completes nine GPU-matching IDs/text/EOS and exact observation
+controls; cached/full-prefix logits max1.335144e-5. Initial40040392649 then stops
+at72 omitted dictionary-backed cache fields. All871 saved arrays remain remote.
+Current cc038b00 audit40041958521 observes integer0 cache entries and demands every
+old NPY member byte-identical plus exactly72 cache stages before native work.
+[Retained original forward and failure](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-cache-observer-failure.json).
+Native/API/quality/calibration and conditional publication remain open; no model
+weights/alias/runtime release or app pin change. App remains0.17.12.
+
 ## 2026-10-23 — Vendor original Ovis quality and initial native capture failure
 
 Vendor original T4/FP16 quality recipe4a616a8f completes all eleven frozen cases
