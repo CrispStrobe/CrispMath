@@ -1,3 +1,16 @@
+## 2026-10-23 — Vendor original tokenizer mismatch localized
+
+Vendor initial Ovis frontend40004747653 at48aefc30 compiled and passed its
+CPU-baseline guard but exited before numerical comparisons. Original Ovis
+regex includes combining marks; the first loader expected the LightOn variant.
+[Failure, original producer and artifact/reference/log hashes](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-frontend-pattern-failure.json)
+are preserved. PR78 correctionccb6059a uses Ovis's exact pattern and existing
+mark-aware BPE by profile; LightOn's pattern/gated alternative are retained.
+Twelve original tokenizers0.23.3 Unicode probes add ID/decode comparisons. All21
+lightweight controls pass; corrected hosted40017014043 is queued. No original
+image fields or numerical gates changed, no corrected pass is inferred, and
+native model admission/decoded quality remain separate. App0.17.12 unchanged.
+
 ## 2026-10-23 — Vendor Ovis experimental export merged; native frontend gated
 
 Vendor PR77 merged2f8b5354 after full F32/F16 export and473-tensor original-cast

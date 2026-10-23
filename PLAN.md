@@ -55,8 +55,8 @@ remains pinned immutable0.17.12; no new tag or model publication follows.
 OvisOCR2 original metadata39983101540 and full473-tensor F32/F16 conversion
 and roundtrip39992662147 pass. Independent small-report review checks source,
 manifest, schema/precision and per-tensor hash declarations; GGUF payloads stay
-remote. PR77 merged2f8b5354. DraftPR78 at48aefc30 adds a separately gated native
-frontend; hosted40004747653 is queued against frozen original packed-image
+remote. PR77 merged2f8b5354. DraftPR78 atccb6059a adds a separately gated native
+frontend; hosted40017014043 is queued against frozen original packed-image
 arrays. Exact original prompt/IDs/masks/modalities and pixels, dual stops and
 negative profile/gate checks are required. Native model loader still admits
 format1 only; no Ovis alias, model decode, quality or publication is claimed.
@@ -73,6 +73,14 @@ PosFormer PR72/73 source/default restoration and actual50-case released/default
 IDs/text/EOS comparison pass; recognition remains7/50. Successor assets and
 consumer qualification remain separate. SAM stays with its existing owner.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+
+Initial frontend40004747653 compiled but stopped before comparisons because
+Ovis includes combining-mark classes in its tokenizer regex. The corrected
+profile selects that exact regex and mark-aware BPE; LightOn remains unchanged.
+Twelve original tokenizers0.23.3 Unicode probes and16 profile rejections extend
+the hosted comparison. Initial producer/reference/log hashes remain preserved;
+image fixtures and numeric budgets are unchanged. No corrected native pass is
+claimed while40017014043 remains queued.
 
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
