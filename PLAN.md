@@ -50,13 +50,19 @@ Python hidden error0.00579 coexists with raw/normalized CLS6.52e-5/6.41e-7.
 Existing native F32 pooled outputs pass their fixed seven-case gates; proceed
 with a separately scoped gated F32 API/retrieval lane, preserving183 intermediate
 failures. F16 raw CLS0.0185 remains outside its gate. No repeated backend arms.
+[DraftPR74](https://github.com/CrispStrobe/CrispEmbed/pull/74) at0e615ea4 adds the
+default-off CPU/F32 public text profile; hosted39939481805 is queued. The
+[owned retrieval smoke](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/ultrabert-retrieval-smoke.md)
+freezes eight questions/24 documents, gold and a tested executable scorer before
+any task outputs. The optional M1 native handover adds complementary Apple CPU
+coverage; model-backed/task qualification and public pair/Rust/Dart checks remain.
 
 PosFormer PR72 merged7f1ecd33 after all sourcef7c53803 checks; historical PR60
 is closed. Actual published Linux0.17.12 and the trained candidate match all50
 IDs/text/EOS stops. Confidence drift remains measured, without fitted tolerance.
 [PR73](https://github.com/CrispStrobe/CrispEmbed/pull/73) at790f9a6b restores the
-released default while retaining literal0; exact-source hosted default/reference
-and platform checks are queued. No tag, publication or app pin change follows.
+released default while retaining literal0; dedicated39933245147 and independent
+raw-report review pass. Final platform CI remains pending before merge. No tag, publication or app pin change follows.
 
 The genuine LFM2.5 Encoder F16 CUDA T4 run passes594 direct CPU/CUDA checks and
 both15-case ordinary API panels, including masks/vocabulary. Independent log/hash
