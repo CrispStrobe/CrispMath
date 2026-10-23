@@ -39,22 +39,30 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. Vendor PR68/69/70 are merged; full integration Build/Flutter/WASM/lint and
-live Pages HTML/PNG verification pass. Corrected local UltraBERT audit39009703362
-completes14 arms/700 passing exact controls and reproduces all183 F32/1,294 F16
-ordinary failures. All21 F32 local probes pass; six F16 down probes fail against
-original F32 targets. Fresh Python local/frozen output gaps remain visible;
-production model support and independent retrieval quality are still pending.
+separate. Vendor PR68/69/70 are merged; integration Build/Flutter/WASM/lint and live
+Pages checks pass. Corrected UltraBERT local audit39009703362 completes14 arms,
+700 exact controls, all21 F32 local probes and six failed F16 down probes while
+retaining183 F32/1,294 F16 ordinary failures. Original-backend39915714794 completes
+four arms: all cases first differ at layer0 Q/287 captured stages; MKLDNN switches
+have no effect and thread changes do not recover frozen anchors. No cause or
+production qualification is inferred. Original arrays are verified/copied through
+21 January2027 by39913800444, with original producer identity unchanged.
 
-Original arrays were verified/copied by39913800444, remote artifact12483912080,
-expiry21 January2027. Original source/manifest/payload identities are unchanged.
-Original-backend reproducibility39915714794 is queued at8031ae1c; its fixed
-thread/MKLDNN/F64/F16-weight diagnostics do not replace frozen references.
+The [M1 handover](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/handover-m1-validation.md)
+is ready with pinned source/dependencies, bounded resource checks, fixed arrays,
+full-stage/projection and explicit raw/normalized CLS acceptance. Earlier Linux
+backend results have final-hidden metrics, not separately measured CLS metrics.
+Kaggle is reserved for real GPU work; a useful LFM CUDA audit first needs explicit
+device selection/no-fallback proof in the current Metal/CPU-only diff target.
+
 Selective opt-in PosFormer [PR72](https://github.com/CrispStrobe/CrispEmbed/pull/72)
-is draft at0b73f5f9 with Linux/macOS normal-API/reference/gate validation39916014523
-pending. Its branch development manifests0.17.13 imply no tag, release, package
-publication or app upgrade. PR60 remains open for reconciliation after validation.
-[Exact executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+is draft atf7c53803. Linux/macOS50-case normal-API/gate checks pass at the same
+runtime C++ source0b73f5f9 (7/50 preserved,38 opt-in transcription changes,
+unset/zero baseline-exact). Initial Linux reference instrumentation fails before
+inference; its test-only anchor adapter is corrected, seven controls pass, and
+Linux retry39918191021 is queued. Actual reference/required checks are needed
+before merge. Branch manifests0.17.13 create no tag/publication/app pin change.
+[Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
 
