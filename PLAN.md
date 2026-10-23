@@ -39,35 +39,37 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. Vendor UltraBERT default-off CPU/F32 API, retrieval smoke and actual Rust/Dart
-support are merged PR74/75. Strict183/1294 intermediate failures, reference
-replay drift and representative quality/pairs/release gates remain separate.
-Development CPU-baseline PR76 passes three-platform builds; successor assets
-and app upgrade remain pending. The app stays on immutable0.17.12.
+separate. Vendor UltraBERT default-off CPU/F32 API, retrieval smoke and Rust/Dart support
+are merged PR74/75. Strict183/1294 intermediate failures, reference replay drift
+and representative quality/pairs/release gates remain. Development CPU-baseline
+PR76 passes three-platform builds; successor assets/app upgrade stay pending.
+The app stays on immutable0.17.12.
 
-OvisOCR2 full473-tensor F32/F16 export and exact frontend PR78 pass. Controlled
-original T4/FP16 GPU execution at5fe3fc90 now passes with explicit TRITON_ATTN
-decoder, Torch-SDPA vision and Triton GDN. Both actual ID lists reach EOS248046;
-readable output is Hello OCR and12345. The original auto-FlashInfer warmup
-failure stays retained; no automatic-backend/BF16/quality equivalence is claimed.
-Actual input/report/log bytes are preserved at immutable HF fixture602a3645,
-500157 ZIP bytes with anonymous readback. The complete Apache base-license
-chain and exact source hashes are recorded in vendor evidence.
+OvisOCR2 full473-tensor F32/F16 export and frontend PR78 pass. Controlled original
+T4/FP16 GPU execution at5fe3fc90 passes with TRITON_ATTN decoder, Torch-SDPA
+vision and Triton GDN. The original auto-FlashInfer warmup failure remains.
+Original report/input/log bytes are preserved at immutable fixture602a3645.
+The eleven-case original GPU quality reference4a616a8f also completes: eleven
+EOS248046, no cap hits, eight authored cases WER0 with paragraph-break CER.
+The unchanged strict parser rejects table border attributes in two documents;
+those failures/raw metrics remain retained. Exact outputs are preserved at
+fixture a2902f8e with anonymous readback. This is not native or benchmark quality.
 
-Native draftPR79 model audit40034685690 at468f5504 is queued, not qualified.
-All-layer/cache/logit/decoded and raw-vector proofs precede actual public
-C/Python/CLI/HTTP/Rust/Dart, independent OCR quality, protected Q8/Q4 and
-four-development-image calibration. Publication remains conditional on all
-planned outcomes, exact remote hashes and an actual empty-cache consumer.
-No Ovis alias or model weights are published. Multiple Ovis stage model paths
-have a prepared cache correction and hosted negative probe; legacy caches
-remain a separate bounded follow-up. Do not duplicate the queued model run.
+Native initial40034685690 at468f5504 stops before forward on raw Python
+processor tuple/list equality despite all three exact original input hashes.
+Correction d0f64542 compares exact archived JSON values and logs each field/type;
+retry40039159696 is dispatched, not qualified. Keep every initial failure.
+All-layer/cache/logit/decoded/raw-vector proofs precede actual C/Python/CLI/HTTP/
+Rust/Dart checks, original-HF/native quality, protected Q8/Q4 and development-only
+calibration. Publication stays conditional on all actual outcomes, qualified
+hashes and immutable empty-cache readback. No Ovis alias or model weights are
+published. Multiple Ovis stage paths have a prepared cache correction/probe;
+legacy caches remain separate. Do not duplicate the current model retry.
 
-LFM official F16 CPU/CUDA numerical and paired one-session timing audits pass;
-wider hardware, precision, throughput and task quality stay open. PosFormer
-source/default restoration and Linux released/default50-case IDs/text/EOS pass;
-recognition stays7/50. Actual successor assets/consumers remain separate.
-SAM stays with its existing owner.
+LFM official F16 CPU/CUDA numerical and paired session timing audits pass;
+wider hardware/precision/throughput/task quality remain. PosFormer source/default
+restoration and Linux released/default50-case IDs/text/EOS pass; recognition7/50.
+Successor assets/consumers remain separate; SAM stays with its existing owner.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
 
 No held-out calibration, runtime/default/weight promotion or app change; the

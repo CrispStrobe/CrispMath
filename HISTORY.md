@@ -1,3 +1,15 @@
+## 2026-10-23 — Vendor original Ovis quality and initial native capture failure
+
+Vendor original T4/FP16 quality recipe4a616a8f completes all eleven frozen cases
+with actual EOS, source/input/ID/confidence checks. All eight authored texts have
+WER0; document recognition errors and two strict table-attribute parse failures
+are preserved. Raw outputs remain immutable at fixture a2902f8e.
+[Original quality evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/ovisocr2-vllm-quality-reference.json).
+Native40034685690 stops before forward on raw Python processor tuple/list
+equality. Correction d0f64542 preserves exact JSON values; retry40039159696 is
+pending with no relaxed numerical tolerance. Native/API/quality/calibration and
+conditional publication remain open. No app/runtime upgrade; app0.17.12 stays.
+
 ## 2026-10-23 — Vendor controlled Ovis GPU reference qualifies
 
 Vendor Ovis source5fe3fc90 completes genuine original vLLM T4/FP16 inference
