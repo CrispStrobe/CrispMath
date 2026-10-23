@@ -1,3 +1,26 @@
+## 2026-10-23 — Vendor PosFormer default merged; guarded retrieval producer ready
+
+Vendor PR73 merged75e87ea6 after all exact-source790f9a6b checks, including ten
+Build/Flutter39933251542 jobs, WASM/style/security and dedicated39933245147.
+Actual Linux released/default50-case IDs/text/EOS/confidence, gates and bounded
+reference paths pass. Recognition remains7/50. Successor actual release assets,
+hashes and consumers remain separate; app0.17.12 and all tags remain unchanged.
+
+UltraBERT API39939481805 builds all required targets but stops before model-backed
+comparisons because the harness looks for target crispembed-cli instead of emitted
+crispembed. Initial raw evidence is retained; PR74 at4be9f864 fixes only that
+lookup, with retry39943940607 queued. Original references/budgets and183/1294
+intermediate failures remain unchanged. No new model-backed parity is claimed.
+
+The owned eight-query/24-document retrieval producer is integrated at40ff3d6c.
+Hosted controls-only39945740758/39946699080 pass four scorer/six producer groups;
+the model job is skipped on push. Successful exact-source API qualification is
+required before models/builds. First original wrapper vectors/rankings precede
+native work, and verified byte-for-byte original reuse preserves failures on
+retries. No retrieval inference has run. See the
+[vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
+All consumer-owned tasks/source/pins remain unchanged.
+
 ## 2026-10-23 — Vendor F32 API candidate and frozen retrieval controls
 
 Vendor PosFormer PR72 merged7f1ecd33 after complete sourcef7c53803 platform,
