@@ -1,3 +1,16 @@
+## 2026-10-23 — Vendor paired F16 GPU performance running
+
+One authorized free GPU slot now runs lfm2-encoder-cuda-performance-v1, recipe
+9fd70ce5, against audited runtime898af2c2/official F16 and exact original15-case
+reference hashes. Submitted/pulled script bytes match. CPU/CUDA/CUDA/CPU blocks
+retain every latency, original CLS gate, actual CUDA scheduler placement and
+process RSS; no speedup is claimed before returned reports. Models/builds remain
+remote. [Protocol](https://github.com/CrispStrobe/CrispEmbed/blob/main/tools/kaggle/lfm2-encoder-cuda-performance/README.md).
+
+Binding controls39972325056 pass; actual Rust/Dart and weight-free Ovis metadata
+39974181719 remain queued. No duplicated inference or local builds were started.
+Existing gates/runtime defaults and consumer-owned task/source/app-pin stay unchanged.
+
 ## 2026-10-23 — Vendor binding audit and Ovis metadata probe queued
 
 UltraBERT F32 API/owned retrieval remain merged and qualified within their

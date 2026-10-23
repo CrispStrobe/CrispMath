@@ -39,48 +39,27 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. Vendor packaging/platform integration and live Pages checks are archived in the
-vendor HISTORY. UltraBERT default-off CPU/F32 public text API is merged via
-[PR74](https://github.com/CrispStrobe/CrispEmbed/pull/74) at3f3d023a after all exact-source
-4be9f864 checks, including ten Build/Flutter39943915528 jobs and API39943940607.
-Original-first retrieval39950831201 at812e56e5/native4be9f864 passes all32 IDs/
-64 vector checks and8/8 top1; original/native Recall@1/MRR@10/NDCG@10 all1.0.
-Raw/normalized maxima7.343292236328125e-5/5.513429641723633e-7 and minimum
-cosine0.999999999999019 satisfy unchanged gates. Every vector/score record and
-artifact byte is independently reviewed. The owned smoke is not MTEB/BEIR;
-183 F32/1294 F16 intermediate failures and strict original replay remain red.
-Initial CLI-name and wheel-line-ending failures are retained. Next actual
-Rust/Dart model-backed checks and a separately frozen licensed representative
-retrieval benchmark, then long-context/GPU/performance/validated publication.
-Original arrays and first retrieval vectors stay remotely preserved through
-21 January2027; do not regenerate anchors or repeat completed M1/backend arms.
+separate. Vendor packaging/platform integration and preview wheels are archived in vendor
+HISTORY. UltraBERT default-off CPU/F32 API mergedPR74 at3f3d023a after all
+exact-source4be9f864 checks. Original-first retrieval39950831201 passes all32
+IDs/64 vectors and8/8 top1, original/native Recall@1/MRR@10/NDCG@10 all1.0.
+This authored smoke is not MTEB/BEIR;183/1294 intermediate failures and strict
+replay failures remain. Original arrays/vectors are preserved through21 January2027.
+DraftPR75 atd01249af/run39972325056 awaits actual Rust/Dart model execution;
+binding controls pass. Ovis source trace narrows MTP/fallback/dual-stop behavior;
+weight-free metadata/meta-schema/processor39974181719 at60679016 is queued.
+No installed-vLLM/inference/conversion/alias claim follows. Paired LFM2 F16
+CPU/CUDA performance recipe9fd70ce5/v1 is running on one authorized GPU slot;
+submitted/pulled script bytes match. Review timing/RSS/CLS/placement reports
+before any speed claim. Both original structural API/retrieval failures remain.
+
+PosFormer PR72/73 source/default restoration merged7f1ecd33/75e87ea6 after
+complete exact-source checks. Actual Linux released/default50-case IDs/text/EOS/
+confidence and bounded references pass; recognition remains7/50. Actual successor
+portable native/WASM assets/hashes and consumers, including Apple comparison,
+remain required before any tag. Development bundle CPU-baseline alignment remains
+open. No model publication, runtime release or app-pin change follows.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
-
-PosFormer source/default PR72/73 merged7f1ecd33/75e87ea6 after complete exact-
-source checks. Actual Linux released/default50-case IDs/text/EOS/confidence,
-gates and bounded original/exported references pass; recognition remains7/50.
-Successor actual portable native/WASM release assets/hashes and consumers,
-including Apple released/default comparison, remain separate before any tag.
-Development Linux/Windows bundle CPU-baseline alignment remains pending.
-
-LFM2.5 official F16 CPU/CUDA T4 audit passes594 direct checks and both15-case
-ordinary API panels. Other devices/precision/MMQ, paired performance, long
-contexts and independent quality remain separate. OCR quantization selects no
-candidate; permissive OCR queue remains scoped. No runtime release, registry
-alias/model publication or app pin change follows the experimental API merge.
-Current executable vendor lanes: [draftPR75](https://github.com/CrispStrobe/CrispEmbed/pull/75)
-atd01249af/model39972325056 awaits actual Rust/Dart results. Ovis source analysis
-identifies distinct stop IDs248044/248046; weight-free HF metadata/meta-schema/
-processor39974181719 at60679016 is queued. Three model-free controls pass; no
-installed-vLLM/inference/conversion/alias success is claimed. Existing OCR
-numerical/quality debt remains. Inspect queued runs instead of duplicating them.
-
-Current executable vendor lanes: [draftPR75](https://github.com/CrispStrobe/CrispEmbed/pull/75)
-atd01249af/model39972325056 awaits actual Rust/Dart results. Ovis source analysis
-identifies distinct stop IDs248044/248046; weight-free HF metadata/meta-schema/
-processor39974181719 at60679016 is queued. Three model-free controls pass; no
-installed-vLLM/inference/conversion/alias success is claimed. Existing OCR
-numerical/quality debt remains. Inspect queued runs instead of duplicating them.
 
 No held-out calibration, runtime/default/weight promotion or app change; the
 immutable app pin stays0.17.12. Use the vendor plan for current run states.
