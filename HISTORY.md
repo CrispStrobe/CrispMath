@@ -1,3 +1,17 @@
+## 2026-10-23 — Vendor controlled Ovis GPU reference qualifies
+
+Vendor Ovis source5fe3fc90 completes genuine original vLLM T4/FP16 inference
+with explicit TRITON_ATTN decoder; vision/GDN choices remain unchanged. Three
+original processor arrays, exact prompts/source/weight hashes and actual stop
+policy pass independent review. Both ID sequences end in EOS248046. The
+unchanged automatic FlashInfer failure remains retained, with no backend-
+equivalence claim. Exact fixtures are preserved at immutable602a3645 and
+verified anonymously, separate from production weights.
+[Full evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/ovisocr2-vllm-reference.json).
+Native40034685690 at468f5504 is queued; actual public interfaces, independent
+quality/calibration and conditional model publication remain pending. No
+native model qualification or app/runtime upgrade is inferred; app0.17.12 stays.
+
 ## 2026-10-23 — Vendor Ovis frontend merged; original GPU startup remains gated
 
 Vendor PR78 merged918c1c8d after exact frontend parity40017014043 and all

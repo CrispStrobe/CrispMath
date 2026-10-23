@@ -39,31 +39,35 @@ The new public model-free auditor and all50 quality controls pass in
 [38957526079](https://github.com/CrispStrobe/CrispEmbed/actions/runs/38957526079)
 at5dbabaa15b27d95782e4491bb13efbe775c869c2; subsequent changes retain identical
 code/tests/workflow and add reports/documentation. Latest platform checks remain
-separate. Vendor default-off UltraBERT CPU/F32 API and Rust/Dart support are merged
-PR74/75; independent authored retrieval smoke passes. Strict183/1294 numerical
-failures, reference replay drift, representative quality, pairs and release
-qualification remain separate. Development desktop CPU-baseline PR76 passes
-actual three-platform builds; successor assets and app upgrade remain pending.
+separate. Vendor UltraBERT default-off CPU/F32 API, retrieval smoke and actual Rust/Dart
+support are merged PR74/75. Strict183/1294 intermediate failures, reference
+replay drift and representative quality/pairs/release gates remain separate.
+Development CPU-baseline PR76 passes three-platform builds; successor assets
+and app upgrade remain pending. The app stays on immutable0.17.12.
 
-OvisOCR2 original metadata/schema and all473-tensor F32/F16 export roundtrips
-pass; PR77 merged2f8b5354. Frontend PR78 merged918c1c8d after exact original
-packed pixels (max error0), tokens/grids/masks/modalities/template, Unicode and
-negative controls40017014043. Original vLLM GPU attempt50ce5e52 installs pinned
-Torch2.11/CUDA12.9, matches all three original processor anchors and passes
-actual FP16 CUDA control; FlashInfer JIT linking fails before decoded output.
-Initial transport/bootstrap/linker failures remain public vendor receipts.
-Recipec819ea5a corrects real-driver linker discovery without model/kernel/dtype
-changes. Native draftPR79 prepares all-layer/cache/logit/decoded/owning-context
-F32/F16 audits gated on a positive original-GPU receipt. Quality, bindings,
-critical-tensor quantization and conditional HF publication follow; no Ovis
-model alias, quality claim or published weights yet.
+OvisOCR2 full473-tensor F32/F16 export and exact frontend PR78 pass. Controlled
+original T4/FP16 GPU execution at5fe3fc90 now passes with explicit TRITON_ATTN
+decoder, Torch-SDPA vision and Triton GDN. Both actual ID lists reach EOS248046;
+readable output is Hello OCR and12345. The original auto-FlashInfer warmup
+failure stays retained; no automatic-backend/BF16/quality equivalence is claimed.
+Actual input/report/log bytes are preserved at immutable HF fixture602a3645,
+500157 ZIP bytes with anonymous readback. The complete Apache base-license
+chain and exact source hashes are recorded in vendor evidence.
 
-LFM official F16 CPU/CUDA numerical and paired timing audits pass, with all
-420 timing samples reviewed. Single-session speedups are scoped; wider GPU,
-precision, throughput and task quality remain open. PosFormer source/default
-restoration and Linux released/default50-case IDs/text/EOS pass; recognition
-stays7/50. Actual successor assets and consumer qualification remain required.
-App stays pinned immutable0.17.12; SAM stays with its existing owner.
+Native draftPR79 model audit40034685690 at468f5504 is queued, not qualified.
+All-layer/cache/logit/decoded and raw-vector proofs precede actual public
+C/Python/CLI/HTTP/Rust/Dart, independent OCR quality, protected Q8/Q4 and
+four-development-image calibration. Publication remains conditional on all
+planned outcomes, exact remote hashes and an actual empty-cache consumer.
+No Ovis alias or model weights are published. Multiple Ovis stage model paths
+have a prepared cache correction and hosted negative probe; legacy caches
+remain a separate bounded follow-up. Do not duplicate the queued model run.
+
+LFM official F16 CPU/CUDA numerical and paired one-session timing audits pass;
+wider hardware, precision, throughput and task quality stay open. PosFormer
+source/default restoration and Linux released/default50-case IDs/text/EOS pass;
+recognition stays7/50. Actual successor assets/consumers remain separate.
+SAM stays with its existing owner.
 [Executable vendor handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
 
 No held-out calibration, runtime/default/weight promotion or app change; the
