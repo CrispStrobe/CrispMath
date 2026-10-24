@@ -46,8 +46,9 @@ PR76 passes three-platform builds; successor assets/app upgrade remain separate.
 The app stays on immutable0.17.12.
 
 Original Ovis controlled GPU reference and eleven-case quality are preserved;
-CPU/F32 capture completes943 frozen fields and12/14 native arms pass; both
-vision arms fail unchanged budgets. Existing precision A/B40046189758 is pending. The following
+CPU/F32 capture completes943 frozen fields. Initial native12/14 arms pass;
+vision precision A/B40047163838 now passes two common presets. Full selected-mode
+replay40049244654 is pending. The following
 vendor-owned execution sequence is mirrored directly from current vendor PLAN.
 It is not model qualification, model publication or an app runtime upgrade.
 
@@ -63,13 +64,21 @@ The original automatic FlashInfer T4 failure remains retained. Continue:
    and12/14 native arms pass. Both vision arms fail unchanged budgets;
    [initial numerical evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-vision-failure.json).
    Preserve the943-field original reference and reuse it for every native retry.
-   Existing-gate vision-only A/B [40046189758](https://github.com/CrispStrobe/CrispEmbed/actions/runs/40046189758)
-   at214e11c2 is dispatched once through phase=vision. It tests six presets per
-   precision with all37 raw vision vectors and post-control dump integrity; no
-   threshold or implementation change. Review earliest operation, magnitudes
-   and preserved alternatives before selecting any correction. Then replay all
-   fourteen native arms against the frozen reference, including final IDs/EOS
-   and full frontend/cache/context controls. A component pass is not this gate.
+   First A/B40046189758 stopped before build/inference on an unpassed report
+   variable; [retained infrastructure evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-vision-ab-archive-failure.json).
+   Corrected existing-gate vision A/B [40047163838](https://github.com/CrispStrobe/CrispEmbed/actions/runs/40047163838)
+   atdf65e911 is complete: all twelve arms/37 vectors each have intact dumps;
+   baseline metrics exactly reproduce both original failures. `both` and
+   `cascade_precise_attn` pass existing calibrated budgets in F32/F16. Four
+   strict0.002 exceedances remain; no budget changed. [All metrics/review](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/ovisocr2-vision-ab.json).
+   Full fourteen-arm replay [40049244654](https://github.com/CrispStrobe/CrispEmbed/actions/runs/40049244654)
+   at a2a17735 is dispatched once, phase=replay, vision_preset=both. This
+   selects precise norm+attention for the lowest merger error and reuses the
+   complete943-stage source without HF recapture/conversion. Review actual
+   layers/cache/logits/IDs/EOS/text, contexts and every raw/TRACE vector before
+   declaring native qualification. Source closure requires27 unchanged native
+   files plus two exact reviewed dump-only test changes. Keep both alternatives,
+   the initial failures and every raw strict/calibrated flag. Do not duplicate.
    Initial40034685690 stopped before forward on a raw Python tuple/list processor
    guard; [initial evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-processor-contract-failure.json)
    preserves all three exact processor anchors and source hashes. The correction
@@ -98,6 +107,16 @@ The original automatic FlashInfer T4 failure remains retained. Continue:
    profile guards, prompt/gate resets, ABI/layout, source/library identity,
    independent contexts and multiple Ovis stage model paths. No invented URL,
    checksum, registry default or production alias before qualified artifacts.
+   The exact historical LightOn format1 wrong-profile control is missing from
+   the old workflow upload. Reconstruction [40046789339](https://github.com/CrispStrobe/CrispEmbed/actions/runs/40046789339)
+   atda0c8bd5 passes: unchanged historical converter, vision-F32 recipe with
+   52 retained matrices (286 F32/187 F16), all473 receipt records and full GGUF
+   SHA41409fc8 match. This is a test control, not OCR qualification. Use
+   `lighton_run_id=40046789339`,
+   `lighton_artifact_name=lightonocr3-format1-receipt-40046789339`,
+   `lighton_filename=lightonocr-3-0.8b-f16-experimental.gguf`;
+   [reviewed control receipt](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/ovisocr2-lighton-fixture.json).
+   No substitute model, toy fixture or relaxed profile guard.
 3. **Independent quality:** the eleven-case original controlled GPU reference
    is complete ([evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/ovisocr2-vllm-quality-reference.json));
    retain its strict table-attribute parse failures and separate
