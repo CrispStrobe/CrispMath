@@ -46,7 +46,8 @@ PR76 passes three-platform builds; successor assets/app upgrade remain separate.
 The app stays on immutable0.17.12.
 
 Original Ovis controlled GPU reference and eleven-case quality are preserved;
-CPU/F32 forward completes, with a retained cache-observer failure. The following
+CPU/F32 capture completes943 frozen fields and12/14 native arms pass; both
+vision arms fail unchanged budgets. Existing precision A/B40046189758 is pending. The following
 vendor-owned execution sequence is mirrored directly from current vendor PLAN.
 It is not model qualification, model publication or an app runtime upgrade.
 
@@ -58,7 +59,17 @@ The original automatic FlashInfer T4 failure remains retained. Continue:
 
 1. **Full native model audit:** draft [PR79](https://github.com/CrispStrobe/CrispEmbed/pull/79),
    source cc038b00, [40041958521](https://github.com/CrispStrobe/CrispEmbed/actions/runs/40041958521)
-   dispatched through `ovisocr2-metadata.yml`, phase=model. Do not duplicate it.
+   is complete: all871 earlier fields remain byte-identical,72 cache states added,
+   and12/14 native arms pass. Both vision arms fail unchanged budgets;
+   [initial numerical evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-vision-failure.json).
+   Preserve the943-field original reference and reuse it for every native retry.
+   Existing-gate vision-only A/B [40046189758](https://github.com/CrispStrobe/CrispEmbed/actions/runs/40046189758)
+   at214e11c2 is dispatched once through phase=vision. It tests six presets per
+   precision with all37 raw vision vectors and post-control dump integrity; no
+   threshold or implementation change. Review earliest operation, magnitudes
+   and preserved alternatives before selecting any correction. Then replay all
+   fourteen native arms against the frozen reference, including final IDs/EOS
+   and full frontend/cache/context controls. A component pass is not this gate.
    Initial40034685690 stopped before forward on a raw Python tuple/list processor
    guard; [initial evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-processor-contract-failure.json)
    preserves all three exact processor anchors and source hashes. The correction

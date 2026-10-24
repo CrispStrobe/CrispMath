@@ -1,3 +1,17 @@
+## 2026-10-24 — Vendor Ovis frozen reference and first native numerical result
+
+Ovis native audit40041958521 at cc038b00 preserves all871 prior arrays byte
+identically and adds72 cache states, completing943 frozen fields. Native12/14
+arms pass, including composed decoder/context exact nine IDs/EOS and decoded
+Hello OCR followed by 12345. Both vision arms fail unchanged numerical budgets;
+first actual failures are F32 block11 up0.018119812 and F16 norm2 0.00448036194.
+[Retained initial numerical evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/qwen35-ocr/initial-ovisocr2-model-vision-failure.json).
+Existing precision A/B40046189758 at214e11c2 is running on hosted CI. Reuse
+this frozen reference for subsequent native retries without HF recapture.
+Public interfaces, independent quality, all three quantization/calibration arms
+and conditional publication remain open; no weights/alias/runtime release or
+app pin change. The app remains on immutable0.17.12.
+
 ## 2026-10-23 — Vendor Ovis original F32 forward preserved before cache completion
 
 Original HF CPU/F32 completes nine GPU-matching IDs/text/EOS and exact observation
