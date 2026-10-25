@@ -10458,3 +10458,31 @@ cold task screenshots/logs was moved to CIFS with SHA-256 verification and
 readable source symlinks. Active sources/reports stay on fast storage; unrelated
 projects remain untouched. Real handwriting accuracy, physical devices and
 Apple's App Review 4.3(a) finding remain pending outside this mathematical audit.
+
+## 25 October 2026 — Vendor-only Ovis audit handoff refresh
+
+[CrispEmbed PR80](https://github.com/CrispStrobe/CrispEmbed/pull/80) carries the
+completed bounded audits, independently reviewed raw reports and executable
+follow-up scopes. This mirror updates only vendor documentation; application
+code, SAM owner work, Apple/store state and the immutable0.17.12 runtime pin stay
+with their existing lanes.
+
+The vendor profile and issue71 source feasibility are complete; inpainting
+implementation remains open. All four Ovis2 quantized recipes are rejected and
+published F16 stays selected. Final-source frozen14 and eleven-case F16 outputs
+match all1,841 baseline IDs/text/stops/confidences. The larger1024/1200 cases pass
+14/14, while2048 passes8/14 with six norm failures despite exact decoded text.
+Ovis3 native14, all11 paired F16 cases/1,679 IDs and29 public diagnostic checks
+pass their declared fidelity/interface scopes; the original two-column1024 cap
+without EOS keeps model/publication/alias qualification false. No release,
+application upgrade, default flip or Ovis3 HF publication follows.
+
+Sources, initial failures, artifact identities, numerical/resource limits and
+next tasks are in [vendor HISTORY](https://github.com/CrispStrobe/CrispEmbed/blob/main/HISTORY.md),
+[PERFORMANCE](https://github.com/CrispStrobe/CrispEmbed/blob/main/PERFORMANCE.md),
+[PLAN](https://github.com/CrispStrobe/CrispEmbed/blob/main/PLAN.md) and the mirrored
+[current state](docs/current-state-and-next-steps.md). Remaining lanes cover
+byte-budgeted weight reuse, quantized operator and2048 attribution, independent
+MI-GAN still-image parity, source-quality protocols and remote preservation.
+Large artifacts remain hosted; all builds/model batches belong on hosted CI or
+authorized suitable compute. Documentation does not select a new app runtime.
