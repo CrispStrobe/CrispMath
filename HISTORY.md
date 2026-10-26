@@ -10486,3 +10486,23 @@ byte-budgeted weight reuse, quantized operator and2048 attribution, independent
 MI-GAN still-image parity, source-quality protocols and remote preservation.
 Large artifacts remain hosted; all builds/model batches belong on hosted CI or
 authorized suitable compute. Documentation does not select a new app runtime.
+
+## 26 October2026 — reviewed vendor receipts and executable remaining gates
+
+The shared handoff now distinguishes completed bounded proofs from pending
+integration/task gates: default-off Ovis cache experiment, same-weight first-FFN
+attribution, exact source-order position operators, unchanged first-F16 control,
+MI-GAN fixed256 original/native prototype and local UltraBERT RoPE attribution.
+Initial failures and scoped numerical/decoded limits remain in vendor receipts.
+Ovis3's November raw vectors are preserved through24 January2027 with verified
+original ZIP/member bytes; later retention remains a dated follow-up.
+
+[Vendor PR84](https://github.com/CrispStrobe/CrispEmbed/pull/84) and
+[PR85](https://github.com/CrispStrobe/CrispEmbed/pull/85) retain the reviewed
+operator/prototype evidence separately from their pending integration checks.
+Ovis interpolation-on/composed replay, full SciFact retrieval after preparation
+review, and actual immutable packaged consumers remain executable pending gates.
+PLAN removes completed cache/FFN implementation from TODOs and scopes adoption,
+new precision selection, production inpainting and renewal work separately.
+All vendor links are public CrispEmbed paths. This documentation changes no
+application code, release version, model default or immutable0.17.12 pin.

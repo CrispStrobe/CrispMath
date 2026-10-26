@@ -24,24 +24,16 @@ runtime artifact, model default, application code or immutable0.17.12 pin.
 
 ## Pending vendor follow-ups
 
-- [ ] **Converted-weight reuse:** start from completed OvisOCR2 latency/RSS
-  attribution40171223309. Implement one default-off per-context experiment
-  with an explicit byte budget and predictable fallback, preserving serial and
-  parallel paths. Cover reset/free/failed load/two-model/survivor behavior;
-  avoid a global tensor-pointer cache. Require the complete current-source14-arm
-  original/crispembed-diff and eleven-case frozen F16 output/confidence replay,
-  then unprofiled paired same-host cold/warm latency and fresh-process RSS.
-  The full F32 head alone costs1,017,118,720 bytes. A speed win requires equal
-  output; it does not qualify a default or app-runtime upgrade.
-- [ ] **Quantized operator attribution:** the attention-F16/FFN-Q4 attempt passes
-  first-linear probes but fails the first full layer and two document screens.
-  Before selecting another recipe, compare the same dequantized weights and
-  activation semantics with an independent Python/ONNX blueprint, starting at
-  gate/up/product/down. Separate intended precision loss from implementation
-  mismatch using earliest-stage absolute errors/norms, caches and full decoded
-  output. Preserve all four failed attempts; no fitting prompts, caps, weights
-  or tolerances to the observed held-out panel. Any new precision selection
-  needs a separately declared development/evaluation protocol.
+- [ ] **Cache adoption:** the bounded256MiB converted-weight experiment is
+  complete and remains default-off. Its0.797% median warm gain and increased RSS
+  do not justify adoption. Freeze a representative same-host latency/RSS protocol
+  before another budget/default proposal; preserve original/diff and all eleven
+  first-F16 IDs/text/stops/confidences.
+- [ ] **Future precision selection:** completed first-FFN attribution40231922668
+  finds exact independent dequantization and original Python reproduces the
+  rejected Q4 layer error. Preserve all four rejected recipes and held-out
+  screens. New selection requires separately declared development/evaluation
+  inputs, with earliest-stage magnitudes and complete decoded-quality gates.
 - [ ] **Larger-page numerical attribution:** the owned1024/1200 cases pass14/14;
   2048 passes8/14 with six composed decoder norm failures. F32/F16 max errors
   are0.003945589/0.004386902 despite exact nine IDs/text/EOS; replay with original
@@ -56,19 +48,20 @@ runtime artifact, model default, application code or immutable0.17.12 pin.
   remains false. Other task modes/new weights need a separately declared
   original-first protocol and independent evaluation; do not change the known
   prompt/cap/gold/scorer to pass. Interface success does not qualify a model.
-- [ ] **Permissive OCR and still-image inpainting:** use exact code/checkpoint/
-  base licenses and original-first blueprints. The issue71 MI-GAN feasibility
-  audit is complete; next select one256/512 MIT checkpoint, verify its payload
-  and tensor inventory, then freeze RGB/mask/block/final-output references before
-  native F32. White means fill; preserve known pixels and empty/full/edge-mask
-  behavior. LaMa is held on checkpoint terms and FFT/complex support. Batching,
-  text-derived masks, temporal propagation, other Ovis3 task modes, multi-image
-  and broad OCR benchmarks require their own protocols and quality evidence.
-- [ ] **Remote artifact preservation:** preserve new Ovis3 native raw vectors
-  before24 November2026 and original/quality/model arrays before their January
-  2027 expiries. Preserve UltraBERT's original copy before21 January, older Ovis
-  artifacts before22 January and newer Ovis artifacts before23 January. Retain
-  immutable producer/manifest/payload identities; download only small reports.
+- [ ] **MI-GAN product follow-up:** the fixed256 CPU/F32 original/native
+  experiment is independently positive in vendor PR85; integration checks remain
+  separate. Production C ABI/orchestrator/CLI/server/bindings, registry/upload,
+  licensed real subtitle/scene quality and video need their own complete scopes.
+  White means fill and known pixels remain exact. Other resolutions, precision,
+  batching, text-derived masks and temporal propagation need frozen contracts.
+  LaMa remains held on checkpoint terms and FFT semantics. The permissive OCR
+  queue retains checkpoint/base-license and original-blueprint gates.
+- [ ] **Remote artifact preservation:** November Ovis3 payloads are preserved
+  by40287253703; renew copy12635202371 before24 January2027. Retain original
+  source/ZIP/member identities. Preserve UltraBERT's older copy before21 January
+  and other Ovis originals/quality/quantized arrays before their recorded January
+  expiries. New operator/MI-GAN artifacts also have recorded90-day lifetimes;
+  verify each source and every member on remote renewal, with no recapture.
 - [ ] **Consumer delivery:** vendor source/model support requires compatible,
   qualified immutable successor native/WASM assets and real consumer checks.
   The app stays pinned0.17.12; do not expose newer engines as working options
@@ -85,7 +78,7 @@ immutable app pin stays0.17.12. Use the vendor plan for current run states.
 
 | Lane | Next task | Readiness |
 | --- | --- | --- |
-| V1 | Reconcile minimal published runtime correction with vendor main | Ready; keep unrelated main changes separate |
+| V1 | Review qualified immutable successor and compatible consumer catalogs | After actual artifact/hash/consumer gates; app remains0.17.12 |
 | M1 | Freeze and exercise fifty new math problems, fix systemic causes | Ready; retain all 789 previous cases |
 | U1 | Cover accessibility, localization and remaining narrow layouts | Ready; fix observed defects with real UI controls |
 | O1 | Extend handwriting diagnosis to complete decoded reference parity | Exported-weight diagnostics ready; original checkpoint requires access |
