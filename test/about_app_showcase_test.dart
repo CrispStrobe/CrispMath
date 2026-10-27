@@ -14,8 +14,7 @@ void main() {
   Widget host(Locale locale) => MaterialApp(
         localizationsDelegates: const [
           AppLocalizationsDelegate(),
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
+          ...GlobalMaterialLocalizations.delegates,
         ],
         supportedLocales: const [
           Locale('en'),

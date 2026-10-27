@@ -270,6 +270,10 @@ void main() {
       await _expandLabs(tester, scrollable);
       await tester.scrollUntilVisible(find.text('Sudoku'), 200,
           scrollable: scrollable);
+      // Labs children are built in the scroll cache once expanded, so
+      // scrollUntilVisible may not move; bring the card on screen first.
+      await tester.ensureVisible(find.text('Sudoku'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Sudoku'));
       await tester.pumpAndSettle();
       // Cycle through the three variants in the SegmentedButton.
@@ -305,6 +309,10 @@ void main() {
       await _expandLabs(tester, scrollable);
       await tester.scrollUntilVisible(find.text('Sudoku'), 200,
           scrollable: scrollable);
+      // Labs children are built in the scroll cache once expanded, so
+      // scrollUntilVisible may not move; bring the card on screen first.
+      await tester.ensureVisible(find.text('Sudoku'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Sudoku'));
       await tester.pumpAndSettle();
       // The hint picker chips are labelled Off / Basic / Advanced —
@@ -354,6 +362,10 @@ void main() {
       await _expandLabs(tester, scrollable);
       await tester.scrollUntilVisible(find.text('Sudoku'), 200,
           scrollable: scrollable);
+      // Labs children are built in the scroll cache once expanded, so
+      // scrollUntilVisible may not move; bring the card on screen first.
+      await tester.ensureVisible(find.text('Sudoku'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Sudoku'));
       await tester.pumpAndSettle();
       // Pick the 4×4 size chip.
