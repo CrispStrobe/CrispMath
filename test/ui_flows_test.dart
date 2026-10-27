@@ -11,6 +11,7 @@
 // wide screens), which is brittle in widget tests.
 
 import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/sudoku.dart';
 import 'package:crisp_math/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -352,9 +353,8 @@ void main() {
       // the layout chips wiped the grid to empty AND left the
       // preset dropdown showing nothing. Now we auto-load a
       // matching preset whenever one exists for the (layout,
-      // variant) combination. Verifying via Reset puzzle staying
-      // enabled after a layout switch (which means the puzzle is
-      // a preset, not an empty grid).
+      // variant) combination. Verified via the preset picker showing a
+      // 4×4 preset after the layout switch (not "Custom", an empty grid).
       await _pumpApp(tester);
       await tester.tap(find.text('Analysis'));
       await tester.pumpAndSettle();
@@ -371,8 +371,9 @@ void main() {
       // Pick the 4×4 size chip.
       await tester.tap(find.text('4×4'));
       await tester.pumpAndSettle();
-      // Reset puzzle button should be visible (and enabled).
-      expect(find.text('Reset puzzle'), findsOneWidget);
+      final picker = tester.widget<DropdownButtonFormField<SudokuPuzzle>>(
+          find.byType(DropdownButtonFormField<SudokuPuzzle>));
+      expect(picker.initialValue?.layout.side, 4);
       // Visualizer isn't visible yet (no solve has been kicked off).
       expect(find.text('Search visualizer'), findsNothing);
     });

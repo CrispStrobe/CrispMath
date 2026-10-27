@@ -1028,9 +1028,11 @@ class _VisualizerControls extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(labels.sudokuVisualizerHeader,
-                  style: Theme.of(context).textTheme.titleSmall),
-              const Spacer(),
+              Expanded(
+                child: Text(labels.sudokuVisualizerHeader,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall),
+              ),
               Text('${current + 1} / $total',
                   style: const TextStyle(fontFamily: 'monospace')),
             ],

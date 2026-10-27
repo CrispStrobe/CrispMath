@@ -291,7 +291,7 @@ List<ShowcaseApp> orderedShowcaseApps({
       if (self != 0) return self;
       final live = flag(b.store != null) - flag(a.store != null);
       if (live != 0) return live;
-      return a.name.compareTo(b.name);
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
     });
 }
 

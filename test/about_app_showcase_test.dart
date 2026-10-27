@@ -93,7 +93,7 @@ void main() {
     final rest = ordered.sublist(0, ordered.length - 1);
     final firstBeta = rest.indexWhere((app) => app.store == null);
     expect(rest.skip(firstBeta).every((app) => app.store == null), isTrue);
-    final live = [for (final app in rest.take(firstBeta)) app.name];
+    final live = [for (final app in rest.take(firstBeta)) app.name.toLowerCase()];
     expect(live, [...live]..sort());
   });
 
