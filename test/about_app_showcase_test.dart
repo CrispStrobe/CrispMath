@@ -68,8 +68,27 @@ void main() {
     },
   );
 
-  test('live apps come first, then betas alphabetically, this app last', () {
-    final ordered = orderedShowcaseApps();
+  test('only App Store apps are listed for now, alphabetically', () {
+    final listed = orderedShowcaseApps();
+    expect(listed.every((app) => app.store != null), isTrue);
+    expect([
+      for (final app in listed) app.slug
+    ], [
+      'cometbeat',
+      'crispaudio',
+      'crisperweaver',
+      'crispsudoku',
+      'hectopolis',
+      'kerotakis',
+      'numbernebula',
+      'word-universe',
+    ]);
+  });
+
+  test('with betas: live apps first, then betas alphabetically, this app last',
+      () {
+    final ordered = orderedShowcaseApps(includeBetas: true);
+    expect(ordered.length, showcaseApps.length);
     expect(ordered.last.slug, 'crispmath');
     final rest = ordered.sublist(0, ordered.length - 1);
     final firstBeta = rest.indexWhere((app) => app.store == null);
@@ -78,7 +97,7 @@ void main() {
     expect(live, [...live]..sort());
   });
 
-  testWidgets('renders store, Mac store, TestFlight and coming-soon chips', (
+  testWidgets('renders only App Store apps with store and TestFlight chips', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1000, 2400);
@@ -89,11 +108,15 @@ void main() {
 
     expect(find.byKey(const ValueKey('about-app-showcase')), findsOneWidget);
     for (final app in showcaseApps) {
-      expect(find.byKey(ValueKey('about-app-${app.slug}')), findsOneWidget);
+      expect(find.byKey(ValueKey('about-app-${app.slug}')),
+          app.store != null ? findsOneWidget : findsNothing,
+          reason: app.slug);
     }
     expect(find.text('Mac App Store'), findsNWidgets(2));
-    expect(find.text('Coming soon'), findsOneWidget);
-    expect(find.textContaining('this app'), findsOneWidget);
+    expect(find.text('App Store'), findsNWidgets(6));
+    expect(find.text('TestFlight'), findsNWidgets(8));
+    expect(find.text('Coming soon'), findsNothing);
+    expect(find.textContaining('this app'), findsNothing);
   });
 
   testWidgets('uses the German chrome and descriptions', (tester) async {
@@ -102,7 +125,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(host(const Locale('de')));
     await tester.pumpAndSettle();
-    expect(find.text('Bald verfügbar'), findsOneWidget);
+    expect(find.textContaining('Weitere Apps desselben'), findsOneWidget);
     expect(find.text('Chemie, die wirklich rechnet'), findsOneWidget);
   });
 

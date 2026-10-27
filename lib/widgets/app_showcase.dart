@@ -272,10 +272,21 @@ const List<ShowcaseApp> showcaseApps = [
   ),
 ];
 
+/// For now only apps that are live on the App Store are shown: TestFlight-
+/// only and coming-soon entries (including CrispMath itself) stay in
+/// [showcaseApps] but are left out while guideline 4.3(a) review is open.
+/// Set to true to list them again.
+const bool showcaseIncludesBetas = false;
+
 /// Live apps first, then betas, each alphabetically; this app last.
-List<ShowcaseApp> orderedShowcaseApps() {
+List<ShowcaseApp> orderedShowcaseApps({
+  bool includeBetas = showcaseIncludesBetas,
+}) {
   int flag(bool b) => b ? 1 : 0;
-  return [...showcaseApps]..sort((a, b) {
+  return [
+    for (final app in showcaseApps)
+      if (includeBetas || app.store != null) app,
+  ]..sort((a, b) {
       final self = flag(a.self) - flag(b.self);
       if (self != 0) return self;
       final live = flag(b.store != null) - flag(a.store != null);
