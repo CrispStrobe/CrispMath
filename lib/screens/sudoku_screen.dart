@@ -1,15 +1,21 @@
 // lib/screens/sudoku_screen.dart
 //
-// Analysis-hub Sudoku module. UX flow:
+// Analysis-hub Sudoku solver module. It shows how a puzzle is solved
+// algorithmically rather than offering a game to play. UX flow:
 //
-//   1. User picks a preset puzzle (size + difficulty) OR taps cells
-//      to enter their own clues.
-//   2. Solve button kicks off a trace solve via [SudokuSolver]
-//      that records every search decision.
-//   3. When recording finishes, the visualizer replays the trace
-//      at a user-controlled speed (Slow / Med / Fast) with
-//      play / pause / restart controls. The just-changed cell
-//      gets a brief tint per frame.
+//   1. User picks a preset puzzle (size + difficulty), generates one, or
+//      taps cells to enter the clues of their own puzzle.
+//   2. Solve runs [SudokuExplainer], which records every step with its
+//      reason: naked single, hidden single, guess, contradiction or
+//      backtrack, plus the pencil marks after the step.
+//   3. The visualizer starts on the first step; the user steps through
+//      or plays the replay. Each frame names the reason, tints the unit
+//      it reasoned about and shows the remaining candidates. A summary
+//      counts singles, guesses, backtracks and the search depth.
+//
+// Killer cages need sum reasoning the explainer does not model, so for
+// Killer the visualizer replays the generic CSP trace from
+// [SudokuSolver.solveWithTrace] instead.
 //
 // V1 supports 4×4 and 9×9 grids. PLAN.md tracks the variant
 // roadmap (6×6, 8×8, 10×10, 12×12, 15×15, 16×16, 25×25,
@@ -22,6 +28,7 @@ import 'package:flutter/services.dart';
 
 import '../engine/app_state.dart';
 import '../engine/sudoku.dart';
+import '../engine/sudoku_explainer.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/function_ref_help_popover.dart';
 import '../widgets/help_target.dart';
@@ -47,26 +54,9 @@ class _SudokuScreenState extends State<SudokuScreen> {
   // entry was being added to _clueIndexes so the user couldn't
   // overwrite their own digits.
   late Set<int> _clueIndexes = _captureClueIndexes(_puzzle);
-  // Round 87: cells of the puzzle as last loaded (preset /
-  // generated / layout-switched). Used by "clear to start" and by
-  // the win-check (which compares _displayed to the unique
-  // solution of _baseCells, not the live-edited _puzzle.cells).
-  late List<int> _baseCells = List<int>.from(_puzzle.cells);
   // Live editable cells. Mutated by tap-to-enter and by the
   // visualizer when replaying frames.
   late List<int> _displayed = List<int>.from(_puzzle.cells);
-
-  /// Round 87: the unique solution to the puzzle as last loaded
-  /// (i.e. to [_baseCells]). Used by the win-check chip. Null on
-  /// load; populated lazily when the user first completes the grid.
-  /// Invalidated to null on every preset / generate / layout switch.
-  List<int>? _solution;
-  bool _computingSolution = false;
-
-  /// Round 87b: whether the user has dismissed the current win
-  /// celebration overlay. Reset to false on every edit / clear /
-  /// preset switch so a fresh win shows the overlay again.
-  bool _winOverlayDismissed = false;
 
   /// Round 87: focus node for cell-keyboard input. When a cell is
   /// selected, pressing a digit key fills it; Backspace / Delete /
@@ -75,6 +65,10 @@ class _SudokuScreenState extends State<SudokuScreen> {
 
   int? _selected;
   SudokuTrace? _trace;
+
+  /// Explained steps behind [_trace] (one per frame), or null for the
+  /// Killer CSP replay.
+  SudokuExplanation? _explanation;
   int _frameIndex = 0;
   Timer? _ticker;
   bool _playing = false;
@@ -145,15 +139,13 @@ class _SudokuScreenState extends State<SudokuScreen> {
     );
     setState(() {
       _puzzle = empty;
-      _baseCells = List<int>.from(empty.cells);
       _clueIndexes = {};
       _displayed = List<int>.from(empty.cells);
       _selected = null;
       _trace = null;
+      _explanation = null;
       _frameIndex = 0;
       _unique = null;
-      _solution = null;
-      _winOverlayDismissed = false;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
@@ -172,7 +164,6 @@ class _SudokuScreenState extends State<SudokuScreen> {
       for (final entry in SudokuPresets.all) {
         if (entry.id == pendingPreset) {
           _puzzle = entry.puzzle;
-          _baseCells = List<int>.from(_puzzle.cells);
           _clueIndexes = _captureClueIndexes(_puzzle);
           _displayed = List<int>.from(_puzzle.cells);
           break;
@@ -198,15 +189,13 @@ class _SudokuScreenState extends State<SudokuScreen> {
     _stopVisualizer();
     setState(() {
       _puzzle = p;
-      _baseCells = List<int>.from(p.cells);
       _clueIndexes = _captureClueIndexes(p);
       _displayed = List<int>.from(p.cells);
       _selected = null;
       _trace = null;
+      _explanation = null;
       _frameIndex = 0;
       _unique = null;
-      _solution = null;
-      _winOverlayDismissed = false;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
@@ -233,16 +222,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
       _puzzle = _puzzle.withCell(
           sel ~/ _puzzle.layout.side, sel % _puzzle.layout.side, d ?? 0);
       _trace = null;
+      _explanation = null;
       _frameIndex = 0;
       _unique = null;
       _advancedCandidates = null;
-      // Round 87b: the user is editing again — a previous win was
-      // dismissed; if they re-complete the grid (e.g. fix an
-      // error), show the celebration overlay again.
-      _winOverlayDismissed = false;
     });
     _maybeRecomputeAdvanced();
-    _maybeCheckWin();
   }
 
   /// Round 87: invoked by [DragTarget<int>] on a cell when the user
@@ -253,27 +238,6 @@ class _SudokuScreenState extends State<SudokuScreen> {
     if (_clueIndexes.contains(idx)) return;
     setState(() => _selected = idx);
     _setDigit(digit);
-  }
-
-  /// Round 87: clear the user's edits and restore the puzzle to
-  /// the cells it had at load time. Clues remain (they're part of
-  /// _baseCells); only user-entered digits are wiped.
-  void _clearToStart() {
-    _stopVisualizer();
-    setState(() {
-      _displayed = List<int>.from(_baseCells);
-      _puzzle = SudokuPuzzle(
-        layout: _puzzle.layout,
-        cells: List<int>.from(_baseCells),
-        variant: _puzzle.variant,
-        cages: _puzzle.cages,
-      );
-      _trace = null;
-      _frameIndex = 0;
-      _selected = null;
-      _advancedCandidates = null;
-    });
-    _maybeRecomputeAdvanced();
   }
 
   Future<void> _generate() async {
@@ -290,91 +254,67 @@ class _SudokuScreenState extends State<SudokuScreen> {
     setState(() {
       _generating = false;
       _puzzle = puzzle;
-      _baseCells = List<int>.from(puzzle.cells);
       _clueIndexes = _captureClueIndexes(puzzle);
       _displayed = List<int>.from(puzzle.cells);
       _selected = null;
       _trace = null;
+      _explanation = null;
       _frameIndex = 0;
       _unique = null;
-      _solution = null;
-      _winOverlayDismissed = false;
       _advancedCandidates = null;
     });
     _maybeRecomputeAdvanced();
   }
 
-  /// Round 87: kicks off step-by-step solver visualization. Before
-  /// this round, _solve set the trace and stopped at frame 0 — the
-  /// user had to know to press play. Now we auto-start the ticker
-  /// so "Lösen" produces visible motion immediately.
+  /// Solve and open the step visualizer. Explained solves start on the
+  /// first step so each reason can be read; the Killer CSP replay
+  /// auto-plays as before (its frames carry no reasons to read).
   Future<void> _solve() async {
     _stopVisualizer();
     setState(() => _solving = true);
-    final trace = await SudokuSolver.solveWithTrace(_puzzle);
+    SudokuExplanation? explanation;
+    SudokuTrace trace;
+    if (SudokuExplainer.supports(_puzzle)) {
+      explanation = SudokuExplainer.explain(_puzzle);
+      trace = SudokuTrace(
+        frames: [
+          for (final step in explanation.steps)
+            SudokuTraceFrame(
+              assigned: step.cells,
+              justChangedIndex: step.kind == SudokuStepKind.contradiction
+                  ? null
+                  : step.cell,
+            ),
+        ],
+        solution: explanation.solution,
+        error: explanation.error,
+      );
+    } else {
+      trace = await SudokuSolver.solveWithTrace(_puzzle);
+    }
     if (!mounted) return;
     setState(() {
       _solving = false;
       _trace = trace;
+      _explanation = explanation;
       _frameIndex = 0;
       if (trace.frames.isNotEmpty) {
         _displayed = List<int>.from(trace.frames.first.assigned);
       }
     });
-    // Round 87: auto-play so the user sees the solver fill the
-    // grid step-by-step. Skip auto-play when the solve failed
-    // (no frames / error) so we don't spin an empty ticker.
-    if (trace.solved && trace.frames.length > 1) {
+    if (explanation == null && trace.solved && trace.frames.length > 1) {
       _playPause();
     }
   }
 
-  /// Round 87: win-check chip. Lazy-solves [_baseCells] on the
-  /// first call and caches the result in [_solution]; subsequent
-  /// calls are O(N) comparison only. Triggered after every
-  /// [_setDigit] so the chip lights up the instant the user
-  /// completes the grid.
-  ///
-  /// Returns silently when the trace is active (visualizer
-  /// playback) or when the grid still has empty cells.
-  Future<void> _maybeCheckWin() async {
-    if (_trace != null) return;
-    if (_displayed.any((v) => v == 0)) return;
-    if (_solution == null) {
-      if (_computingSolution) return;
-      setState(() => _computingSolution = true);
-      final base = SudokuPuzzle(
-        layout: _puzzle.layout,
-        cells: List<int>.from(_baseCells),
-        variant: _puzzle.variant,
-        cages: _puzzle.cages,
-      );
-      final solved = await SudokuSolver.solve(base);
-      if (!mounted) return;
-      setState(() {
-        _computingSolution = false;
-        _solution = solved;
-      });
-    }
-    // After lazy solve, re-check the displayed grid (it may have
-    // been edited during the await).
-    if (_displayed.any((v) => v == 0)) return;
-    setState(() {}); // rebuild to surface the chip
-  }
-
-  /// Round 87: true when the displayed grid is fully filled AND
-  /// matches the cached solution. False when fully filled but
-  /// wrong; null when not yet evaluable (empty cells, no solution
-  /// cached, or trace active).
-  bool? get _winStatus {
-    if (_trace != null) return null;
-    if (_displayed.any((v) => v == 0)) return null;
-    final sol = _solution;
-    if (sol == null) return null;
-    for (var i = 0; i < _displayed.length; i++) {
-      if (_displayed[i] != sol[i]) return false;
-    }
-    return true;
+  void _showFrame(int i) {
+    final trace = _trace;
+    if (trace == null) return;
+    setState(() {
+      _stopVisualizer();
+      _frameIndex = i.clamp(0, trace.frames.length - 1);
+      _displayed = List<int>.from(trace.frames[_frameIndex].assigned);
+    });
   }
 
   Future<void> _checkUnique() async {
@@ -579,7 +519,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
     //     (after an edit or a level flip) we fall back to the basic
     //     set so the grid never blanks — the spinner subtitle below
     //     tells the user a tighter set is on the way.
-    List<Set<int>>? candidates;
+    final step = _explanation?.steps[_frameIndex];
+    List<Set<int>>? candidates = step?.candidates;
     if (_hintLevel != SudokuHintLevel.off && _trace == null) {
       final livePuzzle = SudokuPuzzle(
         layout: layout,
@@ -600,41 +541,32 @@ class _SudokuScreenState extends State<SudokuScreen> {
     // constraint violation. Skip during visualizer playback (the
     // mid-frame solver state legitimately has duplicates the user
     // shouldn't see flagged).
+    // An explained contradiction marks the cell left without candidates.
     final conflicts = _trace == null
         ? SudokuSolver.computeConflicts(_puzzle, _displayed)
-        : const <int>{};
+        : {
+            if (step?.kind == SudokuStepKind.contradiction &&
+                step?.cell != null)
+              step!.cell!,
+          };
 
-    // Round 87b: stack the grid + an animated win-celebration
-    // overlay. The overlay appears when [_winStatus == true] and
-    // the user hasn't dismissed it; it fades + scales in from
-    // half-size for a celebratory pop. Tap to dismiss.
     final gridBlock = Padding(
       padding: const EdgeInsets.all(16),
-      child: Stack(
-        children: [
-          SudokuGrid(
-            layout: layout,
-            cells: _displayed,
-            clueIndexes: _clueIndexes,
-            selectedIndex: _selected,
-            highlightIndex: highlightIdx,
-            candidates: candidates,
-            cages: _puzzle.cages,
-            onTapCell: _onTapCell,
-            // Round 87: drag-and-drop digit entry from the digit
-            // pad. Non-null digit fills the cell; null clears it.
-            // Wired only when the visualizer isn't active.
-            onDropDigit: _trace == null ? _onDropDigitOnCell : null,
-            conflictIndexes: conflicts,
-          ),
-          if (_winStatus == true && !_winOverlayDismissed)
-            Positioned.fill(
-              child: _WinOverlay(
-                label: t.sudokuSolvedCorrectly,
-                onDismiss: () => setState(() => _winOverlayDismissed = true),
-              ),
-            ),
-        ],
+      child: SudokuGrid(
+        layout: layout,
+        cells: _displayed,
+        clueIndexes: _clueIndexes,
+        selectedIndex: _selected,
+        highlightIndex: highlightIdx,
+        candidates: candidates,
+        cages: _puzzle.cages,
+        onTapCell: _onTapCell,
+        // Round 87: drag-and-drop digit entry from the digit
+        // pad. Non-null digit fills the cell; null clears it.
+        // Wired only when the visualizer isn't active.
+        onDropDigit: _trace == null ? _onDropDigitOnCell : null,
+        conflictIndexes: conflicts,
+        unitIndexes: step?.unit?.cells.toSet(),
       ),
     );
 
@@ -670,49 +602,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
             labels: t,
           ),
           const SizedBox(height: 16),
+          Text(t.sudokuEnterClues,
+              style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
           _DigitPad(
             side: layout.side,
             onPress: _setDigit,
-          ),
-          const SizedBox(height: 8),
-          // Round 87: clear-to-start + win-check chip.
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              OutlinedButton.icon(
-                onPressed: _trace == null ? _clearToStart : null,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: Text(t.sudokuClearToStart),
-              ),
-              if (_computingSolution)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              if (_winStatus != null)
-                Chip(
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: _winStatus!
-                      ? Theme.of(context).colorScheme.secondaryContainer
-                      : Theme.of(context).colorScheme.errorContainer,
-                  label: Text(
-                    _winStatus!
-                        ? t.sudokuSolvedCorrectly
-                        : t.sudokuFilledWithErrors,
-                    style: TextStyle(
-                      color: _winStatus!
-                          ? Theme.of(context).colorScheme.onSecondaryContainer
-                          : Theme.of(context).colorScheme.onErrorContainer,
-                    ),
-                  ),
-                ),
-            ],
           ),
           const SizedBox(height: 8),
           _HintLevelPicker(
@@ -781,14 +676,17 @@ class _SudokuScreenState extends State<SudokuScreen> {
               caption: _captionForFrame(t, _trace!, _frameIndex),
               onPlayPause: _playPause,
               onRestart: _restart,
-              onScrub: (i) => setState(() {
-                _stopVisualizer();
-                _frameIndex = i;
-                _displayed = List<int>.from(_trace!.frames[i].assigned);
-              }),
+              onScrub: _showFrame,
+              onStep: (delta) => _showFrame(_frameIndex + delta),
               onSpeed: _setSpeed,
               labels: t,
             ),
+            const SizedBox(height: 8),
+            if (_explanation != null)
+              _ExplanationSummary(explanation: _explanation!, labels: t)
+            else
+              Text(t.sudokuExplainKillerNote,
+                  style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 8),
             if (_trace!.error != null)
               Text(_trace!.error!,
@@ -851,6 +749,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
     SudokuTrace trace,
     int frameIndex,
   ) {
+    final step = _explanation?.steps[frameIndex];
+    if (step != null) return _explainStep(t, step, _puzzle.layout.side);
     final frame = trace.frames[frameIndex];
     final idx = frame.justChangedIndex;
     if (idx == null) return t.sudokuConstraintStartingPosition;
@@ -867,6 +767,70 @@ class _SudokuScreenState extends State<SudokuScreen> {
         t.sudokuConstraintDisjointGroup(ctx.disjointGroup!),
     ];
     return parts.join(' · ');
+  }
+}
+
+/// One explained step in words. Cells use the common r3c5 notation.
+String _explainStep(AppLocalizations t, SudokuExplainedStep step, int side) {
+  String cell(int i) => 'r${i ~/ side + 1}c${i % side + 1}';
+  String unit(SudokuUnit u) => switch (u.kind) {
+        SudokuUnitKind.row => t.sudokuConstraintRow(u.number),
+        SudokuUnitKind.column => t.sudokuConstraintCol(u.number),
+        SudokuUnitKind.box => t.sudokuConstraintBox(u.number),
+        SudokuUnitKind.mainDiagonal => t.sudokuConstraintMainDiagonal,
+        SudokuUnitKind.antiDiagonal => t.sudokuConstraintAntiDiagonal,
+        SudokuUnitKind.disjointGroup =>
+          t.sudokuConstraintDisjointGroup(u.number),
+      };
+  switch (step.kind) {
+    case SudokuStepKind.start:
+      return t.sudokuStepStart(step.cells.where((v) => v != 0).length);
+    case SudokuStepKind.nakedSingle:
+      return t.sudokuStepNakedSingle(
+          cell(step.cell!), step.value!, step.eliminations);
+    case SudokuStepKind.hiddenSingle:
+      return t.sudokuStepHiddenSingle(
+          unit(step.unit!), step.value!, cell(step.cell!));
+    case SudokuStepKind.guess:
+      return step.alternatives.isEmpty
+          ? t.sudokuStepLastOption(cell(step.cell!), step.value!)
+          : t.sudokuStepGuess(
+              cell(step.cell!), step.value!, step.alternatives.join(', '));
+    case SudokuStepKind.contradiction:
+      return step.cell != null
+          ? t.sudokuStepContradictionCell(cell(step.cell!))
+          : t.sudokuStepContradictionUnit(unit(step.unit!), step.value!);
+    case SudokuStepKind.backtrack:
+      return t.sudokuStepBacktrack(cell(step.cell!));
+    case SudokuStepKind.solved:
+      return t.sudokuStepSolved;
+  }
+}
+
+/// Solve statistics under the visualizer.
+class _ExplanationSummary extends StatelessWidget {
+  final SudokuExplanation explanation;
+  final AppLocalizations labels;
+
+  const _ExplanationSummary({required this.explanation, required this.labels});
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodySmall;
+    final e = explanation;
+    return Column(
+      key: const ValueKey('sudoku-explanation-summary'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+            labels.sudokuExplainStats(e.nakedSingles, e.hiddenSingles,
+                e.guesses, e.backtracks, e.maxDepth),
+            style: style),
+        if (e.logicOnly) Text(labels.sudokuExplainLogicOnly, style: style),
+        if (e.truncated)
+          Text(labels.sudokuExplainTruncated(e.steps.length), style: style),
+      ],
+    );
   }
 }
 
@@ -1032,6 +996,7 @@ class _VisualizerControls extends StatelessWidget {
   final VoidCallback onPlayPause;
   final VoidCallback onRestart;
   final ValueChanged<int> onScrub;
+  final ValueChanged<int> onStep;
   final ValueChanged<_Speed> onSpeed;
   final AppLocalizations labels;
 
@@ -1044,6 +1009,7 @@ class _VisualizerControls extends StatelessWidget {
     required this.onPlayPause,
     required this.onRestart,
     required this.onScrub,
+    required this.onStep,
     required this.onSpeed,
     required this.labels,
   });
@@ -1104,9 +1070,19 @@ class _VisualizerControls extends StatelessWidget {
                 onPressed: onRestart,
               ),
               IconButton(
+                tooltip: labels.sudokuStepPrevious,
+                icon: const Icon(Icons.skip_previous),
+                onPressed: current > 0 ? () => onStep(-1) : null,
+              ),
+              IconButton(
                 tooltip: playing ? labels.sudokuPause : labels.sudokuPlay,
                 icon: Icon(playing ? Icons.pause : Icons.play_arrow),
                 onPressed: onPlayPause,
+              ),
+              IconButton(
+                tooltip: labels.sudokuStepNext,
+                icon: const Icon(Icons.skip_next),
+                onPressed: current < total - 1 ? () => onStep(1) : null,
               ),
               SegmentedButton<_Speed>(
                 segments: [
@@ -1342,116 +1318,6 @@ class _HintLevelPicker extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// Round 87b: full-grid win celebration overlay. Fades + scales in
-/// from 60% size for a celebratory "pop". Tap the backdrop or the
-/// card to dismiss. Renders absolutely over the [SudokuGrid] via
-/// the parent's `Stack`.
-///
-/// The card has a layered design: a large translucent green disk
-/// behind a check icon + the localized "Solved!" text + a small
-/// dismiss hint. Style is calibrated to feel celebratory without
-/// looking out of place in a CAS calculator (no cartoonish
-/// confetti — the green-disk pulse + a subtle scale-bounce does
-/// the work).
-class _WinOverlay extends StatelessWidget {
-  final String label;
-  final VoidCallback onDismiss;
-
-  const _WinOverlay({required this.label, required this.onDismiss});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 420),
-      curve: Curves.easeOutBack,
-      builder: (context, t, _) {
-        return Opacity(
-          opacity: t.clamp(0.0, 1.0),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onDismiss,
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.25 * t),
-              alignment: Alignment.center,
-              child: Transform.scale(
-                scale: 0.6 + 0.4 * t,
-                child: _WinCard(label: label, scheme: scheme),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _WinCard extends StatelessWidget {
-  final String label;
-  final ColorScheme scheme;
-
-  const _WinCard({required this.label, required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    final hint = AppLocalizations.of(context).sudokuWinOverlayTapHint;
-    return Material(
-      elevation: 12,
-      borderRadius: BorderRadius.circular(20),
-      // Tertiary container is the green-ish accent on Material 3;
-      // it stays distinct from the primary blue of the highlight
-      // tint so the overlay reads as a different kind of state.
-      color: scheme.tertiaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Pulse disk + check icon stack.
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: scheme.tertiary.withValues(alpha: 0.30),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Icon(
-                  Icons.check_circle,
-                  size: 76,
-                  color: scheme.onTertiaryContainer,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                color: scheme.onTertiaryContainer,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hint,
-              style: TextStyle(
-                fontSize: 12,
-                color: scheme.onTertiaryContainer.withValues(alpha: 0.7),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

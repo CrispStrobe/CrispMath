@@ -243,9 +243,9 @@ void main() {
         expect(find.text(label), findsOneWidget);
       }
       // Puzzle and scene tools are collapsed under Labs until opened.
-      expect(find.text('Sudoku'), findsNothing);
+      expect(find.text('Sudoku solver'), findsNothing);
       await _expandLabs(tester, scrollable);
-      for (final label in const ['Constraint problems', 'Sudoku']) {
+      for (final label in const ['Constraint problems', 'Sudoku solver']) {
         await tester.scrollUntilVisible(find.text(label), 200,
             scrollable: scrollable);
         await tester.pumpAndSettle();
@@ -265,16 +265,16 @@ void main() {
       await _pumpApp(tester);
       await tester.tap(find.text('Analysis'));
       await tester.pumpAndSettle();
-      // Scroll down + tap Sudoku.
+      // Scroll down + tap the Sudoku solver.
       final scrollable = find.byType(Scrollable).first;
       await _expandLabs(tester, scrollable);
-      await tester.scrollUntilVisible(find.text('Sudoku'), 200,
+      await tester.scrollUntilVisible(find.text('Sudoku solver'), 200,
           scrollable: scrollable);
       // Labs children are built in the scroll cache once expanded, so
       // scrollUntilVisible may not move; bring the card on screen first.
-      await tester.ensureVisible(find.text('Sudoku'));
+      await tester.ensureVisible(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Sudoku'));
+      await tester.tap(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
       // Cycle through the three variants in the SegmentedButton.
       // Tapping any of Regular / Sudoku-X / Killer used to crash.
@@ -292,7 +292,7 @@ void main() {
       // The Sudoku tab title is enough — if any frame in the cycle
       // had thrown the dropdown / overflow assertion, pumpAndSettle
       // would have surfaced it as a test failure.
-      expect(find.text('Sudoku'), findsWidgets);
+      expect(find.text('Sudoku solver'), findsWidgets);
     });
 
     testWidgets(
@@ -307,13 +307,13 @@ void main() {
       await tester.pumpAndSettle();
       final scrollable = find.byType(Scrollable).first;
       await _expandLabs(tester, scrollable);
-      await tester.scrollUntilVisible(find.text('Sudoku'), 200,
+      await tester.scrollUntilVisible(find.text('Sudoku solver'), 200,
           scrollable: scrollable);
       // Labs children are built in the scroll cache once expanded, so
       // scrollUntilVisible may not move; bring the card on screen first.
-      await tester.ensureVisible(find.text('Sudoku'));
+      await tester.ensureVisible(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Sudoku'));
+      await tester.tap(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
       // The hint picker chips are labelled Off / Basic / Advanced —
       // verify all three are present, then exercise each.
@@ -338,7 +338,7 @@ void main() {
       }
       await tester.pumpAndSettle();
       // Sanity: still on the Sudoku screen, no exceptions surfaced.
-      expect(find.text('Sudoku'), findsWidgets);
+      expect(find.text('Sudoku solver'), findsWidgets);
       // Flip back to Off — chip stays selectable.
       await tester.tap(find.text('Off'));
       await tester.pumpAndSettle();
@@ -360,13 +360,13 @@ void main() {
       await tester.pumpAndSettle();
       final scrollable = find.byType(Scrollable).first;
       await _expandLabs(tester, scrollable);
-      await tester.scrollUntilVisible(find.text('Sudoku'), 200,
+      await tester.scrollUntilVisible(find.text('Sudoku solver'), 200,
           scrollable: scrollable);
       // Labs children are built in the scroll cache once expanded, so
       // scrollUntilVisible may not move; bring the card on screen first.
-      await tester.ensureVisible(find.text('Sudoku'));
+      await tester.ensureVisible(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Sudoku'));
+      await tester.tap(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
       // Pick the 4×4 size chip.
       await tester.tap(find.text('4×4'));
