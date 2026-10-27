@@ -756,6 +756,18 @@ abstract class AppLocalizations {
   String get onboardingAnalysisBody;
   String get onboardingNotepadTitle;
   String get onboardingNotepadBody;
+  String get onboardingWorksheetTitle;
+  String get onboardingWorksheetBody;
+  String get onboardingTryWorksheet;
+  String get analysisLabsTitle;
+  String get analysisLabsSubtitle;
+  String get aboutOurApps;
+  String get aboutOurAppsIntro;
+  String get aboutAppStore;
+  String get aboutMacAppStore;
+  String get aboutTestFlight;
+  String get aboutComingSoon;
+  String get aboutThisApp;
   String get settingsReplayTour;
   String get settingsReplayTourSubtitle;
 
@@ -2366,6 +2378,42 @@ class EnLocalizations implements AppLocalizations {
       'Type math like a document — one expression per line, results '
       'in the right column. Define variables (tax = 0.085), reference '
       'earlier lines, and watch everything update live as you edit.';
+  @override
+  String get onboardingWorksheetTitle =>
+      'A calculator that remembers';
+  @override
+  String get onboardingWorksheetBody =>
+      'Start with a worksheet: a = 3, f(x) = x² + a, f(4). Change a and every result and the linked graph recalculate. Save a checkpoint, compare, restore, and export the whole session.';
+  @override
+  String get onboardingTryWorksheet =>
+      'Try a live worksheet';
+  @override
+  String get analysisLabsTitle =>
+      'Labs';
+  @override
+  String get analysisLabsSubtitle =>
+      'Constraint problems, Sudoku and the 3D scene composer';
+  @override
+  String get aboutOurApps =>
+      'Our apps';
+  @override
+  String get aboutOurAppsIntro =>
+      'More apps by the same developer. Apps in TestFlight are free betas: the link installs Apple\'s TestFlight first.';
+  @override
+  String get aboutAppStore =>
+      'App Store';
+  @override
+  String get aboutMacAppStore =>
+      'Mac App Store';
+  @override
+  String get aboutTestFlight =>
+      'TestFlight';
+  @override
+  String get aboutComingSoon =>
+      'Coming soon';
+  @override
+  String get aboutThisApp =>
+      'this app';
   @override
   String get settingsReplayTour => 'Replay onboarding tour';
   @override
@@ -5736,6 +5784,42 @@ class DeLocalizations implements AppLocalizations {
       '(tax = 0.085), frühere Zeilen referenzieren und zusehen, '
       'wie sich alles live aktualisiert.';
   @override
+  String get onboardingWorksheetTitle =>
+      'Ein Rechner mit Gedächtnis';
+  @override
+  String get onboardingWorksheetBody =>
+      'Beginne mit einem Arbeitsblatt: a = 3, f(x) = x² + a, f(4). Ändere a, und alle Ergebnisse samt verknüpftem Graphen rechnen neu. Prüfpunkt speichern, vergleichen, wiederherstellen und die ganze Sitzung exportieren.';
+  @override
+  String get onboardingTryWorksheet =>
+      'Live-Arbeitsblatt ausprobieren';
+  @override
+  String get analysisLabsTitle =>
+      'Labor';
+  @override
+  String get analysisLabsSubtitle =>
+      'Constraint-Probleme, Sudoku und der 3D-Szeneneditor';
+  @override
+  String get aboutOurApps =>
+      'Unsere Apps';
+  @override
+  String get aboutOurAppsIntro =>
+      'Weitere Apps desselben Entwicklers. Apps in TestFlight sind kostenlose Betas: Der Link installiert zuerst Apples TestFlight.';
+  @override
+  String get aboutAppStore =>
+      'App Store';
+  @override
+  String get aboutMacAppStore =>
+      'Mac App Store';
+  @override
+  String get aboutTestFlight =>
+      'TestFlight';
+  @override
+  String get aboutComingSoon =>
+      'Bald verfügbar';
+  @override
+  String get aboutThisApp =>
+      'diese App';
+  @override
   String get settingsReplayTour => 'Einführungstour erneut anzeigen';
   @override
   String get settingsReplayTourSubtitle =>
@@ -9052,6 +9136,42 @@ class FrLocalizations implements AppLocalizations {
       '(tax = 0.085), référencez les lignes précédentes et voyez tout '
       'se recalculer en direct.';
   @override
+  String get onboardingWorksheetTitle =>
+      'Une calculatrice qui se souvient';
+  @override
+  String get onboardingWorksheetBody =>
+      'Commencez par une feuille de calcul : a = 3, f(x) = x² + a, f(4). Modifiez a et tous les résultats ainsi que le graphique lié se recalculent. Enregistrez un point de contrôle, comparez, restaurez et exportez toute la session.';
+  @override
+  String get onboardingTryWorksheet =>
+      'Essayer une feuille de calcul interactive';
+  @override
+  String get analysisLabsTitle =>
+      'Labo';
+  @override
+  String get analysisLabsSubtitle =>
+      'Problèmes de contraintes, Sudoku et compositeur de scènes 3D';
+  @override
+  String get aboutOurApps =>
+      'Nos apps';
+  @override
+  String get aboutOurAppsIntro =>
+      'D\'autres apps du même développeur. Les apps dans TestFlight sont des bêtas gratuites : le lien installe d\'abord TestFlight d\'Apple.';
+  @override
+  String get aboutAppStore =>
+      'App Store';
+  @override
+  String get aboutMacAppStore =>
+      'Mac App Store';
+  @override
+  String get aboutTestFlight =>
+      'TestFlight';
+  @override
+  String get aboutComingSoon =>
+      'Bientôt disponible';
+  @override
+  String get aboutThisApp =>
+      'cette app';
+  @override
   String get settingsReplayTour => 'Revoir la visite guidée';
   @override
   String get settingsReplayTourSubtitle =>
@@ -12339,6 +12459,42 @@ class EsLocalizations implements AppLocalizations {
       'resultados en la columna derecha. Define variables (tax = 0.085), '
       'referencia líneas anteriores y observa cómo todo se actualiza '
       'en tiempo real.';
+  @override
+  String get onboardingWorksheetTitle =>
+      'Una calculadora que recuerda';
+  @override
+  String get onboardingWorksheetBody =>
+      'Empieza con una hoja de trabajo: a = 3, f(x) = x² + a, f(4). Cambia a y todos los resultados y la gráfica vinculada se recalculan. Guarda un punto de control, compara, restaura y exporta toda la sesión.';
+  @override
+  String get onboardingTryWorksheet =>
+      'Probar una hoja de trabajo en vivo';
+  @override
+  String get analysisLabsTitle =>
+      'Laboratorio';
+  @override
+  String get analysisLabsSubtitle =>
+      'Problemas de restricciones, Sudoku y compositor de escenas 3D';
+  @override
+  String get aboutOurApps =>
+      'Nuestras apps';
+  @override
+  String get aboutOurAppsIntro =>
+      'Más apps del mismo desarrollador. Las apps en TestFlight son betas gratuitas: el enlace instala primero TestFlight de Apple.';
+  @override
+  String get aboutAppStore =>
+      'App Store';
+  @override
+  String get aboutMacAppStore =>
+      'Mac App Store';
+  @override
+  String get aboutTestFlight =>
+      'TestFlight';
+  @override
+  String get aboutComingSoon =>
+      'Próximamente';
+  @override
+  String get aboutThisApp =>
+      'esta app';
   @override
   String get settingsReplayTour => 'Repetir la visita guiada';
   @override

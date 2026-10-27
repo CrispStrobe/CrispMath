@@ -72,6 +72,8 @@ async def check_modules(args):
                         if references:
                             card = page.get_by_text(re.compile(r'^Statistics\s+Descriptive stats, linear regression, normal & binomial distributions'))
                         else:
+                            # Constraint problems sit in the collapsed Labs section.
+                            await real_click(page,page.get_by_text(re.compile(r'^Labs\s+Constraint problems, Sudoku')))
                             card = page.get_by_text(re.compile(r'^Constraint problems\s+Diophantine equations and cryptarithms'))
                         await real_click(page,card)
                         if not references: await reveal_tab(page,'Free-form')

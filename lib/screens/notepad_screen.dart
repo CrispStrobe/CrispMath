@@ -932,7 +932,9 @@ class NotepadScreenState extends State<NotepadScreen> {
     });
   }
 
-  Future<void> _exploreLinkedWorksheet() async {
+  /// Create the guided a=3, f(x)=x²+a, f(4) worksheet, calculate it and
+  /// link f to the graph. Also started from the first-run tour.
+  Future<void> exploreLinkedWorksheet() async {
     final labels = WorkflowLocalizations.of(context);
     final doc = NotepadTemplates.connectedWorksheet(
         name: labels.text(WorkflowLabel.connectedWorksheetName));
@@ -1831,7 +1833,7 @@ class NotepadScreenState extends State<NotepadScreen> {
 
   void _onMenuSelected(String value) async {
     if (value == 'explore-linked') {
-      await _exploreLinkedWorksheet();
+      await exploreLinkedWorksheet();
       return;
     }
     if (value.startsWith('template:')) {
@@ -1936,7 +1938,7 @@ class NotepadScreenState extends State<NotepadScreen> {
                   icon: const Icon(Icons.show_chart),
                   label: Text(WorkflowLocalizations.of(context).text(
                       WorkflowLabel.exploreWorksheet)),
-                  onPressed: _exploreLinkedWorksheet,
+                  onPressed: exploreLinkedWorksheet,
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.menu_book,

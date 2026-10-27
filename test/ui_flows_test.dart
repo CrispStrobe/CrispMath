@@ -73,6 +73,16 @@ Future<void> _gotoAnalysisModule(WidgetTester tester, String title) async {
   await tester.pumpAndSettle();
 }
 
+/// Open the collapsed Labs section of the Analysis hub (Constraints,
+/// Sudoku, 3D scene composer).
+Future<void> _expandLabs(WidgetTester tester, Finder scrollable) async {
+  await tester.scrollUntilVisible(find.text('Labs'), 200,
+      scrollable: scrollable);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Labs'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('Worked examples — Round 93 (P6) discoverability', () {
     testWidgets('Calculator AppBar surfaces the open-book icon',
@@ -225,9 +235,17 @@ void main() {
         '3D Graphing',
         'Unit Converter',
         'Constants reference', // Round 71: moved from Settings
-        'Constraint problems',
-        'Sudoku',
+        'Labs',
       ]) {
+        await tester.scrollUntilVisible(find.text(label), 200,
+            scrollable: scrollable);
+        await tester.pumpAndSettle();
+        expect(find.text(label), findsOneWidget);
+      }
+      // Puzzle and scene tools are collapsed under Labs until opened.
+      expect(find.text('Sudoku'), findsNothing);
+      await _expandLabs(tester, scrollable);
+      for (final label in const ['Constraint problems', 'Sudoku']) {
         await tester.scrollUntilVisible(find.text(label), 200,
             scrollable: scrollable);
         await tester.pumpAndSettle();
@@ -249,6 +267,7 @@ void main() {
       await tester.pumpAndSettle();
       // Scroll down + tap Sudoku.
       final scrollable = find.byType(Scrollable).first;
+      await _expandLabs(tester, scrollable);
       await tester.scrollUntilVisible(find.text('Sudoku'), 200,
           scrollable: scrollable);
       await tester.tap(find.text('Sudoku'));
@@ -283,6 +302,7 @@ void main() {
       await tester.tap(find.text('Analysis'));
       await tester.pumpAndSettle();
       final scrollable = find.byType(Scrollable).first;
+      await _expandLabs(tester, scrollable);
       await tester.scrollUntilVisible(find.text('Sudoku'), 200,
           scrollable: scrollable);
       await tester.tap(find.text('Sudoku'));
@@ -331,6 +351,7 @@ void main() {
       await tester.tap(find.text('Analysis'));
       await tester.pumpAndSettle();
       final scrollable = find.byType(Scrollable).first;
+      await _expandLabs(tester, scrollable);
       await tester.scrollUntilVisible(find.text('Sudoku'), 200,
           scrollable: scrollable);
       await tester.tap(find.text('Sudoku'));

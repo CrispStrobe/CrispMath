@@ -4,55 +4,50 @@
 CrispMath
 
 ## Subtitle (30 chars max)
-CAS Calculator & Graphing
+Live math worksheets & CAS
 
 ## Keywords (100 chars max, comma-separated)
-calculator,CAS,graphing,algebra,calculus,statistics,matrix,OCR,math,symbolic,solver,3D,equations
+worksheet,CAS,calculator,graphing,algebra,calculus,notepad,symbolic,statistics,matrix,equations
 
 ## Description (4000 chars max)
 
-CrispMath is a powerful scientific calculator with a real Computer Algebra System built in. It solves equations symbolically, plots 2D and 3D graphs, and runs entirely on your device — no account, no cloud, no ads.
+CrispMath is a calculator that remembers. Write math as a worksheet, change one value, and every dependent result and linked graph recalculates. Save a checkpoint, compare, restore, and export the whole session with its source intact. A real Computer Algebra System runs underneath, on your device, with no account.
+
+TRY IT IN TEN SECONDS
+Open the guided worksheet: a = 3, f(x) = x² + a, f(4) gives 19. Change a to 5 and f(4) becomes 21, and the graph of f moves with it. Restore the checkpoint and you are back at 19. That loop (define, change, compare, restore, export) is what CrispMath is built around.
+
+LIVE WORKSHEETS
+- Every line is a live formula: variables, functions, cross-references and subtotals
+- Link a function to the graph; the worksheet's values drive the plot
+- Checkpoints with side-by-side comparison and one-tap restore
+- Export calculations, plots and values together to PDF, Markdown or LaTeX. Worksheet files keep editable source and are recalculated on import
+- Units, dates and currencies work inside the worksheet
 
 SYMBOLIC MATH ENGINE
-Powered by SymEngine, CrispMath handles symbolic algebra the way textbooks do: exact fractions, symbolic integration and differentiation, polynomial factoring, series expansion, limits, and ODE solving — with step-by-step derivations you can follow.
+Powered by SymEngine: exact fractions, symbolic differentiation and integration, polynomial factoring, series, limits, equation and linear-system solving, matrices and eigenvalues, with step-by-step derivations where available.
 
 GRAPHING
-Plot up to 8 functions simultaneously in 2D with pinch-to-zoom and trace. Visualize surfaces in 3D with interactive rotation. Run full curve sketching analysis: derivatives, critical points, inflection points, and asymptotes — all computed symbolically.
+Ten function slots with pan, pinch-to-zoom, tracing, parameter sliders, value tables and full curve sketching (roots, extrema, inflection points, asymptotes). 3D surface plotting with interactive rotation.
 
-3D SCENE COMPOSER
-Build and rotate scenes with planes, lines, spheres, and quadric surfaces. Great for visualizing linear algebra and multivariable calculus concepts.
+ANALYSIS
+Statistics (descriptive, regression, distributions, nine hypothesis tests), planes, conic sections, unit converter and a constants reference. A Labs section holds the constraint solver and 3D scene composer.
 
-MATH NOTEPAD
-A multi-document scratchpad where every line is a live formula. Define variables, import across documents, and export to LaTeX or Markdown. Perfect for homework, problem sets, or engineering notes.
+PRIVATE BY DEFAULT
+Calculations, worksheets and graphs run on-device. No analytics, no tracking, no account. Optional AI assistance uses a provider and key you configure, and cloud backup is off unless you set it up.
 
-OCR — SCAN HANDWRITTEN MATH
-Point your camera at handwritten or printed equations and let on-device OCR convert them into computable expressions. Multiple recognition engines available, all running locally.
-
-MODULES
-- Statistics: descriptive stats, regression, normal and binomial distributions
-- Matrix editor and operations
-- Unit converter across 7 categories with 200+ units
-- Physical, mathematical, chemistry, and astronomy constants
-- Conic section classifier
-- Sudoku solver with step-by-step visualization
-- Constraint solver for Diophantine equations and cryptarithmetic puzzles
-
-PRIVACY FIRST
-Everything stays on your device. No analytics, no tracking, no data collection. Optional AI helper (CrispAssist) uses your own API key — we never see it.
-
-Available in English, German, French, and Spanish. Adapts to phone, tablet, and desktop with keyboard shortcuts.
+Available in English, German, French and Spanish. Adapts to phone, tablet and desktop, with full keyboard support.
 
 Free and open source (AGPL-3.0).
 
 ## Promotional Text (170 chars max)
-A real CAS in your pocket. Symbolic algebra, 2D/3D graphing, OCR for handwritten math, and a live formula notepad — all on-device, no account needed.
+Change one value and every result and graph updates. Live math worksheets with checkpoints and export, backed by a real CAS, on-device with no account.
 
 ## Categories
 Primary: Utilities
 Secondary: Education
 
 ## App Store Review Notes
-No account or login required. The app is fully functional offline. Optional network features (CrispAssist AI helper, OCR model downloads) require the user to provide their own API key or explicitly initiate a download. No in-app purchases.
+No account or login required. The app is fully functional offline. Start with the guided worksheet from the first-run tour (or Notepad > Explore a linked worksheet). Optional network features (CrispAssist AI helper, OCR model downloads) require the user to provide their own API key or explicitly initiate a download. No in-app purchases.
 
 ## Google Play Short Description (80 chars max)
 CAS calculator with symbolic math, graphing, OCR & notepad — all on-device.
