@@ -151,8 +151,15 @@ counts/sources are not the current status; the handoff links exact current evide
   naked singles, hidden singles, guesses, contradictions and backtracks
   with the pencil marks after each step; the screen replays them with
   reasons, unit highlighting and solve statistics. The win check,
-  celebration overlay and clear-to-start are removed. Killer keeps the CSP
-  replay (sum reasoning is not modelled).
+  celebration overlay and clear-to-start are removed. Before guessing it
+  applies cage-sum combinations (Killer now explains too), locked
+  candidates (pointing/box-line) and naked/hidden pairs and triples; removed
+  candidates are crossed out and the cells reasoned from are outlined. A
+  search tree draws every guess (dead ends red, solution path green) and
+  jumps to the step on tap. Tests re-derive every step type independently,
+  including brute-force cage checks and a forged-elimination control.
+  12×12 and both Killer presets are now logic-only; AI Escargot still needs
+  29 guesses (it requires techniques beyond triples).
 
 ## Cloud feedback and handwriting diagnostics
 

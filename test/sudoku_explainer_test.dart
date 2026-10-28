@@ -18,8 +18,54 @@ bool _satisfiesRules(SudokuPuzzle puzzle, List<int> grid) {
   return true;
 }
 
+int _bits(int m) => m == 0 ? 0 : 1 + _bits(m & (m - 1));
+
+/// Digit masks per cage cell over every distinct-digit assignment that
+/// reaches [sum], by brute force over [state].
+List<int> _cageAllowed(SudokuExplainedStep state, List<int> cage, int sum) {
+  final allowed = List<int>.filled(cage.length, 0);
+  final pick = List<int>.filled(cage.length, 0);
+  void go(int k, int used, int total) {
+    if (k == cage.length) {
+      if (total == sum) {
+        for (var j = 0; j < cage.length; j++) {
+          allowed[j] |= 1 << pick[j];
+        }
+      }
+      return;
+    }
+    final i = cage[k];
+    for (var d = 1; d < 32; d++) {
+      final ok = state.cells[i] == 0
+          ? state.candidateMasks[i] & (1 << d) != 0
+          : state.cells[i] == d;
+      if (!ok || used & (1 << d) != 0) continue;
+      pick[k] = d;
+      go(k + 1, used | (1 << d), total + d);
+    }
+  }
+
+  go(0, 0, 0);
+  return allowed;
+}
+
+/// Checks an elimination step: the grid is unchanged and the candidates
+/// lost exactly [SudokuExplainedStep.removed].
+void _checkElimination(
+    SudokuExplainedStep before, SudokuExplainedStep step, int k) {
+  expect(step.cells, before.cells, reason: 'step $k places nothing');
+  expect(step.removed, isNotEmpty, reason: 'step $k removes something');
+  for (var i = 0; i < step.cells.length; i++) {
+    final r = step.removed[i] ?? 0;
+    expect(before.candidateMasks[i] & r, r,
+        reason: 'step $k removes only existing candidates');
+    expect(step.candidateMasks[i], before.candidateMasks[i] & ~r,
+        reason: 'step $k candidates at $i');
+  }
+}
+
 /// Re-derives each step's reason from the previous step's state.
-void _checkReasons(SudokuExplanation e) {
+void _checkReasons(SudokuExplanation e, {List<KillerCage>? cages}) {
   for (var k = 1; k < e.steps.length; k++) {
     final before = e.steps[k - 1];
     final step = e.steps[k];
@@ -40,11 +86,80 @@ void _checkReasons(SudokuExplanation e) {
             reason: 'step $k: hidden single must have one place in its unit');
         expect(step.unit!.cells.any((i) => before.cells[i] == step.value),
             isFalse);
+      case SudokuStepKind.cageCombination:
+        _checkElimination(before, step, k);
+        final allowed = _cageAllowed(before, step.focusCells, step.cageSum!);
+        for (var j = 0; j < step.focusCells.length; j++) {
+          final r = step.removed[step.focusCells[j]] ?? 0;
+          expect(r & allowed[j], 0,
+              reason: 'step $k: a removed digit reaches the cage sum');
+        }
+        expect(step.removed.keys.every(step.focusCells.contains), isTrue);
+        expect(cages!.any((c) => c.targetSum == step.cageSum), isTrue);
+      case SudokuStepKind.lockedCandidates:
+        _checkElimination(before, step, k);
+        final bit = 1 << step.digits.single;
+        final second = step.secondUnit!.cells.toSet();
+        final places = [
+          for (final i in step.unit!.cells)
+            if (before.cells[i] == 0 && before.candidateMasks[i] & bit != 0) i
+        ];
+        expect(places.every(second.contains), isTrue,
+            reason: 'step $k: the digit is confined to the second unit');
+        expect(
+            step.unit!.cells.any((i) => before.cells[i] == step.digits.single),
+            isFalse);
+        step.removed.forEach((i, r) {
+          expect(r, bit);
+          expect(second.contains(i) && !step.unit!.cells.contains(i), isTrue,
+              reason: 'step $k removes only outside the first unit');
+        });
+      case SudokuStepKind.nakedSubset:
+        _checkElimination(before, step, k);
+        var union = 0;
+        for (final i in step.focusCells) {
+          expect(before.cells[i], 0);
+          union |= before.candidateMasks[i];
+        }
+        final digits = step.digits.fold(0, (m, d) => m | (1 << d));
+        expect(union, digits, reason: 'step $k: subset cells hold the digits');
+        expect(_bits(union), step.focusCells.length,
+            reason: 'step $k: k cells hold exactly k digits');
+        step.removed.forEach((i, r) {
+          expect(step.unit!.cells.contains(i), isTrue);
+          expect(step.focusCells.contains(i), isFalse);
+          expect(r & ~union, 0);
+        });
+      case SudokuStepKind.hiddenSubset:
+        _checkElimination(before, step, k);
+        expect(step.digits, hasLength(step.focusCells.length));
+        var keep = 0;
+        for (final d in step.digits) {
+          keep |= 1 << d;
+          final places = [
+            for (final i in step.unit!.cells)
+              if (before.cells[i] == 0 &&
+                  before.candidateMasks[i] & (1 << d) != 0)
+                i
+          ];
+          expect(places.every(step.focusCells.contains), isTrue,
+              reason: 'step $k: digit $d fits only in the subset cells');
+        }
+        step.removed.forEach((i, r) {
+          expect(step.focusCells.contains(i), isTrue);
+          expect(r & keep, 0);
+        });
       case SudokuStepKind.guess:
         expect(before.candidateMasks[step.cell!] & (1 << step.value!), isNot(0),
             reason: 'step $k: a guess takes one of the cell candidates');
       case SudokuStepKind.contradiction:
-        if (step.cell != null) {
+        if (step.cageSum != null) {
+          expect(
+              _cageAllowed(step, step.focusCells, step.cageSum!)
+                  .every((m) => m == 0),
+              isTrue,
+              reason: 'step $k: the cage can no longer reach its sum');
+        } else if (step.cell != null) {
           expect(step.cells[step.cell!], 0);
           expect(step.candidateMasks[step.cell!], 0);
         } else {
@@ -72,6 +187,25 @@ void _checkReasons(SudokuExplanation e) {
   }
 }
 
+/// The search tree has one node per guess; the solution path is a chain
+/// from a root, and every other node ended in a contradiction.
+void _checkTree(SudokuExplanation e, String id) {
+  expect(e.tree, hasLength(e.guesses), reason: id);
+  final onPath =
+      e.tree.where((n) => n.status == SudokuNodeStatus.solution).toList();
+  expect(onPath, hasLength(e.steps.last.depth), reason: id);
+  for (var j = 0; j < onPath.length; j++) {
+    expect(onPath[j].parent, j == 0 ? isNull : onPath[j - 1].id, reason: id);
+  }
+  expect(e.tree.where((n) => n.status == SudokuNodeStatus.open), isEmpty,
+      reason: id);
+  for (final node in e.tree) {
+    final step = e.steps[node.step!];
+    expect(step.kind, SudokuStepKind.guess, reason: id);
+    expect((step.cell, step.value), (node.cell, node.value), reason: id);
+  }
+}
+
 void main() {
   test(
       'every supported preset solves, matches the CSP solver, and every '
@@ -86,12 +220,15 @@ void main() {
       expect(e.solution, await SudokuSolver.solve(puzzle), reason: preset.id);
       expect(e.steps.first.kind, SudokuStepKind.start);
       expect(e.steps.last.kind, SudokuStepKind.solved);
-      _checkReasons(e);
+      _checkReasons(e, cages: puzzle.cages);
       final counted = e.steps.where((s) =>
           s.kind == SudokuStepKind.nakedSingle ||
           s.kind == SudokuStepKind.hiddenSingle);
       expect(counted.length, e.nakedSingles + e.hiddenSingles,
           reason: preset.id);
+      final eliminations = e.steps.where((s) => s.removed.isNotEmpty);
+      expect(eliminations.length, e.eliminationSteps, reason: preset.id);
+      _checkTree(e, preset.id);
     }
   });
 
@@ -132,6 +269,45 @@ void main() {
     expect(() => _checkReasons(tampered), throwsA(isA<TestFailure>()));
   });
 
+  test('the reason check rejects an unjustified elimination', () {
+    final e = SudokuExplainer.explain(SudokuPresets.standard9x9Hard);
+    final k =
+        e.steps.indexWhere((s) => s.kind == SudokuStepKind.lockedCandidates);
+    final real = e.steps[k];
+    final before = e.steps[k - 1];
+    // Remove the digit from a cell inside the first unit as well, which
+    // locked candidates never justifies.
+    final bit = 1 << real.digits.single;
+    final extra = real.focusCells.first;
+    final removed = {...real.removed, extra: bit};
+    final forged = SudokuExplainedStep(
+      kind: SudokuStepKind.lockedCandidates,
+      cells: before.cells,
+      candidateMasks: [
+        for (var i = 0; i < before.cells.length; i++)
+          before.candidateMasks[i] & ~(removed[i] ?? 0)
+      ],
+      unit: real.unit,
+      secondUnit: real.secondUnit,
+      focusCells: real.focusCells,
+      digits: real.digits,
+      removed: removed,
+      depth: real.depth,
+    );
+    final tampered = SudokuExplanation(
+      steps: [...e.steps.take(k), forged],
+      solution: e.solution,
+      error: null,
+      truncated: false,
+      nakedSingles: 0,
+      hiddenSingles: 0,
+      guesses: 0,
+      backtracks: 0,
+      maxDepth: 0,
+    );
+    expect(() => _checkReasons(tampered), throwsA(isA<TestFailure>()));
+  });
+
   test('easy 9×9 needs logic only; hard 9×9 needs search and backtracking', () {
     final easy = SudokuExplainer.explain(SudokuPresets.standard9x9Easy);
     expect(easy.logicOnly, isTrue);
@@ -151,7 +327,19 @@ void main() {
           SudokuStepKind.guess,
           SudokuStepKind.contradiction,
           SudokuStepKind.backtrack,
+          SudokuStepKind.lockedCandidates,
+          SudokuStepKind.nakedSubset,
+          SudokuStepKind.hiddenSubset,
         ]));
+    expect(hard.tree.where((n) => n.status == SudokuNodeStatus.deadEnd),
+        isNotEmpty);
+  });
+
+  test('12×12 is solved by eliminations without guessing', () {
+    final e = SudokuExplainer.explain(SudokuPresets.twelve12x12);
+    expect(e.logicOnly, isTrue);
+    expect(e.lockedCandidates, greaterThan(0));
+    expect(e.tree, isEmpty);
   });
 
   test('X and disjoint variants include their extra units', () {
@@ -197,8 +385,36 @@ void main() {
         SudokuExplainer.explain(SudokuPresets.standard9x9Hard).solution);
   });
 
-  test('Killer puzzles are left to the CSP replay', () {
-    expect(SudokuExplainer.supports(SudokuPresets.killer9x9), isFalse);
-    expect(SudokuExplainer.supports(SudokuPresets.standard9x9Hard), isTrue);
+  test('Killer cages are reasoned about by their sums', () {
+    expect(SudokuExplainer.supports(SudokuPresets.killer9x9), isTrue);
+    final e = SudokuExplainer.explain(SudokuPresets.killer9x9);
+    expect(e.logicOnly, isTrue);
+    expect(e.cageSteps, greaterThan(0));
+    final step =
+        e.steps.firstWhere((s) => s.kind == SudokuStepKind.cageCombination);
+    // Every listed combination is a set of distinct digits with the sum.
+    for (final combo in step.combinations) {
+      expect(combo.toSet(), hasLength(step.focusCells.length));
+      expect(combo.fold(0, (a, b) => a + b), step.cageSum);
+    }
+  });
+
+  test('a cage that cannot reach its sum is a contradiction', () {
+    // 4×4 killer: a two-cell cage of sum 2 needs two equal digits.
+    final cells = List<int>.filled(16, 0);
+    final cages = [
+      const KillerCage(cellIndexes: [0, 1], targetSum: 2),
+      for (var i = 2; i < 16; i++) KillerCage(cellIndexes: [i], targetSum: 1),
+    ];
+    final e = SudokuExplainer.explain(SudokuPuzzle(
+        layout: SudokuLayout.small,
+        cells: cells,
+        variant: SudokuVariant.killer,
+        cages: cages));
+    expect(e.solved, isFalse);
+    expect(e.error, 'No solution exists for this puzzle.');
+    final contradiction =
+        e.steps.firstWhere((s) => s.kind == SudokuStepKind.contradiction);
+    expect(contradiction.cageSum ?? contradiction.cell, isNotNull);
   });
 }

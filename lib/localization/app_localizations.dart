@@ -532,7 +532,18 @@ abstract class AppLocalizations {
       int naked, int hidden, int guesses, int backtracks, int depth);
   String get sudokuExplainLogicOnly;
   String sudokuExplainTruncated(int shown);
-  String get sudokuExplainKillerNote;
+  String sudokuStepCage(int sum, int size, String combos, int removed);
+  String sudokuStepLocked(int digit, String unit, String other, int removed);
+  String sudokuStepNakedSubset(
+      int size, String cells, String digits, String unit, int removed);
+  String sudokuStepHiddenSubset(
+      int size, String digits, String unit, String cells, int removed);
+  String sudokuStepContradictionCage(int sum);
+  String sudokuExplainEliminations(
+      int cages, int locked, int nakedSubsets, int hiddenSubsets);
+  String get sudokuSearchTreeTitle;
+  String get sudokuSearchTreeHint;
+  String sudokuSearchTreeTruncated(int shown);
   String get sudokuStepPrevious;
   String get sudokuStepNext;
   String get sudokuEnterClues;
@@ -1835,9 +1846,9 @@ class EnLocalizations implements AppLocalizations {
       'there even though $cell has other candidates.';
   @override
   String sudokuStepGuess(String cell, int value, String alternatives) =>
-      'No single left, so the solver guesses. It picks $cell because it '
-      'has the fewest candidates and tries $value, keeping $alternatives '
-      'for backtracking.';
+      'No logical step applies, so the solver guesses. It picks $cell '
+      'because it has the fewest candidates and tries $value, keeping '
+      '$alternatives for backtracking.';
   @override
   String sudokuStepLastOption(String cell, int value) =>
       'Last option: every other choice at $cell failed, so it must be '
@@ -1868,9 +1879,46 @@ class EnLocalizations implements AppLocalizations {
   String sudokuExplainTruncated(int shown) =>
       'Showing the first $shown steps; the solve continued past them.';
   @override
-  String get sudokuExplainKillerNote =>
-      'Killer cages need sum reasoning, so this replay shows the '
-      'constraint solver\'s assignments without step reasons.';
+  String sudokuStepCage(int sum, int size, String combos, int removed) =>
+      'Cage sum: $size cells must add up to $sum with different digits. '
+      'Only $combos fit the candidates, so $removed candidates that no '
+      'such combination uses are removed.';
+  @override
+  String sudokuStepLocked(int digit, String unit, String other, int removed) =>
+      'Locked candidates: in $unit, $digit can only go in cells that also '
+      'belong to $other. Wherever it lands, $other gets its $digit there, '
+      'so $digit is removed from $removed other cells of $other.';
+  @override
+  String sudokuStepNakedSubset(
+          int size, String cells, String digits, String unit, int removed) =>
+      'Naked ${size == 2 ? 'pair' : 'triple'}: $cells in $unit hold only '
+      '$digits between them, so those digits must go in these $size cells '
+      'and are removed from the rest of $unit ($removed candidates).';
+  @override
+  String sudokuStepHiddenSubset(
+          int size, String digits, String unit, String cells, int removed) =>
+      'Hidden ${size == 2 ? 'pair' : 'triple'}: in $unit, $digits fit only '
+      'in $cells, so those cells must take them and drop their other '
+      'candidates ($removed removed).';
+  @override
+  String sudokuStepContradictionCage(int sum) =>
+      'Contradiction: the cage of $sum can no longer reach its sum, so a '
+      'guess was wrong.';
+  @override
+  String sudokuExplainEliminations(
+          int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
+      'Cage sums $cages · Locked candidates $locked · Naked pairs/triples '
+      '$nakedSubsets · Hidden pairs/triples $hiddenSubsets';
+  @override
+  String get sudokuSearchTreeTitle => 'Search tree';
+  @override
+  String get sudokuSearchTreeHint =>
+      'Each dot is a guess, children are guesses made after it. Red dots '
+      'led to a contradiction, green ones are the path to the solution. '
+      'The ringed dot is the guess in effect at the current step.';
+  @override
+  String sudokuSearchTreeTruncated(int shown) =>
+      'Showing the first $shown guesses.';
   @override
   String get sudokuStepPrevious => 'Previous step';
   @override
@@ -3707,7 +3755,8 @@ class DeLocalizations implements AppLocalizations {
       '$cell noch andere Kandidaten hat.';
   @override
   String sudokuStepGuess(String cell, int value, String alternatives) =>
-      'Kein Single mehr, also nimmt der Solver etwas an. Er wählt $cell, '
+      'Kein Logikschritt greift mehr, also nimmt der Solver etwas an. '
+      'Er wählt $cell, '
       'weil sie die wenigsten Kandidaten hat, probiert $value und merkt '
       'sich $alternatives fürs Backtracking.';
   @override
@@ -3741,9 +3790,47 @@ class DeLocalizations implements AppLocalizations {
   String sudokuExplainTruncated(int shown) =>
       'Die ersten $shown Schritte werden gezeigt; die Lösung lief weiter.';
   @override
-  String get sudokuExplainKillerNote =>
-      'Killer-Käfige brauchen Summenlogik, daher zeigt diese Wiedergabe '
-      'die Zuweisungen des Constraint-Solvers ohne Begründung.';
+  String sudokuStepCage(int sum, int size, String combos, int removed) =>
+      'Käfigsumme: $size Zellen müssen mit verschiedenen Ziffern $sum '
+      'ergeben. Nur $combos passen zu den Kandidaten, daher werden '
+      '$removed Kandidaten entfernt, die keine solche Kombination nutzt.';
+  @override
+  String sudokuStepLocked(int digit, String unit, String other, int removed) =>
+      'Gesperrte Kandidaten: In $unit kann $digit nur in Zellen stehen, '
+      'die auch zu $other gehören. Wo immer sie landet, hat $other dort '
+      'seine $digit, daher fällt $digit aus $removed weiteren Zellen von '
+      '$other.';
+  @override
+  String sudokuStepNakedSubset(
+          int size, String cells, String digits, String unit, int removed) =>
+      'Nacktes ${size == 2 ? 'Paar' : 'Tripel'}: $cells in $unit enthalten '
+      'zusammen nur $digits, also gehören diese Ziffern in diese $size '
+      'Zellen und fallen aus dem Rest von $unit ($removed Kandidaten).';
+  @override
+  String sudokuStepHiddenSubset(
+          int size, String digits, String unit, String cells, int removed) =>
+      'Verstecktes ${size == 2 ? 'Paar' : 'Tripel'}: In $unit passen '
+      '$digits nur in $cells, also müssen diese Zellen sie aufnehmen und '
+      'verlieren ihre übrigen Kandidaten ($removed entfernt).';
+  @override
+  String sudokuStepContradictionCage(int sum) =>
+      'Widerspruch: Der Käfig mit Summe $sum kann seine Summe nicht mehr '
+      'erreichen, also war eine Annahme falsch.';
+  @override
+  String sudokuExplainEliminations(
+          int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
+      'Käfigsummen $cages · Gesperrte Kandidaten $locked · Nackte '
+      'Paare/Tripel $nakedSubsets · Versteckte Paare/Tripel $hiddenSubsets';
+  @override
+  String get sudokuSearchTreeTitle => 'Suchbaum';
+  @override
+  String get sudokuSearchTreeHint =>
+      'Jeder Punkt ist eine Annahme, Kinder sind spätere Annahmen. Rote '
+      'Punkte führten zu einem Widerspruch, grüne bilden den Weg zur '
+      'Lösung. Der umrandete Punkt ist die Annahme im aktuellen Schritt.';
+  @override
+  String sudokuSearchTreeTruncated(int shown) =>
+      'Die ersten $shown Annahmen werden gezeigt.';
   @override
   String get sudokuStepPrevious => 'Vorheriger Schritt';
   @override
@@ -7182,7 +7269,8 @@ class FrLocalizations implements AppLocalizations {
       'même si $cell a d\'autres candidats.';
   @override
   String sudokuStepGuess(String cell, int value, String alternatives) =>
-      'Plus de singleton : le solveur fait une hypothèse. Il choisit $cell, '
+      'Plus aucune déduction : le solveur fait une hypothèse. '
+      'Il choisit $cell, '
       'qui a le moins de candidats, essaie $value et garde $alternatives '
       'pour le retour arrière.';
   @override
@@ -7216,9 +7304,48 @@ class FrLocalizations implements AppLocalizations {
   String sudokuExplainTruncated(int shown) =>
       'Affichage des $shown premières étapes ; la résolution a continué.';
   @override
-  String get sudokuExplainKillerNote =>
-      'Les cages Killer demandent un raisonnement sur les sommes : cette '
-      'relecture montre les affectations du solveur sans justification.';
+  String sudokuStepCage(int sum, int size, String combos, int removed) =>
+      'Somme de cage : $size cases doivent totaliser $sum avec des chiffres '
+      'différents. Seules $combos conviennent aux candidats, donc $removed '
+      'candidats qu\'aucune de ces combinaisons n\'utilise sont retirés.';
+  @override
+  String sudokuStepLocked(int digit, String unit, String other, int removed) =>
+      'Candidats verrouillés : dans $unit, $digit ne peut aller que dans '
+      'des cases qui appartiennent aussi à $other. Où qu\'il aille, $other '
+      'y reçoit son $digit, donc $digit est retiré de $removed autres cases '
+      'de $other.';
+  @override
+  String sudokuStepNakedSubset(
+          int size, String cells, String digits, String unit, int removed) =>
+      '${size == 2 ? 'Paire' : 'Triplet'} nu : $cells dans $unit ne '
+      'contiennent que $digits, ces chiffres vont donc dans ces $size cases '
+      'et sont retirés du reste de $unit ($removed candidats).';
+  @override
+  String sudokuStepHiddenSubset(
+          int size, String digits, String unit, String cells, int removed) =>
+      '${size == 2 ? 'Paire' : 'Triplet'} caché : dans $unit, $digits ne '
+      'tiennent que dans $cells, ces cases les prennent donc et perdent '
+      'leurs autres candidats ($removed retirés).';
+  @override
+  String sudokuStepContradictionCage(int sum) =>
+      'Contradiction : la cage de $sum ne peut plus atteindre sa somme, une '
+      'hypothèse était fausse.';
+  @override
+  String sudokuExplainEliminations(
+          int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
+      'Sommes de cage $cages · Candidats verrouillés $locked · Paires/'
+      'triplets nus $nakedSubsets · Paires/triplets cachés $hiddenSubsets';
+  @override
+  String get sudokuSearchTreeTitle => 'Arbre de recherche';
+  @override
+  String get sudokuSearchTreeHint =>
+      'Chaque point est une hypothèse, ses enfants sont les hypothèses '
+      'suivantes. Les points rouges ont mené à une contradiction, les verts '
+      'forment le chemin vers la solution. Le point cerclé est l\'hypothèse '
+      'en vigueur à l\'étape courante.';
+  @override
+  String sudokuSearchTreeTruncated(int shown) =>
+      'Affichage des $shown premières hypothèses.';
   @override
   String get sudokuStepPrevious => 'Étape précédente';
   @override
@@ -10588,7 +10715,8 @@ class EsLocalizations implements AppLocalizations {
       'tenga otros candidatos.';
   @override
   String sudokuStepGuess(String cell, int value, String alternatives) =>
-      'No quedan únicos, así que el solucionador supone. Elige $cell '
+      'No queda ningún paso lógico, así que el solucionador supone. '
+      'Elige $cell '
       'porque tiene menos candidatos, prueba $value y guarda '
       '$alternatives para retroceder.';
   @override
@@ -10623,9 +10751,48 @@ class EsLocalizations implements AppLocalizations {
   String sudokuExplainTruncated(int shown) =>
       'Se muestran los primeros $shown pasos; la resolución continuó.';
   @override
-  String get sudokuExplainKillerNote =>
-      'Las jaulas Killer requieren razonar con sumas, así que esta '
-      'reproducción muestra las asignaciones del solucionador sin motivos.';
+  String sudokuStepCage(int sum, int size, String combos, int removed) =>
+      'Suma de jaula: $size celdas deben sumar $sum con dígitos distintos. '
+      'Solo $combos encajan con los candidatos, así que se eliminan '
+      '$removed candidatos que ninguna de esas combinaciones usa.';
+  @override
+  String sudokuStepLocked(int digit, String unit, String other, int removed) =>
+      'Candidatos bloqueados: en $unit, $digit solo cabe en celdas que '
+      'también pertenecen a $other. Caiga donde caiga, $other tendrá allí '
+      'su $digit, así que $digit se elimina de otras $removed celdas de '
+      '$other.';
+  @override
+  String sudokuStepNakedSubset(
+          int size, String cells, String digits, String unit, int removed) =>
+      '${size == 2 ? 'Par' : 'Trío'} desnudo: $cells en $unit solo '
+      'contienen $digits, así que esos dígitos van en estas $size celdas y '
+      'se eliminan del resto de $unit ($removed candidatos).';
+  @override
+  String sudokuStepHiddenSubset(
+          int size, String digits, String unit, String cells, int removed) =>
+      '${size == 2 ? 'Par' : 'Trío'} oculto: en $unit, $digits solo caben '
+      'en $cells, así que esas celdas los toman y pierden sus otros '
+      'candidatos ($removed eliminados).';
+  @override
+  String sudokuStepContradictionCage(int sum) =>
+      'Contradicción: la jaula de $sum ya no puede alcanzar su suma, una '
+      'suposición era errónea.';
+  @override
+  String sudokuExplainEliminations(
+          int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
+      'Sumas de jaula $cages · Candidatos bloqueados $locked · Pares/tríos '
+      'desnudos $nakedSubsets · Pares/tríos ocultos $hiddenSubsets';
+  @override
+  String get sudokuSearchTreeTitle => 'Árbol de búsqueda';
+  @override
+  String get sudokuSearchTreeHint =>
+      'Cada punto es una suposición y sus hijos son suposiciones '
+      'posteriores. Los puntos rojos llevaron a una contradicción, los '
+      'verdes son el camino a la solución. El punto con anillo es la '
+      'suposición vigente en el paso actual.';
+  @override
+  String sudokuSearchTreeTruncated(int shown) =>
+      'Se muestran las primeras $shown suposiciones.';
   @override
   String get sudokuStepPrevious => 'Paso anterior';
   @override

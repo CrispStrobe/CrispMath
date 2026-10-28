@@ -3,6 +3,7 @@
 // a summary counts singles, guesses and backtracks. The former game
 // parts (win check, celebration overlay, clear-to-start) are gone.
 
+import 'package:crisp_math/engine/sudoku.dart';
 import 'package:crisp_math/screens/sudoku_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,30 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const MaterialApp(home: SudokuScreen()));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> pickPreset(WidgetTester tester, String label) async {
+    final picker = find.byType(DropdownButtonFormField<SudokuPuzzle>);
+    await tester.ensureVisible(picker);
+    await tester.tap(picker);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> solve(WidgetTester tester) async {
+    await tester.ensureVisible(find.text('Solve'));
+    await tester.tap(find.text('Solve'));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> next(WidgetTester tester, int times) async {
+    await tester.ensureVisible(find.byTooltip('Next step'));
+    for (var i = 0; i < times; i++) {
+      await tester.tap(find.byTooltip('Next step'));
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
   }
 
@@ -53,5 +78,29 @@ void main() {
     await tester.tap(find.byTooltip('Previous step'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Start: '), findsOneWidget);
+  });
+
+  testWidgets('AI Escargot shows eliminations and a search tree',
+      (tester) async {
+    await pumpScreen(tester);
+    await pickPreset(tester, '9×9 hard (AI Escargot)');
+    await solve(tester);
+    expect(find.textContaining('Locked candidates '), findsOneWidget);
+    expect(find.byKey(const ValueKey('sudoku-search-tree')), findsOneWidget);
+    // Steps 1-3 are guess-free logic; step 4 is a locked-candidates step.
+    await next(tester, 4);
+    expect(find.textContaining('Locked candidates: in '), findsOneWidget);
+  });
+
+  testWidgets('Killer cages are explained by their sums', (tester) async {
+    await pumpScreen(tester);
+    await pickPreset(tester, '9×9 Killer');
+    await solve(tester);
+    expect(find.textContaining('Cage sums '), findsOneWidget);
+    expect(find.text('Solved by logic alone: no guessing needed.'),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey('sudoku-search-tree')), findsNothing);
+    await next(tester, 1);
+    expect(find.textContaining('Cage sum: '), findsOneWidget);
   });
 }
