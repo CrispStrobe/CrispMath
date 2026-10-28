@@ -269,14 +269,18 @@ void main() {
     await settle();
     final picker = find.byType(DropdownButtonFormField<SudokuPuzzle>);
     await tester.ensureVisible(picker);
+    await settle();
     await tester.tap(picker);
     await settle();
     await tester.tap(find.text('9×9 hard (AI Escargot)').last);
     await settle();
     await tester.ensureVisible(find.text('Solve'));
+    await settle();
     await tester.tap(find.text('Solve'));
     await settle();
+    // The scroll takes effect on the next frame; settle before tapping.
     await tester.ensureVisible(find.byTooltip('Next step'));
+    await settle();
     for (var i = 0; i < 4; i++) {
       await tester.tap(find.byTooltip('Next step'));
       await tester.pump(const Duration(milliseconds: 50));
