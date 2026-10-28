@@ -16,6 +16,7 @@ import 'package:crisp_math/services/engine_op.dart';
 import 'package:crisp_math/services/notepad_dispatcher.dart';
 import 'package:crisp_math/screens/analysis_hub_screen.dart';
 import 'package:crisp_math/screens/graphing_screen.dart';
+import 'package:crisp_math/screens/sudoku_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -288,11 +289,20 @@ void main() {
     await settle();
     final lockedCaption = find.textContaining('Locked candidates: in ');
     expect(lockedCaption, findsOneWidget);
-    // Keep the grid in view on narrow layouts, where it scrolls away.
+    final sudokuCaption = tester.widget<Text>(lockedCaption).data;
+    // Narrow layouts stack the grid above the controls in a lazy list, so
+    // the grid is disposed once scrolled away: scroll that list back up.
+    if (find.byType(SudokuGrid).evaluate().isEmpty) {
+      await tester.scrollUntilVisible(find.byType(SudokuGrid), -300,
+          scrollable: find
+              .descendant(
+                  of: find.byType(SudokuScreen),
+                  matching: find.byType(Scrollable))
+              .first);
+    }
     await tester.ensureVisible(find.byType(SudokuGrid));
     await settle();
     await screenshot('sudoku-solver-explained-step');
-    final sudokuCaption = tester.widget<Text>(lockedCaption).data;
     await tester.pageBack();
     await settle();
     await tester.tap(find.text('Notepad').first);
