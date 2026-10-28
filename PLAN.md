@@ -88,8 +88,8 @@ immutable app pin stays0.17.12. Use the vendor plan for current run states.
 | V1 | Reconcile minimal published runtime correction with vendor main | Ready; keep unrelated main changes separate |
 | M1 | Freeze and exercise fifty new math problems, fix systemic causes | Ready; retain all 789 previous cases |
 | U1 | Cover accessibility, localization and remaining narrow layouts | Ready; fix observed defects with real UI controls |
-| O1 | Extend handwriting diagnosis to complete decoded reference parity | Exported-weight diagnostics ready; original checkpoint requires access |
-| O2 | Evaluate licensed recognition weights/training | Requires O1, provenance/access and authorized remote resources |
+| O1 | Extend handwriting diagnosis to complete decoded reference parity | Paused until after the 4.3(a) review; recognition is 7/50 and no longer advertised |
+| O2 | Evaluate licensed recognition weights/training | Paused with O1; requires provenance/access and authorized remote resources |
 | P1 | Physical Apple device matrix | Deferred device session |
 | A1 | Final store presentation and 4.3(a) response | Drafts ready; device checks and authorized submission still pending |
 | R1 | Next production release | After a validated production change; no new binary for docs/capture sizing |
@@ -167,6 +167,14 @@ counts/sources are not the current status; the handoff links exact current evide
   for 3×3 and 4×4 (5×5 exceeds the 20,000-event trace cap). Hard-coded English
   icon semantics in the visualizer were removed in favour of the localized
   tooltips and captions.
+- [~] The native screenshot gallery adds `sudoku-solver-explained-step` (AI
+  Escargot at its first locked-candidates elimination, opened through
+  Analysis > Labs); the verifier requires the scene and its caption. Run the
+  gallery workflow before choosing store screenshots; uploading stays a
+  separate authorized step.
+- [x] Handwriting recognition work (O1/O2) is paused until after review: the
+  listing no longer advertises it and 7/50 does not justify more vendor time
+  now. The input stays available as an editable draft surface.
 
 ## Cloud feedback and handwriting diagnostics
 

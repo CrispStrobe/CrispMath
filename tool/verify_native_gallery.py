@@ -12,7 +12,8 @@ SCENES = {
     'linked-function-graph', 'multiple-function-graph', 'graph-curve-trace',
     'generated-graph-value-table', 'shortcuts-created-worksheet',
     'evaluated-engineering-worksheet', 'worksheet-graph-export-preview',
-    'worksheet-checkpoint-history', 'handwriting-editable-input',
+    'worksheet-checkpoint-history', 'sudoku-solver-explained-step',
+    'handwriting-editable-input',
 }
 
 
@@ -57,6 +58,8 @@ def main():
         assert evidence['integral']['value'] == '1/3'
         assert evidence['integral']['evidence']['accuracy'] == 'exact'
         verify_connected_worksheet(evidence['document'])
+        assert evidence['sudokuExplainedStep'].startswith(
+            'Locked candidates: in '), (profile, evidence['sudokuExplainedStep'])
         if profile != 'macos':
             assert evidence['nativeWorkflowUrl'] is True
             assert evidence['nativeWorkflowUrlSupported'] is True
