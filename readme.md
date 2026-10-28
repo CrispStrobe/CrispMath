@@ -109,12 +109,16 @@ CrispMath/
 │   │   ├── notepad_evaluator.dart      # Multi-line notepad pipeline
 │   │   └── symbolic_limit.dart         # Gruntz-style limit engine
 │   ├── localization/
-│   │   └── app_localizations.dart      # i18n strings (en/de/fr/es)
+│   │   ├── app_localizations.dart      # i18n keys + delegate
+│   │   └── locales/                    # en/de/fr/es strings (part files)
 │   ├── screens/
 │   │   ├── calculator_screen.dart      # Calc keypad + display
 │   │   ├── graphing_screen.dart        # Plotter
 │   │   ├── function_editor_screen.dart # Y= editor
 │   │   ├── analysis_hub_screen.dart    # Module picker
+│   │   ├── constraints_screen.dart     # CSP tabs (parts in constraints/)
+│   │   ├── notepad_screen.dart         # Worksheet (parts in notepad/)
+│   │   ├── sudoku_screen.dart          # Sudoku solver explainer
 │   │   ├── curve_analysis_input_screen.dart
 │   │   ├── curve_analysis_results_screen.dart
 │   │   └── matrix_editor_screen.dart
