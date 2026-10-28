@@ -51,6 +51,10 @@ class SudokuGrid extends StatelessWidget {
   /// computed internally.
   final List<KillerCage>? cages;
 
+  /// Cells of the unit the current solver step reasons about (for
+  /// example the box where a hidden single was found), tinted softly.
+  final Set<int>? unitIndexes;
+
   const SudokuGrid({
     super.key,
     required this.layout,
@@ -63,6 +67,7 @@ class SudokuGrid extends StatelessWidget {
     this.candidates,
     this.cages,
     this.conflictIndexes,
+    this.unitIndexes,
   });
 
   /// Maps each cell index to its cage index, or -1 if uncaged.
@@ -112,6 +117,9 @@ class SudokuGrid extends StatelessWidget {
                               // Round 88: red wash for cells caught
                               // by computeConflicts.
                               isConflict: conflictIndexes
+                                      ?.contains(r * layout.side + c) ??
+                                  false,
+                              inUnit: unitIndexes
                                       ?.contains(r * layout.side + c) ??
                                   false,
                               cellSize: cellSize,
@@ -174,6 +182,7 @@ class _Cell extends StatelessWidget {
   final bool isSelected;
   final bool isHighlighted;
   final bool isConflict;
+  final bool inUnit;
   final double cellSize;
   final Set<int>? candidates;
   final VoidCallback? onTap;
@@ -188,6 +197,7 @@ class _Cell extends StatelessWidget {
     required this.isSelected,
     required this.isHighlighted,
     required this.isConflict,
+    this.inUnit = false,
     required this.cellSize,
     required this.candidates,
     required this.onTap,
@@ -231,6 +241,8 @@ class _Cell extends StatelessWidget {
           bg = scheme.primary.withValues(alpha: 0.30);
         } else if (isSelected) {
           bg = scheme.primary.withValues(alpha: 0.15);
+        } else if (inUnit) {
+          bg = scheme.tertiary.withValues(alpha: 0.12);
         }
         return Material(
           color: bg ?? scheme.surface,

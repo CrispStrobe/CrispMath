@@ -139,6 +139,20 @@ counts/sources are not the current status; the handoff links exact current evide
   are visually reviewed. All PR platform/unit checks and focused CI pass.
 - [ ] Perform the deferred device checks and review/upload store screenshots
   before a future App Review submission.
+- [~] Worksheet-first positioning for 4.3(a): the first-run tour opens on the
+  live worksheet with a button that starts the guided a=3 example; Constraints,
+  Sudoku and the 3D scene composer move into a collapsed Analysis "Labs"
+  section (CrispSudoku is a separate app of the same account); STORE_LISTING.md
+  leads with the worksheet loop and no longer advertises handwriting OCR. About
+  gains "Our apps" (store/TestFlight links, mirrored from Brickwright). Needs
+  hosted CI, refreshed store screenshots and the device session before any
+  resubmission.
+- [~] Sudoku is a solver explainer, not a game: `SudokuExplainer` records
+  naked singles, hidden singles, guesses, contradictions and backtracks
+  with the pencil marks after each step; the screen replays them with
+  reasons, unit highlighting and solve statistics. The win check,
+  celebration overlay and clear-to-start are removed. Killer keeps the CSP
+  replay (sum reasoning is not modelled).
 
 ## Cloud feedback and handwriting diagnostics
 

@@ -519,6 +519,23 @@ abstract class AppLocalizations {
 
   /// Caption shown on the very first visualizer frame (no cell has
   /// changed yet — the displayed grid is the user's starting input).
+  String sudokuStepStart(int clues);
+  String sudokuStepNakedSingle(String cell, int value, int eliminated);
+  String sudokuStepHiddenSingle(String unit, int value, String cell);
+  String sudokuStepGuess(String cell, int value, String alternatives);
+  String sudokuStepLastOption(String cell, int value);
+  String sudokuStepContradictionCell(String cell);
+  String sudokuStepContradictionUnit(String unit, int value);
+  String sudokuStepBacktrack(String cell);
+  String get sudokuStepSolved;
+  String sudokuExplainStats(
+      int naked, int hidden, int guesses, int backtracks, int depth);
+  String get sudokuExplainLogicOnly;
+  String sudokuExplainTruncated(int shown);
+  String get sudokuExplainKillerNote;
+  String get sudokuStepPrevious;
+  String get sudokuStepNext;
+  String get sudokuEnterClues;
   String get sudokuConstraintStartingPosition;
 
   // -- Constraints module (Analysis hub / CSP Round A) --
@@ -756,6 +773,18 @@ abstract class AppLocalizations {
   String get onboardingAnalysisBody;
   String get onboardingNotepadTitle;
   String get onboardingNotepadBody;
+  String get onboardingWorksheetTitle;
+  String get onboardingWorksheetBody;
+  String get onboardingTryWorksheet;
+  String get analysisLabsTitle;
+  String get analysisLabsSubtitle;
+  String get aboutOurApps;
+  String get aboutOurAppsIntro;
+  String get aboutAppStore;
+  String get aboutMacAppStore;
+  String get aboutTestFlight;
+  String get aboutComingSoon;
+  String get aboutThisApp;
   String get settingsReplayTour;
   String get settingsReplayTourSubtitle;
 
@@ -1660,10 +1689,10 @@ class EnLocalizations implements AppLocalizations {
   String get calculating => 'Calculating…';
 
   @override
-  String get moduleSudokuTitle => 'Sudoku';
+  String get moduleSudokuTitle => 'Sudoku solver';
   @override
   String get moduleSudokuSubtitle =>
-      'Solve 4×4 and 9×9 puzzles, watch the search step-by-step.';
+      'See how a solver reasons: singles, guesses and backtracking, step by step.';
   @override
   String get sudokuSolveButton => 'Solve';
   @override
@@ -1791,6 +1820,64 @@ class EnLocalizations implements AppLocalizations {
   String get sudokuConstraintAntiDiagonal => 'Anti diagonal';
   @override
   String sudokuConstraintDisjointGroup(int group) => 'Disjoint group $group';
+  @override
+  String sudokuStepStart(int clues) =>
+      'Start: $clues clues. Pencil marks show the digits each empty cell '
+      'can still take: a digit is ruled out when a peer in the same row, '
+      'column or box already holds it.';
+  @override
+  String sudokuStepNakedSingle(String cell, int value, int eliminated) =>
+      'Naked single: $cell has only one candidate left, so it must be '
+      '$value. That removes $value from $eliminated peer cells.';
+  @override
+  String sudokuStepHiddenSingle(String unit, int value, String cell) =>
+      'Hidden single: in $unit, $value fits only in $cell, so it goes '
+      'there even though $cell has other candidates.';
+  @override
+  String sudokuStepGuess(String cell, int value, String alternatives) =>
+      'No single left, so the solver guesses. It picks $cell because it '
+      'has the fewest candidates and tries $value, keeping $alternatives '
+      'for backtracking.';
+  @override
+  String sudokuStepLastOption(String cell, int value) =>
+      'Last option: every other choice at $cell failed, so it must be '
+      '$value (given the earlier guesses).';
+  @override
+  String sudokuStepContradictionCell(String cell) =>
+      'Contradiction: $cell has no candidates left, so a guess was wrong.';
+  @override
+  String sudokuStepContradictionUnit(String unit, int value) =>
+      'Contradiction: $value has no place left in $unit, so a guess was '
+      'wrong.';
+  @override
+  String sudokuStepBacktrack(String cell) =>
+      'Backtrack: undo everything since the guess at $cell and try its '
+      'next option.';
+  @override
+  String get sudokuStepSolved =>
+      'Solved: every cell is filled and every rule holds.';
+  @override
+  String sudokuExplainStats(
+          int naked, int hidden, int guesses, int backtracks, int depth) =>
+      'Naked singles $naked · Hidden singles $hidden · Guesses $guesses · '
+      'Backtracks $backtracks · Max depth $depth';
+  @override
+  String get sudokuExplainLogicOnly =>
+      'Solved by logic alone: no guessing needed.';
+  @override
+  String sudokuExplainTruncated(int shown) =>
+      'Showing the first $shown steps; the solve continued past them.';
+  @override
+  String get sudokuExplainKillerNote =>
+      'Killer cages need sum reasoning, so this replay shows the '
+      'constraint solver\'s assignments without step reasons.';
+  @override
+  String get sudokuStepPrevious => 'Previous step';
+  @override
+  String get sudokuStepNext => 'Next step';
+  @override
+  String get sudokuEnterClues =>
+      'Enter clues: tap a cell, then a digit, to analyse your own puzzle.';
   @override
   String get sudokuConstraintStartingPosition => 'Starting position';
 
@@ -2366,6 +2453,42 @@ class EnLocalizations implements AppLocalizations {
       'Type math like a document — one expression per line, results '
       'in the right column. Define variables (tax = 0.085), reference '
       'earlier lines, and watch everything update live as you edit.';
+  @override
+  String get onboardingWorksheetTitle =>
+      'A calculator that remembers';
+  @override
+  String get onboardingWorksheetBody =>
+      'Start with a worksheet: a = 3, f(x) = x² + a, f(4). Change a and every result and the linked graph recalculate. Save a checkpoint, compare, restore, and export the whole session.';
+  @override
+  String get onboardingTryWorksheet =>
+      'Try a live worksheet';
+  @override
+  String get analysisLabsTitle =>
+      'Labs';
+  @override
+  String get analysisLabsSubtitle =>
+      'Constraint problems, Sudoku solver and the 3D scene composer';
+  @override
+  String get aboutOurApps =>
+      'Our apps';
+  @override
+  String get aboutOurAppsIntro =>
+      'More apps by the same developer. Apps in TestFlight are free betas: the link installs Apple\'s TestFlight first.';
+  @override
+  String get aboutAppStore =>
+      'App Store';
+  @override
+  String get aboutMacAppStore =>
+      'Mac App Store';
+  @override
+  String get aboutTestFlight =>
+      'TestFlight';
+  @override
+  String get aboutComingSoon =>
+      'Coming soon';
+  @override
+  String get aboutThisApp =>
+      'this app';
   @override
   String get settingsReplayTour => 'Replay onboarding tour';
   @override
@@ -3435,10 +3558,10 @@ class DeLocalizations implements AppLocalizations {
   String get calculating => 'Berechne …';
 
   @override
-  String get moduleSudokuTitle => 'Sudoku';
+  String get moduleSudokuTitle => 'Sudoku-Löser';
   @override
   String get moduleSudokuSubtitle =>
-      '4×4- und 9×9-Rätsel lösen, die Suche Schritt für Schritt mitverfolgen.';
+      'Sehen, wie ein Solver schließt: Singles, Annahmen und Backtracking, Schritt für Schritt.';
   @override
   String get sudokuSolveButton => 'Lösen';
   @override
@@ -3569,6 +3692,66 @@ class DeLocalizations implements AppLocalizations {
   String get sudokuConstraintAntiDiagonal => 'Antidiagonale';
   @override
   String sudokuConstraintDisjointGroup(int group) => 'Disjunkte Gruppe $group';
+  @override
+  String sudokuStepStart(int clues) =>
+      'Start: $clues Vorgaben. Die Notizen zeigen, welche Ziffern jede '
+      'leere Zelle noch annehmen kann: Eine Ziffer fällt weg, sobald eine '
+      'Zelle derselben Zeile, Spalte oder Box sie schon enthält.';
+  @override
+  String sudokuStepNakedSingle(String cell, int value, int eliminated) =>
+      'Nackter Single: $cell hat nur noch einen Kandidaten, also $value. '
+      'Damit fällt $value in $eliminated Nachbarzellen weg.';
+  @override
+  String sudokuStepHiddenSingle(String unit, int value, String cell) =>
+      'Versteckter Single: In $unit passt $value nur in $cell, auch wenn '
+      '$cell noch andere Kandidaten hat.';
+  @override
+  String sudokuStepGuess(String cell, int value, String alternatives) =>
+      'Kein Single mehr, also nimmt der Solver etwas an. Er wählt $cell, '
+      'weil sie die wenigsten Kandidaten hat, probiert $value und merkt '
+      'sich $alternatives fürs Backtracking.';
+  @override
+  String sudokuStepLastOption(String cell, int value) =>
+      'Letzte Möglichkeit: Alle anderen Werte für $cell sind gescheitert, '
+      'also $value (unter den früheren Annahmen).';
+  @override
+  String sudokuStepContradictionCell(String cell) =>
+      'Widerspruch: $cell hat keinen Kandidaten mehr, eine Annahme war '
+      'falsch.';
+  @override
+  String sudokuStepContradictionUnit(String unit, int value) =>
+      'Widerspruch: $value hat in $unit keinen Platz mehr, eine Annahme '
+      'war falsch.';
+  @override
+  String sudokuStepBacktrack(String cell) =>
+      'Backtracking: alles seit der Annahme in $cell zurücknehmen und '
+      'deren nächste Möglichkeit probieren.';
+  @override
+  String get sudokuStepSolved =>
+      'Gelöst: Jede Zelle ist gefüllt und jede Regel erfüllt.';
+  @override
+  String sudokuExplainStats(
+          int naked, int hidden, int guesses, int backtracks, int depth) =>
+      'Nackte Singles $naked · Versteckte Singles $hidden · Annahmen '
+      '$guesses · Backtracks $backtracks · Max. Tiefe $depth';
+  @override
+  String get sudokuExplainLogicOnly =>
+      'Allein durch Logik gelöst: keine Annahme nötig.';
+  @override
+  String sudokuExplainTruncated(int shown) =>
+      'Die ersten $shown Schritte werden gezeigt; die Lösung lief weiter.';
+  @override
+  String get sudokuExplainKillerNote =>
+      'Killer-Käfige brauchen Summenlogik, daher zeigt diese Wiedergabe '
+      'die Zuweisungen des Constraint-Solvers ohne Begründung.';
+  @override
+  String get sudokuStepPrevious => 'Vorheriger Schritt';
+  @override
+  String get sudokuStepNext => 'Nächster Schritt';
+  @override
+  String get sudokuEnterClues =>
+      'Vorgaben eingeben: Zelle antippen, dann Ziffer, um ein eigenes '
+      'Rätsel zu analysieren.';
   @override
   String get sudokuConstraintStartingPosition => 'Ausgangsstellung';
 
@@ -5736,6 +5919,42 @@ class DeLocalizations implements AppLocalizations {
       '(tax = 0.085), frühere Zeilen referenzieren und zusehen, '
       'wie sich alles live aktualisiert.';
   @override
+  String get onboardingWorksheetTitle =>
+      'Ein Rechner mit Gedächtnis';
+  @override
+  String get onboardingWorksheetBody =>
+      'Beginne mit einem Arbeitsblatt: a = 3, f(x) = x² + a, f(4). Ändere a, und alle Ergebnisse samt verknüpftem Graphen rechnen neu. Prüfpunkt speichern, vergleichen, wiederherstellen und die ganze Sitzung exportieren.';
+  @override
+  String get onboardingTryWorksheet =>
+      'Live-Arbeitsblatt ausprobieren';
+  @override
+  String get analysisLabsTitle =>
+      'Labor';
+  @override
+  String get analysisLabsSubtitle =>
+      'Constraint-Probleme, Sudoku-Löser und der 3D-Szeneneditor';
+  @override
+  String get aboutOurApps =>
+      'Unsere Apps';
+  @override
+  String get aboutOurAppsIntro =>
+      'Weitere Apps desselben Entwicklers. Apps in TestFlight sind kostenlose Betas: Der Link installiert zuerst Apples TestFlight.';
+  @override
+  String get aboutAppStore =>
+      'App Store';
+  @override
+  String get aboutMacAppStore =>
+      'Mac App Store';
+  @override
+  String get aboutTestFlight =>
+      'TestFlight';
+  @override
+  String get aboutComingSoon =>
+      'Bald verfügbar';
+  @override
+  String get aboutThisApp =>
+      'diese App';
+  @override
   String get settingsReplayTour => 'Einführungstour erneut anzeigen';
   @override
   String get settingsReplayTourSubtitle =>
@@ -6815,10 +7034,10 @@ class FrLocalizations implements AppLocalizations {
   String get calculating => 'Calcul en cours …';
 
   @override
-  String get moduleSudokuTitle => 'Sudoku';
+  String get moduleSudokuTitle => 'Solveur de Sudoku';
   @override
   String get moduleSudokuSubtitle =>
-      'Résoudre des grilles 4×4 et 9×9, suivre la recherche pas à pas.';
+      'Voir comment un solveur raisonne : singletons, hypothèses et retour arrière, pas à pas.';
   @override
   String get sudokuSolveButton => 'Résoudre';
   @override
@@ -6948,6 +7167,66 @@ class FrLocalizations implements AppLocalizations {
   String get sudokuConstraintAntiDiagonal => 'Anti-diagonale';
   @override
   String sudokuConstraintDisjointGroup(int group) => 'Groupe disjoint $group';
+  @override
+  String sudokuStepStart(int clues) =>
+      'Départ : $clues indices. Les annotations montrent les chiffres '
+      'encore possibles dans chaque case vide : un chiffre est exclu dès '
+      'qu\'une case de la même ligne, colonne ou région le contient.';
+  @override
+  String sudokuStepNakedSingle(String cell, int value, int eliminated) =>
+      'Singleton nu : $cell n\'a plus qu\'un candidat, donc $value. '
+      '$value disparaît de $eliminated cases voisines.';
+  @override
+  String sudokuStepHiddenSingle(String unit, int value, String cell) =>
+      'Singleton caché : dans $unit, $value ne peut aller qu\'en $cell, '
+      'même si $cell a d\'autres candidats.';
+  @override
+  String sudokuStepGuess(String cell, int value, String alternatives) =>
+      'Plus de singleton : le solveur fait une hypothèse. Il choisit $cell, '
+      'qui a le moins de candidats, essaie $value et garde $alternatives '
+      'pour le retour arrière.';
+  @override
+  String sudokuStepLastOption(String cell, int value) =>
+      'Dernière option : tous les autres choix pour $cell ont échoué, '
+      'donc $value (selon les hypothèses précédentes).';
+  @override
+  String sudokuStepContradictionCell(String cell) =>
+      'Contradiction : $cell n\'a plus de candidat, une hypothèse était '
+      'fausse.';
+  @override
+  String sudokuStepContradictionUnit(String unit, int value) =>
+      'Contradiction : $value n\'a plus de place dans $unit, une '
+      'hypothèse était fausse.';
+  @override
+  String sudokuStepBacktrack(String cell) =>
+      'Retour arrière : annuler tout depuis l\'hypothèse en $cell et '
+      'essayer son option suivante.';
+  @override
+  String get sudokuStepSolved =>
+      'Résolu : chaque case est remplie et chaque règle respectée.';
+  @override
+  String sudokuExplainStats(
+          int naked, int hidden, int guesses, int backtracks, int depth) =>
+      'Singletons nus $naked · Singletons cachés $hidden · Hypothèses '
+      '$guesses · Retours arrière $backtracks · Profondeur max $depth';
+  @override
+  String get sudokuExplainLogicOnly =>
+      'Résolu par la logique seule : aucune hypothèse nécessaire.';
+  @override
+  String sudokuExplainTruncated(int shown) =>
+      'Affichage des $shown premières étapes ; la résolution a continué.';
+  @override
+  String get sudokuExplainKillerNote =>
+      'Les cages Killer demandent un raisonnement sur les sommes : cette '
+      'relecture montre les affectations du solveur sans justification.';
+  @override
+  String get sudokuStepPrevious => 'Étape précédente';
+  @override
+  String get sudokuStepNext => 'Étape suivante';
+  @override
+  String get sudokuEnterClues =>
+      'Saisir des indices : touchez une case puis un chiffre pour '
+      'analyser votre propre grille.';
   @override
   String get sudokuConstraintStartingPosition => 'Position de départ';
 
@@ -9052,6 +9331,42 @@ class FrLocalizations implements AppLocalizations {
       '(tax = 0.085), référencez les lignes précédentes et voyez tout '
       'se recalculer en direct.';
   @override
+  String get onboardingWorksheetTitle =>
+      'Une calculatrice qui se souvient';
+  @override
+  String get onboardingWorksheetBody =>
+      'Commencez par une feuille de calcul : a = 3, f(x) = x² + a, f(4). Modifiez a et tous les résultats ainsi que le graphique lié se recalculent. Enregistrez un point de contrôle, comparez, restaurez et exportez toute la session.';
+  @override
+  String get onboardingTryWorksheet =>
+      'Essayer une feuille de calcul interactive';
+  @override
+  String get analysisLabsTitle =>
+      'Labo';
+  @override
+  String get analysisLabsSubtitle =>
+      'Problèmes de contraintes, solveur de Sudoku et compositeur de scènes 3D';
+  @override
+  String get aboutOurApps =>
+      'Nos apps';
+  @override
+  String get aboutOurAppsIntro =>
+      'D\'autres apps du même développeur. Les apps dans TestFlight sont des bêtas gratuites : le lien installe d\'abord TestFlight d\'Apple.';
+  @override
+  String get aboutAppStore =>
+      'App Store';
+  @override
+  String get aboutMacAppStore =>
+      'Mac App Store';
+  @override
+  String get aboutTestFlight =>
+      'TestFlight';
+  @override
+  String get aboutComingSoon =>
+      'Bientôt disponible';
+  @override
+  String get aboutThisApp =>
+      'cette app';
+  @override
   String get settingsReplayTour => 'Revoir la visite guidée';
   @override
   String get settingsReplayTourSubtitle =>
@@ -10126,10 +10441,10 @@ class EsLocalizations implements AppLocalizations {
   String get calculating => 'Calculando…';
 
   @override
-  String get moduleSudokuTitle => 'Sudoku';
+  String get moduleSudokuTitle => 'Solucionador de Sudoku';
   @override
   String get moduleSudokuSubtitle =>
-      'Resuelve cuadrículas 4×4 y 9×9, sigue la búsqueda paso a paso.';
+      'Mira cómo razona un solucionador: únicos, suposiciones y retroceso, paso a paso.';
   @override
   String get sudokuSolveButton => 'Resolver';
   @override
@@ -10258,6 +10573,67 @@ class EsLocalizations implements AppLocalizations {
   String get sudokuConstraintAntiDiagonal => 'Antidiagonal';
   @override
   String sudokuConstraintDisjointGroup(int group) => 'Grupo disjunto $group';
+  @override
+  String sudokuStepStart(int clues) =>
+      'Inicio: $clues pistas. Las anotaciones muestran los dígitos que '
+      'cada celda vacía aún admite: un dígito se descarta cuando una '
+      'celda de la misma fila, columna o caja ya lo contiene.';
+  @override
+  String sudokuStepNakedSingle(String cell, int value, int eliminated) =>
+      'Único desnudo: $cell solo tiene un candidato, así que es $value. '
+      'Eso elimina $value de $eliminated celdas vecinas.';
+  @override
+  String sudokuStepHiddenSingle(String unit, int value, String cell) =>
+      'Único oculto: en $unit, $value solo cabe en $cell, aunque $cell '
+      'tenga otros candidatos.';
+  @override
+  String sudokuStepGuess(String cell, int value, String alternatives) =>
+      'No quedan únicos, así que el solucionador supone. Elige $cell '
+      'porque tiene menos candidatos, prueba $value y guarda '
+      '$alternatives para retroceder.';
+  @override
+  String sudokuStepLastOption(String cell, int value) =>
+      'Última opción: las demás opciones para $cell fallaron, así que es '
+      '$value (según las suposiciones anteriores).';
+  @override
+  String sudokuStepContradictionCell(String cell) =>
+      'Contradicción: $cell no tiene candidatos, una suposición era '
+      'errónea.';
+  @override
+  String sudokuStepContradictionUnit(String unit, int value) =>
+      'Contradicción: $value no tiene sitio en $unit, una suposición era '
+      'errónea.';
+  @override
+  String sudokuStepBacktrack(String cell) =>
+      'Retroceso: deshacer todo desde la suposición en $cell y probar su '
+      'siguiente opción.';
+  @override
+  String get sudokuStepSolved =>
+      'Resuelto: todas las celdas están llenas y se cumplen todas las '
+      'reglas.';
+  @override
+  String sudokuExplainStats(
+          int naked, int hidden, int guesses, int backtracks, int depth) =>
+      'Únicos desnudos $naked · Únicos ocultos $hidden · Suposiciones '
+      '$guesses · Retrocesos $backtracks · Profundidad máx. $depth';
+  @override
+  String get sudokuExplainLogicOnly =>
+      'Resuelto solo con lógica: no hizo falta suponer.';
+  @override
+  String sudokuExplainTruncated(int shown) =>
+      'Se muestran los primeros $shown pasos; la resolución continuó.';
+  @override
+  String get sudokuExplainKillerNote =>
+      'Las jaulas Killer requieren razonar con sumas, así que esta '
+      'reproducción muestra las asignaciones del solucionador sin motivos.';
+  @override
+  String get sudokuStepPrevious => 'Paso anterior';
+  @override
+  String get sudokuStepNext => 'Paso siguiente';
+  @override
+  String get sudokuEnterClues =>
+      'Introducir pistas: toca una celda y luego un dígito para analizar '
+      'tu propio sudoku.';
   @override
   String get sudokuConstraintStartingPosition => 'Posición inicial';
 
@@ -12339,6 +12715,42 @@ class EsLocalizations implements AppLocalizations {
       'resultados en la columna derecha. Define variables (tax = 0.085), '
       'referencia líneas anteriores y observa cómo todo se actualiza '
       'en tiempo real.';
+  @override
+  String get onboardingWorksheetTitle =>
+      'Una calculadora que recuerda';
+  @override
+  String get onboardingWorksheetBody =>
+      'Empieza con una hoja de trabajo: a = 3, f(x) = x² + a, f(4). Cambia a y todos los resultados y la gráfica vinculada se recalculan. Guarda un punto de control, compara, restaura y exporta toda la sesión.';
+  @override
+  String get onboardingTryWorksheet =>
+      'Probar una hoja de trabajo en vivo';
+  @override
+  String get analysisLabsTitle =>
+      'Laboratorio';
+  @override
+  String get analysisLabsSubtitle =>
+      'Problemas de restricciones, solucionador de Sudoku y compositor de escenas 3D';
+  @override
+  String get aboutOurApps =>
+      'Nuestras apps';
+  @override
+  String get aboutOurAppsIntro =>
+      'Más apps del mismo desarrollador. Las apps en TestFlight son betas gratuitas: el enlace instala primero TestFlight de Apple.';
+  @override
+  String get aboutAppStore =>
+      'App Store';
+  @override
+  String get aboutMacAppStore =>
+      'Mac App Store';
+  @override
+  String get aboutTestFlight =>
+      'TestFlight';
+  @override
+  String get aboutComingSoon =>
+      'Próximamente';
+  @override
+  String get aboutThisApp =>
+      'esta app';
   @override
   String get settingsReplayTour => 'Repetir la visita guiada';
   @override

@@ -86,4 +86,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/licenses/
+    - assets/app_showcase/
     - assets/fonts/

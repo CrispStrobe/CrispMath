@@ -1,5 +1,6 @@
 // lib/screens/analysis_hub_screen.dart
-// A menu for selecting different advanced analysis modules.
+// A menu for selecting different advanced analysis modules. Puzzle and
+// scene tools are grouped in a collapsed Labs section at the end.
 
 import 'package:flutter/material.dart';
 
@@ -139,46 +140,63 @@ class AnalysisHubScreen extends StatelessWidget {
                   );
                 },
               ),
-              _helpCard(
-                context,
-                helpKind: ModuleHelpKind.constraints,
-                child: _ModuleCard(
-                  icon: Icons.account_tree_outlined,
-                  title: t.moduleConstraintsTitle,
-                  subtitle: t.moduleConstraintsSubtitle,
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const ConstraintsScreen(),
-                    ));
-                  },
-                ),
-              ),
-              _helpCard(
-                context,
-                helpKind: ModuleHelpKind.sudoku,
-                child: _ModuleCard(
-                  icon: Icons.grid_4x4,
-                  title: t.moduleSudokuTitle,
-                  subtitle: t.moduleSudokuSubtitle,
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const SudokuScreen(),
-                    ));
-                  },
-                ),
-              ),
-              _helpCard(
-                context,
-                helpKind: ModuleHelpKind.scene3D,
-                child: _ModuleCard(
-                  icon: Icons.deblur,
-                  title: t.module3DScene,
-                  subtitle: t.module3DSceneSubtitle,
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const Scene3DScreen(),
-                    ));
-                  },
+              // Labs: the puzzle and scene tools stay one tap away but out of
+              // the main list, so the hub leads with curriculum analysis.
+              Card(
+                margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                clipBehavior: Clip.antiAlias,
+                child: ExpansionTile(
+                  key: const ValueKey('analysis-labs'),
+                  leading: const Icon(Icons.science,
+                      size: 40, color: Colors.blueAccent),
+                  title: Text(t.analysisLabsTitle,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(t.analysisLabsSubtitle),
+                  childrenPadding: const EdgeInsets.only(bottom: 6),
+                  children: [
+                  _helpCard(
+                    context,
+                    helpKind: ModuleHelpKind.constraints,
+                    child: _ModuleCard(
+                      icon: Icons.account_tree_outlined,
+                      title: t.moduleConstraintsTitle,
+                      subtitle: t.moduleConstraintsSubtitle,
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const ConstraintsScreen(),
+                        ));
+                      },
+                    ),
+                  ),
+                  _helpCard(
+                    context,
+                    helpKind: ModuleHelpKind.sudoku,
+                    child: _ModuleCard(
+                      icon: Icons.grid_4x4,
+                      title: t.moduleSudokuTitle,
+                      subtitle: t.moduleSudokuSubtitle,
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const SudokuScreen(),
+                        ));
+                      },
+                    ),
+                  ),
+                  _helpCard(
+                    context,
+                    helpKind: ModuleHelpKind.scene3D,
+                    child: _ModuleCard(
+                      icon: Icons.deblur,
+                      title: t.module3DScene,
+                      subtitle: t.module3DSceneSubtitle,
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const Scene3DScreen(),
+                        ));
+                      },
+                    ),
+                  ),
+                  ],
                 ),
               ),
             ],
