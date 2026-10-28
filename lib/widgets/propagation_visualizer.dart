@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../engine/csp_solver.dart';
+import '../engine/csp_trace_summary.dart';
 import '../localization/app_localizations.dart';
 
 /// Playback speed for the auto-advance timer.
@@ -176,10 +177,7 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(_iconFor(step),
-                    size: 18,
-                    semanticLabel: _stepLabel(step),
-                    color: _colorFor(step, scheme)),
+                Icon(_iconFor(step), size: 18, color: _colorFor(step, scheme)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -207,26 +205,23 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
             children: [
               IconButton(
                 tooltip: t.constraintsTraceRestart,
-                icon: const Icon(Icons.restart_alt, semanticLabel: 'Restart'),
+                icon: const Icon(Icons.restart_alt),
                 onPressed: trace.steps.isEmpty ? null : () => _scrub(-1),
               ),
               IconButton(
                 tooltip: t.constraintsTraceStepBack,
-                icon:
-                    const Icon(Icons.skip_previous, semanticLabel: 'Step back'),
+                icon: const Icon(Icons.skip_previous),
                 onPressed: _index <= -1 ? null : () => _scrub(_index - 1),
               ),
               IconButton(
                 tooltip:
                     _playing ? t.constraintsTracePause : t.constraintsTracePlay,
-                icon: Icon(_playing ? Icons.pause : Icons.play_arrow,
-                    semanticLabel: _playing ? 'Pause' : 'Play'),
+                icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
                 onPressed: trace.steps.isEmpty ? null : _togglePlay,
               ),
               IconButton(
                 tooltip: t.constraintsTraceStepForward,
-                icon:
-                    const Icon(Icons.skip_next, semanticLabel: 'Step forward'),
+                icon: const Icon(Icons.skip_next),
                 onPressed:
                     _index >= _lastIndex ? null : () => _scrub(_index + 1),
               ),
@@ -260,7 +255,6 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
                 avatar: Icon(
                   trace.solved ? Icons.check_circle : Icons.block,
                   size: 18,
-                  semanticLabel: trace.solved ? 'Solved' : 'Unsatisfiable',
                   color: trace.solved ? Colors.green : scheme.error,
                 ),
                 label: Text(trace.solved
@@ -268,6 +262,10 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
                     : t.constraintsTraceUnsat),
               ),
             ),
+          ],
+          if (trace.steps.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _TraceSummaryBlock(trace: trace),
           ],
         ],
       ),
@@ -292,25 +290,6 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
             step.depth ?? 0, step.targetDepth ?? 0);
       case CspTraceStepKind.solution:
         return t.constraintsTraceSolutionStep;
-    }
-  }
-
-  String _stepLabel(CspTraceStep? step) {
-    switch (step?.kind) {
-      case null:
-        return 'Initial';
-      case CspTraceStepKind.decision:
-        return 'Decision';
-      case CspTraceStepKind.prune:
-        return 'Prune';
-      case CspTraceStepKind.wipeout:
-        return 'Wipeout';
-      case CspTraceStepKind.backtrack:
-        return 'Backtrack';
-      case CspTraceStepKind.backjump:
-        return 'Backjump';
-      case CspTraceStepKind.solution:
-        return 'Solution';
     }
   }
 
@@ -360,8 +339,7 @@ class _Note extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline,
-              size: 16, semanticLabel: 'Note', color: scheme.onSurfaceVariant),
+          Icon(Icons.info_outline, size: 16, color: scheme.onSurfaceVariant),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -511,6 +489,53 @@ class _ValueChip extends StatelessWidget {
           decoration: removed ? TextDecoration.lineThrough : null,
         ),
       ),
+    );
+  }
+}
+
+/// Totals under the replay: decisions, prunes, dead ends, backtracks,
+/// and the constraints that removed the most values.
+class _TraceSummaryBlock extends StatelessWidget {
+  final CspTraceResult trace;
+
+  const _TraceSummaryBlock({required this.trace});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final style = Theme.of(context).textTheme.bodySmall;
+    final summary = CspTraceSummary.of(trace);
+    return Column(
+      key: const ValueKey('constraints-trace-summary'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+            t.constraintsTraceStats(summary.decisions, summary.prunes,
+                summary.wipeouts, summary.backtracks),
+            style: style),
+        if (summary.propagationOnly(trace))
+          Text(t.constraintsTracePropagationOnly, style: style),
+        if (summary.byConstraint.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(t.constraintsTraceTopConstraints, style: style),
+          for (final work in summary.byConstraint.take(3))
+            Row(
+              children: [
+                Expanded(
+                  child: Text(work.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: style?.copyWith(fontFamily: 'monospace')),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                    t.constraintsTraceConstraintWork(
+                        work.removed, work.prunes),
+                    style: style),
+              ],
+            ),
+        ],
+      ],
     );
   }
 }

@@ -123,6 +123,25 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
   List<int>? _square;
   bool _solving = false;
   final _rng = Random();
+  CspTraceResult? _trace;
+  bool _tracing = false;
+
+  /// Larger squares exceed the trace cap before a readable replay.
+  static const _maxTracedOrder = 4;
+
+  Future<void> _visualize() async {
+    final n = _n;
+    setState(() {
+      _tracing = true;
+      _trace = null;
+    });
+    final tr = await CspSolver.traceDsl(MagicSquare.buildProgram(n));
+    if (!mounted || n != _n) return;
+    setState(() {
+      _tracing = false;
+      _trace = tr;
+    });
+  }
 
   Future<void> _generate() async {
     final n = _n;
@@ -170,6 +189,8 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
                               setState(() {
                                 _n = n;
                                 _square = null;
+                                _trace = null;
+                                _tracing = false;
                               });
                             }
                           },
@@ -187,20 +208,40 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
                 ?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: FilledButton.icon(
-              onPressed: _solving ? null : _generate,
-              icon: _solving
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.casino_outlined),
-              label: Text(t.constraintsMagicGenerate),
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              FilledButton.icon(
+                onPressed: _solving ? null : _generate,
+                icon: _solving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.casino_outlined),
+                label: Text(t.constraintsMagicGenerate),
+              ),
+              if (_n <= _maxTracedOrder)
+                OutlinedButton.icon(
+                  key: const ValueKey('magic-visualize'),
+                  onPressed: _tracing ? null : _visualize,
+                  icon: _tracing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.slideshow_outlined, size: 18),
+                  label: Text(t.constraintsVisualizeButton),
+                ),
+            ],
           ),
+          const SizedBox(height: 8),
+          Text(t.constraintsMagicVisualizeHint,
+              style: Theme.of(context).textTheme.bodySmall),
           if (_square != null) ...[
             const SizedBox(height: 20),
             Center(
@@ -215,6 +256,13 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
+          ],
+          if (_trace != null) ...[
+            const SizedBox(height: 16),
+            if (_trace!.ok)
+              PropagationVisualizer(trace: _trace!)
+            else
+              _TraceErrorBlock(message: _trace!.error!),
           ],
         ],
       ),

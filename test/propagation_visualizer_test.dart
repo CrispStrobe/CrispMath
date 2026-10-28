@@ -61,5 +61,30 @@ void main() {
     }
     expect(find.text('Step 6 / 6'), findsOneWidget);
     expect(find.text('Solved'), findsOneWidget);
+    // The summary counts the trace and names the constraints that pruned.
+    expect(find.byKey(const ValueKey('constraints-trace-summary')),
+        findsOneWidget);
+    expect(find.text('Decisions 2 · Prunes 3 · Dead ends 0 · Backtracks 0'),
+        findsOneWidget);
+    expect(find.text('line 2: a != b'), findsOneWidget);
+  });
+
+  testWidgets('Magic square offers Visualize for 3×3 and 4×4 only',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 1000));
+    await tester.pumpWidget(const MaterialApp(home: ConstraintsScreen()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Tab).at(4));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('magic-visualize')));
+    await tester.pumpAndSettle();
+    expect(find.byType(PropagationVisualizer), findsOneWidget);
+    expect(find.textContaining('allDifferent('), findsOneWidget);
+
+    await tester.tap(find.text('5×5'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('magic-visualize')), findsNothing);
+    expect(find.byType(PropagationVisualizer), findsNothing);
   });
 }

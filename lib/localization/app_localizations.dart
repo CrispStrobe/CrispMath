@@ -605,6 +605,12 @@ abstract class AppLocalizations {
   String get constraintsTraceBacktrack;
   String constraintsTraceBackjump(int from, int to);
   String get constraintsTraceSolutionStep;
+  String constraintsTraceStats(
+      int decisions, int prunes, int wipeouts, int backtracks);
+  String get constraintsTracePropagationOnly;
+  String get constraintsTraceTopConstraints;
+  String constraintsTraceConstraintWork(int removed, int prunes);
+  String get constraintsMagicVisualizeHint;
   String get constraintsTraceSolved;
   String get constraintsTraceUnsat;
   String constraintsTraceTruncatedNote(int n);
@@ -2127,6 +2133,25 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get constraintsTraceSolutionStep =>
       'Solution — all variables assigned.';
+  @override
+  String constraintsTraceStats(
+          int decisions, int prunes, int wipeouts, int backtracks) =>
+      'Decisions $decisions · Prunes $prunes · Dead ends $wipeouts · '
+      'Backtracks $backtracks';
+  @override
+  String get constraintsTracePropagationOnly =>
+      'Solved by propagation alone: no decision needed.';
+  @override
+  String get constraintsTraceTopConstraints =>
+      'Constraints that removed the most values:';
+  @override
+  String constraintsTraceConstraintWork(int removed, int prunes) =>
+      '$removed values in $prunes prunes';
+  @override
+  String get constraintsMagicVisualizeHint =>
+      'Visualize replays how the solver builds a square: which cell it '
+      'decides, which sums and the all-different rule prune, and where it '
+      'backtracks. Available for 3×3 and 4×4.';
   @override
   String get constraintsTraceSolved => 'Solved';
   @override
@@ -4045,6 +4070,25 @@ class DeLocalizations implements AppLocalizations {
       'Backjump von Tiefe $from zu Tiefe $to.';
   @override
   String get constraintsTraceSolutionStep => 'Lösung — alle Variablen belegt.';
+  @override
+  String constraintsTraceStats(
+          int decisions, int prunes, int wipeouts, int backtracks) =>
+      'Entscheidungen $decisions · Streichungen $prunes · Sackgassen '
+      '$wipeouts · Backtracks $backtracks';
+  @override
+  String get constraintsTracePropagationOnly =>
+      'Allein durch Propagation gelöst: keine Entscheidung nötig.';
+  @override
+  String get constraintsTraceTopConstraints =>
+      'Bedingungen, die die meisten Werte gestrichen haben:';
+  @override
+  String constraintsTraceConstraintWork(int removed, int prunes) =>
+      '$removed Werte in $prunes Streichungen';
+  @override
+  String get constraintsMagicVisualizeHint =>
+      'Visualisieren zeigt, wie der Solver ein Quadrat aufbaut: welche '
+      'Zelle er festlegt, was die Summen und die Alle-verschieden-Regel '
+      'streichen und wo er zurückgeht. Für 3×3 und 4×4 verfügbar.';
   @override
   String get constraintsTraceSolved => 'Gelöst';
   @override
@@ -7564,6 +7608,25 @@ class FrLocalizations implements AppLocalizations {
   String get constraintsTraceSolutionStep =>
       'Solution — toutes les variables affectées.';
   @override
+  String constraintsTraceStats(
+          int decisions, int prunes, int wipeouts, int backtracks) =>
+      'Décisions $decisions · Élagages $prunes · Impasses $wipeouts · '
+      'Retours arrière $backtracks';
+  @override
+  String get constraintsTracePropagationOnly =>
+      'Résolu par propagation seule : aucune décision nécessaire.';
+  @override
+  String get constraintsTraceTopConstraints =>
+      'Contraintes qui ont retiré le plus de valeurs :';
+  @override
+  String constraintsTraceConstraintWork(int removed, int prunes) =>
+      '$removed valeurs en $prunes élagages';
+  @override
+  String get constraintsMagicVisualizeHint =>
+      'Visualiser rejoue la construction d\'un carré par le solveur : la '
+      'case qu\'il fixe, ce que les sommes et la règle tous-différents '
+      'élaguent, et où il revient en arrière. Disponible pour 3×3 et 4×4.';
+  @override
   String get constraintsTraceSolved => 'Résolu';
   @override
   String get constraintsTraceUnsat =>
@@ -11008,6 +11071,25 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get constraintsTraceSolutionStep =>
       'Solución — todas las variables asignadas.';
+  @override
+  String constraintsTraceStats(
+          int decisions, int prunes, int wipeouts, int backtracks) =>
+      'Decisiones $decisions · Podas $prunes · Callejones sin salida '
+      '$wipeouts · Retrocesos $backtracks';
+  @override
+  String get constraintsTracePropagationOnly =>
+      'Resuelto solo por propagación: no hizo falta decidir.';
+  @override
+  String get constraintsTraceTopConstraints =>
+      'Restricciones que eliminaron más valores:';
+  @override
+  String constraintsTraceConstraintWork(int removed, int prunes) =>
+      '$removed valores en $prunes podas';
+  @override
+  String get constraintsMagicVisualizeHint =>
+      'Visualizar reproduce cómo el solucionador construye un cuadrado: qué '
+      'celda fija, qué podan las sumas y la regla todos-distintos, y dónde '
+      'retrocede. Disponible para 3×3 y 4×4.';
   @override
   String get constraintsTraceSolved => 'Resuelto';
   @override

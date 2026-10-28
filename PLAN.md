@@ -160,6 +160,13 @@ counts/sources are not the current status; the handoff links exact current evide
   including brute-force cage checks and a forged-elimination control.
   12×12 and both Killer presets are now logic-only; AI Escargot still needs
   29 guesses (it requires techniques beyond triples).
+- [~] Constraint replays say what the solve took: the propagation visualizer
+  ends with decision/prune/dead-end/backtrack totals, "solved by propagation
+  alone" when no decision was needed, and the three constraints that removed
+  the most values (`CspTraceSummary`). The Magic square tab gains Visualize
+  for 3×3 and 4×4 (5×5 exceeds the 20,000-event trace cap). Hard-coded English
+  icon semantics in the visualizer were removed in favour of the localized
+  tooltips and captions.
 
 ## Cloud feedback and handwriting diagnostics
 
