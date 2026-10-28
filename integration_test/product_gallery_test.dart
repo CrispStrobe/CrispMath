@@ -14,6 +14,7 @@ import 'package:crisp_math/widgets/sudoku_grid.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
 import 'package:crisp_math/services/engine_op.dart';
 import 'package:crisp_math/services/notepad_dispatcher.dart';
+import 'package:crisp_math/screens/analysis_hub_screen.dart';
 import 'package:crisp_math/screens/graphing_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -250,7 +251,15 @@ void main() {
     // elimination, with the removed candidates crossed out.
     await tester.tap(find.text('Analysis').first);
     await settle();
-    await tester.ensureVisible(find.byKey(const ValueKey('analysis-labs')));
+    // The hub list builds lazily; scroll it (not the offstage tabs) until
+    // the Labs section exists.
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('analysis-labs')), 300,
+        scrollable: find
+            .descendant(
+                of: find.byType(AnalysisHubScreen),
+                matching: find.byType(Scrollable))
+            .first);
     await settle();
     await tester.tap(find.text('Labs'));
     await settle();
