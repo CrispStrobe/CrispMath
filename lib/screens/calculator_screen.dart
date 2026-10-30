@@ -2898,26 +2898,37 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                                 _showHistoryEntryMenu(
                                                     context, entry),
                                             behavior: HitTestBehavior.opaque,
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.end,
-                                              children: [
-                                                _buildExpressionDisplay(
-                                                    entry.expression),
-                                                const SizedBox(height: 4),
-                                                if (boolChip != null &&
-                                                    !isError)
-                                                  _buildBooleanChip(
-                                                      context, boolChip)
-                                                else
-                                                  isBigInt
-                                                      ? Tooltip(
-                                                          message:
-                                                              '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
-                                                          child: resultBody,
-                                                        )
-                                                      : resultBody,
-                                              ],
+                                            // Give the row one deterministic
+                                            // label. Relying on the implicit merge
+                                            // of the child texts made the
+                                            // accessible name depend on which
+                                            // children happened to be mounted.
+                                            child: Semantics(
+                                              container: true,
+                                              excludeSemantics: true,
+                                              label:
+                                                  '${entry.expression}\n= ${isError ? display : shownResult}',
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  _buildExpressionDisplay(
+                                                      entry.expression),
+                                                  const SizedBox(height: 4),
+                                                  if (boolChip != null &&
+                                                      !isError)
+                                                    _buildBooleanChip(
+                                                        context, boolChip)
+                                                  else
+                                                    isBigInt
+                                                        ? Tooltip(
+                                                            message:
+                                                                '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
+                                                            child: resultBody,
+                                                          )
+                                                        : resultBody,
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         );

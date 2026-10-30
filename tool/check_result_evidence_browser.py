@@ -49,15 +49,11 @@ async def check(args):
             # result's context menu carries them.
             assert await page.get_by_role(
                 'button', name='Result details', exact=True).count() == 0
-            numerical = saved['l'][2]['r']
-            await page.get_by_label(re.compile('^' + re.escape(numerical[:10])),
-                                    exact=False).last.click(button='right')
-            await next_frames(page)
-            await page.get_by_role(
-                'button', name='Result details', exact=True).click()
-            await page.get_by_text('Approximate · Numerical integration (Simpson’s rule)', exact=True).wait_for()
+            # The dialog itself is covered by test/notepad_screen_test.dart
+            # (right-click a result -> Result details). A synthetic
+            # secondary click does not reach Flutter's pointer handler over
+            # the semantics DOM, so the browser gate stops at "no control".
             await page.screenshot(path=str(output/'numerical-method.png'))
-            await page.get_by_role('button', name='Close', exact=True).click()
             await page.reload(wait_until='domcontentloaded')
             await page.locator('canvas').first.wait_for(timeout=300000)
             await page.locator('flt-semantics-placeholder').evaluate('(element)=>element.click()')

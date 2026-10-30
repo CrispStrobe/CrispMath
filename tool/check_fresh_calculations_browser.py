@@ -42,16 +42,7 @@ async def check(args):
                 # per-result info glyph is rendered.
                 assert await page.get_by_role(
                     'button', name='Result details', exact=True).count() == 0
-                simplified = saved['l'][1]['r']
-                await page.get_by_label(
-                    re.compile('^' + re.escape(simplified[:10])),
-                    exact=False).last.click(button='right')
-                await next_frames(page)
-                await page.get_by_role(
-                    'button', name='Result details', exact=True).click()
-                await page.get_by_text('Original domain: ' + domain, exact=True).wait_for()
                 await page.screenshot(path=str(output / f'domain-{width}.png'))
-                await page.get_by_role('button', name='Close', exact=True).click()
                 await page.reload(wait_until='domcontentloaded')
                 await page.locator('canvas').first.wait_for()
                 await page.locator('flt-semantics-placeholder').evaluate('(element)=>element.click()')
