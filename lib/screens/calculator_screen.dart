@@ -2615,6 +2615,19 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                   builder: (_) => const WorkedExamplesDialog(),
                                 ),
                               ),
+                              // The command palette used to need its own
+                              // full-width row above every tab. It now
+                              // rides in this action row as a magnifier,
+                              // so search is always one tap away without
+                              // spending a line.
+                              if (widget.onOpenCommands != null)
+                                IconButton(
+                                  icon: const Icon(Icons.manage_search,
+                                      size: 20,
+                                      semanticLabel: 'Search commands'),
+                                  tooltip: 'Search commands',
+                                  onPressed: widget.onOpenCommands,
+                                ),
                               // Round 101 (P6): help-mode toggle. Filled icon
                               // + colored when active. Wrapping HelpTarget /
                               // popovers land in Rounds 102-104.
@@ -2718,14 +2731,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                       AppLocalizations.of(context).clearHistory,
                                   onPressed: _confirmClearHistory,
                                 ),
-                                if (widget.onOpenCommands != null)
-                                  IconButton(
-                                    icon: const Icon(Icons.manage_search,
-                                        size: 20,
-                                        semanticLabel: 'Search commands'),
-                                    tooltip: 'Search commands',
-                                    onPressed: widget.onOpenCommands,
-                                  ),
                               ],
                             ],
                           ),
