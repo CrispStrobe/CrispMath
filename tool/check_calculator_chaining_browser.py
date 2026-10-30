@@ -52,6 +52,9 @@ async def check(args):
                         await expect(editor).to_have_value('')
                         await next_frames(page)
                         await expect(editor).to_have_value('')
+                        # Subsequent fill/Enter must reach Flutter's active text
+                        # client, not only a detached browser-side input.
+                        await expect(editor).to_be_focused()
 
                     await editor.fill('Ans/2')
                     await submit('Ans/2', 'Error: No Ans in memory')

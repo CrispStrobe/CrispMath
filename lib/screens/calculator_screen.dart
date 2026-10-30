@@ -1119,7 +1119,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
         .contains(value);
   }
 
-  Future<void> _calculate(String expression) async {
+  Future<void> _calculate(String expression,
+      {bool preserveTextFocus = false}) async {
     _resultEvidence = null;
     if (kDebugMode) debugPrint('CALC: "$expression"');
     try {
@@ -1354,7 +1355,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _latexController.clear();
       });
 
-      _calculatorFocusNode.requestFocus();
+      if (!preserveTextFocus) _calculatorFocusNode.requestFocus();
     } on MissingAnsException {
       setState(() {
         _appState.addHistoryEntry(expression, 'Error: No Ans in memory');
@@ -2978,6 +2979,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
                     controller: _latexController,
                     onResetFocus: _resetFocus,
                     onEvaluate: () => _onButtonPressed('EXE'),
+                    onTextSubmitted: () {
+                      if (_latexController.text.isNotEmpty) {
+                        _calculate(_latexController.text,
+                            preserveTextFocus: true);
+                      }
+                    },
                     resultPreview: _resultPreview,
                   ),
 

@@ -24,6 +24,7 @@ class CalculatorInputBar extends StatefulWidget {
     required this.controller,
     required this.onResetFocus,
     required this.onEvaluate,
+    this.onTextSubmitted,
     this.resultPreview = '',
     this.stackBelowWidth = 480,
   });
@@ -35,6 +36,9 @@ class CalculatorInputBar extends StatefulWidget {
 
   /// Submits the current expression (the =/EXE button).
   final VoidCallback onEvaluate;
+
+  /// Submits from the text editor without surrendering text focus.
+  final VoidCallback? onTextSubmitted;
 
   /// Live "= …" preview shown under the field; hidden when empty.
   final String resultPreview;
@@ -178,7 +182,11 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                   enableSuggestions: false,
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => widget.onEvaluate(),
+                  // The default done action unfocuses the editor. Keep it
+                  // connected for the next calculation instead.
+                  onEditingComplete: () {},
+                  onSubmitted: (_) =>
+                      (widget.onTextSubmitted ?? widget.onEvaluate)(),
                   decoration: InputDecoration(
                       labelText: t.text(WorkflowLabel.expression)),
                 )

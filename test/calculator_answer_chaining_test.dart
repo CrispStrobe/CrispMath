@@ -6,6 +6,44 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('text editor remains focused after missing Ans and submits digits',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'crisp.onboardingDismissed': true});
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.binding.setSurfaceSize(null);
+      await EngineService.shutdownForTest();
+    });
+    await AppState().load(force: true);
+    await tester.pumpWidget(const CrispMathApp());
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byTooltip('Edit expression'));
+    await tester.pumpAndSettle();
+    final field = find.byType(TextField);
+    await tester.enterText(field, 'Ans/2');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(AppState().history.first.result, 'Error: No Ans in memory');
+    expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue,
+        reason: 'the same editor must accept the next input without refocusing');
+    tester.testTextInput.updateEditingValue(const TextEditingValue(
+      text: '24', selection: TextSelection.collapsed(offset: 2)));
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(AppState().history.first.expression, '24');
+    expect(AppState().history.first.result, '24');
+    expect(AppState().history, hasLength(2));
+    expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue,
+        reason: 'successful calculations must also leave the editor connected');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
   testWidgets('text editor chains operators without losing Ans', (tester) async {
     SharedPreferences.setMockInitialValues({'crisp.onboardingDismissed': true});
     await tester.binding.setSurfaceSize(const Size(1280, 900));
