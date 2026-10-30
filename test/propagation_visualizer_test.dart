@@ -81,6 +81,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(PropagationVisualizer), findsOneWidget);
     expect(find.textContaining('allDifferent('), findsOneWidget);
+    final label = tester.widget<Text>(find.textContaining('allDifferent('));
+    expect(label.maxLines, isNull,
+        reason: 'the complete constraint must be readable on narrow screens');
 
     await tester.tap(find.text('5×5'));
     await tester.pumpAndSettle();

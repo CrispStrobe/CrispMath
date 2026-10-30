@@ -41,13 +41,36 @@ void main() {
     expect(s.backtracks,
         count(CspTraceStepKind.backtrack) + count(CspTraceStepKind.backjump));
     expect(s.byConstraint.fold(0, (a, w) => a + w.removed), s.valuesRemoved);
-    expect(
-        s.byConstraint.fold(0, (a, w) => a + w.prunes), s.prunes + s.wipeouts);
+    expect(s.byConstraint.fold(0, (a, w) => a + w.prunes), s.prunes);
     for (var i = 1; i < s.byConstraint.length; i++) {
       expect(s.byConstraint[i - 1].removed,
           greaterThanOrEqualTo(s.byConstraint[i].removed));
     }
     expect(s.byConstraint.first.label, startsWith('allDifferent('));
+  });
+
+  test('wipeouts remove values but are not counted as prunes', () {
+    final trace = CspTraceResult.ok(
+      variables: const ['x'],
+      initialDomains: const {'x': [1, 2, 3]},
+      steps: const [
+        CspTraceStep(seq: 0, kind: CspTraceStepKind.prune, domains: {},
+            causeLabel: 'A', removedValues: [1]),
+        CspTraceStep(seq: 1, kind: CspTraceStepKind.wipeout, domains: {},
+            causeLabel: 'A', removedValues: [2, 3]),
+        CspTraceStep(seq: 2, kind: CspTraceStepKind.wipeout, domains: {},
+            causeLabel: 'B', removedValues: [1]),
+      ],
+      solved: false, solution: null, truncated: false, objectiveIgnored: false,
+    );
+    final summary = CspTraceSummary.of(trace);
+    expect(summary.prunes, 1);
+    expect(summary.wipeouts, 2);
+    expect(summary.valuesRemoved, 4);
+    final a = summary.byConstraint.firstWhere((w) => w.label == 'A');
+    final b = summary.byConstraint.firstWhere((w) => w.label == 'B');
+    expect((a.removed, a.prunes), (3, 1));
+    expect((b.removed, b.prunes), (1, 0));
   });
 
   test('an unsatisfiable model is never propagation-only', () async {
