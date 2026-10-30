@@ -1050,12 +1050,7 @@ class DeLocalizations implements AppLocalizations {
       'Gelöst: Jede Zelle ist gefüllt und jede Regel erfüllt.';
   @override
   String sudokuExplainStats(
-    int naked,
-    int hidden,
-    int guesses,
-    int backtracks,
-    int depth,
-  ) =>
+          int naked, int hidden, int guesses, int backtracks, int depth) =>
       'Nackte Singles $naked · Versteckte Singles $hidden · Annahmen '
       '$guesses · Backtracks $backtracks · Max. Tiefe $depth';
   @override
@@ -1078,23 +1073,13 @@ class DeLocalizations implements AppLocalizations {
       '$other.';
   @override
   String sudokuStepNakedSubset(
-    int size,
-    String cells,
-    String digits,
-    String unit,
-    int removed,
-  ) =>
+          int size, String cells, String digits, String unit, int removed) =>
       'Nacktes ${size == 2 ? 'Paar' : 'Tripel'}: $cells in $unit enthalten '
       'zusammen nur $digits, also gehören diese Ziffern in diese $size '
       'Zellen und fallen aus dem Rest von $unit ($removed Kandidaten).';
   @override
   String sudokuStepHiddenSubset(
-    int size,
-    String digits,
-    String unit,
-    String cells,
-    int removed,
-  ) =>
+          int size, String digits, String unit, String cells, int removed) =>
       'Verstecktes ${size == 2 ? 'Paar' : 'Tripel'}: In $unit passen '
       '$digits nur in $cells, also müssen diese Zellen sie aufnehmen und '
       'verlieren ihre übrigen Kandidaten ($removed entfernt).';
@@ -1104,11 +1089,7 @@ class DeLocalizations implements AppLocalizations {
       'erreichen.';
   @override
   String sudokuExplainEliminations(
-    int cages,
-    int locked,
-    int nakedSubsets,
-    int hiddenSubsets,
-  ) =>
+          int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
       'Käfigsummen $cages · Gesperrte Kandidaten $locked · Nackte '
       'Paare/Tripel $nakedSubsets · Versteckte Paare/Tripel $hiddenSubsets';
   @override
@@ -1337,11 +1318,7 @@ class DeLocalizations implements AppLocalizations {
   String get constraintsTraceSolutionStep => 'Lösung — alle Variablen belegt.';
   @override
   String constraintsTraceStats(
-    int decisions,
-    int prunes,
-    int wipeouts,
-    int backtracks,
-  ) =>
+          int decisions, int prunes, int wipeouts, int backtracks) =>
       'Entscheidungen $decisions · Streichungen $prunes · Sackgassen '
       '$wipeouts · Backtracks $backtracks';
   @override
@@ -1352,10 +1329,8 @@ class DeLocalizations implements AppLocalizations {
       'Bedingungen, die die meisten Werte gestrichen haben:';
   @override
   String constraintsTraceConstraintWork(
-    int removed,
-    int prunes,
-    int wipeouts,
-  ) => '$removed Werte · $prunes Streichungen · $wipeouts Sackgassen';
+          int removed, int prunes, int wipeouts) =>
+      '$removed Werte · $prunes Streichungen · $wipeouts Sackgassen';
   @override
   String get constraintsMagicVisualizeHint =>
       'Visualisieren zeigt, wie der Solver ein Quadrat aufbaut: welche '
@@ -3014,7 +2989,9 @@ class DeLocalizations implements AppLocalizations {
       'dot': [
         'Das Skalarprodukt ist |a||b|cos θ — genau dann null, wenn die Vektoren orthogonal sind.',
       ],
-      'cross': ['Rechte-Hand-Regel: x × y = z. Nur für 3-Vektoren definiert.'],
+      'cross': [
+        'Rechte-Hand-Regel: x × y = z. Nur für 3-Vektoren definiert.',
+      ],
       'norm': [
         'Das 3-4-5-Dreieck. `norm` ist der Betrag, durch den `unit` teilt.',
       ],
@@ -3033,13 +3010,21 @@ class DeLocalizations implements AppLocalizations {
       'cos': [
         'Periode 2π, Wertebereich [-1, 1]; cos ist sin um π/2 verschoben.',
       ],
-      'tan': ['Periode π; undefiniert, wo cos(x)=0 (x = π/2 + kπ).'],
-      'asin': ['Definitionsbereich [-1, 1], Hauptwertebereich [-π/2, π/2].'],
-      'acos': ['Definitionsbereich [-1, 1], Hauptwertebereich [0, π].'],
+      'tan': [
+        'Periode π; undefiniert, wo cos(x)=0 (x = π/2 + kπ).',
+      ],
+      'asin': [
+        'Definitionsbereich [-1, 1], Hauptwertebereich [-π/2, π/2].',
+      ],
+      'acos': [
+        'Definitionsbereich [-1, 1], Hauptwertebereich [0, π].',
+      ],
       'atan': [
         'Definitionsbereich alle reellen Zahlen, Hauptwertebereich (-π/2, π/2).',
       ],
-      'sinh': ['Ungerade Funktion, unbeschränkt; die Kettenlinien-Familie.'],
+      'sinh': [
+        'Ungerade Funktion, unbeschränkt; die Kettenlinien-Familie.',
+      ],
       'cosh': [
         'Gerade Funktion, Minimum 1 bei x=0; Form einer hängenden Kette.',
       ],
@@ -3049,13 +3034,27 @@ class DeLocalizations implements AppLocalizations {
       'asinh': [
         'Definitionsbereich alle reellen Zahlen; asinh(x) = ln(x + √(x²+1)).',
       ],
-      'acosh': ['Definitionsbereich x ≥ 1; acosh(x) = ln(x + √(x²−1)).'],
-      'atanh': ['Definitionsbereich (-1, 1); atanh(x) = ½·ln((1+x)/(1−x)).'],
-      'ln': ['Umkehrung von exp; Definitionsbereich x > 0. ln(e) = 1.'],
-      'log': ['Definitionsbereich x > 0. Für andere Basen ln(x)/ln(b).'],
-      'exp': ['Umkehrung von ln; stets positiv, eigene Ableitung.'],
-      'abs': ['abs(x) = √(x²); für a+bi ergibt √(a²+b²).'],
-      'sqrt': ['sqrt(x) = x^(1/2). Für andere Grade die Taste ⁿ√x.'],
+      'acosh': [
+        'Definitionsbereich x ≥ 1; acosh(x) = ln(x + √(x²−1)).',
+      ],
+      'atanh': [
+        'Definitionsbereich (-1, 1); atanh(x) = ½·ln((1+x)/(1−x)).',
+      ],
+      'ln': [
+        'Umkehrung von exp; Definitionsbereich x > 0. ln(e) = 1.',
+      ],
+      'log': [
+        'Definitionsbereich x > 0. Für andere Basen ln(x)/ln(b).',
+      ],
+      'exp': [
+        'Umkehrung von ln; stets positiv, eigene Ableitung.',
+      ],
+      'abs': [
+        'abs(x) = √(x²); für a+bi ergibt √(a²+b²).',
+      ],
+      'sqrt': [
+        'sqrt(x) = x^(1/2). Für andere Grade die Taste ⁿ√x.',
+      ],
       'pi': [
         'Für π auf eine gewählte Stellenzahl die Taste π(N) (pi_precision).',
       ],
@@ -3110,13 +3109,19 @@ class DeLocalizations implements AppLocalizations {
         'Wird zu SymEngines Le(5, 5) abgesenkt.',
         'Strikt größer besteht den Test nicht.',
       ],
-      'gt_op': ['Wird zu SymEngines Gt(10, 3) abgesenkt.'],
-      'ge_op': ['Wird zu SymEngines Ge(5, 5) abgesenkt.'],
+      'gt_op': [
+        'Wird zu SymEngines Gt(10, 3) abgesenkt.',
+      ],
+      'ge_op': [
+        'Wird zu SymEngines Ge(5, 5) abgesenkt.',
+      ],
       'and_op': [
         'Beide Prädikate gelten → true.',
         'Ein falscher Operand → false.',
       ],
-      'or_op': ['Ein wahrer Operand genügt.'],
+      'or_op': [
+        'Ein wahrer Operand genügt.',
+      ],
       'not_op': [
         '4 ist keine Primzahl → not false → true.',
         'Negiert die Gleichheit.',
@@ -3292,32 +3297,41 @@ class DeLocalizations implements AppLocalizations {
       '(tax = 0.085), frühere Zeilen referenzieren und zusehen, '
       'wie sich alles live aktualisiert.';
   @override
-  String get onboardingWorksheetTitle => 'Ein Rechner mit Gedächtnis';
+  String get onboardingWorksheetTitle =>
+      'Ein Rechner mit Gedächtnis';
   @override
   String get onboardingWorksheetBody =>
       'Beginne mit einem Arbeitsblatt: a = 3, f(x) = x² + a, f(4). Ändere a, und alle Ergebnisse samt verknüpftem Graphen rechnen neu. Prüfpunkt speichern, vergleichen, wiederherstellen und die ganze Sitzung exportieren.';
   @override
-  String get onboardingTryWorksheet => 'Live-Arbeitsblatt ausprobieren';
+  String get onboardingTryWorksheet =>
+      'Live-Arbeitsblatt ausprobieren';
   @override
-  String get analysisLabsTitle => 'Labor';
+  String get analysisLabsTitle =>
+      'Labor';
   @override
   String get analysisLabsSubtitle =>
       'Constraint-Probleme, Sudoku-Löser und der 3D-Szeneneditor';
   @override
-  String get aboutOurApps => 'Unsere Apps';
+  String get aboutOurApps =>
+      'Unsere Apps';
   @override
   String get aboutOurAppsIntro =>
       'Weitere Apps desselben Entwicklers. Apps in TestFlight sind kostenlose Betas: Der Link installiert zuerst Apples TestFlight.';
   @override
-  String get aboutAppStore => 'App Store';
+  String get aboutAppStore =>
+      'App Store';
   @override
-  String get aboutMacAppStore => 'Mac App Store';
+  String get aboutMacAppStore =>
+      'Mac App Store';
   @override
-  String get aboutTestFlight => 'TestFlight';
+  String get aboutTestFlight =>
+      'TestFlight';
   @override
-  String get aboutComingSoon => 'Bald verfügbar';
+  String get aboutComingSoon =>
+      'Bald verfügbar';
   @override
-  String get aboutThisApp => 'diese App';
+  String get aboutThisApp =>
+      'diese App';
   @override
   String get settingsReplayTour => 'Einführungstour erneut anzeigen';
   @override

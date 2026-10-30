@@ -139,21 +139,21 @@ class SudokuExplainedStep {
 
   /// Removed candidates per cell, for crossed-out pencil marks.
   List<Set<int>> get removedCandidates => [
-    for (var i = 0; i < cells.length; i++)
-      {
-        for (var d = 1; d < 32; d++)
-          if ((removed[i] ?? 0) & (1 << d) != 0) d,
-      },
-  ];
+        for (var i = 0; i < cells.length; i++)
+          {
+            for (var d = 1; d < 32; d++)
+              if ((removed[i] ?? 0) & (1 << d) != 0) d,
+          },
+      ];
 
   /// Candidate sets for [SudokuGrid] pencil marks.
   List<Set<int>> get candidates => [
-    for (final mask in candidateMasks)
-      {
-        for (var d = 1; d < 32; d++)
-          if (mask & (1 << d) != 0) d,
-      },
-  ];
+        for (final mask in candidateMasks)
+          {
+            for (var d = 1; d < 32; d++)
+              if (mask & (1 << d) != 0) d,
+          },
+      ];
 }
 
 enum SudokuNodeStatus { open, deadEnd, solution }
@@ -354,11 +354,13 @@ class SudokuExplainer {
   /// gives up after [maxPlacements] placements. Cage analysis is bounded
   /// across the whole solve by [maxCageWork] state/transition visits; hitting
   /// that limit stops the search without claiming the puzzle is impossible.
+  /// Repeated cage evaluations with unchanged candidates are cached, so the
+  /// budget is spent on genuinely new work.
   static SudokuExplanation explain(
     SudokuPuzzle puzzle, {
     int maxSteps = 3000,
     int maxPlacements = 200000,
-    int maxCageWork = 2000000,
+    int maxCageWork = 20000000,
   }) {
     if (!supports(puzzle)) {
       return const SudokuExplanation(
@@ -460,27 +462,27 @@ class SudokuExplainer {
     }
 
     SudokuExplanation finish(String? error) => SudokuExplanation(
-      steps: steps,
-      solution: error == null ? List<int>.unmodifiable(cells) : null,
-      error: error,
-      truncated: truncated,
-      nakedSingles: naked,
-      hiddenSingles: hidden,
-      guesses: guesses,
-      backtracks: backtracks,
-      maxDepth: maxDepth,
-      cageSteps: cageSteps,
-      lockedCandidates: locked,
-      nakedSubsets: nakedSubsets,
-      hiddenSubsets: hiddenSubsets,
-      tree: tree,
-      treeTruncated: treeTruncated,
-    );
+          steps: steps,
+          solution: error == null ? List<int>.unmodifiable(cells) : null,
+          error: error,
+          truncated: truncated,
+          nakedSingles: naked,
+          hiddenSingles: hidden,
+          guesses: guesses,
+          backtracks: backtracks,
+          maxDepth: maxDepth,
+          cageSteps: cageSteps,
+          lockedCandidates: locked,
+          nakedSubsets: nakedSubsets,
+          hiddenSubsets: hiddenSubsets,
+          tree: tree,
+          treeTruncated: treeTruncated,
+        );
 
     List<int> digitsOf(int mask) => [
-      for (var d = 1; d <= n; d++)
-        if (mask & (1 << d) != 0) d,
-    ];
+          for (var d = 1; d <= n; d++)
+            if (mask & (1 << d) != 0) d,
+        ];
 
     // Memoize feasibility by the set of digits used: for a fixed cage
     // ordering it determines both the depth and sum. A second traversal of
@@ -492,8 +494,19 @@ class SudokuExplainer {
       cageWork++;
     }
 
+    // Cage options depend only on the candidate mask each cage cell
+    // currently offers. Reuse recent results but bound retained memory.
+    final cageCache = <String, _CageOptions>{};
+    const maxCachedCages = 256;
+
     _CageOptions cageOptions(KillerCage cage) {
       final cageCells = cage.cellIndexes;
+      final key = '$cageCells|${cage.targetSum}|'
+          '${[
+        for (final i in cageCells) cells[i] != 0 ? 1 << cells[i] : masks[i]
+      ].join(',')}';
+      final cached = cageCache[key];
+      if (cached != null) return cached;
       final allowed = List<int>.filled(cageCells.length, 0);
       final combos = <int>{};
       final memo = <int, bool>{};
@@ -541,12 +554,17 @@ class SudokuExplainer {
       }
 
       if (feasible(0, 0, 0)) collect(0, 0, 0);
-      return _CageOptions(allowed, combos);
+      final result = _CageOptions(allowed, combos);
+      if (cageCache.length >= maxCachedCages) {
+        cageCache.remove(cageCache.keys.first);
+      }
+      cageCache[key] = result;
+      return result;
     }
 
-    List<List<int>> comboLists(Set<int> combos) =>
-        [for (final m in combos) digitsOf(m)]
-          ..sort((a, b) => a.join().compareTo(b.join()));
+    List<List<int>> comboLists(Set<int> combos) => [
+          for (final m in combos) digitsOf(m)
+        ]..sort((a, b) => a.join().compareTo(b.join()));
 
     // Clues must not already clash.
     for (final group in [

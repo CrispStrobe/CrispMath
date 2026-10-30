@@ -1053,12 +1053,7 @@ class FrLocalizations implements AppLocalizations {
       'Résolu : chaque case est remplie et chaque règle respectée.';
   @override
   String sudokuExplainStats(
-    int naked,
-    int hidden,
-    int guesses,
-    int backtracks,
-    int depth,
-  ) =>
+          int naked, int hidden, int guesses, int backtracks, int depth) =>
       'Singletons nus $naked · Singletons cachés $hidden · Hypothèses '
       '$guesses · Retours arrière $backtracks · Profondeur max $depth';
   @override
@@ -1070,9 +1065,10 @@ class FrLocalizations implements AppLocalizations {
   @override
   String sudokuStepCage(int sum, int size, String combos, int removed) =>
       'Somme de cage : $size cases doivent totaliser $sum avec des chiffres '
-      'différents. Les ensembles possibles sont $combos. Leurs affectations aux cases '
-      'qui respectent les contraintes montrent que $removed candidats ne '
-      'peuvent pas être utilisés dans leurs cases respectives ; ils sont retirés.';
+      'différents. Les ensembles possibles sont $combos. Leurs affectations '
+      'aux cases qui respectent les contraintes montrent que $removed '
+      'candidats ne peuvent pas être utilisés dans leurs cases respectives ; '
+      'ils sont retirés.';
   @override
   String sudokuStepLocked(int digit, String unit, String other, int removed) =>
       'Candidats verrouillés : dans $unit, $digit ne peut aller que dans '
@@ -1081,23 +1077,13 @@ class FrLocalizations implements AppLocalizations {
       'de $other.';
   @override
   String sudokuStepNakedSubset(
-    int size,
-    String cells,
-    String digits,
-    String unit,
-    int removed,
-  ) =>
+          int size, String cells, String digits, String unit, int removed) =>
       '${size == 2 ? 'Paire' : 'Triplet'} nu : $cells dans $unit ne '
       'contiennent que $digits, ces chiffres vont donc dans ces $size cases '
       'et sont retirés du reste de $unit ($removed candidats).';
   @override
   String sudokuStepHiddenSubset(
-    int size,
-    String digits,
-    String unit,
-    String cells,
-    int removed,
-  ) =>
+          int size, String digits, String unit, String cells, int removed) =>
       '${size == 2 ? 'Paire' : 'Triplet'} caché : dans $unit, $digits ne '
       'tiennent que dans $cells, ces cases les prennent donc et perdent '
       'leurs autres candidats ($removed retirés).';
@@ -1106,11 +1092,7 @@ class FrLocalizations implements AppLocalizations {
       'Contradiction : la cage de $sum ne peut plus atteindre sa somme.';
   @override
   String sudokuExplainEliminations(
-    int cages,
-    int locked,
-    int nakedSubsets,
-    int hiddenSubsets,
-  ) =>
+          int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
       'Sommes de cage $cages · Candidats verrouillés $locked · Paires/'
       'triplets nus $nakedSubsets · Paires/triplets cachés $hiddenSubsets';
   @override
@@ -1343,11 +1325,7 @@ class FrLocalizations implements AppLocalizations {
       'Solution — toutes les variables affectées.';
   @override
   String constraintsTraceStats(
-    int decisions,
-    int prunes,
-    int wipeouts,
-    int backtracks,
-  ) =>
+          int decisions, int prunes, int wipeouts, int backtracks) =>
       'Décisions $decisions · Élagages $prunes · Impasses $wipeouts · '
       'Retours arrière $backtracks';
   @override
@@ -1358,10 +1336,8 @@ class FrLocalizations implements AppLocalizations {
       'Contraintes qui ont retiré le plus de valeurs :';
   @override
   String constraintsTraceConstraintWork(
-    int removed,
-    int prunes,
-    int wipeouts,
-  ) => '$removed valeurs · $prunes élagages · $wipeouts impasses';
+          int removed, int prunes, int wipeouts) =>
+      '$removed valeurs · $prunes élagages · $wipeouts impasses';
   @override
   String get constraintsMagicVisualizeHint =>
       'Visualiser rejoue la construction d\'un carré par le solveur : la '
@@ -2976,26 +2952,54 @@ class FrLocalizations implements AppLocalizations {
     'sin': [
       'Période 2π, image [-1, 1]. La calculatrice interprète l\'argument en radians.',
     ],
-    'cos': ['Période 2π, image [-1, 1] ; cos est sin décalé de π/2.'],
-    'tan': ['Période π ; indéfinie là où cos(x)=0 (x = π/2 + kπ).'],
-    'asin': ['Domaine [-1, 1], image principale [-π/2, π/2].'],
-    'acos': ['Domaine [-1, 1], image principale [0, π].'],
-    'atan': ['Domaine tous réels, image principale (-π/2, π/2).'],
-    'sinh': ['Fonction impaire, non bornée ; la famille des chaînettes.'],
+    'cos': [
+      'Période 2π, image [-1, 1] ; cos est sin décalé de π/2.',
+    ],
+    'tan': [
+      'Période π ; indéfinie là où cos(x)=0 (x = π/2 + kπ).',
+    ],
+    'asin': [
+      'Domaine [-1, 1], image principale [-π/2, π/2].',
+    ],
+    'acos': [
+      'Domaine [-1, 1], image principale [0, π].',
+    ],
+    'atan': [
+      'Domaine tous réels, image principale (-π/2, π/2).',
+    ],
+    'sinh': [
+      'Fonction impaire, non bornée ; la famille des chaînettes.',
+    ],
     'cosh': [
       'Fonction paire, minimum 1 en x=0 ; forme d\'une chaîne suspendue.',
     ],
     'tanh': [
       'Impaire, image (-1, 1) ; fonction d\'activation courante en réseaux de neurones.',
     ],
-    'asinh': ['Domaine tous réels ; asinh(x) = ln(x + √(x²+1)).'],
-    'acosh': ['Domaine x ≥ 1 ; acosh(x) = ln(x + √(x²−1)).'],
-    'atanh': ['Domaine (-1, 1) ; atanh(x) = ½·ln((1+x)/(1−x)).'],
-    'ln': ['Réciproque de exp ; domaine x > 0. ln(e) = 1.'],
-    'log': ['Domaine x > 0. Pour d\'autres bases : ln(x)/ln(b).'],
-    'exp': ['Réciproque de ln ; toujours positive, sa propre dérivée.'],
-    'abs': ['abs(x) = √(x²) ; pour a+bi renvoie √(a²+b²).'],
-    'sqrt': ['sqrt(x) = x^(1/2). Pour d\'autres degrés, la touche ⁿ√x.'],
+    'asinh': [
+      'Domaine tous réels ; asinh(x) = ln(x + √(x²+1)).',
+    ],
+    'acosh': [
+      'Domaine x ≥ 1 ; acosh(x) = ln(x + √(x²−1)).',
+    ],
+    'atanh': [
+      'Domaine (-1, 1) ; atanh(x) = ½·ln((1+x)/(1−x)).',
+    ],
+    'ln': [
+      'Réciproque de exp ; domaine x > 0. ln(e) = 1.',
+    ],
+    'log': [
+      'Domaine x > 0. Pour d\'autres bases : ln(x)/ln(b).',
+    ],
+    'exp': [
+      'Réciproque de ln ; toujours positive, sa propre dérivée.',
+    ],
+    'abs': [
+      'abs(x) = √(x²) ; pour a+bi renvoie √(a²+b²).',
+    ],
+    'sqrt': [
+      'sqrt(x) = x^(1/2). Pour d\'autres degrés, la touche ⁿ√x.',
+    ],
     'pi': [
       'Pour π à un nombre de chiffres choisi, la touche π(N) (pi_precision).',
     ],
@@ -3049,13 +3053,19 @@ class FrLocalizations implements AppLocalizations {
       'Abaissé vers Le(5, 5) de SymEngine.',
       'Strictement supérieur échoue au test.',
     ],
-    'gt_op': ['Abaissé vers Gt(10, 3) de SymEngine.'],
-    'ge_op': ['Abaissé vers Ge(5, 5) de SymEngine.'],
+    'gt_op': [
+      'Abaissé vers Gt(10, 3) de SymEngine.',
+    ],
+    'ge_op': [
+      'Abaissé vers Ge(5, 5) de SymEngine.',
+    ],
     'and_op': [
       'Les deux prédicats sont vrais → true.',
       'Un opérande faux → false.',
     ],
-    'or_op': ['Un seul opérande vrai suffit.'],
+    'or_op': [
+      'Un seul opérande vrai suffit.',
+    ],
     'not_op': [
       '4 n\'est pas premier → not false → true.',
       'Inverse l\'égalité.',
@@ -3228,7 +3238,8 @@ class FrLocalizations implements AppLocalizations {
       '(tax = 0.085), référencez les lignes précédentes et voyez tout '
       'se recalculer en direct.';
   @override
-  String get onboardingWorksheetTitle => 'Une calculatrice qui se souvient';
+  String get onboardingWorksheetTitle =>
+      'Une calculatrice qui se souvient';
   @override
   String get onboardingWorksheetBody =>
       'Commencez par une feuille de calcul : a = 3, f(x) = x² + a, f(4). Modifiez a et tous les résultats ainsi que le graphique lié se recalculent. Enregistrez un point de contrôle, comparez, restaurez et exportez toute la session.';
@@ -3236,25 +3247,32 @@ class FrLocalizations implements AppLocalizations {
   String get onboardingTryWorksheet =>
       'Essayer une feuille de calcul interactive';
   @override
-  String get analysisLabsTitle => 'Labo';
+  String get analysisLabsTitle =>
+      'Labo';
   @override
   String get analysisLabsSubtitle =>
       'Problèmes de contraintes, solveur de Sudoku et compositeur de scènes 3D';
   @override
-  String get aboutOurApps => 'Nos apps';
+  String get aboutOurApps =>
+      'Nos apps';
   @override
   String get aboutOurAppsIntro =>
       'D\'autres apps du même développeur. Les apps dans TestFlight sont des bêtas gratuites : le lien installe d\'abord TestFlight d\'Apple.';
   @override
-  String get aboutAppStore => 'App Store';
+  String get aboutAppStore =>
+      'App Store';
   @override
-  String get aboutMacAppStore => 'Mac App Store';
+  String get aboutMacAppStore =>
+      'Mac App Store';
   @override
-  String get aboutTestFlight => 'TestFlight';
+  String get aboutTestFlight =>
+      'TestFlight';
   @override
-  String get aboutComingSoon => 'Bientôt disponible';
+  String get aboutComingSoon =>
+      'Bientôt disponible';
   @override
-  String get aboutThisApp => 'cette app';
+  String get aboutThisApp =>
+      'cette app';
   @override
   String get settingsReplayTour => 'Revoir la visite guidée';
   @override

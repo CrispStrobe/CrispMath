@@ -69,10 +69,10 @@ Set<int> _cageSets(SudokuExplainedStep state, List<int> cage, int sum) {
     for (var d = 1; d < 32; d++) {
       final bit = 1 << d;
       if (used & bit != 0) continue;
-      if (state.cells[i] == 0
-          ? state.candidateMasks[i] & bit == 0
-          : state.cells[i] != d)
-        continue;
+      final allowed = state.cells[i] == 0
+          ? state.candidateMasks[i] & bit != 0
+          : state.cells[i] == d;
+      if (!allowed) continue;
       go(k + 1, used | bit, total + d);
     }
   }
@@ -126,9 +126,12 @@ void _checkReasons(SudokuExplanation e, {List<KillerCage>? cages}) {
           for (final i in step.unit!.cells)
             if (before.cells[i] == 0 && before.candidateMasks[i] & bit != 0) i,
         ];
-        expect(places, [
-          step.cell,
-        ], reason: 'step $k: hidden single must have one place in its unit');
+        expect(
+            places,
+            [
+              step.cell,
+            ],
+            reason: 'step $k: hidden single must have one place in its unit');
         expect(
           step.unit!.cells.any((i) => before.cells[i] == step.value),
           isFalse,
@@ -256,8 +259,7 @@ void _checkReasons(SudokuExplanation e, {List<KillerCage>? cages}) {
         expect(
           e.steps[k + 1].kind,
           SudokuStepKind.backtrack,
-          reason:
-              'a contradiction inside a search is followed by a '
+          reason: 'a contradiction inside a search is followed by a '
               'backtrack',
         );
       case SudokuStepKind.backtrack:
@@ -280,9 +282,8 @@ void _checkReasons(SudokuExplanation e, {List<KillerCage>? cages}) {
 /// from a root, and every other node ended in a contradiction.
 void _checkTree(SudokuExplanation e, String id) {
   expect(e.tree, hasLength(e.guesses), reason: id);
-  final onPath = e.tree
-      .where((n) => n.status == SudokuNodeStatus.solution)
-      .toList();
+  final onPath =
+      e.tree.where((n) => n.status == SudokuNodeStatus.solution).toList();
   expect(onPath, hasLength(e.steps.last.depth), reason: id);
   for (var j = 0; j < onPath.length; j++) {
     expect(onPath[j].parent, j == 0 ? isNull : onPath[j - 1].id, reason: id);
@@ -505,7 +506,8 @@ void main() {
       }
     },
   );
-  test('every supported preset solves, matches the CSP solver, and every '
+  test(
+      'every supported preset solves, matches the CSP solver, and every '
       'recorded reason holds', () async {
     for (final preset in SudokuPresets.all) {
       final puzzle = preset.puzzle;
