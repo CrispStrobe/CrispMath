@@ -86,6 +86,27 @@ void main() {
       expect(decoded[1].lastModified, DateTime.utc(2026, 1, 2, 3, 4, 5));
     });
 
+    test('round-trips the full exact result of 1000 factorial', () {
+      var factorial = BigInt.one;
+      for (var n = 2; n <= 1000; n++) {
+        factorial *= BigInt.from(n);
+      }
+      final result = factorial.toString();
+      expect(result, hasLength(2568));
+      final entry = CalculationEntry(
+        expression: '1000!',
+        result: result,
+        rawResult: result,
+        lastModified: DateTime.utc(2026),
+      );
+
+      final bytes = CalculatorHistoryFile.encode([entry]);
+      expect(bytes.length, lessThanOrEqualTo(CalculatorHistoryFile.maxBytes));
+      final decoded = CalculatorHistoryFile.decode(bytes).single;
+      expect(decoded.result, result);
+      expect(decoded.rawResult, result);
+    });
+
     test('round-trips an empty history', () {
       final decoded = CalculatorHistoryFile.decode(
           CalculatorHistoryFile.encode(const <CalculationEntry>[]));
@@ -113,6 +134,92 @@ void main() {
       );
       expect(() => CalculatorHistoryFile.encode(entries),
           throwsA(isA<ArgumentError>()));
+    });
+
+    test('export enforces the exact UTF-8 byte limit without truncation', () {
+      const count = 64;
+      final stamp = DateTime.utc(2026);
+      List<CalculationEntry> entriesWithCharacters(int characters) {
+        var remaining = characters;
+        return List.generate(count, (_) {
+          final length = remaining > CalculatorHistoryFile.maxFieldLength
+              ? CalculatorHistoryFile.maxFieldLength
+              : remaining;
+          remaining -= length;
+          return CalculationEntry(
+            expression: 'x',
+            result: 'a' * length,
+            lastModified: stamp,
+          );
+        });
+      }
+
+      final overhead =
+          CalculatorHistoryFile.encode(entriesWithCharacters(0)).length;
+      final atLimit =
+          entriesWithCharacters(CalculatorHistoryFile.maxBytes - overhead);
+      final encoded = CalculatorHistoryFile.encode(atLimit);
+      expect(encoded.length, CalculatorHistoryFile.maxBytes);
+      final decoded = CalculatorHistoryFile.decode(encoded);
+      expect(decoded.map((entry) => entry.result).toList(),
+          atLimit.map((entry) => entry.result).toList());
+      final tooLarge = entriesWithCharacters(
+          CalculatorHistoryFile.maxBytes - overhead + 1);
+      expect(() => CalculatorHistoryFile.encode(tooLarge),
+          throwsA(isA<ArgumentError>()));
+    });
+
+    test('export counts JSON escaping and multibyte UTF-8', () {
+      final entry = CalculationEntry(
+        expression: 'x',
+        result: '\u0001' * CalculatorHistoryFile.maxFieldLength,
+        rawResult: '😀' * (CalculatorHistoryFile.maxFieldLength ~/ 2),
+        lastModified: DateTime.utc(2026),
+      );
+      final valid = List<CalculationEntry>.filled(7, entry);
+      final bytes = CalculatorHistoryFile.encode(valid);
+      expect(bytes.length, lessThanOrEqualTo(CalculatorHistoryFile.maxBytes));
+      final decoded = CalculatorHistoryFile.decode(bytes);
+      expect(decoded.map((e) => e.result), everyElement(entry.result));
+      expect(decoded.map((e) => e.rawResult), everyElement(entry.rawResult));
+      expect(() => CalculatorHistoryFile.encode(List.filled(9, entry)),
+          throwsA(isA<ArgumentError>()));
+    });
+
+    test('export does not silently replace an unpaired UTF-16 surrogate', () {
+      final entry = CalculationEntry(
+        expression: 'x',
+        result: String.fromCharCode(0xd800),
+        lastModified: DateTime.utc(2026),
+      );
+      try {
+        final decoded = CalculatorHistoryFile.decode(
+            CalculatorHistoryFile.encode([entry]));
+        expect(decoded.single.result, entry.result);
+      } on ArgumentError {
+        // Explicit refusal is also lossless.
+      }
+    });
+
+    test('accepts each text field exactly at its length limit', () {
+      final field = 'x' * CalculatorHistoryFile.maxFieldLength;
+      final entry = CalculationEntry(
+        expression: field,
+        result: field,
+        rawResult: field,
+        resultEvidence: ResultEvidence(
+          ResultAccuracy.exact,
+          ComputationMethod.simplification,
+          sourceDomain: field,
+        ),
+        lastModified: DateTime.utc(2026),
+      );
+      final decoded = CalculatorHistoryFile.decode(
+          CalculatorHistoryFile.encode([entry])).single;
+      expect(decoded.expression, field);
+      expect(decoded.result, field);
+      expect(decoded.rawResult, field);
+      expect(decoded.resultEvidence?.sourceDomain, field);
     });
 
     test('encode refuses an entry field it would have to truncate', () {

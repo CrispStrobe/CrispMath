@@ -141,7 +141,21 @@ void main() {
     expect(find.text('Load history'), findsOneWidget);
     expect(find.text('Clear History'), findsOneWidget);
     expect(find.text('Search history'), findsOneWidget);
-    await tester.tapAt(const Offset(10, 700));
+    await tester.tap(find.text('Load history'));
     await tester.pumpAndSettle();
+    expect(
+        find.text(
+            'Loading replaces the current history. Save it first if you want to keep it.'),
+        findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(AppState().history.single.result, '2');
+    await tester.tap(trigger);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear History'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(AppState().history.single.result, '2');
   });
 }

@@ -789,6 +789,8 @@ class AppState extends ChangeNotifier {
   /// scene viewport.
   Future<void> flushPersistence() async {
     _scene3DPersistTimer?.cancel();
+    // Include an addHistoryEntry whose coalescing microtask has not run yet.
+    if (_historyPersistScheduled) await Future<void>.value();
     if (_pendingHistoryWrites > 0) await _historyWrites;
     if (_prefs != null) {
       await _prefs!.setString(_kScene3D, jsonEncode(_scene3D.toJson()));
@@ -1158,20 +1160,24 @@ class AppState extends ChangeNotifier {
     ResultEvidence? resultEvidence,
   }) {
     final formatted = formatNumber(result);
-    history.insert(
-      0,
-      CalculationEntry(
-        expression: expression,
-        result: formatted,
-        resultEvidence: resultEvidence,
-        // Keep the engine's unrounded string when formatting changed
-        // it, so `Ans` can chain at full precision.
-        rawResult: formatted == result ? null : result,
-        type: type,
-      ),
+    final entry = CalculationEntry(
+      expression: expression,
+      result: formatted,
+      resultEvidence: resultEvidence,
+      // Keep the engine's unrounded string when formatting changed
+      // it, so `Ans` can chain at full precision.
+      rawResult: formatted == result ? null : result,
+      type: type,
     );
-    while (history.length > _kHistoryCap) {
-      history.removeLast();
+    void addTo(List<CalculationEntry> target) {
+      target.insert(0, entry);
+      while (target.length > _kHistoryCap) {
+        target.removeLast();
+      }
+    }
+    addTo(history);
+    for (final edits in _pendingHistoryReplacements) {
+      edits.add(addTo);
     }
     if (!_historyPersistScheduled) {
       _historyPersistScheduled = true;
@@ -1192,32 +1198,29 @@ class AppState extends ChangeNotifier {
   /// being recorded). Every history write now goes through this single queue.
   Future<void> _historyWrites = Future.value();
   int _pendingHistoryWrites = 0;
+  final _pendingHistoryReplacements =
+      <List<void Function(List<CalculationEntry>)>>[];
 
   void _persistHistory() {
-    _enqueueHistoryWrite(
-      jsonEncode(history.map((e) => e.toJson()).toList()),
-    );
+    // Resolve at execution time: a pending replacement may commit or fail
+    // before this later edit reaches the backend.
+    _enqueueHistoryWrite(() async {
+      final prefs = _prefs;
+      if (prefs != null) {
+        await _writeHistory(
+          prefs,
+          jsonEncode(history.map((e) => e.toJson()).toList()),
+        );
+      }
+    });
   }
 
-  /// Snapshot [payload] now and append it to the history-write queue.
-  ///
-  /// The snapshot is taken at call time, so later edits to [history] cannot
-  /// change a queued write, and the queue order matches mutation order. The
-  /// first write starts synchronously (as before this queue existed, so
-  /// `addHistoryEntry` followed by a prefs read still observes the value); later
-  /// ones wait for the previous write to finish.
-  ///
-  /// The returned future reports this write's failure; the internal tail absorbs
-  /// it so one failed platform write does not poison later writes.
-  Future<void> _enqueueHistoryWrite(String payload) {
-    final prefs = _prefs;
-    if (prefs == null) return Future.value();
-    final previous =
-        _pendingHistoryWrites == 0 ? null : _historyWrites;
+  /// Serialize writes and keep the queue usable after failures. Ordinary edits
+  /// resolve their payload when executed, after any earlier import has settled.
+  Future<void> _enqueueHistoryWrite(Future<void> Function() perform) {
+    final previous = _pendingHistoryWrites == 0 ? null : _historyWrites;
     _pendingHistoryWrites++;
-    final write = previous == null
-        ? _writeHistory(prefs, payload)
-        : previous.then((_) => _writeHistory(prefs, payload));
+    final write = previous == null ? perform() : previous.then((_) => perform());
     _historyWrites = write.catchError((Object error) {
       debugPrint('STATE: history save failed: $error');
     }).whenComplete(() => _pendingHistoryWrites--);
@@ -1225,8 +1228,24 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _writeHistory(SharedPreferences prefs, String payload) async {
-    if (!await prefs.setString(_kHistory, payload)) {
-      throw StateError('Failed to save calculation history');
+    // The plugin updates its cache *before* the platform write. Restore that
+    // cache on either false or throw; a failed restore is logged, not masked as
+    // a successful import. All history writes remain serialized during repair.
+    final previous = prefs.getString(_kHistory);
+    try {
+      if (!await prefs.setString(_kHistory, payload)) {
+        throw StateError('Failed to save calculation history');
+      }
+    } catch (_) {
+      try {
+        final restored = previous == null
+            ? await prefs.remove(_kHistory)
+            : await prefs.setString(_kHistory, previous);
+        if (!restored) debugPrint('STATE: history cache restore failed');
+      } catch (error) {
+        debugPrint('STATE: history cache restore failed: $error');
+      }
+      rethrow;
     }
   }
 
@@ -1242,11 +1261,11 @@ class AppState extends ChangeNotifier {
   /// throws [ArgumentError] and leaves the in-memory history and the persisted
   /// value untouched.
   ///
-  /// The returned future completes once the replacement has been written to
-  /// shared_preferences. History writes — including those from
-  /// [addHistoryEntry] and [clearHistory] — are serialized in call order, so a
-  /// concurrent older write cannot overwrite this one. Only the history domain
-  /// is notified; no other AppState field is touched.
+  /// The replacement is published after writing it, and the returned future
+  /// waits until edits made while it is pending are written too. On failure
+  /// those edits stay on the original history, which is restored to storage on
+  /// a best-effort basis. Repeated backend failures cannot guarantee durability.
+  /// Only the history domain is notified for a successful replacement.
   Future<void> replaceHistory(List<CalculationEntry> entries) async {
     if (entries.length > _kHistoryCap) {
       throw ArgumentError.value(
@@ -1257,14 +1276,71 @@ class AppState extends ChangeNotifier {
       );
     }
     final incoming = List<CalculationEntry>.of(entries);
-    history
-      ..clear()
-      ..addAll(incoming);
-    final write = _enqueueHistoryWrite(
-      jsonEncode(history.map((e) => e.toJson()).toList()),
-    );
-    _notify({AppStateDomain.history});
-    await write;
+    final edits = <void Function(List<CalculationEntry>)>[];
+    _pendingHistoryReplacements.add(edits);
+    try {
+      await _enqueueHistoryWrite(() async {
+        final prefs = _prefs;
+        if (prefs == null) {
+          throw StateError('History storage is unavailable');
+        }
+        final original = List<CalculationEntry>.of(history);
+        var published = false;
+        try {
+          while (true) {
+            final count = edits.length;
+            final candidate = List<CalculationEntry>.of(incoming);
+            for (var i = 0; i < count; i++) {
+              edits[i](candidate);
+            }
+            await _writeHistory(
+              prefs,
+              jsonEncode(candidate.map((e) => e.toJson()).toList()),
+            );
+            // No await between this check and publishing: every edit included
+            // in the visible replacement is already in the successful write.
+            if (count != edits.length) continue;
+            history
+              ..clear()
+              ..addAll(candidate);
+            published = true;
+            _notify({AppStateDomain.history});
+            // A synchronous listener may itself edit history during the
+            // notification. Persist that edit before reporting success too.
+            if (count != edits.length) continue;
+            break;
+          }
+        } catch (_) {
+          // A prior candidate may already have reached the backend. Restore
+          // the original live history, including edits made during recovery.
+          if (published) {
+            for (final edit in edits) {
+              edit(original);
+            }
+            history
+              ..clear()
+              ..addAll(original);
+            _notify({AppStateDomain.history});
+          }
+          try {
+            while (true) {
+              final count = edits.length;
+              final payload =
+                  jsonEncode(history.map((e) => e.toJson()).toList());
+              await _writeHistory(prefs, payload);
+              if (count == edits.length) break;
+            }
+          } catch (error) {
+            // Keep live edits and let later queued saves retry. The caller
+            // still receives the original failure, not a false success.
+            debugPrint('STATE: history rollback failed: $error');
+          }
+          rethrow;
+        }
+      });
+    } finally {
+      _pendingHistoryReplacements.remove(edits);
+    }
   }
 
   void _persistVariables() {
@@ -1507,6 +1583,9 @@ class AppState extends ChangeNotifier {
 
   void clearHistory() {
     history.clear();
+    for (final edits in _pendingHistoryReplacements) {
+      edits.add((target) => target.clear());
+    }
     _persistHistory();
     _notify({AppStateDomain.history});
   }
@@ -1567,9 +1646,6 @@ class AppState extends ChangeNotifier {
       imported.add('exact integer mode');
     }
     if (json['history'] is List) {
-      if (!merge) {
-        history.clear();
-      }
       final newEntries = <CalculationEntry>[];
       for (final raw in (json['history'] as List)) {
         if (raw is Map) {
@@ -1578,23 +1654,32 @@ class AppState extends ChangeNotifier {
           );
         }
       }
-      if (merge) {
-        final allEntries = [...history, ...newEntries];
-        // Deduplicate by expression + result, taking newest
-        final dedup = <String, CalculationEntry>{};
-        for (final e in allEntries) {
-          final key = '${e.expression}|${e.result}';
-          if (!dedup.containsKey(key) ||
-              dedup[key]!.lastModified.isBefore(e.lastModified)) {
-            dedup[key] = e;
+      void applyImport(List<CalculationEntry> target) {
+        if (merge) {
+          final allEntries = [...target, ...newEntries];
+          // Deduplicate by expression + result, taking newest
+          final dedup = <String, CalculationEntry>{};
+          for (final e in allEntries) {
+            final key = '${e.expression}|${e.result}';
+            if (!dedup.containsKey(key) ||
+                dedup[key]!.lastModified.isBefore(e.lastModified)) {
+              dedup[key] = e;
+            }
           }
+          final merged = dedup.values.toList();
+          merged.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+          target
+            ..clear()
+            ..addAll(merged.take(_kHistoryCap));
+        } else {
+          target
+            ..clear()
+            ..addAll(newEntries.take(_kHistoryCap));
         }
-        final merged = dedup.values.toList();
-        merged.sort((a, b) => b.lastModified.compareTo(a.lastModified));
-        history.clear();
-        history.addAll(merged.take(_kHistoryCap));
-      } else {
-        history.addAll(newEntries.take(_kHistoryCap));
+      }
+      applyImport(history);
+      for (final edits in _pendingHistoryReplacements) {
+        edits.add(applyImport);
       }
       _persistHistory();
       imported.add('${history.length} history entries');

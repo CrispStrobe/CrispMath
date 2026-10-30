@@ -73,11 +73,16 @@ class CalculatorScreen extends StatefulWidget {
       this.onGoToGraphing,
       this.onGoToAnalysis,
       this.onOpenCommands,
-      this.engineOpForTesting});
+      this.engineOpForTesting,
+      this.historyFileOpenForTesting});
 
   /// Overrides the engine operation boundary in deterministic widget tests.
   @visibleForTesting
   final Future<ComputedResult> Function(EngineOp)? engineOpForTesting;
+
+  /// Overrides the platform file chooser in deterministic widget tests.
+  @visibleForTesting
+  final Future<List<CalculationEntry>?> Function()? historyFileOpenForTesting;
 
   /// Optional: switch the main nav to the Graphing tab. Forwarded down
   /// to the VariableViewer's function-tile context menu.
@@ -97,6 +102,9 @@ class CalculatorScreen extends StatefulWidget {
 
 class CalculatorScreenState extends State<CalculatorScreen>
     with SingleTickerProviderStateMixin, RouteAware {
+  // Covers the whole picker/confirmation/write flow, even if this screen is
+  // disposed and recreated while the platform picker or a write is pending.
+  static bool _historyImportInProgress = false;
   final AppState _appState = AppState();
   final CalculatorEngine _engine = CalculatorEngine();
   final Map<String, String> _memory = {};
@@ -2615,11 +2623,61 @@ class CalculatorScreenState extends State<CalculatorScreen>
   /// Replace the history with the contents of a portable history file.
   Future<void> _openHistoryFromFile() async {
     final t = WorkflowLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    if (_historyImportInProgress) {
+      _toast(context, t.text(WorkflowLabel.historyFileImportBusy));
+      return;
+    }
+    _historyImportInProgress = true;
+    try {
+      var confirmedHistory = List<CalculationEntry>.of(_appState.history);
+      final confirmed = await _confirmHistoryReplacement(t);
+      if (confirmed != true || !mounted) return;
+      final entries = await (widget.historyFileOpenForTesting ??
+          CalculatorHistoryFile.open)();
+      // Null is a cancelled picker; an invalid file throws instead, which
+      // leaves the current history untouched.
+      if (entries == null || !mounted) return;
+      while (true) {
+        // Wait for late calculations before deciding what will be replaced.
+        while (_calculationPending != null) {
+          await _calculationPending!.future;
+          if (!mounted) return;
+        }
+        if (listEquals(confirmedHistory, _appState.history)) break;
+        // The confirmation did not cover new results that appeared while the
+        // picker or a calculation was open. Ask again, and check again after
+        // the dialog, since the history could change while it is displayed.
+        confirmedHistory = List<CalculationEntry>.of(_appState.history);
+        if (await _confirmHistoryReplacement(t, changed: true) != true ||
+            !mounted) {
+          return;
+        }
+      }
+      await _appState.replaceHistory(entries);
+      if (!mounted) return;
+      setState(() {});
+      _toast(
+          context,
+          listEquals(entries, _appState.history)
+              ? t.text(WorkflowLabel.historyFileReplaced, '${entries.length}')
+              : t.text(WorkflowLabel.historyFileReplacedWithChanges));
+    } catch (error) {
+      if (!mounted) return;
+      _toast(context, t.text(WorkflowLabel.historyFileFailed, '$error'));
+    } finally {
+      _historyImportInProgress = false;
+    }
+  }
+
+  Future<bool?> _confirmHistoryReplacement(WorkflowLocalizations t,
+      {bool changed = false}) {
+    return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(t.text(WorkflowLabel.openHistoryFile)),
-        content: Text(t.text(WorkflowLabel.historyFileReplaceNotice)),
+        content: Text(t.text(changed
+            ? WorkflowLabel.historyFileChangedNotice
+            : WorkflowLabel.historyFileReplaceNotice)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -2632,27 +2690,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
-    try {
-      final entries = await CalculatorHistoryFile.open();
-      // Null is a cancelled picker; an invalid file throws instead, which
-      // leaves the current history untouched.
-      if (entries == null || !mounted) return;
-      // Let an in-flight calculation finish first so its late result cannot
-      // append to the freshly restored history out of order.
-      while (_calculationPending != null) {
-        await _calculationPending!.future;
-        if (!mounted) return;
-      }
-      await _appState.replaceHistory(entries);
-      if (!mounted) return;
-      setState(() {});
-      _toast(context,
-          t.text(WorkflowLabel.historyFileReplaced, '${entries.length}'));
-    } catch (error) {
-      if (!mounted) return;
-      _toast(context, t.text(WorkflowLabel.historyFileFailed, '$error'));
-    }
   }
 
   void _confirmClearHistory() {

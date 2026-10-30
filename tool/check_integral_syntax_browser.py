@@ -31,10 +31,8 @@ async def check(args):
                 editor = page.get_by_role('textbox', name='Expression', exact=True)
                 await real_click(page, editor)
                 await next_frames(page)
-                # A programmatic value assignment only touches the DOM node.
-                # After a submit Flutter closes that text-input client, so the
-                # old node keeps the text while the app never sees it. Type
-                # real key events into the freshly focused client instead.
+                # Real key events exercise the currently focused Flutter text
+                # client; a DOM value alone did not prove the app received it.
                 await page.keyboard.type(source, delay=10)
                 await next_frames(page)
                 await expect(editor).to_have_value(source)

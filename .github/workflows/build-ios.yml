@@ -24,6 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate calculator history file type
+        run: python3 test/ios_history_uti_test.py
+
       - name: Checkout CrispEmbed
         uses: actions/checkout@v4
         with:

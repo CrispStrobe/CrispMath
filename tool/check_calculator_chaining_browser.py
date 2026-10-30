@@ -56,10 +56,8 @@ async def check(args):
                         # client, not only a detached browser-side input.
                         await expect(editor).to_be_focused()
 
-                    # Type into the live Flutter text client. A programmatic
-                    # fill only rewrites the DOM node, which Flutter stops
-                    # listening to once it closes the input connection after a
-                    # submit, so a later fill would never reach the app.
+                    # Use real key events: a DOM value alone did not prove
+                    # that Flutter received text after a previous submission.
                     await real_click(page, editor)
                     await page.keyboard.type('Ans/2', delay=20)
                     await submit('Ans/2', 'Error: No Ans in memory')

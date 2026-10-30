@@ -27,7 +27,7 @@
 //   * at most [maxEntries] (200) entries — the AppState history cap. A larger
 //     file is rejected; it is never truncated;
 //   * at most [maxBytes] per file (checked before parsing);
-//   * at most [maxFieldLength] characters per text field;
+//   * at most [maxFieldLength] UTF-16 code units per text field;
 //   * `version` must be exactly [currentVersion]; other versions are rejected
 //     rather than guessed at;
 //   * unknown top-level fields, unknown entry fields and unknown evidence
@@ -72,6 +72,29 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../engine/app_state.dart';
 import '../engine/result_evidence.dart';
 
+// JSON is emitted incrementally so even heavily escaped input cannot allocate
+// an unbounded encoded body before the size check.
+class _LimitedByteSink extends ByteConversionSinkBase {
+  _LimitedByteSink(this.limit);
+
+  final int limit;
+  final BytesBuilder _bytes = BytesBuilder(copy: false);
+
+  @override
+  void add(List<int> chunk) {
+    if (_bytes.length + chunk.length > limit) {
+      throw ArgumentError('Cannot write history file: '
+          '${CalculatorHistoryFile._sizeLimitMessage}');
+    }
+    _bytes.add(chunk);
+  }
+
+  @override
+  void close() {}
+
+  Uint8List takeBytes() => _bytes.takeBytes();
+}
+
 class CalculatorHistoryFile {
   CalculatorHistoryFile._();
 
@@ -81,14 +104,16 @@ class CalculatorHistoryFile {
   /// Only version this build reads or writes.
   static const currentVersion = 1;
 
-  /// Mirrors `AppState.historyCap`; one file always fits one full history.
+  /// Mirrors `AppState.historyCap`; larger histories are never truncated.
   static const maxEntries = 200;
 
   /// Largest history file accepted. Checked before any parsing.
   static const maxBytes = 4 * 1024 * 1024;
 
-  /// Largest accepted single text field (expression, result, raw, sourceDomain).
-  static const maxFieldLength = 1000;
+  /// Largest accepted field in UTF-16 code units (expression, result, raw,
+  /// sourceDomain). Large enough for exact results such as 1000!, while the
+  /// separate byte limit also bounds the total encoded file.
+  static const maxFieldLength = 64 * 1024;
 
   /// File extension used by [save] / [open].
   static const extension = 'crisphistory';
@@ -109,8 +134,8 @@ class CalculatorHistoryFile {
 
   /// Serialize [entries] to the versioned UTF-8 file body.
   ///
-  /// Throws [ArgumentError] when the list cannot be represented faithfully: more
-  /// than [maxEntries] entries or a text field longer than [maxFieldLength].
+  /// Throws [ArgumentError] when the list cannot be represented faithfully,
+  /// including if it exceeds [maxEntries], [maxFieldLength] or [maxBytes].
   /// Encoding never truncates, because the resulting file must always decode.
   static Uint8List encode(List<CalculationEntry> entries) {
     if (entries.length > maxEntries) {
@@ -131,9 +156,11 @@ class CalculatorHistoryFile {
     } on FormatException catch (error) {
       throw ArgumentError('Cannot write history file: ${error.message}');
     }
-    return Uint8List.fromList(
-      utf8.encode(const JsonEncoder.withIndent('  ').convert(payload)),
-    );
+    final output = _LimitedByteSink(maxBytes);
+    final encoder = JsonUtf8Encoder('  ').startChunkedConversion(output);
+    encoder.add(payload);
+    encoder.close();
+    return output.takeBytes();
   }
 
   /// Parse and fully validate a history file.
@@ -240,7 +267,7 @@ class CalculatorHistoryFile {
     }
     if (value.length > maxFieldLength) {
       throw FormatException(
-        'History entry $index: "$field" exceeds $maxFieldLength characters',
+        'History entry $index: "$field" exceeds $maxFieldLength UTF-16 code units',
       );
     }
     return value;
