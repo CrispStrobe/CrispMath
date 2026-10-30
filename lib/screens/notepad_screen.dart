@@ -1410,6 +1410,8 @@ class NotepadScreenState extends State<NotepadScreen> {
       SnackBar(
         content: Text(label),
         duration: const Duration(seconds: 4),
+        // Flutter defaults snackbars with actions to persistent.
+        persist: false,
         behavior: SnackBarBehavior.floating,
         showCloseIcon: true,
         action: SnackBarAction(

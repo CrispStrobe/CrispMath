@@ -48,7 +48,6 @@ async def check(args):
             details = page.get_by_role('button', name='Result details', exact=True)
             assert await details.count() == len(CASES)
             await details.nth(2).click()
-            await page.get_by_text('Result details', exact=True).wait_for()
             await page.get_by_text('Approximate · Numerical integration (Simpson’s rule)', exact=True).wait_for()
             await page.screenshot(path=str(output/'numerical-method.png'))
             await page.get_by_role('button', name='Close', exact=True).click()

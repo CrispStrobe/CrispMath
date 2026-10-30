@@ -83,7 +83,7 @@ void main() {
     await tester.tap(find.text('Search commands'));
     await tester.pumpAndSettle();
     expect(find.text('Find a command'), findsWidgets);
-    await tester.pageBack();
+    await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
     AppState().addHistoryEntry('1+1', '2');
     await tester.pumpAndSettle();
