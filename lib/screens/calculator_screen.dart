@@ -2712,12 +2712,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
                               ),
                               if (_appState.history.isNotEmpty) ...[
                                 const SizedBox(width: 8),
-                                Text(
-                                  AppLocalizations.of(context).historyLabel,
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey[600]),
-                                ),
-                                const SizedBox(width: 8),
+                                // The rows below are self-evidently the
+                                // history; the "History:" caption only ate
+                                // width on narrow screens.
                                 SegmentedButton<bool>(
                                   segments: const [
                                     ButtonSegment<bool>(
