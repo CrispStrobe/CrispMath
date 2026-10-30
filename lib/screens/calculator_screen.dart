@@ -516,6 +516,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() => _justCalculated = false);
     }
 
+    _scheduleLivePreview();
+  }
+
+  void _scheduleLivePreview() {
     _livePreviewDebounce?.cancel();
     _livePreviewDebounce = Timer(const Duration(milliseconds: 150), () async {
       final preview = await _computeLivePreviewAsync();
@@ -1136,14 +1140,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
   // Only the draft submitted by this calculation may be consumed. Comparing
   // revisions also protects edits that happen to return to the original text.
   void _finishSubmittedInput({bool justCalculated = false, bool clearPreview = false}) {
-    if (_inputRevision != _submittedInputRevision) return;
+    if (_inputRevision != _submittedInputRevision) {
+      // A completed result can change Ans or variables used by the draft.
+      _scheduleLivePreview();
+      return;
+    }
     if (clearPreview) _resultPreview = '';
     if (justCalculated) _justCalculated = true;
     _latexController.clear();
   }
 
-  Future<void> _calculate(String expression,
-      {bool preserveTextFocus = false}) async {
+  Future<void> _calculate(String expression) async {
     // Preserve submission order while keeping the shared result evidence
     // isolated. Capture the draft revision now, not when a queued run starts.
     final inputRevision = _inputRevision;
@@ -1383,17 +1390,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
       }
 
       if (!mounted) return;
-      final submittedDraftUnchanged = _inputRevision == _submittedInputRevision;
       setState(() {
         _appState.addHistoryEntry(
             LatexConversionUtils.latexToReadable(expression), result,
             resultEvidence: _resultEvidence);
         _finishSubmittedInput(justCalculated: true, clearPreview: true);
       });
-
-      if (!preserveTextFocus && submittedDraftUnchanged) {
-        _calculatorFocusNode.requestFocus();
-      }
     } on MissingAnsException {
       if (!mounted) return;
       setState(() {
@@ -1654,6 +1656,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       final result = await _runEngineOpMaybeAsync('solve', preprocessed,
           arg2: variable,
           fallback: () => _engine.solve(preprocessed, variable));
+      if (!mounted) return result;
 
       // Auto-bind (opt-in via Settings, default off): if the
       // solver returned exactly one numeric value, stash it into
@@ -1686,6 +1689,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // is otherwise irrelevant.
     for (final prefix in const ['d/dx(', 'diff(']) {
       while (true) {
+        if (!mounted) return s;
         final start = s.indexOf(prefix);
         if (start < 0) break;
         // Walk to find the matching close-paren of the prefix's `(`.
@@ -2536,6 +2540,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     String? arg4,
     required String Function() fallback,
   }) async {
+    if (!mounted) return 'Error: cancelled';
     final operation = EngineOp(op, arg1, arg2, arg3, arg4);
     final testOperation = widget.engineOpForTesting;
     if (testOperation != null) {
@@ -3023,8 +3028,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                     onEvaluate: () => _onButtonPressed('EXE'),
                     onTextSubmitted: () {
                       if (_latexController.text.isNotEmpty) {
-                        _calculate(_latexController.text,
-                            preserveTextFocus: true);
+                        _calculate(_latexController.text);
                       }
                     },
                     resultPreview: _resultPreview,
