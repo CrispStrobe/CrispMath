@@ -40,8 +40,8 @@ class _NotepadResultColumn extends StatelessWidget {
     if (line.cachedError != null) {
       return Align(
         alignment: align,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          _buildErrorWidget(context, line.cachedError!, textAlign),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Flexible(child: _buildErrorWidget(context, line.cachedError!, textAlign)),
           if (line.resultEvidence != null)
             ResultEvidenceBadge(evidence: line.resultEvidence!),
         ]),
@@ -55,9 +55,16 @@ class _NotepadResultColumn extends StatelessWidget {
         : rawRes;
     final children = <Widget>[];
     if (res != null && res.isNotEmpty) {
-      children.add(_buildResult(context, res, textAlign));
-      if (line.resultEvidence != null) {
-        children.add(ResultEvidenceBadge(evidence: line.resultEvidence!));
+      if (line.resultEvidence == null) {
+        children.add(_buildResult(context, res, textAlign));
+      } else {
+        children.add(Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: _buildResult(context, res, textAlign)),
+            ResultEvidenceBadge(evidence: line.resultEvidence!),
+          ],
+        ));
       }
     }
     // Show a small format indicator when a non-auto format is active.

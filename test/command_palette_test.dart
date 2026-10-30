@@ -1,5 +1,6 @@
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/command_catalog.dart';
+import 'package:crisp_math/localization/app_localizations.dart';
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/services/engine_service.dart';
 import 'package:crisp_math/widgets/command_palette.dart';
@@ -93,6 +94,16 @@ void main() {
     expect(find.text('Clear History'), findsOneWidget);
     await tester.tap(find.text('Search history'));
     await tester.pumpAndSettle();
-    expect(find.byType(TextField), findsWidgets);
+    final field = find.byWidgetPredicate((widget) => widget is TextField &&
+        widget.decoration?.hintText == 'Filter history…');
+    expect(field, findsOneWidget);
+    await tester.enterText(field, 'missing');
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump();
+    expect(find.text(AppLocalizations.of(tester.element(field)).historyNoMatches),
+        findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(field, findsNothing);
   });
 }

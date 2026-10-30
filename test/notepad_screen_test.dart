@@ -341,6 +341,7 @@ void main() {
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Delete line').last);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Line deleted'), findsOneWidget);
       expect(find.descendant(

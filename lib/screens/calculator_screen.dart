@@ -54,6 +54,7 @@ import '../widgets/store_result_dialogs.dart';
 // Other imports
 import '../controllers/latex_controller.dart';
 import '../localization/app_localizations.dart';
+import '../localization/workflow_localizations.dart';
 import '../main.dart' show appRouteObserver;
 import '../screens/curve_analysis_input_screen.dart';
 import '../screens/matrix_editor_screen.dart';
@@ -2502,6 +2503,21 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _toast(context, t.historyEntryCopied);
   }
 
+  void _toggleHistorySearch() {
+    setState(() {
+      _historySearchOpen = !_historySearchOpen;
+      if (!_historySearchOpen) _historySearchController.clear();
+    });
+    if (_historySearchOpen) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _historySearchOpen) _historySearchFocusNode.requestFocus();
+      });
+    } else {
+      _calculatorFocusNode.requestFocus();
+    }
+  }
+
   void _confirmClearHistory() {
     final t = AppLocalizations.of(context);
     showDialog<void>(
@@ -2517,6 +2533,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
           ElevatedButton(
             onPressed: () {
               _appState.clearHistory();
+              if (_historySearchOpen) {
+                _toggleHistorySearch();
+              }
               Navigator.of(context).pop();
             },
             child: Text(t.clearAll),
@@ -2615,19 +2634,42 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                   builder: (_) => const WorkedExamplesDialog(),
                                 ),
                               ),
-                              // The command palette used to need its own
-                              // full-width row above every tab. It now
-                              // rides in this action row as a magnifier,
-                              // so search is always one tap away without
-                              // spending a line.
-                              if (widget.onOpenCommands != null)
-                                IconButton(
-                                  icon: const Icon(Icons.manage_search,
-                                      size: 20,
-                                      semanticLabel: 'Search commands'),
-                                  tooltip: 'Search commands',
-                                  onPressed: widget.onOpenCommands,
-                                ),
+                              PopupMenuButton<String>(
+                                enabled: widget.onOpenCommands != null ||
+                                    _appState.history.isNotEmpty,
+                                tooltip: AppLocalizations.of(context).searchHistory,
+                                icon: Icon(_historySearchOpen
+                                    ? Icons.search_off : Icons.search, size: 20),
+                                onSelected: (value) {
+                                  if (value == 'commands') {
+                                    widget.onOpenCommands?.call();
+                                  } else if (value == 'history') {
+                                    _toggleHistorySearch();
+                                  } else if (value == 'clear') {
+                                    _confirmClearHistory();
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  if (widget.onOpenCommands != null)
+                                    PopupMenuItem(
+                                      value: 'commands',
+                                      child: Text(WorkflowLocalizations.of(context)
+                                          .text(WorkflowLabel.searchCommands)),
+                                    ),
+                                  if (_appState.history.isNotEmpty) ...[
+                                    PopupMenuItem(
+                                      value: 'history',
+                                      child: Text(AppLocalizations.of(context)
+                                          .searchHistory),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'clear',
+                                      child: Text(AppLocalizations.of(context)
+                                          .clearHistory),
+                                    ),
+                                  ],
+                                ],
+                              ),
                               // Round 101 (P6): help-mode toggle. Filled icon
                               // + colored when active. Wrapping HelpTarget /
                               // popovers land in Rounds 102-104.
@@ -2686,51 +2728,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                   },
                                 ),
                                 const SizedBox(width: 8),
-                                IconButton(
-                                  icon: Icon(
-                                    _historySearchOpen
-                                        ? Icons.search_off
-                                        : Icons.search,
-                                    size: 20,
-                                    semanticLabel: 'Search history',
-                                  ),
-                                  tooltip: AppLocalizations.of(context)
-                                      .searchHistory,
-                                  onPressed: () {
-                                    setState(() {
-                                      _historySearchOpen = !_historySearchOpen;
-                                      if (!_historySearchOpen) {
-                                        _historySearchController.clear();
-                                      }
-                                    });
-                                    // Hand focus to the search field when opening.
-                                    // Without this the calculator's KeyboardListener
-                                    // (focusNode: _calculatorFocusNode) keeps the
-                                    // primary focus and the TextField never gets to
-                                    // see keystrokes.
-                                    if (_historySearchOpen) {
-                                      FocusManager.instance.primaryFocus
-                                          ?.unfocus();
-                                      WidgetsBinding.instance
-                                          .addPostFrameCallback((_) {
-                                        if (mounted) {
-                                          _historySearchFocusNode
-                                              .requestFocus();
-                                        }
-                                      });
-                                    } else {
-                                      // Closed: hand focus back to the calculator.
-                                      _calculatorFocusNode.requestFocus();
-                                    }
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_sweep,
-                                      size: 20, semanticLabel: 'Clear history'),
-                                  tooltip:
-                                      AppLocalizations.of(context).clearHistory,
-                                  onPressed: _confirmClearHistory,
-                                ),
                               ],
                             ],
                           ),
@@ -2749,19 +2746,24 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                 hintText: AppLocalizations.of(context)
                                     .searchHistoryHint,
                                 border: const OutlineInputBorder(),
-                                suffixIcon: _historySearchController
-                                        .text.isEmpty
-                                    ? null
-                                    : IconButton(
-                                        icon: const Icon(Icons.clear,
-                                            size: 18,
-                                            semanticLabel: 'Clear search'),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (_historySearchController.text.isNotEmpty)
+                                      IconButton(
+                                        icon: const Icon(Icons.clear, size: 18),
                                         tooltip: AppLocalizations.of(context)
                                             .clearSearchTooltip,
-                                        onPressed: () {
-                                          _historySearchController.clear();
-                                        },
+                                        onPressed: _historySearchController.clear,
                                       ),
+                                    IconButton(
+                                      icon: const Icon(Icons.close, size: 18),
+                                      tooltip: WorkflowLocalizations.of(context)
+                                          .text(WorkflowLabel.close),
+                                      onPressed: _toggleHistorySearch,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
