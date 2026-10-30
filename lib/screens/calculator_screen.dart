@@ -2910,11 +2910,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                             // children happened to be mounted.
                                             child: Semantics(
                                               container: true,
-                                              // Marked as a button: the row
-                                              // opens a menu/help, and web
-                                              // semantics only keeps labelled
-                                              // nodes that carry an action.
+                                              // Activating the accessible button
+                                              // opens the same menu as a long press.
                                               button: true,
+                                              onTap: () =>
+                                                  _showHistoryEntryMenu(
+                                                      context, entry),
                                               excludeSemantics: true,
                                               label:
                                                   '${entry.expression}\n= ${isError ? display : shownResult}',

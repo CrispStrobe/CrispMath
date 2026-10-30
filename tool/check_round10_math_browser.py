@@ -233,20 +233,21 @@ async def check_calculator(args):
                     assert re.sub(r'\s+','',entry['e']).replace('×','*').replace('·','*')==re.sub(r'\s+','',LINSOLVE_SOURCE),entry
                     validate_linsolve(entry['r'])
                     assert (entry.get('evidence')or{}).get('accuracy')=='exact',entry
-                    # The row carries one explicit label: expression, then
-                    # "= result". Accessible-name computation may collapse
-                    # the separator to a plain space, so match on content
-                    # and then compare the normalised label exactly.
+                    # Flutter web can derive the accessible name from the
+                    # button's text without an aria-label attribute. Check the
+                    # computed name, rather than requiring that attribute.
                     label=f"{entry['e']} = {entry['r']}"
-                    pattern=re.escape(entry['e'])+r'[\s]*=[\s]*'+re.escape(entry['r'])
-                    result=page.get_by_label(re.compile(pattern),exact=False)
+                    result=page.get_by_role('button',name=label,exact=True)
                     await result.wait_for(state='attached')
-                    assert await result.count()==1,label
+                    await expect(result).to_have_count(1)
+                    await expect(result).to_have_accessible_name(label)
+                    wrong_label=label.replace('z = 4','z = 5')
+                    assert wrong_label != label,label
+                    await expect(page.get_by_role('button',name=wrong_label,exact=True)).to_have_count(0)
                     box=await result.bounding_box()
                     assert box and box['width']>0 and box['height']>0 and box['x']>=0 and box['x']+box['width']<=width and box['y']>=0 and box['y']+box['height']<=height,box
                     item['resultGeometry']=box
-                    item['visibleHistoryLabel']=await result.get_attribute('aria-label')
-                    assert re.sub(r'\s+',' ',item['visibleHistoryLabel'] or '').strip()==label,item
+                    item['accessibleNameVerified']=True
                     item['visibleResult']=entry['r']
                     validate_linsolve(item['visibleResult'])
                     await page.reload(wait_until='domcontentloaded')
@@ -255,11 +256,12 @@ async def check_calculator(args):
                     restored=await page.evaluate("()=>JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0]")
                     assert restored==entry,(entry,restored)
                     item['reload']=True
-                    result=page.get_by_label(re.compile(pattern),exact=False)
+                    result=page.get_by_role('button',name=label,exact=True)
                     await result.wait_for(state='attached')
-                    assert await result.count()==1,label
-                    item['restoredHistoryLabel']=await result.get_attribute('aria-label')
-                    assert re.sub(r'\s+',' ',item['restoredHistoryLabel'] or '').strip()==label,item
+                    await expect(result).to_have_count(1)
+                    await expect(result).to_have_accessible_name(label)
+                    await expect(page.get_by_role('button',name=wrong_label,exact=True)).to_have_count(0)
+                    item['restoredAccessibleNameVerified']=True
                     validate_linsolve(entry['r'])
                     await page.screenshot(path=str(output/f'linsolve-{width}.png'))
                     assert not errors,errors

@@ -38,6 +38,11 @@ void main() {
     // The result detail is not a per-row widget; it lives in the row menu.
     expect(find.byTooltip('Result details'), findsNothing);
     expect(find.text('Result details'), findsNothing);
+
+    // A screen reader can activate the labelled button to reach the menu.
+    tester.semantics.tap(find.semantics.byLabel('$expr\n= $result'));
+    await tester.pumpAndSettle();
+    expect(find.text('Copy result'), findsOneWidget);
     semantics.dispose();
   });
 }

@@ -1716,8 +1716,7 @@ class NotepadScreenState extends State<NotepadScreen> {
       // full-width button row: the same actions, no lost line. On a
       // phone the app bar is already crowded, so these stay in the
       // document menu instead of squeezing the title.
-      if (!compact && doc != null &&
-          doc.lines.any((line) => line.source.trim().isNotEmpty)) ...[
+      if (!compact && doc != null) ...[
         IconButton(
           icon: const Icon(Icons.history),
           tooltip: WorkflowLocalizations.of(context)
@@ -1774,8 +1773,7 @@ class NotepadScreenState extends State<NotepadScreen> {
               PopupMenuItem(value: 'save-file', child: Text(t.notepadSaveFile)),
             // Worksheet-level actions stay near the top: they are what the
             // guided flows use, and a long menu pushes the tail off-screen.
-            if (doc != null &&
-                doc.lines.any((line) => line.source.trim().isNotEmpty)) ...[
+            if (doc != null) ...[
               PopupMenuItem(
                 value: 'document-history',
                 child: Text(WorkflowLocalizations.of(context)
@@ -1801,9 +1799,10 @@ class NotepadScreenState extends State<NotepadScreen> {
             ],
             // One entry instead of seven: the picker opens a dialog, which
             // keeps this menu short enough to use without scrolling.
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'template-picker',
-              child: Text('Insert template…'),
+              child: Text(
+                  '${WorkflowLocalizations.of(context).text(WorkflowLabel.insertTemplate)}…'),
             ),
           ];
           final others = _otherDocsForMenu();
@@ -1882,7 +1881,8 @@ class NotepadScreenState extends State<NotepadScreen> {
       final chosen = await showDialog<NotepadTemplate>(
         context: context,
         builder: (ctx) => SimpleDialog(
-          title: const Text('Insert template'),
+          title: Text(
+              WorkflowLocalizations.of(ctx).text(WorkflowLabel.insertTemplate)),
           children: [
             for (final tmpl in NotepadTemplates.all)
               SimpleDialogOption(

@@ -56,12 +56,7 @@ async def check(args):
             item = {'profile': profile, 'width': width, 'height': height, 'passed': False}
             report['checks'].append(item)
             async def button(name):
-                target = page.get_by_role('button', name=name, exact=True)
-                # Flutter web renders the AppBar overflow trigger with a label
-                # but not always with role=button, depending on the renderer.
-                if name == 'Document menu' and await target.count() == 0:
-                    target = page.locator('[aria-label="Document menu"]')
-                await real_click(page, target.first)
+                await real_click(page, page.get_by_role('button', name=name, exact=True))
                 await next_frames(page)
             async def menu(name):
                 item['stage'] = 'menu: ' + name
@@ -128,7 +123,17 @@ async def check(args):
                   const raw=localStorage.getItem('flutter.crisp.graphLinks');
                   return raw&&Object.values(JSON.parse(JSON.parse(raw))).some(link=>link.document===id);
                 }''', arg=doc_id)
-                await worksheet_action('View linked graph')
+                # Check that navigation is available without activating it:
+                # create() must remain in Notepad to create the next worksheet.
+                if item['width'] < 600:
+                    await button('Document menu')
+                    graph_action = page.locator('[aria-label="View linked graph"]')
+                    await graph_action.wait_for(state='visible')
+                    await page.keyboard.press('Escape')
+                    await graph_action.wait_for(state='hidden')
+                    await next_frames(page)
+                else:
+                    await page.get_by_role('button', name='View linked graph', exact=True).wait_for()
                 after = await snapshot(page)
                 doc = next(doc for doc in after['documents'] if doc['i'] == doc_id)
                 assert [row['s'] for row in doc['l']] == ['a=3', 'f(x)=x^2+a', 'f(4)'], doc

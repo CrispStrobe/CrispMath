@@ -18,6 +18,7 @@ import 'package:crisp_math/localization/app_localizations.dart';
 import 'package:crisp_math/localization/workflow_localizations.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:crisp_math/main.dart';
+import 'package:crisp_math/services/document_history.dart';
 import 'package:crisp_math/services/engine_service.dart';
 import 'package:crisp_math/widgets/boolean_chip.dart';
 import 'package:flutter/material.dart';
@@ -253,6 +254,90 @@ void main() {
       await tester.tap(find.byTooltip(AppLocalizations.of(context).notepadDocumentMenu));
       await tester.pumpAndSettle();
       expect(find.text(labels.text(WorkflowLabel.exploreWorksheet)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final size in [const Size(390, 844), const Size(1280, 900)]) {
+    testWidgets('blank worksheet can preview and restore history at $size',
+        (tester) async {
+      await _bootApp(tester, size: size);
+      await _gotoNotepad(tester);
+      final state = AppState();
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      await tester.enterText(find.byType(TextField).first, '2+37');
+      await tester.pump(const Duration(milliseconds: 350));
+      await DocumentHistory().save(doc, label: 'Saved calculation');
+      await tester.enterText(find.byType(TextField).first, '');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(doc.lines.first.source, isEmpty);
+
+      if (size.width > 600) {
+        expect(find.byTooltip('Document history'), findsOneWidget);
+        expect(find.byTooltip('Worksheet export preview'), findsOneWidget);
+        expect(find.byTooltip('View linked graph'), findsNothing);
+      }
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      expect(find.text('Document history'), findsOneWidget);
+      expect(find.text('Worksheet export preview'), findsOneWidget);
+      expect(find.text('View linked graph'), findsNothing);
+      await tester.tap(find.text('Worksheet export preview'));
+      await tester.pumpAndSettle();
+      expect(find.text('Save MD'), findsOneWidget);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Document history'));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved calculation'), findsOneWidget);
+      await tester.ensureVisible(find.text('Compare'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Compare'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Restore checkpoint'));
+      await tester.pumpAndSettle();
+      expect(state.notepadDocuments[doc.id]!.lines.first.source, '2+37');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final locale in const {
+    'en': 'Insert template',
+    'de': 'Vorlage einfügen',
+    'fr': 'Insérer un modèle',
+    'es': 'Insertar plantilla',
+  }.entries) {
+    testWidgets(
+        'template picker uses ${locale.key} labels and creates a document',
+        (tester) async {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      final state = AppState();
+      final originalId = state.currentNotepadDocId;
+      state.setLocale(Locale(locale.key));
+      await tester.pumpAndSettle();
+      final context = tester.element(find.byType(AppBar).first);
+      await tester.tap(
+          find.byTooltip(AppLocalizations.of(context).notepadDocumentMenu));
+      await tester.pumpAndSettle();
+      final menuItem =
+          find.widgetWithText(PopupMenuItem<String>, '${locale.value}…');
+      expect(menuItem, findsOneWidget);
+      await tester.ensureVisible(menuItem);
+      await tester.pumpAndSettle();
+      await tester.tap(menuItem);
+      await tester.pumpAndSettle();
+      expect(find.descendant(
+          of: find.byType(SimpleDialog), matching: find.text(locale.value)),
+          findsOneWidget);
+      await tester.tap(find.text('Budget Calculator'));
+      await tester.pump();
+      expect(state.currentNotepadDocId, isNot(originalId));
+      expect(state.notepadDocuments[state.currentNotepadDocId]!.name,
+          'Budget Calculator');
       expect(tester.takeException(), isNull);
     });
   }
