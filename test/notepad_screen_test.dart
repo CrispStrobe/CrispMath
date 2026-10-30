@@ -79,6 +79,13 @@ void main() {
     final result = find.byKey(ValueKey('notepad-result:${line.id}'));
     expect(result, findsOneWidget);
     expect(tester.getSemantics(result).label, '39');
+    final details = find.byTooltip('Result details');
+    expect(details, findsOneWidget);
+    final resultRect = tester.getRect(result);
+    final detailRect = tester.getRect(details);
+    expect(detailRect.top, lessThan(resultRect.bottom),
+        reason: 'result details must share the result row');
+    expect(detailRect.bottom, greaterThan(resultRect.top));
     } finally {
       semantics.dispose();
     }
@@ -324,6 +331,24 @@ void main() {
         isTrue,
         reason: 'undo should restore the line',
       );
+    });
+
+    testWidgets('delete feedback expires and has a dismiss control', (tester) async {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      doc.lines.add(NotepadLine.fresh(source: 'temporary'));
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Line deleted'), findsOneWidget);
+      expect(find.descendant(
+          of: find.byType(SnackBar), matching: find.byIcon(Icons.close)),
+          findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Line deleted'), findsNothing);
     });
 
     testWidgets('edit clears stale cached result immediately', (tester) async {
