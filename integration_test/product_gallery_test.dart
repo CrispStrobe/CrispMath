@@ -102,7 +102,7 @@ void main() {
     for (final previous in preserved.entries) {
       expect(state.notepadDocuments[previous.key], same(previous.value));
     }
-    expect(find.text('View linked graph'), findsOneWidget);
+    expect(find.byTooltip('View linked graph'), findsOneWidget);
     await screenshot('connected-worksheet');
     await tester.tap(find.text('Graphing').first);
     await settle();
