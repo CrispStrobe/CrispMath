@@ -56,7 +56,12 @@ async def check(args):
             item = {'profile': profile, 'width': width, 'height': height, 'passed': False}
             report['checks'].append(item)
             async def button(name):
-                await real_click(page, page.get_by_role('button', name=name, exact=True))
+                target = page.get_by_role('button', name=name, exact=True)
+                # Flutter web renders the AppBar overflow trigger with a label
+                # but not always with role=button, depending on the renderer.
+                if name == 'Document menu' and await target.count() == 0:
+                    target = page.locator('[aria-label="Document menu"]')
+                await real_click(page, target.first)
                 await next_frames(page)
             async def menu(name):
                 item['stage'] = 'menu: ' + name
