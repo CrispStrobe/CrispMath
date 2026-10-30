@@ -7,12 +7,16 @@ import 'package:crisp_math/engine/calculator_engine.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
 import 'package:crisp_math/engine/result_evidence.dart';
+import 'package:crisp_math/engine/sudoku.dart';
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/widgets/drawing_canvas.dart';
+import 'package:crisp_math/widgets/sudoku_grid.dart';
 import 'package:crisp_math/services/engine_dispatch.dart';
 import 'package:crisp_math/services/engine_op.dart';
 import 'package:crisp_math/services/notepad_dispatcher.dart';
+import 'package:crisp_math/screens/analysis_hub_screen.dart';
 import 'package:crisp_math/screens/graphing_screen.dart';
+import 'package:crisp_math/screens/sudoku_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -98,7 +102,7 @@ void main() {
     for (final previous in preserved.entries) {
       expect(state.notepadDocuments[previous.key], same(previous.value));
     }
-    expect(find.text('View linked graph'), findsOneWidget);
+    expect(find.byTooltip('View linked graph'), findsOneWidget);
     await screenshot('connected-worksheet');
     await tester.tap(find.text('Graphing').first);
     await settle();
@@ -243,6 +247,66 @@ void main() {
     await screenshot('worksheet-checkpoint-history');
     await tester.tap(find.text('Close').last);
     await settle();
+    // The Sudoku solver explains its reasoning: open it from Analysis >
+    // Labs, solve AI Escargot and step to its first locked-candidates
+    // elimination, with the removed candidates crossed out.
+    await tester.tap(find.text('Analysis').first);
+    await settle();
+    // The hub list builds lazily; scroll it (not the offstage tabs) until
+    // the Labs section exists.
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('analysis-labs')), 300,
+        scrollable: find
+            .descendant(
+                of: find.byType(AnalysisHubScreen),
+                matching: find.byType(Scrollable))
+            .first);
+    await settle();
+    await tester.tap(find.text('Labs'));
+    await settle();
+    await tester.ensureVisible(find.text('Sudoku solver'));
+    await settle();
+    await tester.tap(find.text('Sudoku solver'));
+    await settle();
+    final picker = find.byType(DropdownButtonFormField<SudokuPuzzle>);
+    await tester.ensureVisible(picker);
+    await settle();
+    await tester.tap(picker);
+    await settle();
+    await tester.tap(find.text('9×9 hard (AI Escargot)').last);
+    await settle();
+    await tester.ensureVisible(find.text('Solve'));
+    await settle();
+    await tester.tap(find.text('Solve'));
+    await settle();
+    // The scroll takes effect on the next frame; settle before tapping.
+    await tester.ensureVisible(find.byTooltip('Next step'));
+    await settle();
+    for (var i = 0; i < 4; i++) {
+      await tester.tap(find.byTooltip('Next step'));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await settle();
+    final lockedCaption = find.textContaining('Locked candidates: in ');
+    expect(lockedCaption, findsOneWidget);
+    final sudokuCaption = tester.widget<Text>(lockedCaption).data;
+    // Narrow layouts stack the grid above the controls in a lazy list, so
+    // the grid is disposed once scrolled away: scroll that list back up.
+    if (find.byType(SudokuGrid).evaluate().isEmpty) {
+      await tester.scrollUntilVisible(find.byType(SudokuGrid), -300,
+          scrollable: find
+              .descendant(
+                  of: find.byType(SudokuScreen),
+                  matching: find.byType(Scrollable))
+              .first);
+    }
+    await tester.ensureVisible(find.byType(SudokuGrid));
+    await settle();
+    await screenshot('sudoku-solver-explained-step');
+    await tester.pageBack();
+    await settle();
+    await tester.tap(find.text('Notepad').first);
+    await settle();
     final write = find.byTooltip('Write math');
     if (write.evaluate().isNotEmpty) {
       await tester.tap(write);
@@ -298,5 +362,6 @@ void main() {
     binding.reportData!['exportPreview'] = true;
     binding.reportData!['historyCheckpoint'] = true;
     binding.reportData!['handwritingInput'] = true;
+    binding.reportData!['sudokuExplainedStep'] = sudokuCaption;
   });
 }

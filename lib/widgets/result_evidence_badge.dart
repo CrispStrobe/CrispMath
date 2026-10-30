@@ -46,11 +46,17 @@ class ResultEvidenceBadge extends StatelessWidget {
                 Text(t.text(WorkflowLabel.resultUnchanged)),
             ]);
     if (!compact) return details();
-    return TextButton(
-      style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          visualDensity: VisualDensity.compact,
-          textStyle: const TextStyle(fontSize: 11)),
+    // Compact usage sits beside every computed result, where a text
+    // button ("Exact · Integer arithmetic") cost a whole row on the
+    // notepad. A single info glyph keeps the affordance while leaving
+    // the space to the value itself.
+    return IconButton(
+      icon: const Icon(Icons.info_outline, size: 14),
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+      iconSize: 14,
+      tooltip: t.text(WorkflowLabel.resultDetails),
       onPressed: () => showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
@@ -61,8 +67,6 @@ class ResultEvidenceBadge extends StatelessWidget {
                         onPressed: () => Navigator.of(context).pop(),
                         child: Text(t.text(WorkflowLabel.close)))
                   ])),
-      child: Text(
-          '$accuracy · $method${evidence.sourceDomain != null ? ' · domain' : ''}'),
     );
   }
 }

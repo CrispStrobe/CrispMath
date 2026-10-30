@@ -6,16 +6,17 @@
 //   1. User picks a preset puzzle (size + difficulty), generates one, or
 //      taps cells to enter the clues of their own puzzle.
 //   2. Solve runs [SudokuExplainer], which records every step with its
-//      reason: naked single, hidden single, guess, contradiction or
-//      backtrack, plus the pencil marks after the step.
+//      reason: naked or hidden single, cage sum, locked candidates,
+//      naked or hidden pair/triple, guess, contradiction or backtrack,
+//      plus the pencil marks after the step.
 //   3. The visualizer starts on the first step; the user steps through
-//      or plays the replay. Each frame names the reason, tints the unit
-//      it reasoned about and shows the remaining candidates. A summary
-//      counts singles, guesses, backtracks and the search depth.
+//      or plays the replay. Each frame names the reason, tints the units
+//      it reasoned about, outlines the cells it reasoned from, crosses
+//      out the candidates it removed and shows the rest. A summary counts
+//      every technique, and a search tree draws the guesses.
 //
-// Killer cages need sum reasoning the explainer does not model, so for
-// Killer the visualizer replays the generic CSP trace from
-// [SudokuSolver.solveWithTrace] instead.
+// A puzzle the explainer cannot handle (a Killer without cages) falls
+// back to the generic CSP trace from [SudokuSolver.solveWithTrace].
 //
 // V1 supports 4×4 and 9×9 grids. PLAN.md tracks the variant
 // roadmap (6×6, 8×8, 10×10, 12×12, 15×15, 16×16, 25×25,
@@ -34,6 +35,7 @@ import '../widgets/function_ref_help_popover.dart';
 import '../widgets/help_target.dart';
 import '../widgets/module_help_dialog.dart';
 import '../widgets/sudoku_grid.dart';
+import '../widgets/sudoku_search_tree.dart';
 
 class SudokuScreen extends StatefulWidget {
   const SudokuScreen({super.key});
@@ -545,9 +547,10 @@ class _SudokuScreenState extends State<SudokuScreen> {
     final conflicts = _trace == null
         ? SudokuSolver.computeConflicts(_puzzle, _displayed)
         : {
-            if (step?.kind == SudokuStepKind.contradiction &&
-                step?.cell != null)
-              step!.cell!,
+            if (step?.kind == SudokuStepKind.contradiction) ...[
+              if (step?.cell != null) step!.cell!,
+              if (step?.cageSum != null) ...step!.focusCells,
+            ],
           };
 
     final gridBlock = Padding(
@@ -566,7 +569,13 @@ class _SudokuScreenState extends State<SudokuScreen> {
         // Wired only when the visualizer isn't active.
         onDropDigit: _trace == null ? _onDropDigitOnCell : null,
         conflictIndexes: conflicts,
-        unitIndexes: step?.unit?.cells.toSet(),
+        unitIndexes: step == null
+            ? null
+            : {...?step.unit?.cells, ...?step.secondUnit?.cells},
+        focusIndexes: step?.focusCells.toSet(),
+        struckCandidates: step == null || step.removed.isEmpty
+            ? null
+            : step.removedCandidates,
       ),
     );
 
@@ -682,11 +691,20 @@ class _SudokuScreenState extends State<SudokuScreen> {
               labels: t,
             ),
             const SizedBox(height: 8),
-            if (_explanation != null)
-              _ExplanationSummary(explanation: _explanation!, labels: t)
-            else
-              Text(t.sudokuExplainKillerNote,
-                  style: Theme.of(context).textTheme.bodySmall),
+            if (_explanation != null) ...[
+              _ExplanationSummary(explanation: _explanation!, labels: t),
+              if (_explanation!.tree.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SudokuSearchTreeView(
+                  explanation: _explanation!,
+                  currentNode: _explanation!.steps[_frameIndex].node,
+                  currentStep: _frameIndex,
+                  side: _puzzle.layout.side,
+                  onSelectStep: _showFrame,
+                  labels: t,
+                ),
+              ],
+            ],
             const SizedBox(height: 8),
             if (_trace!.error != null)
               Text(_trace!.error!,
@@ -773,6 +791,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
 /// One explained step in words. Cells use the common r3c5 notation.
 String _explainStep(AppLocalizations t, SudokuExplainedStep step, int side) {
   String cell(int i) => 'r${i ~/ side + 1}c${i % side + 1}';
+  String cells(List<int> list) => list.map(cell).join(', ');
+  String digits(List<int> list) => list.join(', ');
   String unit(SudokuUnit u) => switch (u.kind) {
         SudokuUnitKind.row => t.sudokuConstraintRow(u.number),
         SudokuUnitKind.column => t.sudokuConstraintCol(u.number),
@@ -791,12 +811,31 @@ String _explainStep(AppLocalizations t, SudokuExplainedStep step, int side) {
     case SudokuStepKind.hiddenSingle:
       return t.sudokuStepHiddenSingle(
           unit(step.unit!), step.value!, cell(step.cell!));
+    case SudokuStepKind.cageCombination:
+      return t.sudokuStepCage(
+          step.cageSum!,
+          step.focusCells.length,
+          step.combinations.map((c) => '{${c.join(', ')}}').join(' '),
+          step.eliminations);
+    case SudokuStepKind.lockedCandidates:
+      return t.sudokuStepLocked(step.digits.single, unit(step.unit!),
+          unit(step.secondUnit!), step.removed.length);
+    case SudokuStepKind.nakedSubset:
+      return t.sudokuStepNakedSubset(step.focusCells.length,
+          cells(step.focusCells), digits(step.digits), unit(step.unit!),
+          step.eliminations);
+    case SudokuStepKind.hiddenSubset:
+      return t.sudokuStepHiddenSubset(step.digits.length, digits(step.digits),
+          unit(step.unit!), cells(step.focusCells), step.eliminations);
     case SudokuStepKind.guess:
       return step.alternatives.isEmpty
           ? t.sudokuStepLastOption(cell(step.cell!), step.value!)
           : t.sudokuStepGuess(
               cell(step.cell!), step.value!, step.alternatives.join(', '));
     case SudokuStepKind.contradiction:
+      if (step.cageSum != null) {
+        return t.sudokuStepContradictionCage(step.cageSum!);
+      }
       return step.cell != null
           ? t.sudokuStepContradictionCell(cell(step.cell!))
           : t.sudokuStepContradictionUnit(unit(step.unit!), step.value!);
@@ -826,6 +865,11 @@ class _ExplanationSummary extends StatelessWidget {
             labels.sudokuExplainStats(e.nakedSingles, e.hiddenSingles,
                 e.guesses, e.backtracks, e.maxDepth),
             style: style),
+        if (e.eliminationSteps > 0)
+          Text(
+              labels.sudokuExplainEliminations(e.cageSteps,
+                  e.lockedCandidates, e.nakedSubsets, e.hiddenSubsets),
+              style: style),
         if (e.logicOnly) Text(labels.sudokuExplainLogicOnly, style: style),
         if (e.truncated)
           Text(labels.sudokuExplainTruncated(e.steps.length), style: style),

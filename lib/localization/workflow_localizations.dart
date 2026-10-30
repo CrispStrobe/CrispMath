@@ -26,6 +26,7 @@ enum WorkflowLabel {
   worksheetExport,
   worksheetGraphFull,
   worksheetLinkFailed,
+  searchCommands,
   resultDetails,
   resultExact,
   resultApproximate,
@@ -116,6 +117,7 @@ class WorkflowLocalizations {
       WorkflowLabel.worksheetExport: 'Worksheet export preview',
       WorkflowLabel.worksheetGraphFull: 'Worksheet created. Graph slots are full; clear a slot, then plot the function line.',
       WorkflowLabel.worksheetLinkFailed: 'Worksheet created, but the graph could not be linked: {value}',
+      WorkflowLabel.searchCommands: 'Search commands',
 
       WorkflowLabel.calculationProgress: 'Updating results: {value}',
       WorkflowLabel.cancelCalculation: 'Cancel calculation',
@@ -205,6 +207,7 @@ class WorkflowLocalizations {
       WorkflowLabel.worksheetExport: 'Arbeitsblatt-Exportvorschau',
       WorkflowLabel.worksheetGraphFull: 'Arbeitsblatt erstellt. Alle Graphenplätze sind belegt; leeren Sie einen Platz und zeichnen Sie dann die Funktionszeile.',
       WorkflowLabel.worksheetLinkFailed: 'Arbeitsblatt erstellt, aber der Graph konnte nicht verknüpft werden: {value}',
+      WorkflowLabel.searchCommands: 'Befehle suchen',
 
       WorkflowLabel.calculationProgress:
           'Ergebnisse werden aktualisiert: {value}',
@@ -297,6 +300,7 @@ class WorkflowLocalizations {
       WorkflowLabel.worksheetExport: 'Aperçu de l’export de la feuille',
       WorkflowLabel.worksheetGraphFull: 'Feuille créée. Tous les emplacements de graphique sont occupés ; libérez-en un, puis tracez la ligne de fonction.',
       WorkflowLabel.worksheetLinkFailed: 'Feuille créée, mais le graphique n’a pas pu être lié : {value}',
+      WorkflowLabel.searchCommands: 'Rechercher des commandes',
 
       WorkflowLabel.calculationProgress: 'Mise à jour des résultats : {value}',
       WorkflowLabel.cancelCalculation: 'Annuler le calcul',
@@ -388,6 +392,7 @@ class WorkflowLocalizations {
       WorkflowLabel.worksheetExport: 'Vista previa de exportación',
       WorkflowLabel.worksheetGraphFull: 'Hoja creada. Los espacios de gráficos están llenos; libera uno y luego representa la línea de función.',
       WorkflowLabel.worksheetLinkFailed: 'Hoja creada, pero no se pudo vincular el gráfico: {value}',
+      WorkflowLabel.searchCommands: 'Buscar comandos',
 
       WorkflowLabel.calculationProgress: 'Actualizando resultados: {value}',
       WorkflowLabel.cancelCalculation: 'Cancelar cálculo',

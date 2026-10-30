@@ -88,8 +88,8 @@ immutable app pin stays0.17.12. Use the vendor plan for current run states.
 | V1 | Reconcile minimal published runtime correction with vendor main | Ready; keep unrelated main changes separate |
 | M1 | Freeze and exercise fifty new math problems, fix systemic causes | Ready; retain all 789 previous cases |
 | U1 | Cover accessibility, localization and remaining narrow layouts | Ready; fix observed defects with real UI controls |
-| O1 | Extend handwriting diagnosis to complete decoded reference parity | Exported-weight diagnostics ready; original checkpoint requires access |
-| O2 | Evaluate licensed recognition weights/training | Requires O1, provenance/access and authorized remote resources |
+| O1 | Extend handwriting diagnosis to complete decoded reference parity | Paused until after the 4.3(a) review; recognition is 7/50 and no longer advertised |
+| O2 | Evaluate licensed recognition weights/training | Paused with O1; requires provenance/access and authorized remote resources |
 | P1 | Physical Apple device matrix | Deferred device session |
 | A1 | Final store presentation and 4.3(a) response | Drafts ready; device checks and authorized submission still pending |
 | R1 | Next production release | After a validated production change; no new binary for docs/capture sizing |
@@ -151,8 +151,30 @@ counts/sources are not the current status; the handoff links exact current evide
   naked singles, hidden singles, guesses, contradictions and backtracks
   with the pencil marks after each step; the screen replays them with
   reasons, unit highlighting and solve statistics. The win check,
-  celebration overlay and clear-to-start are removed. Killer keeps the CSP
-  replay (sum reasoning is not modelled).
+  celebration overlay and clear-to-start are removed. Before guessing it
+  applies cage-sum combinations (Killer now explains too), locked
+  candidates (pointing/box-line) and naked/hidden pairs and triples; removed
+  candidates are crossed out and the cells reasoned from are outlined. A
+  search tree draws every guess (dead ends red, solution path green) and
+  jumps to the step on tap. Tests re-derive every step type independently,
+  including brute-force cage checks and a forged-elimination control.
+  12×12 and both Killer presets are now logic-only; AI Escargot still needs
+  29 guesses (it requires techniques beyond triples).
+- [~] Constraint replays say what the solve took: the propagation visualizer
+  ends with decision/prune/dead-end/backtrack totals, "solved by propagation
+  alone" when no decision was needed, and the three constraints that removed
+  the most values (`CspTraceSummary`). The Magic square tab gains Visualize
+  for 3×3 and 4×4 (5×5 exceeds the 20,000-event trace cap). Hard-coded English
+  icon semantics in the visualizer were removed in favour of the localized
+  tooltips and captions.
+- [~] The native screenshot gallery adds `sudoku-solver-explained-step` (AI
+  Escargot at its first locked-candidates elimination, opened through
+  Analysis > Labs); the verifier requires the scene and its caption. Run the
+  gallery workflow before choosing store screenshots; uploading stays a
+  separate authorized step.
+- [x] Handwriting recognition work (O1/O2) is paused until after review: the
+  listing no longer advertises it and 7/50 does not justify more vendor time
+  now. The input stays available as an editable draft surface.
 
 ## Cloud feedback and handwriting diagnostics
 
