@@ -41,6 +41,7 @@ import '../engine/unit_expression.dart';
 
 // Utils imports
 import '../services/engine_service.dart';
+import '../services/calculator_history_file.dart';
 import '../utils/exact_integer.dart';
 import '../utils/keyboard_input_handler.dart';
 import '../utils/latex_conversion_utils.dart';
@@ -2589,6 +2590,71 @@ class CalculatorScreenState extends State<CalculatorScreen>
     }
   }
 
+  /// Save the visible history to a portable file.
+  Future<void> _saveHistoryToFile() async {
+    final t = WorkflowLocalizations.of(context);
+    try {
+      final path =
+          await CalculatorHistoryFile.save(List.of(_appState.history));
+      if (!mounted) return;
+      // A null path is a cancelled picker on native, and on web it means the
+      // bytes were handed to the browser as a download. Never claim a file
+      // exists when the platform did not confirm one.
+      if (path == null && !kIsWeb) return;
+      _toast(
+          context,
+          path == null
+              ? t.text(WorkflowLabel.historyFileUnsaved)
+              : t.text(WorkflowLabel.historyFileSaved));
+    } catch (error) {
+      if (!mounted) return;
+      _toast(context, t.text(WorkflowLabel.historyFileFailed, '$error'));
+    }
+  }
+
+  /// Replace the history with the contents of a portable history file.
+  Future<void> _openHistoryFromFile() async {
+    final t = WorkflowLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.text(WorkflowLabel.openHistoryFile)),
+        content: Text(t.text(WorkflowLabel.historyFileReplaceNotice)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(AppLocalizations.of(context).cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(t.text(WorkflowLabel.openHistoryFile)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      final entries = await CalculatorHistoryFile.open();
+      // Null is a cancelled picker; an invalid file throws instead, which
+      // leaves the current history untouched.
+      if (entries == null || !mounted) return;
+      // Let an in-flight calculation finish first so its late result cannot
+      // append to the freshly restored history out of order.
+      while (_calculationPending != null) {
+        await _calculationPending!.future;
+        if (!mounted) return;
+      }
+      await _appState.replaceHistory(entries);
+      if (!mounted) return;
+      setState(() {});
+      _toast(context,
+          t.text(WorkflowLabel.historyFileReplaced, '${entries.length}'));
+    } catch (error) {
+      if (!mounted) return;
+      _toast(context, t.text(WorkflowLabel.historyFileFailed, '$error'));
+    }
+  }
+
   void _confirmClearHistory() {
     final t = AppLocalizations.of(context);
     showDialog<void>(
@@ -2710,17 +2776,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                 ),
                               ),
                               PopupMenuButton<String>(
-                                enabled: widget.onOpenCommands != null ||
-                                    _appState.history.isNotEmpty,
                                 tooltip: WorkflowLocalizations.of(context)
-                                    .text(WorkflowLabel.search),
-                                icon: Icon(_historySearchOpen
-                                    ? Icons.search_off : Icons.search, size: 20),
+                                    .text(WorkflowLabel.calculatorMenu),
                                 onSelected: (value) {
                                   if (value == 'commands') {
                                     widget.onOpenCommands?.call();
                                   } else if (value == 'history') {
                                     _toggleHistorySearch();
+                                  } else if (value == 'save-history') {
+                                    _saveHistoryToFile();
+                                  } else if (value == 'open-history') {
+                                    _openHistoryFromFile();
                                   } else if (value == 'clear') {
                                     _confirmClearHistory();
                                   }
@@ -2739,11 +2805,26 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                           .searchHistory),
                                     ),
                                     PopupMenuItem(
+                                      value: 'save-history',
+                                      child: Text(WorkflowLocalizations.of(context)
+                                          .text(WorkflowLabel.saveHistoryFile)),
+                                    ),
+                                  ],
+                                  // Loading is offered even with an empty
+                                  // history: that is exactly when a saved file
+                                  // is wanted, and it keeps the menu non-empty
+                                  // on a fresh install.
+                                  PopupMenuItem(
+                                    value: 'open-history',
+                                    child: Text(WorkflowLocalizations.of(context)
+                                        .text(WorkflowLabel.openHistoryFile)),
+                                  ),
+                                  if (_appState.history.isNotEmpty)
+                                    PopupMenuItem(
                                       value: 'clear',
                                       child: Text(AppLocalizations.of(context)
                                           .clearHistory),
                                     ),
-                                  ],
                                 ],
                               ),
                               // Round 101 (P6): help-mode toggle. Filled icon

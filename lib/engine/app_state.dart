@@ -228,6 +228,10 @@ class AppState extends ChangeNotifier {
   static const int _kGraphSlotCount = 10;
   static const int _kHistoryCap = 200;
 
+  /// Maximum number of history entries kept in memory and on disk. Portable
+  /// history files (`CalculatorHistoryFile.maxEntries`) use the same cap.
+  static const int historyCap = _kHistoryCap;
+
   SharedPreferences? _prefs;
   bool _loaded = false;
   bool get isLoaded => _loaded;
@@ -781,9 +785,11 @@ class AppState extends ChangeNotifier {
     return write;
   }
 
-  /// Flush deferred document edits and the debounced scene viewport.
+  /// Flush deferred document edits, queued history writes and the debounced
+  /// scene viewport.
   Future<void> flushPersistence() async {
     _scene3DPersistTimer?.cancel();
+    if (_pendingHistoryWrites > 0) await _historyWrites;
     if (_prefs != null) {
       await _prefs!.setString(_kScene3D, jsonEncode(_scene3D.toJson()));
     }
@@ -1179,11 +1185,86 @@ class AppState extends ChangeNotifier {
 
   bool _historyPersistScheduled = false;
 
+  /// Tail of the serialized history-write queue, plus the number of writes
+  /// still in flight. History was the only persisted collection written
+  /// fire-and-forget (`_prefs?.setString`), so an older save could land after a
+  /// newer one when two writes overlapped (e.g. import while a calculation is
+  /// being recorded). Every history write now goes through this single queue.
+  Future<void> _historyWrites = Future.value();
+  int _pendingHistoryWrites = 0;
+
   void _persistHistory() {
-    _prefs?.setString(
-      _kHistory,
+    _enqueueHistoryWrite(
       jsonEncode(history.map((e) => e.toJson()).toList()),
     );
+  }
+
+  /// Snapshot [payload] now and append it to the history-write queue.
+  ///
+  /// The snapshot is taken at call time, so later edits to [history] cannot
+  /// change a queued write, and the queue order matches mutation order. The
+  /// first write starts synchronously (as before this queue existed, so
+  /// `addHistoryEntry` followed by a prefs read still observes the value); later
+  /// ones wait for the previous write to finish.
+  ///
+  /// The returned future reports this write's failure; the internal tail absorbs
+  /// it so one failed platform write does not poison later writes.
+  Future<void> _enqueueHistoryWrite(String payload) {
+    final prefs = _prefs;
+    if (prefs == null) return Future.value();
+    final previous =
+        _pendingHistoryWrites == 0 ? null : _historyWrites;
+    _pendingHistoryWrites++;
+    final write = previous == null
+        ? _writeHistory(prefs, payload)
+        : previous.then((_) => _writeHistory(prefs, payload));
+    _historyWrites = write.catchError((Object error) {
+      debugPrint('STATE: history save failed: $error');
+    }).whenComplete(() => _pendingHistoryWrites--);
+    return write;
+  }
+
+  Future<void> _writeHistory(SharedPreferences prefs, String payload) async {
+    if (!await prefs.setString(_kHistory, payload)) {
+      throw StateError('Failed to save calculation history');
+    }
+  }
+
+  /// Replace the entire calculation history with [entries] and persist it.
+  ///
+  /// This is the import path for a portable history file
+  /// (`CalculatorHistoryFile.decode` / `.open`). The entries are stored
+  /// verbatim: same order as [entries] (index 0 is newest), no merging,
+  /// re-sorting, re-formatting or truncation, so `raw` full precision for
+  /// `Ans`, result evidence and timestamps survive unchanged.
+  ///
+  /// Validation happens before any mutation: more than [historyCap] entries
+  /// throws [ArgumentError] and leaves the in-memory history and the persisted
+  /// value untouched.
+  ///
+  /// The returned future completes once the replacement has been written to
+  /// shared_preferences. History writes — including those from
+  /// [addHistoryEntry] and [clearHistory] — are serialized in call order, so a
+  /// concurrent older write cannot overwrite this one. Only the history domain
+  /// is notified; no other AppState field is touched.
+  Future<void> replaceHistory(List<CalculationEntry> entries) async {
+    if (entries.length > _kHistoryCap) {
+      throw ArgumentError.value(
+        entries.length,
+        'entries',
+        'History is capped at $_kHistoryCap entries; the replacement was '
+            'refused',
+      );
+    }
+    final incoming = List<CalculationEntry>.of(entries);
+    history
+      ..clear()
+      ..addAll(incoming);
+    final write = _enqueueHistoryWrite(
+      jsonEncode(history.map((e) => e.toJson()).toList()),
+    );
+    _notify({AppStateDomain.history});
+    await write;
   }
 
   void _persistVariables() {

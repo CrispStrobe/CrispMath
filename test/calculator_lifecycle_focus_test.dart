@@ -179,7 +179,7 @@ void main() {
         tester.widget<KeyboardListener>(find.byType(KeyboardListener));
     expect(keyboard.focusNode.hasPrimaryFocus, isTrue,
         reason: 'EXE intentionally focuses the calculator at initiation');
-    await tester.tap(find.byTooltip('Search'));
+    await tester.tap(find.byTooltip('Calculator menu'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Search history'));
     await tester.pumpAndSettle();

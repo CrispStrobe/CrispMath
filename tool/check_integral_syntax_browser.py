@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from playwright.async_api import async_playwright, expect
 from benchmark_workflows import bootstrap, context_for, next_frames
+from check_round6_statistics_browser import real_click
 
 CASES = ['integrate(x^2,x,0,1)', 'integrate(x^2,(x,0,1))']
 
@@ -24,12 +25,17 @@ async def check(args):
         report = {'url': args.url, 'calculator': [], 'editorStates': [], 'pageErrors': errors}
         try:
             await bootstrap(page, args.url)
-            await page.get_by_role('button', name='Edit expression', exact=True).click()
+            await real_click(page, page.get_by_role(
+                'button', name='Edit expression', exact=True))
             for source in CASES:
                 editor = page.get_by_role('textbox', name='Expression', exact=True)
-                await editor.click()
+                await real_click(page, editor)
                 await next_frames(page)
-                await editor.fill(source)
+                # A programmatic value assignment only touches the DOM node.
+                # After a submit Flutter closes that text-input client, so the
+                # old node keeps the text while the app never sees it. Type
+                # real key events into the freshly focused client instead.
+                await page.keyboard.type(source, delay=10)
                 await next_frames(page)
                 await expect(editor).to_have_value(source)
                 await editor.press('Enter')
@@ -43,9 +49,9 @@ async def check(args):
                 # Require the next result to be a new history entry, not the prior pass.
                 if source != CASES[-1]:
                     await expect(editor).to_have_value('')
-                    await editor.click()
+                    await real_click(page, editor)
                     await next_frames(page)
-                    await editor.fill('2+2')
+                    await page.keyboard.type('2+2', delay=10)
                     report['editorStates'].append({'stage': 'after fill',
                         'value': await editor.input_value(),
                         'focused': await editor.evaluate('el => el === document.activeElement')})
