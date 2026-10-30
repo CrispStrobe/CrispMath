@@ -33,6 +33,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:printing/printing.dart';
 
 import '../engine/app_state.dart';
+import '../engine/linked_graph.dart';
 import '../engine/calculator_engine.dart';
 import '../widgets/native_bridge_status_listenable.dart';
 import '../engine/notepad.dart';
@@ -978,39 +979,14 @@ class NotepadScreenState extends State<NotepadScreen> {
     }
   }
 
-  Widget _worksheetActions(NotepadDocument doc) {
-    final labels = WorkflowLocalizations.of(context);
-    final linked = _appState.graphLinks.values
-        .where((source) => source.documentId == doc.id &&
-            doc.lines.any((line) => line.id == source.lineId)).firstOrNull;
-    final hasSource = doc.lines.any((line) => line.source.trim().isNotEmpty);
-    if (!hasSource) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Wrap(spacing: 8, runSpacing: 4, children: [
-        if (linked != null)
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
-            icon: const Icon(Icons.show_chart),
-            label: Text(labels.text(WorkflowLabel.worksheetGraph)),
-            onPressed: () => _linkLine(doc,
-                doc.lines.firstWhere((line) => line.id == linked.lineId)),
-          ),
-        OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
-          icon: const Icon(Icons.history),
-          label: Text(labels.text(WorkflowLabel.worksheetHistory)),
-          onPressed: () => _onMenuSelected('document-history'),
-        ),
-        OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
-          icon: const Icon(Icons.ios_share),
-          label: Text(labels.text(WorkflowLabel.worksheetExport)),
-          onPressed: _previewExport,
-        ),
-      ]),
-    );
-  }
+  /// The graph link that points at a line of [doc], if any. Shared by
+  /// the AppBar graph action and the future worksheet rows.
+  LinkedGraphSource? _linkedSourceFor(NotepadDocument doc) =>
+      _appState.graphLinks.values
+          .where((source) =>
+              source.documentId == doc.id &&
+              doc.lines.any((line) => line.id == source.lineId))
+          .firstOrNull;
 
   Future<void> _openWorksheetFile() async {
     try {
@@ -1427,11 +1403,15 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _showUndoSnackbar(
       {required String label, required VoidCallback onUndo}) {
     final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
+    // clearSnackBars (not hideCurrentSnackBar) so a queued undo from a
+    // previous delete cannot resurface after this one has elapsed.
+    messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
         content: Text(label),
-        duration: const Duration(seconds: 5),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        showCloseIcon: true,
         action: SnackBarAction(
           label: AppLocalizations.of(context).notepadUndo,
           onPressed: onUndo,
@@ -1586,7 +1566,6 @@ class NotepadScreenState extends State<NotepadScreen> {
                                     },
                                   ),
                                 if (_searchOpen) _buildSearchBar(doc),
-                                _worksheetActions(doc),
                                 Expanded(child: _buildDocBody(doc)),
                               ],
                             );
@@ -1699,23 +1678,35 @@ class NotepadScreenState extends State<NotepadScreen> {
             ),
           ),
         ),
-      // Round 101 (P6): help-mode toggle. Mirrors the Calculator
-      // AppBar control so the affordance carries across surfaces.
-      ListenableBuilder(
-        listenable: _appState.notepadChanges,
-        builder: (context, _) {
-          final on = _appState.helpMode;
-          return IconButton(
-            icon: Icon(
-              on ? Icons.help : Icons.help_outline,
-              semanticLabel: on ? 'Disable help mode' : 'Help mode',
-              color: on ? Theme.of(context).colorScheme.primary : null,
-            ),
-            tooltip: on ? t.helpModeDisableTooltip : t.helpModeEnableTooltip,
-            onPressed: _appState.toggleHelpMode,
-          );
-        },
-      ),
+      // Worksheet-level actions live here as glyphs instead of a
+      // full-width button row: the same actions, no lost line.
+      if (doc != null &&
+          doc.lines.any((line) => line.source.trim().isNotEmpty)) ...[
+        IconButton(
+          icon: const Icon(Icons.history),
+          tooltip: WorkflowLocalizations.of(context)
+              .text(WorkflowLabel.worksheetHistory),
+          onPressed: () => _onMenuSelected('document-history'),
+        ),
+        IconButton(
+          icon: const Icon(Icons.ios_share),
+          tooltip: WorkflowLocalizations.of(context)
+              .text(WorkflowLabel.worksheetExport),
+          onPressed: _previewExport,
+        ),
+        if (_linkedSourceFor(doc) != null)
+          IconButton(
+            icon: const Icon(Icons.show_chart),
+            tooltip: WorkflowLocalizations.of(context)
+                .text(WorkflowLabel.worksheetGraph),
+            onPressed: () {
+              final linked = _linkedSourceFor(doc);
+              if (linked == null) return;
+              _linkLine(
+                  doc, doc.lines.firstWhere((line) => line.id == linked.lineId));
+            },
+          ),
+      ],
       if (doc != null)
         IconButton(
           icon: const Icon(Icons.add),

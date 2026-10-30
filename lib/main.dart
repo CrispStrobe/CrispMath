@@ -262,6 +262,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         key: _calculatorKey,
         onGoToGraphing: () => _select(_kGraphing),
         onGoToAnalysis: () => _select(_kAnalysis),
+        onOpenCommands: _openCommands,
       ),
       NotepadScreen(key: _notepadKey),
       GraphingScreen(key: _graphingKey),
@@ -494,12 +495,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         children: [
           if (_showPerfOverlay) const PerfOverlay(),
           const WebUnsupportedBanner(),
-          Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                  onPressed: _openCommands,
-                  icon: const Icon(Icons.search),
-                  label: const Text('Search commands'))),
           Expanded(child: body),
         ],
       );

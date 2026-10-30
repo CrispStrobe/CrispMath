@@ -187,7 +187,7 @@ void main() {
   });
 
   for (final locale in ['en', 'de', 'fr', 'es']) {
-    testWidgets('worksheet actions wrap accessibly in $locale at phone text scale 2',
+    testWidgets('worksheet actions stay reachable in $locale at phone text scale 2',
         (tester) async {
       await _bootApp(tester, size: const Size(390, 844));
       await _gotoNotepad(tester);
@@ -200,24 +200,29 @@ void main() {
       state.setNotepadDocument(doc);
       await tester.pumpAndSettle();
       final labels = WorkflowLocalizations(locale);
-      for (final label in [WorkflowLabel.worksheetHistory, WorkflowLabel.worksheetExport]) {
-        final button = find.widgetWithText(OutlinedButton, labels.text(label));
-        expect(button, findsOneWidget);
-        final bounds = tester.getRect(button);
-        expect(bounds.height, greaterThanOrEqualTo(48));
-        expect(bounds.left, greaterThanOrEqualTo(0));
-        expect(bounds.right, lessThanOrEqualTo(390));
-      }
-      await tester.tap(find.widgetWithText(OutlinedButton,
-          labels.text(WorkflowLabel.worksheetHistory)));
+      // Regression: history and export used to be text buttons on their
+      // own row above the document, which cost a full line. They are
+      // glyphs in the app bar now, named by their localized tooltip.
+      expect(find.widgetWithText(OutlinedButton, labels.text(WorkflowLabel.worksheetHistory)),
+          findsNothing,
+          reason: 'history must not spend a body row');
+      expect(find.widgetWithText(OutlinedButton, labels.text(WorkflowLabel.worksheetExport)),
+          findsNothing,
+          reason: 'export must not spend a body row');
+      final history = find.byTooltip(labels.text(WorkflowLabel.worksheetHistory));
+      final export = find.byTooltip(labels.text(WorkflowLabel.worksheetExport));
+      expect(history, findsOneWidget);
+      expect(export, findsOneWidget);
+      expect(tester.takeException(), isNull,
+          reason: 'App bar must not overflow at phone text scale 2');
+      await tester.tap(history);
       await tester.pumpAndSettle();
       expect(find.text(labels.text(WorkflowLabel.historySave)), findsOneWidget);
       expect(tester.takeException(), isNull,
           reason: 'History instructions must scroll instead of overflowing');
       await tester.tap(find.text(labels.text(WorkflowLabel.close)));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(OutlinedButton,
-          labels.text(WorkflowLabel.worksheetExport)));
+      await tester.tap(export);
       await tester.pumpAndSettle();
       expect(find.text(labels.text(WorkflowLabel.exportSave, 'MD')), findsOneWidget);
       expect(tester.takeException(), isNull);

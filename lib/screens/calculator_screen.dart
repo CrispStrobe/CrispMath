@@ -66,7 +66,11 @@ const bool _kVerboseCalc =
     bool.fromEnvironment('CRISPMATH_VERBOSE', defaultValue: false);
 
 class CalculatorScreen extends StatefulWidget {
-  const CalculatorScreen({super.key, this.onGoToGraphing, this.onGoToAnalysis});
+  const CalculatorScreen(
+      {super.key,
+      this.onGoToGraphing,
+      this.onGoToAnalysis,
+      this.onOpenCommands});
 
   /// Optional: switch the main nav to the Graphing tab. Forwarded down
   /// to the VariableViewer's function-tile context menu.
@@ -74,6 +78,11 @@ class CalculatorScreen extends StatefulWidget {
 
   /// Optional: switch the main nav to the Analysis hub.
   final VoidCallback? onGoToAnalysis;
+
+  /// Optional: open the shell's command palette. Surfaced as the
+  /// search affordance next to the history search so it no longer
+  /// needs a full-width row above the tab body.
+  final VoidCallback? onOpenCommands;
 
   @override
   State<CalculatorScreen> createState() => CalculatorScreenState();
@@ -2709,6 +2718,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                       AppLocalizations.of(context).clearHistory,
                                   onPressed: _confirmClearHistory,
                                 ),
+                                if (widget.onOpenCommands != null)
+                                  IconButton(
+                                    icon: const Icon(Icons.manage_search,
+                                        size: 20,
+                                        semanticLabel: 'Search commands'),
+                                    tooltip: 'Search commands',
+                                    onPressed: widget.onOpenCommands,
+                                  ),
                               ],
                             ],
                           ),
