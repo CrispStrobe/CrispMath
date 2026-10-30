@@ -12,8 +12,9 @@ class CspConstraintWork {
   final String label;
   final int removed;
   final int prunes;
+  final int wipeouts;
 
-  const CspConstraintWork(this.label, this.removed, this.prunes);
+  const CspConstraintWork(this.label, this.removed, this.prunes, this.wipeouts);
 }
 
 class CspTraceSummary {
@@ -41,7 +42,7 @@ class CspTraceSummary {
 
   factory CspTraceSummary.of(CspTraceResult trace) {
     var decisions = 0, prunes = 0, wipeouts = 0, backtracks = 0, removed = 0;
-    final work = <String, (int, int)>{};
+    final work = <String, (int, int, int)>{};
     for (final step in trace.steps) {
       switch (step.kind) {
         case CspTraceStepKind.decision:
@@ -56,8 +57,12 @@ class CspTraceSummary {
           final n = step.removedValues.length;
           removed += n;
           final label = step.causeLabel ?? step.causeKind ?? '?';
-          final (r, p) = work[label] ?? (0, 0);
-          work[label] = (r + n, p + 1);
+          final (r, p, w) = work[label] ?? (0, 0, 0);
+          work[label] = (
+            r + n,
+            p + (step.kind == CspTraceStepKind.prune ? 1 : 0),
+            w + (step.kind == CspTraceStepKind.wipeout ? 1 : 0),
+          );
         case CspTraceStepKind.backtrack:
         case CspTraceStepKind.backjump:
           backtracks++;
@@ -68,7 +73,12 @@ class CspTraceSummary {
     final order = work.keys.toList();
     final byConstraint = [
       for (final label in order)
-        CspConstraintWork(label, work[label]!.$1, work[label]!.$2)
+        CspConstraintWork(
+          label,
+          work[label]!.$1,
+          work[label]!.$2,
+          work[label]!.$3,
+        ),
     ];
     // List.sort is not stable; break ties by first appearance.
     byConstraint.sort((a, b) {

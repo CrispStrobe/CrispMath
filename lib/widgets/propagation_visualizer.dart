@@ -27,10 +27,10 @@ enum _TraceSpeed { slow, medium, fast }
 
 extension on _TraceSpeed {
   Duration get interval => switch (this) {
-        _TraceSpeed.slow => const Duration(milliseconds: 1100),
-        _TraceSpeed.medium => const Duration(milliseconds: 550),
-        _TraceSpeed.fast => const Duration(milliseconds: 220),
-      };
+    _TraceSpeed.slow => const Duration(milliseconds: 1100),
+    _TraceSpeed.medium => const Duration(milliseconds: 550),
+    _TraceSpeed.fast => const Duration(milliseconds: 220),
+  };
 }
 
 class PropagationVisualizer extends StatefulWidget {
@@ -134,8 +134,10 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
         children: [
           Row(
             children: [
-              Text(t.constraintsTraceHeader,
-                  style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                t.constraintsTraceHeader,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               const Spacer(),
               Text(
                 t.constraintsTraceStepCounter(_index + 1, trace.steps.length),
@@ -146,10 +148,9 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
           const SizedBox(height: 4),
           Text(
             t.constraintsTraceIntro,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           if (trace.objectiveIgnored)
             _Note(text: t.constraintsTraceObjectiveNote, scheme: scheme),
@@ -214,16 +215,18 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
                 onPressed: _index <= -1 ? null : () => _scrub(_index - 1),
               ),
               IconButton(
-                tooltip:
-                    _playing ? t.constraintsTracePause : t.constraintsTracePlay,
+                tooltip: _playing
+                    ? t.constraintsTracePause
+                    : t.constraintsTracePlay,
                 icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
                 onPressed: trace.steps.isEmpty ? null : _togglePlay,
               ),
               IconButton(
                 tooltip: t.constraintsTraceStepForward,
                 icon: const Icon(Icons.skip_next),
-                onPressed:
-                    _index >= _lastIndex ? null : () => _scrub(_index + 1),
+                onPressed: _index >= _lastIndex
+                    ? null
+                    : () => _scrub(_index + 1),
               ),
               SegmentedButton<_TraceSpeed>(
                 segments: [
@@ -247,7 +250,9 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
           ),
           // Terminal outcome chip — shown once the timeline reaches
           // the final step.
-          if (_index >= _lastIndex && trace.steps.isNotEmpty) ...[
+          if (_index >= _lastIndex &&
+              trace.steps.isNotEmpty &&
+              (trace.solved || !trace.truncated)) ...[
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
@@ -257,9 +262,11 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
                   size: 18,
                   color: trace.solved ? Colors.green : scheme.error,
                 ),
-                label: Text(trace.solved
-                    ? t.constraintsTraceSolved
-                    : t.constraintsTraceUnsat),
+                label: Text(
+                  trace.solved
+                      ? t.constraintsTraceSolved
+                      : t.constraintsTraceUnsat,
+                ),
               ),
             ),
           ],
@@ -280,14 +287,19 @@ class _PropagationVisualizerState extends State<PropagationVisualizer> {
         return t.constraintsTraceDecision(step.variable!, step.value!);
       case CspTraceStepKind.prune:
         return t.constraintsTracePrune(
-            step.removedValues.join(', '), step.variable!, cause);
+          step.removedValues.join(', '),
+          step.variable!,
+          cause,
+        );
       case CspTraceStepKind.wipeout:
         return t.constraintsTraceWipeout(step.variable!, cause);
       case CspTraceStepKind.backtrack:
         return t.constraintsTraceBacktrack;
       case CspTraceStepKind.backjump:
         return t.constraintsTraceBackjump(
-            step.depth ?? 0, step.targetDepth ?? 0);
+          step.depth ?? 0,
+          step.targetDepth ?? 0,
+        );
       case CspTraceStepKind.solution:
         return t.constraintsTraceSolutionStep;
     }
@@ -344,10 +356,9 @@ class _Note extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
         ],
@@ -376,12 +387,14 @@ class _DomainPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final active = step?.variable;
-    final removed = (step?.kind == CspTraceStepKind.prune ||
+    final removed =
+        (step?.kind == CspTraceStepKind.prune ||
             step?.kind == CspTraceStepKind.wipeout)
         ? step!.removedValues
         : const <int>[];
-    final decidedValue =
-        step?.kind == CspTraceStepKind.decision ? step!.value : null;
+    final decidedValue = step?.kind == CspTraceStepKind.decision
+        ? step!.value
+        : null;
 
     return Column(
       children: [
@@ -510,28 +523,35 @@ class _TraceSummaryBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-            t.constraintsTraceStats(summary.decisions, summary.prunes,
-                summary.wipeouts, summary.backtracks),
-            style: style),
+          t.constraintsTraceStats(
+            summary.decisions,
+            summary.prunes,
+            summary.wipeouts,
+            summary.backtracks,
+          ),
+          style: style,
+        ),
         if (summary.propagationOnly(trace))
           Text(t.constraintsTracePropagationOnly, style: style),
         if (summary.byConstraint.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(t.constraintsTraceTopConstraints, style: style),
           for (final work in summary.byConstraint.take(3))
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(work.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: style?.copyWith(fontFamily: 'monospace')),
-                ),
-                const SizedBox(width: 8),
                 Text(
-                    t.constraintsTraceConstraintWork(
-                        work.removed, work.prunes),
-                    style: style),
+                  work.label,
+                  style: style?.copyWith(fontFamily: 'monospace'),
+                ),
+                Text(
+                  t.constraintsTraceConstraintWork(
+                    work.removed,
+                    work.prunes,
+                    work.wipeouts,
+                  ),
+                  style: style,
+                ),
               ],
             ),
         ],

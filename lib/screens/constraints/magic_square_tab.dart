@@ -26,12 +26,16 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
     setState(() {
       _tracing = true;
       _trace = null;
+      _square = null;
     });
     final tr = await CspSolver.traceDsl(MagicSquare.buildProgram(n));
     if (!mounted || n != _n) return;
     setState(() {
       _tracing = false;
       _trace = tr;
+      if (tr.solved && tr.solution != null) {
+        _square = MagicSquare.gridFromSolution(tr.solution!, n);
+      }
     });
   }
 
@@ -40,9 +44,12 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
     setState(() {
       _solving = true;
       _square = null;
+      _trace = null;
     });
-    final r =
-        await CspSolver.solveDsl(MagicSquare.buildProgram(n), maxSolutions: 1);
+    final r = await CspSolver.solveDsl(
+      MagicSquare.buildProgram(n),
+      maxSolutions: 1,
+    );
     if (!mounted || n != _n) return;
     setState(() {
       _solving = false;
@@ -61,8 +68,10 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(t.constraintsMagicIntro,
-              style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            t.constraintsMagicIntro,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -74,7 +83,7 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
                   child: ChoiceChip(
                     label: Text('$n×$n'),
                     selected: _n == n,
-                    onSelected: _solving
+                    onSelected: _solving || _tracing
                         ? null
                         : (sel) {
                             if (sel && n != _n) {
@@ -94,10 +103,9 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
           const SizedBox(height: 12),
           Text(
             t.constraintsMagicConstant(MagicSquare.constantFor(_n)),
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -106,7 +114,7 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               FilledButton.icon(
-                onPressed: _solving ? null : _generate,
+                onPressed: _solving || _tracing ? null : _generate,
                 icon: _solving
                     ? const SizedBox(
                         width: 16,
@@ -119,7 +127,7 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
               if (_n <= _maxTracedOrder)
                 OutlinedButton.icon(
                   key: const ValueKey('magic-visualize'),
-                  onPressed: _tracing ? null : _visualize,
+                  onPressed: _tracing || _solving ? null : _visualize,
                   icon: _tracing
                       ? const SizedBox(
                           width: 16,
@@ -132,14 +140,20 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(t.constraintsMagicVisualizeHint,
-              style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            t.constraintsMagicVisualizeHint,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
           if (_square != null) ...[
             const SizedBox(height: 20),
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 360),
-                child: _MagicSquareGrid(values: _square!, n: _n),
+                child: _MagicSquareGrid(
+                  key: const ValueKey('magic-square-grid'),
+                  values: _square!,
+                  n: _n,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -166,7 +180,7 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
 class _MagicSquareGrid extends StatelessWidget {
   final List<int> values;
   final int n;
-  const _MagicSquareGrid({required this.values, required this.n});
+  const _MagicSquareGrid({super.key, required this.values, required this.n});
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +211,8 @@ class _MagicSquareGrid extends StatelessWidget {
                               child: Text(
                                 '${values[r * n + c]}',
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.w600),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),

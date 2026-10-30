@@ -1034,12 +1034,10 @@ class EsLocalizations implements AppLocalizations {
       '$value (según las suposiciones anteriores).';
   @override
   String sudokuStepContradictionCell(String cell) =>
-      'Contradicción: $cell no tiene candidatos, una suposición era '
-      'errónea.';
+      'Contradicción: $cell no tiene candidatos.';
   @override
   String sudokuStepContradictionUnit(String unit, int value) =>
-      'Contradicción: $value no tiene sitio en $unit, una suposición era '
-      'errónea.';
+      'Contradicción: $value no tiene sitio en $unit.';
   @override
   String sudokuStepBacktrack(String cell) =>
       'Retroceso: deshacer todo desde la suposición en $cell y probar su '
@@ -1050,7 +1048,12 @@ class EsLocalizations implements AppLocalizations {
       'reglas.';
   @override
   String sudokuExplainStats(
-          int naked, int hidden, int guesses, int backtracks, int depth) =>
+    int naked,
+    int hidden,
+    int guesses,
+    int backtracks,
+    int depth,
+  ) =>
       'Únicos desnudos $naked · Únicos ocultos $hidden · Suposiciones '
       '$guesses · Retrocesos $backtracks · Profundidad máx. $depth';
   @override
@@ -1062,8 +1065,9 @@ class EsLocalizations implements AppLocalizations {
   @override
   String sudokuStepCage(int sum, int size, String combos, int removed) =>
       'Suma de jaula: $size celdas deben sumar $sum con dígitos distintos. '
-      'Solo $combos encajan con los candidatos, así que se eliminan '
-      '$removed candidatos que ninguna de esas combinaciones usa.';
+      'Los conjuntos posibles de dígitos son $combos. Sus asignaciones a las celdas '
+      'que cumplen las restricciones muestran que $removed candidatos no '
+      'pueden usarse en sus respectivas celdas y se eliminan.';
   @override
   String sudokuStepLocked(int digit, String unit, String other, int removed) =>
       'Candidatos bloqueados: en $unit, $digit solo cabe en celdas que '
@@ -1072,23 +1076,36 @@ class EsLocalizations implements AppLocalizations {
       '$other.';
   @override
   String sudokuStepNakedSubset(
-          int size, String cells, String digits, String unit, int removed) =>
+    int size,
+    String cells,
+    String digits,
+    String unit,
+    int removed,
+  ) =>
       '${size == 2 ? 'Par' : 'Trío'} desnudo: $cells en $unit solo '
       'contienen $digits, así que esos dígitos van en estas $size celdas y '
       'se eliminan del resto de $unit ($removed candidatos).';
   @override
   String sudokuStepHiddenSubset(
-          int size, String digits, String unit, String cells, int removed) =>
+    int size,
+    String digits,
+    String unit,
+    String cells,
+    int removed,
+  ) =>
       '${size == 2 ? 'Par' : 'Trío'} oculto: en $unit, $digits solo caben '
       'en $cells, así que esas celdas los toman y pierden sus otros '
       'candidatos ($removed eliminados).';
   @override
   String sudokuStepContradictionCage(int sum) =>
-      'Contradicción: la jaula de $sum ya no puede alcanzar su suma, una '
-      'suposición era errónea.';
+      'Contradicción: la jaula de $sum ya no puede alcanzar su suma.';
   @override
   String sudokuExplainEliminations(
-          int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
+    int cages,
+    int locked,
+    int nakedSubsets,
+    int hiddenSubsets,
+  ) =>
       'Sumas de jaula $cages · Candidatos bloqueados $locked · Pares/tríos '
       'desnudos $nakedSubsets · Pares/tríos ocultos $hiddenSubsets';
   @override
@@ -1319,7 +1336,11 @@ class EsLocalizations implements AppLocalizations {
       'Solución — todas las variables asignadas.';
   @override
   String constraintsTraceStats(
-          int decisions, int prunes, int wipeouts, int backtracks) =>
+    int decisions,
+    int prunes,
+    int wipeouts,
+    int backtracks,
+  ) =>
       'Decisiones $decisions · Podas $prunes · Callejones sin salida '
       '$wipeouts · Retrocesos $backtracks';
   @override
@@ -1329,8 +1350,11 @@ class EsLocalizations implements AppLocalizations {
   String get constraintsTraceTopConstraints =>
       'Restricciones que eliminaron más valores:';
   @override
-  String constraintsTraceConstraintWork(int removed, int prunes) =>
-      '$removed valores en $prunes podas';
+  String constraintsTraceConstraintWork(
+    int removed,
+    int prunes,
+    int wipeouts,
+  ) => '$removed valores · $prunes podas · $wipeouts callejones sin salida';
   @override
   String get constraintsMagicVisualizeHint =>
       'Visualizar reproduce cómo el solucionador construye un cuadrado: qué '
@@ -2926,54 +2950,24 @@ class EsLocalizations implements AppLocalizations {
     'sin': [
       'Período 2π, rango [-1, 1]. La calculadora interpreta el argumento en radianes.',
     ],
-    'cos': [
-      'Período 2π, rango [-1, 1]; cos es sin desplazado π/2.',
-    ],
-    'tan': [
-      'Período π; indefinida donde cos(x)=0 (x = π/2 + kπ).',
-    ],
-    'asin': [
-      'Dominio [-1, 1], rango principal [-π/2, π/2].',
-    ],
-    'acos': [
-      'Dominio [-1, 1], rango principal [0, π].',
-    ],
-    'atan': [
-      'Dominio todos los reales, rango principal (-π/2, π/2).',
-    ],
-    'sinh': [
-      'Función impar, no acotada; la familia de las catenarias.',
-    ],
-    'cosh': [
-      'Función par, mínimo 1 en x=0; forma de una cadena colgante.',
-    ],
+    'cos': ['Período 2π, rango [-1, 1]; cos es sin desplazado π/2.'],
+    'tan': ['Período π; indefinida donde cos(x)=0 (x = π/2 + kπ).'],
+    'asin': ['Dominio [-1, 1], rango principal [-π/2, π/2].'],
+    'acos': ['Dominio [-1, 1], rango principal [0, π].'],
+    'atan': ['Dominio todos los reales, rango principal (-π/2, π/2).'],
+    'sinh': ['Función impar, no acotada; la familia de las catenarias.'],
+    'cosh': ['Función par, mínimo 1 en x=0; forma de una cadena colgante.'],
     'tanh': [
       'Impar, rango (-1, 1); función de activación común en redes neuronales.',
     ],
-    'asinh': [
-      'Dominio todos los reales; asinh(x) = ln(x + √(x²+1)).',
-    ],
-    'acosh': [
-      'Dominio x ≥ 1; acosh(x) = ln(x + √(x²−1)).',
-    ],
-    'atanh': [
-      'Dominio (-1, 1); atanh(x) = ½·ln((1+x)/(1−x)).',
-    ],
-    'ln': [
-      'Inversa de exp; dominio x > 0. ln(e) = 1.',
-    ],
-    'log': [
-      'Dominio x > 0. Para otras bases: ln(x)/ln(b).',
-    ],
-    'exp': [
-      'Inversa de ln; siempre positiva, su propia derivada.',
-    ],
-    'abs': [
-      'abs(x) = √(x²); para a+bi devuelve √(a²+b²).',
-    ],
-    'sqrt': [
-      'sqrt(x) = x^(1/2). Para otros grados, la tecla ⁿ√x.',
-    ],
+    'asinh': ['Dominio todos los reales; asinh(x) = ln(x + √(x²+1)).'],
+    'acosh': ['Dominio x ≥ 1; acosh(x) = ln(x + √(x²−1)).'],
+    'atanh': ['Dominio (-1, 1); atanh(x) = ½·ln((1+x)/(1−x)).'],
+    'ln': ['Inversa de exp; dominio x > 0. ln(e) = 1.'],
+    'log': ['Dominio x > 0. Para otras bases: ln(x)/ln(b).'],
+    'exp': ['Inversa de ln; siempre positiva, su propia derivada.'],
+    'abs': ['abs(x) = √(x²); para a+bi devuelve √(a²+b²).'],
+    'sqrt': ['sqrt(x) = x^(1/2). Para otros grados, la tecla ⁿ√x.'],
     'pi': [
       'Para π con un número de dígitos elegido, la tecla π(N) (pi_precision).',
     ],
@@ -3026,23 +3020,14 @@ class EsLocalizations implements AppLocalizations {
       'Se convierte a Le(5, 5) de SymEngine.',
       'Estrictamente mayor falla la prueba.',
     ],
-    'gt_op': [
-      'Se convierte a Gt(10, 3) de SymEngine.',
-    ],
-    'ge_op': [
-      'Se convierte a Ge(5, 5) de SymEngine.',
-    ],
+    'gt_op': ['Se convierte a Gt(10, 3) de SymEngine.'],
+    'ge_op': ['Se convierte a Ge(5, 5) de SymEngine.'],
     'and_op': [
       'Ambos predicados se cumplen → true.',
       'Un operando falso → false.',
     ],
-    'or_op': [
-      'Un operando verdadero es suficiente.',
-    ],
-    'not_op': [
-      '4 no es primo → not false → true.',
-      'Niega la igualdad.',
-    ],
+    'or_op': ['Un operando verdadero es suficiente.'],
+    'not_op': ['4 no es primo → not false → true.', 'Niega la igualdad.'],
     'xor_op': [
       'Ambos verdaderos → xor es false.',
       'Exactamente uno verdadero → xor es true.',
@@ -3211,41 +3196,32 @@ class EsLocalizations implements AppLocalizations {
       'referencia líneas anteriores y observa cómo todo se actualiza '
       'en tiempo real.';
   @override
-  String get onboardingWorksheetTitle =>
-      'Una calculadora que recuerda';
+  String get onboardingWorksheetTitle => 'Una calculadora que recuerda';
   @override
   String get onboardingWorksheetBody =>
       'Empieza con una hoja de trabajo: a = 3, f(x) = x² + a, f(4). Cambia a y todos los resultados y la gráfica vinculada se recalculan. Guarda un punto de control, compara, restaura y exporta toda la sesión.';
   @override
-  String get onboardingTryWorksheet =>
-      'Probar una hoja de trabajo en vivo';
+  String get onboardingTryWorksheet => 'Probar una hoja de trabajo en vivo';
   @override
-  String get analysisLabsTitle =>
-      'Laboratorio';
+  String get analysisLabsTitle => 'Laboratorio';
   @override
   String get analysisLabsSubtitle =>
       'Problemas de restricciones, solucionador de Sudoku y compositor de escenas 3D';
   @override
-  String get aboutOurApps =>
-      'Nuestras apps';
+  String get aboutOurApps => 'Nuestras apps';
   @override
   String get aboutOurAppsIntro =>
       'Más apps del mismo desarrollador. Las apps en TestFlight son betas gratuitas: el enlace instala primero TestFlight de Apple.';
   @override
-  String get aboutAppStore =>
-      'App Store';
+  String get aboutAppStore => 'App Store';
   @override
-  String get aboutMacAppStore =>
-      'Mac App Store';
+  String get aboutMacAppStore => 'Mac App Store';
   @override
-  String get aboutTestFlight =>
-      'TestFlight';
+  String get aboutTestFlight => 'TestFlight';
   @override
-  String get aboutComingSoon =>
-      'Próximamente';
+  String get aboutComingSoon => 'Próximamente';
   @override
-  String get aboutThisApp =>
-      'esta app';
+  String get aboutThisApp => 'esta app';
   @override
   String get settingsReplayTour => 'Repetir la visita guiada';
   @override

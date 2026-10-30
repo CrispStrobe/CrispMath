@@ -1021,11 +1021,10 @@ class EnLocalizations implements AppLocalizations {
       '$value (given the earlier guesses).';
   @override
   String sudokuStepContradictionCell(String cell) =>
-      'Contradiction: $cell has no candidates left, so a guess was wrong.';
+      'Contradiction: $cell has no candidates left.';
   @override
   String sudokuStepContradictionUnit(String unit, int value) =>
-      'Contradiction: $value has no place left in $unit, so a guess was '
-      'wrong.';
+      'Contradiction: $value has no place left in $unit.';
   @override
   String sudokuStepBacktrack(String cell) =>
       'Backtrack: undo everything since the guess at $cell and try its '
@@ -1035,7 +1034,12 @@ class EnLocalizations implements AppLocalizations {
       'Solved: every cell is filled and every rule holds.';
   @override
   String sudokuExplainStats(
-          int naked, int hidden, int guesses, int backtracks, int depth) =>
+    int naked,
+    int hidden,
+    int guesses,
+    int backtracks,
+    int depth,
+  ) =>
       'Naked singles $naked · Hidden singles $hidden · Guesses $guesses · '
       'Backtracks $backtracks · Max depth $depth';
   @override
@@ -1047,8 +1051,9 @@ class EnLocalizations implements AppLocalizations {
   @override
   String sudokuStepCage(int sum, int size, String combos, int removed) =>
       'Cage sum: $size cells must add up to $sum with different digits. '
-      'Only $combos fit the candidates, so $removed candidates that no '
-      'such combination uses are removed.';
+      'The possible digit sets are $combos. Considering their valid '
+      'assignments to its cells removes $removed candidates that cannot '
+      'be used in their respective cells.';
   @override
   String sudokuStepLocked(int digit, String unit, String other, int removed) =>
       'Locked candidates: in $unit, $digit can only go in cells that also '
@@ -1056,23 +1061,36 @@ class EnLocalizations implements AppLocalizations {
       'so $digit is removed from $removed other cells of $other.';
   @override
   String sudokuStepNakedSubset(
-          int size, String cells, String digits, String unit, int removed) =>
+    int size,
+    String cells,
+    String digits,
+    String unit,
+    int removed,
+  ) =>
       'Naked ${size == 2 ? 'pair' : 'triple'}: $cells in $unit hold only '
       '$digits between them, so those digits must go in these $size cells '
       'and are removed from the rest of $unit ($removed candidates).';
   @override
   String sudokuStepHiddenSubset(
-          int size, String digits, String unit, String cells, int removed) =>
+    int size,
+    String digits,
+    String unit,
+    String cells,
+    int removed,
+  ) =>
       'Hidden ${size == 2 ? 'pair' : 'triple'}: in $unit, $digits fit only '
       'in $cells, so those cells must take them and drop their other '
       'candidates ($removed removed).';
   @override
   String sudokuStepContradictionCage(int sum) =>
-      'Contradiction: the cage of $sum can no longer reach its sum, so a '
-      'guess was wrong.';
+      'Contradiction: the cage of $sum can no longer reach its sum.';
   @override
   String sudokuExplainEliminations(
-          int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
+    int cages,
+    int locked,
+    int nakedSubsets,
+    int hiddenSubsets,
+  ) =>
       'Cage sums $cages · Locked candidates $locked · Naked pairs/triples '
       '$nakedSubsets · Hidden pairs/triples $hiddenSubsets';
   @override
@@ -1295,7 +1313,11 @@ class EnLocalizations implements AppLocalizations {
       'Solution — all variables assigned.';
   @override
   String constraintsTraceStats(
-          int decisions, int prunes, int wipeouts, int backtracks) =>
+    int decisions,
+    int prunes,
+    int wipeouts,
+    int backtracks,
+  ) =>
       'Decisions $decisions · Prunes $prunes · Dead ends $wipeouts · '
       'Backtracks $backtracks';
   @override
@@ -1305,8 +1327,11 @@ class EnLocalizations implements AppLocalizations {
   String get constraintsTraceTopConstraints =>
       'Constraints that removed the most values:';
   @override
-  String constraintsTraceConstraintWork(int removed, int prunes) =>
-      '$removed values in $prunes prunes';
+  String constraintsTraceConstraintWork(
+    int removed,
+    int prunes,
+    int wipeouts,
+  ) => '$removed values · $prunes prunes · $wipeouts dead ends';
   @override
   String get constraintsMagicVisualizeHint =>
       'Visualize replays how the solver builds a square: which cell it '
@@ -1687,41 +1712,32 @@ class EnLocalizations implements AppLocalizations {
       'in the right column. Define variables (tax = 0.085), reference '
       'earlier lines, and watch everything update live as you edit.';
   @override
-  String get onboardingWorksheetTitle =>
-      'A calculator that remembers';
+  String get onboardingWorksheetTitle => 'A calculator that remembers';
   @override
   String get onboardingWorksheetBody =>
       'Start with a worksheet: a = 3, f(x) = x² + a, f(4). Change a and every result and the linked graph recalculate. Save a checkpoint, compare, restore, and export the whole session.';
   @override
-  String get onboardingTryWorksheet =>
-      'Try a live worksheet';
+  String get onboardingTryWorksheet => 'Try a live worksheet';
   @override
-  String get analysisLabsTitle =>
-      'Labs';
+  String get analysisLabsTitle => 'Labs';
   @override
   String get analysisLabsSubtitle =>
       'Constraint problems, Sudoku solver and the 3D scene composer';
   @override
-  String get aboutOurApps =>
-      'Our apps';
+  String get aboutOurApps => 'Our apps';
   @override
   String get aboutOurAppsIntro =>
       'More apps by the same developer. Apps in TestFlight are free betas: the link installs Apple\'s TestFlight first.';
   @override
-  String get aboutAppStore =>
-      'App Store';
+  String get aboutAppStore => 'App Store';
   @override
-  String get aboutMacAppStore =>
-      'Mac App Store';
+  String get aboutMacAppStore => 'Mac App Store';
   @override
-  String get aboutTestFlight =>
-      'TestFlight';
+  String get aboutTestFlight => 'TestFlight';
   @override
-  String get aboutComingSoon =>
-      'Coming soon';
+  String get aboutComingSoon => 'Coming soon';
   @override
-  String get aboutThisApp =>
-      'this app';
+  String get aboutThisApp => 'this app';
   @override
   String get settingsReplayTour => 'Replay onboarding tour';
   @override

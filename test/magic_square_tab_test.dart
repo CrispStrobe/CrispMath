@@ -35,12 +35,15 @@ void main() {
     await _openMagicTab(tester);
     await tester.tap(find.text('4×4'));
     await tester.pumpAndSettle();
-    expect(find.text('Magic constant: ${MagicSquare.constantFor(4)}'),
-        findsOneWidget);
+    expect(
+      find.text('Magic constant: ${MagicSquare.constantFor(4)}'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('replay and displayed square describe the same solution',
-      (tester) async {
+  testWidgets('replay and displayed square describe the same solution', (
+    tester,
+  ) async {
     await _openMagicTab(tester);
     await tester.tap(find.text('Generate'));
     await tester.pumpAndSettle(const Duration(seconds: 3));
@@ -49,11 +52,14 @@ void main() {
     await tester.pumpAndSettle();
 
     final replay = tester.widget<PropagationVisualizer>(
-        find.byType(PropagationVisualizer));
+      find.byType(PropagationVisualizer),
+    );
     expect(replay.trace.solved, isTrue);
     final grid = find.byKey(const ValueKey('magic-square-grid'));
     final displayed = tester
-        .widgetList<Text>(find.descendant(of: grid, matching: find.byType(Text)))
+        .widgetList<Text>(
+          find.descendant(of: grid, matching: find.byType(Text)),
+        )
         .map((text) => int.tryParse(text.data ?? ''))
         .whereType<int>()
         .toList();
@@ -62,7 +68,10 @@ void main() {
     await tester.ensureVisible(find.text('Generate'));
     await tester.tap(find.text('Generate'));
     await tester.pumpAndSettle(const Duration(seconds: 3));
-    expect(find.byType(PropagationVisualizer), findsNothing,
-        reason: 'a new square must not retain a stale replay');
+    expect(
+      find.byType(PropagationVisualizer),
+      findsNothing,
+      reason: 'a new square must not retain a stale replay',
+    );
   });
 }

@@ -37,7 +37,7 @@ enum SudokuUnitKind {
   box,
   mainDiagonal,
   antiDiagonal,
-  disjointGroup
+  disjointGroup,
 }
 
 /// One all-different group of cells. [number] is 1-based for display.
@@ -139,21 +139,21 @@ class SudokuExplainedStep {
 
   /// Removed candidates per cell, for crossed-out pencil marks.
   List<Set<int>> get removedCandidates => [
-        for (var i = 0; i < cells.length; i++)
-          {
-            for (var d = 1; d < 32; d++)
-              if ((removed[i] ?? 0) & (1 << d) != 0) d
-          }
-      ];
+    for (var i = 0; i < cells.length; i++)
+      {
+        for (var d = 1; d < 32; d++)
+          if ((removed[i] ?? 0) & (1 << d) != 0) d,
+      },
+  ];
 
   /// Candidate sets for [SudokuGrid] pencil marks.
   List<Set<int>> get candidates => [
-        for (final mask in candidateMasks)
-          {
-            for (var d = 1; d < 32; d++)
-              if (mask & (1 << d) != 0) d
-          }
-      ];
+    for (final mask in candidateMasks)
+      {
+        for (var d = 1; d < 32; d++)
+          if (mask & (1 << d) != 0) d,
+      },
+  ];
 }
 
 enum SudokuNodeStatus { open, deadEnd, solution }
@@ -274,9 +274,29 @@ Iterable<List<T>> _combinations<T>(List<T> items, int k) sync* {
   }
 }
 
+class _CageWorkLimit implements Exception {}
+
 class SudokuExplainer {
-  static bool supports(SudokuPuzzle puzzle) =>
-      puzzle.variant != SudokuVariant.killer || puzzle.cages != null;
+  /// Whether the explainer can faithfully represent the puzzle's rules.
+  static bool supports(SudokuPuzzle puzzle) {
+    final n = puzzle.layout.side;
+    if (n < 1 ||
+        n > 30 ||
+        puzzle.cells.length != n * n ||
+        puzzle.cells.any((v) => v < 0 || v > n)) {
+      return false;
+    }
+    if (puzzle.variant != SudokuVariant.killer) return puzzle.cages == null;
+    final cages = puzzle.cages;
+    if (cages == null) return false;
+    final seen = <int>{};
+    for (final cage in cages) {
+      for (final i in cage.cellIndexes) {
+        if (i < 0 || i >= n * n || !seen.add(i)) return false;
+      }
+    }
+    return seen.length == n * n;
+  }
 
   /// Every all-different unit of [puzzle], in display order.
   static List<SudokuUnit> unitsOf(SudokuPuzzle puzzle) {
@@ -284,34 +304,46 @@ class SudokuExplainer {
     final n = layout.side;
     final units = <SudokuUnit>[
       for (var r = 0; r < n; r++)
-        SudokuUnit(
-            SudokuUnitKind.row, r + 1, [for (var c = 0; c < n; c++) r * n + c]),
+        SudokuUnit(SudokuUnitKind.row, r + 1, [
+          for (var c = 0; c < n; c++) r * n + c,
+        ]),
       for (var c = 0; c < n; c++)
-        SudokuUnit(SudokuUnitKind.column, c + 1,
-            [for (var r = 0; r < n; r++) r * n + c]),
+        SudokuUnit(SudokuUnitKind.column, c + 1, [
+          for (var r = 0; r < n; r++) r * n + c,
+        ]),
     ];
     final boxesPerRow = n ~/ layout.boxCols;
     for (var b = 0; b < n; b++) {
       final r0 = (b ~/ boxesPerRow) * layout.boxRows;
       final c0 = (b % boxesPerRow) * layout.boxCols;
-      units.add(SudokuUnit(SudokuUnitKind.box, b + 1, [
-        for (var r = r0; r < r0 + layout.boxRows; r++)
-          for (var c = c0; c < c0 + layout.boxCols; c++) r * n + c
-      ]));
+      units.add(
+        SudokuUnit(SudokuUnitKind.box, b + 1, [
+          for (var r = r0; r < r0 + layout.boxRows; r++)
+            for (var c = c0; c < c0 + layout.boxCols; c++) r * n + c,
+        ]),
+      );
     }
     if (puzzle.variant == SudokuVariant.x) {
-      units.add(SudokuUnit(SudokuUnitKind.mainDiagonal, 1,
-          [for (var i = 0; i < n; i++) i * n + i]));
-      units.add(SudokuUnit(SudokuUnitKind.antiDiagonal, 1,
-          [for (var i = 0; i < n; i++) i * n + (n - 1 - i)]));
+      units.add(
+        SudokuUnit(SudokuUnitKind.mainDiagonal, 1, [
+          for (var i = 0; i < n; i++) i * n + i,
+        ]),
+      );
+      units.add(
+        SudokuUnit(SudokuUnitKind.antiDiagonal, 1, [
+          for (var i = 0; i < n; i++) i * n + (n - 1 - i),
+        ]),
+      );
     }
     if (puzzle.variant == SudokuVariant.disjoint) {
       for (var g = 0; g < n; g++) {
         final gr = g ~/ layout.boxCols, gc = g % layout.boxCols;
-        units.add(SudokuUnit(SudokuUnitKind.disjointGroup, g + 1, [
-          for (var r = gr; r < n; r += layout.boxRows)
-            for (var c = gc; c < n; c += layout.boxCols) r * n + c
-        ]));
+        units.add(
+          SudokuUnit(SudokuUnitKind.disjointGroup, g + 1, [
+            for (var r = gr; r < n; r += layout.boxRows)
+              for (var c = gc; c < n; c += layout.boxCols) r * n + c,
+          ]),
+        );
       }
     }
     return units;
@@ -319,12 +351,29 @@ class SudokuExplainer {
 
   /// Solve [puzzle] and record an explained step list. At most [maxSteps]
   /// steps are kept (the solve itself continues to the end); the search
-  /// gives up after [maxPlacements] placements.
+  /// gives up after [maxPlacements] placements. Cage analysis is bounded
+  /// across the whole solve by [maxCageWork] state/transition visits; hitting
+  /// that limit stops the search without claiming the puzzle is impossible.
   static SudokuExplanation explain(
     SudokuPuzzle puzzle, {
     int maxSteps = 3000,
     int maxPlacements = 200000,
+    int maxCageWork = 2000000,
   }) {
+    if (!supports(puzzle)) {
+      return const SudokuExplanation(
+        steps: [],
+        solution: null,
+        error: 'Unsupported Sudoku puzzle.',
+        truncated: false,
+        nakedSingles: 0,
+        hiddenSingles: 0,
+        guesses: 0,
+        backtracks: 0,
+        maxDepth: 0,
+      );
+    }
+    if (maxCageWork < 0) throw ArgumentError.value(maxCageWork, 'maxCageWork');
     final n = puzzle.layout.side;
     final size = n * n;
     final units = unitsOf(puzzle);
@@ -370,99 +419,134 @@ class SudokuExplainer {
     // Tree node ids of the guesses in effect (-1 = guess not in tree).
     final path = <int>[];
 
-    void record(SudokuStepKind kind,
-        {int? cell,
-        int? value,
-        SudokuUnit? unit,
-        SudokuUnit? secondUnit,
-        List<int> focusCells = const [],
-        List<int> digits = const [],
-        int? cageSum,
-        List<List<int>> combinations = const [],
-        Map<int, int> removed = const {},
-        List<int> alternatives = const [],
-        int eliminations = 0}) {
+    void record(
+      SudokuStepKind kind, {
+      int? cell,
+      int? value,
+      SudokuUnit? unit,
+      SudokuUnit? secondUnit,
+      List<int> focusCells = const [],
+      List<int> digits = const [],
+      int? cageSum,
+      List<List<int>> combinations = const [],
+      Map<int, int> removed = const {},
+      List<int> alternatives = const [],
+      int eliminations = 0,
+    }) {
       if (steps.length >= maxSteps) {
         truncated = true;
         return;
       }
-      steps.add(SudokuExplainedStep(
-        kind: kind,
-        cells: List<int>.unmodifiable(cells),
-        candidateMasks: List<int>.unmodifiable(masks),
-        cell: cell,
-        value: value,
-        unit: unit,
-        secondUnit: secondUnit,
-        focusCells: List<int>.unmodifiable(focusCells),
-        digits: List<int>.unmodifiable(digits),
-        cageSum: cageSum,
-        combinations: List<List<int>>.unmodifiable(combinations),
-        removed: Map<int, int>.unmodifiable(removed),
-        depth: path.length,
-        node: path.isEmpty || path.last < 0 ? null : path.last,
-        alternatives: List<int>.unmodifiable(alternatives),
-        eliminations: eliminations,
-      ));
+      steps.add(
+        SudokuExplainedStep(
+          kind: kind,
+          cells: List<int>.unmodifiable(cells),
+          candidateMasks: List<int>.unmodifiable(masks),
+          cell: cell,
+          value: value,
+          unit: unit,
+          secondUnit: secondUnit,
+          focusCells: List<int>.unmodifiable(focusCells),
+          digits: List<int>.unmodifiable(digits),
+          cageSum: cageSum,
+          combinations: List<List<int>>.unmodifiable(combinations),
+          removed: Map<int, int>.unmodifiable(removed),
+          depth: path.length,
+          node: path.isEmpty || path.last < 0 ? null : path.last,
+          alternatives: List<int>.unmodifiable(alternatives),
+          eliminations: eliminations,
+        ),
+      );
     }
 
     SudokuExplanation finish(String? error) => SudokuExplanation(
-          steps: steps,
-          solution: error == null ? List<int>.unmodifiable(cells) : null,
-          error: error,
-          truncated: truncated,
-          nakedSingles: naked,
-          hiddenSingles: hidden,
-          guesses: guesses,
-          backtracks: backtracks,
-          maxDepth: maxDepth,
-          cageSteps: cageSteps,
-          lockedCandidates: locked,
-          nakedSubsets: nakedSubsets,
-          hiddenSubsets: hiddenSubsets,
-          tree: tree,
-          treeTruncated: treeTruncated,
-        );
+      steps: steps,
+      solution: error == null ? List<int>.unmodifiable(cells) : null,
+      error: error,
+      truncated: truncated,
+      nakedSingles: naked,
+      hiddenSingles: hidden,
+      guesses: guesses,
+      backtracks: backtracks,
+      maxDepth: maxDepth,
+      cageSteps: cageSteps,
+      lockedCandidates: locked,
+      nakedSubsets: nakedSubsets,
+      hiddenSubsets: hiddenSubsets,
+      tree: tree,
+      treeTruncated: treeTruncated,
+    );
 
     List<int> digitsOf(int mask) => [
-          for (var d = 1; d <= n; d++)
-            if (mask & (1 << d) != 0) d
-        ];
+      for (var d = 1; d <= n; d++)
+        if (mask & (1 << d) != 0) d,
+    ];
 
-    // Every way to fill [cage] with distinct digits that reaches its sum,
-    // given the current grid and candidates.
+    // Memoize feasibility by the set of digits used: for a fixed cage
+    // ordering it determines both the depth and sum. A second traversal of
+    // viable states collects exact per-cell supports and complete digit sets.
+    // Nothing is returned if the shared work budget is exhausted.
+    var cageWork = 0;
+    void spendCageWork() {
+      if (cageWork >= maxCageWork) throw _CageWorkLimit();
+      cageWork++;
+    }
+
     _CageOptions cageOptions(KillerCage cage) {
       final cageCells = cage.cellIndexes;
       final allowed = List<int>.filled(cageCells.length, 0);
       final combos = <int>{};
-      final chosen = List<int>.filled(cageCells.length, 0);
-      void fill(int k, int used, int sum) {
-        if (sum > cage.targetSum) return;
+      final memo = <int, bool>{};
+      final visited = <int>{};
+      int optionsAt(int k) {
+        final i = cageCells[k];
+        return cells[i] != 0 ? 1 << cells[i] : masks[i];
+      }
+
+      bool feasible(int k, int used, int sum) {
+        spendCageWork();
+        final cached = memo[used];
+        if (cached != null) return cached;
+        if (sum > cage.targetSum) return memo[used] = false;
         if (k == cageCells.length) {
-          if (sum != cage.targetSum) return;
-          for (var j = 0; j < chosen.length; j++) {
-            allowed[j] |= 1 << chosen[j];
+          return memo[used] = sum == cage.targetSum;
+        }
+        final options = optionsAt(k) & ~used;
+        for (var d = 1; d <= n; d++) {
+          spendCageWork();
+          final bit = 1 << d;
+          if (options & bit != 0 && feasible(k + 1, used | bit, sum + d)) {
+            return memo[used] = true;
           }
+        }
+        return memo[used] = false;
+      }
+
+      void collect(int k, int used, int sum) {
+        spendCageWork();
+        if (!visited.add(used)) return;
+        if (k == cageCells.length) {
           combos.add(used);
           return;
         }
-        final i = cageCells[k];
-        final options = cells[i] != 0 ? 1 << cells[i] : masks[i];
+        final options = optionsAt(k) & ~used;
         for (var d = 1; d <= n; d++) {
+          spendCageWork();
           final bit = 1 << d;
-          if (options & bit == 0 || used & bit != 0) continue;
-          chosen[k] = d;
-          fill(k + 1, used | bit, sum + d);
+          if (options & bit != 0 && feasible(k + 1, used | bit, sum + d)) {
+            allowed[k] |= bit;
+            collect(k + 1, used | bit, sum + d);
+          }
         }
       }
 
-      fill(0, 0, 0);
+      if (feasible(0, 0, 0)) collect(0, 0, 0);
       return _CageOptions(allowed, combos);
     }
 
-    List<List<int>> comboLists(Set<int> combos) => [
-          for (final m in combos) digitsOf(m)
-        ]..sort((a, b) => a.join().compareTo(b.join()));
+    List<List<int>> comboLists(Set<int> combos) =>
+        [for (final m in combos) digitsOf(m)]
+          ..sort((a, b) => a.join().compareTo(b.join()));
 
     // Clues must not already clash.
     for (final group in [
@@ -534,15 +618,21 @@ class SudokuExplainer {
         }
         final missing = full & ~placed & ~possible;
         if (missing != 0) {
-          record(SudokuStepKind.contradiction,
-              unit: unit, value: digitsOf(missing).first);
+          record(
+            SudokuStepKind.contradiction,
+            unit: unit,
+            value: digitsOf(missing).first,
+          );
           return true;
         }
       }
       for (final cage in cages) {
         if (cageOptions(cage).combinations.isEmpty) {
-          record(SudokuStepKind.contradiction,
-              cageSum: cage.targetSum, focusCells: cage.cellIndexes);
+          record(
+            SudokuStepKind.contradiction,
+            cageSum: cage.targetSum,
+            focusCells: cage.cellIndexes,
+          );
           return true;
         }
       }
@@ -562,12 +652,14 @@ class SudokuExplainer {
         if (removed.isEmpty) continue;
         final count = eliminate(removed);
         cageSteps++;
-        record(SudokuStepKind.cageCombination,
-            cageSum: cage.targetSum,
-            focusCells: cage.cellIndexes,
-            combinations: comboLists(options.combinations),
-            removed: removed,
-            eliminations: count);
+        record(
+          SudokuStepKind.cageCombination,
+          cageSum: cage.targetSum,
+          focusCells: cage.cellIndexes,
+          combinations: comboLists(options.combinations),
+          removed: removed,
+          eliminations: count,
+        );
         return true;
       }
       return false;
@@ -588,18 +680,20 @@ class SudokuExplainer {
           final removed = <int, int>{
             for (final i in b.cells)
               if (!shared.contains(i) && cells[i] == 0 && masks[i] & bit != 0)
-                i: bit
+                i: bit,
           };
           if (removed.isEmpty) continue;
           final count = eliminate(removed);
           locked++;
-          record(SudokuStepKind.lockedCandidates,
-              unit: a,
-              secondUnit: b,
-              focusCells: places,
-              digits: [d],
-              removed: removed,
-              eliminations: count);
+          record(
+            SudokuStepKind.lockedCandidates,
+            unit: a,
+            secondUnit: b,
+            focusCells: places,
+            digits: [d],
+            removed: removed,
+            eliminations: count,
+          );
           return true;
         }
       }
@@ -610,7 +704,7 @@ class SudokuExplainer {
       for (final unit in units) {
         final open = [
           for (final i in unit.cells)
-            if (cells[i] == 0 && _bitCount(masks[i]) <= k) i
+            if (cells[i] == 0 && _bitCount(masks[i]) <= k) i,
         ];
         if (open.length < k) continue;
         for (final group in _combinations(open, k)) {
@@ -622,17 +716,19 @@ class SudokuExplainer {
           final removed = <int, int>{
             for (final i in unit.cells)
               if (cells[i] == 0 && !group.contains(i) && masks[i] & union != 0)
-                i: masks[i] & union
+                i: masks[i] & union,
           };
           if (removed.isEmpty) continue;
           final count = eliminate(removed);
           nakedSubsets++;
-          record(SudokuStepKind.nakedSubset,
-              unit: unit,
-              focusCells: group,
-              digits: digitsOf(union),
-              removed: removed,
-              eliminations: count);
+          record(
+            SudokuStepKind.nakedSubset,
+            unit: unit,
+            focusCells: group,
+            digits: digitsOf(union),
+            removed: removed,
+            eliminations: count,
+          );
           return true;
         }
       }
@@ -651,7 +747,7 @@ class SudokuExplainer {
           if (placed & (1 << d) != 0) continue;
           final places = [
             for (final i in unit.cells)
-              if (cells[i] == 0 && masks[i] & (1 << d) != 0) i
+              if (cells[i] == 0 && masks[i] & (1 << d) != 0) i,
           ];
           if (places.length >= 2 && places.length <= k) placesOf[d] = places;
         }
@@ -665,17 +761,19 @@ class SudokuExplainer {
           }
           final removed = <int, int>{
             for (final i in where)
-              if (masks[i] & ~keep != 0) i: masks[i] & ~keep
+              if (masks[i] & ~keep != 0) i: masks[i] & ~keep,
           };
           if (removed.isEmpty) continue;
           final count = eliminate(removed);
           hiddenSubsets++;
-          record(SudokuStepKind.hiddenSubset,
-              unit: unit,
-              focusCells: where.toList()..sort(),
-              digits: group,
-              removed: removed,
-              eliminations: count);
+          record(
+            SudokuStepKind.hiddenSubset,
+            unit: unit,
+            focusCells: where.toList()..sort(),
+            digits: group,
+            removed: removed,
+            eliminations: count,
+          );
           return true;
         }
       }
@@ -694,13 +792,15 @@ class SudokuExplainer {
           break;
         }
       }
-      tree.add(SudokuSearchNode(
-        id: tree.length,
-        parent: parent,
-        cell: cell,
-        value: value,
-        step: steps.length < maxSteps ? steps.length : null,
-      ));
+      tree.add(
+        SudokuSearchNode(
+          id: tree.length,
+          parent: parent,
+          cell: cell,
+          value: value,
+          step: steps.length < maxSteps ? steps.length : null,
+        ),
+      );
       return tree.length - 1;
     }
 
@@ -709,15 +809,29 @@ class SudokuExplainer {
       if (path.length > maxDepth) maxDepth = path.length;
       guesses++;
       final removed = place(cell, value);
-      record(SudokuStepKind.guess,
-          cell: cell, value: value, alternatives: rest, eliminations: removed);
+      record(
+        SudokuStepKind.guess,
+        cell: cell,
+        value: value,
+        alternatives: rest,
+        eliminations: removed,
+      );
     }
 
     while (true) {
       if (placements > maxPlacements) {
         return finish('Search stopped after $maxPlacements placements.');
       }
-      if (recordContradiction()) {
+      bool contradiction;
+      try {
+        contradiction = recordContradiction();
+      } on _CageWorkLimit {
+        return finish(
+          'Search stopped after reaching the cage work limit '
+          '($maxCageWork).',
+        );
+      }
+      if (contradiction) {
         if (path.isNotEmpty && path.last >= 0) {
           tree[path.last].status = SudokuNodeStatus.deadEnd;
         }
@@ -726,6 +840,10 @@ class SudokuExplainer {
           stack.removeLast();
         }
         if (stack.isEmpty) {
+          // All guesses on the path have been exhaustively disproved.
+          for (final id in path) {
+            if (id >= 0) tree[id].status = SudokuNodeStatus.deadEnd;
+          }
           return finish('No solution exists for this puzzle.');
         }
         final branch = stack.last;
@@ -760,8 +878,12 @@ class SudokuExplainer {
           final value = digitsOf(m).single;
           final removed = place(i, value);
           naked++;
-          record(SudokuStepKind.nakedSingle,
-              cell: i, value: value, eliminations: removed);
+          record(
+            SudokuStepKind.nakedSingle,
+            cell: i,
+            value: value,
+            eliminations: removed,
+          );
           progressed = true;
           break;
         }
@@ -788,8 +910,13 @@ class SudokuExplainer {
           if (count == 1) {
             final removed = place(only!, d);
             hidden++;
-            record(SudokuStepKind.hiddenSingle,
-                cell: only, value: d, unit: unit, eliminations: removed);
+            record(
+              SudokuStepKind.hiddenSingle,
+              cell: only,
+              value: d,
+              unit: unit,
+              eliminations: removed,
+            );
             progressed = true;
             break search;
           }
@@ -798,7 +925,16 @@ class SudokuExplainer {
       if (progressed) continue;
 
       // Candidate eliminations, simplest first.
-      if (cageStep() ||
+      bool cageProgress;
+      try {
+        cageProgress = cageStep();
+      } on _CageWorkLimit {
+        return finish(
+          'Search stopped after reaching the cage work limit '
+          '($maxCageWork).',
+        );
+      }
+      if (cageProgress ||
           lockedStep() ||
           nakedSubsetStep(2) ||
           hiddenSubsetStep(2) ||
@@ -823,8 +959,15 @@ class SudokuExplainer {
       }
       final options = digitsOf(masks[best]);
       final rest = options.sublist(1);
-      stack.add(_Branch(List<int>.from(cells), List<int>.from(masks), best,
-          List<int>.from(rest), path.length));
+      stack.add(
+        _Branch(
+          List<int>.from(cells),
+          List<int>.from(masks),
+          best,
+          List<int>.from(rest),
+          path.length,
+        ),
+      );
       guess(best, options.first, rest);
     }
   }

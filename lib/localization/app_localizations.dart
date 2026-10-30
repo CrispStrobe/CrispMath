@@ -535,18 +535,37 @@ abstract class AppLocalizations {
   String sudokuStepBacktrack(String cell);
   String get sudokuStepSolved;
   String sudokuExplainStats(
-      int naked, int hidden, int guesses, int backtracks, int depth);
+    int naked,
+    int hidden,
+    int guesses,
+    int backtracks,
+    int depth,
+  );
   String get sudokuExplainLogicOnly;
   String sudokuExplainTruncated(int shown);
   String sudokuStepCage(int sum, int size, String combos, int removed);
   String sudokuStepLocked(int digit, String unit, String other, int removed);
   String sudokuStepNakedSubset(
-      int size, String cells, String digits, String unit, int removed);
+    int size,
+    String cells,
+    String digits,
+    String unit,
+    int removed,
+  );
   String sudokuStepHiddenSubset(
-      int size, String digits, String unit, String cells, int removed);
+    int size,
+    String digits,
+    String unit,
+    String cells,
+    int removed,
+  );
   String sudokuStepContradictionCage(int sum);
   String sudokuExplainEliminations(
-      int cages, int locked, int nakedSubsets, int hiddenSubsets);
+    int cages,
+    int locked,
+    int nakedSubsets,
+    int hiddenSubsets,
+  );
   String get sudokuSearchTreeTitle;
   String get sudokuSearchTreeHint;
   String sudokuSearchTreeTruncated(int shown);
@@ -612,10 +631,14 @@ abstract class AppLocalizations {
   String constraintsTraceBackjump(int from, int to);
   String get constraintsTraceSolutionStep;
   String constraintsTraceStats(
-      int decisions, int prunes, int wipeouts, int backtracks);
+    int decisions,
+    int prunes,
+    int wipeouts,
+    int backtracks,
+  );
   String get constraintsTracePropagationOnly;
   String get constraintsTraceTopConstraints;
-  String constraintsTraceConstraintWork(int removed, int prunes);
+  String constraintsTraceConstraintWork(int removed, int prunes, int wipeouts);
   String get constraintsMagicVisualizeHint;
   String get constraintsTraceSolved;
   String get constraintsTraceUnsat;
@@ -901,7 +924,8 @@ extension AppLocalizationsExtensions on AppLocalizations {
       return curveResultNoInflection;
     }
     if (raw.startsWith(
-        'Error: Cannot find inflection points without second derivative')) {
+      'Error: Cannot find inflection points without second derivative',
+    )) {
       return curveResultNoInflection;
     }
     final replacements = <String, String>{
