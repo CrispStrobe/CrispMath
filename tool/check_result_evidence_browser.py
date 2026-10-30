@@ -45,9 +45,16 @@ async def check(args):
             saved = json.loads(json.loads(raw))
             assert abs(float(saved['l'][2]['r']) - 1.4626517459) < 1e-7
             assert saved['l'][3]['evidence'].get('unchanged') is True
-            details = page.get_by_role('button', name='Result details', exact=True)
-            assert await details.count() == len(CASES)
-            await details.nth(2).click()
+            # Details are on demand: no info glyph sits on the line, the
+            # result's context menu carries them.
+            assert await page.get_by_role(
+                'button', name='Result details', exact=True).count() == 0
+            numerical = saved['l'][2]['r']
+            await page.get_by_label(re.compile('^' + re.escape(numerical[:10])),
+                                    exact=False).last.click(button='right')
+            await next_frames(page)
+            await page.get_by_role(
+                'button', name='Result details', exact=True).click()
             await page.get_by_text('Approximate · Numerical integration (Simpson’s rule)', exact=True).wait_for()
             await page.screenshot(path=str(output/'numerical-method.png'))
             await page.get_by_role('button', name='Close', exact=True).click()
@@ -55,9 +62,8 @@ async def check(args):
             await page.locator('canvas').first.wait_for(timeout=300000)
             await page.locator('flt-semantics-placeholder').evaluate('(element)=>element.click()')
             await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
-            await page.get_by_role('button', name='Result details', exact=True).nth(2).click()
-            await page.get_by_text('Approximate · Numerical integration (Simpson’s rule)', exact=True).wait_for()
-            await page.get_by_role('button', name='Close', exact=True).click()
+            assert await page.get_by_role(
+                'button', name='Result details', exact=True).count() == 0
             await page.screenshot(path=str(output/'worksheet-methods.png'))
             assert not errors, errors
             report = {'cases': saved['l'], 'restored': True, 'pageErrors': errors}

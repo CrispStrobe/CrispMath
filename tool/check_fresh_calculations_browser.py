@@ -38,9 +38,17 @@ async def check(args):
                 assert '≠' in domain and '-3' in domain and '2' in domain, domain
                 roots = saved['l'][2]['r'].strip('{}').split(',')
                 assert sorted(float(v) for v in roots) == [1, 3], saved['l'][2]
-                details = page.get_by_role('button', name='Result details', exact=True)
-                assert await details.count() == len(saved['l'])
-                await details.nth(1).click()
+                # Details are on demand from the result's context menu; no
+                # per-result info glyph is rendered.
+                assert await page.get_by_role(
+                    'button', name='Result details', exact=True).count() == 0
+                simplified = saved['l'][1]['r']
+                await page.get_by_label(
+                    re.compile('^' + re.escape(simplified[:10])),
+                    exact=False).last.click(button='right')
+                await next_frames(page)
+                await page.get_by_role(
+                    'button', name='Result details', exact=True).click()
                 await page.get_by_text('Original domain: ' + domain, exact=True).wait_for()
                 await page.screenshot(path=str(output / f'domain-{width}.png'))
                 await page.get_by_role('button', name='Close', exact=True).click()

@@ -40,11 +40,7 @@ class _NotepadResultColumn extends StatelessWidget {
     if (line.cachedError != null) {
       return Align(
         alignment: align,
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Flexible(child: _buildErrorWidget(context, line.cachedError!, textAlign)),
-          if (line.resultEvidence != null)
-            ResultEvidenceBadge(evidence: line.resultEvidence!),
-        ]),
+        child: _buildErrorWidget(context, line.cachedError!, textAlign),
       );
     }
 
@@ -55,17 +51,7 @@ class _NotepadResultColumn extends StatelessWidget {
         : rawRes;
     final children = <Widget>[];
     if (res != null && res.isNotEmpty) {
-      if (line.resultEvidence == null) {
-        children.add(_buildResult(context, res, textAlign));
-      } else {
-        children.add(Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(child: _buildResult(context, res, textAlign)),
-            ResultEvidenceBadge(evidence: line.resultEvidence!),
-          ],
-        ));
-      }
+      children.add(_buildResult(context, res, textAlign));
     }
     // Show a small format indicator when a non-auto format is active.
     if (rawRes != null &&
@@ -305,6 +291,18 @@ class _NotepadResultColumn extends StatelessWidget {
                 );
               },
             ),
+            if (line.resultEvidence != null)
+              ListTile(
+                leading: const Icon(Icons.info_outline,
+                    semanticLabel: 'Result details'),
+                title: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.resultDetails)),
+                onTap: () {
+                  final evidence = line.resultEvidence!;
+                  Navigator.of(sheetContext).pop();
+                  showResultEvidenceDialog(context, evidence);
+                },
+              ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.save_alt,

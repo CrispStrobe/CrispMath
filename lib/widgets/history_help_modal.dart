@@ -345,8 +345,7 @@ class HistoryRowHelpModal extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               if (entry.resultEvidence != null)
-                ResultEvidenceBadge(
-                    evidence: entry.resultEvidence!, compact: false),
+                ResultEvidenceBadge(evidence: entry.resultEvidence!),
               if (entry.resultEvidence == null && info.hasEngine) ...[
                 Text(
                   t.historyHelpComputedVia(info.engineLabel!),

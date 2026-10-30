@@ -2267,6 +2267,18 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   _toast(context, 'Link copied');
                 },
               ),
+              if (entry.resultEvidence != null)
+                ListTile(
+                  leading: const Icon(Icons.info_outline,
+                      semanticLabel: 'Result details'),
+                  title: Text(WorkflowLocalizations.of(context)
+                      .text(WorkflowLabel.resultDetails)),
+                  onTap: () {
+                    final evidence = entry.resultEvidence!;
+                    Navigator.of(ctx).pop();
+                    showResultEvidenceDialog(context, evidence);
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.refresh,
                     semanticLabel: 'Reuse expression'),
@@ -2848,6 +2860,30 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                             ? ExactInteger.abbreviate(
                                                 entry.result)
                                             : display;
+                                        // The big-integer explanation used to be a
+                                        // second text line under every long result.
+                                        // It rides on the value as a tooltip now: the
+                                        // value itself is already tap-to-copy.
+                                        final resultBody = Text(
+                                          isError
+                                              ? display
+                                              : '= $shownResult',
+                                          style: TextStyle(
+                                            fontSize: isError
+                                                ? 16
+                                                : (isBigInt ? 18 : 28),
+                                            color: isError
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .error
+                                                : Colors.blue[300],
+                                            fontStyle: isError
+                                                ? FontStyle.italic
+                                                : FontStyle.normal,
+                                          ),
+                                          textAlign: TextAlign.right,
+                                          softWrap: true,
+                                        );
                                         return HelpTarget(
                                           onHelpTap: () =>
                                               _showHistoryHelpModal(
@@ -2877,54 +2913,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                                   _buildBooleanChip(
                                                       context, boolChip)
                                                 else
-                                                  Text(
-                                                    isError
-                                                        ? display
-                                                        : '= $shownResult',
-                                                    style: TextStyle(
-                                                      fontSize: isError
-                                                          ? 16
-                                                          : (isBigInt
-                                                              ? 18
-                                                              : 28),
-                                                      color: isError
-                                                          ? Theme.of(context)
-                                                              .colorScheme
-                                                              .error
-                                                          : Colors.blue[300],
-                                                      fontStyle: isError
-                                                          ? FontStyle.italic
-                                                          : FontStyle.normal,
-                                                    ),
-                                                    textAlign: TextAlign.right,
-                                                    softWrap: true,
-                                                  ),
-                                                if (entry.resultEvidence !=
-                                                    null)
-                                                  ResultEvidenceBadge(
-                                                      evidence: entry
-                                                          .resultEvidence!),
-                                                if (isBigInt)
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            top: 2),
-                                                    child: Text(
-                                                      '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface
-                                                            .withValues(
-                                                                alpha: 0.6),
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                      ),
-                                                      textAlign:
-                                                          TextAlign.right,
-                                                    ),
-                                                  ),
+                                                  isBigInt
+                                                      ? Tooltip(
+                                                          message:
+                                                              '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
+                                                          child: resultBody,
+                                                        )
+                                                      : resultBody,
                                               ],
                                             ),
                                           ),

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import '../engine/result_evidence.dart';
 import '../localization/workflow_localizations.dart';
 
+/// How a result was produced: accuracy, method, and any domain caveat.
+///
+/// This is reference detail, not chrome. It is shown on demand — from a
+/// result's context menu or in the optional history help view — never as
+/// a widget attached to every computed line.
 class ResultEvidenceBadge extends StatelessWidget {
-  const ResultEvidenceBadge(
-      {super.key, required this.evidence, this.compact = true});
+  const ResultEvidenceBadge({super.key, required this.evidence});
   final ResultEvidence evidence;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -33,40 +36,33 @@ class ResultEvidenceBadge extends StatelessWidget {
       ComputationMethod.calendar => WorkflowLabel.methodCalendar,
       ComputationMethod.unitConversion => WorkflowLabel.methodUnits,
     });
-    Widget details() => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('$accuracy · $method'),
-              if (evidence.accuracy == ResultAccuracy.unknown)
-                Text(t.text(WorkflowLabel.resultUnknownPrecision)),
-              if (evidence.sourceDomain != null)
-                Text('Original domain: ${evidence.sourceDomain}'),
-              if (evidence.unchanged)
-                Text(t.text(WorkflowLabel.resultUnchanged)),
-            ]);
-    if (!compact) return details();
-    // Compact usage sits beside every computed result, where a text
-    // button ("Exact · Integer arithmetic") cost a whole row on the
-    // notepad. A single info glyph keeps the affordance while leaving
-    // the space to the value itself.
-    return IconButton(
-      icon: const Icon(Icons.info_outline, size: 14),
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-      iconSize: 14,
-      tooltip: t.text(WorkflowLabel.resultDetails),
-      onPressed: () => showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-                  title: Text(t.text(WorkflowLabel.resultDetails)),
-                  content: details(),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(t.text(WorkflowLabel.close)))
-                  ])),
-    );
+    return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$accuracy · $method'),
+          if (evidence.accuracy == ResultAccuracy.unknown)
+            Text(t.text(WorkflowLabel.resultUnknownPrecision)),
+          if (evidence.sourceDomain != null)
+            Text('Original domain: ${evidence.sourceDomain}'),
+          if (evidence.unchanged)
+            Text(t.text(WorkflowLabel.resultUnchanged)),
+        ]);
   }
+}
+
+/// Opens the on-demand details dialog for [evidence].
+Future<void> showResultEvidenceDialog(
+    BuildContext context, ResultEvidence evidence) {
+  final t = WorkflowLocalizations.of(context);
+  return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+              title: Text(t.text(WorkflowLabel.resultDetails)),
+              content: ResultEvidenceBadge(evidence: evidence),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(t.text(WorkflowLabel.close)))
+              ]));
 }

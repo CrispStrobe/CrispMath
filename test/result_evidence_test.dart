@@ -95,23 +95,17 @@ void main() {
     await evaluator.evaluateFrom(doc, 0);
     expect(doc.lines.first.resultEvidence, isNull);
   });
-  testWidgets('numerical evidence is a glyph, not a text row',
+  testWidgets('evidence detail is on demand and never a per-result widget',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
         home: Scaffold(
             body: ResultEvidenceBadge(
                 evidence: ResultEvidence(ResultAccuracy.approximate,
                     ComputationMethod.simpsonIntegration)))));
-    // Regression: the compact badge used to print
-    // "Approximate · Simpson integration" next to every result, which
-    // cost a whole line on the notepad. It must stay a single glyph.
-    expect(find.textContaining('Approximate'), findsNothing);
-    expect(find.textContaining('Simpson'), findsNothing);
-    final info = find.byIcon(Icons.info_outline);
-    expect(info, findsOneWidget);
-    await tester.tap(info);
-    await tester.pumpAndSettle();
-    expect(find.text('Result details'), findsOneWidget);
-    expect(find.textContaining('Simpson'), findsOneWidget);
+    // The badge is reference text, not chrome: it carries no button and
+    // is only ever mounted inside an explicit details view.
+    expect(find.byType(IconButton), findsNothing);
+    expect(find.text('Approximate · Numerical integration (Simpson’s rule)'),
+        findsOneWidget);
   });
 }

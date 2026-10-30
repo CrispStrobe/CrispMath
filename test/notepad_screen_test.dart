@@ -79,13 +79,13 @@ void main() {
     final result = find.byKey(ValueKey('notepad-result:${line.id}'));
     expect(result, findsOneWidget);
     expect(tester.getSemantics(result).label, '39');
-    final details = find.byTooltip('Result details');
-    expect(details, findsOneWidget);
-    final resultRect = tester.getRect(result);
-    final detailRect = tester.getRect(details);
-    expect(detailRect.top, lessThan(resultRect.bottom),
-        reason: 'result details must share the result row');
-    expect(detailRect.bottom, greaterThan(resultRect.top));
+    expect(find.byTooltip('Result details'), findsNothing,
+        reason: 'result metadata must not add an icon to every line');
+    await tester.tap(result, buttons: 2);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Result details'));
+    await tester.pumpAndSettle();
+    expect(find.text('Exact · Integer arithmetic'), findsOneWidget);
     } finally {
       semantics.dispose();
     }
