@@ -4,11 +4,62 @@ import asyncio
 import json
 import re
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from playwright.async_api import async_playwright, expect
 from benchmark_workflows import bootstrap, context_for, next_frames
 from check_round6_statistics_browser import real_click
 
 CASES = ['integrate(x^2,x,0,1)', 'integrate(x^2,(x,0,1))']
+TRACE_PREFIX = '[CALC-INPUT-TRACE] '
+TRACE_LIMIT = 512
+
+
+def diagnostic_url(url):
+    parts = urlsplit(url)
+    query = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True)
+             if key != 'crispInputTrace']
+    query.append(('crispInputTrace', '1'))
+    return urlunsplit(parts._replace(query=urlencode(query)))
+
+
+def collect_trace(message, report):
+    """Capture only our structured, text-free Flutter instrumentation."""
+    _, separator, payload = message.partition(TRACE_PREFIX)
+    if not separator:
+        return
+    try:
+        event = json.loads(payload)
+    except (TypeError, ValueError):
+        report['flutterTraceMalformed'] += 1
+        return
+    if not isinstance(event, dict):
+        report['flutterTraceMalformed'] += 1
+    elif len(report['flutterTrace']) < TRACE_LIMIT:
+        report['flutterTrace'].append(event)
+    else:
+        report['flutterTraceDropped'] += 1
+
+
+async def editor_state(editor, stage, report):
+    state = await editor.evaluate('''el => {
+        if (!window.crispInputNodeIds) {
+            window.crispInputNodeIds = new WeakMap();
+            window.crispInputNextNodeId = 1;
+        }
+        const id = node => {
+            if (!node) return null;
+            if (!window.crispInputNodeIds.has(node))
+                window.crispInputNodeIds.set(node, window.crispInputNextNodeId++);
+            return window.crispInputNodeIds.get(node);
+        };
+        return {value: el.value, focused: el === document.activeElement,
+            nodeId: id(el), connected: el.isConnected,
+            activeNodeId: id(document.activeElement),
+            activeConnected: document.activeElement?.isConnected ?? false,
+            selectionStart: el.selectionStart, selectionEnd: el.selectionEnd};
+    }''')
+    state.update({'stage': stage, 'traceCount': len(report['flutterTrace'])})
+    report['editorStates'].append(state)
 
 async def check(args):
     output = Path(args.output)
@@ -22,9 +73,11 @@ async def check(args):
             options['executable_path'] = args.chromium
         browser = await p.chromium.launch(**options)
         context, page, errors = await context_for(browser, {'viewport': {'width': 1280, 'height': 900}, 'cpu': 1}, document)
-        report = {'url': args.url, 'calculator': [], 'editorStates': [], 'pageErrors': errors}
+        report = {'url': args.url, 'calculator': [], 'editorStates': [], 'pageErrors': errors,
+                  'flutterTrace': [], 'flutterTraceMalformed': 0, 'flutterTraceDropped': 0}
+        page.on('console', lambda message: collect_trace(message.text, report))
         try:
-            await bootstrap(page, args.url)
+            await bootstrap(page, diagnostic_url(args.url))
             await real_click(page, page.get_by_role(
                 'button', name='Edit expression', exact=True))
             for source in CASES:
@@ -49,17 +102,16 @@ async def check(args):
                     await expect(editor).to_have_value('')
                     await real_click(page, editor)
                     await next_frames(page)
+                    await editor_state(editor, 'before typing', report)
                     await page.keyboard.type('2+2', delay=10)
-                    report['editorStates'].append({'stage': 'after fill',
-                        'value': await editor.input_value(),
-                        'focused': await editor.evaluate('el => el === document.activeElement')})
+                    await editor_state(editor, 'after fill', report)
                     await expect(editor).to_have_value('2+2')
                     await next_frames(page)
-                    report['editorStates'].append({'stage': 'before Enter',
-                        'value': await editor.input_value(),
-                        'focused': await editor.evaluate('el => el === document.activeElement')})
+                    await editor_state(editor, 'before Enter', report)
                     await expect(editor).to_have_value('2+2')
                     await expect(editor).to_be_focused()
+                    await page.screenshot(path=str(output/'before-second-enter.png'))
+                    report['beforeSecondEnterScreenshot'] = 'before-second-enter.png'
                     await editor.press('Enter')
                     await page.wait_for_function("""() => {
                         const entry=JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0];

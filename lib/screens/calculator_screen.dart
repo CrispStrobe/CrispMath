@@ -502,6 +502,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       _lastInputText = _latexController.text;
       _inputRevision++;
     }
+    _traceInput('math-changed');
     if (_justCalculated && _latexController.text.isNotEmpty) {
       final currentInput = _latexController.text.trim();
 
@@ -593,6 +594,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   bool _handleKeyboardInput(KeyEvent event) {
     KeyboardInputHandler.debugKeyboardInput(event);
+
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      _traceInput(event is KeyDownEvent
+          ? 'keyboard-enter-down'
+          : 'keyboard-enter-other');
+    }
 
     // If another widget (e.g. the history-search TextField) has primary
     // focus, the user is typing INTO that widget — let the event pass
@@ -1149,6 +1157,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
   // Only the draft submitted by this calculation may be consumed. Comparing
   // revisions also protects edits that happen to return to the original text.
   void _finishSubmittedInput({bool justCalculated = false, bool clearPreview = false}) {
+    _traceInput('finish-submitted-input');
     if (_inputRevision != _submittedInputRevision) {
       // A completed result can change Ans or variables used by the draft.
       _scheduleLivePreview();
@@ -1160,16 +1169,19 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   Future<void> _calculate(String expression) async {
+    _traceInput('calculate-called', expression: expression);
     // Preserve submission order while keeping the shared result evidence
     // isolated. Capture the draft revision now, not when a queued run starts.
     final inputRevision = _inputRevision;
     while (_calculationPending != null) {
+      _traceInput('calculate-waiting', expression: expression);
       await _calculationPending!.future;
       if (!mounted) return;
     }
     final pending = Completer<void>();
     _calculationPending = pending;
     _submittedInputRevision = inputRevision;
+    _traceInput('calculate-started', expression: expression);
     _resultEvidence = null;
     if (kDebugMode) debugPrint('CALC: "$expression"');
     try {
@@ -1399,6 +1411,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
       }
 
       if (!mounted) return;
+      _traceInput('calculate-result',
+          expression: expression, resultIsFour: result == '4');
       setState(() {
         _appState.addHistoryEntry(
             LatexConversionUtils.latexToReadable(expression), result,
@@ -1412,14 +1426,35 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _finishSubmittedInput(justCalculated: true, clearPreview: true);
       });
     } catch (e) {
+      _traceInput('calculate-error', expression: expression);
       if (kDebugMode) debugPrint('CALC: error: $e');
       if (!mounted) return;
       setState(() =>
           _appState.addHistoryEntry(expression, 'Error: ${e.toString()}'));
     } finally {
+      _traceInput('calculate-finished', expression: expression);
       _calculationPending = null;
       pending.complete();
     }
+  }
+
+  void _traceInput(String stage, {String? expression, bool? resultIsFour}) {
+    if (!calculatorInputTraceEnabled) return;
+    traceCalculatorInput({
+      'stage': stage,
+      'mathLength': _latexController.text.length,
+      'mathIsTarget': _latexController.text == '2+2',
+      'expressionLength': expression?.length,
+      'expressionIsTarget': expression == '2+2',
+      'resultIsFour': resultIsFour,
+      'calculatorPrimaryFocus': _calculatorFocusNode.hasPrimaryFocus,
+      'otherPrimaryFocus': FocusManager.instance.primaryFocus != null &&
+          !_calculatorFocusNode.hasPrimaryFocus,
+      'inputRevision': _inputRevision,
+      'submittedRevision': _submittedInputRevision,
+      'pending': _calculationPending != null,
+      'mounted': mounted,
+    });
   }
 
   bool _isFunctionCall(String s, String name) {
@@ -3145,6 +3180,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                     onResetFocus: _resetFocus,
                     onEvaluate: () => _onButtonPressed('EXE'),
                     onTextSubmitted: () {
+                      _traceInput('screen-text-submitted');
                       if (_latexController.text.isNotEmpty) {
                         _calculate(_latexController.text);
                       }

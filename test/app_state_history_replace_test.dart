@@ -182,6 +182,64 @@ void main() {
     expect(s.history.map((e) => e.expression), ['newer', 'new', 'old']);
   });
 
+  test('failed queued replacement does not replay pre-snapshot edits twice',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState();
+    await s.load(force: true);
+    final old = List.generate(197, (i) => _entry('old-$i', '$i'));
+    await s.replaceHistory(old);
+    final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
+    SharedPreferencesStorePlatform.instance = store;
+    addTearDown(() => SharedPreferencesStorePlatform.instance = store.delegate);
+
+    final blockingWrite = Completer<bool>();
+    store.nextResult = blockingWrite;
+    store.started = Completer<void>();
+    s.addHistoryEntry('blocker', '1');
+    await store.started!.future;
+
+    final listenerWrite = Completer<bool>();
+    final listenerStarted = Completer<void>();
+    var listenerEdited = false;
+    final channel = s.changesFor(AppStateDomain.history);
+    void onHistory() {
+      if (!listenerEdited && s.history.any((e) => e.expression == 'imported')) {
+        listenerEdited = true;
+        store.nextResult = listenerWrite;
+        store.started = listenerStarted;
+        s.addHistoryEntry('late', '3');
+      }
+    }
+    channel.addListener(onHistory);
+    addTearDown(() => channel.removeListener(onHistory));
+
+    final replacement = s.replaceHistory([_entry('imported', '2')]);
+    final failure = expectLater(replacement, throwsStateError);
+    s.addHistoryEntry('early', '2');
+    blockingWrite.complete(true);
+    await listenerStarted.future;
+    expect(listenerEdited, isTrue);
+    expect(s.history.map((e) => e.expression), ['late', 'early', 'imported']);
+    listenerWrite.complete(false);
+    await failure;
+
+    final expected = [
+      'late',
+      'early',
+      'blocker',
+      ...old.map((e) => e.expression),
+    ];
+    expect(expected, hasLength(AppState.historyCap));
+    expect(s.history.map((e) => e.expression), expected);
+    final backend = await store.getAll();
+    final stored = jsonDecode(backend['flutter.crisp.history'] as String) as List;
+    expect(stored.map((e) => e['e']), expected);
+    await s.flushPersistence();
+    await s.load(force: true);
+    expect(s.history.map((e) => e.expression), expected);
+  });
+
   test('persistent backend failure keeps edits in memory and permits retry',
       () async {
     SharedPreferences.setMockInitialValues({});

@@ -1285,6 +1285,8 @@ class AppState extends ChangeNotifier {
           throw StateError('History storage is unavailable');
         }
         final original = List<CalculationEntry>.of(history);
+        // Earlier queued edits are already reflected in this snapshot.
+        final originalEditCount = edits.length;
         var published = false;
         try {
           while (true) {
@@ -1314,8 +1316,8 @@ class AppState extends ChangeNotifier {
           // A prior candidate may already have reached the backend. Restore
           // the original live history, including edits made during recovery.
           if (published) {
-            for (final edit in edits) {
-              edit(original);
+            for (var i = originalEditCount; i < edits.length; i++) {
+              edits[i](original);
             }
             history
               ..clear()

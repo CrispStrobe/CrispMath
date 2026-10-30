@@ -37,6 +37,17 @@ Future<void> _pump(WidgetTester tester, Size size,
 }
 
 void main() {
+  test('browser input tracing requires explicit debug web opt-in', () {
+    final enabled = Uri.parse('https://example.test/?crispInputTrace=1');
+    final disabled = Uri.parse('https://example.test/');
+    expect(inputTraceEnabledFor(true, true, enabled), isTrue);
+    expect(inputTraceEnabledFor(false, true, enabled), isFalse);
+    expect(inputTraceEnabledFor(true, false, enabled), isFalse);
+    expect(inputTraceEnabledFor(true, true, disabled), isFalse);
+    expect(inputTraceEnabledFor(true, true,
+        Uri.parse('https://example.test/?crispInputTrace=0')), isFalse);
+  });
+
   testWidgets('editor keeps a synchronous calculator rewrite before more typing',
       (tester) async {
     final controller = LatexController();
