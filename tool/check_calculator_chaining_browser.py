@@ -46,6 +46,12 @@ async def check(args):
                             expression + ' = ' + ('No Ans in memory.' if
                             result == 'Error: No Ans in memory' else result)),
                             exact=True).wait_for(state='attached')
+                        # Persisting and rendering the history row may finish
+                        # before Flutter clears the text editor. Wait for the
+                        # real field to settle before starting the next edit.
+                        await expect(editor).to_have_value('')
+                        await next_frames(page)
+                        await expect(editor).to_have_value('')
 
                     await editor.fill('Ans/2')
                     await submit('Ans/2', 'Error: No Ans in memory')
