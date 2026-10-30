@@ -1,9 +1,7 @@
 import 'package:crisp_math/engine/app_state.dart';
-import 'package:crisp_math/engine/result_evidence.dart';
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/services/engine_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,7 +30,7 @@ void main() {
     final node = find.bySemanticsLabel('$expr\n= $result');
     expect(node, findsOneWidget);
     final data = tester.getSemantics(node);
-    expect(data.hasFlag(SemanticsFlag.isButton), isTrue,
+    expect(data.flagsCollection.isButton, isTrue,
         reason: 'the row opens details, so it must be an accessible action');
     expect(find.bySemanticsLabel(expr), findsNothing,
         reason: 'the expression must not also be a separate label');
