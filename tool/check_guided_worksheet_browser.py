@@ -123,7 +123,7 @@ async def check(args):
                   const raw=localStorage.getItem('flutter.crisp.graphLinks');
                   return raw&&Object.values(JSON.parse(JSON.parse(raw))).some(link=>link.document===id);
                 }''', arg=doc_id)
-                await page.get_by_role('button', name='View linked graph', exact=True).wait_for()
+                await worksheet_action('View linked graph')
                 after = await snapshot(page)
                 doc = next(doc for doc in after['documents'] if doc['i'] == doc_id)
                 assert [row['s'] for row in doc['l']] == ['a=3', 'f(x)=x^2+a', 'f(4)'], doc

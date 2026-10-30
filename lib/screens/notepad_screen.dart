@@ -1772,27 +1772,39 @@ class NotepadScreenState extends State<NotepadScreen> {
             PopupMenuItem(value: 'open-file', child: Text(t.notepadOpenFile)),
             if (doc != null)
               PopupMenuItem(value: 'save-file', child: Text(t.notepadSaveFile)),
+            // Worksheet-level actions stay near the top: they are what the
+            // guided flows use, and a long menu pushes the tail off-screen.
+            if (doc != null &&
+                doc.lines.any((line) => line.source.trim().isNotEmpty)) ...[
+              PopupMenuItem(
+                value: 'document-history',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.worksheetHistory)),
+              ),
+              PopupMenuItem(
+                value: 'export-preview',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.worksheetExport)),
+              ),
+              if (_linkedSourceFor(doc) != null)
+                PopupMenuItem(
+                  value: 'open-linked-graph',
+                  child: Text(WorkflowLocalizations.of(context)
+                      .text(WorkflowLabel.worksheetGraph)),
+                ),
+            ],
             if (compact) ...[
               const PopupMenuItem(value: 'scan', child: Text('Scan math')),
               const PopupMenuItem(value: 'write', child: Text('Write math')),
               const PopupMenuItem(
                   value: 'examples', child: Text('Worked examples')),
             ],
-            // Template picker sub-items.
-            for (final tmpl in NotepadTemplates.all)
-              PopupMenuItem(
-                value: 'template:${tmpl.id}',
-                child: Row(
-                  children: [
-                    const Icon(Icons.description_outlined,
-                        size: 16, semanticLabel: 'Template'),
-                    const SizedBox(width: 8),
-                    Flexible(
-                        child:
-                            Text(tmpl.name, overflow: TextOverflow.ellipsis)),
-                  ],
-                ),
-              ),
+            // One entry instead of seven: the picker opens a dialog, which
+            // keeps this menu short enough to use without scrolling.
+            const PopupMenuItem(
+              value: 'template-picker',
+              child: Text('Insert template…'),
+            ),
           ];
           final others = _otherDocsForMenu();
           if (others.isNotEmpty) {
@@ -1831,21 +1843,6 @@ class NotepadScreenState extends State<NotepadScreen> {
               value: 'copy-markdown',
               child: Text(t.notepadCopyAsMarkdown),
             ));
-            items.add(PopupMenuItem(
-              value: 'document-history',
-              child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetHistory)),
-            ));
-            items.add(PopupMenuItem(
-              value: 'export-preview',
-              child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetExport)),
-            ));
-            if (_linkedSourceFor(doc) != null) {
-              items.add(PopupMenuItem(
-                value: 'open-linked-graph',
-                child: Text(WorkflowLocalizations.of(context)
-                    .text(WorkflowLabel.worksheetGraph)),
-              ));
-            }
             items.add(const PopupMenuItem(
               value: 'export-pdf',
               child: Text('Export PDF'),
@@ -1881,6 +1878,30 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _onMenuSelected(String value) async {
+    if (value == 'template-picker') {
+      final chosen = await showDialog<NotepadTemplate>(
+        context: context,
+        builder: (ctx) => SimpleDialog(
+          title: const Text('Insert template'),
+          children: [
+            for (final tmpl in NotepadTemplates.all)
+              SimpleDialogOption(
+                onPressed: () => Navigator.of(ctx).pop(tmpl),
+                child: Row(children: [
+                  const Icon(Icons.description_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(tmpl.name)),
+                ]),
+              ),
+          ],
+        ),
+      );
+      if (chosen == null || !mounted) return;
+      final doc = chosen.createDocument();
+      _appState.setNotepadDocument(doc);
+      _appState.setCurrentNotepadDoc(doc.id);
+      return;
+    }
     if (value == 'search-commands') {
       widget.onOpenCommands?.call();
       return;
