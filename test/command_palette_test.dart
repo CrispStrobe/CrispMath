@@ -73,11 +73,26 @@ void main() {
     expect(AppState().history, isEmpty);
     expect(find.widgetWithText(TextButton, 'Search commands'), findsNothing,
         reason: 'the palette trigger must not spend a line above the body');
-    final trigger = find.byTooltip('Search commands');
+    final trigger = find.byTooltip('Search history');
     expect(trigger, findsOneWidget,
-        reason: 'search must stay reachable with an empty history');
+        reason: 'one search control must also work with empty history');
+    expect(find.byTooltip('Search commands'), findsNothing);
     await tester.tap(trigger);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Search commands'));
+    await tester.pumpAndSettle();
     expect(find.text('Find a command'), findsWidgets);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    AppState().addHistoryEntry('1+1', '2');
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Clear History'), findsNothing,
+        reason: 'clear belongs in the search menu, not a permanent row');
+    await tester.tap(trigger);
+    await tester.pumpAndSettle();
+    expect(find.text('Clear History'), findsOneWidget);
+    await tester.tap(find.text('Search history'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsWidgets);
   });
 }
