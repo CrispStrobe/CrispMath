@@ -74,7 +74,7 @@ void main() {
     expect(AppState().history, isEmpty);
     expect(find.widgetWithText(TextButton, 'Search commands'), findsNothing,
         reason: 'the palette trigger must not spend a line above the body');
-    final trigger = find.byTooltip('Search history');
+    final trigger = find.byTooltip('Search');
     expect(trigger, findsOneWidget,
         reason: 'one search control must also work with empty history');
     expect(find.byTooltip('Search commands'), findsNothing);

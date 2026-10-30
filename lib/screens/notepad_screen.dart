@@ -78,7 +78,11 @@ part 'notepad/result_column.dart';
 const double _kSideBySideBreakpoint = 720;
 
 class NotepadScreen extends StatefulWidget {
-  const NotepadScreen({super.key});
+  const NotepadScreen({super.key, this.onOpenCommands});
+
+  /// Optional: open the shell's command palette, so command search is
+  /// reachable by touch from this tab too.
+  final VoidCallback? onOpenCommands;
 
   @override
   State<NotepadScreen> createState() => NotepadScreenState();
@@ -129,6 +133,17 @@ class NotepadScreenState extends State<NotepadScreen> {
   final Map<String, undo.UndoHistory> _undoHistories = {};
   undo.UndoHistory _undoFor(NotepadDocument doc) =>
       _undoHistories.putIfAbsent(doc.id, () => undo.UndoHistory());
+
+  void _dismissPendingLineUndo(NotepadDocument doc) {
+    final pending = _pendingDeletion;
+    if (pending == null ||
+        pending.kind != _PendingDeletionKind.line ||
+        pending.doc.id != doc.id) {
+      return;
+    }
+    _pendingDeletion = null;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  }
 
   /// Scroll controller for the line list so blocked-by chips can
   /// scroll the upstream line into view on tap.
@@ -371,6 +386,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _onLineEdited(NotepadDocument doc, NotepadLine line, String value,
       [int? knownIndex]) {
     if (line.source == value) return;
+    _dismissPendingLineUndo(doc);
     final prev = line.source;
     final index = knownIndex ?? doc.lines.indexOf(line);
     final firstCode = firstCodeLineIndexOf(doc);
@@ -410,6 +426,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _appendLine(NotepadDocument doc) {
+    _dismissPendingLineUndo(doc);
     final line = NotepadLine.fresh(source: '');
     doc.lines.add(line);
     _undoFor(doc).record(undo.UndoOp(
@@ -425,7 +442,8 @@ class NotepadScreenState extends State<NotepadScreen> {
     });
   }
 
-  void _performUndo(NotepadDocument doc) {
+  void _performUndo(NotepadDocument doc, {bool dismissSnackbar = true}) {
+    if (dismissSnackbar) _dismissPendingLineUndo(doc);
     final op = _undoFor(doc).undo();
     if (op == null) return;
     final modified = undo.applyUndo(doc, op);
@@ -438,6 +456,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _performRedo(NotepadDocument doc) {
+    _dismissPendingLineUndo(doc);
     final op = _undoFor(doc).redo();
     if (op == null) return;
     final modified = undo.applyRedo(doc, op);
@@ -520,12 +539,20 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   Widget _buildSearchBar(NotepadDocument doc) {
+    // Count only rows the user can actually see: a match inside a
+    // collapsed section was reported but never highlighted.
+    final visible = _visibleLineIndices(doc);
     final matchCount = _searchQuery.isEmpty
         ? 0
-        : doc.lines
-            .where((l) =>
-                l.source.toLowerCase().contains(_searchQuery.toLowerCase()))
+        : visible
+            .where((i) => _lineMatchesSearch(doc.lines[i]))
             .length;
+    final hiddenMatches = _searchQuery.isEmpty
+        ? 0
+        : doc.lines
+                .where((l) => _lineMatchesSearch(l))
+                .length -
+            matchCount;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -538,7 +565,11 @@ class NotepadScreenState extends State<NotepadScreen> {
                 isDense: true,
                 hintText: 'Search…',
                 border: InputBorder.none,
-                suffixText: _searchQuery.isEmpty ? '' : '$matchCount matches',
+                suffixText: _searchQuery.isEmpty
+                    ? ''
+                    : hiddenMatches > 0
+                        ? '$matchCount shown · $hiddenMatches hidden'
+                        : '$matchCount matches',
               ),
               style: const TextStyle(fontSize: 14),
               onChanged: (v) => setState(() => _searchQuery = v),
@@ -632,12 +663,14 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _deleteLine(NotepadDocument doc, int index) {
     if (index < 0 || index >= doc.lines.length) return;
     final removed = doc.lines.removeAt(index);
-    _undoFor(doc).record(undo.UndoOp(
+    final deleteOp = undo.UndoOp(
       kind: undo.UndoOpKind.delete,
       index: index,
       lineId: removed.id,
       previousValue: removed.source,
-    ));
+      deletedLine: removed,
+    );
+    _undoFor(doc).record(deleteOp);
     _persistDoc(doc);
     _pendingDeletion =
         _PendingDeletion.line(doc: doc, line: removed, index: index);
@@ -651,19 +684,18 @@ class NotepadScreenState extends State<NotepadScreen> {
       label: AppLocalizations.of(context).notepadLineDeleted,
       onUndo: () {
         final pending = _pendingDeletion;
-        if (pending == null || pending.kind != _PendingDeletionKind.line) {
+        if (pending == null || pending.kind != _PendingDeletionKind.line ||
+            !identical(_undoFor(doc).nextUndo, deleteOp)) {
           return;
         }
-        final lineIdx = pending.lineIndex!.clamp(0, pending.doc.lines.length);
-        pending.doc.lines.insert(lineIdx, pending.line!);
-        _persistDoc(pending.doc);
-        _scheduleFullRecalc(pending.doc);
         _pendingDeletion = null;
+        _performUndo(doc, dismissSnackbar: false);
       },
     );
   }
 
   void _reorderLines(NotepadDocument doc, int oldIndex, int newIndex) {
+    _dismissPendingLineUndo(doc);
     // onReorderItem already adjusts newIndex for the removed item.
     final moved = doc.lines.removeAt(oldIndex);
     doc.lines.insert(newIndex, moved);
@@ -1681,8 +1713,10 @@ class NotepadScreenState extends State<NotepadScreen> {
           ),
         ),
       // Worksheet-level actions live here as glyphs instead of a
-      // full-width button row: the same actions, no lost line.
-      if (doc != null &&
+      // full-width button row: the same actions, no lost line. On a
+      // phone the app bar is already crowded, so these stay in the
+      // document menu instead of squeezing the title.
+      if (!compact && doc != null &&
           doc.lines.any((line) => line.source.trim().isNotEmpty)) ...[
         IconButton(
           icon: const Icon(Icons.history),
@@ -1721,6 +1755,18 @@ class NotepadScreenState extends State<NotepadScreen> {
         itemBuilder: (context) {
           final items = <PopupMenuEntry<String>>[
             PopupMenuItem(value: 'new', child: Text(t.notepadNewDocument)),
+            if (doc != null)
+              PopupMenuItem(
+                value: 'search-document',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.searchDocument)),
+              ),
+            if (widget.onOpenCommands != null)
+              PopupMenuItem(
+                value: 'search-commands',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.searchCommands)),
+              ),
             PopupMenuItem(value: 'explore-linked', child: Text(
                 WorkflowLocalizations.of(context).text(WorkflowLabel.exploreWorksheet))),
             PopupMenuItem(value: 'open-file', child: Text(t.notepadOpenFile)),
@@ -1793,6 +1839,13 @@ class NotepadScreenState extends State<NotepadScreen> {
               value: 'export-preview',
               child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetExport)),
             ));
+            if (_linkedSourceFor(doc) != null) {
+              items.add(PopupMenuItem(
+                value: 'open-linked-graph',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.worksheetGraph)),
+              ));
+            }
             items.add(const PopupMenuItem(
               value: 'export-pdf',
               child: Text('Export PDF'),
@@ -1828,6 +1881,21 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _onMenuSelected(String value) async {
+    if (value == 'search-commands') {
+      widget.onOpenCommands?.call();
+      return;
+    }
+    if (value == 'search-document') {
+      if (!_searchOpen) _toggleSearch();
+      return;
+    }
+    if (value == 'open-linked-graph') {
+      final doc = _currentDoc;
+      final linked = doc == null ? null : _linkedSourceFor(doc);
+      if (doc == null || linked == null) return;
+      _linkLine(doc, doc.lines.firstWhere((line) => line.id == linked.lineId));
+      return;
+    }
     if (value == 'explore-linked') {
       await exploreLinkedWorksheet();
       return;

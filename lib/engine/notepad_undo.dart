@@ -32,12 +32,16 @@ class UndoOp {
   /// For edit: the line id.
   final String? lineId;
 
+  /// The complete deleted line, when available, including its format.
+  final NotepadLine? deletedLine;
+
   const UndoOp({
     required this.kind,
     required this.index,
     this.newIndex,
     this.previousValue,
     this.lineId,
+    this.deletedLine,
   });
 }
 
@@ -50,6 +54,7 @@ class UndoHistory {
 
   bool get canUndo => _undoStack.isNotEmpty;
   bool get canRedo => _redoStack.isNotEmpty;
+  UndoOp? get nextUndo => _undoStack.isEmpty ? null : _undoStack.last;
 
   /// Record an operation. Clears the redo stack (a new action
   /// forks the history).
@@ -104,7 +109,8 @@ bool applyUndo(NotepadDocument doc, UndoOp op) {
     case UndoOpKind.delete:
       // Undo a delete → re-insert the line.
       if (op.previousValue != null && op.lineId != null) {
-        final restored = NotepadLine(
+        if (doc.lines.any((line) => line.id == op.lineId)) return false;
+        final restored = op.deletedLine ?? NotepadLine(
           id: op.lineId!,
           source: op.previousValue!,
         );

@@ -2547,6 +2547,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
               _appState.clearHistory();
               if (_historySearchOpen) {
                 _toggleHistorySearch();
+              } else {
+                // The toolbar reads the history directly, and the clear
+                // path previously only rebuilt when search was open.
+                setState(() {});
               }
               Navigator.of(context).pop();
             },
@@ -2649,7 +2653,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                               PopupMenuButton<String>(
                                 enabled: widget.onOpenCommands != null ||
                                     _appState.history.isNotEmpty,
-                                tooltip: AppLocalizations.of(context).searchHistory,
+                                tooltip: WorkflowLocalizations.of(context)
+                                    .text(WorkflowLabel.search),
                                 icon: Icon(_historySearchOpen
                                     ? Icons.search_off : Icons.search, size: 20),
                                 onSelected: (value) {

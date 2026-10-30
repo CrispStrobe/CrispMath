@@ -264,7 +264,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         onGoToAnalysis: () => _select(_kAnalysis),
         onOpenCommands: _openCommands,
       ),
-      NotepadScreen(key: _notepadKey),
+      NotepadScreen(key: _notepadKey, onOpenCommands: _openCommands),
       GraphingScreen(key: _graphingKey),
       FunctionEditorScreen(
         onSwitchToGraphing: (_) => _select(_kGraphing),

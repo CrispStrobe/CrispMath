@@ -84,6 +84,13 @@ async def check(args):
                 await real_click(page, target)
                 await next_frames(page)
                 await target.wait_for(state='hidden')
+            async def worksheet_action(name):
+                # Wide layouts keep the action as an app-bar glyph; a phone
+                # hides it (and the graph link action) in the document menu.
+                if item['width'] < 600:
+                    await menu(name)
+                else:
+                    await button(name)
             async def edit(value):
                 field = page.get_by_role('textbox').first
                 await real_click(page, field)
@@ -149,7 +156,7 @@ async def check(args):
                 second = await create()
                 assert first != second
                 await page.screenshot(path=str(output/f'{profile}-created.png'))
-                await button('Document history')
+                await worksheet_action('Document history')
                 await button('Save checkpoint')
                 await page.get_by_role('button', name='Compare', exact=True).wait_for()
                 await button('Close')
@@ -158,7 +165,7 @@ async def check(args):
                 updated = await snapshot(page)
                 slot = next(slot for slot, link in updated['links'].items() if link['document'] == second)
                 assert '(5)' in updated['functions'][int(slot)], updated
-                await button('View linked graph')
+                await worksheet_action('View linked graph')
                 linked = page.get_by_role('button', name=f'Linked Y{int(slot)+1}: Explore a function', exact=True)
                 await real_click(page, linked)
                 await page.get_by_role('button', name='Edit a', exact=True).wait_for()
@@ -166,7 +173,7 @@ async def check(args):
                 await button('Open source')
                 await page.get_by_role('textbox').first.wait_for()
                 await result(second, '21')
-                await button('Document history')
+                await worksheet_action('Document history')
                 await real_click(page, page.get_by_role('button', name='Compare', exact=True).first)
                 await page.get_by_role('button', name='Restore checkpoint', exact=True).wait_for()
                 assert 'a=3' in await labels(page) and 'a=5' in await labels(page)
@@ -174,7 +181,7 @@ async def check(args):
                 await result(second, '19')
                 restored = await snapshot(page)
                 assert '(3)' in restored['functions'][int(slot)], restored
-                await button('Worksheet export preview')
+                await worksheet_action('Worksheet export preview')
                 await page.get_by_role('button', name='Save MD', exact=True).wait_for()
                 assert 'f(4)' in await labels(page) and '19' in await labels(page)
                 async with page.expect_download() as info:

@@ -84,7 +84,7 @@ class _NotepadLineRow extends StatelessWidget {
     // Section headings: `## text` — larger, bold, theme-colored.
     // Fold/unfold toggle + hidden-line-count chip when collapsed.
     if (_lineKind == NotepadLineKind.heading) {
-      return Padding(
+      return _maybeHighlight(Padding(
         key: ValueKey('row-${line.id}'),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         child: Row(
@@ -122,7 +122,7 @@ class _NotepadLineRow extends StatelessWidget {
             _DeleteButton(onPressed: onDelete),
           ],
         ),
-      );
+      ), context);
     }
 
     // Horizontal dividers: `---` — render a line instead of result.

@@ -208,34 +208,48 @@ void main() {
       await tester.pumpAndSettle();
       final labels = WorkflowLocalizations(locale);
       // Regression: history and export used to be text buttons on their
-      // own row above the document, which cost a full line. They are
-      // glyphs in the app bar now, named by their localized tooltip.
+      // own row above the document, which cost a full line. On a phone
+      // they live in the document menu, so the title keeps its width.
       expect(find.widgetWithText(OutlinedButton, labels.text(WorkflowLabel.worksheetHistory)),
           findsNothing,
           reason: 'history must not spend a body row');
       expect(find.widgetWithText(OutlinedButton, labels.text(WorkflowLabel.worksheetExport)),
           findsNothing,
           reason: 'export must not spend a body row');
-      final history = find.byTooltip(labels.text(WorkflowLabel.worksheetHistory));
-      final export = find.byTooltip(labels.text(WorkflowLabel.worksheetExport));
-      expect(history, findsOneWidget);
-      expect(export, findsOneWidget);
+      expect(find.byTooltip(labels.text(WorkflowLabel.worksheetHistory)),
+          findsNothing,
+          reason: 'compact app bar keeps only the essentials');
+      expect(find.byTooltip(labels.text(WorkflowLabel.worksheetExport)),
+          findsNothing,
+          reason: 'compact app bar keeps only the essentials');
       expect(tester.takeException(), isNull,
           reason: 'App bar must not overflow at phone text scale 2');
-      await tester.tap(history);
+      final context = tester.element(find.byType(AppBar).first);
+      await tester.tap(find.byTooltip(AppLocalizations.of(context).notepadDocumentMenu));
+      await tester.pumpAndSettle();
+      expect(find.text(labels.text(WorkflowLabel.worksheetHistory)), findsOneWidget);
+      expect(find.text(labels.text(WorkflowLabel.worksheetExport)), findsOneWidget);
+      await tester.scrollUntilVisible(
+          find.text(labels.text(WorkflowLabel.worksheetHistory)), 120,
+          scrollable: find.byType(Scrollable).last);
+      await tester.tap(find.text(labels.text(WorkflowLabel.worksheetHistory)));
       await tester.pumpAndSettle();
       expect(find.text(labels.text(WorkflowLabel.historySave)), findsOneWidget);
       expect(tester.takeException(), isNull,
           reason: 'History instructions must scroll instead of overflowing');
       await tester.tap(find.text(labels.text(WorkflowLabel.close)));
       await tester.pumpAndSettle();
-      await tester.tap(export);
+      await tester.tap(find.byTooltip(AppLocalizations.of(context).notepadDocumentMenu));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+          find.text(labels.text(WorkflowLabel.worksheetExport)), 120,
+          scrollable: find.byType(Scrollable).last);
+      await tester.tap(find.text(labels.text(WorkflowLabel.worksheetExport)));
       await tester.pumpAndSettle();
       expect(find.text(labels.text(WorkflowLabel.exportSave, 'MD')), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.tap(find.text(labels.text(WorkflowLabel.close)));
       await tester.pumpAndSettle();
-      final context = tester.element(find.byType(AppBar).first);
       await tester.tap(find.byTooltip(AppLocalizations.of(context).notepadDocumentMenu));
       await tester.pumpAndSettle();
       expect(find.text(labels.text(WorkflowLabel.exploreWorksheet)), findsOneWidget);
@@ -352,6 +366,78 @@ void main() {
       expect(find.text('Line deleted'), findsNothing);
     });
 
+    testWidgets('snackbar undo and keyboard undo do not duplicate a deleted line',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final line = NotepadLine.fresh(source: 'restore-once');
+      doc.lines.add(line);
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pump();
+      expect(doc.lines.where((item) => item.id == line.id), hasLength(1));
+    });
+
+    testWidgets('keyboard undo dismisses deletion feedback and redo works',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final line = NotepadLine.fresh(source: 'keep-format')
+        ..resultFormat = LineResultFormat.hex;
+      doc.lines.add(line);
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(doc.lines.where((item) => item.id == line.id), hasLength(1));
+      expect(doc.lines.firstWhere((item) => item.id == line.id).resultFormat,
+          LineResultFormat.hex);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Line deleted'), findsNothing);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pump();
+      expect(doc.lines.where((item) => item.id == line.id), isEmpty);
+    });
+
+    testWidgets('a later edit dismisses the obsolete deletion undo',
+        (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId!]!;
+      final line = NotepadLine.fresh(source: 'deleted');
+      doc.lines.add(line);
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Line deleted'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, 'new edit');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Line deleted'), findsNothing);
+      expect(doc.lines.where((item) => item.id == line.id), isEmpty);
+    });
+
     testWidgets('edit clears stale cached result immediately', (tester) async {
       await _bootApp(tester, size: const Size(1280, 800));
       await _gotoNotepad(tester);
@@ -382,6 +468,60 @@ void main() {
   });
 
   group('NotepadScreen — ⋮ menu', () {
+    testWidgets('document search is reachable without a keyboard', (tester) async {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Search document'));
+      await tester.pumpAndSettle();
+      final search = find.byWidgetPredicate((widget) => widget is TextField &&
+          widget.decoration?.hintText == 'Search…');
+      expect(search, findsOneWidget);
+      await tester.tap(find.byIcon(Icons.close).first);
+      await tester.pumpAndSettle();
+      expect(search, findsNothing);
+    });
+
+    testWidgets('search counts only rows the user can see', (tester) async {
+      await _bootApp(tester, size: const Size(1280, 800));
+      await _gotoNotepad(tester);
+      final doc = AppState().notepadDocuments[AppState().currentNotepadDocId]!;
+      doc.lines
+        ..clear()
+        ..addAll([
+          NotepadLine(id: 'heading', source: '## Section'),
+          NotepadLine(id: 'hidden', source: 'alpha hidden'),
+        ]);
+      AppState().setNotepadDocument(doc);
+      await tester.pumpAndSettle();
+      // Collapse the section so its only match is out of view.
+      await tester.tap(find.byTooltip('Collapse'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Search document'));
+      await tester.pumpAndSettle();
+      final field = find.byWidgetPredicate((widget) =>
+          widget is TextField && widget.decoration?.hintText == 'Search…');
+      await tester.enterText(field, 'alpha');
+      await tester.pumpAndSettle();
+      expect(find.text('0 shown · 1 hidden'), findsOneWidget);
+      await tester.tap(find.byTooltip('Expand'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 matches'), findsOneWidget);
+      // A matching heading is highlighted like any other matching row.
+      await tester.enterText(field, 'Section');
+      await tester.pumpAndSettle();
+      final heading = tester.widget<Container>(find
+          .ancestor(
+              of: find.byKey(const ValueKey('row-heading')),
+              matching: find.byType(Container))
+          .first);
+      expect(heading.color, isNotNull,
+          reason: 'a heading match must be visibly highlighted');
+    });
+
     testWidgets('New document creates Untitled 2 and switches to it',
         (tester) async {
       await _bootApp(tester, size: const Size(1280, 800));
