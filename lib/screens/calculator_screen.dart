@@ -472,7 +472,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final text = _latexController.text;
     if (text.isEmpty) return "";
     try {
-      return _engine.evaluate(text);
+      return _engine.evaluate(
+          ExpressionPreprocessingUtils.substituteAns(text, _appState));
     } catch (_) {
       return "";
     }
@@ -486,7 +487,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
           currentInput.startsWith(r'\times') ||
           currentInput.startsWith(r'\div');
 
-      if ((!currentInput.startsWith('\\') && _isOperator(currentInput)) ||
+      if ((currentInput.isNotEmpty && !currentInput.startsWith('\\') &&
+              _isOperator(currentInput[0])) ||
           isLatexOperator) {
         _latexController.removeListener(_onInputChanged);
         _latexController.clear();
@@ -851,9 +853,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         break;
 
       case 'Ans':
-        if (_appState.history.isNotEmpty) {
-          _latexController.insert('Ans');
-        }
+        _latexController.insert('Ans');
         break;
 
       // === Advanced Mathematical Functions ===
@@ -1163,6 +1163,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
       var converted = convertedExpression
           .trim()
           .replaceAllMapped(RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}(');
+      converted =
+          ExpressionPreprocessingUtils.substituteAns(converted, _appState);
 
       // Inline-derivative expansion: any `d/dx(expr)` or
       // `diff(expr, var)` *inside* a larger expression (e.g.
@@ -1353,6 +1355,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
       });
 
       _calculatorFocusNode.requestFocus();
+    } on MissingAnsException {
+      setState(() {
+        _appState.addHistoryEntry(expression, 'Error: No Ans in memory');
+        _resultPreview = '';
+        _justCalculated = true;
+        _latexController.clear();
+      });
     } catch (e) {
       if (kDebugMode) debugPrint('CALC: error: $e');
       setState(() =>
@@ -1474,6 +1483,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
           _latexController.clear();
         });
       }
+    } on MissingAnsException {
+      rethrow;
     } catch (e) {
       setState(() {
         _appState.addHistoryEntry(

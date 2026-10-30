@@ -11,6 +11,10 @@ import '../engine/app_state.dart';
 import '../engine/cas_result_format.dart';
 import '../engine/vector_math.dart';
 
+class MissingAnsException extends StateError {
+  MissingAnsException() : super('No Ans in memory');
+}
+
 class ExpressionPreprocessingUtils {
   // Names that look like single-letter variables but are really constants or
   // function names. Compared case-sensitively (SymEngine cares).
@@ -664,23 +668,42 @@ class ExpressionPreprocessingUtils {
   /// Substitutes Ans + user variables. Variable names are matched
   /// case-sensitively.
   static String substituteVariables(String expression, AppState appState) {
-    var result = expression;
-
-    if (result.contains('Ans')) {
-      // Use the unrounded engine result (ansValue) rather than the
-      // display string, so `8/3` (shown `2.66666666667`) followed by
-      // `Ans*3` computes from the full-precision value and lands on 8.
-      final lastResult =
-          appState.history.isNotEmpty ? appState.history.first.ansValue : '0';
-      final cleanResult = extractNumericFromSolveResult(lastResult);
-      result = result.replaceAll('Ans', cleanResult);
-    }
-
+    var result = substituteAns(expression, appState);
     for (final entry in appState.userVariables.entries) {
       final pattern = RegExp(r'\b' + RegExp.escape(entry.key) + r'\b');
       result = result.replaceAll(pattern, '(${entry.value})');
     }
+    return result;
+  }
 
+  /// Resolve the calculator's answer before any specialized dispatch.
+  static String substituteAns(String expression, AppState appState) {
+    final ansPattern = RegExp(r'(?<![A-Za-z0-9_])Ans(?![A-Za-z0-9_])');
+    // User-defined and graph functions can introduce Ans during expansion.
+    // Only adopt the expansion here when it actually needs Ans resolution;
+    // otherwise preserve the normal dispatch path unchanged.
+    final expanded = preprocessExpression(expression, appState);
+    var result = ansPattern.hasMatch(expanded) ? expanded : expression;
+
+    if (ansPattern.hasMatch(result)) {
+      // History is newest first. Errors and status messages aren't answers.
+      final answers = appState.history.where((entry) {
+        final value = entry.ansValue.trim();
+        return value.isNotEmpty &&
+            !value.startsWith('Error') &&
+            !value.startsWith('⚠') &&
+            !value.startsWith('Stored ') &&
+            !value.startsWith('Defined ');
+      });
+      if (answers.isEmpty) throw MissingAnsException();
+      final cleanResult = extractNumericFromSolveResult(answers.first.ansValue);
+      // Preserve the value as a unit under multiplication, division and powers.
+      final isUnsignedNumber =
+          RegExp(r'^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$')
+              .hasMatch(cleanResult.trim());
+      result = result.replaceAll(
+          ansPattern, isUnsignedNumber ? cleanResult : '($cleanResult)');
+    }
     return result;
   }
 

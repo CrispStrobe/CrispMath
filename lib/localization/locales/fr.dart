@@ -755,6 +755,8 @@ class FrLocalizations implements AppLocalizations {
   String get errorInvalidLcm => 'Erreur : syntaxe lcm() invalide';
 
   @override
+  String get errorMissingAns => 'Aucun Ans en mémoire.';
+  @override
   String get errorParse =>
       'L\'expression n\'a pas pu être analysée. Vérifiez les parenthèses non appariées, les fautes de frappe ou les opérateurs manquants.';
   @override

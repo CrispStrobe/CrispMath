@@ -750,6 +750,8 @@ class EsLocalizations implements AppLocalizations {
   String get errorInvalidLcm => 'Error: sintaxis de lcm() inválida';
 
   @override
+  String get errorMissingAns => 'No hay Ans en la memoria.';
+  @override
   String get errorParse =>
       'No se pudo analizar la expresión. Revisa paréntesis sin pareja, erratas u operadores ausentes.';
   @override

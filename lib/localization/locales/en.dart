@@ -740,6 +740,8 @@ class EnLocalizations implements AppLocalizations {
   String get errorInvalidLcm => 'Error: Invalid lcm() syntax';
 
   @override
+  String get errorMissingAns => 'No Ans in memory.';
+  @override
   String get errorParse =>
       'Couldn\'t understand the expression. Check for unmatched parentheses, typos, or missing operators.';
   @override

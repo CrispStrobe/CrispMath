@@ -752,6 +752,8 @@ class DeLocalizations implements AppLocalizations {
   String get errorInvalidLcm => 'Fehler: Ungültige lcm()-Syntax';
 
   @override
+  String get errorMissingAns => 'Kein Ans im Speicher.';
+  @override
   String get errorParse =>
       'Der Ausdruck konnte nicht verstanden werden. Bitte auf unausgewogene Klammern, Tippfehler oder fehlende Operatoren prüfen.';
   @override

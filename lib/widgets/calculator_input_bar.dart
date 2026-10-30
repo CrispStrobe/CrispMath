@@ -77,6 +77,13 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
     _syncing = true;
     controller.setEditingValue(_editor.value);
     _syncing = false;
+    // A calculator listener may synchronously rewrite the input (for
+    // example, '/' becomes 'Ans/'). Its notification was suppressed while
+    // syncing, so reflect the final text and selection before the next edit.
+    if (_editor.text != controller.text ||
+        _editor.selection != controller.selection) {
+      _syncFromMath();
+    }
   }
 
   @override

@@ -381,6 +381,7 @@ abstract class AppLocalizations {
   String get errorInvalidLcm;
 
   // -- Friendly errors (shown in history when an op fails) --
+  String get errorMissingAns;
   String get errorParse;
 
   /// A closing bracket with nothing open — `2+3)`.

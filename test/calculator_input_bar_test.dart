@@ -37,6 +37,36 @@ Future<void> _pump(WidgetTester tester, Size size,
 }
 
 void main() {
+  testWidgets('editor keeps a synchronous calculator rewrite before more typing',
+      (tester) async {
+    final controller = LatexController();
+    addTearDown(controller.dispose);
+    void chainPreviousAnswer() {
+      if (controller.text == '/') {
+        controller.setEditingValue(const TextEditingValue(
+          text: 'Ans/',
+          selection: TextSelection.collapsed(offset: 4),
+        ));
+      }
+    }
+    controller.addListener(chainPreviousAnswer);
+    addTearDown(() => controller.removeListener(chainPreviousAnswer));
+    await _pump(tester, const Size(375, 812), controller: controller);
+    await tester.tap(find.byTooltip('Edit expression'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '/');
+    expect(controller.text, 'Ans/');
+    final editor = tester.widget<TextField>(find.byType(TextField)).controller!;
+    expect(editor.text, 'Ans/');
+    expect(editor.selection, const TextSelection.collapsed(offset: 4));
+    tester.testTextInput.updateEditingValue(const TextEditingValue(
+      text: 'Ans/2',
+      selection: TextSelection.collapsed(offset: 5),
+    ));
+    await tester.pump();
+    expect(controller.text, 'Ans/2');
+  });
+
   testWidgets(
       'phone text entry preserves selections, keypad edits and submission',
       (tester) async {
