@@ -261,6 +261,8 @@ void main() {
   for (final size in [const Size(390, 844), const Size(1280, 900)]) {
     testWidgets('blank worksheet can preview and restore history at $size',
         (tester) async {
+      // The static persistence queue belongs to this test's fake-async zone.
+      DocumentHistory.resetForTest();
       await _bootApp(tester, size: size);
       await _gotoNotepad(tester);
       final state = AppState();

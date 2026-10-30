@@ -129,7 +129,10 @@ async def check(args):
                     await button('Document menu')
                     graph_action = page.locator('[aria-label="View linked graph"]')
                     await graph_action.wait_for(state='visible')
-                    await page.keyboard.press('Escape')
+                    # Escape can stay with the worksheet's focused editor on
+                    # Flutter web. Tap the barrier outside the right-aligned
+                    # popup, as a touch user would, without choosing an action.
+                    await page.mouse.click(10, item['height'] - 24)
                     await graph_action.wait_for(state='hidden')
                     await next_frames(page)
                 else:
