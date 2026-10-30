@@ -71,7 +71,12 @@ class CalculatorScreen extends StatefulWidget {
       {super.key,
       this.onGoToGraphing,
       this.onGoToAnalysis,
-      this.onOpenCommands});
+      this.onOpenCommands,
+      this.engineOpForTesting});
+
+  /// Overrides the engine operation boundary in deterministic widget tests.
+  @visibleForTesting
+  final Future<ComputedResult> Function(EngineOp)? engineOpForTesting;
 
   /// Optional: switch the main nav to the Graphing tab. Forwarded down
   /// to the VariableViewer's function-tile context menu.
@@ -102,6 +107,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
   String _resultPreview = '';
   ResultEvidence? _resultEvidence;
   bool _justCalculated = false;
+  Completer<void>? _calculationPending;
+  int _inputRevision = 0;
+  int _submittedInputRevision = 0;
+  String _lastInputText = '';
   bool _showLatexHistory = false; // History display toggle
 
   /// Watchdog-installed message for the progress overlay. Populated by
@@ -480,6 +489,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   void _onInputChanged() {
+    if (_lastInputText != _latexController.text) {
+      _lastInputText = _latexController.text;
+      _inputRevision++;
+    }
     if (_justCalculated && _latexController.text.isNotEmpty) {
       final currentInput = _latexController.text.trim();
 
@@ -493,6 +506,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _latexController.removeListener(_onInputChanged);
         _latexController.clear();
         _latexController.insert('Ans$currentInput');
+        _lastInputText = _latexController.text;
         _latexController.addListener(_onInputChanged);
 
         setState(() => _justCalculated = false);
@@ -1119,8 +1133,27 @@ class CalculatorScreenState extends State<CalculatorScreen>
         .contains(value);
   }
 
+  // Only the draft submitted by this calculation may be consumed. Comparing
+  // revisions also protects edits that happen to return to the original text.
+  void _finishSubmittedInput({bool justCalculated = false, bool clearPreview = false}) {
+    if (_inputRevision != _submittedInputRevision) return;
+    if (clearPreview) _resultPreview = '';
+    if (justCalculated) _justCalculated = true;
+    _latexController.clear();
+  }
+
   Future<void> _calculate(String expression,
       {bool preserveTextFocus = false}) async {
+    // Preserve submission order while keeping the shared result evidence
+    // isolated. Capture the draft revision now, not when a queued run starts.
+    final inputRevision = _inputRevision;
+    while (_calculationPending != null) {
+      await _calculationPending!.future;
+      if (!mounted) return;
+    }
+    final pending = Completer<void>();
+    _calculationPending = pending;
+    _submittedInputRevision = inputRevision;
     _resultEvidence = null;
     if (kDebugMode) debugPrint('CALC: "$expression"');
     try {
@@ -1177,6 +1210,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         debugPrint('CALC: pre-inline-deriv converted="$converted"');
       }
       converted = await _expandInlineDerivatives(converted);
+      if (!mounted) return;
       if (_kVerboseCalc) {
         debugPrint('CALC: post-inline-deriv converted="$converted"');
       }
@@ -1208,6 +1242,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           fallback: () => _engine.evaluate(cond),
         ),
       );
+      if (!mounted) return;
       if (ifFolded != null) {
         converted = ifFolded;
       }
@@ -1226,6 +1261,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           fallback: () => _engine.evaluate(cond),
         ),
       );
+      if (!mounted) return;
       if (pwFolded != null) {
         converted = pwFolded;
       }
@@ -1238,11 +1274,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // evaluator would refuse it.
       final precisionResult = _engine.tryEvaluatePrecisionCall(converted);
       if (precisionResult != null) {
+        if (!mounted) return;
         setState(() {
           _appState.addHistoryEntry(expression, precisionResult);
-          _justCalculated = true;
+          _finishSubmittedInput(justCalculated: true);
         });
-        _latexController.clear();
         return;
       }
 
@@ -1251,11 +1287,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // unit symbols (which it would mis-parse as variables).
       final unitResult = UnitExpressionEvaluator.tryEvaluate(converted);
       if (unitResult != null) {
+        if (!mounted) return;
         setState(() {
           _appState.addHistoryEntry(expression, unitResult);
-          _justCalculated = true;
+          _finishSubmittedInput(justCalculated: true);
         });
-        _latexController.clear();
         return;
       }
 
@@ -1346,27 +1382,32 @@ class CalculatorScreenState extends State<CalculatorScreen>
         }
       }
 
+      if (!mounted) return;
+      final submittedDraftUnchanged = _inputRevision == _submittedInputRevision;
       setState(() {
         _appState.addHistoryEntry(
             LatexConversionUtils.latexToReadable(expression), result,
             resultEvidence: _resultEvidence);
-        _resultPreview = '';
-        _justCalculated = true;
-        _latexController.clear();
+        _finishSubmittedInput(justCalculated: true, clearPreview: true);
       });
 
-      if (!preserveTextFocus) _calculatorFocusNode.requestFocus();
+      if (!preserveTextFocus && submittedDraftUnchanged) {
+        _calculatorFocusNode.requestFocus();
+      }
     } on MissingAnsException {
+      if (!mounted) return;
       setState(() {
         _appState.addHistoryEntry(expression, 'Error: No Ans in memory');
-        _resultPreview = '';
-        _justCalculated = true;
-        _latexController.clear();
+        _finishSubmittedInput(justCalculated: true, clearPreview: true);
       });
     } catch (e) {
       if (kDebugMode) debugPrint('CALC: error: $e');
+      if (!mounted) return;
       setState(() =>
           _appState.addHistoryEntry(expression, 'Error: ${e.toString()}'));
+    } finally {
+      _calculationPending = null;
+      pending.complete();
     }
   }
 
@@ -1410,7 +1451,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, 'Error: all Y slots are full');
-        _latexController.clear();
+        _finishSubmittedInput();
       });
       return;
     }
@@ -1420,8 +1461,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         originalExpression,
         'Stored Y${slot + 1} ($name): $body',
       );
-      _justCalculated = true;
-      _latexController.clear();
+      _finishSubmittedInput(justCalculated: true);
     });
   }
 
@@ -1474,14 +1514,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
         setState(() {
           _appState.addHistoryEntry(
               originalExpression, "Stored $name = $normalizedValue");
-          _justCalculated = true;
-          _latexController.clear();
+          _finishSubmittedInput(justCalculated: true);
         });
       } else {
         setState(() {
           _appState.addHistoryEntry(
               originalExpression, "Error: Could not evaluate $valueExpression");
-          _latexController.clear();
+          _finishSubmittedInput();
         });
       }
     } on MissingAnsException {
@@ -1490,7 +1529,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, "Error: Invalid assignment");
-        _latexController.clear();
+        _finishSubmittedInput();
       });
     }
   }
@@ -1518,8 +1557,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     setState(() {
       _appState.addHistoryEntry(
           originalExpression, 'Defined $name(${params.join(', ')})');
-      _justCalculated = true;
-      _latexController.clear();
+      _finishSubmittedInput(justCalculated: true);
     });
     return true;
   }
@@ -1540,8 +1578,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           setState(() {
             _appState.addHistoryEntry(
                 originalExpression, "Stored Y${functionIndex + 1}");
-            _justCalculated = true;
-            _latexController.clear();
+            _finishSubmittedInput(justCalculated: true);
           });
         } else {
           setState(() => _appState.addHistoryEntry(
@@ -1557,8 +1594,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           setState(() {
             _appState.addHistoryEntry(
                 originalExpression, 'Stored Y${functionIndex + 1} (F → Y)');
-            _justCalculated = true;
-            _latexController.clear();
+            _finishSubmittedInput(justCalculated: true);
           });
         } else {
           setState(() => _appState.addHistoryEntry(
@@ -1569,7 +1605,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, "Error: Invalid function definition");
-        _latexController.clear();
+        _finishSubmittedInput();
       });
     }
   }
@@ -2501,6 +2537,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
     required String Function() fallback,
   }) async {
     final operation = EngineOp(op, arg1, arg2, arg3, arg4);
+    final testOperation = widget.engineOpForTesting;
+    if (testOperation != null) {
+      final computed = await testOperation(operation);
+      _resultEvidence = computed.evidence;
+      return computed.value;
+    }
     if (!EngineService.shouldRunAsync(arg1)) {
       _engine.lastResultEvidence = null;
       final computed = describeEngineResult(_engine, operation, fallback());

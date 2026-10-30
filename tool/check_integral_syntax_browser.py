@@ -4,7 +4,7 @@ import asyncio
 import json
 import re
 from pathlib import Path
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, expect
 from benchmark_workflows import bootstrap, context_for, next_frames
 
 CASES = ['integrate(x^2,x,0,1)', 'integrate(x^2,(x,0,1))']
@@ -21,7 +21,7 @@ async def check(args):
             options['executable_path'] = args.chromium
         browser = await p.chromium.launch(**options)
         context, page, errors = await context_for(browser, {'viewport': {'width': 1280, 'height': 900}, 'cpu': 1}, document)
-        report = {'url': args.url, 'calculator': [], 'pageErrors': errors}
+        report = {'url': args.url, 'calculator': [], 'editorStates': [], 'pageErrors': errors}
         try:
             await bootstrap(page, args.url)
             await page.get_by_role('button', name='Edit expression', exact=True).click()
@@ -31,22 +31,36 @@ async def check(args):
                 await next_frames(page)
                 await editor.fill(source)
                 await next_frames(page)
+                await expect(editor).to_have_value(source)
                 await editor.press('Enter')
-                await page.wait_for_function('''() => {
+                await page.wait_for_function('''source => {
                     const raw=localStorage.getItem('flutter.crisp.history');
                     if(!raw)return false;
                     const r=JSON.parse(JSON.parse(raw))[0];
-                    return r.r==='1/3' && r.evidence?.accuracy==='exact' && r.evidence?.method==='polynomialIntegration';
-                }''', timeout=60000)
+                    return r.e===source && r.r==='1/3' && r.evidence?.accuracy==='exact' && r.evidence?.method==='polynomialIntegration';
+                }''', arg=source, timeout=60000)
                 report['calculator'].append({'source': source, 'result': '1/3'})
                 # Require the next result to be a new history entry, not the prior pass.
                 if source != CASES[-1]:
+                    await expect(editor).to_have_value('')
                     await editor.click()
                     await next_frames(page)
                     await editor.fill('2+2')
+                    report['editorStates'].append({'stage': 'after fill',
+                        'value': await editor.input_value(),
+                        'focused': await editor.evaluate('el => el === document.activeElement')})
+                    await expect(editor).to_have_value('2+2')
                     await next_frames(page)
+                    report['editorStates'].append({'stage': 'before Enter',
+                        'value': await editor.input_value(),
+                        'focused': await editor.evaluate('el => el === document.activeElement')})
+                    await expect(editor).to_have_value('2+2')
+                    await expect(editor).to_be_focused()
                     await editor.press('Enter')
-                    await page.wait_for_function("JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0].r==='4'")
+                    await page.wait_for_function("""() => {
+                        const entry=JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0];
+                        return entry.e==='2+2' && entry.r==='4';
+                    }""")
             await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
             for i, source in enumerate(CASES):
                 field = page.get_by_role('textbox').nth(i)
