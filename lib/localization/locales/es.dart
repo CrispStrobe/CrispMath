@@ -1123,6 +1123,18 @@ class EsLocalizations implements AppLocalizations {
       'tu propio sudoku.';
   @override
   String get sudokuConstraintStartingPosition => 'Posición inicial';
+  @override
+  String sudokuError(SudokuError error) => switch (error.kind) {
+        SudokuErrorKind.unsupported => 'Sudoku no compatible.',
+        SudokuErrorKind.clashingClues =>
+          'Las pistas ya infringen una regla.',
+        SudokuErrorKind.noSolution => 'Este Sudoku no tiene solución.',
+        SudokuErrorKind.placementLimit =>
+          'Búsqueda detenida tras ${error.limit} colocaciones.',
+        SudokuErrorKind.cageWorkLimit =>
+          'Búsqueda detenida al alcanzar el límite de trabajo de las '
+              'jaulas (${error.limit}).',
+      };
 
   @override
   String get moduleConstraintsTitle => 'Problemas de restricciones';

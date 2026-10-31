@@ -258,17 +258,52 @@ class SudokuStepContext {
   });
 }
 
+enum SudokuErrorKind {
+  unsupported, clashingClues, noSolution, placementLimit, cageWorkLimit,
+}
+
+/// Structured solver failure. Limit values are kept independently of prose.
+class SudokuError {
+  final SudokuErrorKind kind;
+  final int? limit;
+
+  const SudokuError.unsupported()
+      : kind = SudokuErrorKind.unsupported, limit = null;
+  const SudokuError.clashingClues()
+      : kind = SudokuErrorKind.clashingClues, limit = null;
+  const SudokuError.noSolution()
+      : kind = SudokuErrorKind.noSolution, limit = null;
+  const SudokuError.placementLimit(int value)
+      : kind = SudokuErrorKind.placementLimit, limit = value;
+  const SudokuError.cageWorkLimit(int value)
+      : kind = SudokuErrorKind.cageWorkLimit, limit = value;
+
+  String get english => switch (kind) {
+        SudokuErrorKind.unsupported => 'Unsupported Sudoku puzzle.',
+        SudokuErrorKind.clashingClues => 'The clues already break a rule.',
+        SudokuErrorKind.noSolution => 'No solution exists for this puzzle.',
+        SudokuErrorKind.placementLimit =>
+          'Search stopped after $limit placements.',
+        SudokuErrorKind.cageWorkLimit =>
+          'Search stopped after reaching the cage work limit ($limit).',
+      };
+}
+
 /// The recorded trace plus the final solution (if any).
 class SudokuTrace {
   final List<SudokuTraceFrame> frames;
   final List<int>? solution;
-  final String? error;
+  final String? _legacyError;
+  final SudokuError? errorMessage;
+
+  String? get error => _legacyError ?? errorMessage?.english;
 
   const SudokuTrace({
     required this.frames,
     required this.solution,
-    required this.error,
-  });
+    required String? error,
+    this.errorMessage,
+  }) : _legacyError = error;
 
   bool get solved => error == null && solution != null;
 }
@@ -334,7 +369,8 @@ class SudokuSolver {
       return SudokuTrace(
         frames: frames,
         solution: null,
-        error: 'No solution exists for this puzzle.',
+        error: null,
+        errorMessage: const SudokuError.noSolution(),
       );
     }
     final solution = _flatten(puzzle.layout, result);

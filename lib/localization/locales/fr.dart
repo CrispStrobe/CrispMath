@@ -1129,6 +1129,18 @@ class FrLocalizations implements AppLocalizations {
       'analyser votre propre grille.';
   @override
   String get sudokuConstraintStartingPosition => 'Position de départ';
+  @override
+  String sudokuError(SudokuError error) => switch (error.kind) {
+        SudokuErrorKind.unsupported => 'Sudoku non pris en charge.',
+        SudokuErrorKind.clashingClues =>
+          'Les indices enfreignent déjà une règle.',
+        SudokuErrorKind.noSolution => 'Ce Sudoku n’a pas de solution.',
+        SudokuErrorKind.placementLimit =>
+          'Recherche arrêtée après ${error.limit} placements.',
+        SudokuErrorKind.cageWorkLimit =>
+          'Recherche arrêtée à la limite de travail des cages '
+              '(${error.limit}).',
+      };
 
   @override
   String get moduleConstraintsTitle => 'Problèmes de contraintes';
