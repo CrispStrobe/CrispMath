@@ -93,7 +93,7 @@ immutable app pin stays0.17.12. Use the vendor plan for current run states.
 | O1 | Extend handwriting diagnosis to complete decoded reference parity | Paused until after the 4.3(a) review; recognition is 7/50 and no longer advertised |
 | O2 | Evaluate licensed recognition weights/training | Paused with O1; requires provenance/access and authorized remote resources |
 | P1 | Physical Apple device matrix | Deferred device session |
-| A1 | Final store presentation and 4.3(a) response | Drafts ready; device checks and authorized submission still pending |
+| A1 | Final store presentation and 4.3(a) response | 1.2.0 (25) submitted for App Review on 31 Oct 2026 with the updated notes via [app-review.yml](https://github.com/CrispStrobe/CrispMath/actions/runs/41214182578); waiting for review. Physical device checks still pending |
 | R1 | Next production release | After a validated production change; no new binary for docs/capture sizing |
 | C1 | Optional deployed cloud/two-device check | Requires explicit backend choice; default remains off |
 | B1 | Optional math-stack capability/performance investigation | Start with a bounded measured need |
