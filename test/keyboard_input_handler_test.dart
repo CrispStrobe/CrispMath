@@ -132,7 +132,28 @@ void main() {
     });
   });
 
-  test('non-key-down events are not handled', () {
+  test('held keys repeat characters and backspace', () {
+    final s = _Sink();
+    const repeatChar = KeyRepeatEvent(
+      physicalKey: PhysicalKeyboardKey.digit1,
+      logicalKey: LogicalKeyboardKey.digit1,
+      character: '1',
+      timeStamp: Duration.zero,
+    );
+    const repeatBackspace = KeyRepeatEvent(
+      physicalKey: PhysicalKeyboardKey.backspace,
+      logicalKey: LogicalKeyboardKey.backspace,
+      timeStamp: Duration.zero,
+    );
+    expect(_dispatch(_char('1'), s), isTrue);
+    expect(_dispatch(repeatChar, s), isTrue);
+    expect(_dispatch(repeatChar, s), isTrue);
+    expect(s.inserted, equals('111'));
+    expect(_dispatch(repeatBackspace, s), isTrue);
+    expect(s.backspaces, equals(1));
+  });
+
+  test('key-up events are not handled', () {
     final s = _Sink();
     const up = KeyUpEvent(
       physicalKey: PhysicalKeyboardKey.escape,

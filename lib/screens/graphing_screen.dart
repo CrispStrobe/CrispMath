@@ -43,6 +43,9 @@ class GraphingScreenState extends State<GraphingScreen>
 
   // FIX: Start with input unfocused. Focus will be given by MainScreen on tab switch.
   bool _isInputFocused = false;
+
+  /// Slot being edited from a function chip; Enter saves back to it.
+  int? _editingSlot;
   // The on-screen keypad starts hidden so the plot has the full graph area.
   // It expands when the user taps the input field, or via the toolbar toggle.
   bool _showKeypad = false;
@@ -77,7 +80,7 @@ class GraphingScreenState extends State<GraphingScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     debugPrint("DEBUG: GraphingScreen initState - Screen initialized.");
     // FIX: Removed focus logic from here to prevent it from running at app startup.
   }
@@ -236,11 +239,6 @@ class GraphingScreenState extends State<GraphingScreen>
     debugPrint(
       "DEBUG: GraphingScreen _handleKeyboardInput | isFocused: $_isInputFocused",
     );
-    if (!_isInputFocused) {
-      debugPrint("DEBUG: Input not focused, ignoring key event.");
-      return false;
-    }
-
     return KeyboardInputHandler.handleKeyboardInput(
       event,
       (text) => _onButtonPressed(text),
@@ -346,6 +344,25 @@ class GraphingScreenState extends State<GraphingScreen>
       return;
     }
 
+    final editing = _editingSlot;
+    if (editing != null) {
+      _recordGraph();
+      _appState.updateFunction(editing, textToAdd);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t.functionUpdated(editing + 1)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      _latexController.clear();
+      setState(() {
+        _editingSlot = null;
+        _isInputFocused = true;
+      });
+      _screenFocusNode.requestFocus();
+      return;
+    }
+
     final emptySlotIndex = _appState.graphFunctions.indexWhere(
       (f) => f.isEmpty,
     );
@@ -412,10 +429,32 @@ class GraphingScreenState extends State<GraphingScreen>
     return null;
   }
 
+  /// Load a graphed function into the input; Enter writes it back.
+  void _editFunction(int slot) {
+    final t = AppLocalizations.of(context);
+    _latexController.clear();
+    _latexController.insert(_appState.graphFunctions[slot]);
+    setState(() {
+      _editingSlot = slot;
+      _isInputFocused = true;
+    });
+    _screenFocusNode.requestFocus();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t.functionEditing(slot + 1)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _removeFunction(String functionToRemove) {
     final t = AppLocalizations.of(context);
     final index = _appState.graphFunctions.indexOf(functionToRemove);
     if (index != -1) {
+      if (_editingSlot == index) {
+        _latexController.clear();
+        setState(() => _editingSlot = null);
+      }
       _recordGraph();
       _appState.clearFunction(index);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -826,8 +865,9 @@ class GraphingScreenState extends State<GraphingScreen>
                         debugPrint(
                           "DEBUG: Graph area tapped. Unfocusing input field.",
                         );
+                        // Keep keyboard focus on the screen so typing
+                        // re-engages the input, as the keypad already does.
                         setState(() => _isInputFocused = false);
-                        _screenFocusNode.unfocus();
                       },
                       onScaleStart: (details) {
                         if (_tracing) return;
@@ -1061,8 +1101,37 @@ class GraphingScreenState extends State<GraphingScreen>
                   ),
                   backgroundColor: color.withValues(alpha: 0.1),
                   side: BorderSide(color: color, width: 1),
-                  onDeleted: () => _removeFunction(funcText),
-                  deleteIcon: const Icon(Icons.close, size: 16),
+                  deleteIcon: PopupMenuButton<String>(
+                    key: ValueKey('graph-function-actions-$originalIndex'),
+                    tooltip: AppLocalizations.of(context).functionActions,
+                    icon: const Icon(Icons.more_horiz, size: 16),
+                    padding: EdgeInsets.zero,
+                    onSelected: (action) => action == 'edit'
+                        ? _editFunction(originalIndex)
+                        : _removeFunction(funcText),
+                    itemBuilder: (context) {
+                      final t = AppLocalizations.of(context);
+                      return [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: ListTile(
+                            leading: const Icon(Icons.edit_outlined),
+                            title: Text(t.functionEdit),
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'remove',
+                          child: ListTile(
+                            leading: const Icon(Icons.delete_outline),
+                            title: Text(t.functionRemove),
+                          ),
+                        ),
+                      ];
+                    },
+                  ),
+                  // Chip only shows deleteIcon with onDeleted; the menu
+                  // above handles the actions itself.
+                  onDeleted: () {},
                 ),
                 if (params.isNotEmpty)
                   SizedBox(

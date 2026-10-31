@@ -663,16 +663,21 @@ class _MemoryActionButton extends StatelessWidget {
             side: BorderSide(color: color.withValues(alpha: 0.3)),
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, semanticLabel: label),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ],
+        // Scale down rather than overflow with larger text settings.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, semanticLabel: label),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -694,7 +699,7 @@ class _MemorySlotButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final slot = Material(
       color: hasValue
           ? Colors.orange.withValues(alpha: 0.15)
           : Colors.grey.withValues(alpha: 0.1),
@@ -703,7 +708,8 @@ class _MemorySlotButton extends StatelessWidget {
         onTap: onPressed,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.all(8),
+          // The slot is 64x36; two text lines only fit with slim padding.
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
@@ -713,33 +719,39 @@ class _MemorySlotButton extends StatelessWidget {
               width: 1,
             ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                name,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: hasValue ? Colors.orange : Colors.grey[600],
-                ),
-              ),
-              if (hasValue && value != null) ...[
-                const SizedBox(height: 2),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  value!.length > 8 ? '${value!.substring(0, 8)}...' : value!,
+                  name,
                   style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[500],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: hasValue ? Colors.orange : Colors.grey[600],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
+                if (hasValue && value != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    value!.length > 8 ? '${value!.substring(0, 8)}…' : value!,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[500],
+                    ),
+                    maxLines: 1,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
+    // The slot can only show a few characters; hover reveals the value.
+    return hasValue && value != null
+        ? Tooltip(message: '$name = $value', child: slot)
+        : slot;
   }
 }

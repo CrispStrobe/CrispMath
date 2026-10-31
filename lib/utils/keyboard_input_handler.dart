@@ -26,7 +26,8 @@ class KeyboardInputHandler {
     void Function(int) onMoveCursor, {
     bool multiplicationAsCdot = true,
   }) {
-    if (event is! KeyDownEvent) return false;
+    // Repeats come from holding a key down; treat them like presses.
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
 
     final logicalKey = event.logicalKey;
     final character = event.character;

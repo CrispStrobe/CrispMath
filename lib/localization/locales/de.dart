@@ -155,6 +155,17 @@ class DeLocalizations implements AppLocalizations {
   @override
   String functionRemoved(int slot) => 'Y$slot entfernt';
   @override
+  String functionUpdated(int slot) => 'Y$slot aktualisiert';
+  @override
+  String functionEditing(int slot) =>
+      'Y$slot wird bearbeitet: Eingabe zum Speichern';
+  @override
+  String get functionActions => 'Funktionsaktionen';
+  @override
+  String get functionEdit => 'Bearbeiten';
+  @override
+  String get functionRemove => 'Entfernen';
+  @override
   String get allSlotsFull =>
       'Alle Funktionsplätze sind belegt. Bitte erst eine Funktion löschen.';
   @override

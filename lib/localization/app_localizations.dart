@@ -101,6 +101,11 @@ abstract class AppLocalizations {
   String graphingTitle(int count);
   String functionAdded(int slot);
   String functionRemoved(int slot);
+  String functionUpdated(int slot);
+  String functionEditing(int slot);
+  String get functionActions;
+  String get functionEdit;
+  String get functionRemove;
   String get allSlotsFull;
   String get clearAllFunctions;
   String get clearAllFunctionsConfirm;
