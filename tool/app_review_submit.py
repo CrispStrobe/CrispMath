@@ -96,6 +96,13 @@ def submit(api, app, evidence):
     if len(editable) > 1:
         raise ValueError('More than one editable iOS version; resolve manually')
     bid, version = evidence['buildId'], evidence['version']
+    # Apple added this age rating question after the last submission. A
+    # calculator has no social media features; every other answer is kept.
+    for rating in evidence['ageRatings']:
+        if rating['declarationId'] and (rating['declaration'] or {}).get('socialMedia') is None:
+            api.request(f'/v1/ageRatingDeclarations/{rating["declarationId"]}', {'data': {
+                'type': 'ageRatingDeclarations', 'id': rating['declarationId'],
+                'attributes': {'socialMedia': False}}}, method='PATCH')
     if editable:
         vid = editable[0]['id']
         if editable[0]['versionString'] != version:
