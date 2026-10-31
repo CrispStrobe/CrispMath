@@ -37,6 +37,19 @@ Future<void> _pump(WidgetTester tester, Size size,
 }
 
 void main() {
+  test('only a focused web text field re-attaches after submit', () {
+    expect(
+        shouldReopenTextConnection(web: true, focused: true, plain: true),
+        isTrue);
+    expect(shouldReopenTextConnection(web: false, focused: true, plain: true),
+        isFalse,
+        reason: 'native keeps its text input connection and keyboard');
+    expect(shouldReopenTextConnection(web: true, focused: false, plain: true),
+        isFalse);
+    expect(shouldReopenTextConnection(web: true, focused: true, plain: false),
+        isFalse);
+  });
+
   test('browser input tracing requires explicit debug web opt-in', () {
     final enabled = Uri.parse('https://example.test/?crispInputTrace=1');
     final disabled = Uri.parse('https://example.test/');
