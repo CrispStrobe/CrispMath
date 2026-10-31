@@ -151,6 +151,17 @@ class EnLocalizations implements AppLocalizations {
   @override
   String functionRemoved(int slot) => 'Removed Y$slot';
   @override
+  String functionUpdated(int slot) => 'Updated Y$slot';
+  @override
+  String functionEditing(int slot) =>
+      'Editing Y$slot: press Enter to save';
+  @override
+  String get functionActions => 'Function actions';
+  @override
+  String get functionEdit => 'Edit';
+  @override
+  String get functionRemove => 'Remove';
+  @override
   String get allSlotsFull =>
       'All function slots are full. Clear a function first.';
   @override

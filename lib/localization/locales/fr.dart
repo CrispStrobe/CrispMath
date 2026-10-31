@@ -155,6 +155,17 @@ class FrLocalizations implements AppLocalizations {
   @override
   String functionRemoved(int slot) => 'Y$slot supprimée';
   @override
+  String functionUpdated(int slot) => 'Y$slot mise à jour';
+  @override
+  String functionEditing(int slot) =>
+      'Modification de Y$slot : Entrée pour enregistrer';
+  @override
+  String get functionActions => 'Actions de la fonction';
+  @override
+  String get functionEdit => 'Modifier';
+  @override
+  String get functionRemove => 'Supprimer';
+  @override
   String get allSlotsFull =>
       'Tous les emplacements de fonction sont occupés. Effacez-en une d\'abord.';
   @override

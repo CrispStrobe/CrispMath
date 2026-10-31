@@ -23,10 +23,10 @@ class FunctionEditorScreen extends StatefulWidget {
   const FunctionEditorScreen({super.key, this.onSwitchToGraphing});
 
   @override
-  State<FunctionEditorScreen> createState() => _FunctionEditorScreenState();
+  State<FunctionEditorScreen> createState() => FunctionEditorScreenState();
 }
 
-class _FunctionEditorScreenState extends State<FunctionEditorScreen>
+class FunctionEditorScreenState extends State<FunctionEditorScreen>
     with SingleTickerProviderStateMixin {
   final AppState _appState = AppState();
   late final LatexController _activeController; // Single active controller
@@ -43,6 +43,11 @@ class _FunctionEditorScreenState extends State<FunctionEditorScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _screenFocusNode.requestFocus();
     });
+  }
+
+  /// Lets MainScreen give hardware-keyboard focus back to this pane.
+  void requestFocus() {
+    if (mounted) _screenFocusNode.requestFocus();
   }
 
   @override

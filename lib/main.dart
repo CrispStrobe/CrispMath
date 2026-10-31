@@ -230,7 +230,6 @@ const double _extendedRailBreakpoint = 1100;
 const int _kCalculator = 0;
 const int _kNotepad = 1;
 const int _kGraphing = 2;
-// ignore: unused_element
 const int _kFunctionEditor = 3;
 const int _kAnalysis = 4;
 // ignore: unused_element
@@ -251,12 +250,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey<CalculatorScreenState> _calculatorKey = GlobalKey();
   final GlobalKey<GraphingScreenState> _graphingKey = GlobalKey();
   final GlobalKey<NotepadScreenState> _notepadKey = GlobalKey();
+  final GlobalKey<FunctionEditorScreenState> _functionEditorKey = GlobalKey();
 
   late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.addListener(_restoreLostFocus);
     _screens = [
       CalculatorScreen(
         key: _calculatorKey,
@@ -267,6 +268,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       NotepadScreen(key: _notepadKey, onOpenCommands: _openCommands),
       GraphingScreen(key: _graphingKey),
       FunctionEditorScreen(
+        key: _functionEditorKey,
         onSwitchToGraphing: (_) => _select(_kGraphing),
       ),
       const AnalysisHubScreen(),
@@ -340,8 +342,41 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     AppState().navigationChanges.addListener(_maybeRouteToCalculator);
   }
 
+  /// Give hardware-keyboard focus to the active pane's key listener.
+  void _focusActivePane() {
+    if (!mounted) return;
+    switch (_selectedIndex) {
+      case _kCalculator:
+        _calculatorKey.currentState?.requestFocus();
+      case _kGraphing:
+        _graphingKey.currentState?.requestFocus();
+      case _kFunctionEditor:
+        _functionEditorKey.currentState?.requestFocus();
+    }
+  }
+
+  bool _focusRestoreScheduled = false;
+
+  /// When focus falls back to a scope (a closed dialog or menu, a disposed
+  /// field, a click that unfocused), no key listener receives typed keys and
+  /// they are silently dropped. Return focus to the active pane instead,
+  /// unless another route (a dialog or pushed screen) is on top.
+  void _restoreLostFocus() {
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary != null && primary is! FocusScopeNode) return;
+    if (_focusRestoreScheduled) return;
+    _focusRestoreScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusRestoreScheduled = false;
+      if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+      final now = FocusManager.instance.primaryFocus;
+      if (now == null || now is FocusScopeNode) _focusActivePane();
+    });
+  }
+
   @override
   void dispose() {
+    FocusManager.instance.removeListener(_restoreLostFocus);
     AppleWorkflowBridge.stop();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(AppState().flushPersistence());
@@ -392,13 +427,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _selectedIndex = i;
       _visitedTabs.add(i);
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (i == _kCalculator) {
-        _calculatorKey.currentState?.requestFocus();
-      } else if (i == _kGraphing) {
-        _graphingKey.currentState?.requestFocus();
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focusActivePane());
   }
 
   @override

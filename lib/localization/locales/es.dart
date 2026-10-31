@@ -152,6 +152,17 @@ class EsLocalizations implements AppLocalizations {
   @override
   String functionRemoved(int slot) => 'Y$slot eliminada';
   @override
+  String functionUpdated(int slot) => 'Y$slot actualizada';
+  @override
+  String functionEditing(int slot) =>
+      'Editando Y$slot: pulsa Intro para guardar';
+  @override
+  String get functionActions => 'Acciones de la función';
+  @override
+  String get functionEdit => 'Editar';
+  @override
+  String get functionRemove => 'Eliminar';
+  @override
   String get allSlotsFull =>
       'Todas las posiciones de función están ocupadas. Borra una primero.';
   @override
