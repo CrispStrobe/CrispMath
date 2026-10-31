@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 
 from testflight_internal import AppleApi, matching_build
@@ -159,6 +160,11 @@ if __name__ == '__main__':
     app = os.environ['ASC_APP_ID']
     evidence = inspect(api, app, args.build, args.version)
     if args.submit:
-        evidence = submit(api, app, evidence)
+        try:
+            evidence = submit(api, app, evidence)
+        except HTTPError as error:
+            # Apple explains a refused submission in the response body.
+            print(error.read().decode(errors='replace'))
+            raise
     args.output.write_text(json.dumps(evidence, indent=2) + '\n')
     print(json.dumps(evidence, indent=2))
