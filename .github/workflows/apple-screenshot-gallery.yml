@@ -1,24 +1,11 @@
 name: Native Apple screenshot gallery
 on:
   workflow_dispatch:
-  push:
-    branches: ['feat/graph-workspace-ux']
-    paths:
-      - '.github/workflows/apple-screenshot-gallery.yml'
-      - 'integration_test/product_gallery_test.dart'
-      - 'ios/Runner/AppDelegate.swift'
-      - 'ios/Runner/Info.plist'
-      - 'lib/services/apple_workflow.dart'
-      - 'test_driver/product_gallery_driver.dart'
-      - 'macos/Runner/MainFlutterWindow.swift'
-      - 'tool/verify_native_gallery.py'
-      - 'tool/run_native_gallery.py'
-      - 'tool/run_native_gallery_test.py'
 permissions:
   contents: read
 jobs:
   gallery:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +82,7 @@ jobs:
           path: native-gallery
           retention-days: 14
   macos-gallery:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4

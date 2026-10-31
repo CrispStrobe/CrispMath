@@ -1,9 +1,10 @@
 // lib/widgets/onboarding_tour.dart
 //
-// First-launch overlay that introduces the four big features
-// (keypad, history, function pickers, analysis hub) as a paged
-// stack of cards. Skippable from any page; the user's choice is
-// persisted on AppState so the tour only runs once.
+// First-launch overlay. It opens on the live worksheet (the app's
+// distinguishing workflow) with a button that starts the guided example,
+// then introduces the keypad, history, function pickers and analysis hub
+// as a paged stack of cards. Skippable from any page; the user's choice
+// is persisted on AppState so the tour only runs once.
 
 import 'package:flutter/material.dart';
 
@@ -15,14 +16,16 @@ class OnboardingTour extends StatefulWidget {
 
   /// Show the tour as a full-screen modal dialog. Marks
   /// [AppState.onboardingDismissed] = true on close so the caller
-  /// doesn't have to remember.
-  static Future<void> show(BuildContext context) async {
-    await showDialog<void>(
+  /// doesn't have to remember. Completes with true when the user chose
+  /// to try the live worksheet; the caller opens it.
+  static Future<bool> show(BuildContext context) async {
+    final tryWorksheet = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) => const OnboardingTour(),
     );
     AppState().setOnboardingDismissed(true);
+    return tryWorksheet ?? false;
   }
 
   @override
@@ -46,14 +49,20 @@ class _OnboardingTourState extends State<OnboardingTour> {
 
     final pages = <_TourCard>[
       _TourCard(
+        icon: Icons.description,
+        title: t.onboardingWorksheetTitle,
+        body: t.onboardingWorksheetBody,
+        action: FilledButton.icon(
+          key: const ValueKey('onboarding-try-worksheet'),
+          icon: const Icon(Icons.play_arrow),
+          label: Text(t.onboardingTryWorksheet),
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+      ),
+      _TourCard(
         icon: Icons.calculate,
         title: t.onboardingKeypadTitle,
         body: t.onboardingKeypadBody,
-      ),
-      _TourCard(
-        icon: Icons.description,
-        title: t.onboardingNotepadTitle,
-        body: t.onboardingNotepadBody,
       ),
       _TourCard(
         icon: Icons.history,
@@ -151,11 +160,13 @@ class _TourCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String body;
+  final Widget? action;
 
   const _TourCard({
     required this.icon,
     required this.title,
     required this.body,
+    this.action,
   });
 
   @override
@@ -182,6 +193,10 @@ class _TourCard extends StatelessWidget {
                   color: scheme.onSurface.withValues(alpha: 0.85),
                 ),
           ),
+          if (action != null) ...[
+            const SizedBox(height: 24),
+            action!,
+          ],
         ],
       ),
     );

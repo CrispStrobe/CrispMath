@@ -122,10 +122,12 @@ void main() {
       expect(out, '3*5');
     });
 
-    test('Ans defaults to 0 when history is empty', () {
-      final out =
-          ExpressionPreprocessingUtils.substituteVariables('Ans+1', AppState());
-      expect(out, '0+1');
+    test('Ans reports a missing answer when history is empty', () {
+      expect(
+        () => ExpressionPreprocessingUtils.substituteVariables(
+            'Ans/2', AppState()),
+        throwsStateError,
+      );
     });
 
     test('user variable inlines wrapped in parens', () {

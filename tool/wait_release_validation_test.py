@@ -1,5 +1,7 @@
 """Release publication must have live UI proof for the same app bytes."""
 import copy
+from pathlib import Path
+import re
 import unittest
 
 from wait_release_validation import REPOSITORY, WORKFLOW, ValidationError, wait_for_validation
@@ -164,6 +166,33 @@ class ReleaseValidationTest(unittest.TestCase):
         self.api.packaged = {'truncated': False, 'tree': []}
         with self.assertRaises(ValidationError):
             self.check()
+
+
+class ReleaseWorkflowGateTest(unittest.TestCase):
+    """Upload routing must not bypass the real source-validation step."""
+
+    def test_every_upload_intent_runs_gate_before_signing(self):
+        workflow = (Path(__file__).resolve().parent.parent /
+                    '.github/workflows/ios-release.yml').read_text()
+
+        def step(name):
+            match = re.search(r'^      - name: ' + re.escape(name) +
+                              r'\n(?:(?!      - ).*\n)*', workflow, re.M)
+            self.assertIsNotNone(match, name)
+            assert match is not None
+            return match
+
+        gate = step('Wait for live release validation and matching application source')
+        upload = step('Upload to App Store Connect')
+        signing = step('Import signing certificate into a temp keychain')
+        condition = "if: ${{ github.event_name == 'push' || inputs.dry_run == false }}"
+        self.assertIn(condition, gate.group())
+        self.assertIn(condition, upload.group())
+        self.assertIn('--run-id "$VALIDATION_RUN_ID"', gate.group())
+        self.assertNotIn('inputs.validation_run_id !=', gate.group())
+        self.assertLess(gate.start(), signing.start())
+        self.assertLess(signing.start(), upload.start())
+        self.assertNotIn('always()', upload.group())
 
 
 if __name__ == '__main__':

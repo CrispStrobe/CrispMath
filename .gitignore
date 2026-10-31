@@ -72,3 +72,6 @@ handover-prompts/
 /.ci/
 
 /web/workflow_tasks_worker.dart.js*
+
+# Locally staged native runtime (CI stages it per platform)
+/*.dylib

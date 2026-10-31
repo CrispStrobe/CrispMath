@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../engine/notepad.dart';
@@ -148,6 +149,13 @@ class DocumentHistory {
   static const storageKey = 'crisp.documentCheckpoints';
   static const maxBytes = 1024 * 1024;
   static Future<void> _writes = Future.value();
+
+  /// Start a new isolated test's queue after its prior writes have completed.
+  @visibleForTesting
+  static void resetForTest() {
+    _writes = Future.value();
+  }
+
   Future<List<DocumentCheckpoint>> all() async {
     await _writes;
     final prefs = await SharedPreferences.getInstance();

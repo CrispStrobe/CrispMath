@@ -82,7 +82,9 @@ class MagicSquare {
   /// dihedral (D4) symmetries — k∈0..3 quarter-turns, optionally
   /// mirrored — optionally followed by the complement. Gives a deterministic
   /// solver visual variety on each "Generate" without re-solving. For
-  /// order 3 this reaches all 8 essentially-distinct squares; for larger
+  /// order 3 these transforms reach exactly the eight 3×3 magic squares:
+  /// there is one essentially-distinct square and its D4 images (the
+  /// complement of a 3×3 square is already one of those images). For larger
   /// orders it samples the symmetry orbit of the one solved square.
   static List<int> randomVariant(List<int> g, int n, Random rng) {
     var out = g;

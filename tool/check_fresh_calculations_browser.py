@@ -38,10 +38,11 @@ async def check(args):
                 assert '≠' in domain and '-3' in domain and '2' in domain, domain
                 roots = saved['l'][2]['r'].strip('{}').split(',')
                 assert sorted(float(v) for v in roots) == [1, 3], saved['l'][2]
-                await page.get_by_role('button', name=re.compile(r'· domain$')).click()
-                await page.get_by_text('Original domain: ' + domain, exact=True).wait_for()
+                # Details are on demand from the result's context menu; no
+                # per-result info glyph is rendered.
+                assert await page.get_by_role(
+                    'button', name='Result details', exact=True).count() == 0
                 await page.screenshot(path=str(output / f'domain-{width}.png'))
-                await page.get_by_role('button', name='Close', exact=True).click()
                 await page.reload(wait_until='domcontentloaded')
                 await page.locator('canvas').first.wait_for()
                 await page.locator('flt-semantics-placeholder').evaluate('(element)=>element.click()')

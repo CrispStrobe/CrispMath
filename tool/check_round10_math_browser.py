@@ -73,6 +73,8 @@ async def check_modules(args):
                         if references:
                             card = page.get_by_text(re.compile(r'^Statistics\s+Descriptive stats, linear regression, normal & binomial distributions'))
                         else:
+                            # Constraint problems sit in the collapsed Labs section.
+                            await real_click(page,page.get_by_text(re.compile(r'^Labs\s+Constraint problems, Sudoku')))
                             card = page.get_by_text(re.compile(r'^Constraint problems\s+Diophantine equations and cryptarithms'))
                         await real_click(page,card)
                         if not references: await reveal_tab(page,'Free-form')
@@ -231,18 +233,33 @@ async def check_calculator(args):
                     assert re.sub(r'\s+','',entry['e']).replace('×','*').replace('·','*')==re.sub(r'\s+','',LINSOLVE_SOURCE),entry
                     validate_linsolve(entry['r'])
                     assert (entry.get('evidence')or{}).get('accuracy')=='exact',entry
-                    # Flutter merges expression and result into the actual
-                    # history row's semantic label, rather than a DOM Text.
-                    label=entry['e']+'\n= '+entry['r']
-                    result=page.get_by_label(label,exact=True)
+                    # Flutter web can derive the accessible name from the
+                    # button's text without an aria-label attribute. Check the
+                    # computed name, rather than requiring that attribute.
+                    label=f"{entry['e']} = {entry['r']}"
+                    result=page.get_by_role('button',name=label,exact=True)
                     await result.wait_for(state='attached')
-                    assert await result.count()==1,label
+                    await expect(result).to_have_count(1)
+                    await expect(result).to_have_accessible_name(label)
+                    # This checker also runs the round-eleven system, whose
+                    # correct z differs. Mutate the result, not the source
+                    # expression, and prove the reference rejects the control.
+                    wrong_result,replacements=re.subn(r'(\bz\s*=\s*)[^,{}]+',r'\g<1>5',entry['r'])
+                    assert replacements==1 and wrong_result!=entry['r'],entry['r']
+                    try:
+                        validate_linsolve(wrong_result)
+                    except AssertionError:
+                        pass
+                    else:
+                        raise AssertionError('Wrong-answer control must fail the reference')
+                    wrong_label=f"{entry['e']} = {wrong_result}"
+                    assert wrong_label != label,label
+                    await expect(page.get_by_role('button',name=wrong_label,exact=True)).to_have_count(0)
                     box=await result.bounding_box()
                     assert box and box['width']>0 and box['height']>0 and box['x']>=0 and box['x']+box['width']<=width and box['y']>=0 and box['y']+box['height']<=height,box
                     item['resultGeometry']=box
-                    item['visibleHistoryLabel']=await result.get_attribute('aria-label')
-                    assert item['visibleHistoryLabel']==label,item
-                    item['visibleResult']=item['visibleHistoryLabel'].split('\n= ')[1]
+                    item['accessibleNameVerified']=True
+                    item['visibleResult']=entry['r']
                     validate_linsolve(item['visibleResult'])
                     await page.reload(wait_until='domcontentloaded')
                     await page.locator('canvas').first.wait_for()
@@ -250,12 +267,13 @@ async def check_calculator(args):
                     restored=await page.evaluate("()=>JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0]")
                     assert restored==entry,(entry,restored)
                     item['reload']=True
-                    result=page.get_by_label(label,exact=True)
+                    result=page.get_by_role('button',name=label,exact=True)
                     await result.wait_for(state='attached')
-                    assert await result.count()==1,label
-                    item['restoredHistoryLabel']=await result.get_attribute('aria-label')
-                    assert item['restoredHistoryLabel']==label,item
-                    validate_linsolve(item['restoredHistoryLabel'].split('\n= ')[1])
+                    await expect(result).to_have_count(1)
+                    await expect(result).to_have_accessible_name(label)
+                    await expect(page.get_by_role('button',name=wrong_label,exact=True)).to_have_count(0)
+                    item['restoredAccessibleNameVerified']=True
+                    validate_linsolve(entry['r'])
                     await page.screenshot(path=str(output/f'linsolve-{width}.png'))
                     assert not errors,errors
                     item['passed']=True

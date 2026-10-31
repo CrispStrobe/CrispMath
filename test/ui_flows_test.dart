@@ -11,6 +11,7 @@
 // wide screens), which is brittle in widget tests.
 
 import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/sudoku.dart';
 import 'package:crisp_math/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -70,6 +71,16 @@ Future<void> _gotoAnalysisModule(WidgetTester tester, String title) async {
       scrollable: scrollable);
   await tester.pumpAndSettle();
   await tester.tap(find.text(title));
+  await tester.pumpAndSettle();
+}
+
+/// Open the collapsed Labs section of the Analysis hub (Constraints,
+/// Sudoku, 3D scene composer).
+Future<void> _expandLabs(WidgetTester tester, Finder scrollable) async {
+  await tester.scrollUntilVisible(find.text('Labs'), 200,
+      scrollable: scrollable);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Labs'));
   await tester.pumpAndSettle();
 }
 
@@ -225,9 +236,17 @@ void main() {
         '3D Graphing',
         'Unit Converter',
         'Constants reference', // Round 71: moved from Settings
-        'Constraint problems',
-        'Sudoku',
+        'Labs',
       ]) {
+        await tester.scrollUntilVisible(find.text(label), 200,
+            scrollable: scrollable);
+        await tester.pumpAndSettle();
+        expect(find.text(label), findsOneWidget);
+      }
+      // Puzzle and scene tools are collapsed under Labs until opened.
+      expect(find.text('Sudoku solver'), findsNothing);
+      await _expandLabs(tester, scrollable);
+      for (final label in const ['Constraint problems', 'Sudoku solver']) {
         await tester.scrollUntilVisible(find.text(label), 200,
             scrollable: scrollable);
         await tester.pumpAndSettle();
@@ -247,11 +266,16 @@ void main() {
       await _pumpApp(tester);
       await tester.tap(find.text('Analysis'));
       await tester.pumpAndSettle();
-      // Scroll down + tap Sudoku.
+      // Scroll down + tap the Sudoku solver.
       final scrollable = find.byType(Scrollable).first;
-      await tester.scrollUntilVisible(find.text('Sudoku'), 200,
+      await _expandLabs(tester, scrollable);
+      await tester.scrollUntilVisible(find.text('Sudoku solver'), 200,
           scrollable: scrollable);
-      await tester.tap(find.text('Sudoku'));
+      // Labs children are built in the scroll cache once expanded, so
+      // scrollUntilVisible may not move; bring the card on screen first.
+      await tester.ensureVisible(find.text('Sudoku solver'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
       // Cycle through the three variants in the SegmentedButton.
       // Tapping any of Regular / Sudoku-X / Killer used to crash.
@@ -269,7 +293,7 @@ void main() {
       // The Sudoku tab title is enough — if any frame in the cycle
       // had thrown the dropdown / overflow assertion, pumpAndSettle
       // would have surfaced it as a test failure.
-      expect(find.text('Sudoku'), findsWidgets);
+      expect(find.text('Sudoku solver'), findsWidgets);
     });
 
     testWidgets(
@@ -283,9 +307,14 @@ void main() {
       await tester.tap(find.text('Analysis'));
       await tester.pumpAndSettle();
       final scrollable = find.byType(Scrollable).first;
-      await tester.scrollUntilVisible(find.text('Sudoku'), 200,
+      await _expandLabs(tester, scrollable);
+      await tester.scrollUntilVisible(find.text('Sudoku solver'), 200,
           scrollable: scrollable);
-      await tester.tap(find.text('Sudoku'));
+      // Labs children are built in the scroll cache once expanded, so
+      // scrollUntilVisible may not move; bring the card on screen first.
+      await tester.ensureVisible(find.text('Sudoku solver'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
       // The hint picker chips are labelled Off / Basic / Advanced —
       // verify all three are present, then exercise each.
@@ -310,7 +339,7 @@ void main() {
       }
       await tester.pumpAndSettle();
       // Sanity: still on the Sudoku screen, no exceptions surfaced.
-      expect(find.text('Sudoku'), findsWidgets);
+      expect(find.text('Sudoku solver'), findsWidgets);
       // Flip back to Off — chip stays selectable.
       await tester.tap(find.text('Off'));
       await tester.pumpAndSettle();
@@ -324,22 +353,27 @@ void main() {
       // the layout chips wiped the grid to empty AND left the
       // preset dropdown showing nothing. Now we auto-load a
       // matching preset whenever one exists for the (layout,
-      // variant) combination. Verifying via Reset puzzle staying
-      // enabled after a layout switch (which means the puzzle is
-      // a preset, not an empty grid).
+      // variant) combination. Verified via the preset picker showing a
+      // 4×4 preset after the layout switch (not "Custom", an empty grid).
       await _pumpApp(tester);
       await tester.tap(find.text('Analysis'));
       await tester.pumpAndSettle();
       final scrollable = find.byType(Scrollable).first;
-      await tester.scrollUntilVisible(find.text('Sudoku'), 200,
+      await _expandLabs(tester, scrollable);
+      await tester.scrollUntilVisible(find.text('Sudoku solver'), 200,
           scrollable: scrollable);
-      await tester.tap(find.text('Sudoku'));
+      // Labs children are built in the scroll cache once expanded, so
+      // scrollUntilVisible may not move; bring the card on screen first.
+      await tester.ensureVisible(find.text('Sudoku solver'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sudoku solver'));
       await tester.pumpAndSettle();
       // Pick the 4×4 size chip.
       await tester.tap(find.text('4×4'));
       await tester.pumpAndSettle();
-      // Reset puzzle button should be visible (and enabled).
-      expect(find.text('Reset puzzle'), findsOneWidget);
+      final picker = tester.widget<DropdownButtonFormField<SudokuPuzzle>>(
+          find.byType(DropdownButtonFormField<SudokuPuzzle>));
+      expect(picker.initialValue?.layout.side, 4);
       // Visualizer isn't visible yet (no solve has been kicked off).
       expect(find.text('Search visualizer'), findsNothing);
     });

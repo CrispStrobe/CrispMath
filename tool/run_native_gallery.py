@@ -132,7 +132,13 @@ def capture(profile,simulator,output):
         assert readiness['returnCode']==0 and not readiness['timedOut'],'Simulator boot readiness failed'
         status=phase(prefix+'status-bar',['xcrun','simctl','status_bar',device,'override','--time','9:41',
                                   '--batteryState','charged','--batteryLevel','100','--wifiBars','3'],30)
-        assert status['returnCode']==0 and not status['timedOut'],'Status bar setup failed'
+        # Cosmetic only: some simulator runtimes reject an override (the iPad
+        # one refused this exact command). Record it and capture anyway; the
+        # image is still a real simulator screenshot.
+        if status['returnCode']!=0 or status['timedOut']:
+            attempt.setdefault('warnings',[]).append(
+                {'step':'status-bar','returnCode':status['returnCode'],
+                 'timedOut':status['timedOut'],'log':status['log']})
         with socket.socket() as candidate:
             candidate.bind(('127.0.0.1',0))
             port=candidate.getsockname()[1]

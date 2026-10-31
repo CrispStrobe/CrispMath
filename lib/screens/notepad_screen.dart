@@ -33,6 +33,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:printing/printing.dart';
 
 import '../engine/app_state.dart';
+import '../engine/linked_graph.dart';
 import '../engine/calculator_engine.dart';
 import '../widgets/native_bridge_status_listenable.dart';
 import '../engine/notepad.dart';
@@ -68,13 +69,20 @@ import '../widgets/notepad_manager_dialog.dart';
 import '../widgets/store_result_dialogs.dart';
 import '../widgets/worked_examples_dialog.dart';
 
+part 'notepad/line_row.dart';
+part 'notepad/result_column.dart';
+
 /// Layout breakpoint matching the app shell's nav-rail switch
 /// (decision #17). At or above this width the input + result render
 /// side-by-side; below, the result stacks under the input.
 const double _kSideBySideBreakpoint = 720;
 
 class NotepadScreen extends StatefulWidget {
-  const NotepadScreen({super.key});
+  const NotepadScreen({super.key, this.onOpenCommands});
+
+  /// Optional: open the shell's command palette, so command search is
+  /// reachable by touch from this tab too.
+  final VoidCallback? onOpenCommands;
 
   @override
   State<NotepadScreen> createState() => NotepadScreenState();
@@ -125,6 +133,17 @@ class NotepadScreenState extends State<NotepadScreen> {
   final Map<String, undo.UndoHistory> _undoHistories = {};
   undo.UndoHistory _undoFor(NotepadDocument doc) =>
       _undoHistories.putIfAbsent(doc.id, () => undo.UndoHistory());
+
+  void _dismissPendingLineUndo(NotepadDocument doc) {
+    final pending = _pendingDeletion;
+    if (pending == null ||
+        pending.kind != _PendingDeletionKind.line ||
+        pending.doc.id != doc.id) {
+      return;
+    }
+    _pendingDeletion = null;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  }
 
   /// Scroll controller for the line list so blocked-by chips can
   /// scroll the upstream line into view on tap.
@@ -367,6 +386,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _onLineEdited(NotepadDocument doc, NotepadLine line, String value,
       [int? knownIndex]) {
     if (line.source == value) return;
+    _dismissPendingLineUndo(doc);
     final prev = line.source;
     final index = knownIndex ?? doc.lines.indexOf(line);
     final firstCode = firstCodeLineIndexOf(doc);
@@ -406,6 +426,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _appendLine(NotepadDocument doc) {
+    _dismissPendingLineUndo(doc);
     final line = NotepadLine.fresh(source: '');
     doc.lines.add(line);
     _undoFor(doc).record(undo.UndoOp(
@@ -421,7 +442,8 @@ class NotepadScreenState extends State<NotepadScreen> {
     });
   }
 
-  void _performUndo(NotepadDocument doc) {
+  void _performUndo(NotepadDocument doc, {bool dismissSnackbar = true}) {
+    if (dismissSnackbar) _dismissPendingLineUndo(doc);
     final op = _undoFor(doc).undo();
     if (op == null) return;
     final modified = undo.applyUndo(doc, op);
@@ -434,6 +456,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _performRedo(NotepadDocument doc) {
+    _dismissPendingLineUndo(doc);
     final op = _undoFor(doc).redo();
     if (op == null) return;
     final modified = undo.applyRedo(doc, op);
@@ -516,12 +539,20 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   Widget _buildSearchBar(NotepadDocument doc) {
+    // Count only rows the user can actually see: a match inside a
+    // collapsed section was reported but never highlighted.
+    final visible = _visibleLineIndices(doc);
     final matchCount = _searchQuery.isEmpty
         ? 0
-        : doc.lines
-            .where((l) =>
-                l.source.toLowerCase().contains(_searchQuery.toLowerCase()))
+        : visible
+            .where((i) => _lineMatchesSearch(doc.lines[i]))
             .length;
+    final hiddenMatches = _searchQuery.isEmpty
+        ? 0
+        : doc.lines
+                .where((l) => _lineMatchesSearch(l))
+                .length -
+            matchCount;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -534,7 +565,11 @@ class NotepadScreenState extends State<NotepadScreen> {
                 isDense: true,
                 hintText: 'Search…',
                 border: InputBorder.none,
-                suffixText: _searchQuery.isEmpty ? '' : '$matchCount matches',
+                suffixText: _searchQuery.isEmpty
+                    ? ''
+                    : hiddenMatches > 0
+                        ? '$matchCount shown · $hiddenMatches hidden'
+                        : '$matchCount matches',
               ),
               style: const TextStyle(fontSize: 14),
               onChanged: (v) => setState(() => _searchQuery = v),
@@ -628,12 +663,14 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _deleteLine(NotepadDocument doc, int index) {
     if (index < 0 || index >= doc.lines.length) return;
     final removed = doc.lines.removeAt(index);
-    _undoFor(doc).record(undo.UndoOp(
+    final deleteOp = undo.UndoOp(
       kind: undo.UndoOpKind.delete,
       index: index,
       lineId: removed.id,
       previousValue: removed.source,
-    ));
+      deletedLine: removed,
+    );
+    _undoFor(doc).record(deleteOp);
     _persistDoc(doc);
     _pendingDeletion =
         _PendingDeletion.line(doc: doc, line: removed, index: index);
@@ -647,19 +684,18 @@ class NotepadScreenState extends State<NotepadScreen> {
       label: AppLocalizations.of(context).notepadLineDeleted,
       onUndo: () {
         final pending = _pendingDeletion;
-        if (pending == null || pending.kind != _PendingDeletionKind.line) {
+        if (pending == null || pending.kind != _PendingDeletionKind.line ||
+            !identical(_undoFor(doc).nextUndo, deleteOp)) {
           return;
         }
-        final lineIdx = pending.lineIndex!.clamp(0, pending.doc.lines.length);
-        pending.doc.lines.insert(lineIdx, pending.line!);
-        _persistDoc(pending.doc);
-        _scheduleFullRecalc(pending.doc);
         _pendingDeletion = null;
+        _performUndo(doc, dismissSnackbar: false);
       },
     );
   }
 
   void _reorderLines(NotepadDocument doc, int oldIndex, int newIndex) {
+    _dismissPendingLineUndo(doc);
     // onReorderItem already adjusts newIndex for the removed item.
     final moved = doc.lines.removeAt(oldIndex);
     doc.lines.insert(newIndex, moved);
@@ -932,7 +968,9 @@ class NotepadScreenState extends State<NotepadScreen> {
     });
   }
 
-  Future<void> _exploreLinkedWorksheet() async {
+  /// Create the guided a=3, f(x)=x²+a, f(4) worksheet, calculate it and
+  /// link f to the graph. Also started from the first-run tour.
+  Future<void> exploreLinkedWorksheet() async {
     final labels = WorkflowLocalizations.of(context);
     final doc = NotepadTemplates.connectedWorksheet(
         name: labels.text(WorkflowLabel.connectedWorksheetName));
@@ -973,39 +1011,14 @@ class NotepadScreenState extends State<NotepadScreen> {
     }
   }
 
-  Widget _worksheetActions(NotepadDocument doc) {
-    final labels = WorkflowLocalizations.of(context);
-    final linked = _appState.graphLinks.values
-        .where((source) => source.documentId == doc.id &&
-            doc.lines.any((line) => line.id == source.lineId)).firstOrNull;
-    final hasSource = doc.lines.any((line) => line.source.trim().isNotEmpty);
-    if (!hasSource) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Wrap(spacing: 8, runSpacing: 4, children: [
-        if (linked != null)
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
-            icon: const Icon(Icons.show_chart),
-            label: Text(labels.text(WorkflowLabel.worksheetGraph)),
-            onPressed: () => _linkLine(doc,
-                doc.lines.firstWhere((line) => line.id == linked.lineId)),
-          ),
-        OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
-          icon: const Icon(Icons.history),
-          label: Text(labels.text(WorkflowLabel.worksheetHistory)),
-          onPressed: () => _onMenuSelected('document-history'),
-        ),
-        OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
-          icon: const Icon(Icons.ios_share),
-          label: Text(labels.text(WorkflowLabel.worksheetExport)),
-          onPressed: _previewExport,
-        ),
-      ]),
-    );
-  }
+  /// The graph link that points at a line of [doc], if any. Shared by
+  /// the AppBar graph action and the future worksheet rows.
+  LinkedGraphSource? _linkedSourceFor(NotepadDocument doc) =>
+      _appState.graphLinks.values
+          .where((source) =>
+              source.documentId == doc.id &&
+              doc.lines.any((line) => line.id == source.lineId))
+          .firstOrNull;
 
   Future<void> _openWorksheetFile() async {
     try {
@@ -1422,11 +1435,17 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _showUndoSnackbar(
       {required String label, required VoidCallback onUndo}) {
     final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
+    // clearSnackBars (not hideCurrentSnackBar) so a queued undo from a
+    // previous delete cannot resurface after this one has elapsed.
+    messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
         content: Text(label),
-        duration: const Duration(seconds: 5),
+        duration: const Duration(seconds: 4),
+        // Flutter defaults snackbars with actions to persistent.
+        persist: false,
+        behavior: SnackBarBehavior.floating,
+        showCloseIcon: true,
         action: SnackBarAction(
           label: AppLocalizations.of(context).notepadUndo,
           onPressed: onUndo,
@@ -1581,7 +1600,6 @@ class NotepadScreenState extends State<NotepadScreen> {
                                     },
                                   ),
                                 if (_searchOpen) _buildSearchBar(doc),
-                                _worksheetActions(doc),
                                 Expanded(child: _buildDocBody(doc)),
                               ],
                             );
@@ -1694,23 +1712,36 @@ class NotepadScreenState extends State<NotepadScreen> {
             ),
           ),
         ),
-      // Round 101 (P6): help-mode toggle. Mirrors the Calculator
-      // AppBar control so the affordance carries across surfaces.
-      ListenableBuilder(
-        listenable: _appState.notepadChanges,
-        builder: (context, _) {
-          final on = _appState.helpMode;
-          return IconButton(
-            icon: Icon(
-              on ? Icons.help : Icons.help_outline,
-              semanticLabel: on ? 'Disable help mode' : 'Help mode',
-              color: on ? Theme.of(context).colorScheme.primary : null,
-            ),
-            tooltip: on ? t.helpModeDisableTooltip : t.helpModeEnableTooltip,
-            onPressed: _appState.toggleHelpMode,
-          );
-        },
-      ),
+      // Worksheet-level actions live here as glyphs instead of a
+      // full-width button row: the same actions, no lost line. On a
+      // phone the app bar is already crowded, so these stay in the
+      // document menu instead of squeezing the title.
+      if (!compact && doc != null) ...[
+        IconButton(
+          icon: const Icon(Icons.history),
+          tooltip: WorkflowLocalizations.of(context)
+              .text(WorkflowLabel.worksheetHistory),
+          onPressed: () => _onMenuSelected('document-history'),
+        ),
+        IconButton(
+          icon: const Icon(Icons.ios_share),
+          tooltip: WorkflowLocalizations.of(context)
+              .text(WorkflowLabel.worksheetExport),
+          onPressed: _previewExport,
+        ),
+        if (_linkedSourceFor(doc) != null)
+          IconButton(
+            icon: const Icon(Icons.show_chart),
+            tooltip: WorkflowLocalizations.of(context)
+                .text(WorkflowLabel.worksheetGraph),
+            onPressed: () {
+              final linked = _linkedSourceFor(doc);
+              if (linked == null) return;
+              _linkLine(
+                  doc, doc.lines.firstWhere((line) => line.id == linked.lineId));
+            },
+          ),
+      ],
       if (doc != null)
         IconButton(
           icon: const Icon(Icons.add),
@@ -1723,32 +1754,56 @@ class NotepadScreenState extends State<NotepadScreen> {
         itemBuilder: (context) {
           final items = <PopupMenuEntry<String>>[
             PopupMenuItem(value: 'new', child: Text(t.notepadNewDocument)),
+            if (doc != null)
+              PopupMenuItem(
+                value: 'search-document',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.searchDocument)),
+              ),
+            if (widget.onOpenCommands != null)
+              PopupMenuItem(
+                value: 'search-commands',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.searchCommands)),
+              ),
             PopupMenuItem(value: 'explore-linked', child: Text(
                 WorkflowLocalizations.of(context).text(WorkflowLabel.exploreWorksheet))),
             PopupMenuItem(value: 'open-file', child: Text(t.notepadOpenFile)),
             if (doc != null)
               PopupMenuItem(value: 'save-file', child: Text(t.notepadSaveFile)),
+            // Worksheet-level actions stay near the top: they are what the
+            // guided flows use, and a long menu pushes the tail off-screen.
+            if (doc != null) ...[
+              PopupMenuItem(
+                value: 'document-history',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.worksheetHistory)),
+              ),
+              PopupMenuItem(
+                value: 'export-preview',
+                child: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.worksheetExport)),
+              ),
+              if (_linkedSourceFor(doc) != null)
+                PopupMenuItem(
+                  value: 'open-linked-graph',
+                  child: Text(WorkflowLocalizations.of(context)
+                      .text(WorkflowLabel.worksheetGraph)),
+                ),
+            ],
             if (compact) ...[
               const PopupMenuItem(value: 'scan', child: Text('Scan math')),
               const PopupMenuItem(value: 'write', child: Text('Write math')),
               const PopupMenuItem(
                   value: 'examples', child: Text('Worked examples')),
             ],
-            // Template picker sub-items.
-            for (final tmpl in NotepadTemplates.all)
-              PopupMenuItem(
-                value: 'template:${tmpl.id}',
-                child: Row(
-                  children: [
-                    const Icon(Icons.description_outlined,
-                        size: 16, semanticLabel: 'Template'),
-                    const SizedBox(width: 8),
-                    Flexible(
-                        child:
-                            Text(tmpl.name, overflow: TextOverflow.ellipsis)),
-                  ],
-                ),
-              ),
+            // One entry instead of seven: the picker opens a dialog, which
+            // keeps this menu short enough to use without scrolling.
+            PopupMenuItem(
+              value: 'template-picker',
+              child: Text(
+                  '${WorkflowLocalizations.of(context).text(WorkflowLabel.insertTemplate)}…'),
+            ),
           ];
           final others = _otherDocsForMenu();
           if (others.isNotEmpty) {
@@ -1787,14 +1842,6 @@ class NotepadScreenState extends State<NotepadScreen> {
               value: 'copy-markdown',
               child: Text(t.notepadCopyAsMarkdown),
             ));
-            items.add(PopupMenuItem(
-              value: 'document-history',
-              child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetHistory)),
-            ));
-            items.add(PopupMenuItem(
-              value: 'export-preview',
-              child: Text(WorkflowLocalizations.of(context).text(WorkflowLabel.worksheetExport)),
-            ));
             items.add(const PopupMenuItem(
               value: 'export-pdf',
               child: Text('Export PDF'),
@@ -1830,8 +1877,48 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _onMenuSelected(String value) async {
+    if (value == 'template-picker') {
+      final chosen = await showDialog<NotepadTemplate>(
+        context: context,
+        builder: (ctx) => SimpleDialog(
+          title: Text(
+              WorkflowLocalizations.of(ctx).text(WorkflowLabel.insertTemplate)),
+          children: [
+            for (final tmpl in NotepadTemplates.all)
+              SimpleDialogOption(
+                onPressed: () => Navigator.of(ctx).pop(tmpl),
+                child: Row(children: [
+                  const Icon(Icons.description_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(tmpl.name)),
+                ]),
+              ),
+          ],
+        ),
+      );
+      if (chosen == null || !mounted) return;
+      final doc = chosen.createDocument();
+      _appState.setNotepadDocument(doc);
+      _appState.setCurrentNotepadDoc(doc.id);
+      return;
+    }
+    if (value == 'search-commands') {
+      widget.onOpenCommands?.call();
+      return;
+    }
+    if (value == 'search-document') {
+      if (!_searchOpen) _toggleSearch();
+      return;
+    }
+    if (value == 'open-linked-graph') {
+      final doc = _currentDoc;
+      final linked = doc == null ? null : _linkedSourceFor(doc);
+      if (doc == null || linked == null) return;
+      _linkLine(doc, doc.lines.firstWhere((line) => line.id == linked.lineId));
+      return;
+    }
     if (value == 'explore-linked') {
-      await _exploreLinkedWorksheet();
+      await exploreLinkedWorksheet();
       return;
     }
     if (value.startsWith('template:')) {
@@ -1936,7 +2023,7 @@ class NotepadScreenState extends State<NotepadScreen> {
                   icon: const Icon(Icons.show_chart),
                   label: Text(WorkflowLocalizations.of(context).text(
                       WorkflowLabel.exploreWorksheet)),
-                  onPressed: _exploreLinkedWorksheet,
+                  onPressed: exploreLinkedWorksheet,
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.menu_book,
@@ -2101,866 +2188,6 @@ class NotepadScreenState extends State<NotepadScreen> {
 
 // ---------------------------------------------------------------------------
 // Row
-// ---------------------------------------------------------------------------
-
-final _dividerPattern = RegExp(r'^-{3,}\s*$');
-
-class _NotepadLineRow extends StatelessWidget {
-  final NotepadLine line;
-  final int index;
-  final bool sideBySide;
-  final bool isPending;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onDelete;
-  final VoidCallback? onPlot;
-  final void Function(String lineId) onScrollToLineId;
-
-  /// Round 104b (P6): used by [_showLineHelp] to wire the Show-steps
-  /// button on solve / diff / integrate rows. The notepad row didn't
-  /// originally carry an engine reference; Round 104 deferred this
-  /// wiring, Round 104b threads it through so help mode reaches the
-  /// same [StepEngine] trace the Calculator history popover does.
-  final CalculatorEngine engine;
-  final AppState appState;
-
-  final VoidCallback? onFormatCycle;
-  final Set<String> scopeNames;
-  final bool isCollapsedHeading;
-  final int hiddenLineCount;
-  final VoidCallback? onToggleCollapse;
-  final bool highlightSearch;
-  final bool useLatexInput;
-
-  const _NotepadLineRow({
-    required this.line,
-    required this.index,
-    required this.sideBySide,
-    required this.isPending,
-    required this.controller,
-    required this.focusNode,
-    required this.onChanged,
-    required this.onDelete,
-    this.onPlot,
-    required this.onScrollToLineId,
-    required this.engine,
-    required this.appState,
-    this.onFormatCycle,
-    this.scopeNames = const {},
-    this.isCollapsedHeading = false,
-    this.hiddenLineCount = 0,
-    this.onToggleCollapse,
-    this.highlightSearch = false,
-    this.useLatexInput = false,
-  });
-
-  bool get _isBlank => line.source.trim().isEmpty;
-  Set<String> get _scopeNames => scopeNames;
-
-  NotepadLineKind get _lineKind {
-    // Lightweight classification for rendering — only checks heading
-    // and divider patterns (the full classify needs firstCodeLineIndex
-    // which we don't carry here).
-    final t = line.source.trim();
-    if (t.startsWith('## ')) return NotepadLineKind.heading;
-    if (_dividerPattern.hasMatch(t)) return NotepadLineKind.divider;
-    return NotepadLineKind.expression; // generic fallback
-  }
-
-  Widget _maybeHighlight(Widget child, BuildContext context) {
-    if (!highlightSearch) return child;
-    return Container(
-      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-      child: child,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Empty and expression rows keep the same editor ancestry. Reparenting
-    // the editor can reset the browser editing element during the input event.
-    // Section headings: `## text` — larger, bold, theme-colored.
-    // Fold/unfold toggle + hidden-line-count chip when collapsed.
-    if (_lineKind == NotepadLineKind.heading) {
-      return Padding(
-        key: ValueKey('row-${line.id}'),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _DragHandle(index: index),
-            if (onToggleCollapse != null)
-              IconButton(
-                icon: Icon(
-                  isCollapsedHeading ? Icons.expand_more : Icons.expand_less,
-                  size: 20,
-                  semanticLabel: isCollapsedHeading
-                      ? 'Expand section'
-                      : 'Collapse section',
-                ),
-                onPressed: onToggleCollapse,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 28,
-                  minHeight: 28,
-                ),
-                tooltip: isCollapsedHeading ? 'Expand' : 'Collapse',
-              ),
-            Expanded(child: _buildInputField(context, heading: true)),
-            if (isCollapsedHeading && hiddenLineCount > 0)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Chip(
-                  label: Text('$hiddenLineCount hidden'),
-                  labelStyle: const TextStyle(fontSize: 11),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            _DeleteButton(onPressed: onDelete),
-          ],
-        ),
-      );
-    }
-
-    // Horizontal dividers: `---` — render a line instead of result.
-    if (_lineKind == NotepadLineKind.divider) {
-      return Padding(
-        key: ValueKey('row-${line.id}'),
-        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _DragHandle(index: index),
-            Expanded(
-              child: Column(
-                children: [
-                  _buildInputField(context, dense: true),
-                  const Divider(height: 1, thickness: 1),
-                ],
-              ),
-            ),
-            _DeleteButton(onPressed: onDelete),
-          ],
-        ),
-      );
-    }
-
-    if (sideBySide) {
-      return _maybeHighlight(
-          Padding(
-            key: ValueKey('row-${line.id}'),
-            padding:
-                EdgeInsets.symmetric(vertical: _isBlank ? 2 : 4, horizontal: 8),
-            child: HelpTarget(
-              onHelpTap: () => _showLineHelp(context),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _DragHandle(index: index),
-                  Expanded(
-                    flex: 3,
-                    child: _buildInputField(context),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: _NotepadResultColumn(
-                      line: line,
-                      isPending: isPending,
-                      onScrollToLineId: onScrollToLineId,
-                      onFormatCycle: onFormatCycle,
-                      engine: engine,
-                    ),
-                  ),
-                  if (!_isBlank && onPlot != null)
-                    IconButton(
-                        tooltip: 'Link line to graph',
-                        icon: const Icon(Icons.show_chart),
-                        onPressed: onPlot),
-                  _DeleteButton(onPressed: onDelete),
-                ],
-              ),
-            ),
-          ),
-          context);
-    }
-
-    // Stacked layout for narrow screens.
-    return _maybeHighlight(
-        Padding(
-          key: ValueKey('row-${line.id}'),
-          padding:
-              EdgeInsets.symmetric(vertical: _isBlank ? 2 : 4, horizontal: 8),
-          child: HelpTarget(
-            onHelpTap: () => _showLineHelp(context),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _DragHandle(index: index),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildInputField(context),
-                      Padding(
-                        padding:
-                            const EdgeInsets.only(top: 4, left: 4, bottom: 4),
-                        child: _NotepadResultColumn(
-                          line: line,
-                          isPending: isPending,
-                          onScrollToLineId: onScrollToLineId,
-                          alignStart: true,
-                          onFormatCycle: onFormatCycle,
-                          engine: engine,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (!_isBlank && onPlot != null)
-                  IconButton(
-                      tooltip: 'Link line to graph',
-                      icon: const Icon(Icons.show_chart),
-                      onPressed: onPlot),
-                _DeleteButton(onPressed: onDelete),
-              ],
-            ),
-          ),
-        ),
-        context);
-  }
-
-  /// Round 104 (P6): help-mode tap on a notepad line opens the shared
-  /// [HistoryRowHelpModal]. Reuses the calculator-history routing
-  /// table; the line's `source` is the expression, and the modal
-  /// surfaces `cachedError` ahead of `cachedResult` so error lines
-  /// still display sensibly. Round 104b wires Show-steps via the
-  /// shared [runHistoryStepTrace] runner — solve / diff / integrate
-  /// rows now re-render the same step-by-step dialog the Calculator
-  /// uses.
-  void _showLineHelp(BuildContext context) {
-    final source = line.source.trim();
-    if (source.isEmpty) return;
-    final displayed = line.cachedError ?? line.cachedResult ?? '';
-    final entry = CalculationEntry(
-      expression: source,
-      result: displayed,
-    );
-    final info = detectHistoryHelp(source);
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => HistoryRowHelpModal(
-        entry: entry,
-        info: info,
-        onShowSteps: info.hasSteps
-            ? () {
-                Navigator.of(dialogContext).pop();
-                runHistoryStepTrace(
-                  context: context,
-                  info: info,
-                  engine: engine,
-                  appState: appState,
-                );
-              }
-            : null,
-        onLearnMore: info.refId == null
-            ? null
-            : () {
-                Navigator.of(dialogContext).pop();
-                showDialog<void>(
-                  context: context,
-                  builder: (_) =>
-                      FunctionReferenceDialog(initialSearch: info.refId),
-                );
-              },
-      ),
-    );
-  }
-
-  Widget _buildInputField(BuildContext context,
-      {bool dense = false, bool heading = false}) {
-    final textField = TextField(
-      // Blank, normal and heading rows place the editor under different
-      // parents. Keep its editing connection and focus through those changes.
-      key: GlobalObjectKey(controller),
-      controller: controller,
-      focusNode: focusNode,
-      onChanged: onChanged,
-      minLines: 1,
-      maxLines: null,
-      style: heading
-          ? TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            )
-          : const TextStyle(fontFamily: 'monospace', fontSize: 14),
-      decoration: InputDecoration(
-        isDense: dense,
-        border: InputBorder.none,
-        hintText: 'line ${index + 1}',
-        hintStyle: TextStyle(
-          color: Colors.grey[600],
-          fontStyle: FontStyle.italic,
-        ),
-      ),
-    );
-    // Skip autocomplete for dense/heading/divider rows.
-    if (dense || heading) return textField;
-    final withAutocomplete = NotepadAutocompleteOverlay(
-      controller: controller,
-      focusNode: focusNode,
-      scopeNames: _scopeNames,
-      child: textField,
-    );
-    // Wrap in DragTarget so dragged results can be dropped into this line.
-    final dragTarget = DragTarget<String>(
-      onAcceptWithDetails: (details) {
-        final value = details.data;
-        final text = controller.text;
-        final sel = controller.selection;
-        final pos = sel.isValid ? sel.start : text.length;
-        final before = text.substring(0, pos);
-        final after = text.substring(pos);
-        final newText = '$before$value$after';
-        controller.value = TextEditingValue(
-          text: newText,
-          selection: TextSelection.collapsed(offset: pos + value.length),
-        );
-        onChanged(newText);
-      },
-      builder: (context, candidateData, rejectedData) {
-        if (candidateData.isNotEmpty) {
-          return Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: withAutocomplete,
-          );
-        }
-        return withAutocomplete;
-      },
-    );
-
-    // When LaTeX input is active, show a live-rendered preview of the
-    // expression below the text field. Only render when the input
-    // contains LaTeX-ish content (backslash commands, braces, carets).
-    if (!useLatexInput) return dragTarget;
-    final src = controller.text.trim();
-    if (src.isEmpty || !RegExp(r'[\\{}\^_]').hasMatch(src)) return dragTarget;
-    final latex = MathDisplayUtils.toHistoryDisplayLatex(src);
-    Widget preview;
-    try {
-      preview = Math.tex(
-        latex,
-        textStyle: TextStyle(
-          fontSize: 16,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-        ),
-        onErrorFallback: (_) => const SizedBox.shrink(),
-      );
-    } catch (_) {
-      return dragTarget;
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        dragTarget,
-        Padding(
-          padding: const EdgeInsets.only(left: 8, bottom: 4),
-          child: preview,
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Drag handle / delete button
-// ---------------------------------------------------------------------------
-
-class _DragHandle extends StatelessWidget {
-  final int index;
-  const _DragHandle({required this.index});
-
-  @override
-  Widget build(BuildContext context) {
-    return ReorderableDragStartListener(
-      index: index,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Icon(
-          Icons.drag_handle,
-          size: 20,
-          semanticLabel: 'Drag to reorder',
-          color: Colors.grey[600],
-        ),
-      ),
-    );
-  }
-}
-
-class _DeleteButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  const _DeleteButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(Icons.close,
-          size: 18, semanticLabel: 'Delete line', color: Colors.grey[600]),
-      tooltip: AppLocalizations.of(context).notepadDeleteLine,
-      visualDensity: VisualDensity.compact,
-      onPressed: onPressed,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Result column
-// ---------------------------------------------------------------------------
-
-class _NotepadResultColumn extends StatelessWidget {
-  final NotepadLine line;
-  final bool isPending;
-  final void Function(String lineId) onScrollToLineId;
-  final bool alignStart;
-  final VoidCallback? onFormatCycle;
-  final CalculatorEngine engine;
-
-  const _NotepadResultColumn({
-    required this.line,
-    required this.isPending,
-    required this.onScrollToLineId,
-    required this.engine,
-    this.alignStart = false,
-    this.onFormatCycle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (line.source.trim().isEmpty) return const SizedBox.shrink();
-    final cs = Theme.of(context).colorScheme;
-    final align = alignStart ? Alignment.centerLeft : Alignment.centerRight;
-    final textAlign = alignStart ? TextAlign.left : TextAlign.right;
-
-    // Phase 5 pending state: greyed-out previous value (or a small
-    // spinner if no previous value to grey) + progress dot.
-    if (isPending) {
-      return Align(
-        alignment: align,
-        child: _buildPendingWidget(context, textAlign),
-      );
-    }
-
-    if (line.cachedError != null) {
-      return Align(
-        alignment: align,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          _buildErrorWidget(context, line.cachedError!, textAlign),
-          if (line.resultEvidence != null)
-            ResultEvidenceBadge(evidence: line.resultEvidence!),
-        ]),
-      );
-    }
-
-    final rawRes = line.cachedResult;
-    // Apply per-line format override if set.
-    final res = rawRes != null && line.resultFormat != LineResultFormat.auto
-        ? (formatLineResult(rawRes, line.resultFormat) ?? rawRes)
-        : rawRes;
-    final children = <Widget>[];
-    if (res != null && res.isNotEmpty) {
-      children.add(_buildResult(context, res, textAlign));
-      if (line.resultEvidence != null) {
-        children.add(ResultEvidenceBadge(evidence: line.resultEvidence!));
-      }
-    }
-    // Show a small format indicator when a non-auto format is active.
-    if (rawRes != null &&
-        rawRes.isNotEmpty &&
-        line.resultFormat != LineResultFormat.auto) {
-      children.add(GestureDetector(
-        onTap: onFormatCycle,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            _formatLabel(line.resultFormat),
-            style: TextStyle(
-              fontSize: 10,
-              color: cs.primary.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: textAlign,
-          ),
-        ),
-      ));
-    }
-    if (line.cachedFreeVars.isNotEmpty) {
-      children.add(Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          AppLocalizations.of(context)
-              .notepadFreeVars(line.cachedFreeVars.join(', ')),
-          style: TextStyle(
-            fontSize: 11,
-            fontStyle: FontStyle.italic,
-            color: cs.onSurface.withValues(alpha: 0.6),
-          ),
-          textAlign: textAlign,
-        ),
-      ));
-    }
-
-    if (children.isEmpty) return const SizedBox.shrink();
-
-    return Align(
-      alignment: align,
-      child: Column(
-        crossAxisAlignment:
-            alignStart ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildPendingWidget(BuildContext context, TextAlign textAlign) {
-    final cs = Theme.of(context).colorScheme;
-    final res = line.cachedResult;
-    final style =
-        TextStyle(fontSize: 16, color: cs.onSurface.withValues(alpha: 0.4));
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (res != null && res.isNotEmpty)
-          Flexible(child: Text(res, style: style, textAlign: textAlign)),
-        if (res != null && res.isNotEmpty) const SizedBox(width: 6),
-        SizedBox(
-          width: 12,
-          height: 12,
-          child: CircularProgressIndicator(
-            strokeWidth: 1.5,
-            color: cs.primary.withValues(alpha: 0.7),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildResult(BuildContext context, String res, TextAlign textAlign) {
-    final scheme = Theme.of(context).colorScheme;
-    // Inline plot: the evaluator stores a `__plot__:` sentinel.
-    final plotSpec = PlotSpec.tryParse(res);
-    if (plotSpec != null) {
-      return MiniPlotWidget(spec: plotSpec, engine: engine);
-    }
-    // FlatZinc lines (Round E.4) produce multi-line `name = value;`
-    // output blocks plus separator markers — Math.tex can't render
-    // that, so route them to a monospace SelectableText block. Use
-    // the raw line source for detection so we don't have to re-
-    // classify (the dispatcher already ran).
-    if (line.source.trimLeft().startsWith('fzn:')) {
-      return _buildFlatZincResult(context, res);
-    }
-    // Round 113 (P7): boolean predicates render as the same chip the
-    // calculator history uses. `normalizeBooleanResult` lowercases
-    // SymEngine's `True`/`False` before they reach the cache, so a
-    // simple string match suffices.
-    final trimmedRes = res.trim();
-    if (trimmedRes == 'true' || trimmedRes == 'false') {
-      return BooleanChip(value: trimmedRes == 'true', fontSize: 16);
-    }
-    final color = scheme.primary;
-    final style = TextStyle(fontSize: 16, color: color);
-    final latex = MathDisplayUtils.toHistoryDisplayLatex(res);
-    Widget body;
-    try {
-      body = Math.tex(
-        latex,
-        textStyle: style,
-        onErrorFallback: (_) => Text(res, style: style, textAlign: textAlign),
-      );
-    } catch (_) {
-      body = Text(res, style: style, textAlign: textAlign);
-    }
-    // A typeset expression cannot wrap like ordinary text. Give it its full
-    // intrinsic width and let the user scroll to every term on narrow screens.
-    if (body is Math) {
-      body = SingleChildScrollView(
-        key: ValueKey('notepad-result-scroll:${line.id}'),
-        scrollDirection: Axis.horizontal,
-        child: body,
-      );
-    }
-    // Speak the complete computed value, including multi-digit math rendered
-    // as separate glyph widgets. The label describes the same visible body.
-    body = Semantics(
-      key: ValueKey('notepad-result:${line.id}'),
-      container: true, label: res, excludeSemantics: true, child: body);
-    return LongPressDraggable<String>(
-      data: res,
-      feedback: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Text(
-            res.length > 30 ? '${res.substring(0, 30)}…' : res,
-            style: style.copyWith(fontSize: 14),
-          ),
-        ),
-      ),
-      childWhenDragging: Opacity(opacity: 0.4, child: body),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onLongPress: () => _showResultActions(context, res, latex),
-        onSecondaryTap: () => _showResultActions(context, res, latex),
-        child: body,
-      ),
-    );
-  }
-
-  Widget _buildFlatZincResult(BuildContext context, String res) {
-    final scheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPress: () => _showResultActions(context, res, res),
-      onSecondaryTap: () => _showResultActions(context, res, res),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: scheme.outlineVariant),
-        ),
-        child: SelectableText(
-          res,
-          style: TextStyle(
-            fontSize: 12,
-            fontFamily: 'monospace',
-            color: scheme.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
-
-  static String _formatLabel(LineResultFormat f) {
-    switch (f) {
-      case LineResultFormat.auto:
-        return '';
-      case LineResultFormat.decimal:
-        return 'dec';
-      case LineResultFormat.fraction:
-        return 'frac';
-      case LineResultFormat.scientific:
-        return 'sci';
-      case LineResultFormat.hex:
-        return 'hex';
-      case LineResultFormat.binary:
-        return 'bin';
-    }
-  }
-
-  void _showResultActions(BuildContext context, String plain, String latex) {
-    final t = AppLocalizations.of(context);
-    // Round 91: when the line is an assignment (`f = x^2 + 1`), Store
-    // as function should bind on the RHS, not the entire source. Parse
-    // once so both menu items see the same canonical body.
-    final parsed = classifyNotepadLine(
-      line.source,
-      lineIndex: 0,
-      firstCodeLineIndex: 0,
-    );
-    final functionBody = parsed.kind == NotepadLineKind.assignment
-        ? (parsed.body ?? line.source)
-        : line.source;
-    final freeVars =
-        ExpressionPreprocessingUtils.extractFreeVariables(functionBody);
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          key: const ValueKey('notepad-result-actions-scroll'),
-          child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.content_copy, semanticLabel: 'Copy'),
-              title: Text(t.notepadCopyResult),
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: plain));
-                Navigator.of(sheetContext).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(t.notepadCopiedResult),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.code, semanticLabel: 'Copy as LaTeX'),
-              title: Text(t.notepadCopyAsLatex),
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: latex));
-                Navigator.of(sheetContext).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(t.notepadCopiedAsLatex),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.save_alt,
-                  semanticLabel: 'Store as variable'),
-              title: Text(t.storeAsVariable),
-              onTap: () async {
-                Navigator.of(sheetContext).pop();
-                final saved = await StoreResultDialogs.promptStoreAsVariable(
-                  context: context,
-                  value: plain,
-                );
-                if (saved != null && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(t.storeSavedAs(saved)),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
-              },
-            ),
-            if (AppState().crispAssistEnabled)
-              ListTile(
-                leading: const Icon(Icons.auto_awesome,
-                    semanticLabel: 'Explain with AI'),
-                title: const Text('Explain with AI'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  showCrispAssistExplainDialog(
-                    context,
-                    expression: line.source,
-                    result: plain,
-                  );
-                },
-              ),
-            if (freeVars.isNotEmpty)
-              ListTile(
-                leading: const Icon(Icons.functions,
-                    semanticLabel: 'Store as function'),
-                title: Text(t.storeAsFunction),
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  final saved = await StoreResultDialogs.promptStoreAsFunction(
-                    context: context,
-                    expression: functionBody,
-                  );
-                  if (saved != null && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(t.storeSavedAs(saved)),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-              ),
-          ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget(
-      BuildContext context, String rawError, TextAlign textAlign) {
-    final cs = Theme.of(context).colorScheme;
-    final t = AppLocalizations.of(context);
-
-    if (rawError.startsWith(NotepadErrorPrefix.blockedBy)) {
-      // blockedBy:<lineId>:<alias>
-      final payload = rawError.substring(NotepadErrorPrefix.blockedBy.length);
-      final sep = payload.indexOf(':');
-      final lineId = sep < 0 ? '' : payload.substring(0, sep);
-      final alias = sep < 0 ? payload : payload.substring(sep + 1);
-      return ActionChip(
-        avatar: Icon(Icons.block,
-            size: 16, semanticLabel: 'Blocked', color: cs.error),
-        label: Text(
-          t.notepadBlockedBy(alias),
-          style: TextStyle(color: cs.error, fontSize: 12),
-        ),
-        onPressed: () => onScrollToLineId(lineId),
-      );
-    }
-
-    if (rawError.startsWith(NotepadErrorPrefix.circularReference)) {
-      final path =
-          rawError.substring(NotepadErrorPrefix.circularReference.length);
-      return Chip(
-        avatar: Icon(Icons.sync_problem,
-            size: 16, semanticLabel: 'Circular reference', color: cs.error),
-        label: Text(
-          t.notepadCycle(path),
-          style: TextStyle(color: cs.error, fontSize: 12),
-        ),
-        backgroundColor: cs.errorContainer.withValues(alpha: 0.3),
-      );
-    }
-
-    if (rawError.startsWith(NotepadErrorPrefix.useDirective)) {
-      final code = rawError.substring(NotepadErrorPrefix.useDirective.length);
-      String label;
-      if (code.startsWith('unknownImport:')) {
-        label = t.notepadUnknownImport(code.substring('unknownImport:'.length));
-      } else if (code.startsWith('invalidImport:')) {
-        label = t.notepadInvalidImport(code.substring('invalidImport:'.length));
-      } else if (code == 'emptyImportList') {
-        label = t.notepadEmptyImportList;
-      } else {
-        label = t.notepadUseDirective(code);
-      }
-      return Text(
-        label,
-        style: TextStyle(color: cs.error, fontSize: 12),
-        textAlign: textAlign,
-      );
-    }
-
-    if (rawError.startsWith(NotepadErrorPrefix.evaluation)) {
-      final engine = rawError.substring(NotepadErrorPrefix.evaluation.length);
-      final formatted = EngineErrorFormatter.format(engine, t);
-      return Text(
-        formatted,
-        style: TextStyle(color: cs.error, fontSize: 12),
-        textAlign: textAlign,
-      );
-    }
-
-    // Unknown prefix — render verbatim.
-    return Text(
-      rawError,
-      style: TextStyle(color: cs.error, fontSize: 12),
-      textAlign: textAlign,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Phase 6: use-directive resolution result
 // ---------------------------------------------------------------------------
 
 class _UseDirectiveResolution {

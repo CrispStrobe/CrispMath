@@ -1,12 +1,69 @@
 # CrispMath and CrispEmbed: current state and executable lanes
 
-Current vendor execution: [27 October wrap-up handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/handoff-2026-10-27.md).
-Main documentation records verified branch results; experimental runtimes remain
-on their stated branches, with no new release or application pin.
+<!-- BEGIN CURRENT VENDOR EXECUTION -->
+## Vendor execution —29 October2026,11:48 UTC
 
-Consumer snapshot verified5 October2026; vendor roadmap updated26 October2026.
-For current vendor work, start with the [executable handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md).
-The application snapshot below keeps its original verification dates. Read the status, choose one lane, and record
+Read the [current portfolio execution handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/handoff-2026-10-29.md)
+and [precision/task matrix](https://github.com/CrispStrobe/CrispEmbed/blob/main/PLAN.md).
+The app remains immutable0.17.12. No new runtime release or quantized qualification.
+
+- **Josev:** [actual final-projection ablations](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/josev2b-last-projection-v1-result.md)
+  complete at3cc96dbab. Q8 final gate/up pair passes the limited discrete/
+  probability/ordinal screen (worst probability0.0000433922), but75 strict
+  stages and complete serialization remain negative. Single Q4 gate/up recipes
+  fail106/105 strict stages and probability gates. All292 critical tensors stay
+  F32; other projections F16. No recipe selected; NEW20 remains closed. Calibration source208fbefe is
+  ready for review/registration, not yet executed (40 native prefills maximum).
+- **MoEdern:** [exact CPUv4/f336 actual capture](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/moedern-first-row-actual-v4-result.md)
+  completes after both ordinary barriers/93 native anchors. All real operator/
+  observer/repeat/public-slice controls pass;44 floating Ref stages give39 pass,
+  five fail. First strict difference is layer1 row58 top-k: original[2,4],
+  native[2,6] after roughly1e-7 unequal probability reordering; final normalized
+  max0.02282943/cosine0.99574771 remains negative. Router weights already F32.
+  Replay source81fa4e26 is pushed but needs independent review/execution with exact retained inputs,
+  no new original/full-model forward. Aggregate original calls8 stay frozen.
+- **UltraBERT:** [first Q4 shard40855927708](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/ultrabert-first-q4-shard0-result.md)
+  completes686 rows/1372 public raw-normalized calls. Minimum cosine0.98075227;
+  raw max2.76205, normalized max0.0258125; strict vector checks negative.
+  Same576,997,440-byte/12-Q4/206-F32 candidate remains unqualified. Remaining
+  seven shards/full300-query ranking40871150002 is queued atef7153156; no new
+  quantizer/original/F32 forwards. Q8 remains open.
+- **Unlimited:** [retained structural proof](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/unlimited-retained-v3-structural-result.md)
+  passes all540 files; actual40859258832 authenticates544 including PNGs,
+  builds/profiles pass, then isolated Ref-helper import fails before any model
+  forward. Source388c510a0 adds only the exact frozen-helper wrapper;18 bounded
+  controls pass. Corrected F16-before-Q4 panel40868634374 is queued at388c510a0. Reuse first
+  candidate; last4/all11 and Q8 remain later declared work.
+- **MiniCPM:** [seven missing arms40855153707](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/minicpm-seven-arm-v3-result.md)
+  complete: all30 decoded cases exact/zero CER/WER. Combined vision130/180 pass,
+  50 fail; F32/F16 each50/60, Q4_K25/30, Q8_0 5/30.96 later crop parts lack
+  original tensors. Same-input F32 attribution precedes further precision
+  recipes; no original recapture or qualification from high cosine/exact text.
+- **WASM:** full norm64 remains rejected16/20 final and6/16 stage checks.
+  One-sentence40867038915/ff3 now fails its component compile-profile guard
+  before model acquisition or forwards; [initial evidence](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/packaging/wasm-live-norm-initial-build-review.json)
+  preserves39 small members. Repair exact target inventory/flags before any
+  model capture. All rounding/norm defaults remain unchanged.
+- **LFM/typed Gemma:** [source/evidence audit](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/encoder-precision-evidence-20261029.md)
+  distinguishes existing masked230M LFM Q8/Q4 failures from other models;
+  mixed330 precision improves but one masked prediction remains wrong.
+  Typed Gemma has published Q8 approximation evidence; current-source Q4
+  [genuine CPUv1/92ee](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/gemma-first-q4-cpu-v1-initial-result.md)
+  rejects before Q4: all five pooled embeddings pass, but125 saved-stage
+  failures and a768-wide bank-adapter error block the F32 barrier. Only the
+  design0ee3fb674 is frozen: implement/review it before a three-call first probe.
+  Rust/Dart Q8 and broader current-source consumer gaps remain explicit.
+
+Both Q8/Q4_K require actual original intermediates, errors/magnitudes and final
+outputs/rankings. Critical-tensor protection follows measured ablations.
+Final integrated-source Ovis14/11 on both gates, assets, all public consumers,
+platform checks and immutable HF readback remain required. Keep heavy work
+hosted, large artifacts remote and machine/access details outside Git.
+<!-- END CURRENT VENDOR EXECUTION -->
+
+Consumer snapshot verified5 October2026; vendor roadmap updated25 October2026.
+This handoff scopes follow-up work; it does not say the
+lanes below have been implemented. Read the status, choose one lane, and record
 its exact source, evidence and remaining dependencies before handing it on.
 All references are public repository paths, workflow runs or published services.
 
@@ -14,11 +71,12 @@ All references are public repository paths, workflow runs or published services.
 
 | Surface | Current verified state | Public evidence |
 | --- | --- | --- |
-| CrispMath main | PRs 1–3 merged; application revision 4f45017534720c96d46b5c0874a3100e9cf28e7e has successful post-merge platform, CI/CD, Feature and Pages runs | [PR 3](https://github.com/CrispStrobe/CrispMath/pull/3), [Feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/37240927201), [CI/CD](https://github.com/CrispStrobe/CrispMath/actions/runs/37240927178) |
-| Apple binary | 1.2.0 (23), source 637b07ec0e13c428385dc670cdc91f64919777b6, VALID, beta APPROVED, Public Beta assigned, internal/external IN_BETA_TESTING | [Signed upload](https://github.com/CrispStrobe/CrispMath/actions/runs/37230996262), [Apple read-back](https://github.com/CrispStrobe/CrispMath/actions/runs/37231506974), [TestFlight](https://testflight.apple.com/join/E6HdVhTx) |
+| CrispMath main | PRs 1–8 merged; application revision 5d50e367207cc890fa4be048d16057a52a0bf891 includes calculator history import/export and Sudoku replay fixes. Feature validation and native gallery passed on the identical production tree of 5022a76 | [PR 7](https://github.com/CrispStrobe/CrispMath/pull/7), [PR 8](https://github.com/CrispStrobe/CrispMath/pull/8), [Feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/41189428008), [native gallery](https://github.com/CrispStrobe/CrispMath/actions/runs/41189426273) |
+| Calculator answer chaining | `Ans` reads the newest successful history entry, skips error and status rows, keeps the unrounded value in parentheses where needed, and reports a localized "No Ans in memory" instead of an error string or a silent zero. The text editor keeps a synchronous `Ans`-rewrite (`/` becomes `Ans/`) so a following keystroke cannot drop it. Covered by widget/unit tests plus `tool/check_calculator_chaining_browser.py` | [checker](https://github.com/CrispStrobe/CrispMath/blob/main/tool/check_calculator_chaining_browser.py) |
+| Apple binary | 1.2.0 (25), source 5d50e367207cc890fa4be048d16057a52a0bf891, VALID and assigned to Internal Testers. Physical-device testing and App Review submission remain open | [Signed upload and internal verification](https://github.com/CrispStrobe/CrispMath/actions/runs/41192688325), [TestFlight](https://testflight.apple.com/join/E6HdVhTx) |
 | Public web | Pages reports 4f45017; Vercel reports 637b07e. The subsequent application change is a DEBUG-only Mac capture-window size, with release behavior unchanged | [Pages](https://crispstrobe.github.io/CrispMath/), [Pages verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37240927177), [Vercel](https://crisp-math.vercel.app/), [Vercel verification](https://github.com/CrispStrobe/CrispMath/actions/runs/37230684265) |
 | Mathematical audit | All 789 accumulated cases pass independently on Linux/native, WASM and packaged macOS. All 52 round-eleven references also pass actual desktop/phone UI checks | [Native/WASM audit](https://github.com/CrispStrobe/CrispMath/actions/runs/37228244814), [Mac audit](https://github.com/CrispStrobe/CrispMath/actions/runs/37228248552), [frozen references and initial failures](https://github.com/CrispStrobe/CrispMath/blob/main/docs/round11-math-audit-52.md) |
-| Guided workflow and UX | Real menu creates a fresh a=3, f(x)=x²+a, f(4)=19 worksheet; 19→21→19, linked graph, checkpoints, downloads, reload and existing-document preservation pass release/debug on desktop, phone and tablet. Long math and enlarged-text result actions scroll | [Guided checks](https://github.com/CrispStrobe/CrispMath/blob/main/tool/check_guided_worksheet_browser.py), [main browser evidence](https://github.com/CrispStrobe/CrispMath/actions/runs/37240927201) |
+| Guided workflow and UX | Real menu creates a fresh a=3, f(x)=x²+a, f(4)=19 worksheet; 19→21→19, linked graph, checkpoints, downloads, reload and existing-document preservation pass release/debug on desktop, phone and tablet. Long math and enlarged-text result actions scroll. Chrome is compacted to one row per screen: one search menu (commands, history, clear) instead of a header row, worksheet actions as app-bar glyphs plus menu entries, no per-result accuracy or digit-count lines (result details live in the result's context menu and the optional history help view), and transient undo bars expire | [Guided checks](https://github.com/CrispStrobe/CrispMath/blob/main/tool/check_guided_worksheet_browser.py), [main browser evidence](https://github.com/CrispStrobe/CrispMath/actions/runs/41036815731) |
 | Cloud | Off without configuration; local work needs no account. Real browser profiles emit zero backend requests. Configured-cloud tests use a disposable backend, not a production project | [Cloud behavior](https://github.com/CrispStrobe/CrispMath/blob/main/docs/workspace-backups.md), [contract CI](https://github.com/CrispStrobe/CrispMath/actions/runs/37230602216) |
 | Native screenshots | 33 populated captures pass: eleven each for iPhone, iPad and Mac. New Mac renders are 2560×1600; four selected Mac scenes are visually reviewed. Both iOS simulators pass first attempt, no recovery; sixteen tool controls pass | [Native run](https://github.com/CrispStrobe/CrispMath/actions/runs/37239843806), [selection/provenance](https://github.com/CrispStrobe/CrispMath/blob/main/docs/native-apple-gallery.md) |
 | CrispEmbed app runtime | Published 0.17.12 at 78493a31fc3043f3af4ab6fd2f197a32da6f07f0 contains decoder input normalization and ceil-pooling fixes. Fourteen CPU/Apple/Android/WASM assets have verified release hashes; the app pins the release | [Release](https://github.com/CrispStrobe/CrispEmbed/releases/tag/v0.17.12), [native assets](https://github.com/CrispStrobe/CrispEmbed/actions/runs/37222310628), [WASM assets](https://github.com/CrispStrobe/CrispEmbed/actions/runs/37222310650) |
@@ -32,6 +90,10 @@ the exact latest workflow reports when recording new totals.
 
 ## What remains open
 
+- For an iOS upload, dispatch the release workflow with a successful matching
+  Feature validation run ID. Tag pushes cannot provide inputs and fail closed;
+  dispatch against the tag instead. This validates selected production-tree
+  parity, not binary identity or protection against executing old workflow code.
 - Physical-device testing and Apple's September 4.3(a) App Review rejection.
   External TestFlight approval does not settle that rejection. No new App
   Review submission or store-image upload has occurred.

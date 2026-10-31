@@ -18,11 +18,14 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate calculator history file type
+        run: python3 test/ios_history_uti_test.py
 
       - name: Checkout CrispEmbed
         uses: actions/checkout@v4

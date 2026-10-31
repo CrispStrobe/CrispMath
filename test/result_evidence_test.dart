@@ -95,18 +95,17 @@ void main() {
     await evaluator.evaluateFrom(doc, 0);
     expect(doc.lines.first.resultEvidence, isNull);
   });
-  testWidgets('numerical badge opens method details without claiming exactness',
+  testWidgets('evidence detail is on demand and never a per-result widget',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
         home: Scaffold(
             body: ResultEvidenceBadge(
                 evidence: ResultEvidence(ResultAccuracy.approximate,
                     ComputationMethod.simpsonIntegration)))));
-    expect(find.textContaining('Approximate'), findsOneWidget);
-    expect(find.text('Exact'), findsNothing);
-    await tester.tap(find.byType(TextButton));
-    await tester.pumpAndSettle();
-    expect(find.text('Result details'), findsOneWidget);
-    expect(find.textContaining('Simpson'), findsNWidgets(2));
+    // The badge is reference text, not chrome: it carries no button and
+    // is only ever mounted inside an explicit details view.
+    expect(find.byType(IconButton), findsNothing);
+    expect(find.text('Approximate · Numerical integration (Simpson’s rule)'),
+        findsOneWidget);
   });
 }

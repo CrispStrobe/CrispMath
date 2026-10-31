@@ -324,6 +324,35 @@ void main() {
         expect(t.sudokuPresetLabel('bogus'), 'bogus');
       });
 
+      test('Sudoku summary keeps non-zero techniques and drops zeros', () {
+        expect(t.sudokuGenerateSection.trim(), isNotEmpty);
+
+        // The full string still carries every label when the counts
+        // exist (nothing is hidden wholesale).
+        final full = t.sudokuExplainStats(7, 3, 2, 1, 4);
+        expect(full.split(' · ').length, 5, reason: 'all five labels: $full');
+
+        // Zero techniques disappear instead of reading "Guesses 0".
+        final single = t.sudokuExplainStats(7, 0, 0, 0, 0);
+        expect(single.split(' · ').length, 1, reason: single);
+        expect(single, contains('7'));
+        expect(single, isNot(contains(' 0')), reason: single);
+        expect(t.sudokuExplainStats(0, 0, 0, 0, 0).trim(), isEmpty);
+
+        final two = t.sudokuExplainStats(7, 3, 0, 0, 0);
+        expect(two.split(' · ').length, 2, reason: two);
+        expect(two, contains('7'));
+        expect(two, contains('3'));
+
+        // Elimination counts filter independently: a zero cage count
+        // must not hide the locked-candidates count.
+        final elim = t.sudokuExplainEliminations(0, 2, 0, 1);
+        expect(elim.split(' · ').length, 2, reason: elim);
+        expect(elim, contains('2'));
+        expect(elim, contains('1'));
+        expect(t.sudokuExplainEliminations(0, 0, 0, 0).trim(), isEmpty);
+      });
+
       test('CSP / Constraints module strings are present', () {
         for (final s in [
           t.moduleConstraintsTitle,

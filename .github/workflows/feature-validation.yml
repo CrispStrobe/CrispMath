@@ -258,6 +258,8 @@ jobs:
         run: |
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
+      - name: Check integral browser trace capture
+        run: python -m unittest discover -s tool -p 'test_check_integral_syntax_browser.py'
       - name: Live browser feature checks
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
@@ -280,6 +282,7 @@ jobs:
           python tool/check_cloud_disabled_browser.py --expected-source "$GITHUB_SHA"
           python tool/check_handwriting_browser.py
           python tool/check_fresh_calculations_browser.py
+          python tool/check_calculator_chaining_browser.py
           python tool/check_new_math_browser.py
           python tool/check_release_browser.py --results browser-results/release
           python tool/benchmark_workflows.py --trials 3 --source "$GITHUB_SHA" --output browser-results/workflow-performance.json
@@ -311,6 +314,7 @@ jobs:
           python tool/check_cloud_disabled_browser.py --expected-source "$GITHUB_SHA" --output browser-results/debug/cloud-disabled
           python tool/check_handwriting_browser.py --output browser-results/debug/handwriting
           python tool/check_fresh_calculations_browser.py --output browser-results/debug/fresh-calculations
+          python tool/check_calculator_chaining_browser.py --output browser-results/debug/calculator-chaining
           python tool/check_new_math_browser.py --output browser-results/debug/new-math
       - name: Eleventh independent math and guided worksheet debug UI
         if: ${{ !cancelled() && steps.debug_checks.outcome == 'success' }}

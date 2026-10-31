@@ -2,7 +2,8 @@
 //
 // About / legal info for CrispMath. Layout mirrors the sibling CrisperWeaver
 // app so the two are visually consistent: app header card, then sections for
-// service provider, contact, privacy, disclaimer, license. The bottom button
+// service provider, contact, privacy, disclaimer, license, then "Our apps"
+// (lib/widgets/app_showcase.dart). The bottom button
 // opens Flutter's `showLicensePage`, which lists every pub dep plus the
 // native SymEngine stack (registered via `registerNativeLicenses` in main).
 
@@ -11,6 +12,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../localization/app_localizations.dart';
+import '../widgets/app_showcase.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -119,6 +121,11 @@ class AboutScreen extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          _SectionCard(
+            icon: Icons.apps,
+            label: l.aboutOurApps,
+            child: const AppShowcase(),
           ),
           const SizedBox(height: 4),
           OutlinedButton.icon(

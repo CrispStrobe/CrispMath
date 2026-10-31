@@ -37,6 +37,19 @@ void main() {
     });
   });
 
+  test('missing Ans has a localized diagnostic in all four locales', () {
+    const messages = <AppLocalizations, String>{
+      EnLocalizations(): 'No Ans in memory.',
+      DeLocalizations(): 'Kein Ans im Speicher.',
+      FrLocalizations(): 'Aucun Ans en mémoire.',
+      EsLocalizations(): 'No hay Ans en la memoria.',
+    };
+    for (final entry in messages.entries) {
+      expect(EngineErrorFormatter.format('Error: No Ans in memory', entry.key),
+          entry.value);
+    }
+  });
+
   group('format — parse errors', () {
     test('SymbolicMathException: evaluate - parse failed', () {
       final out = EngineErrorFormatter.format(

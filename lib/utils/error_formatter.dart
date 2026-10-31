@@ -24,6 +24,8 @@ class EngineErrorFormatter {
     if (!raw.startsWith('Error')) return raw;
     final lower = raw.toLowerCase();
 
+    if (raw == 'Error: No Ans in memory') return t.errorMissingAns;
+
     // Native library not loaded — affects most symbolic ops on
     // platforms without the bridge (Linux / Windows / Android in CI).
     if (lower.contains('requires native library')) {

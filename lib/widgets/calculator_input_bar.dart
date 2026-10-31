@@ -12,11 +12,28 @@
 // display, so there the row STACKS: the field takes the full width on
 // its own line and the toolbar drops beneath it.
 
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../controllers/latex_controller.dart';
 import 'latex_input_field.dart';
 import '../localization/workflow_localizations.dart';
+
+// Explicitly opted-in debug-web browser probes only. Never log input text.
+@visibleForTesting
+bool inputTraceEnabledFor(bool debug, bool web, Uri uri) =>
+    debug && web && uri.queryParameters['crispInputTrace'] == '1';
+
+bool get calculatorInputTraceEnabled =>
+    inputTraceEnabledFor(kDebugMode, kIsWeb, Uri.base);
+
+void traceCalculatorInput(Map<String, Object?> fields) {
+  if (calculatorInputTraceEnabled) {
+    debugPrintSynchronously('[CALC-INPUT-TRACE] ${jsonEncode(fields)}');
+  }
+}
 
 class CalculatorInputBar extends StatefulWidget {
   const CalculatorInputBar({
@@ -24,8 +41,10 @@ class CalculatorInputBar extends StatefulWidget {
     required this.controller,
     required this.onResetFocus,
     required this.onEvaluate,
+    this.onTextSubmitted,
     this.resultPreview = '',
     this.stackBelowWidth = 480,
+    this.webInputForTesting,
   });
 
   final LatexController controller;
@@ -36,6 +55,9 @@ class CalculatorInputBar extends StatefulWidget {
   /// Submits the current expression (the =/EXE button).
   final VoidCallback onEvaluate;
 
+  /// Submits from the text editor without surrendering text focus.
+  final VoidCallback? onTextSubmitted;
+
   /// Live "= …" preview shown under the field; hidden when empty.
   final String resultPreview;
 
@@ -43,6 +65,10 @@ class CalculatorInputBar extends StatefulWidget {
   /// toolbar; wider ones keep the single-row form. Phone widths top out
   /// around 430pt, so the 480 default stacks all phones.
   final double stackBelowWidth;
+
+  /// Overrides the web text-input configuration for focused widget tests.
+  @visibleForTesting
+  final bool? webInputForTesting;
 
   @override
   State<CalculatorInputBar> createState() => _CalculatorInputBarState();
@@ -62,7 +88,29 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
     _syncFromMath();
     controller.addListener(_syncFromMath);
     _editor.addListener(_syncToMath);
+    _editorFocus.addListener(_traceFocus);
   }
+
+  void _traceEditor(String stage) {
+    if (!calculatorInputTraceEnabled) return;
+    traceCalculatorInput({
+      'stage': stage,
+      'editorLength': _editor.text.length,
+      'editorIsTarget': _editor.text == '2+2',
+      'mathLength': controller.text.length,
+      'mathIsTarget': controller.text == '2+2',
+      'selectionBase': _editor.selection.baseOffset,
+      'selectionExtent': _editor.selection.extentOffset,
+      'mathSelectionBase': controller.selection.baseOffset,
+      'mathSelectionExtent': controller.selection.extentOffset,
+      'editorHasFocus': _editorFocus.hasFocus,
+      'editorPrimaryFocus': _editorFocus.hasPrimaryFocus,
+      'plain': _plain,
+      'syncing': _syncing,
+    });
+  }
+
+  void _traceFocus() => _traceEditor('editor-focus');
 
   void _syncFromMath() {
     if (_syncing) return;
@@ -70,6 +118,7 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
     _editor.value = TextEditingValue(
         text: controller.text, selection: controller.selection);
     _syncing = false;
+    _traceEditor('math-to-editor');
   }
 
   void _syncToMath() {
@@ -77,6 +126,14 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
     _syncing = true;
     controller.setEditingValue(_editor.value);
     _syncing = false;
+    _traceEditor('editor-to-math');
+    // A calculator listener may synchronously rewrite the input (for
+    // example, '/' becomes 'Ans/'). Its notification was suppressed while
+    // syncing, so reflect the final text and selection before the next edit.
+    if (_editor.text != controller.text ||
+        _editor.selection != controller.selection) {
+      _syncFromMath();
+    }
   }
 
   @override
@@ -93,6 +150,7 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
   void dispose() {
     controller.removeListener(_syncFromMath);
     _editor.removeListener(_syncToMath);
+    _editorFocus.removeListener(_traceFocus);
     _editor.dispose();
     _editorFocus.dispose();
     super.dispose();
@@ -170,8 +228,17 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                   autocorrect: false,
                   enableSuggestions: false,
                   keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => widget.onEvaluate(),
+                  // On web, `done` restarts the input client after submission;
+                  // the semantics input strategy may then lose its listener.
+                  textInputAction: (widget.webInputForTesting ?? kIsWeb)
+                      ? TextInputAction.none
+                      : TextInputAction.done,
+                  // Retain focus after the native done action as well.
+                  onEditingComplete: () => _traceEditor('editing-complete'),
+                  onSubmitted: (_) {
+                    _traceEditor('editor-submitted');
+                    (widget.onTextSubmitted ?? widget.onEvaluate)();
+                  },
                   decoration: InputDecoration(
                       labelText: t.text(WorkflowLabel.expression)),
                 )

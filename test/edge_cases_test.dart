@@ -205,10 +205,7 @@ void main() {
       // be touched because there's no word boundary.
       final out =
           ExpressionPreprocessingUtils.substituteVariables('Ansa', AppState());
-      // Looking at the actual rule: `replaceAll('Ans', ...)` is
-      // global, doesn't respect word boundaries. So `Ansa` becomes
-      // `2a`. Documenting the current behavior.
-      expect(out, '2a');
+      expect(out, 'Ansa');
     });
     test('Ans appearing multiple times', () {
       AppState().addHistoryEntry('1+1', '2');
@@ -216,15 +213,36 @@ void main() {
           'Ans + Ans', AppState());
       expect(out, '2 + 2');
     });
-    test('Ans=0 when history has only error entries', () {
+    test('Ans reports a missing answer when history has only errors', () {
       AppState().addHistoryEntry('foo', 'Error: parse failed');
-      // The last history entry's result string is "Error: parse failed",
-      // which extractNumericFromSolveResult returns as-is (no
-      // `x = N` pattern). So `Ans+1` becomes `Error: parse failed+1`.
-      // Quirky but documented.
-      final out =
-          ExpressionPreprocessingUtils.substituteVariables('Ans+1', AppState());
-      expect(out, 'Error: parse failed+1');
+      expect(
+        () => ExpressionPreprocessingUtils.substituteVariables(
+            'Ans*2', AppState()),
+        throwsStateError,
+      );
+    });
+    test('Ans skips errors and retains full precision', () {
+      AppState().addHistoryEntry('8/3', '2.66666666666667');
+      AppState().addHistoryEntry('1/0', 'Error: division by zero');
+      expect(
+          ExpressionPreprocessingUtils.substituteVariables('Ans/2', AppState()),
+          '2.66666666666667/2');
+      expect(
+          ExpressionPreprocessingUtils.substituteVariables('Ans*2', AppState()),
+          '2.66666666666667*2');
+    });
+    test('Ans protects a compound previous result from operator precedence',
+        () {
+      AppState().addHistoryEntry('complex', '3 + 4i');
+      expect(
+          ExpressionPreprocessingUtils.substituteVariables('Ans*2', AppState()),
+          '(3 + 4i)*2');
+    });
+    test('Ans substring is not a token even with empty history', () {
+      expect(
+          ExpressionPreprocessingUtils.substituteVariables(
+              'AnsOther + xAns + Ans_1', AppState()),
+          'AnsOther + xAns + Ans_1');
     });
   });
 

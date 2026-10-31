@@ -41,6 +41,7 @@ import '../engine/unit_expression.dart';
 
 // Utils imports
 import '../services/engine_service.dart';
+import '../services/calculator_history_file.dart';
 import '../utils/exact_integer.dart';
 import '../utils/keyboard_input_handler.dart';
 import '../utils/latex_conversion_utils.dart';
@@ -54,6 +55,7 @@ import '../widgets/store_result_dialogs.dart';
 // Other imports
 import '../controllers/latex_controller.dart';
 import '../localization/app_localizations.dart';
+import '../localization/workflow_localizations.dart';
 import '../main.dart' show appRouteObserver;
 import '../screens/curve_analysis_input_screen.dart';
 import '../screens/matrix_editor_screen.dart';
@@ -66,7 +68,21 @@ const bool _kVerboseCalc =
     bool.fromEnvironment('CRISPMATH_VERBOSE', defaultValue: false);
 
 class CalculatorScreen extends StatefulWidget {
-  const CalculatorScreen({super.key, this.onGoToGraphing, this.onGoToAnalysis});
+  const CalculatorScreen(
+      {super.key,
+      this.onGoToGraphing,
+      this.onGoToAnalysis,
+      this.onOpenCommands,
+      this.engineOpForTesting,
+      this.historyFileOpenForTesting});
+
+  /// Overrides the engine operation boundary in deterministic widget tests.
+  @visibleForTesting
+  final Future<ComputedResult> Function(EngineOp)? engineOpForTesting;
+
+  /// Overrides the platform file chooser in deterministic widget tests.
+  @visibleForTesting
+  final Future<List<CalculationEntry>?> Function()? historyFileOpenForTesting;
 
   /// Optional: switch the main nav to the Graphing tab. Forwarded down
   /// to the VariableViewer's function-tile context menu.
@@ -75,12 +91,20 @@ class CalculatorScreen extends StatefulWidget {
   /// Optional: switch the main nav to the Analysis hub.
   final VoidCallback? onGoToAnalysis;
 
+  /// Optional: open the shell's command palette. Surfaced as the
+  /// search affordance next to the history search so it no longer
+  /// needs a full-width row above the tab body.
+  final VoidCallback? onOpenCommands;
+
   @override
   State<CalculatorScreen> createState() => CalculatorScreenState();
 }
 
 class CalculatorScreenState extends State<CalculatorScreen>
     with SingleTickerProviderStateMixin, RouteAware {
+  // Covers the whole picker/confirmation/write flow, even if this screen is
+  // disposed and recreated while the platform picker or a write is pending.
+  static bool _historyImportInProgress = false;
   final AppState _appState = AppState();
   final CalculatorEngine _engine = CalculatorEngine();
   final Map<String, String> _memory = {};
@@ -92,6 +116,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
   String _resultPreview = '';
   ResultEvidence? _resultEvidence;
   bool _justCalculated = false;
+  Completer<void>? _calculationPending;
+  int _inputRevision = 0;
+  int _submittedInputRevision = 0;
+  String _lastInputText = '';
   bool _showLatexHistory = false; // History display toggle
 
   /// Watchdog-installed message for the progress overlay. Populated by
@@ -168,7 +196,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   void _onHistorySearchChanged() {
     _historySearchDebounce?.cancel();
-    _livePreviewDebounce?.cancel();
     _historySearchDebounce = Timer(const Duration(milliseconds: 200), () {
       if (!mounted) return;
       setState(() {
@@ -195,6 +222,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _latexController.dispose();
     _calculatorFocusNode.dispose();
     _historySearchDebounce?.cancel();
+    _livePreviewDebounce?.cancel();
     _historySearchController.dispose();
     _historySearchFocusNode.dispose();
     super.dispose();
@@ -462,13 +490,19 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final text = _latexController.text;
     if (text.isEmpty) return "";
     try {
-      return _engine.evaluate(text);
+      return _engine.evaluate(
+          ExpressionPreprocessingUtils.substituteAns(text, _appState));
     } catch (_) {
       return "";
     }
   }
 
   void _onInputChanged() {
+    if (_lastInputText != _latexController.text) {
+      _lastInputText = _latexController.text;
+      _inputRevision++;
+    }
+    _traceInput('math-changed');
     if (_justCalculated && _latexController.text.isNotEmpty) {
       final currentInput = _latexController.text.trim();
 
@@ -476,11 +510,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
           currentInput.startsWith(r'\times') ||
           currentInput.startsWith(r'\div');
 
-      if ((!currentInput.startsWith('\\') && _isOperator(currentInput)) ||
+      if ((currentInput.isNotEmpty && !currentInput.startsWith('\\') &&
+              _isOperator(currentInput[0])) ||
           isLatexOperator) {
         _latexController.removeListener(_onInputChanged);
         _latexController.clear();
         _latexController.insert('Ans$currentInput');
+        _lastInputText = _latexController.text;
         _latexController.addListener(_onInputChanged);
 
         setState(() => _justCalculated = false);
@@ -490,6 +526,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() => _justCalculated = false);
     }
 
+    _scheduleLivePreview();
+  }
+
+  void _scheduleLivePreview() {
     _livePreviewDebounce?.cancel();
     _livePreviewDebounce = Timer(const Duration(milliseconds: 150), () async {
       final preview = await _computeLivePreviewAsync();
@@ -554,6 +594,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   bool _handleKeyboardInput(KeyEvent event) {
     KeyboardInputHandler.debugKeyboardInput(event);
+
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      _traceInput(event is KeyDownEvent
+          ? 'keyboard-enter-down'
+          : 'keyboard-enter-other');
+    }
 
     // If another widget (e.g. the history-search TextField) has primary
     // focus, the user is typing INTO that widget — let the event pass
@@ -841,9 +888,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         break;
 
       case 'Ans':
-        if (_appState.history.isNotEmpty) {
-          _latexController.insert('Ans');
-        }
+        _latexController.insert('Ans');
         break;
 
       // === Advanced Mathematical Functions ===
@@ -1109,7 +1154,34 @@ class CalculatorScreenState extends State<CalculatorScreen>
         .contains(value);
   }
 
+  // Only the draft submitted by this calculation may be consumed. Comparing
+  // revisions also protects edits that happen to return to the original text.
+  void _finishSubmittedInput({bool justCalculated = false, bool clearPreview = false}) {
+    _traceInput('finish-submitted-input');
+    if (_inputRevision != _submittedInputRevision) {
+      // A completed result can change Ans or variables used by the draft.
+      _scheduleLivePreview();
+      return;
+    }
+    if (clearPreview) _resultPreview = '';
+    if (justCalculated) _justCalculated = true;
+    _latexController.clear();
+  }
+
   Future<void> _calculate(String expression) async {
+    _traceInput('calculate-called', expression: expression);
+    // Preserve submission order while keeping the shared result evidence
+    // isolated. Capture the draft revision now, not when a queued run starts.
+    final inputRevision = _inputRevision;
+    while (_calculationPending != null) {
+      _traceInput('calculate-waiting', expression: expression);
+      await _calculationPending!.future;
+      if (!mounted) return;
+    }
+    final pending = Completer<void>();
+    _calculationPending = pending;
+    _submittedInputRevision = inputRevision;
+    _traceInput('calculate-started', expression: expression);
     _resultEvidence = null;
     if (kDebugMode) debugPrint('CALC: "$expression"');
     try {
@@ -1153,6 +1225,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
       var converted = convertedExpression
           .trim()
           .replaceAllMapped(RegExp(r'\b([a-zA-Z/]+)\s+\('), (m) => '${m[1]}(');
+      converted =
+          ExpressionPreprocessingUtils.substituteAns(converted, _appState);
 
       // Inline-derivative expansion: any `d/dx(expr)` or
       // `diff(expr, var)` *inside* a larger expression (e.g.
@@ -1164,6 +1238,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         debugPrint('CALC: pre-inline-deriv converted="$converted"');
       }
       converted = await _expandInlineDerivatives(converted);
+      if (!mounted) return;
       if (_kVerboseCalc) {
         debugPrint('CALC: post-inline-deriv converted="$converted"');
       }
@@ -1195,6 +1270,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           fallback: () => _engine.evaluate(cond),
         ),
       );
+      if (!mounted) return;
       if (ifFolded != null) {
         converted = ifFolded;
       }
@@ -1213,6 +1289,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           fallback: () => _engine.evaluate(cond),
         ),
       );
+      if (!mounted) return;
       if (pwFolded != null) {
         converted = pwFolded;
       }
@@ -1225,11 +1302,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // evaluator would refuse it.
       final precisionResult = _engine.tryEvaluatePrecisionCall(converted);
       if (precisionResult != null) {
+        if (!mounted) return;
         setState(() {
           _appState.addHistoryEntry(expression, precisionResult);
-          _justCalculated = true;
+          _finishSubmittedInput(justCalculated: true);
         });
-        _latexController.clear();
         return;
       }
 
@@ -1238,11 +1315,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // unit symbols (which it would mis-parse as variables).
       final unitResult = UnitExpressionEvaluator.tryEvaluate(converted);
       if (unitResult != null) {
+        if (!mounted) return;
         setState(() {
           _appState.addHistoryEntry(expression, unitResult);
-          _justCalculated = true;
+          _finishSubmittedInput(justCalculated: true);
         });
-        _latexController.clear();
         return;
       }
 
@@ -1333,21 +1410,51 @@ class CalculatorScreenState extends State<CalculatorScreen>
         }
       }
 
+      if (!mounted) return;
+      _traceInput('calculate-result',
+          expression: expression, resultIsFour: result == '4');
       setState(() {
         _appState.addHistoryEntry(
             LatexConversionUtils.latexToReadable(expression), result,
             resultEvidence: _resultEvidence);
-        _resultPreview = '';
-        _justCalculated = true;
-        _latexController.clear();
+        _finishSubmittedInput(justCalculated: true, clearPreview: true);
       });
-
-      _calculatorFocusNode.requestFocus();
+    } on MissingAnsException {
+      if (!mounted) return;
+      setState(() {
+        _appState.addHistoryEntry(expression, 'Error: No Ans in memory');
+        _finishSubmittedInput(justCalculated: true, clearPreview: true);
+      });
     } catch (e) {
+      _traceInput('calculate-error', expression: expression);
       if (kDebugMode) debugPrint('CALC: error: $e');
+      if (!mounted) return;
       setState(() =>
           _appState.addHistoryEntry(expression, 'Error: ${e.toString()}'));
+    } finally {
+      _traceInput('calculate-finished', expression: expression);
+      _calculationPending = null;
+      pending.complete();
     }
+  }
+
+  void _traceInput(String stage, {String? expression, bool? resultIsFour}) {
+    if (!calculatorInputTraceEnabled) return;
+    traceCalculatorInput({
+      'stage': stage,
+      'mathLength': _latexController.text.length,
+      'mathIsTarget': _latexController.text == '2+2',
+      'expressionLength': expression?.length,
+      'expressionIsTarget': expression == '2+2',
+      'resultIsFour': resultIsFour,
+      'calculatorPrimaryFocus': _calculatorFocusNode.hasPrimaryFocus,
+      'otherPrimaryFocus': FocusManager.instance.primaryFocus != null &&
+          !_calculatorFocusNode.hasPrimaryFocus,
+      'inputRevision': _inputRevision,
+      'submittedRevision': _submittedInputRevision,
+      'pending': _calculationPending != null,
+      'mounted': mounted,
+    });
   }
 
   bool _isFunctionCall(String s, String name) {
@@ -1390,7 +1497,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, 'Error: all Y slots are full');
-        _latexController.clear();
+        _finishSubmittedInput();
       });
       return;
     }
@@ -1400,8 +1507,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         originalExpression,
         'Stored Y${slot + 1} ($name): $body',
       );
-      _justCalculated = true;
-      _latexController.clear();
+      _finishSubmittedInput(justCalculated: true);
     });
   }
 
@@ -1454,21 +1560,22 @@ class CalculatorScreenState extends State<CalculatorScreen>
         setState(() {
           _appState.addHistoryEntry(
               originalExpression, "Stored $name = $normalizedValue");
-          _justCalculated = true;
-          _latexController.clear();
+          _finishSubmittedInput(justCalculated: true);
         });
       } else {
         setState(() {
           _appState.addHistoryEntry(
               originalExpression, "Error: Could not evaluate $valueExpression");
-          _latexController.clear();
+          _finishSubmittedInput();
         });
       }
+    } on MissingAnsException {
+      rethrow;
     } catch (e) {
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, "Error: Invalid assignment");
-        _latexController.clear();
+        _finishSubmittedInput();
       });
     }
   }
@@ -1496,8 +1603,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     setState(() {
       _appState.addHistoryEntry(
           originalExpression, 'Defined $name(${params.join(', ')})');
-      _justCalculated = true;
-      _latexController.clear();
+      _finishSubmittedInput(justCalculated: true);
     });
     return true;
   }
@@ -1518,8 +1624,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           setState(() {
             _appState.addHistoryEntry(
                 originalExpression, "Stored Y${functionIndex + 1}");
-            _justCalculated = true;
-            _latexController.clear();
+            _finishSubmittedInput(justCalculated: true);
           });
         } else {
           setState(() => _appState.addHistoryEntry(
@@ -1535,8 +1640,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           setState(() {
             _appState.addHistoryEntry(
                 originalExpression, 'Stored Y${functionIndex + 1} (F → Y)');
-            _justCalculated = true;
-            _latexController.clear();
+            _finishSubmittedInput(justCalculated: true);
           });
         } else {
           setState(() => _appState.addHistoryEntry(
@@ -1547,7 +1651,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, "Error: Invalid function definition");
-        _latexController.clear();
+        _finishSubmittedInput();
       });
     }
   }
@@ -1596,6 +1700,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       final result = await _runEngineOpMaybeAsync('solve', preprocessed,
           arg2: variable,
           fallback: () => _engine.solve(preprocessed, variable));
+      if (!mounted) return result;
 
       // Auto-bind (opt-in via Settings, default off): if the
       // solver returned exactly one numeric value, stash it into
@@ -1628,6 +1733,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // is otherwise irrelevant.
     for (final prefix in const ['d/dx(', 'diff(']) {
       while (true) {
+        if (!mounted) return s;
         final start = s.indexOf(prefix);
         if (start < 0) break;
         // Walk to find the matching close-paren of the prefix's `(`.
@@ -2257,6 +2363,18 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   _toast(context, 'Link copied');
                 },
               ),
+              if (entry.resultEvidence != null)
+                ListTile(
+                  leading: const Icon(Icons.info_outline,
+                      semanticLabel: 'Result details'),
+                  title: Text(WorkflowLocalizations.of(context)
+                      .text(WorkflowLabel.resultDetails)),
+                  onTap: () {
+                    final evidence = entry.resultEvidence!;
+                    Navigator.of(ctx).pop();
+                    showResultEvidenceDialog(context, evidence);
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.refresh,
                     semanticLabel: 'Reuse expression'),
@@ -2466,7 +2584,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
     String? arg4,
     required String Function() fallback,
   }) async {
+    if (!mounted) return 'Error: cancelled';
     final operation = EngineOp(op, arg1, arg2, arg3, arg4);
+    final testOperation = widget.engineOpForTesting;
+    if (testOperation != null) {
+      final computed = await testOperation(operation);
+      _resultEvidence = computed.evidence;
+      return computed.value;
+    }
     if (!EngineService.shouldRunAsync(arg1)) {
       _engine.lastResultEvidence = null;
       final computed = describeEngineResult(_engine, operation, fallback());
@@ -2493,6 +2618,115 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _toast(context, t.historyEntryCopied);
   }
 
+  void _toggleHistorySearch() {
+    setState(() {
+      _historySearchOpen = !_historySearchOpen;
+      if (!_historySearchOpen) _historySearchController.clear();
+    });
+    if (_historySearchOpen) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _historySearchOpen) _historySearchFocusNode.requestFocus();
+      });
+    } else {
+      _calculatorFocusNode.requestFocus();
+    }
+  }
+
+  /// Save the visible history to a portable file.
+  Future<void> _saveHistoryToFile() async {
+    final t = WorkflowLocalizations.of(context);
+    try {
+      final path =
+          await CalculatorHistoryFile.save(List.of(_appState.history));
+      if (!mounted) return;
+      // A null path is a cancelled picker on native, and on web it means the
+      // bytes were handed to the browser as a download. Never claim a file
+      // exists when the platform did not confirm one.
+      if (path == null && !kIsWeb) return;
+      _toast(
+          context,
+          path == null
+              ? t.text(WorkflowLabel.historyFileUnsaved)
+              : t.text(WorkflowLabel.historyFileSaved));
+    } catch (error) {
+      if (!mounted) return;
+      _toast(context, t.text(WorkflowLabel.historyFileFailed, '$error'));
+    }
+  }
+
+  /// Replace the history with the contents of a portable history file.
+  Future<void> _openHistoryFromFile() async {
+    final t = WorkflowLocalizations.of(context);
+    if (_historyImportInProgress) {
+      _toast(context, t.text(WorkflowLabel.historyFileImportBusy));
+      return;
+    }
+    _historyImportInProgress = true;
+    try {
+      var confirmedHistory = List<CalculationEntry>.of(_appState.history);
+      final confirmed = await _confirmHistoryReplacement(t);
+      if (confirmed != true || !mounted) return;
+      final entries = await (widget.historyFileOpenForTesting ??
+          CalculatorHistoryFile.open)();
+      // Null is a cancelled picker; an invalid file throws instead, which
+      // leaves the current history untouched.
+      if (entries == null || !mounted) return;
+      while (true) {
+        // Wait for late calculations before deciding what will be replaced.
+        while (_calculationPending != null) {
+          await _calculationPending!.future;
+          if (!mounted) return;
+        }
+        if (listEquals(confirmedHistory, _appState.history)) break;
+        // The confirmation did not cover new results that appeared while the
+        // picker or a calculation was open. Ask again, and check again after
+        // the dialog, since the history could change while it is displayed.
+        confirmedHistory = List<CalculationEntry>.of(_appState.history);
+        if (await _confirmHistoryReplacement(t, changed: true) != true ||
+            !mounted) {
+          return;
+        }
+      }
+      await _appState.replaceHistory(entries);
+      if (!mounted) return;
+      setState(() {});
+      _toast(
+          context,
+          listEquals(entries, _appState.history)
+              ? t.text(WorkflowLabel.historyFileReplaced, '${entries.length}')
+              : t.text(WorkflowLabel.historyFileReplacedWithChanges));
+    } catch (error) {
+      if (!mounted) return;
+      _toast(context, t.text(WorkflowLabel.historyFileFailed, '$error'));
+    } finally {
+      _historyImportInProgress = false;
+    }
+  }
+
+  Future<bool?> _confirmHistoryReplacement(WorkflowLocalizations t,
+      {bool changed = false}) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.text(WorkflowLabel.openHistoryFile)),
+        content: Text(t.text(changed
+            ? WorkflowLabel.historyFileChangedNotice
+            : WorkflowLabel.historyFileReplaceNotice)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(AppLocalizations.of(context).cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(t.text(WorkflowLabel.openHistoryFile)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmClearHistory() {
     final t = AppLocalizations.of(context);
     showDialog<void>(
@@ -2508,6 +2742,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
           ElevatedButton(
             onPressed: () {
               _appState.clearHistory();
+              if (_historySearchOpen) {
+                _toggleHistorySearch();
+              } else {
+                // The toolbar reads the history directly, and the clear
+                // path previously only rebuilt when search was open.
+                setState(() {});
+              }
               Navigator.of(context).pop();
             },
             child: Text(t.clearAll),
@@ -2606,6 +2847,58 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                   builder: (_) => const WorkedExamplesDialog(),
                                 ),
                               ),
+                              PopupMenuButton<String>(
+                                tooltip: WorkflowLocalizations.of(context)
+                                    .text(WorkflowLabel.calculatorMenu),
+                                onSelected: (value) {
+                                  if (value == 'commands') {
+                                    widget.onOpenCommands?.call();
+                                  } else if (value == 'history') {
+                                    _toggleHistorySearch();
+                                  } else if (value == 'save-history') {
+                                    _saveHistoryToFile();
+                                  } else if (value == 'open-history') {
+                                    _openHistoryFromFile();
+                                  } else if (value == 'clear') {
+                                    _confirmClearHistory();
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  if (widget.onOpenCommands != null)
+                                    PopupMenuItem(
+                                      value: 'commands',
+                                      child: Text(WorkflowLocalizations.of(context)
+                                          .text(WorkflowLabel.searchCommands)),
+                                    ),
+                                  if (_appState.history.isNotEmpty) ...[
+                                    PopupMenuItem(
+                                      value: 'history',
+                                      child: Text(AppLocalizations.of(context)
+                                          .searchHistory),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'save-history',
+                                      child: Text(WorkflowLocalizations.of(context)
+                                          .text(WorkflowLabel.saveHistoryFile)),
+                                    ),
+                                  ],
+                                  // Loading is offered even with an empty
+                                  // history: that is exactly when a saved file
+                                  // is wanted, and it keeps the menu non-empty
+                                  // on a fresh install.
+                                  PopupMenuItem(
+                                    value: 'open-history',
+                                    child: Text(WorkflowLocalizations.of(context)
+                                        .text(WorkflowLabel.openHistoryFile)),
+                                  ),
+                                  if (_appState.history.isNotEmpty)
+                                    PopupMenuItem(
+                                      value: 'clear',
+                                      child: Text(AppLocalizations.of(context)
+                                          .clearHistory),
+                                    ),
+                                ],
+                              ),
                               // Round 101 (P6): help-mode toggle. Filled icon
                               // + colored when active. Wrapping HelpTarget /
                               // popovers land in Rounds 102-104.
@@ -2636,12 +2929,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
                               ),
                               if (_appState.history.isNotEmpty) ...[
                                 const SizedBox(width: 8),
-                                Text(
-                                  AppLocalizations.of(context).historyLabel,
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey[600]),
-                                ),
-                                const SizedBox(width: 8),
+                                // The rows below are self-evidently the
+                                // history; the "History:" caption only ate
+                                // width on narrow screens.
                                 SegmentedButton<bool>(
                                   segments: const [
                                     ButtonSegment<bool>(
@@ -2664,51 +2954,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                   },
                                 ),
                                 const SizedBox(width: 8),
-                                IconButton(
-                                  icon: Icon(
-                                    _historySearchOpen
-                                        ? Icons.search_off
-                                        : Icons.search,
-                                    size: 20,
-                                    semanticLabel: 'Search history',
-                                  ),
-                                  tooltip: AppLocalizations.of(context)
-                                      .searchHistory,
-                                  onPressed: () {
-                                    setState(() {
-                                      _historySearchOpen = !_historySearchOpen;
-                                      if (!_historySearchOpen) {
-                                        _historySearchController.clear();
-                                      }
-                                    });
-                                    // Hand focus to the search field when opening.
-                                    // Without this the calculator's KeyboardListener
-                                    // (focusNode: _calculatorFocusNode) keeps the
-                                    // primary focus and the TextField never gets to
-                                    // see keystrokes.
-                                    if (_historySearchOpen) {
-                                      FocusManager.instance.primaryFocus
-                                          ?.unfocus();
-                                      WidgetsBinding.instance
-                                          .addPostFrameCallback((_) {
-                                        if (mounted) {
-                                          _historySearchFocusNode
-                                              .requestFocus();
-                                        }
-                                      });
-                                    } else {
-                                      // Closed: hand focus back to the calculator.
-                                      _calculatorFocusNode.requestFocus();
-                                    }
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_sweep,
-                                      size: 20, semanticLabel: 'Clear history'),
-                                  tooltip:
-                                      AppLocalizations.of(context).clearHistory,
-                                  onPressed: _confirmClearHistory,
-                                ),
                               ],
                             ],
                           ),
@@ -2727,19 +2972,24 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                 hintText: AppLocalizations.of(context)
                                     .searchHistoryHint,
                                 border: const OutlineInputBorder(),
-                                suffixIcon: _historySearchController
-                                        .text.isEmpty
-                                    ? null
-                                    : IconButton(
-                                        icon: const Icon(Icons.clear,
-                                            size: 18,
-                                            semanticLabel: 'Clear search'),
+                                suffixIcon: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (_historySearchController.text.isNotEmpty)
+                                      IconButton(
+                                        icon: const Icon(Icons.clear, size: 18),
                                         tooltip: AppLocalizations.of(context)
                                             .clearSearchTooltip,
-                                        onPressed: () {
-                                          _historySearchController.clear();
-                                        },
+                                        onPressed: _historySearchController.clear,
                                       ),
+                                    IconButton(
+                                      icon: const Icon(Icons.close, size: 18),
+                                      tooltip: WorkflowLocalizations.of(context)
+                                          .text(WorkflowLabel.close),
+                                      onPressed: _toggleHistorySearch,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -2824,6 +3074,30 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                             ? ExactInteger.abbreviate(
                                                 entry.result)
                                             : display;
+                                        // The big-integer explanation used to be a
+                                        // second text line under every long result.
+                                        // It rides on the value as a tooltip now: the
+                                        // value itself is already tap-to-copy.
+                                        final resultBody = Text(
+                                          isError
+                                              ? display
+                                              : '= $shownResult',
+                                          style: TextStyle(
+                                            fontSize: isError
+                                                ? 16
+                                                : (isBigInt ? 18 : 28),
+                                            color: isError
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .error
+                                                : Colors.blue[300],
+                                            fontStyle: isError
+                                                ? FontStyle.italic
+                                                : FontStyle.normal,
+                                          ),
+                                          textAlign: TextAlign.right,
+                                          softWrap: true,
+                                        );
                                         return HelpTarget(
                                           onHelpTap: () =>
                                               _showHistoryHelpModal(
@@ -2841,67 +3115,43 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                                 _showHistoryEntryMenu(
                                                     context, entry),
                                             behavior: HitTestBehavior.opaque,
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.end,
-                                              children: [
-                                                _buildExpressionDisplay(
-                                                    entry.expression),
-                                                const SizedBox(height: 4),
-                                                if (boolChip != null &&
-                                                    !isError)
-                                                  _buildBooleanChip(
-                                                      context, boolChip)
-                                                else
-                                                  Text(
-                                                    isError
-                                                        ? display
-                                                        : '= $shownResult',
-                                                    style: TextStyle(
-                                                      fontSize: isError
-                                                          ? 16
-                                                          : (isBigInt
-                                                              ? 18
-                                                              : 28),
-                                                      color: isError
-                                                          ? Theme.of(context)
-                                                              .colorScheme
-                                                              .error
-                                                          : Colors.blue[300],
-                                                      fontStyle: isError
-                                                          ? FontStyle.italic
-                                                          : FontStyle.normal,
-                                                    ),
-                                                    textAlign: TextAlign.right,
-                                                    softWrap: true,
-                                                  ),
-                                                if (entry.resultEvidence !=
-                                                    null)
-                                                  ResultEvidenceBadge(
-                                                      evidence: entry
-                                                          .resultEvidence!),
-                                                if (isBigInt)
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            top: 2),
-                                                    child: Text(
-                                                      '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface
-                                                            .withValues(
-                                                                alpha: 0.6),
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                      ),
-                                                      textAlign:
-                                                          TextAlign.right,
-                                                    ),
-                                                  ),
-                                              ],
+                                            // Give the row one deterministic
+                                            // label. Relying on the implicit merge
+                                            // of the child texts made the
+                                            // accessible name depend on which
+                                            // children happened to be mounted.
+                                            child: Semantics(
+                                              container: true,
+                                              // Activating the accessible button
+                                              // opens the same menu as a long press.
+                                              button: true,
+                                              onTap: () =>
+                                                  _showHistoryEntryMenu(
+                                                      context, entry),
+                                              excludeSemantics: true,
+                                              label:
+                                                  '${entry.expression}\n= ${isError ? display : shownResult}',
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  _buildExpressionDisplay(
+                                                      entry.expression),
+                                                  const SizedBox(height: 4),
+                                                  if (boolChip != null &&
+                                                      !isError)
+                                                    _buildBooleanChip(
+                                                        context, boolChip)
+                                                  else
+                                                    isBigInt
+                                                        ? Tooltip(
+                                                            message:
+                                                                '${tt.exactIntegerBadge(digitCount)} · ${tt.exactIntegerTapToCopy}',
+                                                            child: resultBody,
+                                                          )
+                                                        : resultBody,
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         );
@@ -2929,6 +3179,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
                     controller: _latexController,
                     onResetFocus: _resetFocus,
                     onEvaluate: () => _onButtonPressed('EXE'),
+                    onTextSubmitted: () {
+                      _traceInput('screen-text-submitted');
+                      if (_latexController.text.isNotEmpty) {
+                        _calculate(_latexController.text);
+                      }
+                    },
                     resultPreview: _resultPreview,
                   ),
 

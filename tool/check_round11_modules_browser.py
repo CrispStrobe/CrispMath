@@ -97,6 +97,8 @@ async def check_modules(args):
                         if args.expected_source:assert source==args.expected_source,source
                         item['appSource']=source
                         await page.get_by_role('button',name=re.compile(r'^Analysis')).click()
+                        # Constraint problems sit in the collapsed Labs section.
+                        if tab=='Constraint':await real_click(page,page.get_by_text(re.compile(r'^Labs\s+Constraint problems, Sudoku')))
                         card=page.get_by_text(re.compile(r'^Constraint problems\s+Diophantine equations and cryptarithms'if tab=='Constraint'else r'^Statistics\s+Descriptive stats, linear regression, normal & binomial distributions'))
                         await real_click(page,card)
                         if tab=='Constraint':

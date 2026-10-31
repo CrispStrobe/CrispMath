@@ -3,7 +3,16 @@
 Living worklist. `[ ]` pending · `[~]` in-progress · `[x]` done.
 Completed items with details are in `HISTORY.md`.
 
-## Current handoff — 5 October 2026
+## Current app status — 31 October 2026
+
+App Store Connect reports 1.2.0 (25) VALID and assigned to Internal Testers
+for source 5d50e367207cc890fa4be048d16057a52a0bf891; see the
+[signed upload and verification](https://github.com/CrispStrobe/CrispMath/actions/runs/41192688325).
+This is not physical-device testing or App Review approval. iOS upload dispatches
+must supply a matching successful Feature validation run ID; tag pushes cannot
+provide it, so dispatch against the tag rather than relying on a tag push.
+
+## Prior handoff — 5 October 2026
 
 Application main 4f45017 has green post-merge CI, including Feature validation,
 all platforms and Pages. Approved external TestFlight remains 1.2.0 (23),
@@ -81,8 +90,8 @@ immutable app pin stays0.17.12. Use the vendor plan for current run states.
 | V1 | Review qualified immutable successor and compatible consumer catalogs | After actual artifact/hash/consumer gates; app remains0.17.12 |
 | M1 | Freeze and exercise fifty new math problems, fix systemic causes | Ready; retain all 789 previous cases |
 | U1 | Cover accessibility, localization and remaining narrow layouts | Ready; fix observed defects with real UI controls |
-| O1 | Extend handwriting diagnosis to complete decoded reference parity | Exported-weight diagnostics ready; original checkpoint requires access |
-| O2 | Evaluate licensed recognition weights/training | Requires O1, provenance/access and authorized remote resources |
+| O1 | Extend handwriting diagnosis to complete decoded reference parity | Paused until after the 4.3(a) review; recognition is 7/50 and no longer advertised |
+| O2 | Evaluate licensed recognition weights/training | Paused with O1; requires provenance/access and authorized remote resources |
 | P1 | Physical Apple device matrix | Deferred device session |
 | A1 | Final store presentation and 4.3(a) response | Drafts ready; device checks and authorized submission still pending |
 | R1 | Next production release | After a validated production change; no new binary for docs/capture sizing |
@@ -132,6 +141,46 @@ counts/sources are not the current status; the handoff links exact current evide
   are visually reviewed. All PR platform/unit checks and focused CI pass.
 - [ ] Perform the deferred device checks and review/upload store screenshots
   before a future App Review submission.
+- [~] Worksheet-first positioning for 4.3(a): the first-run tour opens on the
+  live worksheet with a button that starts the guided a=3 example; Constraints,
+  Sudoku and the 3D scene composer move into a collapsed Analysis "Labs"
+  section (CrispSudoku is a separate app of the same account); STORE_LISTING.md
+  leads with the worksheet loop and no longer advertises handwriting OCR. About
+  gains "Our apps" (store/TestFlight links, mirrored from Brickwright). Needs
+  hosted CI, refreshed store screenshots and the device session before any
+  resubmission.
+- [~] Sudoku is a solver explainer, not a game: `SudokuExplainer` records
+  naked singles, hidden singles, guesses, contradictions and backtracks
+  with the pencil marks after each step; the screen replays them with
+  reasons, unit highlighting and solve statistics. The win check,
+  celebration overlay and clear-to-start are removed. Before guessing it
+  applies cage-sum combinations (Killer now explains too), locked
+  candidates (pointing/box-line) and naked/hidden pairs and triples; removed
+  candidates are crossed out and the cells reasoned from are outlined. A
+  search tree draws every guess (dead ends red, solution path green) and
+  jumps to the step on tap. Tests re-derive every step type independently,
+  including brute-force cage checks and a forged-elimination control.
+  12×12 and both Killer presets are now logic-only; AI Escargot still needs
+  29 guesses (it requires techniques beyond triples).
+- [~] Constraint replays say what the solve took: the propagation visualizer
+  ends with decision/prune/dead-end/backtrack totals, "solved by propagation
+  alone" when no decision was needed, and the three constraints that removed
+  the most values (`CspTraceSummary`). The Magic square tab gains Visualize
+  for 3×3 and 4×4; a 4×4 trace takes 280 steps, while a 5×5 one runs to the
+  20,000-event cap and comes back truncated (the true total is not observable),
+  so it would replay only a prefix. A Generate that returns no square now
+  shows the solver error (or "No solutions.") and re-enables the button
+  instead of silently doing nothing; a throwing solve is caught the same way.
+  Hard-coded English icon semantics in the visualizer were removed in favour
+  of the localized tooltips and captions.
+- [~] The native screenshot gallery adds `sudoku-solver-explained-step` (AI
+  Escargot at its first locked-candidates elimination, opened through
+  Analysis > Labs); the verifier requires the scene and its caption. Run the
+  gallery workflow before choosing store screenshots; uploading stays a
+  separate authorized step.
+- [x] Handwriting recognition work (O1/O2) is paused until after review: the
+  listing no longer advertises it and 7/50 does not justify more vendor time
+  now. The input stays available as an editable draft surface.
 
 ## Cloud feedback and handwriting diagnostics
 

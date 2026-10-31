@@ -228,7 +228,6 @@ const double _extendedRailBreakpoint = 1100;
 // the rest are kept as documentation so the next person inserting a tab
 // can renumber without spelunking through the IndexedStack indices.
 const int _kCalculator = 0;
-// ignore: unused_element
 const int _kNotepad = 1;
 const int _kGraphing = 2;
 // ignore: unused_element
@@ -263,18 +262,22 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         key: _calculatorKey,
         onGoToGraphing: () => _select(_kGraphing),
         onGoToAnalysis: () => _select(_kAnalysis),
+        onOpenCommands: _openCommands,
       ),
-      NotepadScreen(key: _notepadKey),
+      NotepadScreen(key: _notepadKey, onOpenCommands: _openCommands),
       GraphingScreen(key: _graphingKey),
       FunctionEditorScreen(
         onSwitchToGraphing: (_) => _select(_kGraphing),
       ),
       const AnalysisHubScreen(),
-      SettingsScreen(onWorkspaceRestored: () {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _notepadKey.currentState?.recalculateAll();
-        });
-      }),
+      SettingsScreen(
+        onWorkspaceRestored: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _notepadKey.currentState?.recalculateAll();
+          });
+        },
+        onReplayTour: _runOnboarding,
+      ),
     ];
     // First-launch onboarding tour. Skipped if the user has already
     // dismissed it (persisted) or — pragmatically — when running
@@ -284,7 +287,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!AppState().onboardingDismissed) {
-        OnboardingTour.show(context);
+        unawaited(_runOnboarding());
       }
       // Calculator's own initState postFrame already requests focus,
       // but it can lose the focus race when the IndexedStack mounts
@@ -354,6 +357,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         state == AppLifecycleState.hidden) {
       unawaited(AppState().flushPersistence());
     }
+  }
+
+  /// Show the tour; when the user picks the live worksheet, open the
+  /// Notepad tab (mounting it if needed) and start the guided example.
+  Future<void> _runOnboarding() async {
+    final tryWorksheet = await OnboardingTour.show(context);
+    if (!mounted || !tryWorksheet) return;
+    _select(_kNotepad);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notepad = _notepadKey.currentState;
+      if (mounted && notepad != null) {
+        unawaited(notepad.exploreLinkedWorksheet());
+      }
+    });
   }
 
   void _maybeRouteToCalculator() {
@@ -478,12 +495,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         children: [
           if (_showPerfOverlay) const PerfOverlay(),
           const WebUnsupportedBanner(),
-          Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                  onPressed: _openCommands,
-                  icon: const Icon(Icons.search),
-                  label: const Text('Search commands'))),
           Expanded(child: body),
         ],
       );
@@ -556,7 +567,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
 class SettingsScreen extends StatelessWidget {
   final VoidCallback? onWorkspaceRestored;
-  const SettingsScreen({super.key, this.onWorkspaceRestored});
+
+  /// Replays the first-run tour, including its live-worksheet action.
+  final Future<void> Function()? onReplayTour;
+  const SettingsScreen(
+      {super.key, this.onWorkspaceRestored, this.onReplayTour});
 
   @override
   Widget build(BuildContext context) {
@@ -747,7 +762,9 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: Text(t.settingsReplayTourSubtitle),
                   trailing:
                       const Icon(Icons.play_arrow, semanticLabel: 'Start tour'),
-                  onTap: () => OnboardingTour.show(context),
+                  onTap: () => onReplayTour != null
+                      ? onReplayTour!()
+                      : OnboardingTour.show(context),
                 ),
               ),
               const SizedBox(height: 16),

@@ -16,6 +16,7 @@ Future<void> _pump(WidgetTester tester, Size size,
     {required LatexController controller,
     VoidCallback? onEvaluate,
     VoidCallback? onResetFocus,
+    bool? webInputForTesting,
     String preview = ''}) async {
   await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -28,6 +29,7 @@ Future<void> _pump(WidgetTester tester, Size size,
             onResetFocus: onResetFocus ?? () {},
             onEvaluate: onEvaluate ?? () {},
             resultPreview: preview,
+            webInputForTesting: webInputForTesting,
           ),
         ],
       ),
@@ -37,6 +39,82 @@ Future<void> _pump(WidgetTester tester, Size size,
 }
 
 void main() {
+  testWidgets('web submission keeps its text client for the next entry',
+      (tester) async {
+    final controller = LatexController();
+    addTearDown(controller.dispose);
+    final submissions = <String>[];
+    await _pump(tester, const Size(375, 812),
+        controller: controller,
+        webInputForTesting: true,
+        onEvaluate: () {
+          submissions.add(controller.text);
+          controller.clear();
+        });
+    await tester.tap(find.byTooltip('Edit expression'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '1+1');
+    final action = tester.widget<TextField>(find.byType(TextField)).textInputAction!;
+    tester.testTextInput.log.clear();
+    await tester.testTextInput.receiveAction(action);
+    await tester.pump();
+    expect(submissions, ['1+1']);
+    expect(
+        tester.testTextInput.log.where((call) => call.method == 'TextInput.setClient'),
+        isEmpty,
+        reason: 'restarting the web semantics input client loses later input');
+    tester.testTextInput.updateEditingValue(const TextEditingValue(
+      text: '2+2',
+      selection: TextSelection.collapsed(offset: 3),
+    ));
+    await tester.pump();
+    expect(controller.text, '2+2');
+    await tester.testTextInput.receiveAction(action);
+    await tester.pump();
+    expect(submissions, ['1+1', '2+2']);
+  });
+
+  test('browser input tracing requires explicit debug web opt-in', () {
+    final enabled = Uri.parse('https://example.test/?crispInputTrace=1');
+    final disabled = Uri.parse('https://example.test/');
+    expect(inputTraceEnabledFor(true, true, enabled), isTrue);
+    expect(inputTraceEnabledFor(false, true, enabled), isFalse);
+    expect(inputTraceEnabledFor(true, false, enabled), isFalse);
+    expect(inputTraceEnabledFor(true, true, disabled), isFalse);
+    expect(inputTraceEnabledFor(true, true,
+        Uri.parse('https://example.test/?crispInputTrace=0')), isFalse);
+  });
+
+  testWidgets('editor keeps a synchronous calculator rewrite before more typing',
+      (tester) async {
+    final controller = LatexController();
+    addTearDown(controller.dispose);
+    void chainPreviousAnswer() {
+      if (controller.text == '/') {
+        controller.setEditingValue(const TextEditingValue(
+          text: 'Ans/',
+          selection: TextSelection.collapsed(offset: 4),
+        ));
+      }
+    }
+    controller.addListener(chainPreviousAnswer);
+    addTearDown(() => controller.removeListener(chainPreviousAnswer));
+    await _pump(tester, const Size(375, 812), controller: controller);
+    await tester.tap(find.byTooltip('Edit expression'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '/');
+    expect(controller.text, 'Ans/');
+    final editor = tester.widget<TextField>(find.byType(TextField)).controller!;
+    expect(editor.text, 'Ans/');
+    expect(editor.selection, const TextSelection.collapsed(offset: 4));
+    tester.testTextInput.updateEditingValue(const TextEditingValue(
+      text: 'Ans/2',
+      selection: TextSelection.collapsed(offset: 5),
+    ));
+    await tester.pump();
+    expect(controller.text, 'Ans/2');
+  });
+
   testWidgets(
       'phone text entry preserves selections, keypad edits and submission',
       (tester) async {

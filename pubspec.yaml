@@ -2,7 +2,7 @@ name: crisp_math
 description: CAS calculator with SymEngine
 publish_to: 'none'
 
-version: 1.2.0+23
+version: 1.2.0+25
 
 environment:
   # 3.3.0 floor: package:web ^1.0.0 (pulled in by the symbolic_math_bridge
@@ -86,4 +86,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/licenses/
+    - assets/app_showcase/
     - assets/fonts/

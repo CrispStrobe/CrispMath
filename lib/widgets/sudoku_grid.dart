@@ -51,6 +51,18 @@ class SudokuGrid extends StatelessWidget {
   /// computed internally.
   final List<KillerCage>? cages;
 
+  /// Cells of the unit the current solver step reasons about (for
+  /// example the box where a hidden single was found), tinted softly.
+  final Set<int>? unitIndexes;
+
+  /// Cells the current solver step reasons from (a naked pair, the
+  /// places of a locked digit, a cage), outlined in the secondary color.
+  final Set<int>? focusIndexes;
+
+  /// Candidates the current solver step removed, drawn crossed out in
+  /// the error color next to the remaining pencil marks.
+  final List<Set<int>>? struckCandidates;
+
   const SudokuGrid({
     super.key,
     required this.layout,
@@ -63,6 +75,9 @@ class SudokuGrid extends StatelessWidget {
     this.candidates,
     this.cages,
     this.conflictIndexes,
+    this.unitIndexes,
+    this.focusIndexes,
+    this.struckCandidates,
   });
 
   /// Maps each cell index to its cage index, or -1 if uncaged.
@@ -114,8 +129,15 @@ class SudokuGrid extends StatelessWidget {
                               isConflict: conflictIndexes
                                       ?.contains(r * layout.side + c) ??
                                   false,
+                              inUnit: unitIndexes
+                                      ?.contains(r * layout.side + c) ??
+                                  false,
+                              inFocus: focusIndexes
+                                      ?.contains(r * layout.side + c) ??
+                                  false,
                               cellSize: cellSize,
                               candidates: candidates?[r * layout.side + c],
+                              struck: struckCandidates?[r * layout.side + c],
                               onTap: onTapCell == null
                                   ? null
                                   : () => onTapCell!(r * layout.side + c),
@@ -174,8 +196,11 @@ class _Cell extends StatelessWidget {
   final bool isSelected;
   final bool isHighlighted;
   final bool isConflict;
+  final bool inUnit;
+  final bool inFocus;
   final double cellSize;
   final Set<int>? candidates;
+  final Set<int>? struck;
   final VoidCallback? onTap;
   final ValueChanged<int>? onAcceptDigit;
 
@@ -188,8 +213,11 @@ class _Cell extends StatelessWidget {
     required this.isSelected,
     required this.isHighlighted,
     required this.isConflict,
+    this.inUnit = false,
+    this.inFocus = false,
     required this.cellSize,
     required this.candidates,
+    this.struck,
     required this.onTap,
     required this.onAcceptDigit,
   });
@@ -231,6 +259,10 @@ class _Cell extends StatelessWidget {
           bg = scheme.primary.withValues(alpha: 0.30);
         } else if (isSelected) {
           bg = scheme.primary.withValues(alpha: 0.15);
+        } else if (inFocus) {
+          bg = scheme.secondary.withValues(alpha: 0.22);
+        } else if (inUnit) {
+          bg = scheme.tertiary.withValues(alpha: 0.12);
         }
         return Material(
           color: bg ?? scheme.surface,
@@ -259,10 +291,12 @@ class _Cell extends StatelessWidget {
                         color: isClue ? scheme.onSurface : scheme.primary,
                       ),
                     )
-                  : (candidates != null && candidates!.isNotEmpty
+                  : ((candidates?.isNotEmpty ?? false) ||
+                          (struck?.isNotEmpty ?? false)
                       ? _PencilMarks(
                           layout: layout,
-                          candidates: candidates!,
+                          candidates: candidates ?? const {},
+                          struck: struck ?? const {},
                           cellSize: cellSize,
                         )
                       : const SizedBox.shrink()),
@@ -277,11 +311,13 @@ class _Cell extends StatelessWidget {
 class _PencilMarks extends StatelessWidget {
   final SudokuLayout layout;
   final Set<int> candidates;
+  final Set<int> struck;
   final double cellSize;
 
   const _PencilMarks({
     required this.layout,
     required this.candidates,
+    this.struck = const {},
     required this.cellSize,
   });
 
@@ -313,13 +349,17 @@ class _PencilMarks extends StatelessWidget {
                       final digit = sr * subCols + sc + 1;
                       if (digit > n) return const SizedBox();
                       final present = candidates.contains(digit);
+                      final removed = struck.contains(digit);
                       return Expanded(
                         child: Center(
                           child: Text(
-                            present ? '$digit' : '',
+                            present || removed ? '$digit' : '',
                             style: TextStyle(
                               fontSize: cellSize * 0.18,
-                              color: dim,
+                              color: removed ? scheme.error : dim,
+                              decoration:
+                                  removed ? TextDecoration.lineThrough : null,
+                              decorationColor: scheme.error,
                             ),
                           ),
                         ),

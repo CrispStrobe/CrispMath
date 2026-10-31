@@ -123,6 +123,25 @@
 				<string>application/vnd.crispmath.worksheet+json</string>
 			</dict>
 		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.crispstrobe.crispmath.calculator-history</string>
+			<key>UTTypeDescription</key>
+			<string>CrispMath calculator history</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>crisphistory</string>
+				</array>
+				<key>public.mime-type</key>
+				<string>application/vnd.crispmath.calculator-history+json</string>
+			</dict>
+		</dict>
 	</array>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
