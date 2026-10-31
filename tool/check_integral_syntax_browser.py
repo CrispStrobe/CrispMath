@@ -63,7 +63,7 @@ async def editor_state(editor, stage, report):
     report['editorStates'].append(state)
 
 
-async def wait_for_app_input(page, report, expected, timeout=15.0):
+async def wait_for_app_input(page, report, expected, start_index=0, timeout=15.0):
     """Wait until the app's own editor, not just the DOM node, holds `expected`.
 
     `editorIsTarget` is emitted by the Flutter-side trace, so this fails when
@@ -71,7 +71,9 @@ async def wait_for_app_input(page, report, expected, timeout=15.0):
     """
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        if any(event.get('editorIsTarget') is True for event in report['flutterTrace']):
+        if any(event.get('stage') == 'editor-to-math' and
+               event.get('editorIsTarget') is True and event.get('mathIsTarget') is True
+               for event in report['flutterTrace'][start_index:]):
             return
         await page.wait_for_timeout(100)
     raise AssertionError(
@@ -121,6 +123,7 @@ async def check(args):
                     await real_click(page, editor)
                     await next_frames(page)
                     await editor_state(editor, 'before typing', report)
+                    trace_start = len(report['flutterTrace'])
                     await page.keyboard.type('2+2', delay=10)
                     await editor_state(editor, 'after fill', report)
                     await expect(editor).to_have_value('2+2')
@@ -129,7 +132,7 @@ async def check(args):
                     # is built with the input trace, require the app itself to
                     # hold the text before submitting.
                     if report['flutterTrace']:
-                        await wait_for_app_input(page, report, '2+2')
+                        await wait_for_app_input(page, report, '2+2', start_index=trace_start)
                     await next_frames(page)
                     await editor_state(editor, 'before Enter', report)
                     await expect(editor).to_have_value('2+2')
@@ -140,7 +143,7 @@ async def check(args):
                     await page.wait_for_function("""() => {
                         const entry=JSON.parse(JSON.parse(localStorage.getItem('flutter.crisp.history')))[0];
                         return entry.e==='2+2' && entry.r==='4';
-                    }""")
+                    }""", timeout=15000)
             await page.get_by_role('button', name=re.compile(r'^Notepad')).click()
             for i, source in enumerate(CASES):
                 field = page.get_by_role('textbox').nth(i)

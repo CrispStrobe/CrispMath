@@ -16,6 +16,7 @@ Future<void> _pump(WidgetTester tester, Size size,
     {required LatexController controller,
     VoidCallback? onEvaluate,
     VoidCallback? onResetFocus,
+    bool? webInputForTesting,
     String preview = ''}) async {
   await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -28,6 +29,7 @@ Future<void> _pump(WidgetTester tester, Size size,
             onResetFocus: onResetFocus ?? () {},
             onEvaluate: onEvaluate ?? () {},
             resultPreview: preview,
+            webInputForTesting: webInputForTesting,
           ),
         ],
       ),
@@ -37,17 +39,39 @@ Future<void> _pump(WidgetTester tester, Size size,
 }
 
 void main() {
-  test('only a focused web text field re-attaches after submit', () {
+  testWidgets('web submission keeps its text client for the next entry',
+      (tester) async {
+    final controller = LatexController();
+    addTearDown(controller.dispose);
+    final submissions = <String>[];
+    await _pump(tester, const Size(375, 812),
+        controller: controller,
+        webInputForTesting: true,
+        onEvaluate: () {
+          submissions.add(controller.text);
+          controller.clear();
+        });
+    await tester.tap(find.byTooltip('Edit expression'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '1+1');
+    final action = tester.widget<TextField>(find.byType(TextField)).textInputAction!;
+    tester.testTextInput.log.clear();
+    await tester.testTextInput.receiveAction(action);
+    await tester.pump();
+    expect(submissions, ['1+1']);
     expect(
-        shouldReopenTextConnection(web: true, focused: true, plain: true),
-        isTrue);
-    expect(shouldReopenTextConnection(web: false, focused: true, plain: true),
-        isFalse,
-        reason: 'native keeps its text input connection and keyboard');
-    expect(shouldReopenTextConnection(web: true, focused: false, plain: true),
-        isFalse);
-    expect(shouldReopenTextConnection(web: true, focused: true, plain: false),
-        isFalse);
+        tester.testTextInput.log.where((call) => call.method == 'TextInput.setClient'),
+        isEmpty,
+        reason: 'restarting the web semantics input client loses later input');
+    tester.testTextInput.updateEditingValue(const TextEditingValue(
+      text: '2+2',
+      selection: TextSelection.collapsed(offset: 3),
+    ));
+    await tester.pump();
+    expect(controller.text, '2+2');
+    await tester.testTextInput.receiveAction(action);
+    await tester.pump();
+    expect(submissions, ['1+1', '2+2']);
   });
 
   test('browser input tracing requires explicit debug web opt-in', () {

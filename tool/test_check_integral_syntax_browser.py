@@ -55,6 +55,23 @@ class IntegralDiagnosticsTest(unittest.TestCase):
 
 
 class EditorSnapshotTest(unittest.IsolatedAsyncioTestCase):
+    async def test_wait_accepts_current_editor_and_controller_update(self):
+        report = {'flutterTrace': [{'stage': 'editor-to-math',
+                                    'editorIsTarget': True, 'mathIsTarget': True}]}
+        await checker.wait_for_app_input(None, report, '2+2', start_index=0)
+
+    async def test_wait_ignores_matching_trace_from_before_this_input(self):
+        class Page:
+            async def wait_for_timeout(self, milliseconds):
+                import asyncio
+                await asyncio.sleep(milliseconds / 1000)
+
+        report = {'flutterTrace': [
+            {'stage': 'editor-to-math', 'editorIsTarget': True, 'mathIsTarget': True}]}
+        with self.assertRaises(AssertionError):
+            await checker.wait_for_app_input(Page(), report, '2+2',
+                                             start_index=1, timeout=0.01)
+
     async def test_snapshot_records_trace_boundary_and_node_state(self):
         class Editor:
             async def evaluate(self, script):

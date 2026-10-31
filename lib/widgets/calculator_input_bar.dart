@@ -29,16 +29,6 @@ bool inputTraceEnabledFor(bool debug, bool web, Uri uri) =>
 bool get calculatorInputTraceEnabled =>
     inputTraceEnabledFor(kDebugMode, kIsWeb, Uri.base);
 
-/// Whether a submitted text field must re-attach its editing connection.
-///
-/// Bouncing focus is only needed where the browser owns the text input, only
-/// while the plain-text field is shown and only if it still holds focus;
-/// native platforms keep their connection and their keyboard.
-@visibleForTesting
-bool shouldReopenTextConnection(
-        {required bool web, required bool focused, required bool plain}) =>
-    web && focused && plain;
-
 void traceCalculatorInput(Map<String, Object?> fields) {
   if (calculatorInputTraceEnabled) {
     debugPrintSynchronously('[CALC-INPUT-TRACE] ${jsonEncode(fields)}');
@@ -54,6 +44,7 @@ class CalculatorInputBar extends StatefulWidget {
     this.onTextSubmitted,
     this.resultPreview = '',
     this.stackBelowWidth = 480,
+    this.webInputForTesting,
   });
 
   final LatexController controller;
@@ -74,6 +65,10 @@ class CalculatorInputBar extends StatefulWidget {
   /// toolbar; wider ones keep the single-row form. Phone widths top out
   /// around 430pt, so the 480 default stacks all phones.
   final double stackBelowWidth;
+
+  /// Overrides the web text-input configuration for focused widget tests.
+  @visibleForTesting
+  final bool? webInputForTesting;
 
   @override
   State<CalculatorInputBar> createState() => _CalculatorInputBarState();
@@ -116,27 +111,6 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
   }
 
   void _traceFocus() => _traceEditor('editor-focus');
-
-  /// Re-attach the browser text-input client after a `done` action.
-  ///
-  /// The `done` text action tears down Flutter's editing connection while the
-  /// field keeps focus, so on the web the characters typed into the cleared
-  /// field afterwards never reach [_editor] — the next calculation silently
-  /// stays empty. Bounce focus once so a fresh client is created. Native
-  /// platforms keep their connection and keep their keyboard open, so this is
-  /// web-only on purpose.
-  void _reopenTextConnection() {
-    if (!shouldReopenTextConnection(
-        web: kIsWeb, focused: _editorFocus.hasFocus, plain: _plain)) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_plain) return;
-      _editorFocus.unfocus();
-      _editorFocus.requestFocus();
-      _traceEditor('text-connection-reopened');
-    });
-  }
 
   void _syncFromMath() {
     if (_syncing) return;
@@ -254,14 +228,16 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                   autocorrect: false,
                   enableSuggestions: false,
                   keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.done,
-                  // The default done action unfocuses the editor. Keep it
-                  // connected for the next calculation instead.
+                  // On web, `done` restarts the input client after submission;
+                  // the semantics input strategy may then lose its listener.
+                  textInputAction: (widget.webInputForTesting ?? kIsWeb)
+                      ? TextInputAction.none
+                      : TextInputAction.done,
+                  // Retain focus after the native done action as well.
                   onEditingComplete: () => _traceEditor('editing-complete'),
                   onSubmitted: (_) {
                     _traceEditor('editor-submitted');
                     (widget.onTextSubmitted ?? widget.onEvaluate)();
-                    _reopenTextConnection();
                   },
                   decoration: InputDecoration(
                       labelText: t.text(WorkflowLabel.expression)),
