@@ -4,6 +4,10 @@
 // Split from ocr_model_manager.dart so web code can import the catalog
 // without pulling in dart:io.
 
+import 'model_license_terms.dart';
+
+export 'model_license_terms.dart';
+
 /// A downloadable OCR model variant.
 class OcrModelVariant {
   final String id;
@@ -17,6 +21,11 @@ class OcrModelVariant {
   /// contains 'NC', the download UI should show an acceptance gate.
   final String? license;
 
+  /// Restrictive license terms that need explicit, persisted consent (see
+  /// ModelLicenseConsent) before download or use. Models with terms are
+  /// never defaults and are never auto-selected.
+  final ModelLicenseTerms? restrictedTerms;
+
   const OcrModelVariant({
     required this.id,
     required this.name,
@@ -25,11 +34,15 @@ class OcrModelVariant {
     required this.sizeBytes,
     required this.description,
     this.license,
+    this.restrictedTerms,
   });
 
-  /// Whether the model requires the user to accept NC license terms.
+  /// Whether the model requires the user to accept non-commercial terms.
   bool get requiresLicenseAcceptance =>
-      license != null && license!.contains('NC');
+      restrictedTerms != null || (license != null && license!.contains('NC'));
+
+  /// Whether CrispMath may pick this model without the user choosing it.
+  bool get autoSelectable => !requiresLicenseAcceptance;
 
   String get sizeLabel {
     if (sizeBytes >= 1024 * 1024 * 1024) {
@@ -398,27 +411,36 @@ class OcrModelCatalog {
   static const String _hfQwen2vlUrl =
       'https://huggingface.co/cstr/qwen2.5-vl-3b-crispembed-GGUF/resolve/main';
 
+  /// Qwen2.5-VL-3B. The weights are Qwen2.5-VL-3B-Instruct, licensed under
+  /// the non-commercial Qwen RESEARCH LICENSE AGREEMENT (the former
+  /// Apache-2.0 label came from the re-host card; see CrispStrobe/CrispEmbed
+  /// #92). Optional and consent-gated; Qwen3-VL-2B (Apache-2.0) is preferred.
   static const List<OcrModelVariant> visionLanguage = [
     OcrModelVariant(
       id: 'qwen2vl-3b-q4k',
-      name: 'Qwen2.5-VL (document OCR)',
+      name: 'Qwen2.5-VL (document OCR, non-commercial)',
       filename: 'qwen2.5-vl-3b-q4_k.gguf',
       url: '$_hfQwen2vlUrl/qwen2.5-vl-3b-q4_k.gguf',
       sizeBytes: 2670 * 1024 * 1024, // 2.6 GB
       description: 'Vision-language model (3B params). '
           '2.6 GB Q4_K. Full document OCR with custom prompts. '
-          'Desktop only — too large for mobile/web.',
-      license: 'Apache-2.0',
+          'Desktop only — too large for mobile/web. Non-commercial '
+          'Qwen Research License; prefer Qwen3-VL (Apache-2.0).',
+      license: 'qwen-research',
+      restrictedTerms: ModelLicenseTerms.qwenResearch,
     ),
     OcrModelVariant(
       id: 'qwen2vl-3b-q8',
-      name: 'Qwen2.5-VL (high quality)',
+      name: 'Qwen2.5-VL (high quality, non-commercial)',
       filename: 'qwen2.5-vl-3b-q8_0.gguf',
       url: '$_hfQwen2vlUrl/qwen2.5-vl-3b-q8_0.gguf',
       sizeBytes: 3930 * 1024 * 1024, // 3.9 GB
       description: 'Vision-language model (3B params). '
-          '3.9 GB Q8_0. Best quality document OCR. Desktop only.',
-      license: 'Apache-2.0',
+          '3.9 GB Q8_0. Best quality document OCR. Desktop only. '
+          'Non-commercial Qwen Research License; prefer Qwen3-VL '
+          '(Apache-2.0).',
+      license: 'qwen-research',
+      restrictedTerms: ModelLicenseTerms.qwenResearch,
     ),
   ];
 
@@ -505,6 +527,14 @@ class OcrModelCatalog {
       license: 'Apache-2.0',
     ),
   ];
+
+  /// The only families from which startup may auto-select the active
+  /// provider. Every member must be [OcrModelVariant.autoSelectable].
+  static List<List<OcrModelVariant>> get autoSelectableFamilies => [
+        printedMathPpfnl,
+        printedMathTexo,
+        printedMath,
+      ];
 
   static List<OcrModelVariant> get all => [
         ...printedMathPpfnl,

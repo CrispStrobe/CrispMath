@@ -15,9 +15,11 @@ import 'package:crispembed/crispembed.dart'
         CrispOcrPipeline,
         LayoutRegion;
 
+import 'model_license_consent.dart';
 import 'ocr_cloud_llm.dart';
 import 'ocr_provider.dart';
 import '../services/ocr_service.dart';
+import '../services/native_env.dart';
 import '../services/ocr_library_path.dart';
 import 'ocr_model_manager.dart';
 
@@ -134,13 +136,19 @@ class _CrispEmbedVlmProvider implements OcrProvider {
   final String _modelPath;
   final String _name;
 
-  _CrispEmbedVlmProvider(this._modelPath, this._name);
+  /// Restrictive license of the weights; null for permissive models.
+  final ModelLicenseTerms? _terms;
+
+  _CrispEmbedVlmProvider(this._modelPath, this._name,
+      {ModelLicenseTerms? terms})
+      : _terms = terms;
 
   @override
   String get name => _name;
 
+  /// Unavailable once consent to a restrictive license is withdrawn.
   @override
-  bool get isAvailable => true;
+  bool get isAvailable => ModelLicenseConsent.allows(_terms);
 
   @override
   bool get requiresNetwork => false;
@@ -152,6 +160,12 @@ class _CrispEmbedVlmProvider implements OcrProvider {
   Future<OcrResult?> recognize(Uint8List imageBytes, int width, int height,
       {void Function(int, int, double, double, double, double)?
           onProgress}) async {
+    // Fail closed: never run restricted weights without recorded consent.
+    final terms = _terms;
+    if (terms != null) {
+      if (!ModelLicenseConsent.allows(terms)) return null;
+      ModelLicenseConsent.applyRuntimeGate(terms);
+    }
     try {
       final op = OcrOp('vlm_raw', _modelPath, imageBytes, width, height);
       final latex = await OcrService.recognizeAsync(op);
@@ -489,6 +503,10 @@ Uint8List _toPpm(Uint8List pixels, int w, int h, int channels) {
 /// Try to register available OCR providers in priority order.
 /// Called once at app startup.
 Future<void> initOcrProviders() async {
+  // Restrictive-license consent gates registration and the runtime env gate.
+  ModelLicenseConsent.runtimeGateSetter = setCrispEmbedLicenseGate;
+  await ModelLicenseConsent.load();
+
   // Pre-resolve all model paths in parallel (avoids serial File.exists calls).
   final allModels = OcrModelCatalog.all;
   final allPaths =
@@ -528,7 +546,7 @@ Future<void> initOcrProviders() async {
         'PP-FormulaNet-L (printed, 181M)',
       );
       OcrProviders.register(provider);
-      OcrProviders.active = provider;
+      if (model.autoSelectable) OcrProviders.active = provider;
       break;
     }
   }
@@ -555,7 +573,7 @@ Future<void> initOcrProviders() async {
         'Texo (printed, BLEU 0.90)',
       );
       OcrProviders.register(provider);
-      OcrProviders.active = provider;
+      if (model.autoSelectable) OcrProviders.active = provider;
       break;
     }
   }
@@ -570,7 +588,7 @@ Future<void> initOcrProviders() async {
           'pix2tex (printed)',
         );
         OcrProviders.register(provider);
-        OcrProviders.active = provider;
+        if (model.autoSelectable) OcrProviders.active = provider;
         break;
       }
     }
@@ -623,13 +641,18 @@ Future<void> initOcrProviders() async {
     }
   }
 
-  // Tier 2b: Qwen2.5-VL vision-language (fallback, 2.6–3.9 GB)
+  // Tier 2b: Qwen2.5-VL vision-language (optional fallback, 2.6–3.9 GB).
+  // Non-commercial Qwen Research License: registered only when downloaded
+  // AND the user has consented; never auto-selected as active.
   if (!hasQwen3vl) {
     for (final model in OcrModelCatalog.visionLanguage) {
       final path = pathMap[model.id];
-      if (path != null) {
-        OcrProviders.register(
-            _CrispEmbedVlmProvider(path, 'Qwen2.5-VL (document OCR, 3B)'));
+      if (path != null && ModelLicenseConsent.allows(model.restrictedTerms)) {
+        final terms = model.restrictedTerms;
+        if (terms != null) ModelLicenseConsent.applyRuntimeGate(terms);
+        OcrProviders.register(_CrispEmbedVlmProvider(
+            path, 'Qwen2.5-VL (document OCR, 3B, non-commercial)',
+            terms: terms));
         break;
       }
     }

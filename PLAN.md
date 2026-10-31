@@ -12,6 +12,37 @@ This is not physical-device testing or App Review approval. iOS upload dispatche
 must supply a matching successful Feature validation run ID; tag pushes cannot
 provide it, so dispatch against the tag rather than relying on a tag push.
 
+## Model-license consent — 31 October 2026
+
+The CrispEmbed license audit ([CrispStrobe/CrispEmbed#92](https://github.com/CrispStrobe/CrispEmbed/pull/92),
+[registry-qwen-audit.json](https://github.com/CrispStrobe/CrispEmbed/blob/feat/teleocr/tests/results/licenses/registry-qwen-audit.json))
+found Qwen2.5-VL-3B-derived weights (`qwen2vl-3b`, `nanonets-ocr-s`,
+`uni-mumer-qwen2.5-vl-3b`, `teleocr-*`) under the non-commercial Qwen Research
+License, `got-ocr2` under Tongyi Qianwen Research (non-commercial, no improving
+other LLMs) and `transcoda` under CC-BY-NC-4.0. Of these, CrispMath ships only
+the two Qwen2.5-VL-3B catalog entries (`qwen2vl-3b-q4k`, `qwen2vl-3b-q8`).
+
+- [x] Relabel both entries `qwen-research`; they need explicit, persisted
+  per-license consent (name, non-commercial, link) before download, and
+  previously downloaded copies stay unregistered until accepted. Consent can be
+  withdrawn in OCR settings. They were never auto-selected; startup now only
+  auto-selects permissive families. Qwen3-VL-2B (Apache-2.0) stays preferred.
+- [x] After consent, set `CRISPEMBED_ACCEPT_QWEN_RESEARCH_LICENSE=1` in-process
+  (FFI `setenv`) before model load. The pinned 0.17.12 runtime ignores it.
+- [ ] Windows: a statically linked CrispEmbed CRT keeps its own environment copy
+  taken at load time; verify on hosted Windows CI with a gate-checking runtime
+  that the gate is seen without a restart (consent before first load works).
+- [ ] Any future GOT-OCR2, Uni-MuMER-Qwen2.5, Nanonets-OCR-s or Transcoda entry
+  must carry `ModelLicenseTerms` (GOT: `tongyiQianwenResearch`); prefer the
+  Apache/MIT alternatives (`uni-mumer-qwen3-vl-2b`, `firered-ocr`,
+  `qwen3vl-2b`, `paddleocr-vl`; music `smt-grandstaff`/`smt-fp`, `tromr`,
+  `flova`) once a released runtime the app pins supports them.
+- [ ] MinerU2.5-Pro and TeleOCR are not in a released runtime; do not add them
+  as providers until one is pinned (TeleOCR is also `qwen-research`).
+- [ ] Existing CC BY-NC-SA handwriting models still use a per-download dialog
+  and an in-session handwriting prompt; consider moving them to the persisted
+  consent store.
+
 ## Prior handoff — 5 October 2026
 
 Application main 4f45017 has green post-merge CI, including Feature validation,
@@ -1145,7 +1176,7 @@ quantizations verified. CI builds all 5 platforms.
 | 3b. General OCR | ✅ | DBNet/Surya text det + TrOCR recognition (7–63 MB) |
 | 4a. Printed math | ✅ | PP-FormulaNet-L (181M), Texo-Distill, pix2tex, MixTex (CJK) |
 | 4b. Handwritten math | ✅ | PosFormer (57%), BTTR (49%), HMER (36%), auto-detected from GGUF |
-| 5a. Vision-language | ✅ | Qwen3-VL-2B (preferred), Qwen2.5-VL-3B (fallback), desktop-only |
+| 5a. Vision-language | ✅ | Qwen3-VL-2B (preferred, Apache-2.0), Qwen2.5-VL-3B (optional, non-commercial `qwen-research`, consent-gated), desktop-only |
 | 5b. MoE document OCR | ✅ | DeepSeek-OCR2 (3B MoE, Apache-2.0), desktop-only, Q4K/Q8/F16 |
 
 **Models on HuggingFace**: `cstr/pix2tex-mfr-gguf` (F32/F16/Q8_0/Q4_K)
