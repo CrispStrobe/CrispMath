@@ -164,9 +164,13 @@ counts/sources are not the current status; the handoff links exact current evide
   ends with decision/prune/dead-end/backtrack totals, "solved by propagation
   alone" when no decision was needed, and the three constraints that removed
   the most values (`CspTraceSummary`). The Magic square tab gains Visualize
-  for 3×3 and 4×4 (5×5 exceeds the 20,000-event trace cap). Hard-coded English
-  icon semantics in the visualizer were removed in favour of the localized
-  tooltips and captions.
+  for 3×3 and 4×4; a 4×4 trace takes 280 steps, while a 5×5 one runs to the
+  20,000-event cap and comes back truncated (the true total is not observable),
+  so it would replay only a prefix. A Generate that returns no square now
+  shows the solver error (or "No solutions.") and re-enables the button
+  instead of silently doing nothing; a throwing solve is caught the same way.
+  Hard-coded English icon semantics in the visualizer were removed in favour
+  of the localized tooltips and captions.
 - [~] The native screenshot gallery adds `sudoku-solver-explained-step` (AI
   Escargot at its first locked-candidates elimination, opened through
   Analysis > Labs); the verifier requires the scene and its caption. Run the

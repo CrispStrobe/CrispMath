@@ -118,9 +118,20 @@ class _SudokuScreenState extends State<SudokuScreen> {
   /// list is required), so Killer mode always loads a preset.
   void _switchLayoutOrVariant(
       SudokuLayout? newLayout, SudokuVariant? newVariant) {
-    _stopVisualizer();
     final layout = newLayout ?? _puzzle.layout;
     final variant = newVariant ?? _puzzle.variant;
+    // Round 109: re-picking the chip that is already active is a
+    // no-op. The pickers fire even for the selected chip, and this
+    // method used to re-resolve the very same (layout, variant) to a
+    // preset — silently replacing the user's edited or generated grid
+    // (clues included) and stopping the replay.
+    if (layout.side == _puzzle.layout.side &&
+        layout.boxRows == _puzzle.layout.boxRows &&
+        layout.boxCols == _puzzle.layout.boxCols &&
+        variant == _puzzle.variant) {
+      return;
+    }
+    _stopVisualizer();
     // Round 87: try to find a preset that matches the new (layout,
     // variant) exactly. If found, load it — keeps the preset
     // dropdown showing the active entry. Falls through to an empty
@@ -1079,20 +1090,30 @@ class _PresetPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Match by identity so the dropdown shows the active preset
-    // when one is loaded; render no selection ("Custom") when the
-    // current puzzle was built fresh (variant/layout switch,
-    // generator output, hand-entered clues). Returning a non-item
-    // value here trips the DropdownButton "exactly one item with
-    // this value" assertion — passing null avoids the crash.
+    // Round 109: the field must always display the puzzle that is
+    // actually loaded, so the value is derived from [current] here
+    // instead of being left to the FormField's own state. `initialValue`
+    // only seeds that state once, so a generated, hand-edited or
+    // layout-switched grid could leave the field naming a preset it no
+    // longer holds — or naming nothing at all. Keying the field on the
+    // matched preset re-seeds it whenever the loaded puzzle changes, and
+    // the localized "Custom" placeholder names the state in between.
+    //
+    // Match by identity so the dropdown shows the active preset when
+    // one is loaded. Returning a non-item value here trips the
+    // DropdownButton "exactly one item with this value" assertion.
     final matched = SudokuPresets.all
         .map((e) => e.puzzle)
         .where((p) => identical(p, current))
         .firstOrNull;
     return DropdownButtonFormField<SudokuPuzzle>(
+      key: ObjectKey(matched),
       initialValue: matched,
       isExpanded: true, // round 70: stop long preset labels from
       // overflowing the 360 px right panel; text now ellipsises.
+      hint: matched == null
+          ? Text(labelOf(current), overflow: TextOverflow.ellipsis)
+          : null,
       decoration: InputDecoration(
         labelText: AppLocalizations.of(context).sudokuPresetLabelChooser,
         border: const OutlineInputBorder(),

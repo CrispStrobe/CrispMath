@@ -196,7 +196,6 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   void _onHistorySearchChanged() {
     _historySearchDebounce?.cancel();
-    _livePreviewDebounce?.cancel();
     _historySearchDebounce = Timer(const Duration(milliseconds: 200), () {
       if (!mounted) return;
       setState(() {
@@ -223,6 +222,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     _latexController.dispose();
     _calculatorFocusNode.dispose();
     _historySearchDebounce?.cancel();
+    _livePreviewDebounce?.cancel();
     _historySearchController.dispose();
     _historySearchFocusNode.dispose();
     super.dispose();

@@ -39,6 +39,32 @@ def verify_connected_worksheet(document):
     assert lines[2]['evidence']['accuracy'] == 'exact'
 
 
+def _inside(inner, outer, tolerance=0.5):
+    return (inner['left'] >= outer['left'] - tolerance
+            and inner['top'] >= outer['top'] - tolerance
+            and inner['left'] + inner['width'] <= outer['left'] + outer['width'] + tolerance
+            and inner['top'] + inner['height'] <= outer['top'] + outer['height'] + tolerance)
+
+
+def verify_step_viewport(evidence):
+    """Reject a solver step capture whose board or caption is out of frame.
+
+    The caption being present in the render tree proves nothing: the phone
+    layout once stacked the explanation below the visible grid, so the
+    published image showed squares only. Re-derive the check from the measured
+    rectangles instead of trusting the reported boolean.
+    """
+    measurement = evidence['sudokuStepViewport']
+    assert measurement['bothVisible'] is True, 'Solver step capture reported a clipped scene'
+    clips = measurement['clips']
+    assert clips, 'Solver step capture must record the frames it was clipped by'
+    for part in ('grid', 'caption'):
+        rect = measurement[part]
+        assert rect['width'] > 0 and rect['height'] > 0, f'{part} was off screen: {rect}'
+        for clip in clips:
+            assert _inside(rect, clip), f'{part} fell outside {clip}: {rect}'
+
+
 def main():
     root = Path(sys.argv[1])
     profiles = sys.argv[2:]
@@ -60,6 +86,7 @@ def main():
         verify_connected_worksheet(evidence['document'])
         assert evidence['sudokuExplainedStep'].startswith(
             'Locked candidates: in '), (profile, evidence['sudokuExplainedStep'])
+        verify_step_viewport(evidence)
         if profile != 'macos':
             assert evidence['nativeWorkflowUrl'] is True
             assert evidence['nativeWorkflowUrlSupported'] is True

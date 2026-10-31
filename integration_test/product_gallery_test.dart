@@ -19,6 +19,7 @@ import 'package:crisp_math/screens/graphing_screen.dart';
 import 'package:crisp_math/screens/sudoku_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'gallery_geometry.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -46,6 +47,18 @@ void main() {
         resultEvidence: integral.evidence);
     final dispatcher = NotepadDispatcher(formatNumber: state.formatNumber);
     final galleryKey = GlobalKey();
+    if (Platform.isMacOS) {
+      // The hosted Mac runner exposes a small display, and macOS clamps a
+      // window's height to the visible frame, so the app window cannot reach
+      // the 1280x800 logic size that Apple's 2560x1600 upload needs: asking
+      // for it produced a 1280x656 content view and 2560x1312 images. Lay the
+      // gallery out at the intended size explicitly instead of inheriting
+      // whatever the display allows, and capture its render tree at 2x.
+      tester.view.devicePixelRatio = 2.0;
+      tester.view.physicalSize = _macGalleryPixels;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
     await tester.pumpWidget(RepaintBoundary(
         key: galleryKey, child: const CrispMathApp()));
     if (Platform.isMacOS) {
@@ -65,6 +78,12 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 2);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       expect(bytes, isNotNull);
+      // Fail here with the measured size rather than in the upload verifier,
+      // which only sees the PNG the run already wrote.
+      expect(image.width * image.height,
+          (_macGalleryPixels.width * _macGalleryPixels.height).round(),
+          reason: 'Mac gallery capture must be 2560x1600 upload-ready, '
+              'got ${image.width}x${image.height}');
       desktopImages.add({'name': name,
         'pngBase64': base64Encode(bytes!.buffer.asUint8List()),
         'width': image.width, 'height': image.height});
@@ -302,6 +321,27 @@ void main() {
     }
     await tester.ensureVisible(find.byType(SudokuGrid));
     await settle();
+    // A mounted caption is not a pictured caption: assert the board and the
+    // reason for the current step are both inside the frame we publish.
+    final screenRect = tester.view.physicalSize / tester.view.devicePixelRatio;
+    final clips = <Rect>[Offset.zero & screenRect];
+    final solverList = find.descendant(
+        of: find.byType(SudokuScreen), matching: find.byType(Scrollable));
+    if (solverList.evaluate().isNotEmpty) {
+      clips.add(tester.getRect(solverList.first));
+    }
+    final gridRect = tester.getRect(find.byType(SudokuGrid));
+    final captionRect = tester.getRect(lockedCaption);
+    final bothVisible = allVisibleTogether([gridRect, captionRect], clips);
+    expect(bothVisible, isTrue,
+        reason: 'Solver step capture must show the board and its explanation; '
+            'grid=$gridRect caption=$captionRect clips=$clips');
+    binding.reportData!['sudokuStepViewport'] = {
+      'grid': _rectToJson(gridRect),
+      'caption': _rectToJson(captionRect),
+      'clips': clips.map(_rectToJson).toList(),
+      'bothVisible': bothVisible,
+    };
     await screenshot('sudoku-solver-explained-step');
     await tester.pageBack();
     await settle();
@@ -365,3 +405,14 @@ void main() {
     binding.reportData!['sudokuExplainedStep'] = sudokuCaption;
   });
 }
+
+Map<String, double> _rectToJson(Rect rect) => {
+      'left': rect.left,
+      'top': rect.top,
+      'width': rect.width,
+      'height': rect.height,
+    };
+
+/// Apple's 2560x1600 upload size, expressed as the physical pixels the test
+/// view is configured with at devicePixelRatio 2.
+const Size _macGalleryPixels = Size(2560, 1600);

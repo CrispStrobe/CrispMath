@@ -5,7 +5,11 @@
 part of '../constraints_screen.dart';
 
 class _MagicSquareTab extends StatefulWidget {
-  const _MagicSquareTab();
+  const _MagicSquareTab({this.solveForTesting});
+
+  /// Overrides the CSP solve boundary in deterministic widget tests.
+  final MagicSquareSolve? solveForTesting;
+
   @override
   State<_MagicSquareTab> createState() => _MagicSquareTabState();
 }
@@ -18,7 +22,13 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
   CspTraceResult? _trace;
   bool _tracing = false;
 
-  /// Larger squares exceed the trace cap before a readable replay.
+  /// Set when a Generate attempt produced no square, so the tab can say why
+  /// instead of appearing to ignore the tap.
+  String? _error;
+
+  /// Larger squares exceed the trace cap before a readable replay: a 5×5
+  /// trace needs more than 20,000 events and would replay only a truncated
+  /// prefix.
   static const _maxTracedOrder = 4;
 
   Future<void> _visualize() async {
@@ -27,6 +37,7 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
       _tracing = true;
       _trace = null;
       _square = null;
+      _error = null;
     });
     final tr = await CspSolver.traceDsl(MagicSquare.buildProgram(n));
     if (!mounted || n != _n) return;
@@ -45,15 +56,29 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
       _solving = true;
       _square = null;
       _trace = null;
+      _error = null;
     });
-    final r = await CspSolver.solveDsl(
-      MagicSquare.buildProgram(n),
-      maxSolutions: 1,
-    );
-    if (!mounted || n != _n) return;
+    final solve = widget.solveForTesting ?? CspSolver.solveDsl;
+    DiophantineResult r;
+    try {
+      r = await solve(MagicSquare.buildProgram(n), maxSolutions: 1);
+    } catch (e) {
+      // A thrown solve must not leave the button spinning forever with no
+      // visible outcome.
+      r = DiophantineResult.failure('Magic-square solve failed: $e');
+    }
+    if (!mounted) return;
+    if (n != _n) {
+      setState(() => _solving = false);
+      return;
+    }
+    final error = r.ok && r.solutions.isNotEmpty
+        ? null
+        : (r.error ?? AppLocalizations.of(context).constraintsNoSolutions);
     setState(() {
       _solving = false;
-      if (r.ok && r.solutions.isNotEmpty) {
+      _error = error;
+      if (error == null) {
         final grid = MagicSquare.gridFromSolution(r.solutions.first, n);
         _square = MagicSquare.randomVariant(grid, n, _rng);
       }
@@ -91,6 +116,7 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
                                 _n = n;
                                 _square = null;
                                 _trace = null;
+                                _error = null;
                                 _tracing = false;
                               });
                             }
@@ -144,6 +170,10 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
             t.constraintsMagicVisualizeHint,
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          if (_error != null) ...[
+            const SizedBox(height: 16),
+            _TraceErrorBlock(message: _error!),
+          ],
           if (_square != null) ...[
             const SizedBox(height: 20),
             Center(

@@ -4,7 +4,8 @@ import sys
 import tempfile
 import unittest
 from run_native_gallery import run_phase, capture, pre_vm_discovery_failure, allow_discovery_recovery
-from verify_native_gallery import verify_connected_worksheet, verify_dimensions
+from verify_native_gallery import (verify_connected_worksheet, verify_dimensions,
+                                   verify_step_viewport)
 
 
 class GalleryDimensionsTest(unittest.TestCase):
@@ -18,6 +19,11 @@ class GalleryDimensionsTest(unittest.TestCase):
             with self.subTest(size=size):
                 with self.assertRaises(AssertionError):
                     verify_dimensions('macos', *size)
+
+    def test_short_mac_capture_from_run_41184475635_is_rejected(self):
+        with self.assertRaisesRegex(
+                AssertionError, '^Unsupported Mac screenshot size: 2560x1312$'):
+            verify_dimensions('macos', 2560, 1312)
 
     def test_native_ios_portrait_profiles_remain_accepted(self):
         verify_dimensions('iphone', 1290, 2796)
@@ -58,6 +64,57 @@ class ConnectedGalleryEvidenceTest(unittest.TestCase):
         document['l'][1]['r'] = '3'
         with self.assertRaises(AssertionError):
             verify_connected_worksheet(document)
+
+
+class StepViewportEvidenceTest(unittest.TestCase):
+    """The published solver capture must contain the board AND its reason."""
+
+    def measurement(self, grid, caption, clips):
+        return {'sudokuStepViewport': {'grid': grid, 'caption': caption,
+                                       'clips': clips, 'bothVisible': True}}
+
+    def test_phone_scene_with_board_under_a_visible_caption_is_accepted(self):
+        verify_step_viewport(self.measurement(
+            {'left': 12, 'top': 96, 'width': 366, 'height': 366},
+            {'left': 12, 'top': 470, 'width': 366, 'height': 28},
+            [{'left': 0, 'top': 0, 'width': 390, 'height': 844},
+             {'left': 0, 'top': 96, 'width': 390, 'height': 748}]))
+
+    def test_wide_window_with_caption_beside_the_board_is_accepted(self):
+        verify_step_viewport(self.measurement(
+            {'left': 16, 'top': 120, 'width': 640, 'height': 640},
+            {'left': 692, 'top': 120, 'width': 320, 'height': 28},
+            [{'left': 0, 'top': 0, 'width': 1280, 'height': 800}]))
+
+    def test_caption_below_the_visible_screen_is_rejected(self):
+        measurement = self.measurement(
+            {'left': 12, 'top': 96, 'width': 366, 'height': 366},
+            {'left': 12, 'top': 1500, 'width': 366, 'height': 28},
+            [{'left': 0, 'top': 0, 'width': 390, 'height': 844}])
+        with self.assertRaises(AssertionError):
+            verify_step_viewport(measurement)
+
+    def test_board_scrolled_out_of_the_list_viewport_is_rejected(self):
+        measurement = self.measurement(
+            {'left': 12, 'top': 900, 'width': 366, 'height': 366},
+            {'left': 12, 'top': 500, 'width': 366, 'height': 28},
+            [{'left': 0, 'top': 0, 'width': 390, 'height': 844},
+             {'left': 0, 'top': 96, 'width': 390, 'height': 748}])
+        with self.assertRaises(AssertionError):
+            verify_step_viewport(measurement)
+
+    def test_reported_flag_cannot_override_measured_rectangles(self):
+        measurement = self.measurement(
+            {'left': 12, 'top': 96, 'width': 366, 'height': 366},
+            {'left': 12, 'top': 1500, 'width': 366, 'height': 28},
+            [{'left': 0, 'top': 0, 'width': 390, 'height': 844}])
+        measurement['sudokuStepViewport']['bothVisible'] = False
+        with self.assertRaises(AssertionError):
+            verify_step_viewport(measurement)
+
+    def test_missing_measurement_is_rejected_rather_than_skipped(self):
+        with self.assertRaises(KeyError):
+            verify_step_viewport({})
 
 
 class NativeGalleryPhaseTest(unittest.TestCase):
