@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 
 from testflight_internal import AppleApi, matching_build
@@ -76,7 +77,14 @@ def inspect(api, app, number, version):
                    'state': version_state(v), 'buildId': attached and attached['id'],
                    'reviewDetailId': (detail.get('data') or {}).get('id'),
                    'reviewFieldsPresent': {k: bool(x) for k, x in ((detail.get('data') or {}).get('attributes') or {}).items()}})
+    ratings = []
+    for info in api.request(f'/v1/apps/{app}/appInfos')['data']:
+        declaration = api.request(f'/v1/appInfos/{info["id"]}/ageRatingDeclaration').get('data') or {}
+        ratings.append({'appInfoId': info['id'], 'state': info['attributes'].get('state'),
+                        'declarationId': declaration.get('id'),
+                        'declaration': declaration.get('attributes')})
     return {'source': os.environ.get('BUILD_SOURCE'), 'version': version, 'build': number,
+            'ageRatings': ratings,
             'buildId': build['id'], 'usesNonExemptEncryption': build['attributes'].get('usesNonExemptEncryption'),
             'versions': vs, 'reviewSubmissions': subs, 'appReviewSubmitted': False}
 
@@ -88,6 +96,13 @@ def submit(api, app, evidence):
     if len(editable) > 1:
         raise ValueError('More than one editable iOS version; resolve manually')
     bid, version = evidence['buildId'], evidence['version']
+    # Apple added this age rating question after the last submission. A
+    # calculator has no social media features; every other answer is kept.
+    for rating in evidence['ageRatings']:
+        if rating['declarationId'] and (rating['declaration'] or {}).get('socialMedia') is None:
+            api.request(f'/v1/ageRatingDeclarations/{rating["declarationId"]}', {'data': {
+                'type': 'ageRatingDeclarations', 'id': rating['declarationId'],
+                'attributes': {'socialMedia': False}}}, method='PATCH')
     if editable:
         vid = editable[0]['id']
         if editable[0]['versionString'] != version:
@@ -159,6 +174,11 @@ if __name__ == '__main__':
     app = os.environ['ASC_APP_ID']
     evidence = inspect(api, app, args.build, args.version)
     if args.submit:
-        evidence = submit(api, app, evidence)
+        try:
+            evidence = submit(api, app, evidence)
+        except HTTPError as error:
+            # Apple explains a refused submission in the response body.
+            print(error.read().decode(errors='replace'))
+            raise
     args.output.write_text(json.dumps(evidence, indent=2) + '\n')
     print(json.dumps(evidence, indent=2))
