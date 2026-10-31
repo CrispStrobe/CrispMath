@@ -31,7 +31,7 @@ class _GatedStore extends SharedPreferencesStorePlatform {
 
 void main() {
   test('history replacement refuses to succeed without storage', () async {
-    final state = AppState();
+    final state = AppState.forTesting();
     state.history.clear();
     state.addHistoryEntry('old', '1');
     await expectLater(
@@ -41,10 +41,10 @@ void main() {
     expect(state.history.map((e) => e.expression), ['old']);
   });
 
-  test('synchronous listener changes are persisted before import succeeds',
+  test('listener edits use a separate queued save after import commits',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final state = AppState();
+    final state = AppState.forTesting();
     await state.load(force: true);
     final store = _GatedStore(SharedPreferencesStorePlatform.instance);
     SharedPreferencesStorePlatform.instance = store;
@@ -63,19 +63,19 @@ void main() {
     final replacement = state
         .replaceHistory([CalculationEntry(expression: 'new', result: '2')])
         .then((_) => completed = true);
-    await Future<void>.delayed(Duration.zero);
-    expect(completed, isFalse,
-        reason: 'the listener edit has not yet been durably written');
-    store.gate.complete(true);
     await replacement;
+    expect(completed, isTrue);
+    expect(state.history.map((e) => e.expression), ['listener', 'new']);
+    store.gate.complete(true);
+    await state.flushPersistence();
     final prefs = await SharedPreferences.getInstance();
     final stored = jsonDecode(prefs.getString('crisp.history')!) as List;
     expect(stored.map((e) => e['e']), ['listener', 'new']);
   });
 
-  test('failed listener edit write restores old history and the edit', () async {
+  test('failed listener save preserves committed import and live edit', () async {
     SharedPreferences.setMockInitialValues({});
-    final state = AppState();
+    final state = AppState.forTesting();
     await state.load(force: true);
     await state.replaceHistory([CalculationEntry(expression: 'old', result: '1')]);
     final store = _GatedStore(SharedPreferencesStorePlatform.instance);
@@ -93,14 +93,12 @@ void main() {
     addTearDown(() => state.calculatorChanges.removeListener(listener));
     final replacement = state.replaceHistory(
         [CalculationEntry(expression: 'new', result: '2')]);
-    final failure = expectLater(replacement, throwsStateError);
-    await Future<void>.delayed(Duration.zero);
+    await replacement;
     store.gate.complete(false);
-    await failure;
     await state.flushPersistence();
-    expect(state.history.map((e) => e.expression), ['listener', 'old']);
+    expect(state.history.map((e) => e.expression), ['listener', 'new']);
     final prefs = await SharedPreferences.getInstance();
     final stored = jsonDecode(prefs.getString('crisp.history')!) as List;
-    expect(stored.map((e) => e['e']), ['listener', 'old']);
+    expect(stored.map((e) => e['e']), ['new']);
   });
 }

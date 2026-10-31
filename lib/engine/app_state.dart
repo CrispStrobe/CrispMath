@@ -189,6 +189,10 @@ class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
 
+  /// Isolated state for tests; production callers use the singleton.
+  @visibleForTesting
+  AppState.forTesting() : this._internal();
+
   AppState._internal() {
     graphFunctions = List.generate(_kGraphSlotCount, (_) => '');
     // Default examples — replaced once load() restores user data.
@@ -1261,10 +1265,12 @@ class AppState extends ChangeNotifier {
   /// throws [ArgumentError] and leaves the in-memory history and the persisted
   /// value untouched.
   ///
-  /// The replacement is published after writing it, and the returned future
-  /// waits until edits made while it is pending are written too. On failure
-  /// those edits stay on the original history, which is restored to storage on
-  /// a best-effort basis. Repeated backend failures cannot guarantee durability.
+  /// The first successful backend write commits the replacement irrevocably.
+  /// Edits made while it was pending are replayed exactly once; later saves
+  /// use the ordinary serialized queue and do not change the import result.
+  /// A failed initial write leaves the live history unchanged apart from
+  /// concurrent edits. SharedPreferences acknowledges a platform write, not
+  /// crash-safe disk durability; later edit saves can also fail independently.
   /// Only the history domain is notified for a successful replacement.
   Future<void> replaceHistory(List<CalculationEntry> entries) async {
     if (entries.length > _kHistoryCap) {
@@ -1284,61 +1290,26 @@ class AppState extends ChangeNotifier {
         if (prefs == null) {
           throw StateError('History storage is unavailable');
         }
-        final original = List<CalculationEntry>.of(history);
-        // Earlier queued edits are already reflected in this snapshot.
-        final originalEditCount = edits.length;
-        var published = false;
-        try {
-          while (true) {
-            final count = edits.length;
-            final candidate = List<CalculationEntry>.of(incoming);
-            for (var i = 0; i < count; i++) {
-              edits[i](candidate);
-            }
-            await _writeHistory(
-              prefs,
-              jsonEncode(candidate.map((e) => e.toJson()).toList()),
-            );
-            // No await between this check and publishing: every edit included
-            // in the visible replacement is already in the successful write.
-            if (count != edits.length) continue;
-            history
-              ..clear()
-              ..addAll(candidate);
-            published = true;
-            _notify({AppStateDomain.history});
-            // A synchronous listener may itself edit history during the
-            // notification. Persist that edit before reporting success too.
-            if (count != edits.length) continue;
-            break;
-          }
-        } catch (_) {
-          // A prior candidate may already have reached the backend. Restore
-          // the original live history, including edits made during recovery.
-          if (published) {
-            for (var i = originalEditCount; i < edits.length; i++) {
-              edits[i](original);
-            }
-            history
-              ..clear()
-              ..addAll(original);
-            _notify({AppStateDomain.history});
-          }
-          try {
-            while (true) {
-              final count = edits.length;
-              final payload =
-                  jsonEncode(history.map((e) => e.toJson()).toList());
-              await _writeHistory(prefs, payload);
-              if (count == edits.length) break;
-            }
-          } catch (error) {
-            // Keep live edits and let later queued saves retry. The caller
-            // still receives the original failure, not a false success.
-            debugPrint('STATE: history rollback failed: $error');
-          }
-          rethrow;
+        // Edits queued before this write begins belong in its one payload.
+        final count = edits.length;
+        final candidate = List<CalculationEntry>.of(incoming);
+        for (var i = 0; i < count; i++) {
+          edits[i](candidate);
         }
+        await _writeHistory(
+          prefs,
+          jsonEncode(candidate.map((e) => e.toJson()).toList()),
+        );
+        // The successful write is the commit point. Apply only edits which
+        // arrived during that write, then detach before notifying listeners.
+        for (var i = count; i < edits.length; i++) {
+          edits[i](candidate);
+        }
+        _pendingHistoryReplacements.remove(edits);
+        history
+          ..clear()
+          ..addAll(candidate);
+        _notify({AppStateDomain.history});
       });
     } finally {
       _pendingHistoryReplacements.remove(edits);

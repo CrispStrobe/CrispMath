@@ -1,6 +1,6 @@
 // Tests for AppState.replaceHistory — the only supported way to apply an
-// imported Calculator-history file. Replacing must be exact, persisted before
-// the returned future completes, and it must not touch unrelated state.
+// imported Calculator-history file. The committed payload is acknowledged before
+// success; concurrent edits use ordinary queued saves. Unrelated state is untouched.
 
 import 'dart:async';
 import 'dart:convert';
@@ -69,19 +69,10 @@ List<Map<String, dynamic>> _storedHistory(SharedPreferences prefs) =>
         .toList();
 
 void main() {
-  setUp(() {
-    final s = AppState();
-    s.history.clear();
-    s.userVariables.clear();
-    for (var i = 0; i < s.graphFunctions.length; i++) {
-      s.graphFunctions[i] = '';
-    }
-  });
-
   test('failed replacement preserves history and cannot leak into later writes',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -90,12 +81,18 @@ void main() {
     store.nextResult = Completer<bool>();
     store.started = Completer<void>();
     final result = store.nextResult!;
+    var notifications = 0;
+    final channel = s.changesFor(AppStateDomain.history);
+    void onHistory() => notifications++;
+    channel.addListener(onHistory);
+    addTearDown(() => channel.removeListener(onHistory));
 
     final replacement = s.replaceHistory([_entry('imported', '2')]);
     final failure = expectLater(replacement, throwsStateError);
     await store.started!.future;
     result.complete(false);
     await failure;
+    expect(notifications, 0);
 
     expect(s.history.map((e) => e.expression), ['old']);
     expect(_storedHistory(await SharedPreferences.getInstance()).map((e) => e['e']),
@@ -111,7 +108,7 @@ void main() {
   test('failed pending replacement preserves concurrent addition on disk',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -136,9 +133,9 @@ void main() {
     expect(s.history.map((e) => e.expression), ['new', 'old']);
   });
 
-  test('replacement fails if persisting a concurrent edit fails', () async {
+  test('post-commit edit failure does not turn import into failure', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -168,24 +165,25 @@ void main() {
     await store.started!.future;
     s.addHistoryEntry('newer', '4');
     await Future<void>.delayed(Duration.zero);
+    await replacement;
     final completedBeforeSecondWrite = completed;
     second.complete(false);
     final success = await replacement;
     await s.flushPersistence();
-    expect(completedBeforeSecondWrite, isFalse);
-    expect(success, isFalse);
-    expect(s.history.map((e) => e.expression), ['newer', 'new', 'old']);
+    expect(completedBeforeSecondWrite, isTrue);
+    expect(success, isTrue);
+    expect(s.history.map((e) => e.expression), ['newer', 'new', 'imported']);
     final backend = await store.getAll();
     final stored = jsonDecode(backend['flutter.crisp.history'] as String) as List;
-    expect(stored.map((e) => e['e']), ['newer', 'new', 'old']);
+    expect(stored.map((e) => e['e']), ['newer', 'new', 'imported']);
     await s.load(force: true);
-    expect(s.history.map((e) => e.expression), ['newer', 'new', 'old']);
+    expect(s.history.map((e) => e.expression), ['newer', 'new', 'imported']);
   });
 
-  test('failed queued replacement does not replay pre-snapshot edits twice',
+  test('queued replacement replays pre-write and listener edits once',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     final old = List.generate(197, (i) => _entry('old-$i', '$i'));
     await s.replaceHistory(old);
@@ -215,35 +213,30 @@ void main() {
     addTearDown(() => channel.removeListener(onHistory));
 
     final replacement = s.replaceHistory([_entry('imported', '2')]);
-    final failure = expectLater(replacement, throwsStateError);
     s.addHistoryEntry('early', '2');
     blockingWrite.complete(true);
     await listenerStarted.future;
     expect(listenerEdited, isTrue);
     expect(s.history.map((e) => e.expression), ['late', 'early', 'imported']);
+    await replacement;
     listenerWrite.complete(false);
-    await failure;
-
-    final expected = [
-      'late',
-      'early',
-      'blocker',
-      ...old.map((e) => e.expression),
-    ];
-    expect(expected, hasLength(AppState.historyCap));
-    expect(s.history.map((e) => e.expression), expected);
+    await s.flushPersistence();
+    expect(s.history.map((e) => e.expression), ['late', 'early', 'imported']);
     final backend = await store.getAll();
     final stored = jsonDecode(backend['flutter.crisp.history'] as String) as List;
-    expect(stored.map((e) => e['e']), expected);
+    // Another ordinary save was already queued by the early edit.
+    expect(stored.map((e) => e['e']), ['late', 'early', 'imported']);
+    s.addHistoryEntry('retry', '4');
     await s.flushPersistence();
     await s.load(force: true);
-    expect(s.history.map((e) => e.expression), expected);
+    expect(s.history.map((e) => e.expression),
+        ['retry', 'late', 'early', 'imported']);
   });
 
-  test('persistent backend failure keeps edits in memory and permits retry',
+  test('committed import survives persistent failure of later edit saves',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -253,7 +246,6 @@ void main() {
     store.nextResult = first;
     store.started = Completer<void>();
     final replacement = s.replaceHistory([_entry('imported', '2')]);
-    final failure = expectLater(replacement, throwsStateError);
     await store.started!.future;
     s.addHistoryEntry('new', '3');
     final second = Completer<bool>();
@@ -263,24 +255,87 @@ void main() {
     await store.started!.future;
     store.failHistoryWrites = true;
     second.complete(false);
-    await failure;
+    await replacement;
     await s.flushPersistence();
-    expect(s.history.map((e) => e.expression), ['new', 'old']);
+    expect(s.history.map((e) => e.expression), ['new', 'imported']);
     final failedBackend = await store.getAll();
     final failedStored =
         jsonDecode(failedBackend['flutter.crisp.history'] as String) as List;
     expect(failedStored.map((e) => e['e']), ['imported']);
+    expect(store.historyWrites.map((write) =>
+        (jsonDecode(write) as List).map((e) => e['e']).toList()), [
+      ['imported'],
+      ['new', 'imported'],
+      ['imported'], // cache repair, not a speculative import retry
+    ]);
+    // Re-read the platform store, not the possibly stale preferences cache.
+    await (await SharedPreferences.getInstance()).reload();
+    final restarted = AppState.forTesting();
+    await restarted.load();
+    expect(restarted.history.map((e) => e.expression), ['imported']);
     store.failHistoryWrites = false;
     s.addHistoryEntry('retry', '4');
     await s.flushPersistence();
     final backend = await store.getAll();
     final stored = jsonDecode(backend['flutter.crisp.history'] as String) as List;
-    expect(stored.map((e) => e['e']), ['retry', 'new', 'old']);
+    expect(stored.map((e) => e['e']), ['retry', 'new', 'imported']);
+    await (await SharedPreferences.getInstance()).reload();
+    final relaunched = AppState.forTesting();
+    await relaunched.load();
+    relaunched.addHistoryEntry('after-restart', '5');
+    await relaunched.flushPersistence();
+    final afterRestart = await store.getAll();
+    final saved = jsonDecode(afterRestart['flutter.crisp.history'] as String) as List;
+    expect(saved.map((e) => e['e']),
+        ['after-restart', 'retry', 'new', 'imported']);
+  });
+
+  test('pre-write and in-flight edits are applied once at the cap', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState.forTesting();
+    await s.load();
+    final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
+    SharedPreferencesStorePlatform.instance = store;
+    addTearDown(() => SharedPreferencesStorePlatform.instance = store.delegate);
+
+    final blocker = Completer<bool>();
+    store.nextResult = blocker;
+    store.started = Completer<void>();
+    s.addHistoryEntry('blocker', '1');
+    await store.started!.future;
+    final imported = List.generate(
+        AppState.historyCap, (i) => _entry('import-$i', '$i'));
+    final replacement = s.replaceHistory(imported);
+    s.addHistoryEntry('early', '2');
+    final importWrite = Completer<bool>();
+    final importStarted = Completer<void>();
+    store.nextResult = importWrite;
+    store.started = importStarted;
+    blocker.complete(true);
+    await importStarted.future;
+    s.addHistoryEntry('late', '3');
+    importWrite.complete(true);
+    await replacement;
+    final expected = [
+      'late', 'early',
+      ...imported.take(AppState.historyCap - 2).map((e) => e.expression),
+    ];
+    expect(s.history.map((e) => e.expression), expected);
+    expect(s.history, hasLength(AppState.historyCap));
+    final committed = jsonDecode(store.historyWrites[1]) as List;
+    expect(committed.map((e) => e['e']), [
+      'early',
+      ...imported.take(AppState.historyCap - 1).map((e) => e.expression),
+    ]);
+    await s.flushPersistence();
+    final backend = await store.getAll();
+    final stored = jsonDecode(backend['flutter.crisp.history'] as String) as List;
+    expect(stored.map((e) => e['e']), expected);
   });
 
   test('successful pending replacement replays concurrent addition', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -303,9 +358,9 @@ void main() {
     expect(stored.map((e) => e['e']), ['new', 'imported']);
   });
 
-  test('rapid edits across successive replacement writes are durable', () async {
+  test('rapid edits across queued saves preserve clear ordering', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -337,8 +392,9 @@ void main() {
     final completedBeforeFinalWrite = completed;
     third.complete(true);
     await replacement;
-    expect(completedBeforeFinalWrite, isFalse);
+    expect(completedBeforeFinalWrite, isTrue);
     expect(s.history.map((e) => e.expression), ['latest', 'after-clear']);
+    await s.flushPersistence();
     final backend = await store.getAll();
     final stored = jsonDecode(backend['flutter.crisp.history'] as String) as List;
     expect(stored.map((e) => e['e']), ['latest', 'after-clear']);
@@ -349,7 +405,7 @@ void main() {
 
   test('clear during a pending replacement wins over the import', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -374,7 +430,7 @@ void main() {
 
   test('thrown backend error rolls back before a later replacement', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -403,7 +459,7 @@ void main() {
   test('whole-state history import during pending replacement is not lost',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -429,7 +485,7 @@ void main() {
   test('whole-state merge during pending replacement merges against it',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -458,7 +514,7 @@ void main() {
 
   test('flush waits for a just-scheduled history addition', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -482,7 +538,7 @@ void main() {
 
   test('an older pending calculation writes before a replacement', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     await s.replaceHistory([_entry('old', '1')]);
     final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
@@ -517,7 +573,7 @@ void main() {
 
   test('replaces an existing history exactly and persists it', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     s.addHistoryEntry('old+1', '1');
     s.addHistoryEntry('old+2', '2');
@@ -542,7 +598,7 @@ void main() {
     expect(s.history.last.type, HistoryEntryType.solve);
     expect(s.history.last.lastModified, DateTime.utc(2026, 10, 29, 8));
 
-    // Disk: already written when the future completes (awaited, not deferred).
+    // Preferences cache: the initial write has completed on success.
     final prefs = await SharedPreferences.getInstance();
     final stored = _storedHistory(prefs);
     expect(stored.map((e) => e['e']), ['8/3', 'solve(x^2-4, x)']);
@@ -554,7 +610,7 @@ void main() {
 
   test('reload after replaceHistory restores the same entries', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
 
     final imported = [
@@ -572,7 +628,7 @@ void main() {
 
   test('preserves Ans full precision through file and persistence', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
 
     final source = _entry('8/3', '2.66666666667',
@@ -595,7 +651,7 @@ void main() {
 
   test('rejects more than the cap without mutating anything', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     s.addHistoryEntry('keep', '1');
     final before = (await SharedPreferences.getInstance())
@@ -614,7 +670,7 @@ void main() {
   test('an invalid imported file leaves the current history untouched',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     s.addHistoryEntry('keep', '1');
     final before =
@@ -645,7 +701,7 @@ void main() {
   test('notifies history listeners once and touches no unrelated state',
       () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     s.setLocale(const Locale('de'));
     s.setVariable('a', '5');
@@ -684,7 +740,7 @@ void main() {
 
   test('listeners see the replaced list before the future completes', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
 
     List<String>? seenAtNotify;
@@ -699,9 +755,43 @@ void main() {
     expect(seenAtNotify, ['first']);
   });
 
+  test('queued replacements replay only edits since each call', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = AppState.forTesting();
+    await s.load();
+    await s.replaceHistory([_entry('old', '0')]);
+    final store = _HistoryStore(SharedPreferencesStorePlatform.instance);
+    SharedPreferencesStorePlatform.instance = store;
+    addTearDown(() => SharedPreferencesStorePlatform.instance = store.delegate);
+    final gate = Completer<bool>();
+    store.nextResult = gate;
+    store.started = Completer<void>();
+    final first = s.replaceHistory([_entry('first', '1')]);
+    await store.started!.future;
+    s.addHistoryEntry('before-second', '2');
+    final second = s.replaceHistory([_entry('second', '3')]);
+    s.addHistoryEntry('after-second', '4');
+    final seen = <List<String>>[];
+    final channel = s.changesFor(AppStateDomain.history);
+    void onHistory() => seen.add(s.history.map((e) => e.expression).toList());
+    channel.addListener(onHistory);
+    addTearDown(() => channel.removeListener(onHistory));
+    gate.complete(true);
+    await Future.wait([first, second]);
+    await s.flushPersistence();
+    expect(seen, [
+      ['after-second', 'before-second', 'first'],
+      ['after-second', 'second'],
+    ]);
+    expect(s.history.map((e) => e.expression), ['after-second', 'second']);
+    final backend = await store.getAll();
+    final stored = jsonDecode(backend['flutter.crisp.history'] as String) as List;
+    expect(stored.map((e) => e['e']), ['after-second', 'second']);
+  });
+
   test('overlapping replacements persist in call order', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
 
     final first = s.replaceHistory([_entry('a', '1')]);
@@ -713,18 +803,22 @@ void main() {
     expect(s.history.map((e) => e.expression), ['b']);
   });
 
-  test('replaceHistory before load() still updates memory and notifies',
-      () async {
+  test('replaceHistory before load refuses without publishing', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
-    // No load(): persistence is a no-op, but nothing may throw.
-    await s.replaceHistory([_entry('1+1', '2')]);
-    expect(s.history.map((e) => e.expression), ['1+1']);
+    final other = AppState.forTesting();
+    await other.load();
+    await other.replaceHistory([_entry('other', '9')]);
+    final s = AppState.forTesting();
+    var notifications = 0;
+    s.changesFor(AppStateDomain.history).addListener(() => notifications++);
+    await expectLater(s.replaceHistory([_entry('1+1', '2')]), throwsStateError);
+    expect(s.history, isEmpty);
+    expect(notifications, 0);
   });
 
   test('an empty import clears the history and the stored list', () async {
     SharedPreferences.setMockInitialValues({});
-    final s = AppState();
+    final s = AppState.forTesting();
     await s.load(force: true);
     s.addHistoryEntry('1+1', '2');
 
