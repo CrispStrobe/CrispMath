@@ -189,6 +189,10 @@ class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
 
+  /// Isolated state for tests; production callers use the singleton.
+  @visibleForTesting
+  AppState.forTesting() : this._internal();
+
   AppState._internal() {
     graphFunctions = List.generate(_kGraphSlotCount, (_) => '');
     // Default examples — replaced once load() restores user data.
@@ -227,6 +231,10 @@ class AppState extends ChangeNotifier {
 
   static const int _kGraphSlotCount = 10;
   static const int _kHistoryCap = 200;
+
+  /// Maximum number of history entries kept in memory and on disk. Portable
+  /// history files (`CalculatorHistoryFile.maxEntries`) use the same cap.
+  static const int historyCap = _kHistoryCap;
 
   SharedPreferences? _prefs;
   bool _loaded = false;
@@ -781,9 +789,13 @@ class AppState extends ChangeNotifier {
     return write;
   }
 
-  /// Flush deferred document edits and the debounced scene viewport.
+  /// Flush deferred document edits, queued history writes and the debounced
+  /// scene viewport.
   Future<void> flushPersistence() async {
     _scene3DPersistTimer?.cancel();
+    // Include an addHistoryEntry whose coalescing microtask has not run yet.
+    if (_historyPersistScheduled) await Future<void>.value();
+    if (_pendingHistoryWrites > 0) await _historyWrites;
     if (_prefs != null) {
       await _prefs!.setString(_kScene3D, jsonEncode(_scene3D.toJson()));
     }
@@ -1152,20 +1164,24 @@ class AppState extends ChangeNotifier {
     ResultEvidence? resultEvidence,
   }) {
     final formatted = formatNumber(result);
-    history.insert(
-      0,
-      CalculationEntry(
-        expression: expression,
-        result: formatted,
-        resultEvidence: resultEvidence,
-        // Keep the engine's unrounded string when formatting changed
-        // it, so `Ans` can chain at full precision.
-        rawResult: formatted == result ? null : result,
-        type: type,
-      ),
+    final entry = CalculationEntry(
+      expression: expression,
+      result: formatted,
+      resultEvidence: resultEvidence,
+      // Keep the engine's unrounded string when formatting changed
+      // it, so `Ans` can chain at full precision.
+      rawResult: formatted == result ? null : result,
+      type: type,
     );
-    while (history.length > _kHistoryCap) {
-      history.removeLast();
+    void addTo(List<CalculationEntry> target) {
+      target.insert(0, entry);
+      while (target.length > _kHistoryCap) {
+        target.removeLast();
+      }
+    }
+    addTo(history);
+    for (final edits in _pendingHistoryReplacements) {
+      edits.add(addTo);
     }
     if (!_historyPersistScheduled) {
       _historyPersistScheduled = true;
@@ -1179,11 +1195,125 @@ class AppState extends ChangeNotifier {
 
   bool _historyPersistScheduled = false;
 
+  /// Tail of the serialized history-write queue, plus the number of writes
+  /// still in flight. History was the only persisted collection written
+  /// fire-and-forget (`_prefs?.setString`), so an older save could land after a
+  /// newer one when two writes overlapped (e.g. import while a calculation is
+  /// being recorded). Every history write now goes through this single queue.
+  Future<void> _historyWrites = Future.value();
+  int _pendingHistoryWrites = 0;
+  final _pendingHistoryReplacements =
+      <List<void Function(List<CalculationEntry>)>>[];
+
   void _persistHistory() {
-    _prefs?.setString(
-      _kHistory,
-      jsonEncode(history.map((e) => e.toJson()).toList()),
-    );
+    // Resolve at execution time: a pending replacement may commit or fail
+    // before this later edit reaches the backend.
+    _enqueueHistoryWrite(() async {
+      final prefs = _prefs;
+      if (prefs != null) {
+        await _writeHistory(
+          prefs,
+          jsonEncode(history.map((e) => e.toJson()).toList()),
+        );
+      }
+    });
+  }
+
+  /// Serialize writes and keep the queue usable after failures. Ordinary edits
+  /// resolve their payload when executed, after any earlier import has settled.
+  Future<void> _enqueueHistoryWrite(Future<void> Function() perform) {
+    final previous = _pendingHistoryWrites == 0 ? null : _historyWrites;
+    _pendingHistoryWrites++;
+    final write = previous == null ? perform() : previous.then((_) => perform());
+    _historyWrites = write.catchError((Object error) {
+      debugPrint('STATE: history save failed: $error');
+    }).whenComplete(() => _pendingHistoryWrites--);
+    return write;
+  }
+
+  Future<void> _writeHistory(SharedPreferences prefs, String payload) async {
+    // The plugin updates its cache *before* the platform write. Restore that
+    // cache on either false or throw; a failed restore is logged, not masked as
+    // a successful import. All history writes remain serialized during repair.
+    final previous = prefs.getString(_kHistory);
+    try {
+      if (!await prefs.setString(_kHistory, payload)) {
+        throw StateError('Failed to save calculation history');
+      }
+    } catch (_) {
+      try {
+        final restored = previous == null
+            ? await prefs.remove(_kHistory)
+            : await prefs.setString(_kHistory, previous);
+        if (!restored) debugPrint('STATE: history cache restore failed');
+      } catch (error) {
+        debugPrint('STATE: history cache restore failed: $error');
+      }
+      rethrow;
+    }
+  }
+
+  /// Replace the entire calculation history with [entries] and persist it.
+  ///
+  /// This is the import path for a portable history file
+  /// (`CalculatorHistoryFile.decode` / `.open`). The entries are stored
+  /// verbatim: same order as [entries] (index 0 is newest), no merging,
+  /// re-sorting, re-formatting or truncation, so `raw` full precision for
+  /// `Ans`, result evidence and timestamps survive unchanged.
+  ///
+  /// Validation happens before any mutation: more than [historyCap] entries
+  /// throws [ArgumentError] and leaves the in-memory history and the persisted
+  /// value untouched.
+  ///
+  /// The first successful backend write commits the replacement irrevocably.
+  /// Edits made while it was pending are replayed exactly once; later saves
+  /// use the ordinary serialized queue and do not change the import result.
+  /// A failed initial write leaves the live history unchanged apart from
+  /// concurrent edits. SharedPreferences acknowledges a platform write, not
+  /// crash-safe disk durability; later edit saves can also fail independently.
+  /// Only the history domain is notified for a successful replacement.
+  Future<void> replaceHistory(List<CalculationEntry> entries) async {
+    if (entries.length > _kHistoryCap) {
+      throw ArgumentError.value(
+        entries.length,
+        'entries',
+        'History is capped at $_kHistoryCap entries; the replacement was '
+            'refused',
+      );
+    }
+    final incoming = List<CalculationEntry>.of(entries);
+    final edits = <void Function(List<CalculationEntry>)>[];
+    _pendingHistoryReplacements.add(edits);
+    try {
+      await _enqueueHistoryWrite(() async {
+        final prefs = _prefs;
+        if (prefs == null) {
+          throw StateError('History storage is unavailable');
+        }
+        // Edits queued before this write begins belong in its one payload.
+        final count = edits.length;
+        final candidate = List<CalculationEntry>.of(incoming);
+        for (var i = 0; i < count; i++) {
+          edits[i](candidate);
+        }
+        await _writeHistory(
+          prefs,
+          jsonEncode(candidate.map((e) => e.toJson()).toList()),
+        );
+        // The successful write is the commit point. Apply only edits which
+        // arrived during that write, then detach before notifying listeners.
+        for (var i = count; i < edits.length; i++) {
+          edits[i](candidate);
+        }
+        _pendingHistoryReplacements.remove(edits);
+        history
+          ..clear()
+          ..addAll(candidate);
+        _notify({AppStateDomain.history});
+      });
+    } finally {
+      _pendingHistoryReplacements.remove(edits);
+    }
   }
 
   void _persistVariables() {
@@ -1426,6 +1556,9 @@ class AppState extends ChangeNotifier {
 
   void clearHistory() {
     history.clear();
+    for (final edits in _pendingHistoryReplacements) {
+      edits.add((target) => target.clear());
+    }
     _persistHistory();
     _notify({AppStateDomain.history});
   }
@@ -1486,9 +1619,6 @@ class AppState extends ChangeNotifier {
       imported.add('exact integer mode');
     }
     if (json['history'] is List) {
-      if (!merge) {
-        history.clear();
-      }
       final newEntries = <CalculationEntry>[];
       for (final raw in (json['history'] as List)) {
         if (raw is Map) {
@@ -1497,23 +1627,32 @@ class AppState extends ChangeNotifier {
           );
         }
       }
-      if (merge) {
-        final allEntries = [...history, ...newEntries];
-        // Deduplicate by expression + result, taking newest
-        final dedup = <String, CalculationEntry>{};
-        for (final e in allEntries) {
-          final key = '${e.expression}|${e.result}';
-          if (!dedup.containsKey(key) ||
-              dedup[key]!.lastModified.isBefore(e.lastModified)) {
-            dedup[key] = e;
+      void applyImport(List<CalculationEntry> target) {
+        if (merge) {
+          final allEntries = [...target, ...newEntries];
+          // Deduplicate by expression + result, taking newest
+          final dedup = <String, CalculationEntry>{};
+          for (final e in allEntries) {
+            final key = '${e.expression}|${e.result}';
+            if (!dedup.containsKey(key) ||
+                dedup[key]!.lastModified.isBefore(e.lastModified)) {
+              dedup[key] = e;
+            }
           }
+          final merged = dedup.values.toList();
+          merged.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+          target
+            ..clear()
+            ..addAll(merged.take(_kHistoryCap));
+        } else {
+          target
+            ..clear()
+            ..addAll(newEntries.take(_kHistoryCap));
         }
-        final merged = dedup.values.toList();
-        merged.sort((a, b) => b.lastModified.compareTo(a.lastModified));
-        history.clear();
-        history.addAll(merged.take(_kHistoryCap));
-      } else {
-        history.addAll(newEntries.take(_kHistoryCap));
+      }
+      applyImport(history);
+      for (final edits in _pendingHistoryReplacements) {
+        edits.add(applyImport);
       }
       _persistHistory();
       imported.add('${history.length} history entries');

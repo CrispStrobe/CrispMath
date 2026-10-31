@@ -41,6 +41,7 @@ import '../engine/unit_expression.dart';
 
 // Utils imports
 import '../services/engine_service.dart';
+import '../services/calculator_history_file.dart';
 import '../utils/exact_integer.dart';
 import '../utils/keyboard_input_handler.dart';
 import '../utils/latex_conversion_utils.dart';
@@ -71,7 +72,17 @@ class CalculatorScreen extends StatefulWidget {
       {super.key,
       this.onGoToGraphing,
       this.onGoToAnalysis,
-      this.onOpenCommands});
+      this.onOpenCommands,
+      this.engineOpForTesting,
+      this.historyFileOpenForTesting});
+
+  /// Overrides the engine operation boundary in deterministic widget tests.
+  @visibleForTesting
+  final Future<ComputedResult> Function(EngineOp)? engineOpForTesting;
+
+  /// Overrides the platform file chooser in deterministic widget tests.
+  @visibleForTesting
+  final Future<List<CalculationEntry>?> Function()? historyFileOpenForTesting;
 
   /// Optional: switch the main nav to the Graphing tab. Forwarded down
   /// to the VariableViewer's function-tile context menu.
@@ -91,6 +102,9 @@ class CalculatorScreen extends StatefulWidget {
 
 class CalculatorScreenState extends State<CalculatorScreen>
     with SingleTickerProviderStateMixin, RouteAware {
+  // Covers the whole picker/confirmation/write flow, even if this screen is
+  // disposed and recreated while the platform picker or a write is pending.
+  static bool _historyImportInProgress = false;
   final AppState _appState = AppState();
   final CalculatorEngine _engine = CalculatorEngine();
   final Map<String, String> _memory = {};
@@ -102,6 +116,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
   String _resultPreview = '';
   ResultEvidence? _resultEvidence;
   bool _justCalculated = false;
+  Completer<void>? _calculationPending;
+  int _inputRevision = 0;
+  int _submittedInputRevision = 0;
+  String _lastInputText = '';
   bool _showLatexHistory = false; // History display toggle
 
   /// Watchdog-installed message for the progress overlay. Populated by
@@ -480,6 +498,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
   }
 
   void _onInputChanged() {
+    if (_lastInputText != _latexController.text) {
+      _lastInputText = _latexController.text;
+      _inputRevision++;
+    }
+    _traceInput('math-changed');
     if (_justCalculated && _latexController.text.isNotEmpty) {
       final currentInput = _latexController.text.trim();
 
@@ -493,6 +516,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _latexController.removeListener(_onInputChanged);
         _latexController.clear();
         _latexController.insert('Ans$currentInput');
+        _lastInputText = _latexController.text;
         _latexController.addListener(_onInputChanged);
 
         setState(() => _justCalculated = false);
@@ -502,6 +526,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() => _justCalculated = false);
     }
 
+    _scheduleLivePreview();
+  }
+
+  void _scheduleLivePreview() {
     _livePreviewDebounce?.cancel();
     _livePreviewDebounce = Timer(const Duration(milliseconds: 150), () async {
       final preview = await _computeLivePreviewAsync();
@@ -566,6 +594,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   bool _handleKeyboardInput(KeyEvent event) {
     KeyboardInputHandler.debugKeyboardInput(event);
+
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      _traceInput(event is KeyDownEvent
+          ? 'keyboard-enter-down'
+          : 'keyboard-enter-other');
+    }
 
     // If another widget (e.g. the history-search TextField) has primary
     // focus, the user is typing INTO that widget — let the event pass
@@ -1119,7 +1154,34 @@ class CalculatorScreenState extends State<CalculatorScreen>
         .contains(value);
   }
 
+  // Only the draft submitted by this calculation may be consumed. Comparing
+  // revisions also protects edits that happen to return to the original text.
+  void _finishSubmittedInput({bool justCalculated = false, bool clearPreview = false}) {
+    _traceInput('finish-submitted-input');
+    if (_inputRevision != _submittedInputRevision) {
+      // A completed result can change Ans or variables used by the draft.
+      _scheduleLivePreview();
+      return;
+    }
+    if (clearPreview) _resultPreview = '';
+    if (justCalculated) _justCalculated = true;
+    _latexController.clear();
+  }
+
   Future<void> _calculate(String expression) async {
+    _traceInput('calculate-called', expression: expression);
+    // Preserve submission order while keeping the shared result evidence
+    // isolated. Capture the draft revision now, not when a queued run starts.
+    final inputRevision = _inputRevision;
+    while (_calculationPending != null) {
+      _traceInput('calculate-waiting', expression: expression);
+      await _calculationPending!.future;
+      if (!mounted) return;
+    }
+    final pending = Completer<void>();
+    _calculationPending = pending;
+    _submittedInputRevision = inputRevision;
+    _traceInput('calculate-started', expression: expression);
     _resultEvidence = null;
     if (kDebugMode) debugPrint('CALC: "$expression"');
     try {
@@ -1176,6 +1238,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         debugPrint('CALC: pre-inline-deriv converted="$converted"');
       }
       converted = await _expandInlineDerivatives(converted);
+      if (!mounted) return;
       if (_kVerboseCalc) {
         debugPrint('CALC: post-inline-deriv converted="$converted"');
       }
@@ -1207,6 +1270,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           fallback: () => _engine.evaluate(cond),
         ),
       );
+      if (!mounted) return;
       if (ifFolded != null) {
         converted = ifFolded;
       }
@@ -1225,6 +1289,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           fallback: () => _engine.evaluate(cond),
         ),
       );
+      if (!mounted) return;
       if (pwFolded != null) {
         converted = pwFolded;
       }
@@ -1237,11 +1302,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // evaluator would refuse it.
       final precisionResult = _engine.tryEvaluatePrecisionCall(converted);
       if (precisionResult != null) {
+        if (!mounted) return;
         setState(() {
           _appState.addHistoryEntry(expression, precisionResult);
-          _justCalculated = true;
+          _finishSubmittedInput(justCalculated: true);
         });
-        _latexController.clear();
         return;
       }
 
@@ -1250,11 +1315,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // unit symbols (which it would mis-parse as variables).
       final unitResult = UnitExpressionEvaluator.tryEvaluate(converted);
       if (unitResult != null) {
+        if (!mounted) return;
         setState(() {
           _appState.addHistoryEntry(expression, unitResult);
-          _justCalculated = true;
+          _finishSubmittedInput(justCalculated: true);
         });
-        _latexController.clear();
         return;
       }
 
@@ -1345,28 +1410,51 @@ class CalculatorScreenState extends State<CalculatorScreen>
         }
       }
 
+      if (!mounted) return;
+      _traceInput('calculate-result',
+          expression: expression, resultIsFour: result == '4');
       setState(() {
         _appState.addHistoryEntry(
             LatexConversionUtils.latexToReadable(expression), result,
             resultEvidence: _resultEvidence);
-        _resultPreview = '';
-        _justCalculated = true;
-        _latexController.clear();
+        _finishSubmittedInput(justCalculated: true, clearPreview: true);
       });
-
-      _calculatorFocusNode.requestFocus();
     } on MissingAnsException {
+      if (!mounted) return;
       setState(() {
         _appState.addHistoryEntry(expression, 'Error: No Ans in memory');
-        _resultPreview = '';
-        _justCalculated = true;
-        _latexController.clear();
+        _finishSubmittedInput(justCalculated: true, clearPreview: true);
       });
     } catch (e) {
+      _traceInput('calculate-error', expression: expression);
       if (kDebugMode) debugPrint('CALC: error: $e');
+      if (!mounted) return;
       setState(() =>
           _appState.addHistoryEntry(expression, 'Error: ${e.toString()}'));
+    } finally {
+      _traceInput('calculate-finished', expression: expression);
+      _calculationPending = null;
+      pending.complete();
     }
+  }
+
+  void _traceInput(String stage, {String? expression, bool? resultIsFour}) {
+    if (!calculatorInputTraceEnabled) return;
+    traceCalculatorInput({
+      'stage': stage,
+      'mathLength': _latexController.text.length,
+      'mathIsTarget': _latexController.text == '2+2',
+      'expressionLength': expression?.length,
+      'expressionIsTarget': expression == '2+2',
+      'resultIsFour': resultIsFour,
+      'calculatorPrimaryFocus': _calculatorFocusNode.hasPrimaryFocus,
+      'otherPrimaryFocus': FocusManager.instance.primaryFocus != null &&
+          !_calculatorFocusNode.hasPrimaryFocus,
+      'inputRevision': _inputRevision,
+      'submittedRevision': _submittedInputRevision,
+      'pending': _calculationPending != null,
+      'mounted': mounted,
+    });
   }
 
   bool _isFunctionCall(String s, String name) {
@@ -1409,7 +1497,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, 'Error: all Y slots are full');
-        _latexController.clear();
+        _finishSubmittedInput();
       });
       return;
     }
@@ -1419,8 +1507,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
         originalExpression,
         'Stored Y${slot + 1} ($name): $body',
       );
-      _justCalculated = true;
-      _latexController.clear();
+      _finishSubmittedInput(justCalculated: true);
     });
   }
 
@@ -1473,14 +1560,13 @@ class CalculatorScreenState extends State<CalculatorScreen>
         setState(() {
           _appState.addHistoryEntry(
               originalExpression, "Stored $name = $normalizedValue");
-          _justCalculated = true;
-          _latexController.clear();
+          _finishSubmittedInput(justCalculated: true);
         });
       } else {
         setState(() {
           _appState.addHistoryEntry(
               originalExpression, "Error: Could not evaluate $valueExpression");
-          _latexController.clear();
+          _finishSubmittedInput();
         });
       }
     } on MissingAnsException {
@@ -1489,7 +1575,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, "Error: Invalid assignment");
-        _latexController.clear();
+        _finishSubmittedInput();
       });
     }
   }
@@ -1517,8 +1603,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     setState(() {
       _appState.addHistoryEntry(
           originalExpression, 'Defined $name(${params.join(', ')})');
-      _justCalculated = true;
-      _latexController.clear();
+      _finishSubmittedInput(justCalculated: true);
     });
     return true;
   }
@@ -1539,8 +1624,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           setState(() {
             _appState.addHistoryEntry(
                 originalExpression, "Stored Y${functionIndex + 1}");
-            _justCalculated = true;
-            _latexController.clear();
+            _finishSubmittedInput(justCalculated: true);
           });
         } else {
           setState(() => _appState.addHistoryEntry(
@@ -1556,8 +1640,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
           setState(() {
             _appState.addHistoryEntry(
                 originalExpression, 'Stored Y${functionIndex + 1} (F → Y)');
-            _justCalculated = true;
-            _latexController.clear();
+            _finishSubmittedInput(justCalculated: true);
           });
         } else {
           setState(() => _appState.addHistoryEntry(
@@ -1568,7 +1651,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       setState(() {
         _appState.addHistoryEntry(
             originalExpression, "Error: Invalid function definition");
-        _latexController.clear();
+        _finishSubmittedInput();
       });
     }
   }
@@ -1617,6 +1700,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       final result = await _runEngineOpMaybeAsync('solve', preprocessed,
           arg2: variable,
           fallback: () => _engine.solve(preprocessed, variable));
+      if (!mounted) return result;
 
       // Auto-bind (opt-in via Settings, default off): if the
       // solver returned exactly one numeric value, stash it into
@@ -1649,6 +1733,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // is otherwise irrelevant.
     for (final prefix in const ['d/dx(', 'diff(']) {
       while (true) {
+        if (!mounted) return s;
         final start = s.indexOf(prefix);
         if (start < 0) break;
         // Walk to find the matching close-paren of the prefix's `(`.
@@ -2499,7 +2584,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
     String? arg4,
     required String Function() fallback,
   }) async {
+    if (!mounted) return 'Error: cancelled';
     final operation = EngineOp(op, arg1, arg2, arg3, arg4);
+    final testOperation = widget.engineOpForTesting;
+    if (testOperation != null) {
+      final computed = await testOperation(operation);
+      _resultEvidence = computed.evidence;
+      return computed.value;
+    }
     if (!EngineService.shouldRunAsync(arg1)) {
       _engine.lastResultEvidence = null;
       final computed = describeEngineResult(_engine, operation, fallback());
@@ -2539,6 +2631,100 @@ class CalculatorScreenState extends State<CalculatorScreen>
     } else {
       _calculatorFocusNode.requestFocus();
     }
+  }
+
+  /// Save the visible history to a portable file.
+  Future<void> _saveHistoryToFile() async {
+    final t = WorkflowLocalizations.of(context);
+    try {
+      final path =
+          await CalculatorHistoryFile.save(List.of(_appState.history));
+      if (!mounted) return;
+      // A null path is a cancelled picker on native, and on web it means the
+      // bytes were handed to the browser as a download. Never claim a file
+      // exists when the platform did not confirm one.
+      if (path == null && !kIsWeb) return;
+      _toast(
+          context,
+          path == null
+              ? t.text(WorkflowLabel.historyFileUnsaved)
+              : t.text(WorkflowLabel.historyFileSaved));
+    } catch (error) {
+      if (!mounted) return;
+      _toast(context, t.text(WorkflowLabel.historyFileFailed, '$error'));
+    }
+  }
+
+  /// Replace the history with the contents of a portable history file.
+  Future<void> _openHistoryFromFile() async {
+    final t = WorkflowLocalizations.of(context);
+    if (_historyImportInProgress) {
+      _toast(context, t.text(WorkflowLabel.historyFileImportBusy));
+      return;
+    }
+    _historyImportInProgress = true;
+    try {
+      var confirmedHistory = List<CalculationEntry>.of(_appState.history);
+      final confirmed = await _confirmHistoryReplacement(t);
+      if (confirmed != true || !mounted) return;
+      final entries = await (widget.historyFileOpenForTesting ??
+          CalculatorHistoryFile.open)();
+      // Null is a cancelled picker; an invalid file throws instead, which
+      // leaves the current history untouched.
+      if (entries == null || !mounted) return;
+      while (true) {
+        // Wait for late calculations before deciding what will be replaced.
+        while (_calculationPending != null) {
+          await _calculationPending!.future;
+          if (!mounted) return;
+        }
+        if (listEquals(confirmedHistory, _appState.history)) break;
+        // The confirmation did not cover new results that appeared while the
+        // picker or a calculation was open. Ask again, and check again after
+        // the dialog, since the history could change while it is displayed.
+        confirmedHistory = List<CalculationEntry>.of(_appState.history);
+        if (await _confirmHistoryReplacement(t, changed: true) != true ||
+            !mounted) {
+          return;
+        }
+      }
+      await _appState.replaceHistory(entries);
+      if (!mounted) return;
+      setState(() {});
+      _toast(
+          context,
+          listEquals(entries, _appState.history)
+              ? t.text(WorkflowLabel.historyFileReplaced, '${entries.length}')
+              : t.text(WorkflowLabel.historyFileReplacedWithChanges));
+    } catch (error) {
+      if (!mounted) return;
+      _toast(context, t.text(WorkflowLabel.historyFileFailed, '$error'));
+    } finally {
+      _historyImportInProgress = false;
+    }
+  }
+
+  Future<bool?> _confirmHistoryReplacement(WorkflowLocalizations t,
+      {bool changed = false}) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.text(WorkflowLabel.openHistoryFile)),
+        content: Text(t.text(changed
+            ? WorkflowLabel.historyFileChangedNotice
+            : WorkflowLabel.historyFileReplaceNotice)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(AppLocalizations.of(context).cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(t.text(WorkflowLabel.openHistoryFile)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _confirmClearHistory() {
@@ -2662,17 +2848,17 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                 ),
                               ),
                               PopupMenuButton<String>(
-                                enabled: widget.onOpenCommands != null ||
-                                    _appState.history.isNotEmpty,
                                 tooltip: WorkflowLocalizations.of(context)
-                                    .text(WorkflowLabel.search),
-                                icon: Icon(_historySearchOpen
-                                    ? Icons.search_off : Icons.search, size: 20),
+                                    .text(WorkflowLabel.calculatorMenu),
                                 onSelected: (value) {
                                   if (value == 'commands') {
                                     widget.onOpenCommands?.call();
                                   } else if (value == 'history') {
                                     _toggleHistorySearch();
+                                  } else if (value == 'save-history') {
+                                    _saveHistoryToFile();
+                                  } else if (value == 'open-history') {
+                                    _openHistoryFromFile();
                                   } else if (value == 'clear') {
                                     _confirmClearHistory();
                                   }
@@ -2691,11 +2877,26 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                           .searchHistory),
                                     ),
                                     PopupMenuItem(
+                                      value: 'save-history',
+                                      child: Text(WorkflowLocalizations.of(context)
+                                          .text(WorkflowLabel.saveHistoryFile)),
+                                    ),
+                                  ],
+                                  // Loading is offered even with an empty
+                                  // history: that is exactly when a saved file
+                                  // is wanted, and it keeps the menu non-empty
+                                  // on a fresh install.
+                                  PopupMenuItem(
+                                    value: 'open-history',
+                                    child: Text(WorkflowLocalizations.of(context)
+                                        .text(WorkflowLabel.openHistoryFile)),
+                                  ),
+                                  if (_appState.history.isNotEmpty)
+                                    PopupMenuItem(
                                       value: 'clear',
                                       child: Text(AppLocalizations.of(context)
                                           .clearHistory),
                                     ),
-                                  ],
                                 ],
                               ),
                               // Round 101 (P6): help-mode toggle. Filled icon
@@ -2978,6 +3179,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
                     controller: _latexController,
                     onResetFocus: _resetFocus,
                     onEvaluate: () => _onButtonPressed('EXE'),
+                    onTextSubmitted: () {
+                      _traceInput('screen-text-submitted');
+                      if (_latexController.text.isNotEmpty) {
+                        _calculate(_latexController.text);
+                      }
+                    },
                     resultPreview: _resultPreview,
                   ),
 

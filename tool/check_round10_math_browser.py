@@ -241,7 +241,18 @@ async def check_calculator(args):
                     await result.wait_for(state='attached')
                     await expect(result).to_have_count(1)
                     await expect(result).to_have_accessible_name(label)
-                    wrong_label=label.replace('z = 4','z = 5')
+                    # This checker also runs the round-eleven system, whose
+                    # correct z differs. Mutate the result, not the source
+                    # expression, and prove the reference rejects the control.
+                    wrong_result,replacements=re.subn(r'(\bz\s*=\s*)[^,{}]+',r'\g<1>5',entry['r'])
+                    assert replacements==1 and wrong_result!=entry['r'],entry['r']
+                    try:
+                        validate_linsolve(wrong_result)
+                    except AssertionError:
+                        pass
+                    else:
+                        raise AssertionError('Wrong-answer control must fail the reference')
+                    wrong_label=f"{entry['e']} = {wrong_result}"
                     assert wrong_label != label,label
                     await expect(page.get_by_role('button',name=wrong_label,exact=True)).to_have_count(0)
                     box=await result.bounding_box()

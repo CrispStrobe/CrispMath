@@ -120,10 +120,10 @@ async def check(args):
                 await page.get_by_role('textbox', name='Value', exact=True).wait_for(timeout=60000)
                 print('Unit converter opened through command search', flush=True)
                 await page.get_by_role('button', name='Close', exact=True).click()
-                # The calculator's search menu owns both history and command
-                # search; it replaces the former full-width shell button.
+                # The calculator overflow menu owns command search without
+                # spending a full-width shell row.
                 await page.keyboard.press('Control+1')
-                await page.get_by_role('button', name='Search', exact=True).click()
+                await page.get_by_role('button', name='Calculator menu', exact=True).click()
                 await page.locator('[aria-label="Search commands"]').click()
                 await page.get_by_role('textbox', name='Find a command').fill('notepad')
                 await page.get_by_text(re.compile(r'^Notepad\s+Open Notepad')).wait_for()

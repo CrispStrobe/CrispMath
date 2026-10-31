@@ -52,10 +52,17 @@ async def check(args):
                         await expect(editor).to_have_value('')
                         await next_frames(page)
                         await expect(editor).to_have_value('')
+                        # Subsequent fill/Enter must reach Flutter's active text
+                        # client, not only a detached browser-side input.
+                        await expect(editor).to_be_focused()
 
-                    await editor.fill('Ans/2')
+                    # Use real key events: a DOM value alone did not prove
+                    # that Flutter received text after a previous submission.
+                    await real_click(page, editor)
+                    await page.keyboard.type('Ans/2', delay=20)
                     await submit('Ans/2', 'Error: No Ans in memory')
-                    await editor.fill('24')
+                    await real_click(page, editor)
+                    await page.keyboard.type('24', delay=20)
                     await submit('24', '24')
                     for operator, expression, result in [
                         ('/', 'Ans/2', '12'),
@@ -67,7 +74,8 @@ async def check(args):
                         await next_frames(page)
                         await submit(expression, result)
                     # A single batched edit must behave like the two keystrokes.
-                    await editor.fill('/2')
+                    await real_click(page, editor)
+                    await page.keyboard.type('/2', delay=20)
                     await submit('Ans/2', '13')
                     await page.screenshot(path=str(output / f'chaining-{width}.png'))
                     assert not errors, errors

@@ -74,9 +74,11 @@ void main() {
     expect(AppState().history, isEmpty);
     expect(find.widgetWithText(TextButton, 'Search commands'), findsNothing,
         reason: 'the palette trigger must not spend a line above the body');
-    final trigger = find.byTooltip('Search');
+    final trigger = find.byTooltip('Calculator menu');
     expect(trigger, findsOneWidget,
-        reason: 'one search control must also work with empty history');
+        reason: 'the overflow menu must also work with empty history');
+    expect(find.descendant(of: trigger, matching: find.byIcon(Icons.more_vert)),
+        findsOneWidget);
     expect(find.byTooltip('Search commands'), findsNothing);
     await tester.tap(trigger);
     await tester.pumpAndSettle();
@@ -88,7 +90,7 @@ void main() {
     AppState().addHistoryEntry('1+1', '2');
     await tester.pumpAndSettle();
     expect(find.byTooltip('Clear History'), findsNothing,
-        reason: 'clear belongs in the search menu, not a permanent row');
+        reason: 'clear belongs in the calculator menu, not a permanent row');
     await tester.tap(trigger);
     await tester.pumpAndSettle();
     expect(find.text('Clear History'), findsOneWidget);
@@ -105,5 +107,55 @@ void main() {
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     expect(field, findsNothing);
+  });
+
+  testWidgets('calculator menu saves and loads history without a glyph row',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'crisp.onboardingDismissed': true});
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.binding.setSurfaceSize(null);
+      await EngineService.shutdownForTest();
+    });
+    await AppState().load(force: true);
+    await tester.pumpWidget(const CrispMathApp());
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    final trigger = find.byTooltip('Calculator menu');
+    await tester.tap(trigger);
+    await tester.pumpAndSettle();
+    expect(find.text('Load history'), findsOneWidget,
+        reason: 'loading stays reachable on a fresh install');
+    expect(find.text('Save history'), findsNothing,
+        reason: 'there is nothing to save yet');
+    expect(find.text('Clear History'), findsNothing);
+    await tester.tapAt(const Offset(10, 700));
+    await tester.pumpAndSettle();
+    AppState().addHistoryEntry('1+1', '2');
+    await tester.pumpAndSettle();
+    await tester.tap(trigger);
+    await tester.pumpAndSettle();
+    expect(find.text('Save history'), findsOneWidget);
+    expect(find.text('Load history'), findsOneWidget);
+    expect(find.text('Clear History'), findsOneWidget);
+    expect(find.text('Search history'), findsOneWidget);
+    await tester.tap(find.text('Load history'));
+    await tester.pumpAndSettle();
+    expect(
+        find.text(
+            'Loading replaces the current history. Save it first if you want to keep it.'),
+        findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(AppState().history.single.result, '2');
+    await tester.tap(trigger);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear History'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(AppState().history.single.result, '2');
   });
 }

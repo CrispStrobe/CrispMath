@@ -30,6 +30,17 @@ enum WorkflowLabel {
   searchCommands,
   searchDocument,
   search,
+  calculatorMenu,
+  saveHistoryFile,
+  openHistoryFile,
+  historyFileSaved,
+  historyFileUnsaved,
+  historyFileReplaced,
+  historyFileReplacedWithChanges,
+  historyFileFailed,
+  historyFileReplaceNotice,
+  historyFileChangedNotice,
+  historyFileImportBusy,
   resultDetails,
   resultExact,
   resultApproximate,
@@ -124,6 +135,23 @@ class WorkflowLocalizations {
       WorkflowLabel.searchCommands: 'Search commands',
       WorkflowLabel.searchDocument: 'Search document',
       WorkflowLabel.search: 'Search',
+      WorkflowLabel.calculatorMenu: 'Calculator menu',
+      WorkflowLabel.saveHistoryFile: 'Save history',
+      WorkflowLabel.openHistoryFile: 'Load history',
+      WorkflowLabel.historyFileSaved: 'History saved.',
+      WorkflowLabel.historyFileUnsaved:
+          'The download may have started. Check your downloads.',
+      WorkflowLabel.historyFileReplaced:
+          'History replaced with {value} entries.',
+      WorkflowLabel.historyFileReplacedWithChanges:
+          'History loaded; newer changes were kept.',
+      WorkflowLabel.historyFileFailed: 'Could not use that history file: {value}',
+      WorkflowLabel.historyFileReplaceNotice:
+          'Loading replaces the current history. Save it first if you want to keep it.',
+      WorkflowLabel.historyFileChangedNotice:
+          'History changed while loading. Loading will also replace the new entries. Continue?',
+      WorkflowLabel.historyFileImportBusy:
+          'A history file is already being loaded.',
 
       WorkflowLabel.calculationProgress: 'Updating results: {value}',
       WorkflowLabel.cancelCalculation: 'Cancel calculation',
@@ -217,6 +245,24 @@ class WorkflowLocalizations {
       WorkflowLabel.searchCommands: 'Befehle suchen',
       WorkflowLabel.searchDocument: 'Dokument durchsuchen',
       WorkflowLabel.search: 'Suchen',
+      WorkflowLabel.calculatorMenu: 'Rechner-Menü',
+      WorkflowLabel.saveHistoryFile: 'Verlauf speichern',
+      WorkflowLabel.openHistoryFile: 'Verlauf laden',
+      WorkflowLabel.historyFileSaved: 'Verlauf gespeichert.',
+      WorkflowLabel.historyFileUnsaved:
+          'Der Download wurde möglicherweise gestartet. Prüfen Sie Ihre Downloads.',
+      WorkflowLabel.historyFileReplaced:
+          'Verlauf durch {value} Einträge ersetzt.',
+      WorkflowLabel.historyFileReplacedWithChanges:
+          'Verlauf geladen; neuere Änderungen wurden beibehalten.',
+      WorkflowLabel.historyFileFailed:
+          'Diese Verlaufsdatei konnte nicht verwendet werden: {value}',
+      WorkflowLabel.historyFileReplaceNotice:
+          'Laden ersetzt den aktuellen Verlauf. Speichern Sie ihn vorher, wenn Sie ihn behalten wollen.',
+      WorkflowLabel.historyFileChangedNotice:
+          'Der Verlauf wurde während des Ladens geändert. Auch die neuen Einträge werden ersetzt. Fortfahren?',
+      WorkflowLabel.historyFileImportBusy:
+          'Eine Verlaufsdatei wird bereits geladen.',
 
       WorkflowLabel.calculationProgress:
           'Ergebnisse werden aktualisiert: {value}',
@@ -313,6 +359,24 @@ class WorkflowLocalizations {
       WorkflowLabel.searchCommands: 'Rechercher des commandes',
       WorkflowLabel.searchDocument: 'Rechercher dans le document',
       WorkflowLabel.search: 'Rechercher',
+      WorkflowLabel.calculatorMenu: 'Menu de la calculatrice',
+      WorkflowLabel.saveHistoryFile: 'Enregistrer l’historique',
+      WorkflowLabel.openHistoryFile: 'Charger l’historique',
+      WorkflowLabel.historyFileSaved: 'Historique enregistré.',
+      WorkflowLabel.historyFileUnsaved:
+          'Le téléchargement a peut-être commencé. Vérifiez vos téléchargements.',
+      WorkflowLabel.historyFileReplaced:
+          'Historique remplacé par {value} entrées.',
+      WorkflowLabel.historyFileReplacedWithChanges:
+          'Historique chargé ; les modifications récentes ont été conservées.',
+      WorkflowLabel.historyFileFailed:
+          'Fichier d’historique inutilisable : {value}',
+      WorkflowLabel.historyFileReplaceNotice:
+          'Le chargement remplace l’historique actuel. Enregistrez-le d’abord si vous voulez le conserver.',
+      WorkflowLabel.historyFileChangedNotice:
+          'L’historique a changé pendant le chargement. Les nouvelles entrées seront aussi remplacées. Continuer ?',
+      WorkflowLabel.historyFileImportBusy:
+          'Un fichier d’historique est déjà en cours de chargement.',
 
       WorkflowLabel.calculationProgress: 'Mise à jour des résultats : {value}',
       WorkflowLabel.cancelCalculation: 'Annuler le calcul',
@@ -408,6 +472,24 @@ class WorkflowLocalizations {
       WorkflowLabel.searchCommands: 'Buscar comandos',
       WorkflowLabel.searchDocument: 'Buscar en el documento',
       WorkflowLabel.search: 'Buscar',
+      WorkflowLabel.calculatorMenu: 'Menú de la calculadora',
+      WorkflowLabel.saveHistoryFile: 'Guardar historial',
+      WorkflowLabel.openHistoryFile: 'Cargar historial',
+      WorkflowLabel.historyFileSaved: 'Historial guardado.',
+      WorkflowLabel.historyFileUnsaved:
+          'Es posible que haya comenzado la descarga. Revise sus descargas.',
+      WorkflowLabel.historyFileReplaced:
+          'Historial reemplazado por {value} entradas.',
+      WorkflowLabel.historyFileReplacedWithChanges:
+          'Historial cargado; se conservaron los cambios posteriores.',
+      WorkflowLabel.historyFileFailed:
+          'No se pudo usar ese archivo de historial: {value}',
+      WorkflowLabel.historyFileReplaceNotice:
+          'Cargar reemplaza el historial actual. Guárdelo antes si quiere conservarlo.',
+      WorkflowLabel.historyFileChangedNotice:
+          'El historial cambió durante la carga. Las nuevas entradas también se reemplazarán. ¿Continuar?',
+      WorkflowLabel.historyFileImportBusy:
+          'Ya se está cargando un archivo de historial.',
 
       WorkflowLabel.calculationProgress: 'Actualizando resultados: {value}',
       WorkflowLabel.cancelCalculation: 'Cancelar cálculo',
