@@ -3,7 +3,16 @@
 Living worklist. `[ ]` pending · `[~]` in-progress · `[x]` done.
 Completed items with details are in `HISTORY.md`.
 
-## Current handoff — 5 October 2026
+## Current app status — 31 October 2026
+
+App Store Connect reports 1.2.0 (25) VALID and assigned to Internal Testers
+for source 5d50e367207cc890fa4be048d16057a52a0bf891; see the
+[signed upload and verification](https://github.com/CrispStrobe/CrispMath/actions/runs/41192688325).
+This is not physical-device testing or App Review approval. iOS upload dispatches
+must supply a matching successful Feature validation run ID; tag pushes cannot
+provide it, so dispatch against the tag rather than relying on a tag push.
+
+## Prior handoff — 5 October 2026
 
 Application main 4f45017 has green post-merge CI, including Feature validation,
 all platforms and Pages. Approved external TestFlight remains 1.2.0 (23),
