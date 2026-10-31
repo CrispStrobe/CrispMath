@@ -19,6 +19,7 @@ import 'package:crisp_math/screens/graphing_screen.dart';
 import 'package:crisp_math/screens/sudoku_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'gallery_geometry.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -46,6 +47,18 @@ void main() {
         resultEvidence: integral.evidence);
     final dispatcher = NotepadDispatcher(formatNumber: state.formatNumber);
     final galleryKey = GlobalKey();
+    if (Platform.isMacOS) {
+      // The hosted Mac runner exposes a small display, and macOS clamps a
+      // window's height to the visible frame, so the app window cannot reach
+      // the 1280x800 logic size that Apple's 2560x1600 upload needs: asking
+      // for it produced a 1280x656 content view and 2560x1312 images. Lay the
+      // gallery out at the intended size explicitly instead of inheriting
+      // whatever the display allows, and capture its render tree at 2x.
+      tester.view.devicePixelRatio = 2.0;
+      tester.view.physicalSize = _macGalleryPixels;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
     await tester.pumpWidget(RepaintBoundary(
         key: galleryKey, child: const CrispMathApp()));
     if (Platform.isMacOS) {
@@ -65,6 +78,12 @@ void main() {
       final image = await boundary.toImage(pixelRatio: 2);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       expect(bytes, isNotNull);
+      // Fail here with the measured size rather than in the upload verifier,
+      // which only sees the PNG the run already wrote.
+      expect(image.width, _macGalleryPixels.width.toInt(),
+          reason: 'Mac gallery capture width must be 2560 pixels');
+      expect(image.height, _macGalleryPixels.height.toInt(),
+          reason: 'Mac gallery capture height must be 1600 pixels');
       desktopImages.add({'name': name,
         'pngBase64': base64Encode(bytes!.buffer.asUint8List()),
         'width': image.width, 'height': image.height});
@@ -102,8 +121,18 @@ void main() {
     for (final previous in preserved.entries) {
       expect(state.notepadDocuments[previous.key], same(previous.value));
     }
-    expect(find.byTooltip('View linked graph'), findsOneWidget);
     await screenshot('connected-worksheet');
+    // Wide layouts put the worksheet's graph link on the row; phone chrome
+    // folds the row actions into the document menu. Accept either, so the
+    // capture checks the affordance this layout actually offers.
+    if (find.byTooltip('View linked graph').evaluate().isEmpty) {
+      await tester.tap(find.byTooltip('Document menu'));
+      await settle();
+      expect(find.text('View linked graph'), findsOneWidget,
+          reason: 'the document menu must still offer the worksheet graph link');
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await settle();
+    }
     await tester.tap(find.text('Graphing').first);
     await settle();
     Future<void> populatedGraph({int minimumCurves = 1}) async {
@@ -302,6 +331,41 @@ void main() {
     }
     await tester.ensureVisible(find.byType(SudokuGrid));
     await settle();
+    // A mounted caption is not a pictured caption: assert the board and the
+    // reason for the current step are both inside the frame we publish.
+    final screenRect = tester.view.physicalSize / tester.view.devicePixelRatio;
+    List<Rect> clipsFor(Finder target) {
+      final clips = <Rect>[Offset.zero & screenRect];
+      final scrollables = find.ancestor(
+          of: target, matching: find.byType(Scrollable));
+      for (final element in scrollables.evaluate()) {
+        clips.add(tester.getRect(find.byElementPredicate(
+            (candidate) => identical(candidate, element))));
+      }
+      return clips;
+    }
+    final grid = find.byType(SudokuGrid);
+    final gridRect = tester.getRect(grid);
+    final captionRect = tester.getRect(lockedCaption);
+    final gridClips = clipsFor(grid);
+    final captionClips = clipsFor(lockedCaption);
+    final bothVisible = fullyVisible(gridRect, gridClips) &&
+        fullyVisible(captionRect, captionClips);
+    expect(bothVisible, isTrue,
+        reason: 'Solver step capture must show the board and its explanation; '
+            'grid=$gridRect caption=$captionRect '
+            'gridClips=$gridClips captionClips=$captionClips');
+    // reportData is only created lazily by takeScreenshot, which the macOS
+    // render-tree capture never calls: initialize it here.
+    final report = binding.reportData ?? <String, dynamic>{};
+    binding.reportData = report;
+    report['sudokuStepViewport'] = {
+      'grid': _rectToJson(gridRect),
+      'caption': _rectToJson(captionRect),
+      'gridClips': gridClips.map(_rectToJson).toList(),
+      'captionClips': captionClips.map(_rectToJson).toList(),
+      'bothVisible': bothVisible,
+    };
     await screenshot('sudoku-solver-explained-step');
     await tester.pageBack();
     await settle();
@@ -365,3 +429,14 @@ void main() {
     binding.reportData!['sudokuExplainedStep'] = sudokuCaption;
   });
 }
+
+Map<String, double> _rectToJson(Rect rect) => {
+      'left': rect.left,
+      'top': rect.top,
+      'width': rect.width,
+      'height': rect.height,
+    };
+
+/// Apple's 2560x1600 upload size, expressed as the physical pixels the test
+/// view is configured with at devicePixelRatio 2.
+const Size _macGalleryPixels = Size(2560, 1600);

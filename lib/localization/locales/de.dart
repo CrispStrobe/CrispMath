@@ -958,6 +958,8 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get sudokuGenerateButton => 'Erzeugen';
   @override
+  String get sudokuGenerateSection => 'Schwierigkeit für neue Rätsel';
+  @override
   String get sudokuDifficultyEasy => 'Leicht';
   @override
   String get sudokuDifficultyMedium => 'Mittel';
@@ -1053,8 +1055,13 @@ class DeLocalizations implements AppLocalizations {
   @override
   String sudokuExplainStats(
           int naked, int hidden, int guesses, int backtracks, int depth) =>
-      'Nackte Singles $naked · Versteckte Singles $hidden · Annahmen '
-      '$guesses · Backtracks $backtracks · Max. Tiefe $depth';
+      [
+        if (naked > 0) 'Nackte Singles $naked',
+        if (hidden > 0) 'Versteckte Singles $hidden',
+        if (guesses > 0) 'Annahmen $guesses',
+        if (backtracks > 0) 'Backtracks $backtracks',
+        if (depth > 0) 'Max. Tiefe $depth',
+      ].join(' · ');
   @override
   String get sudokuExplainLogicOnly =>
       'Allein durch Logik gelöst: keine Annahme nötig.';
@@ -1092,8 +1099,12 @@ class DeLocalizations implements AppLocalizations {
   @override
   String sudokuExplainEliminations(
           int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
-      'Käfigsummen $cages · Gesperrte Kandidaten $locked · Nackte '
-      'Paare/Tripel $nakedSubsets · Versteckte Paare/Tripel $hiddenSubsets';
+      [
+        if (cages > 0) 'Käfigsummen $cages',
+        if (locked > 0) 'Gesperrte Kandidaten $locked',
+        if (nakedSubsets > 0) 'Nackte Paare/Tripel $nakedSubsets',
+        if (hiddenSubsets > 0) 'Versteckte Paare/Tripel $hiddenSubsets',
+      ].join(' · ');
   @override
   String get sudokuSearchTreeTitle => 'Suchbaum';
   @override

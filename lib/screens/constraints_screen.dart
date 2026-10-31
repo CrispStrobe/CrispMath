@@ -49,8 +49,20 @@ part 'constraints/cryptarithm_result.dart';
 part 'constraints/flatzinc_tab.dart';
 part 'constraints/explain.dart';
 
+/// Solve boundary for the Magic square generator: emits the DSL program for
+/// an order-N square and returns the solver's first solution. Overridable in
+/// widget tests so a failed or empty solve can be exercised without needing
+/// an unsatisfiable magic-square program.
+typedef MagicSquareSolve = Future<DiophantineResult> Function(
+    String program, {int maxSolutions});
+
 class ConstraintsScreen extends StatefulWidget {
-  const ConstraintsScreen({super.key});
+  const ConstraintsScreen({super.key, this.magicSquareSolveForTesting});
+
+  /// Overrides the CSP solve used by the Magic square generator in
+  /// deterministic widget tests. Null in production.
+  @visibleForTesting
+  final MagicSquareSolve? magicSquareSolveForTesting;
 
   @override
   State<ConstraintsScreen> createState() => _ConstraintsScreenState();
@@ -107,12 +119,14 @@ class _ConstraintsScreenState extends State<ConstraintsScreen>
       ),
       body: TabBarView(
         controller: _tabs,
-        children: const [
-          _DiophantineTab(),
-          _CryptarithmTab(),
-          _DslTab(),
-          _FlatZincTab(),
-          _MagicSquareTab(),
+        children: [
+          const _DiophantineTab(),
+          const _CryptarithmTab(),
+          const _DslTab(),
+          const _FlatZincTab(),
+          _MagicSquareTab(
+            solveForTesting: widget.magicSquareSolveForTesting,
+          ),
         ],
       ),
     );
