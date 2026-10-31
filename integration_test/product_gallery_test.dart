@@ -121,8 +121,18 @@ void main() {
     for (final previous in preserved.entries) {
       expect(state.notepadDocuments[previous.key], same(previous.value));
     }
-    expect(find.byTooltip('View linked graph'), findsOneWidget);
     await screenshot('connected-worksheet');
+    // Wide layouts put the worksheet's graph link on the row; phone chrome
+    // folds the row actions into the document menu. Accept either, so the
+    // capture checks the affordance this layout actually offers.
+    if (find.byTooltip('View linked graph').evaluate().isEmpty) {
+      await tester.tap(find.byTooltip('Document menu'));
+      await settle();
+      expect(find.text('View linked graph'), findsOneWidget,
+          reason: 'the document menu must still offer the worksheet graph link');
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await settle();
+    }
     await tester.tap(find.text('Graphing').first);
     await settle();
     Future<void> populatedGraph({int minimumCurves = 1}) async {
@@ -345,7 +355,11 @@ void main() {
         reason: 'Solver step capture must show the board and its explanation; '
             'grid=$gridRect caption=$captionRect '
             'gridClips=$gridClips captionClips=$captionClips');
-    binding.reportData!['sudokuStepViewport'] = {
+    // reportData is only created lazily by takeScreenshot, which the macOS
+    // render-tree capture never calls: initialize it here.
+    final report = binding.reportData ?? <String, dynamic>{};
+    binding.reportData = report;
+    report['sudokuStepViewport'] = {
       'grid': _rectToJson(gridRect),
       'caption': _rectToJson(captionRect),
       'gridClips': gridClips.map(_rectToJson).toList(),
