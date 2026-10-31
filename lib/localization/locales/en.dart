@@ -946,6 +946,8 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get sudokuGenerateButton => 'Generate';
   @override
+  String get sudokuGenerateSection => 'New puzzle difficulty';
+  @override
   String get sudokuDifficultyEasy => 'Easy';
   @override
   String get sudokuDifficultyMedium => 'Medium';
@@ -1037,8 +1039,13 @@ class EnLocalizations implements AppLocalizations {
   @override
   String sudokuExplainStats(
           int naked, int hidden, int guesses, int backtracks, int depth) =>
-      'Naked singles $naked · Hidden singles $hidden · Guesses $guesses · '
-      'Backtracks $backtracks · Max depth $depth';
+      [
+        if (naked > 0) 'Naked singles $naked',
+        if (hidden > 0) 'Hidden singles $hidden',
+        if (guesses > 0) 'Guesses $guesses',
+        if (backtracks > 0) 'Backtracks $backtracks',
+        if (depth > 0) 'Max depth $depth',
+      ].join(' · ');
   @override
   String get sudokuExplainLogicOnly =>
       'Solved by logic alone: no guessing needed.';
@@ -1074,8 +1081,12 @@ class EnLocalizations implements AppLocalizations {
   @override
   String sudokuExplainEliminations(
           int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
-      'Cage sums $cages · Locked candidates $locked · Naked pairs/triples '
-      '$nakedSubsets · Hidden pairs/triples $hiddenSubsets';
+      [
+        if (cages > 0) 'Cage sums $cages',
+        if (locked > 0) 'Locked candidates $locked',
+        if (nakedSubsets > 0) 'Naked pairs/triples $nakedSubsets',
+        if (hiddenSubsets > 0) 'Hidden pairs/triples $hiddenSubsets',
+      ].join(' · ');
   @override
   String get sudokuSearchTreeTitle => 'Search tree';
   @override

@@ -493,6 +493,11 @@ abstract class AppLocalizations {
   String get sudokuSpeedMed;
   String get sudokuSpeedFast;
   String get sudokuGenerateButton;
+
+  /// Heading of the generator block. The difficulty chips below it are
+  /// a setting for the *next* generated puzzle, not a description of the
+  /// preset currently loaded.
+  String get sudokuGenerateSection;
   String get sudokuDifficultyEasy;
   String get sudokuDifficultyMedium;
   String get sudokuDifficultyHard;
@@ -535,6 +540,9 @@ abstract class AppLocalizations {
   String sudokuStepContradictionUnit(String unit, int value);
   String sudokuStepBacktrack(String cell);
   String get sudokuStepSolved;
+  /// Placement techniques that actually occurred. Zero counts are
+  /// omitted (`''` when none occurred) so an easy solve does not read
+  /// "Guesses 0 · Backtracks 0".
   String sudokuExplainStats(
       int naked, int hidden, int guesses, int backtracks, int depth);
   String get sudokuExplainLogicOnly;
@@ -546,6 +554,8 @@ abstract class AppLocalizations {
   String sudokuStepHiddenSubset(
       int size, String digits, String unit, String cells, int removed);
   String sudokuStepContradictionCage(int sum);
+  /// Candidate-elimination techniques that actually occurred. Zero
+  /// counts are omitted (`''` when none occurred).
   String sudokuExplainEliminations(
       int cages, int locked, int nakedSubsets, int hiddenSubsets);
   String get sudokuSearchTreeTitle;

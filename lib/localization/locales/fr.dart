@@ -962,6 +962,8 @@ class FrLocalizations implements AppLocalizations {
   @override
   String get sudokuGenerateButton => 'Générer';
   @override
+  String get sudokuGenerateSection => 'Difficulté des nouveaux puzzles';
+  @override
   String get sudokuDifficultyEasy => 'Facile';
   @override
   String get sudokuDifficultyMedium => 'Moyen';
@@ -1056,8 +1058,13 @@ class FrLocalizations implements AppLocalizations {
   @override
   String sudokuExplainStats(
           int naked, int hidden, int guesses, int backtracks, int depth) =>
-      'Singletons nus $naked · Singletons cachés $hidden · Hypothèses '
-      '$guesses · Retours arrière $backtracks · Profondeur max $depth';
+      [
+        if (naked > 0) 'Singletons nus $naked',
+        if (hidden > 0) 'Singletons cachés $hidden',
+        if (guesses > 0) 'Hypothèses $guesses',
+        if (backtracks > 0) 'Retours arrière $backtracks',
+        if (depth > 0) 'Profondeur max $depth',
+      ].join(' · ');
   @override
   String get sudokuExplainLogicOnly =>
       'Résolu par la logique seule : aucune hypothèse nécessaire.';
@@ -1095,8 +1102,12 @@ class FrLocalizations implements AppLocalizations {
   @override
   String sudokuExplainEliminations(
           int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
-      'Sommes de cage $cages · Candidats verrouillés $locked · Paires/'
-      'triplets nus $nakedSubsets · Paires/triplets cachés $hiddenSubsets';
+      [
+        if (cages > 0) 'Sommes de cage $cages',
+        if (locked > 0) 'Candidats verrouillés $locked',
+        if (nakedSubsets > 0) 'Paires/triplets nus $nakedSubsets',
+        if (hiddenSubsets > 0) 'Paires/triplets cachés $hiddenSubsets',
+      ].join(' · ');
   @override
   String get sudokuSearchTreeTitle => 'Arbre de recherche';
   @override

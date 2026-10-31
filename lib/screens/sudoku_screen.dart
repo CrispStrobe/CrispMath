@@ -68,6 +68,10 @@ class _SudokuScreenState extends State<SudokuScreen> {
   int? _selected;
   SudokuTrace? _trace;
 
+  /// Phone layout only: scrolls the narrow list so the grid and the
+  /// replay controls are visible right after a solve.
+  final ScrollController _scrollController = ScrollController();
+
   /// Explained steps behind [_trace] (one per frame), or null for the
   /// Killer CSP replay.
   SudokuExplanation? _explanation;
@@ -90,7 +94,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
   // Round 108: kills the in-flight advanced-hint isolate when a newer
   // edit supersedes it, so stale computes don't keep burning CPU.
   void Function()? _advancedCancel;
-  SudokuDifficulty _genDifficulty = SudokuDifficulty.medium;
+  SudokuDifficulty _genDifficulty = SudokuDifficulty.easy;
   _Speed _speed = _Speed.medium;
 
   /// Round 65: uniqueness check result for the *currently displayed*
@@ -172,12 +176,14 @@ class _SudokuScreenState extends State<SudokuScreen> {
         }
       }
     }
+    _syncGeneratorDifficultyToPreset();
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
     _advancedCancel?.call(); // kill any in-flight advanced-hint isolate
+    _scrollController.dispose();
     _keyboardFocus.dispose();
     super.dispose();
   }
@@ -186,6 +192,47 @@ class _SudokuScreenState extends State<SudokuScreen> {
         for (var i = 0; i < p.cells.length; i++)
           if (p.cells[i] != 0) i,
       };
+
+  /// The difficulty a preset was published with, or null when the
+  /// preset does not state one (the Killer cages have no difficulty
+  /// tier, and their generation is disabled anyway).
+  static SudokuDifficulty? _presetDifficulty(String id) {
+    switch (id) {
+      case 'small4x4Easy':
+      case 'standard9x9Easy':
+      case 'standard9x9XEasy':
+        return SudokuDifficulty.easy;
+      case 'small4x4Hard':
+      case 'standard9x9Hard':
+        return SudokuDifficulty.hard;
+      case 'small4x4Medium':
+      case 'medium6x6':
+      case 'eight8x8':
+      case 'eight8x8X':
+      case 'eight8x8Disjoint':
+      case 'eight8x8Killer':
+      case 'ten10x10':
+      case 'twelve12x12':
+      case 'fifteen15x15':
+      case 'standard9x9Medium':
+        return SudokuDifficulty.medium;
+      default:
+        return null;
+    }
+  }
+
+  /// The generator chips describe the next generated puzzle, so they
+  /// follow a preset's published difficulty instead of leaving a
+  /// default "Medium" highlighted under a hard preset. A custom or
+  /// generated grid keeps the user's own generator choice.
+  void _syncGeneratorDifficultyToPreset() {
+    for (final entry in SudokuPresets.all) {
+      if (!identical(entry.puzzle, _puzzle)) continue;
+      final difficulty = _presetDifficulty(entry.id);
+      if (difficulty != null) _genDifficulty = difficulty;
+      return;
+    }
+  }
 
   void _loadPreset(SudokuPuzzle p) {
     _stopVisualizer();
@@ -199,6 +246,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
       _frameIndex = 0;
       _unique = null;
       _advancedCandidates = null;
+      _syncGeneratorDifficultyToPreset();
     });
     _maybeRecomputeAdvanced();
   }
@@ -307,6 +355,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
     if (explanation == null && trace.solved && trace.frames.length > 1) {
       _playPause();
     }
+    _revealReplay();
   }
 
   void _showFrame(int i) {
@@ -435,6 +484,21 @@ class _SudokuScreenState extends State<SudokuScreen> {
       _ticker?.cancel();
       _ticker = Timer.periodic(s.interval, (_) => _advance());
     }
+  }
+
+  /// Phone layout: after a solve the list is parked on the setup form, so
+  /// scroll back to the grid. The replay block sits directly below it,
+  /// giving board and reason in one viewport.
+  void _revealReplay() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (MediaQuery.sizeOf(context).width >= 720) return;
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   /// Round 87: keyboard handler. Digit keys (1..9, plus 0 = clear)
@@ -675,44 +739,31 @@ class _SudokuScreenState extends State<SudokuScreen> {
                 ),
             ],
           ),
-          if (_trace != null) ...[
-            const SizedBox(height: 16),
-            _VisualizerControls(
-              total: _trace!.frames.length,
-              current: _frameIndex,
-              playing: _playing,
-              speed: _speed,
-              caption: _captionForFrame(t, _trace!, _frameIndex),
-              onPlayPause: _playPause,
-              onRestart: _restart,
-              onScrub: _showFrame,
-              onStep: (delta) => _showFrame(_frameIndex + delta),
-              onSpeed: _setSpeed,
-              labels: t,
-            ),
-            const SizedBox(height: 8),
-            if (_explanation != null) ...[
-              _ExplanationSummary(explanation: _explanation!, labels: t),
-              if (_explanation!.tree.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                SudokuSearchTreeView(
-                  explanation: _explanation!,
-                  currentNode: _explanation!.steps[_frameIndex].node,
-                  currentStep: _frameIndex,
-                  side: _puzzle.layout.side,
-                  onSelectStep: _showFrame,
-                  labels: t,
-                ),
-              ],
-            ],
-            const SizedBox(height: 8),
-            if (_trace!.error != null)
-              Text(_trace!.error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ],
         ],
       ),
     );
+
+    // One replay block, rendered under the grid on phones and at the
+    // bottom of the side panel from tablet width up. Building it once
+    // keeps a single set of play/step controls.
+    final replayBlock = _trace == null
+        ? null
+        : _ReplayBlock(
+            trace: _trace!,
+            explanation: _explanation,
+            frameIndex: _frameIndex,
+            playing: _playing,
+            speed: _speed,
+            caption: _captionForFrame(t, _trace!, _frameIndex),
+            side: _puzzle.layout.side,
+            labels: t,
+            onPlayPause: _playPause,
+            onRestart: _restart,
+            onScrub: _showFrame,
+            onStep: (delta) => _showFrame(_frameIndex + delta),
+            onSpeed: _setSpeed,
+            onSelectStep: _showFrame,
+          );
 
     return Scaffold(
       appBar: AppBar(
@@ -737,11 +788,38 @@ class _SudokuScreenState extends State<SudokuScreen> {
                     // uniqueness chip + variant picker landed. Wrap in
                     // a scroll view so short windows don't overflow
                     // the column at the bottom.
-                    child: SingleChildScrollView(child: controlsBlock),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          controlsBlock,
+                          if (replayBlock != null)
+                            Padding(
+                              key: const ValueKey('sudoku-replay-section'),
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              child: replayBlock,
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               )
-            : ListView(children: [gridBlock, controlsBlock]),
+            // Phone/narrow layout: grid, then the replay and its reason,
+            // then the setup controls. The replay must be reachable
+            // without scrolling past the whole setup form.
+            : ListView(
+                controller: _scrollController,
+                children: [
+                  gridBlock,
+                  if (replayBlock != null)
+                    Padding(
+                      key: const ValueKey('sudoku-replay-section'),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: replayBlock,
+                    ),
+                  controlsBlock,
+                ],
+              ),
       ),
     );
   }
@@ -855,24 +933,113 @@ class _ExplanationSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.bodySmall;
+    final theme = Theme.of(context);
+    // Phone widths carry the explanation as the primary reading, so the
+    // summary uses the body size there and the compact size in the side
+    // panel. Everything wraps; no fixed heights.
+    final style = MediaQuery.sizeOf(context).width < 720
+        ? theme.textTheme.bodyMedium
+        : theme.textTheme.bodySmall;
     final e = explanation;
+    // The localized summaries omit techniques that never occurred, and
+    // return an empty string when there are none: no "Guesses 0" line.
+    final stats = labels
+        .sudokuExplainStats(e.nakedSingles, e.hiddenSingles, e.guesses,
+            e.backtracks, e.maxDepth)
+        .trim();
+    final eliminations = labels
+        .sudokuExplainEliminations(
+            e.cageSteps, e.lockedCandidates, e.nakedSubsets, e.hiddenSubsets)
+        .trim();
     return Column(
       key: const ValueKey('sudoku-explanation-summary'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-            labels.sudokuExplainStats(e.nakedSingles, e.hiddenSingles,
-                e.guesses, e.backtracks, e.maxDepth),
-            style: style),
-        if (e.eliminationSteps > 0)
-          Text(
-              labels.sudokuExplainEliminations(e.cageSteps,
-                  e.lockedCandidates, e.nakedSubsets, e.hiddenSubsets),
-              style: style),
+        if (stats.isNotEmpty) Text(stats, style: style),
+        if (eliminations.isNotEmpty) Text(eliminations, style: style),
         if (e.logicOnly) Text(labels.sudokuExplainLogicOnly, style: style),
         if (e.truncated)
           Text(labels.sudokuExplainTruncated(e.steps.length), style: style),
+      ],
+    );
+  }
+}
+
+/// Replay controls, current reason, solve summary and search tree. Built
+/// once per frame and placed under the grid on phones or in the side
+/// panel from tablet width up.
+class _ReplayBlock extends StatelessWidget {
+  final SudokuTrace trace;
+  final SudokuExplanation? explanation;
+  final int frameIndex;
+  final bool playing;
+  final _Speed speed;
+  final String caption;
+  final int side;
+  final AppLocalizations labels;
+  final VoidCallback onPlayPause;
+  final VoidCallback onRestart;
+  final ValueChanged<int> onScrub;
+  final ValueChanged<int> onStep;
+  final ValueChanged<_Speed> onSpeed;
+  final ValueChanged<int> onSelectStep;
+
+  const _ReplayBlock({
+    required this.trace,
+    required this.explanation,
+    required this.frameIndex,
+    required this.playing,
+    required this.speed,
+    required this.caption,
+    required this.side,
+    required this.labels,
+    required this.onPlayPause,
+    required this.onRestart,
+    required this.onScrub,
+    required this.onStep,
+    required this.onSpeed,
+    required this.onSelectStep,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final explanation = this.explanation;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _VisualizerControls(
+          total: trace.frames.length,
+          current: frameIndex,
+          playing: playing,
+          speed: speed,
+          caption: caption,
+          onPlayPause: onPlayPause,
+          onRestart: onRestart,
+          onScrub: onScrub,
+          onStep: onStep,
+          onSpeed: onSpeed,
+          labels: labels,
+        ),
+        if (explanation != null) ...[
+          const SizedBox(height: 8),
+          _ExplanationSummary(explanation: explanation, labels: labels),
+          if (explanation.tree.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            SudokuSearchTreeView(
+              explanation: explanation,
+              currentNode: explanation.steps[frameIndex].node,
+              currentStep: frameIndex,
+              side: side,
+              onSelectStep: onSelectStep,
+              labels: labels,
+            ),
+          ],
+        ],
+        if (trace.error != null) ...[
+          const SizedBox(height: 8),
+          Text(trace.error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        ],
       ],
     );
   }
@@ -1086,11 +1253,18 @@ class _VisualizerControls extends StatelessWidget {
           // the just-assigned cell sits in.
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              caption,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+            child: Semantics(
+              // Announce the new reason when replay steps move.
+              liveRegion: true,
+              child: Text(
+                caption,
+                style: (MediaQuery.sizeOf(context).width < 720
+                        ? Theme.of(context).textTheme.bodyMedium
+                        : Theme.of(context).textTheme.bodySmall)
+                    ?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
             ),
           ),
           Slider(
@@ -1130,27 +1304,69 @@ class _VisualizerControls extends StatelessWidget {
                 icon: const Icon(Icons.skip_next),
                 onPressed: current < total - 1 ? () => onStep(1) : null,
               ),
-              SegmentedButton<_Speed>(
-                segments: [
-                  ButtonSegment(
-                    value: _Speed.slow,
-                    label: Text(labels.sudokuSpeedSlow),
-                  ),
-                  ButtonSegment(
-                    value: _Speed.medium,
-                    label: Text(labels.sudokuSpeedMed),
-                  ),
-                  ButtonSegment(
-                    value: _Speed.fast,
-                    label: Text(labels.sudokuSpeedFast),
-                  ),
-                ],
-                selected: {speed},
-                onSelectionChanged: (s) => onSpeed(s.first),
-              ),
+              _speedSelector(context),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  String _speedLabel(_Speed s) => switch (s) {
+        _Speed.slow => labels.sudokuSpeedSlow,
+        _Speed.medium => labels.sudokuSpeedMed,
+        _Speed.fast => labels.sudokuSpeedFast,
+      };
+
+  /// Phones and enlarged text get a compact dropdown for the speed; the
+  /// segmented control stays where all three labels fit. Both expose the
+  /// same three speeds.
+  Widget _speedSelector(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 720 ||
+        MediaQuery.textScalerOf(context).scale(14) > 20;
+    if (!compact) {
+      return SegmentedButton<_Speed>(
+        segments: [
+          ButtonSegment(
+            value: _Speed.slow,
+            label: Text(labels.sudokuSpeedSlow),
+          ),
+          ButtonSegment(
+            value: _Speed.medium,
+            label: Text(labels.sudokuSpeedMed),
+          ),
+          ButtonSegment(
+            value: _Speed.fast,
+            label: Text(labels.sudokuSpeedFast),
+          ),
+        ],
+        selected: {speed},
+        onSelectionChanged: (s) => onSpeed(s.first),
+      );
+    }
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<_Speed>(
+        value: speed,
+        isDense: true,
+        borderRadius: BorderRadius.circular(6),
+        selectedItemBuilder: (context) => [
+          for (final s in _Speed.values)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.speed, size: 18),
+                const SizedBox(width: 4),
+                Text(_speedLabel(s)),
+              ],
+            ),
+        ],
+        items: [
+          for (final s in _Speed.values)
+            DropdownMenuItem(value: s, child: Text(_speedLabel(s))),
+        ],
+        onChanged: (s) {
+          if (s != null) onSpeed(s);
+        },
       ),
     );
   }
@@ -1249,39 +1465,50 @@ class _GeneratorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Round 70: Wrap so the difficulty picker + Generate button
-    // flow onto a second line on narrow right panels rather than
-    // overflowing horizontally.
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    // The difficulty chips belong to the generator: the heading keeps
+    // them from reading as the loaded preset's difficulty (a hard preset
+    // must not appear as "Medium").
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(labels.sudokuGenerateSection,
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 4),
+        // Round 70: Wrap so the difficulty picker + Generate button
+        // flow onto a second line on narrow right panels rather than
+        // overflowing horizontally.
         Wrap(
-          spacing: 4,
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            for (final d in SudokuDifficulty.values)
-              ChoiceChip(
-                label: Text(switch (d) {
-                  SudokuDifficulty.easy => labels.sudokuDifficultyEasy,
-                  SudokuDifficulty.medium => labels.sudokuDifficultyMedium,
-                  SudokuDifficulty.hard => labels.sudokuDifficultyHard,
-                }),
-                selected: difficulty == d,
-                onSelected: disabled ? null : (_) => onDifficulty(d),
-              ),
+            Wrap(
+              spacing: 4,
+              children: [
+                for (final d in SudokuDifficulty.values)
+                  ChoiceChip(
+                    label: Text(switch (d) {
+                      SudokuDifficulty.easy => labels.sudokuDifficultyEasy,
+                      SudokuDifficulty.medium => labels.sudokuDifficultyMedium,
+                      SudokuDifficulty.hard => labels.sudokuDifficultyHard,
+                    }),
+                    selected: difficulty == d,
+                    onSelected: disabled ? null : (_) => onDifficulty(d),
+                  ),
+              ],
+            ),
+            FilledButton.icon(
+              onPressed: (generating || disabled) ? null : onGenerate,
+              icon: generating
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.shuffle),
+              label: Text(labels.sudokuGenerateButton),
+            ),
           ],
-        ),
-        FilledButton.icon(
-          onPressed: (generating || disabled) ? null : onGenerate,
-          icon: generating
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.shuffle),
-          label: Text(labels.sudokuGenerateButton),
         ),
       ],
     );

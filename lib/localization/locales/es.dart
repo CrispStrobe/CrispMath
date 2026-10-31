@@ -957,6 +957,8 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get sudokuGenerateButton => 'Generar';
   @override
+  String get sudokuGenerateSection => 'Dificultad de los puzzles nuevos';
+  @override
   String get sudokuDifficultyEasy => 'Fácil';
   @override
   String get sudokuDifficultyMedium => 'Medio';
@@ -1051,8 +1053,13 @@ class EsLocalizations implements AppLocalizations {
   @override
   String sudokuExplainStats(
           int naked, int hidden, int guesses, int backtracks, int depth) =>
-      'Únicos desnudos $naked · Únicos ocultos $hidden · Suposiciones '
-      '$guesses · Retrocesos $backtracks · Profundidad máx. $depth';
+      [
+        if (naked > 0) 'Únicos desnudos $naked',
+        if (hidden > 0) 'Únicos ocultos $hidden',
+        if (guesses > 0) 'Suposiciones $guesses',
+        if (backtracks > 0) 'Retrocesos $backtracks',
+        if (depth > 0) 'Profundidad máx. $depth',
+      ].join(' · ');
   @override
   String get sudokuExplainLogicOnly =>
       'Resuelto solo con lógica: no hizo falta suponer.';
@@ -1089,8 +1096,12 @@ class EsLocalizations implements AppLocalizations {
   @override
   String sudokuExplainEliminations(
           int cages, int locked, int nakedSubsets, int hiddenSubsets) =>
-      'Sumas de jaula $cages · Candidatos bloqueados $locked · Pares/tríos '
-      'desnudos $nakedSubsets · Pares/tríos ocultos $hiddenSubsets';
+      [
+        if (cages > 0) 'Sumas de jaula $cages',
+        if (locked > 0) 'Candidatos bloqueados $locked',
+        if (nakedSubsets > 0) 'Pares/tríos desnudos $nakedSubsets',
+        if (hiddenSubsets > 0) 'Pares/tríos ocultos $hiddenSubsets',
+      ].join(' · ');
   @override
   String get sudokuSearchTreeTitle => 'Árbol de búsqueda';
   @override
