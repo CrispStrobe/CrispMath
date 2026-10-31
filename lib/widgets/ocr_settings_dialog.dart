@@ -5,10 +5,12 @@
 
 import 'package:flutter/material.dart';
 
+import '../engine/model_license_consent.dart';
 import '../engine/ocr_model_manager.dart';
 import '../engine/ocr_provider.dart';
 import '../services/ocr_initialization.dart';
 import '../engine/ocr_providers_init.dart';
+import 'model_license_consent_dialog.dart';
 
 class OcrSettingsDialog extends StatefulWidget {
   const OcrSettingsDialog({super.key});
@@ -29,6 +31,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
     ensureOcrProviders().then((_) {
       if (mounted) setState(() {});
     });
+    ModelLicenseConsent.load().then((_) {
+      if (mounted) setState(() {});
+    });
     _checkDownloaded();
   }
 
@@ -42,8 +47,13 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   }
 
   Future<void> _download(OcrModelVariant model) async {
-    // NC license gate: require explicit user confirmation
-    if (model.requiresLicenseAcceptance) {
+    final terms = model.restrictedTerms;
+    if (terms != null) {
+      // Restrictive license: explicit, persisted consent naming the license.
+      if (!await ensureModelLicenseConsent(context, terms, model.name)) return;
+      if (!mounted) return;
+    } else if (model.requiresLicenseAcceptance) {
+      // NC license gate: require explicit user confirmation
       final accepted = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -114,6 +124,26 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       setState(() => _downloaded[model.id] = false);
       _checkDownloaded();
     }
+  }
+
+  /// Accept the license of an already-downloaded restricted model (e.g. one
+  /// downloaded before its license was corrected) so it can be registered.
+  Future<void> _acceptLicense(OcrModelVariant model) async {
+    final terms = model.restrictedTerms;
+    if (terms == null) return;
+    if (!await ensureModelLicenseConsent(context, terms, model.name)) return;
+    await initOcrProviders();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _withdrawLicense(OcrModelVariant model) async {
+    final terms = model.restrictedTerms;
+    if (terms == null) return;
+    await ModelLicenseConsent.revoke(terms);
+    if (!OcrProviders.available.contains(OcrProviders.active)) {
+      OcrProviders.active = null;
+    }
+    if (mounted) setState(() {});
   }
 
   void _setActiveProvider(OcrProvider provider) {
@@ -213,7 +243,8 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                   'Layout Detection', OcrModelCatalog.layoutDetection),
               _buildSection('Vision-Language — Qwen3-VL (recommended)',
                   OcrModelCatalog.visionLanguageQwen3),
-              _buildSection('Vision-Language — Qwen2.5-VL',
+              _buildSection(
+                  'Vision-Language — Qwen2.5-VL (non-commercial, optional)',
                   OcrModelCatalog.visionLanguage),
               _buildSection('Vision-Language — DeepSeek-OCR2',
                   OcrModelCatalog.deepseekOcr2),
@@ -300,6 +331,24 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                 ],
               ],
             ),
+            if (model.restrictedTerms != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ModelLicenseConsent.allows(model.restrictedTerms)
+                    ? TextButton(
+                        onPressed: () => _withdrawLicense(model),
+                        child: const Text('Withdraw license consent',
+                            style: TextStyle(fontSize: 11)),
+                      )
+                    : TextButton(
+                        onPressed: () => _acceptLicense(model),
+                        child: Text(
+                            isDownloaded
+                                ? 'Review license to enable'
+                                : 'Review license',
+                            style: const TextStyle(fontSize: 11)),
+                      ),
+              ),
             if (isDownloading || isPaused)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
