@@ -8,7 +8,9 @@ name: iOS Release (App Store)
 # the other apps use, adapted; nothing here needs a browser or an Apple ID login.
 #
 # Triggers:
-#   * push a tag matching v*        -> full build + upload (a real release)
+#   * push a tag matching v*        -> blocked: tag pushes cannot supply the
+#                                      required validation run ID. Dispatch
+#                                      against the tag instead.
 #   * manual "Run workflow"         -> choose dry_run=true to build+sign WITHOUT
 #                                      uploading (validates signing safely)
 #
@@ -41,7 +43,7 @@ on:
         type: boolean
         default: true
       validation_run_id:
-        description: 'Optional Feature validation run whose browser/gallery must pass before upload'
+        description: 'Feature validation run whose browser/gallery must pass before upload (required for uploads)'
         type: string
         default: ''
       verify_only:
@@ -90,6 +92,31 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # The gate is intentionally required for every upload intent. A tag
+      # push has no dispatch inputs, so it fails closed before signing; run a
+      # manual dispatch against the tag with a valid validation run ID.
+      - name: Wait for live release validation and matching application source
+        if: ${{ github.event_name == 'push' || inputs.dry_run == false }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+        run: |
+          python tool/wait_release_validation.py \
+            --run-id "$VALIDATION_RUN_ID" --package-sha "$GITHUB_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --output "$RUNNER_TEMP/release-validation.json"
+
+      - name: Preserve release validation provenance
+        if: ${{ always() && (github.event_name == 'push' || inputs.dry_run == false) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-validation-provenance
+          path: ${{ runner.temp }}/release-validation.json
+          if-no-files-found: ignore
+
       - name: Checkout pinned CrispEmbed
         uses: actions/checkout@v4
         with:
@@ -106,9 +133,6 @@ jobs:
       - name: Disable Swift Package Manager (use pure CocoaPods)
         run: flutter config --no-enable-swift-package-manager
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - name: Release tooling and internal assignment unit checks
         run: python -m unittest discover -s tool -p '*_test.py'
       - name: Stage verified OCR runtime libraries
@@ -240,25 +264,6 @@ jobs:
           name: crispmath-ipa
           path: build/ios/ipa/*.ipa
           if-no-files-found: error
-
-      - name: Wait for live release validation and matching application source
-        if: ${{ inputs.validation_run_id != '' && (github.event_name == 'push' || inputs.dry_run == false) }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
-        run: |
-          python tool/wait_release_validation.py \
-            --run-id "$VALIDATION_RUN_ID" --package-sha "$GITHUB_SHA" \
-            --repository "$GITHUB_REPOSITORY" \
-            --output "$RUNNER_TEMP/release-validation.json"
-
-      - name: Preserve release validation provenance
-        if: ${{ always() && inputs.validation_run_id != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-validation-provenance
-          path: ${{ runner.temp }}/release-validation.json
-          if-no-files-found: ignore
 
       - name: Upload to App Store Connect
         if: ${{ github.event_name == 'push' || inputs.dry_run == false }}
