@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 
 import '../engine/module_help_kind.dart';
 import '../engine/step_engine.dart' show StepNote;
+import '../engine/sudoku.dart' show SudokuError, SudokuErrorKind;
 import 'worked_example_translations.dart';
 
 export '../engine/module_help_kind.dart' show ModuleHelpKind;
@@ -565,6 +566,10 @@ abstract class AppLocalizations {
   String get sudokuStepNext;
   String get sudokuEnterClues;
   String get sudokuConstraintStartingPosition;
+
+  /// Renders a solver failure; the limit travels in [SudokuError], so
+  /// callers never parse the previously rendered English prose.
+  String sudokuError(SudokuError error);
 
   // -- Constraints module (Analysis hub / CSP Round A) --
   String get moduleConstraintsTitle;

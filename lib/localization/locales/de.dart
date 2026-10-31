@@ -1125,6 +1125,19 @@ class DeLocalizations implements AppLocalizations {
       'Rätsel zu analysieren.';
   @override
   String get sudokuConstraintStartingPosition => 'Ausgangsstellung';
+  @override
+  String sudokuError(SudokuError error) => switch (error.kind) {
+        SudokuErrorKind.unsupported => 'Nicht unterstütztes Sudoku.',
+        SudokuErrorKind.clashingClues =>
+          'Die Vorgaben verletzen bereits eine Regel.',
+        SudokuErrorKind.noSolution =>
+          'Für dieses Sudoku gibt es keine Lösung.',
+        SudokuErrorKind.placementLimit =>
+          'Suche nach ${error.limit} Platzierungen abgebrochen.',
+        SudokuErrorKind.cageWorkLimit =>
+          'Suche beim Erreichen des Käfig-Arbeitslimits '
+              '(${error.limit}) abgebrochen.',
+      };
 
   @override
   String get moduleConstraintsTitle => 'Bedingungsprobleme';

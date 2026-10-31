@@ -183,7 +183,10 @@ class SudokuSearchNode {
 class SudokuExplanation {
   final List<SudokuExplainedStep> steps;
   final List<int>? solution;
-  final String? error;
+  final String? _legacyError;
+  final SudokuError? errorMessage;
+
+  String? get error => _legacyError ?? errorMessage?.english;
 
   /// True when more steps happened than were recorded.
   final bool truncated;
@@ -206,7 +209,8 @@ class SudokuExplanation {
   const SudokuExplanation({
     required this.steps,
     required this.solution,
-    required this.error,
+    required String? error,
+    this.errorMessage,
     required this.truncated,
     required this.nakedSingles,
     required this.hiddenSingles,
@@ -219,7 +223,7 @@ class SudokuExplanation {
     this.hiddenSubsets = 0,
     this.tree = const [],
     this.treeTruncated = false,
-  });
+  }) : _legacyError = error;
 
   bool get solved => error == null && solution != null;
 
@@ -366,7 +370,8 @@ class SudokuExplainer {
       return const SudokuExplanation(
         steps: [],
         solution: null,
-        error: 'Unsupported Sudoku puzzle.',
+        error: null,
+        errorMessage: SudokuError.unsupported(),
         truncated: false,
         nakedSingles: 0,
         hiddenSingles: 0,
@@ -461,10 +466,11 @@ class SudokuExplainer {
       );
     }
 
-    SudokuExplanation finish(String? error) => SudokuExplanation(
+    SudokuExplanation finish(SudokuError? error) => SudokuExplanation(
           steps: steps,
           solution: error == null ? List<int>.unmodifiable(cells) : null,
-          error: error,
+          error: null,
+          errorMessage: error,
           truncated: truncated,
           nakedSingles: naked,
           hiddenSingles: hidden,
@@ -576,7 +582,7 @@ class SudokuExplainer {
         final v = cells[i];
         if (v != 0 && !seen.add(v)) {
           record(SudokuStepKind.start);
-          return finish('The clues already break a rule.');
+          return finish(const SudokuError.clashingClues());
         }
       }
     }
@@ -838,16 +844,13 @@ class SudokuExplainer {
 
     while (true) {
       if (placements > maxPlacements) {
-        return finish('Search stopped after $maxPlacements placements.');
+        return finish(SudokuError.placementLimit(maxPlacements));
       }
       bool contradiction;
       try {
         contradiction = recordContradiction();
       } on _CageWorkLimit {
-        return finish(
-          'Search stopped after reaching the cage work limit '
-          '($maxCageWork).',
-        );
+        return finish(SudokuError.cageWorkLimit(maxCageWork));
       }
       if (contradiction) {
         if (path.isNotEmpty && path.last >= 0) {
@@ -862,7 +865,7 @@ class SudokuExplainer {
           for (final id in path) {
             if (id >= 0) tree[id].status = SudokuNodeStatus.deadEnd;
           }
-          return finish('No solution exists for this puzzle.');
+          return finish(const SudokuError.noSolution());
         }
         final branch = stack.last;
         cells = List<int>.from(branch.cells);
@@ -947,10 +950,7 @@ class SudokuExplainer {
       try {
         cageProgress = cageStep();
       } on _CageWorkLimit {
-        return finish(
-          'Search stopped after reaching the cage work limit '
-          '($maxCageWork).',
-        );
+        return finish(SudokuError.cageWorkLimit(maxCageWork));
       }
       if (cageProgress ||
           lockedStep() ||

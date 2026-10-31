@@ -348,7 +348,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
             ),
         ],
         solution: explanation.solution,
-        error: explanation.error,
+        error: explanation.errorMessage == null ? explanation.error : null,
+        errorMessage: explanation.errorMessage,
       );
     } else {
       trace = await SudokuSolver.solveWithTrace(_puzzle);
@@ -1046,9 +1047,14 @@ class _ReplayBlock extends StatelessWidget {
             ),
           ],
         ],
+        // Render the typed failure here, not in initState: a locale
+        // change re-words the message without re-running the solve.
         if (trace.error != null) ...[
           const SizedBox(height: 8),
-          Text(trace.error!,
+          Text(
+              trace.errorMessage == null
+                  ? trace.error!
+                  : labels.sudokuError(trace.errorMessage!),
               style: TextStyle(color: Theme.of(context).colorScheme.error)),
         ],
       ],

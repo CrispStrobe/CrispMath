@@ -1106,6 +1106,17 @@ class EnLocalizations implements AppLocalizations {
       'Enter clues: tap a cell, then a digit, to analyse your own puzzle.';
   @override
   String get sudokuConstraintStartingPosition => 'Starting position';
+  @override
+  String sudokuError(SudokuError error) => switch (error.kind) {
+        SudokuErrorKind.unsupported => 'Unsupported Sudoku puzzle.',
+        SudokuErrorKind.clashingClues => 'The clues already break a rule.',
+        SudokuErrorKind.noSolution => 'No solution exists for this puzzle.',
+        SudokuErrorKind.placementLimit =>
+          'Search stopped after ${error.limit} placements.',
+        SudokuErrorKind.cageWorkLimit =>
+          'Search stopped after reaching the cage work limit '
+              '(${error.limit}).',
+      };
 
   @override
   String get moduleConstraintsTitle => 'Constraint problems';
