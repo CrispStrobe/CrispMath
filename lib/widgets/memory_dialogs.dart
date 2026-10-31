@@ -137,7 +137,8 @@ class MemoryDialogs {
                       9,
                       (i) => ListTile(
                             title: Text('M${i + 1}'),
-                            subtitle: Text(memory['M$i'] ?? 'Empty'),
+                            subtitle: Text(memory['M$i'] ?? 'Empty',
+                                maxLines: 2, overflow: TextOverflow.ellipsis),
                             onTap: () {
                               memory['M$i'] = value;
                               Navigator.of(context).pop();
@@ -180,7 +181,8 @@ class MemoryDialogs {
                   9,
                   (i) => ListTile(
                         title: Text('M${i + 1}'),
-                        subtitle: Text(memory['M$i'] ?? 'Empty'),
+                        subtitle: Text(memory['M$i'] ?? 'Empty',
+                            maxLines: 2, overflow: TextOverflow.ellipsis),
                         trailing: memory['M$i'] != null
                             ? IconButton(
                                 icon: const Icon(Icons.delete,

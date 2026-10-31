@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import time
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 
@@ -87,6 +88,34 @@ def inspect(api, app, number, version):
             'ageRatings': ratings,
             'buildId': build['id'], 'usesNonExemptEncryption': build['attributes'].get('usesNonExemptEncryption'),
             'versions': vs, 'reviewSubmissions': subs, 'appReviewSubmitted': False}
+
+
+def withdraw(api, app, evidence, wait_seconds=900):
+    """Cancel the submission holding a version in review, then wait until
+    that version is editable again so a new build can be attached."""
+    waiting = [v for v in evidence['versions'] if v['state'] in {'WAITING_FOR_REVIEW', 'IN_REVIEW'}]
+    if len(waiting) != 1:
+        raise ValueError('Expected exactly one version waiting for or in review')
+    vid = waiting[0]['id']
+    open_subs = [s for s in evidence['reviewSubmissions']
+                 if s['state'] in {'WAITING_FOR_REVIEW', 'IN_REVIEW', 'UNRESOLVED_ISSUES'}
+                 and any(i['appStoreVersion'] == vid for i in s['items'])]
+    if len(open_subs) != 1:
+        raise ValueError('Expected exactly one open review submission for the version')
+    sid = open_subs[0]['id']
+    api.request(f'/v1/reviewSubmissions/{sid}', {'data': {'type': 'reviewSubmissions', 'id': sid,
+        'attributes': {'canceled': True}}}, method='PATCH')
+    deadline = time.time() + wait_seconds
+    while True:
+        current = inspect(api, app, evidence['build'], evidence['version'])
+        state = next(v['state'] for v in current['versions'] if v['id'] == vid)
+        if state in EDITABLE:
+            current['withdrawnSubmissionId'] = sid
+            return current
+        if time.time() > deadline:
+            raise ValueError('Withdrawn version did not become editable: ' + str(state))
+        print('Waiting for withdrawal:', state)
+        time.sleep(20)
 
 
 def submit(api, app, evidence):
@@ -168,6 +197,8 @@ if __name__ == '__main__':
     parser.add_argument('--version', required=True)
     parser.add_argument('--build', required=True)
     parser.add_argument('--submit', action='store_true')
+    parser.add_argument('--replace-in-review', action='store_true',
+                        help='Withdraw the version in review first, then submit this build')
     parser.add_argument('--output', type=Path, default=Path('app-review-evidence.json'))
     args = parser.parse_args()
     api = AppleApi(args.key_file)
@@ -175,6 +206,8 @@ if __name__ == '__main__':
     evidence = inspect(api, app, args.build, args.version)
     if args.submit:
         try:
+            if args.replace_in_review:
+                evidence = withdraw(api, app, evidence)
             evidence = submit(api, app, evidence)
         except HTTPError as error:
             # Apple explains a refused submission in the response body.
