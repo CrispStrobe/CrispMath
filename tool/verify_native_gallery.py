@@ -56,10 +56,10 @@ def verify_step_viewport(evidence):
     """
     measurement = evidence['sudokuStepViewport']
     assert measurement['bothVisible'] is True, 'Solver step capture reported a clipped scene'
-    clips = measurement['clips']
-    assert clips, 'Solver step capture must record the frames it was clipped by'
     for part in ('grid', 'caption'):
         rect = measurement[part]
+        clips = measurement[f'{part}Clips']
+        assert clips, f'Solver step capture must record {part} clipping frames'
         assert rect['width'] > 0 and rect['height'] > 0, f'{part} was off screen: {rect}'
         for clip in clips:
             assert _inside(rect, clip), f'{part} fell outside {clip}: {rect}'

@@ -80,10 +80,10 @@ void main() {
       expect(bytes, isNotNull);
       // Fail here with the measured size rather than in the upload verifier,
       // which only sees the PNG the run already wrote.
-      expect(image.width * image.height,
-          (_macGalleryPixels.width * _macGalleryPixels.height).round(),
-          reason: 'Mac gallery capture must be 2560x1600 upload-ready, '
-              'got ${image.width}x${image.height}');
+      expect(image.width, _macGalleryPixels.width.toInt(),
+          reason: 'Mac gallery capture width must be 2560 pixels');
+      expect(image.height, _macGalleryPixels.height.toInt(),
+          reason: 'Mac gallery capture height must be 1600 pixels');
       desktopImages.add({'name': name,
         'pngBase64': base64Encode(bytes!.buffer.asUint8List()),
         'width': image.width, 'height': image.height});
@@ -324,22 +324,32 @@ void main() {
     // A mounted caption is not a pictured caption: assert the board and the
     // reason for the current step are both inside the frame we publish.
     final screenRect = tester.view.physicalSize / tester.view.devicePixelRatio;
-    final clips = <Rect>[Offset.zero & screenRect];
-    final solverList = find.descendant(
-        of: find.byType(SudokuScreen), matching: find.byType(Scrollable));
-    if (solverList.evaluate().isNotEmpty) {
-      clips.add(tester.getRect(solverList.first));
+    List<Rect> clipsFor(Finder target) {
+      final clips = <Rect>[Offset.zero & screenRect];
+      final scrollables = find.ancestor(
+          of: target, matching: find.byType(Scrollable));
+      for (final element in scrollables.evaluate()) {
+        clips.add(tester.getRect(find.byElementPredicate(
+            (candidate) => identical(candidate, element))));
+      }
+      return clips;
     }
-    final gridRect = tester.getRect(find.byType(SudokuGrid));
+    final grid = find.byType(SudokuGrid);
+    final gridRect = tester.getRect(grid);
     final captionRect = tester.getRect(lockedCaption);
-    final bothVisible = allVisibleTogether([gridRect, captionRect], clips);
+    final gridClips = clipsFor(grid);
+    final captionClips = clipsFor(lockedCaption);
+    final bothVisible = fullyVisible(gridRect, gridClips) &&
+        fullyVisible(captionRect, captionClips);
     expect(bothVisible, isTrue,
         reason: 'Solver step capture must show the board and its explanation; '
-            'grid=$gridRect caption=$captionRect clips=$clips');
+            'grid=$gridRect caption=$captionRect '
+            'gridClips=$gridClips captionClips=$captionClips');
     binding.reportData!['sudokuStepViewport'] = {
       'grid': _rectToJson(gridRect),
       'caption': _rectToJson(captionRect),
-      'clips': clips.map(_rectToJson).toList(),
+      'gridClips': gridClips.map(_rectToJson).toList(),
+      'captionClips': captionClips.map(_rectToJson).toList(),
       'bothVisible': bothVisible,
     };
     await screenshot('sudoku-solver-explained-step');

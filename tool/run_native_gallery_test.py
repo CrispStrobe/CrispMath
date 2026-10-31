@@ -69,9 +69,24 @@ class ConnectedGalleryEvidenceTest(unittest.TestCase):
 class StepViewportEvidenceTest(unittest.TestCase):
     """The published solver capture must contain the board AND its reason."""
 
+    def test_wide_scene_checks_each_part_against_its_own_scroll_clip(self):
+        screen = {'left': 0, 'top': 0, 'width': 1280, 'height': 800}
+        panel = {'left': 680, 'top': 80, 'width': 360, 'height': 700}
+        measurement = {'sudokuStepViewport': {
+            'grid': {'left': 16, 'top': 120, 'width': 640, 'height': 640},
+            'caption': {'left': 692, 'top': 120, 'width': 320, 'height': 28},
+            'gridClips': [screen], 'captionClips': [screen, panel],
+            'bothVisible': True,
+        }}
+        verify_step_viewport(measurement)
+        measurement['sudokuStepViewport']['caption']['top'] = 790
+        with self.assertRaises(AssertionError):
+            verify_step_viewport(measurement)
+
     def measurement(self, grid, caption, clips):
         return {'sudokuStepViewport': {'grid': grid, 'caption': caption,
-                                       'clips': clips, 'bothVisible': True}}
+                                       'gridClips': clips, 'captionClips': clips,
+                                       'bothVisible': True}}
 
     def test_phone_scene_with_board_under_a_visible_caption_is_accepted(self):
         verify_step_viewport(self.measurement(
