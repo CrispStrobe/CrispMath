@@ -77,7 +77,14 @@ def inspect(api, app, number, version):
                    'state': version_state(v), 'buildId': attached and attached['id'],
                    'reviewDetailId': (detail.get('data') or {}).get('id'),
                    'reviewFieldsPresent': {k: bool(x) for k, x in ((detail.get('data') or {}).get('attributes') or {}).items()}})
+    ratings = []
+    for info in api.request(f'/v1/apps/{app}/appInfos')['data']:
+        declaration = api.request(f'/v1/appInfos/{info["id"]}/ageRatingDeclaration').get('data') or {}
+        ratings.append({'appInfoId': info['id'], 'state': info['attributes'].get('state'),
+                        'declarationId': declaration.get('id'),
+                        'declaration': declaration.get('attributes')})
     return {'source': os.environ.get('BUILD_SOURCE'), 'version': version, 'build': number,
+            'ageRatings': ratings,
             'buildId': build['id'], 'usesNonExemptEncryption': build['attributes'].get('usesNonExemptEncryption'),
             'versions': vs, 'reviewSubmissions': subs, 'appReviewSubmitted': False}
 
