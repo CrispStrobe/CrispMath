@@ -1,6 +1,6 @@
-# CrispMath 1.2.0 release candidate
+# CrispMath 1.2.0
 
-This candidate improves calculation and graph responsiveness and connects the
+This release improves calculation and graph responsiveness and connects the
 notepad and graph workspace. Compiled expression caching, persistent workers,
 lazy tabs and document-level storage reduce repeated work.
 
@@ -16,6 +16,6 @@ lazy tabs and document-level storage reduce repeated work.
 - Recover saved documents if their index is damaged; migrate legacy storage
   without replacing newer records.
 
-The candidate artifacts use pinned dependency revisions and verified native
+The release artifacts use pinned dependency revisions and verified native
 binary checksums. macOS requires version 12 or later. Physical-device coverage
 and AI translation quality are reported separately from build and contract tests.
