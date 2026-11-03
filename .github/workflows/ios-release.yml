@@ -8,11 +8,16 @@ name: iOS Release (App Store)
 # the other apps use, adapted; nothing here needs a browser or an Apple ID login.
 #
 # Triggers:
-#   * push a tag matching v*        -> blocked: tag pushes cannot supply the
-#                                      required validation run ID. Dispatch
-#                                      against the tag instead.
 #   * manual "Run workflow"         -> choose dry_run=true to build+sign WITHOUT
 #                                      uploading (validates signing safely)
+#
+# Tag pushes deliberately do NOT start this workflow any more. A push event
+# cannot supply the required validation run ID, so every release tag used to
+# start a run that failed closed at the validation gate -- a red run on an
+# otherwise healthy release that never signed anything. Uploading a tag's
+# build is still a dispatch: run this workflow against the tag (or its SHA)
+# with validation_run_id set to the green validation run for that commit.
+# The unsigned per-release iOS artifact comes from release.yml.
 #
 # Requires these repo secrets (all set via `gh secret set` on 2026-08-17):
 #   ASC_API_KEY_P8_BASE64  base64 of AuthKey_<KEYID>.p8
@@ -34,8 +39,6 @@ name: iOS Release (App Store)
 # even when the previous build has expired.
 
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
     inputs:
       dry_run:
@@ -95,9 +98,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      # The gate is intentionally required for every upload intent. A tag
-      # push has no dispatch inputs, so it fails closed before signing; run a
-      # manual dispatch against the tag with a valid validation run ID.
+      # The gate is intentionally required for every upload intent. Uploads
+      # therefore only come from a dispatch (dry_run=false) or, if a push
+      # trigger is ever restored, a push -- which is exactly why the condition
+      # still names it instead of relying on dispatch inputs alone.
       - name: Wait for live release validation and matching application source
         if: ${{ github.event_name == 'push' || inputs.dry_run == false }}
         env:
