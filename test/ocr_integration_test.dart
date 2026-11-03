@@ -355,9 +355,11 @@ void main() {
       }
     });
 
-    test('non-NC models do not require license acceptance', () {
+    test('permissive models do not require license acceptance', () {
       for (final m in OcrModelCatalog.all) {
-        if (m.license != null && !m.license!.contains('NC')) {
+        if (m.license != null &&
+            !m.license!.contains('NC') &&
+            m.restrictedTerms == null) {
           expect(m.requiresLicenseAcceptance, false,
               reason: '${m.id} incorrectly requires license acceptance');
         }
@@ -565,10 +567,15 @@ void main() {
       expect(q8.sizeLabel, '3.8 GB');
     });
 
-    test('license is Apache-2.0', () {
+    test('license is the non-commercial Qwen Research License', () {
+      // Weights are Qwen2.5-VL-3B-Instruct (CrispStrobe/CrispEmbed#92).
       for (final m in OcrModelCatalog.visionLanguage) {
-        expect(m.license, 'Apache-2.0');
-        expect(m.requiresLicenseAcceptance, false);
+        expect(m.license, 'qwen-research');
+        expect(m.restrictedTerms, same(ModelLicenseTerms.qwenResearch));
+        expect(m.requiresLicenseAcceptance, true);
+        expect(m.autoSelectable, false);
+        expect(m.name.toLowerCase(), contains('non-commercial'));
+        expect(m.description.toLowerCase(), contains('non-commercial'));
       }
     });
 

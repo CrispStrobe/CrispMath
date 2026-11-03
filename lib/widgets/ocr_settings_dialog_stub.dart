@@ -10,6 +10,7 @@ import '../engine/ocr_model_catalog.dart';
 import '../engine/ocr_model_manager_web.dart';
 import '../engine/ocr_provider.dart';
 import '../services/ocr_initialization.dart';
+import 'model_license_consent_dialog.dart';
 
 class OcrSettingsDialog extends StatefulWidget {
   const OcrSettingsDialog({super.key});
@@ -39,7 +40,11 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   }
 
   Future<void> _download(OcrModelVariant model) async {
-    if (model.requiresLicenseAcceptance) {
+    final terms = model.restrictedTerms;
+    if (terms != null) {
+      if (!await ensureModelLicenseConsent(context, terms, model.name)) return;
+      if (!mounted) return;
+    } else if (model.requiresLicenseAcceptance) {
       final accepted = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
