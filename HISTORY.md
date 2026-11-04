@@ -1,3 +1,38 @@
+## 3 November 2026 — v1.2.0 tagged, built for six platforms and deployed
+
+Tag `v1.2.0` points at `de3959dc42439695a52c763e77df49f5815d824f`
+(pubspec `1.2.0+26`). The release workflow validated the label against pubspec
+and the dependency lock, then built and published every platform artifact:
+macOS 42,523,158 bytes, iOS unsigned 15,058,003, Linux x64 40,357,113,
+Windows x64 26,844,112, Android APK 111,096,570, web 22,043,193, plus the
+2,092-byte dependency manifest. The manifest records Flutter 3.44.0, CrispEmbed
+0.17.12 at `78493a3`, the pinned bridge and `dart_csp` revisions and the OCR
+runtime checksums, and marks the artifacts as release rather than candidate.
+
+Only the macOS and iOS archives carry SymEngine symbols; the release run still
+enforces its 30-symbol floor on macOS. Windows, Linux, Android and web ship the
+documented degraded bridge.
+
+Both public hosts serve that exact commit: Pages at
+`crispstrobe.github.io/CrispMath` and Vercel production at
+`crisp-math.vercel.app` each report `1.2.0`/`26`, and the deployed-browser
+suites ran against the tag build. Pages deploys on the `main` push, Vercel
+production only on the tag.
+
+Two workflow defects surfaced and were fixed after the tag: the release body
+reused `RELEASE_NOTES.md`, which still said "release candidate", so the notes
+were reworded and the published body corrected in place; and
+`ios-release.yml` triggered on `v*` tags although its upload gate requires a
+dispatch-only validation run ID, so every tag produced a run that failed before
+signing. The tag trigger is removed; uploads stay dispatch-only, and the signed
+build for a tag is produced by dispatching against it. `Build iOS` also failed
+on `main` that day purely because no macOS arm64 runner was acquired.
+
+- [Release](https://github.com/CrispStrobe/CrispMath/releases/tag/v1.2.0)
+- [Build and publish](https://github.com/CrispStrobe/CrispMath/actions/runs/41726192297) — success
+- [Vercel deploy and live checks](https://github.com/CrispStrobe/CrispMath/actions/runs/41726192274) — success
+- [Pages deploy](https://github.com/CrispStrobe/CrispMath/actions/runs/41699905107) — success
+
 ## 24 October 2026 — Ovis qualification loop integrated and closed
 
 [PR79](https://github.com/CrispStrobe/CrispEmbed/pull/79) merges qualified head
