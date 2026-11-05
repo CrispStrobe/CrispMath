@@ -1,3 +1,31 @@
+## 5 November 2026 — 1.2.0 resubmitted to App Review with build 27
+
+Tag `v1.2.0` shipped six desktop/mobile/web artifacts plus the dependency
+manifest, but its iOS App Store binary lagged: build 26 came from `25a1cd7`
+and predates the Qwen research-license consent gate in `de3959d`. Build 27 was
+built from `fe1ffd1` — code-identical to the tag, with only docs and workflow
+changes on top — and uploaded with the live-validation gate bound to Feature
+validation run `41991629266`.
+
+Two release-process defects surfaced. App Store Connect rejects a re-upload of
+an existing `CFBundleVersion` with a bare 409 after the bundle has been signed,
+so the iOS workflow now asks Apple first (`--assert-unused`) and names the
+build that already exists. And a rejected version stays inside the submission
+that rejected it, so a resubmission has to reuse that submission rather than
+add a new item; the review tool now does that instead of failing on
+`Item is already present in another reviewSubmission`. Note that it also
+overwrites the version's reviewer notes on every submit, which had still argued
+the 1.0.3 rejection — the notes now describe this build.
+
+The 4.3(a) reply was already sent on 3 November 2026. After build 27 replaced
+build 26 on the version, the 1.2.0 version moved to `WAITING_FOR_REVIEW` with
+submission `0fdfe76e`, and the age-rating declaration cleared from `REJECTED`.
+The API refused to submit on state (`Version is not ready to be submitted yet`)
+at every attempt; the Resubmit action in App Store Connect completed it.
+
+- [Upload build 27](https://github.com/CrispStrobe/CrispMath/actions/runs/41996446735) — success
+- [Post-resubmit state](https://github.com/CrispStrobe/CrispMath/actions/runs/42005290692) — `WAITING_FOR_REVIEW`, build 27 attached
+
 ## 3 November 2026 — v1.2.0 tagged, built for six platforms and deployed
 
 Tag `v1.2.0` points at `de3959dc42439695a52c763e77df49f5815d824f`
