@@ -1,375 +1,386 @@
-# CrispMath — CAS Calculator
+# CrispMath
 
-A cross-platform scientific and graphing calculator built with Flutter. It
-features an adaptive UI (mobile bottom-nav / desktop side-rail / wide-screen
-split-view) and is powered by the SymEngine Computer Algebra System for
-symbolic math.
+An offline-first mathematical workspace: a scientific and graphing calculator
+with a real computer-algebra system, a linked notepad, and documents that
+survive between sessions. Built with Flutter, it runs natively on iOS, macOS,
+Android, Windows and Linux, and in the browser through WebAssembly.
 
-Free and open source (AGPL-3.0 with App Store exception). Available on
-[iOS](https://apps.apple.com/app/crispmath/), web
-([crisp-math.vercel.app](https://crisp-math.vercel.app)), macOS, Android,
-Linux, and Windows.
+Everything that computes runs on the device. There is no account, no server
+round-trip and no telemetry in the calculation path — symbolic algebra, exact
+constants, statistics, plotting and OCR all execute locally.
 
-## Core Features
+**[Open the web app](https://crisp-math.vercel.app)** ·
+**[Mirror on GitHub Pages](https://crispstrobe.github.io/CrispMath/)** ·
+**[Releases](https://github.com/CrispStrobe/CrispMath/releases)** ·
+**[TestFlight](https://testflight.apple.com/join/E6HdVhTx)**
 
-- **LaTeX display:** Textbook-style rendering of expressions and history via
-  `flutter_math_fork`. Inline LaTeX input with live preview, 12-stage
-  LaTeX→engine converter.
-- **Symbolic CAS engine:** Algebra and calculus operations, not just numerical
-  calculations.
-  - Solver: `solve(x^2 - 4, x)` returns `x = {-2, 2}`.
-  - Calculus: symbolic differentiation (`d/dx`), symbolic limits (Gruntz-style
-    growth-rate analysis at infinity), Taylor/Maclaurin series
-    (`taylor(f, x, x0, n)` / `series(f, x, n)`).
-  - Algebraic: `factor` (univariate + multivariate via FLINT), `expand`,
-    `simplify` (rational cancellation + trig identities), `gcd`, `lcm`,
-    linear-system solve (`linsolve(eq1; eq2, x, y)`).
-  - Numerics: `factorial`, `fibonacci`, constants `π`, `e`, `γ`.
-  - Matrix: `det`, `inv`, `transpose`, `rref`, `eigenvalues`, `eigenvectors`
-    (pure-Dart QR algorithm with Hessenberg reduction).
-- **Interactive graphing:** Y1..Y10 function slots, pan + pinch-to-zoom, axis
-  labelling, curve sketching (Kurvendiskussion), root & extrema annotations,
-  parameter sliders, curve tracing (tap/drag or arrow keys), value tables with
-  TSV/CSV clipboard export, editable independent axis bounds, finite-value fit
-  and a 20-change undo history. Fit uses the current x interval and trims the
-  outer 2% of samples to avoid isolated poles dominating the y range.
-- **Notepad:** Multi-line evaluator with variables, cross-references,
-  subtotals, date/time arithmetic, currency conversion (44 currencies),
-  inline mini-plots, collapsible sections, templates, Markdown/LaTeX export.
-  Link an expression line to a graph slot; document scope updates the graph,
-  and its source dialog opens the document or detaches the expression.
-- **Statistics:** Descriptive stats, linear/polynomial/exponential regression,
-  normal/binomial distributions, 9 hypothesis tests (t-test, ANOVA,
-  chi-square, Fisher's exact, sign test, Wilcoxon). Clipboard paste for data.
-- **Unit conversion:** built-in dimensions and derived SI units (N, J, W, Pa, Hz),
-  composite-dimension arithmetic (`100 m / 10 s → 10 m/s`), SI prefix system.
-- **Constraint solver:** FlatZinc parser + solver (Sudoku, N-queens, boolean
-  SAT). Notepad `fzn:` prefix for inline constraint problems.
-- **CrispAssist:** AI verifier (never solver) via streaming SSE. Anthropic +
-  OpenAI compatible. Explain/Narrate/Translate actions.
-- **Math OCR:** On-device DeiT+TrOCR (printed) + HMER/BTTR (handwritten) via
-  CrispEmbed ggml FFI. Cloud LLM fallback (Claude/GPT-4V). Camera + pen input.
-- **Adaptive layout:**
-  - `< 720 px` — bottom navigation bar (mobile).
-  - `720–1199 px` — side rail (tablets / narrow desktop windows).
-  - `≥ 1200 px` — side rail plus a secondary pane so calculator + graph (or
-    calculator + analysis) can be shown at the same time.
-- **Command search:** The global Search commands button and Ctrl/Cmd+K find
-  screens, tools and function examples. Arrow keys select; Enter opens a result.
-- **Accessibility:** High-contrast theme, configurable text scale (80%–150%),
-  keyboard navigation (Ctrl+1-6), ~225 semantic labels, full keyboard input.
-- **Localization:** English, German, French, Spanish (EN/DE/FR/ES) with
-  complete function reference translations.
-- **Export/Import:** PDF, Markdown, LaTeX, JSON (full state), CSV (history).
-  Shareable URL links (`?expr=...&tab=N`).
+Current version: **1.2.0**. Release artifacts are build **26** (tag
+`v1.2.0`); build **27** is the iOS binary currently in App Review, and it adds
+the research-license consent gate described below.
 
-## Cloud Sync & Optional Math Assistance
-- **Supabase Cloud Sync:** Sync AppState (variables, history, notepad, graphs) seamlessly across devices. Features robust merging to prevent data loss.
-- **Math assistance:** Deferred provider-backed natural-language translation on native and web. Configure a full chat-completions or messages endpoint, model and API key in CrispAssist settings. The assistant supports cancellation, timeout and retry, and lets you edit the expression before sending it to the calculator. Keyless local endpoints are supported; browser endpoints must allow CORS. Configuration is not a claim that a model connection has been verified.
-- **Advanced Graphing:** Vector Fields and plotting enhancements.
-- **Notepad PDF Export:** Print or save complete interactive math sessions to PDF.
+---
+
+## Highlights
+
+- **Symbolic algebra on every platform, including the browser** — SymEngine
+  through FFI natively and through a WebAssembly worker on the web, replacing
+  the usual "numeric only" web calculator.
+- **Worksheets, not just answers** — a notepad with variables, cross-references,
+  subtotals and sections, whose expressions can be linked to graph slots so
+  changing a definition redraws the curve.
+- **Graphs you can interrogate** — trace curves by touch or keyboard, read value
+  tables, fit samples, set axis bounds, annotate roots and extrema, and undo.
+- **On-device math OCR** — photograph or handwrite a formula and edit the
+  recognised LaTeX before it is evaluated.
+- **Reproducible state** — checkpoints, document history, portable worksheet
+  bundles and backups, so a calculation can be revisited rather than retyped.
+
+---
+
+## Features
+
+### Calculation and computer algebra
+
+Expressions are entered in LaTeX with live rendering and are evaluated by the
+SymEngine-backed bridge (native) or its WASM build (web).
+
+- **Algebra** — `expand`, `simplify` (with rational cancellation and trig
+  identities), `factor` (univariate, plus multivariate via FLINT), `gcd`,
+  `lcm`, polynomial division and quotient cancellation.
+- **Calculus** — symbolic `diff` (including nth order), indefinite and definite
+  `integrate` (exact rational functions and improper exponential integrals),
+  `limit` via L'Hôpital plus Gruntz-style growth-rate analysis, Taylor/Maclaurin
+  `taylor`, and `dsolve` for first-order and constant-coefficient second-order
+  ODEs with a step trace.
+- **Solving** — `solve` for equations, polynomial and rational equations,
+  polynomial inequalities, complex quadratics, and linear systems through
+  `linsolve`.
+- **Number theory** — `factorial`, `fibonacci`, `isprime`, `factorint`,
+  `nextprime`, `prevprime`, `divisors`.
+- **Special functions and constants** — `erf`, `beta`, Bessel J/Y, and the exact
+  constants `π`, `e`, `γ`.
+- **Precision** — `evalf`, `e(N)`, `sqrt(2, N)` and `EulerGamma(N)` through
+  MPFR-backed arbitrary precision.
+- **Matrices** — literals, arithmetic, `det`, `inv`, `transpose`, `rref`,
+  `eigenvalues` and `eigenvectors` (pure-Dart QR with Hessenberg reduction).
+- **Vectors and tensors** — `dot`, `cross` and tensor helpers in pure Dart.
+- **Boolean and constraint DSL** — `and`, `or`, `among`, `at_least`,
+  `at_most`, `all_different`, `at_most_in_a_row`.
+
+The full function reference (130 entries with signatures, examples, expected
+results and cross-links) is available inside the app.
+
+### Units, dates and everyday arithmetic
+
+- Unit-aware arithmetic with SI prefixes, derived units (N, J, W, Pa, Hz) and
+  composite dimensions — `100 m / 10 s` evaluates to `10 m/s`.
+- Offline currency conversion across 44 currencies.
+- Date and time arithmetic in the notepad.
+
+### Statistics
+
+Descriptive statistics with preset column layouts, linear, polynomial and
+exponential regression, normal and binomial distributions, and nine hypothesis
+tests: one/two-sample and paired t-tests, one-way ANOVA, chi-square
+goodness-of-fit and independence, Fisher's exact test, sign test and Wilcoxon
+rank-sum. Data can be pasted from the clipboard.
+
+### Graphing
+
+- **2D plots** — `Y1…Y10` function slots, parametric `(x(t), y(t))`, polar
+  `r(θ)`, implicit `F(x, y) = 0` via marching squares, and vector fields.
+- **Interaction** — pan, pinch/scroll zoom, drag or arrow-key tracing,
+  root/extrema annotations, parameter sliders, and a 20-change undo history.
+- **Analysis** — editable axis bounds, reading values off a curve, exporting a
+  sampled value table (CSV/TSV), and fitting finite samples where the outer 2%
+  of samples is trimmed so isolated poles do not dominate the range.
+- **Curve sketching** — a Kurvendiskussion pipeline that reports zeros,
+  extrema, inflection points and symmetry.
+- **3D** — `z = f(x, y)` as a rotated wireframe over a cached sample grid.
+- **Geometry modules** — plane and conic-section analysis in the Analysis hub.
+- **Links to documents** — a graph slot can be bound to a notepad expression and
+  follows the document's variables.
+
+### Worksheets and documents
+
+The notepad is a multi-line evaluator rather than a scratchpad: variables,
+cross-references, subtotals, collapsible sections, templates, inline
+mini-plots and Markdown/LaTeX export. Rows otherwise stored per widget are
+stored per document, so state survives tab switches and reloads.
+
+- Checkpoints and document history let you compare a later state with an
+  earlier one and restore it.
+- Portable worksheet bundles carry results and plots for sharing and
+  recalculation on import.
+- Damaged document indexes are recovered, and legacy storage migrates without
+  overwriting newer records.
+
+### Constraints and puzzles
+
+- **FlatZinc** parser and solver, reachable inline with the `fzn:` prefix, plus
+  a step-by-step propagation view.
+- **Sudoku** solver that explains each deduction (singles, locked candidates,
+  subsets, Killer cage sums) and draws its search tree.
+- **N-queens**, boolean constraint problems and magic squares.
+
+### Handwriting and math OCR
+
+Recognition runs on device through CrispEmbed's ggml inference — no Python and
+no ONNX at runtime:
+
+- **Printed math** — DeiT encoder with a TrOCR decoder, published in four
+  quantization levels (F32/F16/Q8_0/Q4_K).
+- **Handwritten math** — HMER and BTTR, auto-detected from the GGUF metadata.
+- **Input** — camera capture or pen drawing, with the recognised LaTeX kept
+  editable before evaluation.
+- **Optional cloud fallback** — a configured vision-capable endpoint, only when
+  you choose to use it.
+
+Model weights with restrictive licenses are gated: the non-commercial Qwen
+research model requires explicit, persisted consent that names the license,
+can be withdrawn, and fails closed at inference time when absent.
+
+### Optional AI assistance
+
+CrispAssist is a verifier, narrator and translator — never a silent solver.
+It is off until you configure an Anthropic-compatible or OpenAI-compatible
+endpoint, streams responses, supports cancellation, timeout and retry, and
+shows every translated expression for review before it is calculated. Keyless
+local endpoints are supported; browser endpoints must allow CORS. A configured
+endpoint is not a claim that a model connection has been verified.
+
+### Workspace, layout and accessibility
+
+- **Adaptive layout** — bottom navigation below 720 px, a side rail from 720 px,
+  and a two-pane split from 1200 px so the calculator and a graph can be visible
+  together.
+- **Command palette** — `Ctrl`/`Cmd`+`K` searches screens, tools and function
+  examples; arrow keys and Enter work throughout.
+- **Keyboard** — hardware input, calculator shortcuts and trace controls.
+- **Accessibility** — high-contrast theme, 80–150 % text scaling, semantic
+  labels on controls and a keyboard-reachable result path.
+- **Localization** — English, German, French and Spanish, including function
+  reference entries and worked examples.
+- **Export** — PDF, Markdown, LaTeX, JSON workspace state and CSV history, plus
+  shareable `?expr=…&tab=N` links.
+
+### Performance
+
+Modules mount on first visit and keep their state; hidden graphs stop sampling.
+Graph geometry is sampled off the paint path — an isolate natively, and a
+persistent browser worker with its own WASM instance on the web, so cancelling a
+calculation does not interrupt a plot. Viewport and expression caches are
+bounded, and a settings overlay reports UI and raster p95 work times against the
+display refresh budget.
+
+---
+
+## Platform support
+
+| Platform | Symbolic engine | Notes |
+|---|---|---|
+| **iOS** | ✓ full | `.xcframework`; App Store build in review |
+| **macOS 12+** | ✓ full | `.xcframework`, release artifacts unsigned |
+| **Android arm64-v8a** | ✓ full | `libsymbolic_math_bridge.so`; APK unsigned |
+| **Windows x86_64** | ✓ full | `libsymbolic_math_bridge.dll` in a self-contained bundle |
+| **Linux x86_64** | ✓ full | GLIBC 2.35 baseline; statically built SymEngine |
+| **Web** | ✓ full via WASM | SymEngine compiled to WebAssembly (GMP/MPFR/MPC/FLINT) |
+
+Android `x86_64` and `armeabi-v7a` are not built. The only capability gap
+specific to the web build is multivariate factoring, which falls back to
+`expand`.
+
+---
+
+## Install
+
+**Web** — open [crisp-math.vercel.app](https://crisp-math.vercel.app). Both web
+hosts serve the same bundle; GitHub Pages lags at most one deploy behind.
+
+**Desktop** — download from the [release page](https://github.com/CrispStrobe/CrispMath/releases):
+`.zip` for macOS and Windows, `.tar.gz` for Linux. Builds are unsigned, so
+macOS needs right-click → Open the first time.
+
+**iOS** — join the [public TestFlight](https://testflight.apple.com/join/E6HdVhTx).
+The 1.2.0 App Store submission is currently in review.
+
+**Android** — install the unsigned APK from the release page
+(`adb install crisp_math-v1.2.0-android.apk`).
+
+---
+
+## Build from source
+
+Requirements: Flutter **3.44.0** (stable), Python 3.12 for the packaging and
+verification scripts, and a platform toolchain for native builds.
+
+```bash
+# 1. The OCR/runtime plugin is consumed from a pinned checkout, as CI does.
+git clone https://github.com/CrispStrobe/CrispEmbed.git .ci/CrispEmbed
+git -C .ci/CrispEmbed checkout --detach 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
+
+# 2. Resolve dependencies (points the plugin at that checkout).
+cat > pubspec_overrides.yaml <<'YAML'
+dependency_overrides:
+  crispembed:
+    path: .ci/CrispEmbed/flutter/crispembed
+YAML
+flutter pub get
+
+# 3. Stage the matching native OCR runtime for desktop builds.
+python3 tool/stage_ocr_runtime.py --platform linux   # or macos / windows
+
+# 4. Build and check.
+flutter analyze
+flutter test
+flutter run
+
+# 5. Browser bundle (also compiles the CAS worker).
+tool/build_web.sh --release
+```
+
+The native CAS lives in the `symbolic_math_bridge` plugin, a separate
+git-pinned repository; see its README for the SymEngine build.
+
+### Release process
+
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which validates the
+label against `pubspec.yaml` and the dependency lock, builds all six platforms,
+checks the macOS binary for exported SymEngine symbols, and publishes the
+artifacts with a dependency manifest. `main` pushes deploy the web preview to
+GitHub Pages; tags deploy Vercel production.
+
+---
 
 ## Architecture
 
-Three layers:
+Three layers, with a strict boundary at the engine:
 
-1. **Flutter UI** (`lib/screens`, `lib/widgets`) — renders the keypad,
-   captures input, displays results. No knowledge of FFI.
-2. **`CalculatorEngine`** (`lib/engine/calculator_engine.dart`) — Dart facade
-   over the `symbolic_math_bridge` plugin. Every method returns a `String` so
-   the UI can treat errors and successes the same way. When the native bridge
-   isn't loaded (e.g. under `flutter test` on the host), every method returns
-   `'Error: <op> requires native library'` instead of crashing.
-3. **`symbolic_math_bridge`** (separate package) — Flutter FFI plugin that
-   wraps the SymEngine C API.
+1. **Flutter UI** (`lib/screens`, `lib/widgets`) — rendering, input and layout;
+   it never touches FFI.
+2. **Engine facade** (`lib/engine`) — `CalculatorEngine` and the dispatchers.
+   Every operation returns a `String`, so errors and results share one path;
+   when no native library is present, calls return
+   `'Error: <op> requires native library'` instead of crashing, which is what
+   lets the whole suite run under `flutter test`.
+3. **`symbolic_math_bridge`** — an FFI plugin over the SymEngine C API, with a
+   WebAssembly build for the browser.
 
 ```mermaid
 graph LR
-    A[Flutter UI] --> B[CalculatorEngine]
+    A[Flutter UI] --> B[Engine facade]
     B --> C[symbolic_math_bridge / FFI]
-    C --> D[SymEngine C++ library]
+    C --> D[SymEngine C++]
+    B --> E[Pure-Dart paths]
+    E --> F[limits, QR eigen, plotting, units, CSP]
 ```
 
-## Project layout
+Pure-Dart implementations deliberately cover what must run synchronously or on
+the web worker: numeric fallback, limits, eigenvalue decomposition, plot
+sampling, unit and currency arithmetic, statistics and the constraint solver.
 
 ```
-CrispMath/
-├── lib/
-│   ├── main.dart                       # App entry, adaptive shell, settings
-│   ├── controllers/
-│   │   └── latex_controller.dart       # Cursor-aware LaTeX text controller
-│   ├── engine/
-│   │   ├── app_state.dart              # Singleton: history, variables, fns
-│   │   ├── calculator_engine.dart      # Bridge facade
-│   │   ├── analysis_engine.dart        # Curve sketching pipeline
-│   │   ├── eigen.dart                  # Eigenvalue/eigenvector (QR algorithm)
-│   │   ├── matrix_evaluator.dart       # Matrix ops (det/inv/rref/eigen)
-│   │   ├── statistics.dart             # Descriptive stats + regression
-│   │   ├── unit_expression.dart        # Unit arithmetic + SI derived
-│   │   ├── notepad_evaluator.dart      # Multi-line notepad pipeline
-│   │   └── symbolic_limit.dart         # Gruntz-style limit engine
-│   ├── localization/
-│   │   ├── app_localizations.dart      # i18n keys + delegate
-│   │   └── locales/                    # en/de/fr/es strings (part files)
-│   ├── screens/
-│   │   ├── calculator_screen.dart      # Calc keypad + display
-│   │   ├── graphing_screen.dart        # Plotter
-│   │   ├── function_editor_screen.dart # Y= editor
-│   │   ├── analysis_hub_screen.dart    # Module picker
-│   │   ├── constraints_screen.dart     # CSP tabs (parts in constraints/)
-│   │   ├── notepad_screen.dart         # Worksheet (parts in notepad/)
-│   │   ├── sudoku_screen.dart          # Sudoku solver explainer
-│   │   ├── curve_analysis_input_screen.dart
-│   │   ├── curve_analysis_results_screen.dart
-│   │   └── matrix_editor_screen.dart
-│   ├── utils/
-│   │   ├── expression_preprocessing_utils.dart  # Implicit-* / mod / Y(x) inlining
-│   │   ├── latex_conversion_utils.dart          # LaTeX <-> engine syntax
-│   │   ├── math_display_utils.dart              # Result formatting
-│   │   └── keyboard_input_handler.dart          # Hardware-keyboard mapping
-│   └── widgets/
-│       ├── calculator_keypad.dart      # Tabbed keypad
-│       ├── calculator_button.dart      # Single key
-│       ├── keypad_grid.dart            # Layout grid
-│       ├── latex_input_field.dart      # Live LaTeX-rendered input
-│       ├── function_picker_dialogs.dart
-│       ├── memory_dialogs.dart
-│       ├── progress_overlay.dart
-│       ├── variable_viewer.dart
-│       └── calculator_display.dart
-├── test/                               # Unit tests (no native bridge needed)
-├── PLAN.md                             # Open work items
-├── HISTORY.md                          # Completed work log
-└── pubspec.yaml
+lib/
+├── engine/          # CAS facade, solvers, statistics, units, CSP, OCR catalog
+├── screens/         # calculator, graphing, analysis hub, statistics, notepad,
+│                    # constraints, Sudoku, 3D, conic/plane analysis
+├── services/        # workers, AI provider, OCR, documents, backups, sync
+├── widgets/         # keypad, displays, dialogs, palettes, drawing canvas
+├── localization/    # en / de / fr / es
+├── utils/           # LaTeX conversion, preprocessing, keyboard mapping
+└── main.dart        # app shell, settings, adaptive layout
+
+tool/                # packaging, browser/native checks, benchmarks, release gates
+integration_test/    # end-to-end and corpus tests
+native_test/         # native OCR, CAS corpus cross-check, inference quality
+docs/                # audits, findings and per-release evidence
 ```
 
-## Building and running
+---
+
+## Privacy and data
+
+- Calculations, OCR and inference run locally; the app needs no account.
+- Cloud sync and backup exist but are **off unless you configure them**
+  yourself; the browser build is checked in CI to emit no backend requests
+  unconfigured. No production backend is selected.
+- Nothing is uploaded except what you explicitly send to an AI or cloud OCR
+  endpoint you configured.
+- Third-party licenses ship in `assets/licenses`.
+
+---
+
+## Validation
+
+The repository treats behaviour, not compilation, as the deliverable:
+
+- **273 test files** across unit, widget, integration and native suites.
+- **789 accumulated math cases** audited independently across native Linux,
+  WebAssembly and packaged macOS, plus 52 round-eleven references exercised
+  through real desktop and phone UI checks — see `docs/round11-math-audit-52.md`.
+- **Browser checks** for the deployed bundle: worksheets, linked graphs,
+  tracing, exports, document history, OCR runtime, cloud-off behaviour and the
+  guided worksheet flow, run against Pages and Vercel on every deploy.
+- **Native checks** for the installed OCR runtime (a committed `5 + 7` image
+  must evaluate to `12`), CAS corpus parity and inference quality.
+- **Release gates**: the macOS binary is rejected unless the required SymEngine
+  symbols are present, and iOS uploads are refused unless the packaged source
+  matches a green validation run and the build number is unused.
 
 ```bash
-# Fetch the on-device OCR plugin into the same path used by CI.
-git clone https://github.com/CrispStrobe/CrispEmbed.git .ci/CrispEmbed
-git -C .ci/CrispEmbed checkout --detach 11e6d598521976f38081934106b55095b46b40e3
-flutter pub get
-# For desktop OCR, stage the matching release library (linux or windows):
-python3 tool/stage_ocr_runtime.py --platform linux
-flutter analyze
-flutter test            # Over 5,100 unit and widget tests; no native bridge needed
-flutter run             # Runs the app; SymEngine bridge required for math
-tool/build_web.sh --release  # Also compiles the browser math worker
-
-# CAS regression corpus (SymPy-certified expected values):
-python3 tool/cas_corpus_verify.py                        # certify + regenerate
-flutter test test/cas_corpus_test.dart                   # pure-Dart fallbacks
+python3 tool/cas_corpus_verify.py                                  # certify corpus
+flutter test test/cas_corpus_test.dart                             # Dart fallbacks
 flutter test integration_test/cas_corpus_native_test.dart -d macos  # native
+CRISPMATH_OCR_MODEL=… CRISPMATH_OCR_LIBRARY=… \
+  flutter test native_test/ocr_native_test.dart                    # real OCR
 ```
 
-The native side lives in the `symbolic_math_bridge` plugin (separate
-repository, git-pinned in `pubspec.yaml`). See its README for the SymEngine
-build.
-
-## Platform support (1.2.0 candidate)
-
-| Platform | SymEngine bridge | Notes |
-|---|---|---|
-| **iOS** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
-| **macOS 12+** | ✓ full | `.xcframework` from `math-stack-ios-builder` |
-| **Android arm64-v8a** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg+NDK build (PLAN P11 R132) |
-| **Windows x86_64** | ✓ full | `symbolic_math_bridge_plugin.dll`, MSYS2/MinGW64 build (PLAN P11 R131) |
-| **Linux x86_64** | ✓ full | `libsymbolic_math_bridge.so`, vcpkg `x64-linux` static build on ubuntu-22.04 / GLIBC 2.35 (PLAN P11 R130) |
-| Android x86_64 / armeabi-v7a | ✗ not built | extend the bridge's build matrix when needed |
-| **Web** (Vercel) | ✓ CAS via WASM | **Live: https://crisp-math.vercel.app** (PLAN P10 Path B). Full CAS core (evaluate, expand, diff, solve, substitute, trig, gcd/lcm/factorial/fibonacci, matrices) runs via SymEngine WASM (1.1 MB, `INTEGER_CLASS=boostmp`). Pure-Dart CAS interim (expand/diff/solve for single-variable polynomials) serves as synchronous pre-load fallback. MPFR precision / FLINT number-theory / Bessel not available in web build. |
-
-Releases ship platform binaries via GitHub Actions; see GH Releases
-for `crisp_math-vX.Y.Z-{macos.zip,ios-unsigned.zip,linux-x64.tar.gz,
-windows-x64.zip,android.apk}`.
-
-## Math OCR (June 2026)
-
-On-device math equation recognition via CrispEmbed's ggml inference:
-- **Printed math:** DeiT encoder + TrOCR decoder — image → LaTeX in 3.3s (FP16)
-  - 4 quantization levels: F32 (112MB), F16 (56MB), Q8_0 (31MB), Q4_K (17MB)
-  - Models on HuggingFace: [`cstr/pix2tex-mfr-gguf`](https://huggingface.co/cstr/pix2tex-mfr-gguf)
-- **Handwritten math:** HMER (DenseNet+GRU, 13MB) and BTTR (DenseNet+Transformer, 4–25MB)
-  - Model type auto-detected from GGUF by unified `CrispEmbedOcr` FFI
-- **Cloud fallback:** CloudLlmOcrProvider (Claude/GPT-4V) for cross-platform coverage
-- **Pen input:** DrawingCanvas on all platforms (mouse/touch/stylus) → OCR pipeline
-- Camera or pen tap on Calculator/Notepad → photo/drawing → LaTeX → engine syntax
-- No cloud required, no Python, no ONNX at runtime — pure C++ via FFI
+---
 
 ## Known limitations
 
-- `limit()` uses a pure-Dart symbolic engine (L'Hôpital + Gruntz growth-rate
-  analysis) — no native SymEngine binding yet.
-- Matrix eigenvalues/eigenvectors use a pure-Dart QR algorithm — works well
-  for small matrices (tested up to 4x4), but not optimized for large ones.
-- `simplify()` handles the core trig identities natively since bridge
-  1.4.1 (Pythagorean, double angle, power reduction, secant form); broader
-  identity rewriting (angle sums, half angles, radicals) is still open.
-- OCR requires the CrispEmbed native library bundled per platform.
-- Multivariate `factor()` uses FLINT and is not available in the web build
-  (WASM `fmpz_mpoly_factor` traps).
+- `limit()` is a pure-Dart implementation (L'Hôpital plus growth-rate analysis),
+  not a SymEngine binding.
+- Eigenvalues/eigenvectors use a pure-Dart QR algorithm — fine to 4×4, not
+  optimised beyond it.
+- `simplify()` covers the core identities (Pythagorean, double angle, power
+  reduction, secant form); broader rewriting (angle sums, half angles, radicals)
+  is still open.
+- Multivariate `factor()` needs FLINT and is unavailable in the web build.
+- Handwriting recognition is experimental: the original benchmark recognises
+  7 of 50 samples, and recognition quality is reported separately from build and
+  contract tests. Printed math is markedly better.
+- 3D graphing is a wireframe `z = f(x, y)` with cached sampling; perspective,
+  hidden-line removal and contour lines are not implemented.
+- OCR requires the bundled CrispEmbed runtime for the platform.
+- Physical-device testing is not yet recorded for 1.2.0.
+- The Qwen2.5-VL-3B OCR weights are under a non-commercial research license and
+  stay behind explicit consent; they are not a general-purpose asset.
 
-Since 2026-07-04 the browser build runs the full CAS — including
-high-precision (`evalf`), number theory (isprime/factorint/…), Bessel,
-Taylor series, `linsolve`, and trig-identity simplify — via the
-full-capability SymEngine WASM (GMP/MPFR/MPC/FLINT). The remaining
-web-only gap is multivariate factoring (falls back to `expand`).
+---
 
-See `PLAN.md` for the current punch list and `HISTORY.md` for what landed
-recently.
+## Documentation
 
-## Performance validation
+| Document | Contents |
+|---|---|
+| [docs/current-state-and-next-steps.md](docs/current-state-and-next-steps.md) | verified state of every surface, open lanes |
+| [HISTORY.md](HISTORY.md) | dated record of what landed and its evidence |
+| [PLAN.md](PLAN.md) | punch list and roadmap |
+| [RELEASE_NOTES.md](RELEASE_NOTES.md) | current release notes |
+| [docs/release-notes/](docs/release-notes/) | archived release notes |
+| [DISTRIBUTION.md](DISTRIBUTION.md) | store submission checklist |
+| [STORE_LISTING.md](STORE_LISTING.md) | listing copy and review notes |
+| [docs/round11-math-audit-52.md](docs/round11-math-audit-52.md) | 789-case math evidence |
 
-Modules mount on their first visit and retain their state afterward; hidden
-graphs stop scheduling samples. Graph geometry is sampled outside painting: native builds use an isolate;
-web builds use a persistent browser worker with its own SymEngine WASM
-instance. Gesture updates use coarse samples, then refine at rest. An
-8-entry viewport cache and a 128-entry numeric expression cache are bounded.
-Calculator CAS and graph sampling use separate browser workers, so cancelling
-an evaluation does not interrupt the plot. Build web through
-`tool/build_web.sh` so the compiled worker is included. For `flutter run -d
-chrome`, first run `dart compile js -O2 -Ddart.vm.product=true
-lib/services/math_worker_entry.dart -o web/math_worker.dart.js`.
+---
 
-Use the settings performance overlay in a profile build. It reports UI and
-raster p95 work times against the display's refresh-rate budget; it does not
-claim presentation FPS. Exercise graph pan/zoom with multiple functions,
-implicit contours and parameter sliders; edit a large notepad; then compare
-cold startup with OCR unopened. Record the device and build mode with results.
-`dart run tool/benchmark_graph_sampling.dart` measures sampling CPU time only.
+## License
 
-For browser worker transport/cancellation checks, compile
-`tool/math_worker_browser_probe.dart` to `web/math_worker_probe.dart.js`, serve
-`web/` over HTTP, and run `python tool/check_math_worker.py --url
-http://localhost:8765/`. This optional check uses Python Playwright and accepts
-`--chromium` for an existing Chromium executable. The probe is a development
-artifact and is excluded from production bundles by `tool/build_web.sh`.
+GNU AGPL-3.0, with an additional permission under Section 7 allowing
+distribution through app marketplaces whose terms would otherwise conflict with
+Section 10 — provided the corresponding source stays available under the same
+license. See [LICENSE](LICENSE).
 
-Notepad records are stored per document. Existing `crisp.notepadDocs` blobs
-migrate automatically, retaining the old blob until migration succeeds.
-Writes are ordered, edits are batched, and lifecycle pauses flush pending
-changes. JSON import/export remains compatible; linked graph source IDs are included
-in the optional `graphLinks` field.
-
-
-## Feature validation
-
-Build with `tool/build_web.sh --debug --no-wasm-dry-run` and serve `build/web`
-over HTTP. With Python Playwright installed, start
-`python tool/ai_contract_fixture.py`, then run
-`python tool/check_feature_browser.py --stage 5 --url http://localhost:8766/`.
-Run `python tool/check_mobile_trace.py` for touch tap/drag checks with
-accessibility enabled in a phone-sized viewport. This uses touch emulation,
-not a physical Android device.
-Run `python tool/check_catalog_browser.py` to verify translated example titles,
-descriptions and unique search results in German, French and Spanish.
-The ordered workflow checks tracing/table CSV against numeric values, linked
-source edits, command navigation, bounds/fit/undo, and provider error,
-cancellation, retry and calculator handoff. It saves screenshots and failure
-labels. The HTTP fixture tests the provider contract, not actual model quality.
-A real provider and an evaluation corpus are still needed to assess translation
-quality. The Feature validation workflow runs focused regressions, the entire
-unit/widget suite, and live release/debug browser checks as separate jobs.
-
-Native OCR recognition runs separately from the model-independent suite:
-
-```sh
-CRISPMATH_OCR_MODEL=/path/to/pix2tex-mfr-q4_k.gguf \
-CRISPMATH_OCR_LIBRARY=/path/to/libcrispembed.so \
-flutter test native_test/ocr_native_test.dart
-```
-
-The native check recognizes the committed `5 + 7` image and requires an exact
-calculator result of `12`. Missing libraries or models fail the check. The
-Feature validation workflow builds the library and downloads the same printed
-math model offered by the app before running it. The ordinary unit suite covers
-LaTeX conversion and evaluation without requiring native OCR assets.
-
-### Workflow measurements
-
-After serving a release bundle at `http://127.0.0.1:8766/`, run:
-
-```sh
-python -m pip install -r tool/browser-requirements.txt
-python -m playwright install chromium
-python tool/benchmark_workflows.py --source YOUR_COMMIT
-```
-
-The report in `browser-results/workflow-performance.json` records cold/warm
-startup, calculation-to-saved-history, keyboard trace, pointer pan and editing
-the first variable in 500/2,000-row dependency chains until the final result
-is saved. Restored documents deliberately reuse their cached results; opening
-latency measures the restored editor, and editing measures recalculation.
-Desktop uses 1280×900; the touch profile uses 390×844 and 4× page CPU throttling.
-Throttling is configured through the page CDP session; worker timing is not calibrated. Measurements include browser automation overhead,
-notepad debounce and storage. RAF intervals describe browser frame scheduling
-on the measured host; they do not certify phone FPS or GPU performance. Small
-sample p95 values describe only the observed trials. Feature validation uploads
-the full report with its browser artifacts.
-
-`dart tool/benchmark_notepad.dart` measures the dependency evaluator separately
-with a numeric dispatcher and verifies both initial and edited final results.
-Its JIT timings exclude UI and worker costs. CI retains this report alongside
-the full browser workflow measurements so regressions can be located.
-
-### Real inference quality checks
-
-Unit scoring/provider contracts: `flutter test test/inference_quality_test.dart test/ai_provider_service_test.dart`.
-Real-model checks require an actual configured endpoint; no canned responses:
-
-```sh
-CRISPMATH_AI_ENDPOINT=http://127.0.0.1:11434/v1/chat/completions \
-CRISPMATH_AI_MODEL=your-model flutter test native_test/ai_quality_test.dart
-python3 -m pip install -r tool/inference-requirements.txt
-python3 tool/provision_ocr_quality.py
-CRISPMATH_OCR_MODEL=/path/pix2tex.gguf CRISPMATH_OCR_LIBRARY=/path/libcrispembed.so \
-flutter test native_test/ocr_native_test.dart native_test/ocr_quality_test.dart
-```
-
-Reports in `.dart_tool/inference` separate availability failures from incorrect
-translations and recognition errors. The October 1 CPU baseline with Qwen2.5
-0.5B returned 2 correct translations out of 14; it is unsuitable as an automatic
-answer source. Printed pix2tex recognized 10 of 13 scored images correctly; all
-three human handwriting cases failed expression validation. Exact outcomes and
-model provenance are in `tool/inference_baseline.json`. Truncated responses and
-exposed reasoning traces are rejected before preview.
-
-OCR provisioning renders four fonts, fractions, a root, four image variations,
-and three actual human test samples from [Google MathWriting](https://github.com/google-research/google-research/tree/master/mathwriting).
-The pinned archive is checksum verified. Generated handwriting images stay in
-ignored evaluation storage with attribution and CC BY-NC-SA 4.0 notice; they
-are not application assets. CI uploads scored reports and notices. The strict
-original printed fixture must still recognize and evaluate to 12.
-
-### Core workflow and maintenance checks
-
-On mobile, **Edit expression** opens a text field that supports typing, paste,
-selection and Enter submission; **Math preview** returns to rendered notation.
-Inspecting a linked graph offers **Edit a** (or another bound variable) when its
-assignment belongs to the source document. That action focuses the effective
-assignment, including a definition later in the document. Imported values keep
-their source ownership. AI clarification questions request more input; they are
-never inserted as calculator expressions. Recalculation shows progress and
-unexpected document failures offer retry.
-
-`tool/check_core_workflow_browser.py` verifies mobile entry, calculation,
-linked-variable editing, tracing and reload persistence against a built app.
-Workflow labels have exhaustive en/de/fr/es coverage. Notepad syntax/scope and
-worker dispatch now live in focused components. A per-run classification cache
-observes source edits; numeric substitution scans only the expression while
-symbolic bindings retain ordered replacement. In sequential JIT runs on this
-shared VPS, a 2,000-row dependent edit changed from 13.4 to 2.7 seconds. See
-`tool/notepad_evaluator_comparison.json`; this excludes UI and worker latency.
-Small integer sums also avoid per-row worker messages: the existing numeric
-parser handles only short addition/subtraction expressions with bounded operands,
-so every intermediate integer is exact. Evaluation yields between rows for UI
-responsiveness; fractions, larger integers and other operations retain engine
-routing.
-Documents with unique numeric assignments also reuse a scope index. It checks
-source identities, cached results and imports between rows; changes rebuild the
-index only if its safety conditions still hold. Symbolic results, duplicate
-assignment names and FlatZinc use the existing scope builder. A separate local
-JIT run measured a 2,000-row edit at 0.39 seconds; this still excludes UI and
-worker latency and is not an end-to-end timing.
-Native CI still validates installed OCR runtimes, and superseded platform builds
-are cancelled automatically per workflow and branch.
+Third-party components include Flutter, SymEngine (with GMP/MPFR/MPC/FLINT),
+`dart_csp`, and the CrispEmbed runtime; their notices ship in
+`assets/licenses`.
