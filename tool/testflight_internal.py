@@ -57,17 +57,41 @@ class AppleApi:
             return json.loads(raw) if raw else {}
 
 
+def matching_builds(api, app, number, version):
+    """Return every iOS build of [version] whose build number is [number]."""
+    query = urlencode({'filter[app]': app, 'filter[version]': number, 'limit': '200'})
+    found = []
+    for build in api.request('/v1/builds?' + query)['data']:
+        prerelease = api.request(f'/v1/builds/{build["id"]}/preReleaseVersion')['data']
+        if matching_build(build, prerelease, number, version):
+            found.append(build)
+    return found
+
+
+def assert_unused(api, app, number, version):
+    """Fail closed when App Store Connect already holds this build number.
+
+    Apple rejects a re-upload of an existing CFBundleVersion with a bare 409,
+    after the bundle has been built and signed. Checking first turns that into
+    a clear message and costs one API call.
+    """
+    if api.request(f'/v1/apps/{app}')['data']['attributes']['bundleId'] != 'com.crispstrobe.crispmath':
+        raise ValueError('App ID does not identify CrispMath')
+    existing = matching_builds(api, app, number, version)
+    if not existing:
+        return {'version': version, 'build': number, 'alreadyUploaded': False}
+    states = [item['attributes']['processingState'] for item in existing]
+    raise ValueError(
+        f'{version} ({number}) is already in App Store Connect '
+        f'(processingState={", ".join(states)}); bump the build number instead of re-uploading')
+
+
 def prepare(api, app, number, version, wait_seconds=900):
     if api.request(f'/v1/apps/{app}')['data']['attributes']['bundleId'] != 'com.crispstrobe.crispmath':
         raise ValueError('App ID does not identify CrispMath')
     deadline = time.monotonic() + wait_seconds
     while True:
-        query = urlencode({'filter[app]': app, 'filter[version]': number, 'limit': '200'})
-        candidates = []
-        for build in api.request('/v1/builds?' + query)['data']:
-            prerelease = api.request(f'/v1/builds/{build["id"]}/preReleaseVersion')['data']
-            if matching_build(build, prerelease, number, version):
-                candidates.append(build)
+        candidates = matching_builds(api, app, number, version)
         if len(candidates) > 1:
             raise ValueError('Multiple matching iOS builds; assignment aborted')
         if candidates:
@@ -104,10 +128,21 @@ if __name__ == '__main__':
     parser.add_argument('--version')
     parser.add_argument('--build')
     parser.add_argument('--inspect-only', action='store_true')
+    parser.add_argument('--assert-unused', action='store_true',
+                        help='Fail when this version/build pair is already uploaded')
     parser.add_argument('--output', type=Path, default=Path('testflight-evidence.json'))
     args = parser.parse_args()
     api = AppleApi(args.key_file)
     app = os.environ['ASC_APP_ID']
+    if args.assert_unused:
+        if not args.version or not args.build:
+            parser.error('--version and --build are required for --assert-unused')
+        try:
+            available = assert_unused(api, app, args.build, args.version)
+        except ValueError as error:
+            raise SystemExit(f'Upload refused: {error}')
+        print(json.dumps(available), flush=True)
+        raise SystemExit(0)
     if args.inspect_only:
         if api.request(f'/v1/apps/{app}')['data']['attributes']['bundleId'] != 'com.crispstrobe.crispmath':
             raise ValueError('App ID does not identify CrispMath')

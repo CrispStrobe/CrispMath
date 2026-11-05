@@ -196,6 +196,24 @@ jobs:
           echo "$P8_B64" | base64 --decode > ".appstoreconnect/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
           cp ".appstoreconnect/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" "$HOME/.appstoreconnect/private_keys/"
 
+      - name: Refuse to reuse an already uploaded build number
+        if: ${{ github.event_name == 'push' || inputs.dry_run == false }}
+        env:
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -eu
+          python -m pip install cryptography
+          VER=$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)
+          BUILD=$(sed -n 's/^version: .*+//p' pubspec.yaml)
+          # A duplicate build number is rejected by Apple with a bare 409 only
+          # after the bundle has been built and signed. Ask first, and name the
+          # build that is already there.
+          python tool/testflight_internal.py \
+            --key-file ".appstoreconnect/AuthKey_${ASC_KEY_ID}.p8" \
+            --version "$VER" --build "$BUILD" --assert-unused
+
       - name: Write ExportOptions.plist (manual signing)
         run: |
           cat > .appstoreconnect/ExportOptions.plist <<EOF

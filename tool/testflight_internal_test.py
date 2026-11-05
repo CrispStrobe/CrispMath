@@ -1,68 +1,69 @@
+"""Upload preflight: an existing build number must be refused before signing."""
+import importlib.util
+from pathlib import Path
 import unittest
-from unittest.mock import patch
-from testflight_internal import prepare
+
+MODULE = Path(__file__).resolve().parent / 'testflight_internal.py'
+spec = importlib.util.spec_from_file_location('testflight_internal', MODULE)
+testflight = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(testflight)
+
+APP = '6789536359'
 
 
-class ApiFixture:
-    def __init__(self, *, bundle='com.crispstrobe.crispmath', platform='IOS', version='1.2.0', internal=True, state='VALID'):
-        self.bundle, self.platform, self.version = bundle, platform, version
-        self.internal, self.state = internal, state
-        self.assigned = False
-        self.writes = []
+class FakeApi:
+    def __init__(self, builds=(), bundle_id='com.crispstrobe.crispmath'):
+        self.builds = list(builds)
+        self.bundle_id = bundle_id
+        self.requests = []
 
-    def request(self, path, data=None):
-        if data is not None:
-            self.writes.append((path, data))
-            self.assigned = True
-            return {}
-        if path == '/v1/apps/app':
-            return {'data': {'attributes': {'bundleId': self.bundle}}}
+    def request(self, path, data=None, method=None):
+        self.requests.append(path)
+        if path == f'/v1/apps/{APP}':
+            return {'data': {'attributes': {'bundleId': self.bundle_id}}}
         if path.startswith('/v1/builds?'):
-            return {'data': [{'id': 'build', 'attributes': {'version': '12', 'processingState': self.state}}]}
-        if path.endswith('/preReleaseVersion'):
-            return {'data': {'attributes': {'version': self.version, 'platform': self.platform}}}
-        if 'betaGroups?' in path:
-            return {'data': [{'id': 'group', 'attributes': {'name': 'Internal Testers', 'isInternalGroup': self.internal}}]}
-        if path == '/v1/betaGroups/group/builds?limit=200':
-            return {'data': [{'id': 'build'}] if self.assigned else []}
-        raise AssertionError(path)
+            return {'data': self.builds}
+        if path.startswith('/v1/builds/') and path.endswith('/preReleaseVersion'):
+            build_id = path.split('/')[3]
+            build = next(item for item in self.builds if item['id'] == build_id)
+            return {'data': {'attributes': {'version': build['version'],
+                                            'platform': build['platform']}}}
+        raise AssertionError(f'unexpected request: {path}')
 
 
-class InternalTestFlightTests(unittest.TestCase):
-    def test_valid_build_is_assigned_and_reverified_without_review(self):
-        api = ApiFixture()
-        result = prepare(api, 'app', '12', '1.2.0', wait_seconds=0)
-        self.assertTrue(result['internalGroupAssigned'])
-        self.assertFalse(result['appReviewSubmitted'])
-        self.assertEqual(api.writes, [('/v1/betaGroups/group/relationships/builds',
-                                      {'data': [{'type': 'builds', 'id': 'build'}]})])
+def build(identifier, number, version='1.2.0', platform='IOS',
+          state='VALID'):
+    return {'id': identifier,
+            'version': version,
+            'platform': platform,
+            'attributes': {'version': number, 'processingState': state}}
 
-    def test_wrong_app_or_external_group_never_receives_a_write(self):
-        for options in [{'bundle': 'other.app'}, {'internal': False}]:
-            api = ApiFixture(**options)
-            with self.assertRaises(ValueError):
-                prepare(api, 'app', '12', '1.2.0', wait_seconds=0)
-            self.assertEqual(api.writes, [])
 
-    def test_wrong_platform_or_marketing_version_is_not_assigned(self):
-        for options in [{'platform': 'MAC_OS'}, {'version': '1.0.3'}]:
-            api = ApiFixture(**options)
-            with self.assertRaises(TimeoutError):
-                prepare(api, 'app', '12', '1.2.0', wait_seconds=0)
-            self.assertEqual(api.writes, [])
+class AssertUnusedTest(unittest.TestCase):
+    def test_unused_build_number_passes(self):
+        api = FakeApi([build('a', '26')])
+        self.assertEqual(testflight.assert_unused(api, APP, '27', '1.2.0'),
+                         {'version': '1.2.0', 'build': '27', 'alreadyUploaded': False})
 
-    def test_failed_or_unprocessed_build_is_not_assigned(self):
-        for state in ['INVALID', 'FAILED', 'PROCESSING']:
-            api = ApiFixture(state=state)
-            with self.assertRaises((ValueError, TimeoutError)):
-                prepare(api, 'app', '12', '1.2.0', wait_seconds=0)
-            self.assertEqual(api.writes, [])
+    def test_existing_build_number_is_refused_with_its_state(self):
+        api = FakeApi([build('a', '26')])
+        with self.assertRaisesRegex(ValueError,
+                                    r'1\.2\.0 \(26\) is already in App Store Connect '
+                                    r'\(processingState=VALID\)'):
+            testflight.assert_unused(api, APP, '26', '1.2.0')
 
-    def test_assignment_is_idempotent(self):
-        api = ApiFixture()
-        api.assigned = True
-        with patch.dict('os.environ', {'GITHUB_SHA': 'verifier-source', 'BUILD_SOURCE': 'uploaded-source'}):
-            result = prepare(api, 'app', '12', '1.2.0', wait_seconds=0)
-        self.assertEqual(result['source'], 'uploaded-source')
-        self.assertEqual(result['verificationSource'], 'verifier-source')
-        self.assertEqual(api.writes, [])
+    def test_other_version_or_platform_does_not_block(self):
+        api = FakeApi([build('a', '27', version='1.1.9'),
+                       build('b', '27', platform='MAC_OS')])
+        self.assertFalse(testflight.assert_unused(api, APP, '27', '1.2.0')['alreadyUploaded'])
+
+    def test_wrong_app_is_refused_before_any_build_query(self):
+        api = FakeApi(bundle_id='com.example.other')
+        with self.assertRaisesRegex(ValueError, 'does not identify CrispMath'):
+            testflight.assert_unused(api, APP, '27', '1.2.0')
+        self.assertEqual(api.requests, [f'/v1/apps/{APP}'])
+
+
+if __name__ == '__main__':
+    unittest.main()
