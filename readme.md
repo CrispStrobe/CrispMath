@@ -14,9 +14,11 @@ constants, statistics, plotting and OCR all execute locally.
 **[Releases](https://github.com/CrispStrobe/CrispMath/releases)** ·
 **[TestFlight](https://testflight.apple.com/join/E6HdVhTx)**
 
-Current version: **1.2.0**. Release artifacts are build **26** (tag
-`v1.2.0`); build **27** is the iOS binary currently in App Review, and it adds
-the research-license consent gate described below.
+Current version: <!-- AUTO:app_version -->1.2.0<!-- /AUTO:app_version -->;
+`pubspec.yaml` carries build <!-- AUTO:build_number -->27<!-- /AUTO:build_number -->.
+Latest release tag: <!-- AUTO:latest_tag -->v1.2.0<!-- /AUTO:latest_tag -->.
+The App Store binary can trail the tag by a build number when it is rebuilt for
+a release-blocking fix — see [HISTORY.md](HISTORY.md).
 
 ---
 
@@ -67,8 +69,9 @@ SymEngine-backed bridge (native) or its WASM build (web).
 - **Boolean and constraint DSL** — `and`, `or`, `among`, `at_least`,
   `at_most`, `all_different`, `at_most_in_a_row`.
 
-The full function reference (130 entries with signatures, examples, expected
-results and cross-links) is available inside the app.
+The full function reference (<!-- AUTO:function_entry_count -->130<!-- /AUTO:function_entry_count --> entries
+with signatures, examples, expected results and cross-links) is available
+inside the app.
 
 ### Units, dates and everyday arithmetic
 
@@ -211,13 +214,13 @@ The 1.2.0 App Store submission is currently in review.
 
 ## Build from source
 
-Requirements: Flutter **3.44.0** (stable), Python 3.12 for the packaging and
-verification scripts, and a platform toolchain for native builds.
+Requirements: Flutter **<!-- AUTO:flutter_version -->3.44.0<!-- /AUTO:flutter_version -->** (stable), Python 3.12 for the
+packaging and verification scripts, and a platform toolchain for native builds.
 
 ```bash
 # 1. The OCR/runtime plugin is consumed from a pinned checkout, as CI does.
 git clone https://github.com/CrispStrobe/CrispEmbed.git .ci/CrispEmbed
-git -C .ci/CrispEmbed checkout --detach 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
+git -C .ci/CrispEmbed checkout --detach <!-- AUTO:crispembed_revision -->78493a31fc3043f3af4ab6fd2f197a32da6f07f0<!-- /AUTO:crispembed_revision -->
 
 # 2. Resolve dependencies (points the plugin at that checkout).
 cat > pubspec_overrides.yaml <<'YAML'
@@ -249,6 +252,20 @@ label against `pubspec.yaml` and the dependency lock, builds all six platforms,
 checks the macOS binary for exported SymEngine symbols, and publishes the
 artifacts with a dependency manifest. `main` pushes deploy the web preview to
 GitHub Pages; tags deploy Vercel production.
+
+### Pinned versions
+
+Generated from `pubspec.yaml` and `tool/dependency_lock.json` by
+`tool/update_readme_facts.py`; do not edit these rows by hand.
+
+| Component | Pin |
+|---|---|
+| CrispMath | <!-- AUTO:app_version_build -->1.2.0+27<!-- /AUTO:app_version_build --> |
+| Latest release tag | <!-- AUTO:latest_tag -->v1.2.0<!-- /AUTO:latest_tag --> |
+| Flutter | <!-- AUTO:flutter_version -->3.44.0<!-- /AUTO:flutter_version --> |
+| CrispEmbed runtime | <!-- AUTO:crispembed_revision -->78493a31fc3043f3af4ab6fd2f197a32da6f07f0<!-- /AUTO:crispembed_revision --> |
+| `symbolic_math_bridge` | <!-- AUTO:bridge_revision -->e75dbbe916c238e6a109ba85aac227fe9bbe34b7<!-- /AUTO:bridge_revision --> |
+| `dart_csp` | <!-- AUTO:dart_csp_version -->2.3.0 (ce10138)<!-- /AUTO:dart_csp_version --> |
 
 ---
 
@@ -314,7 +331,7 @@ docs/                # audits, findings and per-release evidence
 
 The repository treats behaviour, not compilation, as the deliverable:
 
-- **273 test files** across unit, widget, integration and native suites.
+- **<!-- AUTO:test_file_count -->273<!-- /AUTO:test_file_count --> test files** across unit, widget, integration and native suites.
 - **789 accumulated math cases** audited independently across native Linux,
   WebAssembly and packaged macOS, plus 52 round-eleven references exercised
   through real desktop and phone UI checks — see `docs/round11-math-audit-52.md`.

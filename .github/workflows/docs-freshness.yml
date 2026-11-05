@@ -1,0 +1,80 @@
+# Keeps the generated facts in readme.md (version, build, latest tag, pinned
+# dependency revisions, test and function counts) in step with their real
+# sources instead of hand-edited prose.
+#
+#   * push to main / a v* tag  -> rewrite the marked blocks and commit the
+#                                 change if anything moved
+#   * pull request             -> fail when the README is stale, so the drift is
+#                                 visible before it merges
+#
+# Source of truth per fact: pubspec.yaml, tool/dependency_lock.json, the newest
+# v* tag, and counts taken from the tree. Nothing here invents a value, and a
+# missing marker or source is an error rather than a silently skipped line.
+
+name: Docs freshness
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-freshness-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  facts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (pull request)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A tag push leaves a detached HEAD; refresh the facts on main, which is
+      # where the README is read from.
+      - name: Checkout main (push or dispatch)
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generator unit tests
+        run: python -m unittest discover -s tool -p 'update_readme_facts_test.py'
+
+      - name: Refresh generated README facts
+        if: github.event_name != 'pull_request'
+        id: refresh
+        run: |
+          python tool/update_readme_facts.py
+          if git diff --quiet -- readme.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit the refreshed facts
+        if: github.event_name != 'pull_request' && steps.refresh.outputs.changed == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add readme.md
+          git commit -m "docs: refresh generated README facts [skip ci]"
+          git push origin HEAD:main
+
+      - name: Check the README is current (pull request)
+        if: github.event_name == 'pull_request'
+        run: python tool/update_readme_facts.py --check
