@@ -205,10 +205,10 @@ hosts serve the same bundle; GitHub Pages lags at most one deploy behind.
 macOS needs right-click → Open the first time.
 
 **iOS** — join the [public TestFlight](https://testflight.apple.com/join/E6HdVhTx).
-The 1.2.0 App Store submission is currently in review.
+The current App Store submission is in review.
 
 **Android** — install the unsigned APK from the release page
-(`adb install crisp_math-v1.2.0-android.apk`).
+(`adb install crisp_math-v<!-- AUTO:app_version -->1.2.0<!-- /AUTO:app_version -->-android.apk`).
 
 ---
 
@@ -370,7 +370,7 @@ CRISPMATH_OCR_MODEL=… CRISPMATH_OCR_LIBRARY=… \
 - 3D graphing is a wireframe `z = f(x, y)` with cached sampling; perspective,
   hidden-line removal and contour lines are not implemented.
 - OCR requires the bundled CrispEmbed runtime for the platform.
-- Physical-device testing is not yet recorded for 1.2.0.
+- Physical-device testing is not yet recorded for the current release.
 - The Qwen2.5-VL-3B OCR weights are under a non-commercial research license and
   stay behind explicit consent; they are not a general-purpose asset.
 
