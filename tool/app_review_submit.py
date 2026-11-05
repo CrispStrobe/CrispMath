@@ -113,6 +113,22 @@ def withdraw(api, app, evidence, wait_seconds=900):
         time.sleep(20)
 
 
+def resubmit_submission(submissions, app_store_version):
+    """The submission to resubmit for a version Apple rejected.
+
+    Apple keeps a rejected version inside the submission that rejected it and
+    refuses to accept the same version in a new one, so a resubmission has to
+    reuse that submission instead of adding a fresh item.
+    """
+    for submission in submissions:
+        if submission['state'] != 'UNRESOLVED_ISSUES':
+            continue
+        if any(item['appStoreVersion'] == app_store_version
+               for item in submission['items']):
+            return submission['id']
+    return None
+
+
 def submit(api, app, evidence):
     if any(v['state'] in IN_FLIGHT for v in evidence['versions']):
         raise ValueError('A version is already waiting for or in review')
@@ -157,19 +173,28 @@ def submit(api, app, evidence):
             'relationships': {'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': vid}}}}})
 
     # Reuse an open draft submission instead of leaving another one behind.
-    drafts = [s for s in evidence['reviewSubmissions'] if s['state'] == 'READY_FOR_REVIEW']
-    draft = next((s for s in drafts if any(i['appStoreVersion'] == vid for i in s['items'])), None) \
-        or next((s for s in drafts if not s['items']), None)
-    if draft:
-        sid = draft['id']
+    # A rejected version stays attached to the submission that rejected it:
+    # Apple refuses to add the same version to a second one ("Item is already
+    # present in another reviewSubmission"). Resubmitting that submission is
+    # what the web UI's "Resubmit to App Review" button does, and the attached
+    # build above is the binary that submission will now review.
+    reused = resubmit_submission(evidence['reviewSubmissions'], vid)
+    if reused:
+        sid = reused
     else:
-        sid = api.request('/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions',
-            'attributes': {'platform': 'IOS'},
-            'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']['id']
-    if not (draft and any(i['appStoreVersion'] == vid for i in draft['items'])):
-        api.request('/v1/reviewSubmissionItems', {'data': {'type': 'reviewSubmissionItems',
-            'relationships': {'reviewSubmission': {'data': {'type': 'reviewSubmissions', 'id': sid}},
-                              'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': vid}}}}})
+        drafts = [s for s in evidence['reviewSubmissions'] if s['state'] == 'READY_FOR_REVIEW']
+        draft = next((s for s in drafts if any(i['appStoreVersion'] == vid for i in s['items'])), None) \
+            or next((s for s in drafts if not s['items']), None)
+        if draft:
+            sid = draft['id']
+        else:
+            sid = api.request('/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions',
+                'attributes': {'platform': 'IOS'},
+                'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']['id']
+        if not (draft and any(i['appStoreVersion'] == vid for i in draft['items'])):
+            api.request('/v1/reviewSubmissionItems', {'data': {'type': 'reviewSubmissionItems',
+                'relationships': {'reviewSubmission': {'data': {'type': 'reviewSubmissions', 'id': sid}},
+                                  'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': vid}}}}})
     api.request(f'/v1/reviewSubmissions/{sid}', {'data': {'type': 'reviewSubmissions', 'id': sid,
         'attributes': {'submitted': True}}}, method='PATCH')
 
