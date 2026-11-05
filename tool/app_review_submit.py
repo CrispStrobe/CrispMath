@@ -16,20 +16,15 @@ from urllib.parse import urlencode
 from testflight_internal import AppleApi, matching_build
 
 REVIEW_NOTES = """\
-This resubmission responds to the 4.3(a) finding on CrispMath 1.0.3 (submission e4eafc90-b0a1-4e16-890a-11dbf5919165). The same finding was recorded against nine other apps of ours in the same period, which makes us suspect an automated similarity check rather than a judgement about this app. CrispMath shares practically no relevant source files with our other titles, some of which are learning games; this is a scientific and graphing calculator with a computer algebra system in it.
+This resubmission answers the Guideline 4.3(a) finding against CrispMath 1.2.0. The full point-by-point response to the nine questions was sent in Messages on 3 November 2026; this build carries the fixes made since the rejected binary.
 
-The algebra is not string rewriting or a stored table of worked examples. The app embeds SymEngine, a C++ computer algebra library, through dart:ffi. On device and offline it provides:
-- symbolic factoring, expansion and simplification with rational cancellation
-- symbolic differentiation, Taylor and Maclaurin series, and limits computed by the Gruntz algorithm rather than by pattern matching
-- equation and linear-system solving; matrices with determinant, inverse, reduced row echelon form and eigenvalues
-- curve sketching that annotates roots and extrema, with parameter sliders
-- statistics: one-, two-sample and paired t-tests, one-way ANOVA, chi-square goodness-of-fit and independence, Wilcoxon rank-sum
-- unit conversion with SI prefixes and composite-dimension arithmetic
-- a FlatZinc constraint solver with a step-by-step propagation view, and a Sudoku solver that explains each deduction (singles, locked candidates, subsets, Killer cage sums) and draws its search tree
+CrispMath is a standalone mathematical workspace, not a template product or an opportunistic variant of a category app. Users define variables and functions in a worksheet, compute symbolic algebra and calculus, link expressions to a graph, trace curves and export the worksheet together with its plots. The algebra is SymEngine, a C++ computer algebra library, called through dart:ffi and running on device without an account; it is not string rewriting or a stored table of worked examples. It provides factoring and simplification with rational cancellation, symbolic differentiation, Taylor and Maclaurin series, limits computed by the Gruntz algorithm, equation and linear-system solving, matrices with determinant/inverse/RREF/eigenvalues, statistical tests, unit conversion with composite dimensions, and a FlatZinc constraint solver with a step-by-step propagation view.
 
-Suggested path: the app opens on a worksheet. Enter a=3, then f(t)=t^2+a, then f(4); the result is 19, and changing a recalculates the sheet. Analysis > Labs > Sudoku solver > AI Escargot > Solve, then Next, steps through the explained deductions.
+Suggested path: the app opens on a worksheet. Enter a=3, then f(t)=t^2+a, then f(4); the result is 19, and changing a recalculates the sheet. Analysis > Labs > Sudoku solver > AI Escargot > Solve, then Next, steps through each explained deduction.
 
-It is about 99,000 lines of Dart with more than 3,400 automated tests, localised in English, German, French and Spanish, and exports LaTeX. No account is needed. The source is public, so none of this has to be taken on trust: https://github.com/CrispStrobe/CrispMath
+It is about 99,000 lines of Dart with more than 3,400 automated tests, localised in English, German, French and Spanish, and exports LaTeX. The source is public: https://github.com/CrispStrobe/CrispMath
+
+This build (27) also fixes the keyboard focus, graph-function editing and memory-value layout issues found while testing build 25. It shares no codebase, SDK or content library with any third-party app; internal components shared with our other titles are identified in the 3 November reply.
 """
 
 EDITABLE = {'PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED',
