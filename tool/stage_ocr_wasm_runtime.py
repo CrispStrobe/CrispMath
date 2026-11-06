@@ -12,7 +12,10 @@ ASSETS = ('crispembed_ocr.js', 'crispembed_ocr.wasm')
 UTF8_BEFORE = b'UTF8Decoder.decode(heapOrArray.subarray(idx,endPtr))'
 UTF8_AFTER = b'UTF8Decoder.decode(heapOrArray.buffer.resizable?heapOrArray.slice(idx,endPtr):heapOrArray.subarray(idx,endPtr))'
 PATCH_RULE_SHA256 = hashlib.sha256(UTF8_BEFORE + b'\n' + UTF8_AFTER).hexdigest()
-PATCHED_17_12_JS_SHA256 = 'b5116b0625c30bc5be2f0ebcd9aae096936de7cb7fc4cf04cb9a096cd5e46407'
+PATCHED_JS_SHA256 = {
+    '0.17.12': 'b5116b0625c30bc5be2f0ebcd9aae096936de7cb7fc4cf04cb9a096cd5e46407',
+    '0.17.15': 'bf91cf3c9a4fbc5620ef46f10392a22c4ef886cb000fcda479b9b73a2bca2e70',
+}
 PATCH_SOURCE = 'https://github.com/emscripten-core/emscripten/pull/27242'
 PATCH_SOURCE_COMMIT = 'a41c221fbe7b99bf2f0d7e84990f90b5bf2fd9f3'
 
@@ -25,8 +28,8 @@ def patch_loader(script):
 
 def staged_checksums(version, published):
     result = published.copy()
-    if version == '0.17.12':
-        result['crispembed_ocr.js'] = PATCHED_17_12_JS_SHA256
+    if version in PATCHED_JS_SHA256:
+        result['crispembed_ocr.js'] = PATCHED_JS_SHA256[version]
     return result
 
 REQUIRED_EXPORTS = ('_wasm_ocr_version', '_wasm_ocr_init',
@@ -78,7 +81,7 @@ def stage(root=Path('.'), *, fetch=download, source_revision=None, environment=N
         files[asset] = data
     downloaded = {name: hashlib.sha256(data).hexdigest() for name, data in files.items()}
     patch = None
-    if version == '0.17.12':
+    if version in PATCHED_JS_SHA256:
         files['crispembed_ocr.js'] = patch_loader(files['crispembed_ocr.js'])
         patch = {'upstream': PATCH_SOURCE, 'sourceCommit': PATCH_SOURCE_COMMIT,
                  'ruleSha256': PATCH_RULE_SHA256, 'replacements': 1}

@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from stage_ocr_wasm_runtime import (PATCH_RULE_SHA256, PATCH_SOURCE,
-                                    PATCH_SOURCE_COMMIT, staged_checksums)
+                                    PATCH_SOURCE_COMMIT, PATCHED_JS_SHA256, staged_checksums)
 
 API_VERSION = 'crispembed-ocr-wasm-0.3.0'
 
@@ -19,7 +19,7 @@ def verify_report(report, source, revision, version, checksums):
     expected = staged_checksums(version, checksums)
     if report.get('downloadedAssets') != {name: checksums[name] for name in expected if name in ('crispembed_ocr.js', 'crispembed_ocr.wasm')}:
         raise ValueError('OCR downloaded asset checksum mismatch')
-    if version == '0.17.12' and report.get('compatibilityPatch') != {
+    if version in PATCHED_JS_SHA256 and report.get('compatibilityPatch') != {
             'upstream': PATCH_SOURCE, 'sourceCommit': PATCH_SOURCE_COMMIT,
             'ruleSha256': PATCH_RULE_SHA256, 'replacements': 1}:
         raise ValueError('OCR compatibility patch provenance mismatch')

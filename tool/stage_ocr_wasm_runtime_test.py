@@ -60,7 +60,7 @@ class StageOcrWasmRuntimeTest(unittest.TestCase):
             self.assertEqual(report['downloadedAssets'][name], hashlib.sha256(data).hexdigest())
             self.assertIn('/v0.17.12/', next(url for url in self.calls if url.endswith(name)))
 
-    def test_successor_release_stages_original_verified_bytes(self):
+    def test_successor_release_applies_known_compatibility_fix(self):
         (self.plugin / 'pubspec.yaml').write_text('version: 0.17.15\n')
         (self.root / 'tool/dependency_lock.json').write_text(json.dumps(
             {'crispembed': {'revision': REVISION, 'version': '0.17.15'}}))
@@ -68,10 +68,12 @@ class StageOcrWasmRuntimeTest(unittest.TestCase):
             {'0.17.15': {name: hashlib.sha256(data).hexdigest()
                          for name, data in self.files.items()}}))
         report = self.check()
-        self.assertIsNone(report['compatibilityPatch'])
+        self.assertEqual(report['compatibilityPatch']['replacements'], 1)
         for name, data in self.files.items():
-            self.assertEqual((self.root / 'web' / name).read_bytes(), data)
-            self.assertEqual(report['downloadedAssets'][name], report['assets'][name]['sha256'])
+            actual = patch_loader(data) if name.endswith('.js') else data
+            self.assertEqual((self.root / 'web' / name).read_bytes(), actual)
+            self.assertEqual(report['downloadedAssets'][name], hashlib.sha256(data).hexdigest())
+            self.assertEqual(report['assets'][name]['sha256'], hashlib.sha256(actual).hexdigest())
             self.assertIn('/v0.17.15/', next(url for url in self.calls if url.endswith(name)))
 
     def test_unknown_duplicate_and_already_patched_calls_reject(self):
