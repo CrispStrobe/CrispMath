@@ -32,5 +32,23 @@
     "crispembed_ocr.wasm": "e6965be85330280175e57055e7d688cb9e2ea7decacd6f7a157e5048a4e0f577",
     "runtime-artifact-manifest.json": "28f92e668558c2dfa0c8e0f7e47dbe5929715fc1e69bbe9af87df37e7d37a52f",
     "wasm-release-artifact-manifest.json": "4c842768092059b3db9286e43a28e9e3fded3dce4333534a3609edd6c84aa6cd"
+  },
+  "0.17.15": {
+    "crispembed-android-arm64-v8a.tar.gz": "ba8ac0053d9cb239c5f199d189ff978dd0ddf00d56fa124e2c3bd76956b3b968",
+    "crispembed-android-armeabi-v7a.tar.gz": "4cc0e332933e25c33daed1573c80d9654aa9c495ab14367ea3086a143c5dd4b5",
+    "crispembed-embed-wasm.tar.gz": "e882d115760308d6a87c329a59a153f4ea8b28c11fec31448a9b2ef7eda18d8c",
+    "crispembed-ios-arm64.tar.gz": "958c3136703e744f4d21cec7838d5c035bcb964d5a37e81fab1662fbc715ea77",
+    "crispembed-linux-arm64.tar.gz": "c5c30444c1514adef14bd5b4d56fd45263f76f5a4c60a21085d94caf89b22b76",
+    "crispembed-linux-x86_64-cuda-bundled.tar.gz": "af1d71cc68430e2c9df0798ae2843e2c79f53437bd3a9e314d176c8cb8516c71",
+    "crispembed-linux-x86_64-cuda.tar.gz": "ef32f8a5b19436abed95c73352deae71ba8a0f43603877dee2e0cc4397eaea4b",
+    "crispembed-linux-x86_64.tar.gz": "b247e6bbf50b1d576af69335cbb098a8b120cc61d738dd3139eda9ec9bac4ea7",
+    "crispembed-macos-arm64.tar.gz": "f13899f9bd5cb1b0a581f95f817325ed014ba9d0bb50f0b9c741b84ce607a9c2",
+    "crispembed-ocr-wasm.tar.gz": "fffddcec706f197d3fa25433ff45542f5c9fda722a6159f8d7c3b11a9e70c36a",
+    "crispembed-ocr.js": "fbdb66dbd251a7ec6dbd3d03b6fc0edd315c3c5598fd5d3d86ef0f6fc9fb4347",
+    "crispembed-windows-x86_64-cuda.zip": "b8030d21ec76adc20ab909989dcc767eabfad84260a719172b0c9a1154dda8cf",
+    "crispembed-windows-x86_64-vulkan.zip": "9a4f3b92f8f6f1dfa687c76260bc2a5841a4816cc74ece98d1050791d9da365e",
+    "crispembed-windows-x86_64.zip": "3bbf1d415d8796c49b3ffab61bd33b54a930824da2b77f219875986bb2426c67",
+    "crispembed_ocr.js": "fe5e667ce364e1be8b5283ada32b6c83fae3cf42436e6323b4c38902fc5da0bd",
+    "crispembed_ocr.wasm": "c67a6d104f6cc06f085bed7bc8291f66ab1004ad6b2ac9287e7b1a564a167717"
   }
 }

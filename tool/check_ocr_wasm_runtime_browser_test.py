@@ -21,6 +21,16 @@ class OcrWasmBrowserTest(unittest.TestCase):
         verify_report(self.report, 'c' * 40, 'd' * 40, '0.17.12', self.checksums)
         verify_live(self.live, staged_checksums('0.17.12', self.checksums))
 
+    def test_01715_requires_recorded_patch_and_patched_bytes(self):
+        report = copy.deepcopy(self.report)
+        report['version'] = '0.17.15'
+        report['assets'] = {name: {'sha256': sha} for name, sha in
+                            staged_checksums('0.17.15', self.checksums).items()}
+        verify_report(report, 'c' * 40, 'd' * 40, '0.17.15', self.checksums)
+        report['compatibilityPatch'] = None
+        with self.assertRaisesRegex(ValueError, 'patch provenance'):
+            verify_report(report, 'c' * 40, 'd' * 40, '0.17.15', self.checksums)
+
     def test_wrong_app_source_vendor_source_release_or_verified_flag_reject(self):
         for key, value in [('source', 'e' * 40), ('crispembedSource', 'e' * 40),
                            ('version', '0.17.11'), ('checksumsVerified', False)]:

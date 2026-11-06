@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
+          ref: d28ca2ea43a95934d673d1a54177fdf721614ade
           path: .ci/CrispEmbed
 
       - name: Set up Flutter
@@ -75,6 +75,11 @@ jobs:
           CRISPMATH_OCR_MODEL: .ci/ocr-model/pix2tex-mfr-q4_k.gguf
           CRISPMATH_OCR_LIBRARY: build/windows/x64/runner/Release/crispembed.dll
         run: flutter test --no-pub --reporter expanded native_test/ocr_native_test.dart
+
+      - name: Check license gate in the loaded packaged runtime
+        env:
+          CRISPMATH_OCR_LIBRARY: build/windows/x64/runner/Release/crispembed.dll
+        run: flutter test --no-pub --reporter expanded native_test/license_gate_native_test.dart
 
       - name: Zip the bundle
         run: |

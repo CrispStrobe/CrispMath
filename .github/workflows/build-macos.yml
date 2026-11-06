@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
+          ref: d28ca2ea43a95934d673d1a54177fdf721614ade
           path: .ci/CrispEmbed
 
       - name: Set up Flutter
@@ -366,7 +366,7 @@ jobs:
         env:
           CRISPMATH_OCR_APP_EXECUTABLE: build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math
           CRISPMATH_OCR_MODEL: .ci/ocr-model/pix2tex-mfr-q4_k.gguf
-          CRISPMATH_OCR_LIBRARY: build/macos/Build/Products/Release/crisp_math.app/Contents/Frameworks/libcrispembed.0.dylib
+          CRISPMATH_OCR_LIBRARY: build/macos/Build/Products/Release/crisp_math.app/Contents/Frameworks/libcrispembed.dylib
         run: flutter test --no-pub --reporter expanded native_test/ocr_native_test.dart
 
       - name: Zip the .app for download

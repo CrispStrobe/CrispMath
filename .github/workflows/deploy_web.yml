@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
-          ref: 78493a31fc3043f3af4ab6fd2f197a32da6f07f0
+          ref: d28ca2ea43a95934d673d1a54177fdf721614ade
           path: .ci/CrispEmbed
 
       - name: Setup Flutter
