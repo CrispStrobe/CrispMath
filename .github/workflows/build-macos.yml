@@ -366,7 +366,7 @@ jobs:
         env:
           CRISPMATH_OCR_APP_EXECUTABLE: build/macos/Build/Products/Release/crisp_math.app/Contents/MacOS/crisp_math
           CRISPMATH_OCR_MODEL: .ci/ocr-model/pix2tex-mfr-q4_k.gguf
-          CRISPMATH_OCR_LIBRARY: build/macos/Build/Products/Release/crisp_math.app/Contents/Frameworks/libcrispembed.0.dylib
+          CRISPMATH_OCR_LIBRARY: build/macos/Build/Products/Release/crisp_math.app/Contents/Frameworks/libcrispembed.dylib
         run: flutter test --no-pub --reporter expanded native_test/ocr_native_test.dart
 
       - name: Zip the .app for download
