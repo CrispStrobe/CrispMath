@@ -60,6 +60,20 @@ class StageOcrWasmRuntimeTest(unittest.TestCase):
             self.assertEqual(report['downloadedAssets'][name], hashlib.sha256(data).hexdigest())
             self.assertIn('/v0.17.12/', next(url for url in self.calls if url.endswith(name)))
 
+    def test_successor_release_stages_original_verified_bytes(self):
+        (self.plugin / 'pubspec.yaml').write_text('version: 0.17.15\n')
+        (self.root / 'tool/dependency_lock.json').write_text(json.dumps(
+            {'crispembed': {'revision': REVISION, 'version': '0.17.15'}}))
+        (self.root / 'tool/ocr_runtime_checksums.json').write_text(json.dumps(
+            {'0.17.15': {name: hashlib.sha256(data).hexdigest()
+                         for name, data in self.files.items()}}))
+        report = self.check()
+        self.assertIsNone(report['compatibilityPatch'])
+        for name, data in self.files.items():
+            self.assertEqual((self.root / 'web' / name).read_bytes(), data)
+            self.assertEqual(report['downloadedAssets'][name], report['assets'][name]['sha256'])
+            self.assertIn('/v0.17.15/', next(url for url in self.calls if url.endswith(name)))
+
     def test_unknown_duplicate_and_already_patched_calls_reject(self):
         for script in (b'unknown', UTF8_BEFORE + UTF8_BEFORE, UTF8_AFTER):
             with self.subTest(script=script), self.assertRaises(ValueError):

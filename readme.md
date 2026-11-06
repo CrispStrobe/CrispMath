@@ -220,7 +220,7 @@ packaging and verification scripts, and a platform toolchain for native builds.
 ```bash
 # 1. The OCR/runtime plugin is consumed from a pinned checkout, as CI does.
 git clone https://github.com/CrispStrobe/CrispEmbed.git .ci/CrispEmbed
-git -C .ci/CrispEmbed checkout --detach <!-- AUTO:crispembed_revision -->78493a31fc3043f3af4ab6fd2f197a32da6f07f0<!-- /AUTO:crispembed_revision -->
+git -C .ci/CrispEmbed checkout --detach <!-- AUTO:crispembed_revision -->d28ca2ea43a95934d673d1a54177fdf721614ade<!-- /AUTO:crispembed_revision -->
 
 # 2. Resolve dependencies (points the plugin at that checkout).
 cat > pubspec_overrides.yaml <<'YAML'
@@ -263,7 +263,7 @@ Generated from `pubspec.yaml` and `tool/dependency_lock.json` by
 | CrispMath | <!-- AUTO:app_version_build -->1.2.0+27<!-- /AUTO:app_version_build --> |
 | Latest release tag | <!-- AUTO:latest_tag -->v1.2.0<!-- /AUTO:latest_tag --> |
 | Flutter | <!-- AUTO:flutter_version -->3.44.0<!-- /AUTO:flutter_version --> |
-| CrispEmbed runtime | <!-- AUTO:crispembed_revision -->78493a31fc3043f3af4ab6fd2f197a32da6f07f0<!-- /AUTO:crispembed_revision --> |
+| CrispEmbed runtime | <!-- AUTO:crispembed_revision -->d28ca2ea43a95934d673d1a54177fdf721614ade<!-- /AUTO:crispembed_revision --> |
 | `symbolic_math_bridge` | <!-- AUTO:bridge_revision -->e75dbbe916c238e6a109ba85aac227fe9bbe34b7<!-- /AUTO:bridge_revision --> |
 | `dart_csp` | <!-- AUTO:dart_csp_version -->2.3.0 (ce10138)<!-- /AUTO:dart_csp_version --> |
 
