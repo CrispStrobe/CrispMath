@@ -3,7 +3,7 @@
 Living worklist. `[ ]` pending · `[~]` in-progress · `[x]` done.
 Completed items with details are in `HISTORY.md`.
 
-## Current app status — 31 October 2026
+## Historical app status — 31 October 2026
 
 App Store Connect reports 1.2.0 (25) VALID and assigned to Internal Testers
 for source 5d50e367207cc890fa4be048d16057a52a0bf891; see the
