@@ -76,6 +76,11 @@ jobs:
           CRISPMATH_OCR_LIBRARY: build/windows/x64/runner/Release/crispembed.dll
         run: flutter test --no-pub --reporter expanded native_test/ocr_native_test.dart
 
+      - name: Check license gate in the loaded packaged runtime
+        env:
+          CRISPMATH_OCR_LIBRARY: build/windows/x64/runner/Release/crispembed.dll
+        run: flutter test --no-pub --reporter expanded native_test/license_gate_native_test.dart
+
       - name: Zip the bundle
         run: |
           cd build\windows\x64\runner\Release
