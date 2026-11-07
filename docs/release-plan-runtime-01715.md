@@ -29,13 +29,13 @@ bounded consumer checks, not universal model quality or physical-device proof.
 
 ## Store state and version decision
 
-The last recorded App Store readback on 5 November has 1.2.0 build 27 VALID,
-assigned internally and waiting for review after resubmission. A fresh read-only
-inspection [42371965467](https://github.com/CrispStrobe/CrispMath/actions/runs/42371965467)
-was queued when this plan was written; use its actual result, not the old
-snapshot, before selecting a release action. A completed workflow alone must be
-backed by its returned version, review and build states. If inspection fails,
-record the failure and treat the current store state as unknown.
+The 7 November read-only inspection [42371965467](https://github.com/CrispStrobe/CrispMath/actions/runs/42371965467)
+confirmed build 27 is valid and current, and that App Store version 1.2.0 has
+that build attached with state `WAITING_FOR_REVIEW`. The age-rating declaration
+and the active submission are also waiting for review. The inspection made no
+submission or other store change. Internal assignment was last verified on
+5 November; inspect it again if it is needed for a later release. Recheck all
+store states before acting because review can advance independently.
 
 After reviewing that state, choose the next legal marketing version and an
 unused build number greater than 27. Do not assume 1.2.1 or build 28 is available:
