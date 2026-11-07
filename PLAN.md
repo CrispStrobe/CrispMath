@@ -3,6 +3,10 @@
 Living worklist. `[ ]` pending · `[~]` in-progress · `[x]` done.
 Completed items with details are in `HISTORY.md`.
 
+## Next release planning — 7 November 2026
+
+[The 0.17.15 consumer release plan](docs/release-plan-runtime-01715.md) binds the merged source, existing consumer evidence, outstanding exact-candidate gates and read-only store inspection. No new version, upload or review submission has been authorized by this plan.
+
 ## Historical app status — 31 October 2026
 
 App Store Connect reports 1.2.0 (25) VALID and assigned to Internal Testers
