@@ -331,7 +331,7 @@ docs/                # audits, findings and per-release evidence
 
 The repository treats behaviour, not compilation, as the deliverable:
 
-- **<!-- AUTO:test_file_count -->274<!-- /AUTO:test_file_count --> test files** across unit, widget, integration and native suites.
+- **<!-- AUTO:test_file_count -->277<!-- /AUTO:test_file_count --> test files** across unit, widget, integration and native suites.
 - **789 accumulated math cases** audited independently across native Linux,
   WebAssembly and packaged macOS, plus 52 round-eleven references exercised
   through real desktop and phone UI checks — see `docs/round11-math-audit-52.md`.
