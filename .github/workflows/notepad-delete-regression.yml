@@ -1,0 +1,67 @@
+name: Focused source deletion regression
+on:
+  push:
+    branches: [ci/notepad-delete-regression-20261110]
+permissions:
+  contents: read
+concurrency:
+  group: notepad-delete-regression-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  APP_SOURCE_BASE: ca24eb34b9b83037aad1be6fc54e3f7623e92aa0
+jobs:
+  regression:
+    runs-on: macos-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Verify production source unchanged
+        run: |
+          git cat-file -e "$APP_SOURCE_BASE^{commit}" || git fetch --no-tags --depth=1 origin "$APP_SOURCE_BASE"
+          python3 - <<'PY_RECEIPT'
+          import json, os, subprocess
+          from pathlib import Path
+          base = os.environ['APP_SOURCE_BASE']
+          changed = subprocess.check_output(['git', 'diff', '--name-only', base, 'HEAD'], text=True).splitlines()
+          expected = ['.github/workflows/notepad-delete-regression.yml', 'test/notepad_screen_test.dart']
+          assert changed == expected, changed
+          receipt = {'applicationSource': base, 'workflowSource': os.environ['GITHUB_SHA'], 'productionSourceUnchanged': True, 'allowedChanges': expected, 'purpose': 'Native baseline regression for focused source deletion; no application changes'}
+          Path('regression-results').mkdir(exist_ok=True)
+          Path('regression-results/source-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt), flush=True)
+          PY_RECEIPT
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: d28ca2ea43a95934d673d1a54177fdf721614ade
+          path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Focused source deletion baseline
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded test/notepad_screen_test.dart --plain-name 'semantic deletion of a focused source preserves its dependent and Undo' 2>&1 | tee regression-results/widget-test.log
+      - name: Retain baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: focused-source-deletion-baseline
+          path: regression-results
+          if-no-files-found: error
+          retention-days: 7

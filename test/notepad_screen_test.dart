@@ -248,6 +248,83 @@ void main() {
     }
   });
 
+  testWidgets('semantic deletion of a focused source preserves its dependent and Undo',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _bootApp(tester, size: const Size(1280, 900));
+      await _gotoNotepad(tester);
+      await tester.enterText(find.byType(TextField).first, '5+4');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final state = AppState();
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      final sourceId = doc.lines.first.id;
+      expect(doc.lines.first.cachedResult, '9');
+      await tester.tap(find.byKey(ValueKey('notepad-result:$sourceId')),
+          buttons: 2);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Use result'));
+      await tester.pumpAndSettle();
+      final dependentId = doc.lines.last.id;
+      final expression = '10+${resultReferenceToken(sourceId)}';
+      await tester.enterText(
+          _editorWithSource(resultReferenceToken(sourceId)), expression);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(doc.lines.last.cachedResult, '19');
+      final dependentController =
+          tester.widget<TextField>(_editorWithSource(expression)).controller;
+      tester.semantics.tap(find.semantics.byPredicate((node) =>
+          node.label == 'Result of line 1' &&
+          node.getSemanticsData().hasAction(ui.SemanticsAction.tap)));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(_editorWithSource('5+4'))
+          .focusNode!.hasFocus, isTrue);
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+
+      // Accessibility activation invokes the Delete action directly; it does
+      // not send a pointer press that can first blur the focused source.
+      final deleteNode = tester.getSemantics(find.descendant(
+          of: find.byKey(ValueKey(sourceId)),
+          matching: find.byTooltip('Delete line')));
+      expect(deleteNode.getSemanticsData().hasAction(ui.SemanticsAction.tap),
+          isTrue);
+      tester.semantics.tap(find.semantics.byPredicate(
+          (node) => node.id == deleteNode.id));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(doc.lines, hasLength(1));
+      expect(doc.lines.single.id, dependentId);
+      expect(doc.lines.single.source, expression);
+      expect(doc.lines.single.cachedResult, isNull);
+      expect(doc.lines.single.cachedError, contains('missing'));
+      expect(find.text('Missing result'), findsOneWidget);
+      expect(tester.widget<TextField>(_editorWithSource(expression)).controller,
+          same(dependentController));
+      await tester.tap(_editorWithSource(expression));
+      await tester.pump();
+      expect(tester.widget<TextField>(_editorWithSource(expression))
+          .focusNode!.hasFocus, isTrue);
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(doc.lines.map((line) => line.id), [sourceId, dependentId]);
+      expect(doc.lines.map((line) => line.cachedResult), ['9', '19']);
+      expect(find.text('Missing result'), findsNothing);
+      expect(find.text('Result of line 1'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   for (final latex in [false, true]) {
     testWidgets('References preserves selection after semantic-menu blur (LaTeX: $latex)',
         (tester) async {
