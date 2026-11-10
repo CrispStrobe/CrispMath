@@ -268,7 +268,9 @@ void main() {
     // pumpAndSettle alone spins on the pending indicator without real I/O.
     for (var i = 0; i < 30; i++) {
       if (copy.lines.every((line) =>
-          line.cachedResult != null || line.cachedError != null)) break;
+          line.cachedResult != null || line.cachedError != null)) {
+        break;
+      }
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 200)));
       await tester.pump();
