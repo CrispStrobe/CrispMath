@@ -15,6 +15,8 @@ concurrency:
 
 env:
   APP_SOURCE_BASE: 90d80b6f1ce087fc2cd95e1fd0a0618d95c57c46
+  BUNDLE_SOURCE: 8fe1d27448ce648eb026a7ccd9d1c1a9e7d5797b
+  APP_TREE_SHA: dd4e56bbe729f344ed665cd8136fbd4876639531
   DIAGNOSTIC_APP_SOURCE: 90d80b6f1ce087fc2cd95e1fd0a0618d95c57c46
   DIAGNOSTIC_ARTIFACT_ID: '13763667705'
 
@@ -40,6 +42,7 @@ jobs:
       - name: Verify application source and bundle provenance
         run: |
           git cat-file -e "$APP_SOURCE_BASE^{commit}" || git fetch --no-tags --depth=1 origin "$APP_SOURCE_BASE"
+          git cat-file -e "$BUNDLE_SOURCE^{commit}" || git fetch --no-tags --depth=1 origin "$BUNDLE_SOURCE"
           python - <<'PY_RECEIPT'
           import json, os, subprocess
           from pathlib import Path
@@ -50,13 +53,20 @@ jobs:
           changed = subprocess.check_output(['git', 'diff', '--name-only', base, workflow_sha], text=True).splitlines()
           assert changed == [expected], changed
           build = json.loads(Path('build/web/build-info.json').read_text())
-          assert build['source'] == base, build
+          bundle_source = os.environ['BUNDLE_SOURCE']
+          assert build['source'] == bundle_source, build
+          def tree_of(revision):
+              return subprocess.check_output(['git', 'rev-parse', revision + '^{tree}'], text=True).strip()
+          app_tree, bundle_tree = tree_of(base), tree_of(bundle_source)
+          assert app_tree == bundle_tree == os.environ['APP_TREE_SHA'], (app_tree, bundle_tree)
           receipt = {
               'diagnostic': True, 'appSourceBase': base, 'workflowSha': workflow_sha,
               'onlyChangedFile': expected, 'applicationSourceUnchanged': True,
               'applicationBundleUnchanged': True,
               'bundleBuildRun': 42813758910, 'bundleArtifact': 13763667705,
               'bundleCommand': 'tool/build_web.sh --release',
+              'bundleSource': bundle_source, 'appTree': app_tree, 'bundleTree': bundle_tree,
+              'exactTreeEquivalence': True,
               'runnerOS': os.environ['RUNNER_OS'], 'runId': os.environ['GITHUB_RUN_ID'],
               'instrumentation': 'Read-only DOM events and mutation observation; original checker assertions unchanged',
           }
@@ -143,6 +153,8 @@ jobs:
               seenEvents.add(event);
               const target=event.composedPath().find(node=>node?.nodeType===Node.ELEMENT_NODE)
                 ||event.target;
+              if(target?.nodeType===Node.ELEMENT_NODE&&target.matches(selector)&&!knownInputs.has(target))
+                remember(target);
               record(event.type,{target:describe(target),relatedTarget:describe(event.relatedTarget),
                 key:typeof event.key==='string'?event.key:null,
                 inputType:event.inputType||null,data:typeof event.data==='string'?event.data:null});
