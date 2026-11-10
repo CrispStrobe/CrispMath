@@ -12,6 +12,8 @@
 // ran end-to-end. Tests that poke `cachedResult` / `cachedError`
 // directly stay reliable because no engine call is made.
 
+import 'dart:ui' as ui;
+
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/localization/app_localizations.dart';
@@ -124,8 +126,10 @@ void main() {
   }
 
   for (final latex in [false, true]) {
-    testWidgets('References replaces the remembered selection (LaTeX: $latex)',
+    testWidgets('References preserves selection after semantic-menu blur (LaTeX: $latex)',
         (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
       await _bootApp(tester, size: const Size(390, 844));
       await _gotoNotepad(tester);
       final state = AppState();
@@ -153,7 +157,20 @@ void main() {
       expect(destination.controller!.selection.start, 3);
       expect(destination.controller!.selection.end, 4);
 
-      await tester.tap(find.byTooltip('Document menu'));
+      // Browser accessibility activation can blur the editor before Flutter
+      // receives the menu action, and does not send Listener.onPointerDown.
+      destination.focusNode!.unfocus();
+      await tester.pump();
+      expect(destination.focusNode!.hasFocus, isFalse);
+      final documentMenuAction = find.semantics.byPredicate((node) =>
+          (node.label == 'Document menu' || node.tooltip == 'Document menu') &&
+          node.getSemanticsData().hasAction(ui.SemanticsAction.tap));
+      tester.semantics.tap(documentMenuAction);
+      await tester.pumpAndSettle();
+      // Cancelling a menu clears that transaction, not the editing position.
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      tester.semantics.tap(documentMenuAction);
       await tester.pumpAndSettle();
       await tester.tap(find.text('References…'));
       await tester.pumpAndSettle();
@@ -187,6 +204,9 @@ void main() {
       expect(tester.widget<TextField>(_editorWithSource('3+4'))
           .focusNode!.hasFocus, isTrue);
       expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
     });
   }
 
