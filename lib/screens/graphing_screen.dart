@@ -99,7 +99,9 @@ class GraphingScreenState extends State<GraphingScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || generation != _graphNavigationGeneration) return;
       if (!_appState.graphLinks.containsKey(request.slot) ||
-          _appState.graphFunctions[request.slot].isEmpty) return;
+          _appState.graphFunctions[request.slot].isEmpty) {
+        return;
+      }
       _recordGraph();
       setState(() {
         _plotMode = PlotMode.cartesian;
@@ -123,7 +125,9 @@ class GraphingScreenState extends State<GraphingScreen>
         final values = await GraphSamplingService.values(expression, xs);
         if (!mounted || generation != _graphNavigationGeneration ||
             revision != _viewRevision || _plotMode != PlotMode.cartesian ||
-            _appState.graphFunctions[request.slot] != expression) return;
+            _appState.graphFunctions[request.slot] != expression) {
+          return;
+        }
         _applyBounds(fittedGraphBounds(plot.lo, plot.hi,
             values.map((row) => row[1])), record: false);
       } catch (_) {

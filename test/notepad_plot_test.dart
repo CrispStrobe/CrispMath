@@ -215,7 +215,7 @@ void main() {
     await engine.evaluateFrom(doc, 0);
     expect(at(PlotSpec.tryParse(doc.lines.last.cachedResult)!, 2), 6);
 
-    final source = 'diff(sec(x)+sec,x)+sec';
+    const source = 'diff(sec(x)+sec,x)+sec';
     final protected = preprocessNotepadLine(
         classifyNotepadLine(source, lineIndex: 0, firstCodeLineIndex: 0),
         doc: document([source]),

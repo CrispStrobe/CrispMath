@@ -76,7 +76,9 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
     if (previousKind == NotepadLineKind.plot ||
         previousKind == NotepadLineKind.heading ||
         previousKind == NotepadLineKind.divider ||
-        previousKind == NotepadLineKind.useDirective) continue;
+        previousKind == NotepadLineKind.useDirective) {
+      continue;
+    }
     if (previous.cachedError == null && previous.cachedResult != null &&
         !previous.cachedResult!.startsWith(PlotSpec.prefix)) {
       scope['Ans'] = previous.cachedResult!;

@@ -106,7 +106,7 @@ jobs:
         run: >-
           flutter test --no-pub --concurrency=2 --reporter expanded
           test/notepad_plot_test.dart test/mini_plot_widget_test.dart
-          test/notepad_export_test.dart test/linked_graph_test.dart
+          test/notepad_export_test.dart test/notepad_screen_test.dart test/linked_graph_test.dart
           test/notepad_v2_test.dart test/notepad_v2_comprehensive_test.dart
           test/graph_worksheet_test.dart test/graphing_function_actions_test.dart
           test/graph_navigation_widget_test.dart
@@ -333,6 +333,16 @@ jobs:
           python tool/check_round11_math_browser.py --expected-source "$GITHUB_SHA" --output browser-results/debug/round11-math-ui || status=1
           python tool/check_guided_worksheet_browser.py --output browser-results/debug/guided-worksheet || status=1
           exit "$status"
+      - name: Upload connected Notepad UI evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connected-notepad-ui
+          path: |
+            browser-results/connected-notepad
+            browser-results/debug/connected-notepad
+          if-no-files-found: ignore
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -160,15 +160,16 @@ separate graph collection and fixed preview interval need their own review.
 | Edit during sampling | A late old sample cannot replace the new result. |
 | Open, return, move row, reload | Link identity and source navigation survive. |
 | Graph with sliders to new worksheet | Parameters and interval survive; unrelated worksheet contents are preserved. |
-| Markdown, LaTeX, shared PDF content | Human-readable plot metadata; no internal cache sentinel. |
+| Markdown export, Copy as Markdown menu, LaTeX, shared PDF content | Human-readable plot metadata; no internal cache sentinel. |
 
 Use focused unit/widget regressions plus actual hosted browser controls on wide
 and narrow layouts. Record exact commits and workflow conclusions. Do not
 replace historical mathematical fixtures or infer application behavior from a
-model-only test. At this initial audit checkpoint, these acceptance checks are
-pending. The checks live in `notepad_plot_test.dart`,
+model-only test. Hosted validation for the final branch revision is recorded in
+the linked pull request. The checks live in `notepad_plot_test.dart`,
 `mini_plot_widget_test.dart`, `graph_worksheet_test.dart`, the existing graph
-navigation/action and export suites, and `tool/check_connected_notepad_browser.py`.
+navigation/action, Notepad screen and export suites, and
+`tool/check_connected_notepad_browser.py`.
 The latter enters data through actual controls, observes successful sampled
 plot semantics, checks both navigation directions, and reloads saved work.
 

@@ -1142,21 +1142,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _copyAsMarkdown() {
     final doc = _currentDoc;
     if (doc == null) return;
-    final buf = StringBuffer();
-    buf.writeln('# ${doc.name}');
-    buf.writeln();
-    buf.writeln('```');
-    for (final line in doc.lines) {
-      final src = line.source;
-      final res = line.cachedResult;
-      if (res != null && res.isNotEmpty) {
-        buf.writeln('$src  // → $res');
-      } else {
-        buf.writeln(src);
-      }
-    }
-    buf.writeln('```');
-    Clipboard.setData(ClipboardData(text: buf.toString()));
+    Clipboard.setData(ClipboardData(text: exportToMarkdown(doc)));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(AppLocalizations.of(context).notepadCopiedAsMarkdown),

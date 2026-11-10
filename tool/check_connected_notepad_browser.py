@@ -48,7 +48,7 @@ async def button(page, name):
     await next_frames(page)
 
 
-async def popup_item(page, name):
+async def popup_item(page, name, *, reveal=False):
     """Wait for actual popup layout/hit testing before a real pointer click."""
     target = page.locator('[aria-label=' + json.dumps(name) + ']')
     await target.wait_for(state='attached')
@@ -70,6 +70,14 @@ async def popup_item(page, name):
             await target.wait_for(state='hidden')
             await next_frames(page)
             return
+        if reveal and sample['count'] == 1 and not sample['ready']:
+            # The document menu's Copy action can be below its visible fold.
+            # Scroll over its measured horizontal position, never force-click
+            # a clipped semantic node or mutate the DOM scroll position.
+            width, height = page.viewport_size['width'], page.viewport_size['height']
+            x = min(width - 20, max(20, sample['x'] + sample['width'] / 2))
+            await page.mouse.move(x, height * 0.65)
+            await page.mouse.wheel(0, -180 if sample['y'] < 0 else 180)
         await next_frames(page)
     raise AssertionError(f'Popup item did not settle: {name}; {samples[-4:]}')
 
@@ -209,6 +217,17 @@ async def check(args):
                 await wait_document(page, original_id, sources)
                 initial_label = await inline_plot(page, 2, -2, 2)
                 await page.screenshot(path=str(output / f'{profile}-inline-initial.png'))
+
+                item['stage'] = 'copy plot through the actual document Markdown menu'
+                await button(page, 'Document menu')
+                await popup_item(page, 'Copy as Markdown', reveal=True)
+                await page.wait_for_function("""async()=>
+                  (await navigator.clipboard.readText()).includes('plot(f(x),x,-2,2)')""")
+                copied = await page.evaluate('navigator.clipboard.readText()')
+                assert '`plot(f(x),x,-2,2)`' in copied, copied
+                assert 'Plot of ' in copied and 'x in [-2, 2]' in copied, copied
+                assert '__plot__' not in copied, copied
+                item['clipboardPlotMetadata'] = True
 
                 item['stage'] = 'edit captured parameter and observe new inline plot'
                 sources[0] = 'a=3'
