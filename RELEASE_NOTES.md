@@ -1,3 +1,16 @@
+# CrispMath 1.2.1
+
+This TestFlight build makes the notepad a connected mathematical worksheet.
+
+- Inline notepad plots use the worksheet's own variables, functions and
+  interval expressions, sample in the background and keep gaps at undefined
+  points.
+- Open an inline plot in Graph, return to its worksheet source, or create a
+  new worksheet from an independent graph with its parameters and interval.
+- Result references stay attached to the same calculation when rows are
+  inserted, moved, duplicated or imported, with navigation to their source.
+- Copy as Markdown and other exports describe plots readably.
+
 # CrispMath 1.2.0
 
 This release improves calculation and graph responsiveness and connects the
