@@ -342,7 +342,7 @@ ParsedNotepadLine classifyNotepadLine(
   }
 
   // Inline plot: `plot(expr)` or `plot(expr, var, lo, hi)`.
-  final plotMatch = _plotRegex.firstMatch(trimmed);
+  final plotMatch = _plotRegex.firstMatch(_stripComment(trimmed).trim());
   if (plotMatch != null) {
     final args = plotMatch.group(1)!;
     final parts = _splitTopLevelCommas(args);
@@ -501,7 +501,10 @@ Map<String, String> buildNotepadScope(
     }
     if (parsed.kind == NotepadLineKind.blank ||
         parsed.kind == NotepadLineKind.comment ||
-        parsed.kind == NotepadLineKind.useDirective) {
+        parsed.kind == NotepadLineKind.useDirective ||
+        parsed.kind == NotepadLineKind.heading ||
+        parsed.kind == NotepadLineKind.divider ||
+        parsed.kind == NotepadLineKind.plot) {
       continue;
     }
     // FlatZinc lines contribute multiple scalar exports (one per
@@ -626,20 +629,29 @@ String? preprocessNotepadLine(
   return protected.restore(out);
 }
 
-/// Walk backward from [lineIndex] to the first non-blank,
-/// non-comment line above. Return its `cachedResult` if it has
+/// Walk backward from [lineIndex] to the first answer-producing line above.
+/// Plot displays and document structure never become the previous answer.
+/// Return its `cachedResult` if it has
 /// one; otherwise null (the engine will then see the literal
 /// `Ans` and error, which Phase 3 turns into a "blocked by
 /// line N" badge on dependents).
 String? _resolveAns(NotepadDocument doc, int lineIndex) {
+  final firstCode = firstCodeLineIndexOf(doc);
   for (var i = lineIndex - 1; i >= 0; i--) {
     final line = doc.lines[i];
-    final stripped = _stripComment(line.source).trim();
-    if (stripped.isEmpty) continue;
+    final parsed = classifyNotepadLine(line.source,
+        lineIndex: i, firstCodeLineIndex: firstCode);
+    if (!_isAnswerKind(parsed.kind)) continue;
     return line.cachedResult;
   }
   return null;
 }
+
+bool _isAnswerKind(NotepadLineKind kind) =>
+    kind == NotepadLineKind.assignment ||
+    kind == NotepadLineKind.expression ||
+    kind == NotepadLineKind.aggregate ||
+    kind == NotepadLineKind.flatzinc;
 
 String _stripComment(String source) {
   final m = _commentRegex.firstMatch(source);
@@ -931,6 +943,14 @@ Set<String> dependenciesOfLine(
   final body = parsed.body;
   if (body == null) return const {};
   final words = _unboundIdentifierWords(body);
+  if (parsed.kind == NotepadLineKind.plot) {
+    // A plot's coordinate is lexical in its body, but range bounds are normal
+    // document expressions (x=2; plot(x,x,-x,x) deliberately uses both roles).
+    words.remove(parsed.name);
+    for (final bound in parsed.imports) {
+      words.addAll(_unboundIdentifierWords(bound));
+    }
+  }
   return words
       .where((word) =>
           scopeKeys.contains(word) &&
@@ -954,6 +974,13 @@ Set<String> freeVariablesOfLine(
   final body = parsed.body;
   if (body == null) return const {};
   final words = _unboundIdentifierWords(body, includeOutputVariables: true);
+  if (parsed.kind == NotepadLineKind.plot) {
+    words.remove(parsed.name);
+    for (final bound in parsed.imports) {
+      words.addAll(_unboundIdentifierWords(bound,
+          includeOutputVariables: true));
+    }
+  }
   return words
       .where((id) =>
           !scopeKeys.contains(id) &&

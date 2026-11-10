@@ -5,6 +5,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_export.dart';
+import 'package:crisp_math/engine/worksheet_bundle.dart';
 
 void main() {
   NotepadDocument makeDoc({
@@ -156,6 +157,98 @@ void main() {
       expect(tex, contains(r'\%'));
       expect(tex, contains(r'\&'));
       expect(tex, contains(r'\#'));
+    });
+  });
+
+  group('plot exports', () {
+    const expected = 'Plot of (2)*t^2; t in [-2, 2]';
+
+    NotepadDocument plotDocument() => makeDoc(lines: [
+          ('plot(a*t^2,t,-r,r)', '__plot__:(2)*t^2|t|-2|2'),
+        ]);
+
+    test('shared PDF and bundle content receives evaluated plot metadata', () {
+      final doc = plotDocument();
+      // A plot is not a scalar: a previously selected result format must not
+      // alter its interval or expose the private cached representation.
+      doc.lines.single.resultFormat = LineResultFormat.hex;
+      final line = exportDocument(doc).lines.single;
+      expect(line.kind, 'plot');
+      expect(line.source, 'plot(a*t^2,t,-r,r)');
+      expect(line.result, expected);
+      expect(line.formattedResult, expected);
+      expect(line.result, isNot(contains('__plot__')));
+      expect(WorksheetBundle.capture(doc).resultAt(0), expected);
+      // Export is a snapshot; it does not rewrite the persisted calculation.
+      expect(doc.lines.single.cachedResult, '__plot__:(2)*t^2|t|-2|2');
+    });
+
+    test('Markdown preserves source and resolved expression/range', () {
+      final md = exportToMarkdown(plotDocument());
+      expect(md, contains('`plot(a*t^2,t,-r,r)`'));
+      expect(md, contains('> $expected'));
+      expect(md, isNot(contains('__plot__')));
+    });
+
+    test('LaTeX describes plots as text rather than scalar equality', () {
+      final tex = exportToLatex(plotDocument());
+      expect(tex, contains('Plot of (2)*t'));
+      expect(tex, contains('t in [-2, 2]'));
+      expect(tex, contains(r'\textasciicircum{}2'));
+      expect(tex, isNot(contains('__plot__')));
+      expect(tex, isNot(contains(r'\_\_plot\_\_')));
+      expect(tex, isNot(contains(r'} = ')));
+    });
+
+    test('PDF serializes the same readable document content', () async {
+      final doc = plotDocument();
+      // exportToPdf consumes this shared content model before layout. Check
+      // the actual content here, then exercise PDF layout/serialization too.
+      expect(exportDocument(doc).lines.single.formattedResult, expected);
+      final pdf = await exportToPdf(doc);
+      final bytes = await pdf.save();
+      expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+    });
+
+    test('worksheet bundle HTML and text also omit the sentinel', () {
+      final bundle = WorksheetBundle.capture(plotDocument());
+      for (final content in [bundle.html(), bundle.markdown(), bundle.latex()]) {
+        expect(content, contains('t in [-2, 2]'));
+        expect(content, isNot(contains('__plot__')));
+        expect(content, isNot(contains(r'\_\_plot\_\_')));
+      }
+    });
+
+    test('uncalculated plots retain requested symbolic bounds honestly', () {
+      final doc = makeDoc(lines: [('plot(sin(t),t,-pi,pi)', null)]);
+      final line = exportDocument(doc).lines.single;
+      expect(line.formattedResult,
+          'Plot not calculated: sin(t); t in [-pi, pi]');
+      expect(exportToMarkdown(doc), contains('Plot not calculated'));
+    });
+
+    test('malformed cached plots do not leak internal encoding', () {
+      for (final cache in [
+        '__plot__:sin(x)|x|bad|10',
+        '__plot__:sin(x)|x|-Infinity|Infinity',
+        '__plot__:sin(x)|x|4|2',
+      ]) {
+        final doc = makeDoc(lines: [('plot(sin(x))', cache)]);
+        final line = exportDocument(doc).lines.single;
+        expect(line.result,
+            'Plot not calculated: sin(x); x in [-10, 10]');
+        expect(exportToMarkdown(doc), isNot(contains('__plot__')));
+        expect(exportToLatex(doc), isNot(contains(r'\_\_plot\_\_')));
+      }
+    });
+
+    test('a failed plot cannot export its old successful result', () {
+      final doc = plotDocument();
+      doc.lines.single.cachedError = 'Invalid plot range';
+      final result = exportDocument(doc).lines.single.formattedResult;
+      expect(result, 'Plot unavailable: Invalid plot range');
+      expect(result, isNot(contains('Plot of')));
+      expect(exportToMarkdown(doc), isNot(contains('__plot__')));
     });
   });
 }
