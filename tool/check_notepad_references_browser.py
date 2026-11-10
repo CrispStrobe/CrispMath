@@ -190,6 +190,9 @@ async def check(args):
                 await expect(fields.nth(1)).to_have_value(re.compile(r'^@\{[^{}]+\}$'))
                 token = await fields.nth(1).input_value()
                 assert referenced_ids(token) == [source_id], token
+                inserted = await wait_rows(page, document_id, ['3+4', token], ['7', '7'])
+                assert inserted['l'][0]['i'] == source_id
+                dependent_id = inserted['l'][1]['i']
                 item['useResultFocusBeforeTyping'] = await reference_dom(page)
                 # Prove keyboard focus by actual input in the new row. Flutter
                 # may keep a separate semantic textarea from its active editor.
@@ -198,8 +201,8 @@ async def check(args):
                 await page.keyboard.type('*2')
                 await expect(fields.nth(1)).to_have_value(token + '*2')
                 linked = await wait_rows(page, document_id, ['3+4', token + '*2'], ['7', '14'])
+                assert [row['i'] for row in linked['l']] == [source_id, dependent_id]
                 await row_result(page, 1, '14')
-                dependent_id = linked['l'][1]['i']
                 item['useResult'] = True
                 item['useResultKeyboardFocus'] = True
 
@@ -226,6 +229,23 @@ async def check(args):
                 assert picked['l'][1]['i'] == dependent_id
                 await row_result(page, 1, '19')
                 item['selectionReplacement'] = True
+
+                item['stage'] = 'picker returns keyboard input to the same dependent editor'
+                item['pickerFocusBeforeTyping'] = await reference_dom(page)
+                await page.keyboard.press('End')
+                await page.keyboard.type('+0')
+                await expect(fields.nth(1)).to_have_value('10+' + token + '+0')
+                continued = await wait_rows(
+                    page, document_id, ['5+4', '10+' + token + '+0'], ['9', '19'])
+                assert [row['i'] for row in continued['l']] == [source_id, dependent_id]
+                await page.keyboard.press('Backspace')
+                await page.keyboard.press('Backspace')
+                await expect(fields.nth(1)).to_have_value('10+' + token)
+                restored_picker = await wait_rows(
+                    page, document_id, ['5+4', '10+' + token], ['9', '19'])
+                assert [row['i'] for row in restored_picker['l']] == [source_id, dependent_id]
+                await row_result(page, 1, '19')
+                item['pickerKeyboardFocus'] = True
 
                 item['stage'] = 'reference chip returns focus to its source row'
                 await reference_button(page, 1, 'Open source: 5+4')

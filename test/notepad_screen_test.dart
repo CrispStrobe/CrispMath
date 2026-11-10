@@ -101,6 +101,11 @@ void main() {
       }
       await tester.pumpAndSettle();
       await tester.tap(find.text('Use result'));
+      await tester.pump();
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(doc.lines, hasLength(1),
+          reason: 'Insertion must wait until the sheet releases its focus scope.');
+      await tester.pumpAndSettle();
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpAndSettle();
       expect(doc.lines, hasLength(2));
@@ -179,6 +184,12 @@ void main() {
           reason: 'The destination cannot reference itself.');
       await tester.tap(find.byKey(ValueKey(
           'notepad-reference-choice:${doc.lines.first.id}')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('notepad-reference-picker')),
+          findsOneWidget);
+      expect(doc.lines.last.source, '10+0',
+          reason: 'The picker must release its focus scope before editing resumes.');
+      await tester.pumpAndSettle();
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpAndSettle();
       final text = '10+${resultReferenceToken(doc.lines.first.id)}';

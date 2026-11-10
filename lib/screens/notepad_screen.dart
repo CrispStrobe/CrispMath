@@ -500,9 +500,11 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void _useResult(NotepadDocument doc, NotepadLine source) {
-    if (_currentDoc?.id != doc.id ||
+    if (!identical(_currentDoc, doc)) return;
+    final sourceIndex = doc.lines.indexWhere((line) => line.id == source.id);
+    if (sourceIndex < 0 ||
         _pendingLineIds.contains(source.id) ||
-        !canReferenceNotepadLine(source)) {
+        !canReferenceNotepadLine(doc.lines[sourceIndex])) {
       return;
     }
     // Appending preserves the meaning of legacy positional lineN expressions.
@@ -577,6 +579,7 @@ class NotepadScreenState extends State<NotepadScreen> {
         entry.$2.id != destination?.lineId &&
         !_pendingLineIds.contains(entry.$2.id) &&
         canReferenceNotepadLine(entry.$2)).toList();
+    Future<String?>? pickerDismissed;
     final chosen = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -598,8 +601,11 @@ class NotepadScreenState extends State<NotepadScreen> {
                     final source = _readableReferenceSource(
                         doc, candidate.$2.source, labels);
                     final preview = '$source = ${candidate.$2.cachedResult}';
-                    void choose() =>
-                        Navigator.of(dialogContext).pop(candidate.$2.id);
+                    void choose() {
+                      pickerDismissed =
+                          ModalRoute.of<String>(dialogContext)?.completed;
+                      Navigator.of(dialogContext).pop(candidate.$2.id);
+                    }
                     return Semantics(
                       key: ValueKey(
                           'notepad-reference-choice:${candidate.$2.id}'),
@@ -626,7 +632,14 @@ class NotepadScreenState extends State<NotepadScreen> {
         ],
       ),
     );
-    if (chosen == null || !mounted || _currentDoc?.id != doc.id) return;
+    if (chosen == null) return;
+    // A chosen result resumes editing only after the dialog has released its
+    // overlay and focus scope, just like the result action sheet handoff.
+    final dismissal = pickerDismissed;
+    if (dismissal != null) {
+      await dismissal;
+    }
+    if (!mounted || !identical(_currentDoc, doc)) return;
     final sourceIndex = doc.lines.indexWhere((line) => line.id == chosen);
     if (sourceIndex < 0 ||
         _pendingLineIds.contains(chosen) ||
