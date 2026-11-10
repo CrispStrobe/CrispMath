@@ -8,7 +8,7 @@ concurrency:
   group: notepad-delete-regression-${{ github.ref }}
   cancel-in-progress: true
 env:
-  APP_SOURCE_BASE: ca24eb34b9b83037aad1be6fc54e3f7623e92aa0
+  APP_SOURCE_BASE: 43d00309345b369860c8453bcec0f4fea1e3717d
 jobs:
   regression:
     runs-on: macos-latest
@@ -27,7 +27,7 @@ jobs:
           changed = subprocess.check_output(['git', 'diff', '--name-only', base, 'HEAD'], text=True).splitlines()
           expected = ['.github/workflows/notepad-delete-regression.yml', 'test/notepad_screen_test.dart']
           assert changed == expected, changed
-          receipt = {'applicationSource': base, 'workflowSource': os.environ['GITHUB_SHA'], 'productionSourceUnchanged': True, 'allowedChanges': expected, 'purpose': 'Native baseline regression for focused source deletion; no application changes'}
+          receipt = {'applicationSource': base, 'workflowSource': os.environ['GITHUB_SHA'], 'productionSourceUnchanged': True, 'allowedChanges': expected, 'purpose': 'Native phone pointer/tooltip/Undo baseline; no application changes'}
           Path('regression-results').mkdir(exist_ok=True)
           Path('regression-results/source-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
           print(json.dumps(receipt), flush=True)
@@ -56,7 +56,7 @@ jobs:
       - name: Focused source deletion baseline
         run: |
           set -o pipefail
-          flutter test --reporter expanded test/notepad_screen_test.dart --plain-name 'semantic deletion of a focused source preserves its dependent and Undo' 2>&1 | tee regression-results/widget-test.log
+          flutter test --reporter expanded test/notepad_screen_test.dart --plain-name 'phone Undo restores a source while the row tooltip is showing' 2>&1 | tee regression-results/widget-test.log
       - name: Retain baseline evidence
         if: always()
         uses: actions/upload-artifact@v4

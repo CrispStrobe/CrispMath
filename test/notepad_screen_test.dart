@@ -283,19 +283,19 @@ void main() {
           .focusNode!.hasFocus, isTrue);
       expect(tester.testTextInput.hasAnyClients, isTrue);
 
-      // Keep the reference tooltip visible on the surviving row while its
-      // source remains focused. Deleting the source will move this row from
-      // index 1 to index 0 inside the reorderable list.
+      // Hover the surviving row's source chip while the source stays focused.
+      // Deleting the source then moves this row from index 1 to index 0.
       final mouse =
           await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await mouse.addPointer(location: Offset.zero);
       addTearDown(mouse.removePointer);
-      await mouse.moveTo(tester.getCenter(find.byKey(
-          ValueKey('notepad-reference:$dependentId:$sourceId'))));
+      final sourceChip = find.byKey(
+          ValueKey('notepad-reference:$dependentId:$sourceId'));
+      await mouse.moveTo(tester.getCenter(sourceChip));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
-      expect(find.text('Open source: 5+4', findRichText: true), findsOneWidget);
+      expect(tester.getSemantics(sourceChip).hint, 'Open source: 5+4');
       expect(tester.widget<TextField>(_editorWithSource('5+4'))
           .focusNode!.hasFocus, isTrue);
 
@@ -338,6 +338,75 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('phone Undo restores a source while the row tooltip is showing',
+      (tester) async {
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    await tester.enterText(find.byType(TextField).first, '5+4');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    final state = AppState();
+    final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+    final sourceId = doc.lines.first.id;
+    expect(doc.lines.first.cachedResult, '9');
+    await tester.longPress(find.byKey(ValueKey('notepad-result:$sourceId')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Use result'));
+    await tester.pumpAndSettle();
+    final dependentId = doc.lines.last.id;
+    final expression = '10+${resultReferenceToken(sourceId)}';
+    await tester.enterText(
+        _editorWithSource(resultReferenceToken(sourceId)), expression);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(doc.lines.last.cachedResult, '19');
+    await tester.tap(find.text('Result of line 1'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(_editorWithSource('5+4'))
+        .focusNode!.hasFocus, isTrue);
+
+    final mouse =
+        await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    final deletePosition = tester.getCenter(find.byTooltip('Delete line').first);
+    await mouse.moveTo(deletePosition);
+    await mouse.down(deletePosition);
+    await mouse.up();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(doc.lines, hasLength(1));
+    expect(doc.lines.single.id, dependentId);
+    expect(doc.lines.single.source, expression);
+    expect(doc.lines.single.cachedResult, isNull);
+    expect(doc.lines.single.cachedError, contains('missing'));
+    expect(find.text('Missing result'), findsOneWidget);
+
+    // Narrow rows top-align Delete, so the stationary pointer now hovers the
+    // surviving row's control. Its shown tooltip must survive this exact path
+    // through Undo without a portal being grafted during sliver layout.
+    expect(tester.getRect(find.byTooltip('Delete line').single)
+        .contains(deletePosition), isTrue);
+    expect(find.text('Delete line', findRichText: true), findsOneWidget);
+    final undoPosition = tester.getCenter(find.text('Undo'));
+    await mouse.moveTo(undoPosition);
+    await mouse.down(undoPosition);
+    await mouse.up();
+    // Do not let a tooltip dismissal animation finish before restoring rows.
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(doc.lines.map((line) => line.id), [sourceId, dependentId]);
+    expect(doc.lines.map((line) => line.cachedResult), ['9', '19']);
+    expect(find.byKey(ValueKey('notepad-result:$dependentId')), findsOneWidget);
+    expect(find.text('Missing result'), findsNothing);
+    expect(find.text('Result of line 1'), findsOneWidget);
   });
 
   for (final latex in [false, true]) {
