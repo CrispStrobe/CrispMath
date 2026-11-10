@@ -260,12 +260,25 @@ void main() {
     expect(resultReferencesIn(copy.lines.last.source).single.lineId,
         copy.lines.first.id);
     await tester.tap(find.widgetWithText(ListTile, copy.name));
+    // Opening schedules the debounce after the controller-switch frame.
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.pumpAndSettle();
+    // Multiplication uses the real engine worker, unlike the local small-sum
+    // path. Let isolate messages arrive between fake-clock frame pumps;
+    // pumpAndSettle alone spins on the pending indicator without real I/O.
+    for (var i = 0; i < 30; i++) {
+      if (copy.lines.every((line) =>
+          line.cachedResult != null || line.cachedError != null)) break;
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await tester.pump();
+    }
+    await tester.pump();
     expect(state.currentNotepadDocId, copy.id);
     expect(copy.lines.first.cachedResult, '7');
     expect(copy.lines.last.cachedResult, '14');
     expect(copy.lines.every((line) => line.cachedError == null), isTrue);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(original.lines.last.source,
         '${resultReferenceToken(source.id)}*2');
     expect(tester.takeException(), isNull);

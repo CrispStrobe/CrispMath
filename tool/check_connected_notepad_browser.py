@@ -50,7 +50,9 @@ async def button(page, name):
 
 async def popup_item(page, name, *, reveal=False):
     """Wait for actual popup layout/hit testing before a real pointer click."""
-    target = page.locator('[aria-label=' + json.dumps(name) + ']')
+    # Accessible names preserve Unicode; JSON escapes are not CSS escapes.
+    # Include clipped menu items so real scrolling can reveal them below.
+    target = page.get_by_role('menuitem', name=name, exact=True, include_hidden=True)
     await target.wait_for(state='attached')
     samples = []
     for _ in range(180):
