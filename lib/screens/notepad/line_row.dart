@@ -420,6 +420,10 @@ class _NotepadLineRow extends StatelessWidget {
         ? null : () => onScrollToLineId(sourceId);
     return Semantics(
       key: ValueKey('notepad-reference:${line.id}:$sourceId'),
+      // Keep this action separate from the reorderable row. Otherwise its
+      // button role can merge into the editor's ancestor while a result is
+      // pending, then replace that ancestor when the result arrives on web.
+      container: true,
       button: open != null,
       label: label,
       hint: hint,

@@ -24,7 +24,9 @@ import 'package:crisp_math/main.dart';
 import 'package:crisp_math/services/document_history.dart';
 import 'package:crisp_math/services/engine_service.dart';
 import 'package:crisp_math/widgets/boolean_chip.dart';
+import 'package:crisp_math/widgets/notepad_autocomplete.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,6 +65,35 @@ Future<void> _gotoNotepad(WidgetTester tester) async {
 Finder _editorWithSource(String source) => find.byWidgetPredicate((widget) =>
     widget is TextField && widget.controller?.text == source);
 
+/// The editor's path to its reorderable row must never acquire the source
+/// chip's button role. On web that role change replaces an ancestor DOM node
+/// and blurs an otherwise unchanged, focused textarea.
+List<int> _referenceEditorSemanticsPath(
+    WidgetTester tester, String source, Finder chip) {
+  final chipNode = tester.getSemantics(chip);
+  expect(chipNode.label, 'Result of line 1');
+  expect(chipNode.flagsCollection.isButton, isTrue);
+  expect(chipNode.getSemanticsData().hasAction(ui.SemanticsAction.tap), isTrue);
+  final editors = find.semantics.byPredicate((node) =>
+      node.flagsCollection.isTextField && node.value == source).evaluate();
+  expect(editors, hasLength(1));
+  final path = <int>[];
+  for (SemanticsNode? node = editors.single; node != null; node = node.parent) {
+    path.add(node.id);
+    expect(node.id, isNot(chipNode.id),
+        reason: 'The source action must not contain the editor.');
+    expect(node.flagsCollection.isButton, isFalse,
+        reason: 'The editor ancestry must not inherit the source action.');
+    if (node.label.contains('Drag to reorder')) {
+      expect(node.label, 'Drag to reorder');
+      expect(node.getSemanticsData().customSemanticsActionIds, isNotEmpty,
+          reason: 'The row must retain its accessible reorder actions.');
+      return path;
+    }
+  }
+  fail('The editor has no reorderable row in its semantics ancestry.');
+}
+
 Future<void> _worksheetUndo(WidgetTester tester, {bool redo = false}) async {
   await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
   if (redo) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
@@ -84,51 +115,138 @@ void main() {
   for (final size in [const Size(390, 844), const Size(1280, 900)]) {
     testWidgets('Use result appends a live reference with undo/redo at $size',
         (tester) async {
-      await _bootApp(tester, size: size);
-      await _gotoNotepad(tester);
-      await tester.enterText(find.byType(TextField).first, '3+4');
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pumpAndSettle();
-      final state = AppState();
-      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
-      final source = doc.lines.first;
-      expect(source.cachedResult, '7');
-      final result = find.byKey(ValueKey('notepad-result:${source.id}'));
-      if (size.width < 720) {
-        await tester.longPress(result);
-      } else {
-        await tester.tap(result, buttons: 2);
-      }
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Use result'));
-      await tester.pump();
-      expect(find.byType(BottomSheet), findsOneWidget);
-      expect(doc.lines, hasLength(1),
-          reason: 'Insertion must wait until the sheet releases its focus scope.');
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pumpAndSettle();
-      expect(doc.lines, hasLength(2));
-      expect(doc.lines.first.id, source.id);
-      final dependentId = doc.lines.last.id;
-      final token = resultReferenceToken(source.id);
-      expect(doc.lines.last.source, token);
-      expect(doc.lines.last.cachedResult, '7');
-      final editor = tester.widget<TextField>(_editorWithSource(token));
-      expect(editor.focusNode!.hasFocus, isTrue);
-      expect(editor.controller!.selection.extentOffset, token.length);
-      expect(find.text('Result of line 1'), findsOneWidget);
+      final semantics = tester.ensureSemantics();
+      try {
+        await _bootApp(tester, size: size);
+        await _gotoNotepad(tester);
+        await tester.enterText(find.byType(TextField).first, '3+4');
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        final state = AppState();
+        final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+        final source = doc.lines.first;
+        expect(source.cachedResult, '7');
+        final result = find.byKey(ValueKey('notepad-result:${source.id}'));
+        if (size.width < 720) {
+          await tester.longPress(result);
+        } else {
+          await tester.tap(result, buttons: 2);
+        }
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Use result'));
+        await tester.pump();
+        expect(find.byType(BottomSheet), findsOneWidget);
+        expect(doc.lines, hasLength(1),
+            reason: 'Insertion must wait until the sheet releases its focus scope.');
+        // Finish dismissal, then build/focus the appended row without advancing
+        // its new 300 ms calculation debounce. This is the failing web phase:
+        // the source chip exists before the first result adds sibling semantics.
+        await tester.pump(const Duration(milliseconds: 400));
+        for (var frame = 0; frame < 4; frame++) {
+          await tester.pump();
+        }
+        expect(find.byType(BottomSheet), findsNothing);
+        expect(doc.lines, hasLength(2));
+        expect(doc.lines.last.cachedResult, isNull);
+        final token = resultReferenceToken(source.id);
+        final dependentId = doc.lines.last.id;
+        final chip = find.byKey(
+            ValueKey('notepad-reference:$dependentId:${source.id}'));
+        final beforeResult = _referenceEditorSemanticsPath(tester, token, chip);
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        expect(doc.lines, hasLength(2));
+        expect(doc.lines.first.id, source.id);
+        expect(doc.lines.last.source, token);
+        expect(doc.lines.last.cachedResult, '7');
+        expect(_referenceEditorSemanticsPath(tester, token, chip), beforeResult,
+            reason: 'Result arrival must preserve the editor semantic ancestry.');
+        final editor = tester.widget<TextField>(_editorWithSource(token));
+        expect(editor.focusNode!.hasFocus, isTrue);
+        expect(editor.controller!.selection.extentOffset, token.length);
+        expect(find.text('Result of line 1'), findsOneWidget);
 
-      await _worksheetUndo(tester);
-      expect(doc.lines, hasLength(1));
-      await _worksheetUndo(tester, redo: true);
-      expect(doc.lines.last.id, dependentId);
-      expect(doc.lines.last.source, token);
-      expect(doc.lines.last.cachedResult, '7');
-      expect(_editorWithSource(token), findsOneWidget);
-      expect(tester.takeException(), isNull);
+        expect(tester.testTextInput.hasAnyClients, isTrue);
+        tester.testTextInput.updateEditingValue(TextEditingValue(
+            text: '$token+1',
+            selection: TextSelection.collapsed(offset: token.length + 2)));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        expect(doc.lines.first.source, '3+4');
+        expect(doc.lines.last.source, '$token+1');
+        expect(doc.lines.last.cachedResult, '8');
+        await _worksheetUndo(tester);
+        expect(doc.lines.last.source, token);
+        expect(doc.lines.last.cachedResult, '7');
+
+        await _worksheetUndo(tester);
+        expect(doc.lines, hasLength(1));
+        await _worksheetUndo(tester, redo: true);
+        expect(doc.lines.last.id, dependentId);
+        expect(doc.lines.last.source, token);
+        expect(doc.lines.last.cachedResult, '7');
+        expect(_editorWithSource(token), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
     });
   }
+
+  testWidgets('autocomplete owns one keyboard node across editor rebuilds',
+      (tester) async {
+    final controller = TextEditingController();
+    final editorFocus = FocusNode();
+    late StateSetter rebuild;
+    var names = <String>{'sigma'};
+    try {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(builder: (context, setState) {
+            rebuild = setState;
+            return NotepadAutocompleteOverlay(
+              controller: controller,
+              focusNode: editorFocus,
+              scopeNames: names,
+              child: TextField(controller: controller, focusNode: editorFocus),
+            );
+          }),
+        ),
+      ));
+      await tester.tap(find.byType(TextField));
+      await tester.enterText(find.byType(TextField), 'si');
+      await tester.pump();
+      final listener = find.descendant(
+          of: find.byType(NotepadAutocompleteOverlay),
+          matching: find.byType(KeyboardListener));
+      final keyboardNode = tester.widget<KeyboardListener>(listener).focusNode;
+      rebuild(() => names = {'customAngle'});
+      await tester.pump();
+      expect(tester.widget<KeyboardListener>(listener).focusNode,
+          same(keyboardNode));
+      expect(editorFocus.hasFocus, isTrue);
+      expect(controller.selection, const TextSelection.collapsed(offset: 2));
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+      // Continue through the existing input client, without a tap or the
+      // implicit focus request made by WidgetTester.enterText.
+      tester.testTextInput.updateEditingValue(const TextEditingValue(
+          text: 'cust', selection: TextSelection.collapsed(offset: 4)));
+      await tester.pump();
+      expect(controller.text, 'cust');
+      expect(find.text('customAngle'), findsOneWidget);
+      await tester.tap(find.text('customAngle'));
+      await tester.pump();
+      expect(controller.text, 'customAngle');
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(() => keyboardNode.addListener(() {}), throwsFlutterError,
+          reason: 'The autocomplete owner must dispose its keyboard node.');
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+      editorFocus.dispose();
+    }
+  });
 
   for (final latex in [false, true]) {
     testWidgets('References preserves selection after semantic-menu blur (LaTeX: $latex)',
