@@ -2,18 +2,31 @@
 
 ## Scope and status — 10 November 2026
 
-This lane makes calculations, inline plots and the graph workspace cooperate
-inside the existing Notepad model. The baseline inspection is source review at
+Application checkpoint
+[`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
+tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`, connects worksheet calculations,
+inline plots, Graph and [stable result references](stable-result-references.md).
+[Release acceptance](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015)
+passes both complete workflows on desktop and phone with zero page errors;
+62 focused widget tests also pass. Analysis is clean, the full native suite
+passes 6,052 tests/eight skips, and all six platform builds pass. The
+[debug retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537)
+passes both graph layouts and the complete desktop reference lifecycle, but
+phone Undo exposes a remaining list-layout assertion after restoring the
+correct row identities, sources and results in storage. Feature closure remains
+open for that visible UI failure. The first debug attempt's Flutter SDK setup
+timeout occurred before application execution. Exact sources and retained failures are in the
+[evidence receipt](evidence/notepad-stable-references-20261110.json).
+
+This audit began at
 [834bcc0](https://github.com/CrispStrobe/CrispMath/commit/834bcc0152bb703a187e7a838dfb6f70d3e11013).
-The first increment below merged through
-[PR 21](https://github.com/CrispStrobe/CrispMath/pull/21) as `c7f84eb`. At its
-`84877bd` source, clean analysis, both full suites (6,005 passed, eight skipped
-each), and all six platform builds passed. The new connected browser flow
-still failed at observing a rendered plot's semantic geometry. Follow-up
-[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) contains the chart
-accessibility correction and the [stable-reference increment](stable-result-references.md).
-It tracks exact hosted results and the retained initial failures. This document
-does not establish a released app, deployment, device result, or new engine capability.
+The first increment merged through
+[PR 21](https://github.com/CrispStrobe/CrispMath/pull/21) as `c7f84eb`; follow-up
+[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) adds accessible plots
+and stable references. Historical graph-observation, editor-focus and shown-
+tooltip failures remain recorded in [HISTORY](../HISTORY.md) and the receipt.
+This feature-branch evidence does not establish a release, deployment,
+physical-device result, or additional engine capability.
 
 Follow the [current state and executable lanes](https://github.com/CrispStrobe/CrispMath/blob/main/docs/current-state-and-next-steps.md)
 and [PLAN](https://github.com/CrispStrobe/CrispMath/blob/main/PLAN.md). Keep the
@@ -50,7 +63,7 @@ The application already has document-local variables and functions, dependency
 tracking, error propagation, persistent documents, headings, undo, graph links,
 source navigation, graph tracing, value tables and several exports. Graph links
 use document and line IDs, so they can follow the same source through a row
-move. The first increment should reuse those facilities.
+move. The first increment reuses those facilities.
 
 | Existing part | Public source |
 | --- | --- |
@@ -81,7 +94,7 @@ The reverse-workflow and export observations come from the
 [graph screen](https://github.com/CrispStrobe/CrispMath/blob/834bcc0152bb703a187e7a838dfb6f70d3e11013/lib/screens/graphing_screen.dart)
 and [exporter](https://github.com/CrispStrobe/CrispMath/blob/834bcc0152bb703a187e7a838dfb6f70d3e11013/lib/engine/notepad_export.dart).
 
-## Selected first increment
+## Implemented first increment
 
 ### Try the connected worksheet
 
@@ -108,41 +121,41 @@ functions offer **Open worksheet source** instead of creating another copy.
 
 ### Shared plot meaning
 
-Move the plain plot specification into the engine layer. Resolve document
-functions, parameters, imports and interval bounds before either view samples.
+The plain plot specification now lives in the engine layer. Document
+functions, parameters, imports and interval bounds resolve before either view samples.
 The independent variable is lexically bound: a document assignment `t=100`
-must not replace the `t` in `plot(t^2,t,-2,2)`. Bounds remain ordinary document
-expressions. A missing/invalid dependency must produce an explicit error and
-clear the old output.
+does not replace the `t` in `plot(t^2,t,-2,2)`. Bounds remain ordinary document
+expressions. A missing or invalid dependency produces an explicit error and
+clears the old output.
 
-Keep the current document IDs, row IDs and graph slots. Avoid creating a second
-notebook store or duplicating mathematical definitions between surfaces.
+The existing document IDs, row IDs and graph slots remain the source of
+identity; both views use the worksheet's mathematical definitions.
 
 ### Inline graph and full graph
 
-The inline output should show a useful graph, its interval, loading/empty/error
-states and an Open graph action. Sampling should be asynchronous, reusable and
-protected against late results from previous expressions. Invalid samples must
-remain breaks in the curve. Opening a plot should preserve its source link and
-carry its declared x interval to the graph view.
+The inline output shows the graph, its interval, loading/empty/error states and
+a **View linked graph** action. Sampling is asynchronous and reusable, with
+late results from previous expressions discarded. Invalid samples remain
+breaks in the curve. Opening a plot preserves its source link and carries its
+declared x interval to the graph view.
 
 ### Graph back to Notepad
 
 For a graph that already has a document source, the action opens that source.
-For an independent graph, create a new worksheet containing its parameter
-assignments and a plot over the current interval, then link the original graph
-slot to the new plot row. This makes the document the owner of subsequent
+For an independent graph, **Create worksheet** creates parameter assignments
+and a plot over the current interval, then links the original graph slot to the
+new plot row. This makes the document the owner of subsequent
 changes while preserving the original graph slot and leaving the user's
 current worksheet intact. The new worksheet provides a separate scope for
 parameter names that may already exist in another document.
 
 ### Export
 
-Decode cached plot metadata before handing it to any text exporter or the
-shared worksheet-bundle/PDF content path. Export the mathematical expression,
-independent variable and evaluated interval. If no usable evaluation exists,
-retain the requested expression/range and say that the plot is not calculated.
-An error must not be described as a valid plot.
+Cached plot metadata is decoded for text exporters and the shared
+worksheet-bundle/PDF content path. The export includes the mathematical
+expression, independent variable and evaluated interval. If no usable
+evaluation exists, it retains the requested expression/range and identifies
+the plot as not calculated. An error is not described as a valid plot.
 
 This bounded change exports readable plot metadata. It does not claim to embed
 an inline chart image in every format. A later graph-export lane should preserve
@@ -169,8 +182,9 @@ separate graph collection and fixed preview interval need their own review.
 Use focused unit/widget regressions plus actual hosted browser controls on wide
 and narrow layouts. Record exact commits and workflow conclusions. Do not
 replace historical mathematical fixtures or infer application behavior from a
-model-only test. Hosted validation for the final branch revision is recorded in
-the linked pull request. The checks live in `notepad_plot_test.dart`,
+model-only test. The `43d0030` release, native-suite and debug results, including
+the remaining phone Undo layout failure, are recorded in the
+[evidence receipt](evidence/notepad-stable-references-20261110.json). The checks live in `notepad_plot_test.dart`,
 `mini_plot_widget_test.dart`, `graph_worksheet_test.dart`, the existing graph
 navigation/action, Notepad screen and export suites, and
 `tool/check_connected_notepad_browser.py`.
@@ -194,11 +208,15 @@ it. The remaining next steps below are proposed work.
 
 ## Subsequent worksheet roadmap
 
-1. **Stable result references.** Use row UUIDs for new references and display
-   convenient labels. Preserve existing `lineN` behavior during migration;
-   do not silently reinterpret saved documents. Insert, delete, move, undo,
-   copy and import need explicit reference semantics. The implementation and
-   acceptance contract are now tracked in [PR22](stable-result-references.md).
+1. **Stable result references — phone Undo layout fix remains.**
+   [PR22's contract](stable-result-references.md) uses persistent row IDs and
+   adds **Use result**, a **References…** picker and readable source links.
+   Editable source still shows `@{row-id}` tokens, scoped to the same document;
+   existing `lineN` stays positional without migration. Copy/import remaps
+   internal identities, undo preserves them, and static exports use snapshot
+   labels. Release controls pass on desktop and phone; debug passes the complete
+   desktop lifecycle. Phone Undo restores the document state but throws a
+   visible list-layout assertion. Resolve that bounded defect before moving on.
 2. **Dependent calculation groups.** Differentiate, integrate, solve, plot and
    table actions should insert a new source-linked calculation beside the
    original. Show inputs, output and any assumptions together. Reuse the

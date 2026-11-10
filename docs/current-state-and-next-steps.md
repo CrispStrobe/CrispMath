@@ -7,17 +7,41 @@ worksheet lane, based on the PR21 merge `c7f84eb`. See the [plot audit](connecte
 [stable-reference contract](stable-result-references.md). All work is retained
 in incremental feature-branch commits; it is not merged or released.
 
-At `84877bd`, [Linux feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/42793201631)
-and [macOS CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42793212441)
-report clean analysis and 6,005 full-suite passes/eight skips each. The six
-platform builds pass. The new connected-plot browser flow still fails at its
-initial semantic observation despite a visibly rendered parabola and correct
-plot metadata. The chart-container fix is `9e8f2f6`; its exact hosted result
-must be checked before claiming the new flow passes.
+The current application checkpoint is
+[`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
+tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`.
+[Release acceptance](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015)
+passes the complete graph and stable-reference workflows on desktop and phone,
+with zero page errors. Its 62 focused widget passes overlap the full suite.
+The graphs preserve worksheet functions, parameter values, interval and source
+identity. **Use result**, the **References…** picker, continued typing, source
+navigation, deletion/Undo, duplicate identity and reload pass through actual
+controls.
 
-Stable result references are the next increment in this same lane. Preserve
-old `lineN` semantics, document ownership, import/copy identity remapping, and
-honest static exports. No vendor-runtime or release work is part of this lane.
+[Source-matched CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42822982607/job/129852918258)
+has clean analysis and 6,052 full-suite passes/eight skips, including the
+hovered source-deletion/Undo regression. All six platform builds, Docs freshness
+and format preview pass. The
+[debug retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537/job/129859438590)
+passes both graph layouts and the complete desktop reference workflow with no
+page errors, but **phone Undo remains broken in the visible UI**. Deletion shows
+the missing-reference state; Undo restores the two original row IDs, sources
+and results 9/19 in storage, then the list throws
+`_RenderLayoutBuilder0 was mutated in RenderSliverList.performLayout` while
+rebuilding `_ReorderableItem`. Later phone lifecycle stages are not reached.
+
+The next bounded task is to fix and verify that Undo layout failure. The first
+debug attempt's Flutter SDK setup timeout occurred before app execution and
+remains separate infrastructure evidence. Earlier focus and tooltip failures
+and all exact sources/runs are retained in the
+[public evidence receipt](evidence/notepad-stable-references-20261110.json).
+
+References use persistent row IDs within one document. Editable source still
+displays `@{row-id}` tokens; `lineN` remains positional. Static exports use
+snapshot result labels and readable plot metadata, without embedded inline
+chart images. Derived calculation groups and worksheet parameter controls are
+the next bounded product work after validation closes. No vendor-runtime,
+release, deployment or physical-device result is claimed by this lane.
 
 ## Integrated checkpoint — 6 November 2026
 

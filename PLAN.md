@@ -8,17 +8,31 @@ Completed items with details are in `HISTORY.md`.
 [PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) follows the merged
 Notepad/Graph work in PR21 with incremental remote checkpoints. It is a draft
 feature branch from `c7f84eb`; release metadata and dependency pins are unchanged.
+The current application checkpoint is
+[`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
+tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`.
 
-- [~] Complete the [connected plot workflow](docs/connected-notepad.md) browser
-  gate. Source `84877bd` passes clean analysis, both full suites (6,005 passed,
-  eight skipped each), and all six platform builds; the new browser harness
-  finds rendered plot evidence but fails semantic geometry. An explicit chart
-  semantics container and regression are pushed at `9e8f2f6`; verification is
-  pending. Preserve both initial browser failures.
-- [~] Add [stable result references](docs/stable-result-references.md), friendly
-  insertion/source navigation, and copy/import/undo/export behavior while
-  preserving legacy positional `lineN` semantics. Require focused regressions
-  and actual desktop/phone controls before declaring the increment ready.
+- [x] Connect [Notepad plots and Graph](docs/connected-notepad.md) through shared
+  function/parameter/range resolution, source navigation, and Graph-to-worksheet
+  creation. Final-source release browser checks pass on desktop and phone in
+  [acceptance 42823031454](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015).
+- [~] Close [stable result references](docs/stable-result-references.md).
+  The same release job passes the complete reference workflow on both layouts,
+  with zero page errors and 62 focused widget passes. **Use result**, picker
+  insertion, keyboard continuation, source navigation, deletion/Undo, document
+  duplication and reload are verified. Preserve raw editable tokens,
+  same-document ownership, positional `lineN`, and static-export semantics.
+  Analysis is clean, the full native suite passes 6,052 tests/eight skips, and
+  all six platform builds pass. The
+  [debug retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537)
+  passes both graph layouts and the complete desktop reference workflow, but
+  **phone Undo still breaks the visible list**: the original two row IDs,
+  sources and results 9/19 return in storage, then a layout-mutation assertion
+  appears while rebuilding a reorderable item. Fix that observed failure and
+  complete the remaining phone lifecycle before closure. The earlier SDK setup
+  timeout remains separate infrastructure evidence. Preserve exact results and
+  initial failures in the
+  [evidence receipt](docs/evidence/notepad-stable-references-20261110.json).
 - [ ] Build derived calculation groups and worksheet parameter controls on the
   same source identities after the reference contract is verified.
 
