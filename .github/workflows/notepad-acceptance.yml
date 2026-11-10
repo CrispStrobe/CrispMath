@@ -1,4 +1,4 @@
-name: Notepad layout diagnostics
+name: Connected Notepad acceptance
 
 on:
   push:
@@ -13,19 +13,18 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_SOURCE_BASE: ca24eb34b9b83037aad1be6fc54e3f7623e92aa0
-  DIAGNOSTIC_APP_SOURCE: ca24eb34b9b83037aad1be6fc54e3f7623e92aa0
+  APP_SOURCE_BASE: 43d00309345b369860c8453bcec0f4fea1e3717d
 
 jobs:
   browser:
-    name: Observe focused source deletion (${{ matrix.mode }})
+    name: Connected Notepad (${{ matrix.mode }})
     runs-on: macos-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mode: [debug]
+        mode: [release, debug]
     env:
       ACCEPTANCE_MODE: ${{ matrix.mode }}
     steps:
@@ -52,8 +51,6 @@ jobs:
           assert changed == [expected], f'Unexpected changes from the accepted source: {changed}'
           receipt = {
               'appSourceBase': base,
-              'diagnostic': True,
-              'instrumentation': 'Read-only all-level browser console and pageerror capture; original checker assertions unchanged',
               'workflowSha': workflow_sha,
               'onlyChangedFile': expected,
               'applicationSourceUnchanged': True,
@@ -84,6 +81,13 @@ jobs:
               path: .ci/CrispEmbed/flutter/crispembed
           YAML
           flutter pub get
+      - name: Focused worksheet widget regressions
+        id: widgets
+        if: matrix.mode == 'release'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded test/notepad_screen_test.dart test/mini_plot_widget_test.dart | tee browser-results/widget-tests.log
       - name: Build preview
         run: |
           if [[ "$ACCEPTANCE_MODE" == release ]]; then
@@ -95,122 +99,56 @@ jobs:
         run: |
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
-      - name: Install read-only console observer
-        run: |
-          cat > "$RUNNER_TEMP/notepad-console-diagnostics.py" <<'PY_OBSERVER'
-          """CI-only console observation for the unchanged reference browser checker.
-
-          No application, DOM, source, result, selection, focus, or assertion is modified.
-          The original checker continues to decide whether the actual UI workflow passes.
-          """
-          import argparse
-          import asyncio
-          import json
-          import os
-          from pathlib import Path
-          import sys
-          import time
-
-          sys.path.insert(0, str(Path.cwd() / 'tool'))
-          import check_notepad_references_browser as checker  # noqa: E402
-
-
-          original_result_actions = checker.result_actions
-          traces = {}
-
-
-          async def observed_result_actions(page, result, profile):
-              started = time.perf_counter()
-              trace = {'profile': profile, 'startedAt': 'before Use result context menu',
-                       'console': [], 'pageErrors': []}
-              traces[profile] = trace
-
-              def console(message):
-                  trace['console'].append({
-                      'atMs': round((time.perf_counter() - started) * 1000, 3),
-                      'type': message.type,
-                      'text': message.text,
-                      'location': message.location,
-                  })
-
-              def pageerror(error):
-                  trace['pageErrors'].append({
-                      'atMs': round((time.perf_counter() - started) * 1000, 3),
-                      'name': getattr(error, 'name', None),
-                      'message': str(error),
-                      'stack': getattr(error, 'stack', None),
-                  })
-
-              # Record every console level and full message, including stack frames logged
-              # separately from Flutter's initial exception heading. Never intercept input.
-              page.on('console', console)
-              page.on('pageerror', pageerror)
-              await original_result_actions(page, result, profile)
-
-
-          checker.result_actions = observed_result_actions
-
-
-          async def main(args):
-              output = Path(args.output)
-              output.mkdir(parents=True, exist_ok=True)
-              provenance = {
-                  'driver': 'notepad-console-readonly-v1',
-                  'applicationSource': os.environ.get('DIAGNOSTIC_APP_SOURCE'),
-                  'workflowSource': os.environ.get('GITHUB_SHA'),
-                  'originalCheckerAssertionsUnchanged': True,
-                  'applicationStateInjected': False,
-                  'focusRepaired': False,
-                  'instrumentation': 'read-only browser console and pageerror listeners',
-              }
-              try:
-                  await checker.check(args)
-              finally:
-                  for profile, trace in traces.items():
-                      trace['diagnosticProvenance'] = provenance
-                      (output / f'{profile}-console.json').write_text(
-                          json.dumps(trace, indent=2) + '\n')
-                  report_path = output / 'report.json'
-                  if report_path.exists():
-                      report = json.loads(report_path.read_text())
-                      report['diagnosticProvenance'] = provenance
-                      report['consoleArtifacts'] = [f'{profile}-console.json' for profile in traces]
-                      report_path.write_text(json.dumps(report, indent=2) + '\n')
-
-
-          if __name__ == '__main__':
-              parser = argparse.ArgumentParser(description=__doc__)
-              parser.add_argument('--url', default='http://127.0.0.1:8766/')
-              parser.add_argument('--output', default='browser-results/notepad-console-diagnostics')
-              parser.add_argument('--chromium')
-              asyncio.run(main(parser.parse_args()))
-          PY_OBSERVER
       - name: Start browser preview server
         id: preview
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > browser-results/http.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+      - name: Connected worksheet browser acceptance
+        id: connected
+        continue-on-error: true
+        run: python tool/check_connected_notepad_browser.py --output browser-results/connected-notepad
+      - name: Preserve connected worksheet evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: notepad-acceptance-${{ matrix.mode }}-connected
+          path: |
+            browser-results/source-receipt.json
+            browser-results/http.log
+            browser-results/widget-tests.log
+            browser-results/connected-notepad
+            build/web/build-info.json
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Stable result references browser acceptance
         id: references
         if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
         continue-on-error: true
-        run: python "$RUNNER_TEMP/notepad-console-diagnostics.py" --output browser-results/notepad-references
+        run: python tool/check_notepad_references_browser.py --output browser-results/notepad-references
       - name: Preserve stable result references evidence
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: notepad-layout-diagnostics
+          name: notepad-acceptance-${{ matrix.mode }}-references
           path: |
             browser-results/source-receipt.json
             browser-results/http.log
+            browser-results/widget-tests.log
             browser-results/notepad-references
             build/web/build-info.json
           if-no-files-found: ignore
           retention-days: 7
-      - name: Preserve original assertion outcome
+      - name: Require worksheet acceptance checks to pass
         if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
         env:
+          WIDGET_OUTCOME: ${{ steps.widgets.outcome }}
+          CONNECTED_OUTCOME: ${{ steps.connected.outcome }}
           REFERENCES_OUTCOME: ${{ steps.references.outcome }}
         run: |
-          printf 'Original reference assertions: %s\n' "$REFERENCES_OUTCOME"
+          printf 'Connected worksheet: %s\nStable result references: %s\n' "$CONNECTED_OUTCOME" "$REFERENCES_OUTCOME"
+          if [[ "$ACCEPTANCE_MODE" == release ]]; then
+            test "$WIDGET_OUTCOME" = success
+          fi
+          test "$CONNECTED_OUTCOME" = success
           test "$REFERENCES_OUTCOME" = success
