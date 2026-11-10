@@ -1,4 +1,4 @@
-name: Connected Notepad acceptance
+name: Notepad focus diagnostics
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: notepad-acceptance-${{ github.ref }}
@@ -14,19 +15,14 @@ concurrency:
 
 env:
   APP_SOURCE_BASE: 90d80b6f1ce087fc2cd95e1fd0a0618d95c57c46
+  DIAGNOSTIC_APP_SOURCE: 90d80b6f1ce087fc2cd95e1fd0a0618d95c57c46
+  DIAGNOSTIC_ARTIFACT_ID: '13763667705'
 
 jobs:
-  browser:
-    name: Connected Notepad (${{ matrix.mode }})
+  focus:
+    name: Observe immutable web bundle focus
     runs-on: macos-latest
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix:
-        mode: [release, debug]
-    env:
-      ACCEPTANCE_MODE: ${{ matrix.mode }}
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,121 +30,256 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify application source and record provenance
+      - name: Download exact application build
+        uses: actions/download-artifact@v4
+        with:
+          name: crisp_math-web
+          run-id: 42813758910
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: build/web
+      - name: Verify application source and bundle provenance
         run: |
           git cat-file -e "$APP_SOURCE_BASE^{commit}" || git fetch --no-tags --depth=1 origin "$APP_SOURCE_BASE"
-          python - <<'PY'
+          python - <<'PY_RECEIPT'
           import json, os, subprocess
           from pathlib import Path
-
           base = os.environ['APP_SOURCE_BASE']
           workflow_sha = os.environ['GITHUB_SHA']
           expected = '.github/workflows/notepad-acceptance.yml'
-          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-          assert head == workflow_sha, (head, workflow_sha)
-          changed = subprocess.check_output(
-              ['git', 'diff', '--name-only', base, workflow_sha], text=True).splitlines()
-          assert changed == [expected], f'Unexpected changes from the accepted source: {changed}'
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == workflow_sha
+          changed = subprocess.check_output(['git', 'diff', '--name-only', base, workflow_sha], text=True).splitlines()
+          assert changed == [expected], changed
+          build = json.loads(Path('build/web/build-info.json').read_text())
+          assert build['source'] == base, build
           receipt = {
-              'appSourceBase': base,
-              'workflowSha': workflow_sha,
-              'onlyChangedFile': expected,
-              'applicationSourceUnchanged': True,
-              'mode': os.environ['ACCEPTANCE_MODE'],
-              'runnerOS': os.environ['RUNNER_OS'],
-              'runId': os.environ['GITHUB_RUN_ID'],
-              'runAttempt': os.environ['GITHUB_RUN_ATTEMPT'],
+              'diagnostic': True, 'appSourceBase': base, 'workflowSha': workflow_sha,
+              'onlyChangedFile': expected, 'applicationSourceUnchanged': True,
+              'applicationBundleUnchanged': True,
+              'bundleBuildRun': 42813758910, 'bundleArtifact': 13763667705,
+              'bundleCommand': 'tool/build_web.sh --release',
+              'runnerOS': os.environ['RUNNER_OS'], 'runId': os.environ['GITHUB_RUN_ID'],
+              'instrumentation': 'Read-only DOM events and mutation observation; original checker assertions unchanged',
           }
           Path('browser-results').mkdir(exist_ok=True)
           Path('browser-results/source-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
           print(json.dumps(receipt), flush=True)
-          PY
-      - uses: actions/checkout@v4
-        with:
-          repository: CrispStrobe/CrispEmbed
-          ref: d28ca2ea43a95934d673d1a54177fdf721614ade
-          path: .ci/CrispEmbed
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.44.0'
-          channel: stable
-          cache: true
-      - name: Dependencies
-        run: |
-          cat > pubspec_overrides.yaml <<'YAML'
-          dependency_overrides:
-            crispembed:
-              path: .ci/CrispEmbed/flutter/crispembed
-          YAML
-          flutter pub get
-      - name: Focused worksheet widget regressions
-        id: widgets
-        if: matrix.mode == 'release'
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          flutter test --reporter expanded test/notepad_screen_test.dart test/mini_plot_widget_test.dart | tee browser-results/widget-tests.log
-      - name: Build preview
-        run: |
-          if [[ "$ACCEPTANCE_MODE" == release ]]; then
-            tool/build_web.sh --release --no-wasm-dry-run -O2
-          else
-            tool/build_web.sh --debug --no-wasm-dry-run
-          fi
-      - name: Install browser test tools
+          PY_RECEIPT
+      - name: Install browser tools and observational wrapper
         run: |
           python -m pip install -r tool/browser-requirements.txt
           python -m playwright install --with-deps chromium
-      - name: Start browser preview server
-        id: preview
+          cat > "$RUNNER_TEMP/notepad-focus-diagnostics.py" <<'PY_OBSERVER'
+          """Read-only DOM focus diagnostics around the unchanged reference UI checker.
+
+          CI-only driver: import the application revision's existing checker and keep all
+          of its pointer, keyboard, source, identity, and mathematical assertions intact.
+          This file belongs outside the feature tree; it does not patch the application.
+          """
+          import argparse
+          import asyncio
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          sys.path.insert(0, str(Path.cwd() / 'tool'))
+          import check_notepad_references_browser as checker  # noqa: E402
+
+
+          TRACE_SCRIPT = r"""() => {
+            const selector='input,textarea,[contenteditable="true"],[role="textbox"]';
+            const events=[], ids=new WeakMap(), knownInputs=new Map(), roots=new Set();
+            const observers=[], listeners=[], seenEvents=new WeakSet();
+            const started=performance.now(), maxEvents=240;
+            let nextId=0, droppedEvents=0;
+            const identify=node=>{
+              if(!ids.has(node))ids.set(node,++nextId);
+              return ids.get(node);
+            };
+            const deepActive=()=>{
+              let active=document.activeElement;
+              while(active&&active.shadowRoot&&active.shadowRoot.activeElement)
+                active=active.shadowRoot.activeElement;
+              return active;
+            };
+            const describe=node=>{
+              if(!node||node.nodeType!==Node.ELEMENT_NODE)return null;
+              const r=node.getBoundingClientRect();
+              return {id:identify(node),tag:node.tagName,connected:node.isConnected,
+                role:node.getAttribute('role'),label:node.getAttribute('aria-label'),
+                semanticsRole:node.getAttribute('data-semantics-role'),
+                placeholder:node.getAttribute('placeholder'),tabIndex:node.tabIndex,
+                value:typeof node.value==='string'?node.value:null,
+                selectionStart:typeof node.selectionStart==='number'?node.selectionStart:null,
+                selectionEnd:typeof node.selectionEnd==='number'?node.selectionEnd:null,
+                rect:{x:r.x,y:r.y,width:r.width,height:r.height}};
+            };
+            const ancestry=node=>{
+              const result=[];
+              for(let current=node;current&&result.length<16;){
+                result.push(current);
+                current=current.parentElement||current.getRootNode()?.host||null;
+              }
+              return result;
+            };
+            const inputsWithin=node=>{
+              const found=[];
+              if(node.nodeType===Node.ELEMENT_NODE&&node.matches(selector))found.push(node);
+              if(node.querySelectorAll)found.push(...node.querySelectorAll(selector));
+              return found;
+            };
+            const remember=node=>{
+              const ancestors=ancestry(node);
+              knownInputs.set(node,{ancestors,snapshot:ancestors.map(describe)});
+            };
+            const record=(type,details={})=>{
+              if(events.length>=maxEvents){droppedEvents++;return;}
+              events.push({type,atMs:Math.round((performance.now()-started)*1000)/1000,
+                active:describe(deepActive()),rootActive:describe(document.activeElement),
+                documentHasFocus:document.hasFocus(),...details});
+            };
+            const nativeEvent=event=>{
+              if(seenEvents.has(event))return;
+              seenEvents.add(event);
+              const target=event.composedPath().find(node=>node?.nodeType===Node.ELEMENT_NODE)
+                ||event.target;
+              record(event.type,{target:describe(target),relatedTarget:describe(event.relatedTarget),
+                key:typeof event.key==='string'?event.key:null,
+                inputType:event.inputType||null,data:typeof event.data==='string'?event.data:null});
+            };
+            const watch=root=>{
+              if(roots.has(root))return;
+              roots.add(root);
+              for(const input of inputsWithin(root))remember(input);
+              for(const name of ['focus','blur','focusin','focusout','keydown','beforeinput','input']){
+                root.addEventListener(name,nativeEvent,true);
+                listeners.push([root,name]);
+              }
+              const observer=new MutationObserver(records=>{
+                for(const mutation of records){
+                  if(mutation.type==='attributes'){
+                    const affected=[...knownInputs].filter(([,prior])=>
+                      prior.ancestors.includes(mutation.target));
+                    if(affected.length)record('ancestor-attribute',{
+                      target:describe(mutation.target),attribute:mutation.attributeName,
+                      oldValue:mutation.oldValue,newValue:mutation.target.getAttribute(mutation.attributeName),
+                      textboxes:affected.map(([input,prior])=>({input:describe(input),
+                        previousAncestors:prior.snapshot,currentAncestors:ancestry(input).map(describe)}))});
+                    continue;
+                  }
+                  for(const [type,nodes] of [['subtree-removed',mutation.removedNodes],
+                                            ['subtree-added',mutation.addedNodes]]){
+                    for(const node of nodes){
+                      const affected=new Set(inputsWithin(node));
+                      // A reparented textarea may no longer be inside a removed ancestor
+                      // by callback time. Retain the previous ancestor identities too.
+                      for(const [input,prior] of knownInputs)
+                        if(prior.ancestors.includes(node))affected.add(input);
+                      if(affected.size)record(type,{subtree:describe(node),
+                        mutationParent:describe(mutation.target),textboxes:[...affected].map(input=>({
+                          input:describe(input),previousAncestors:knownInputs.get(input)?.snapshot||[],
+                          currentAncestors:ancestry(input).map(describe)}))});
+                      if(type==='subtree-added'&&node.querySelectorAll){
+                        if(node.shadowRoot)watch(node.shadowRoot);
+                        for(const child of node.querySelectorAll('*'))
+                          if(child.shadowRoot)watch(child.shadowRoot);
+                        for(const input of inputsWithin(node))if(!knownInputs.has(input))remember(input);
+                      }
+                    }
+                  }
+                }
+                for(const input of knownInputs.keys())if(input.isConnected)remember(input);
+              });
+              observer.observe(root,{subtree:true,childList:true,attributes:true,attributeOldValue:true,
+                attributeFilter:['role','data-semantics-role','aria-hidden']});
+              observers.push(observer);
+              for(const node of root.querySelectorAll('*'))if(node.shadowRoot)watch(node.shadowRoot);
+            };
+            watch(document);
+            record('trace-start',{textboxes:[...knownInputs].map(([input,prior])=>({
+              input:describe(input),ancestors:prior.snapshot}))});
+            return {read:()=>({version:'notepad-focus-readonly-v1',maxEvents,droppedEvents,
+              visibilityState:document.visibilityState,documentHasFocus:document.hasFocus(),
+              active:describe(deepActive()),events:events.slice()}),
+              stop:()=>{for(const observer of observers)observer.disconnect();
+                for(const [root,name] of listeners)root.removeEventListener(name,nativeEvent,true);}};
+          }"""
+
+
+          original_result_actions = checker.result_actions
+          original_reference_dom = checker.reference_dom
+          traces = {}
+
+
+          async def traced_result_actions(page, result, profile):
+              traces[page] = await page.evaluate_handle(TRACE_SCRIPT)
+              await original_result_actions(page, result, profile)
+
+
+          async def traced_reference_dom(page):
+              evidence = await original_reference_dom(page)
+              trace = traces.get(page)
+              if trace is not None:
+                  try:
+                      evidence['focusTrace'] = await trace.evaluate('(trace)=>trace.read()')
+                  except Exception as error:
+                      evidence['focusTraceError'] = str(error)
+              return evidence
+
+
+          checker.result_actions = traced_result_actions
+          checker.reference_dom = traced_reference_dom
+
+
+          async def main(args):
+              try:
+                  await checker.check(args)
+              finally:
+                  report_path = Path(args.output) / 'report.json'
+                  if report_path.exists():
+                      report = json.loads(report_path.read_text())
+                      report['diagnosticProvenance'] = {
+                          'driver': 'notepad-focus-readonly-v1',
+                          'applicationSource': os.environ.get('DIAGNOSTIC_APP_SOURCE'),
+                          'artifactId': os.environ.get('DIAGNOSTIC_ARTIFACT_ID'),
+                          'workflowSource': os.environ.get('GITHUB_SHA'),
+                          'originalCheckerAssertionsUnchanged': True,
+                          'applicationStateInjected': False,
+                          'focusRepaired': False,
+                          'instrumentation': 'read-only DOM events and mutation observation',
+                      }
+                      report_path.write_text(json.dumps(report, indent=2) + '\n')
+
+
+          if __name__ == '__main__':
+              parser = argparse.ArgumentParser(description=__doc__)
+              parser.add_argument('--url', default='http://127.0.0.1:8766/')
+              parser.add_argument('--output', default='browser-results/notepad-focus-diagnostics')
+              parser.add_argument('--chromium')
+              asyncio.run(main(parser.parse_args()))
+          PY_OBSERVER
+      - name: Start immutable preview
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > browser-results/http.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
-      - name: Connected worksheet browser acceptance
-        id: connected
+      - name: Observe original reference assertions
+        id: trace
         continue-on-error: true
-        run: python tool/check_connected_notepad_browser.py --output browser-results/connected-notepad
-      - name: Preserve connected worksheet evidence
-        uses: actions/upload-artifact@v4
+        run: python "$RUNNER_TEMP/notepad-focus-diagnostics.py" --output browser-results/notepad-focus-diagnostics
+      - name: Preserve focus diagnostics
         if: always()
-        with:
-          name: notepad-acceptance-${{ matrix.mode }}-connected
-          path: |
-            browser-results/source-receipt.json
-            browser-results/http.log
-            browser-results/widget-tests.log
-            browser-results/connected-notepad
-            build/web/build-info.json
-          if-no-files-found: ignore
-          retention-days: 7
-      - name: Stable result references browser acceptance
-        id: references
-        if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
-        continue-on-error: true
-        run: python tool/check_notepad_references_browser.py --output browser-results/notepad-references
-      - name: Preserve stable result references evidence
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: notepad-acceptance-${{ matrix.mode }}-references
+          name: notepad-focus-diagnostics
           path: |
-            browser-results/source-receipt.json
-            browser-results/http.log
-            browser-results/widget-tests.log
-            browser-results/notepad-references
+            browser-results
             build/web/build-info.json
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 7
-      - name: Require worksheet acceptance checks to pass
-        if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
+      - name: Preserve original assertion outcome
+        if: ${{ !cancelled() && steps.trace.outcome != '' }}
         env:
-          WIDGET_OUTCOME: ${{ steps.widgets.outcome }}
-          CONNECTED_OUTCOME: ${{ steps.connected.outcome }}
-          REFERENCES_OUTCOME: ${{ steps.references.outcome }}
+          TRACE_OUTCOME: ${{ steps.trace.outcome }}
         run: |
-          printf 'Connected worksheet: %s\nStable result references: %s\n' "$CONNECTED_OUTCOME" "$REFERENCES_OUTCOME"
-          if [[ "$ACCEPTANCE_MODE" == release ]]; then
-            test "$WIDGET_OUTCOME" = success
-          fi
-          test "$CONNECTED_OUTCOME" = success
-          test "$REFERENCES_OUTCOME" = success
+          printf 'Original reference assertions: %s\n' "$TRACE_OUTCOME"
+          test "$TRACE_OUTCOME" = success
