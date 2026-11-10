@@ -41,15 +41,28 @@ class MiniPlotWidget extends StatefulWidget {
 
 class _MiniPlotWidgetState extends State<MiniPlotWidget> {
   int _generation = 0;
+  bool _enabled = false;
+  bool _needsSample = true;
   bool _busy = true;
   bool _failed = false;
   List<PlotPt> _points = const [];
   GraphBounds? _bounds;
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_sample());
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final enabled = TickerMode.valuesOf(context).enabled;
+    if (!enabled) {
+      if (_busy && _enabled) {
+        // Keep completed geometry, but do not publish a result from a request
+        // that was superseded while this worksheet was hidden.
+        _generation++;
+        _needsSample = true;
+      }
+      _busy = false;
+    }
+    _enabled = enabled;
+    if (_enabled && _needsSample) unawaited(_sample());
   }
 
   @override
@@ -62,13 +75,27 @@ class _MiniPlotWidgetState extends State<MiniPlotWidget> {
         before.lo != after.lo ||
         before.hi != after.hi ||
         oldWidget.sampler != widget.sampler) {
-      unawaited(_sample());
+      _generation++;
+      _needsSample = true;
+      _busy = false;
+      _failed = false;
+      _points = const [];
+      _bounds = null;
+      // A tab change and source update can arrive in the same frame, before
+      // didChangeDependencies has refreshed the cached visibility.
+      _enabled = TickerMode.valuesOf(context).enabled;
+      if (_enabled) unawaited(_sample());
     }
   }
 
   Future<void> _sample() async {
+    if (!_enabled) {
+      _needsSample = true;
+      return;
+    }
     final generation = ++_generation;
     final spec = widget.spec;
+    _needsSample = false;
     _busy = true;
     _failed = false;
     _points = const [];

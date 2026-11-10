@@ -42,19 +42,23 @@ void main() {
     Future<GraphSamples> Function(Map<String, dynamic>) sampler, {
     VoidCallback? onOpenGraph,
     double width = 260,
+    bool enabled = true,
   }) =>
       MaterialApp(
         localizationsDelegates: const [AppLocalizationsDelegate()],
         theme: ThemeData(colorScheme: const ColorScheme.light(primary: Colors.red)),
         home: Scaffold(
-          body: Center(
-            child: SizedBox(
-              width: width,
-              child: MiniPlotWidget(
-                spec: plot,
-                engine: engine,
-                sampler: sampler,
-                onOpenGraph: onOpenGraph,
+          body: TickerMode(
+            enabled: enabled,
+            child: Center(
+              child: SizedBox(
+                width: width,
+                child: MiniPlotWidget(
+                  spec: plot,
+                  engine: engine,
+                  sampler: sampler,
+                  onOpenGraph: onOpenGraph,
+                ),
               ),
             ),
           ),
@@ -110,6 +114,49 @@ void main() {
     ]));
     await tester.pump();
     expect(find.textContaining('No real values in this range'), findsOneWidget);
+    expect(find.byKey(const ValueKey('notepad-mini-plot-canvas')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('hidden plots defer changed expressions until visible',
+      (tester) async {
+    final requests = <Map<String, dynamic>>[];
+    Future<GraphSamples> sample(Map<String, dynamic> request) async {
+      requests.add(request);
+      return curve;
+    }
+
+    await tester.pumpWidget(app(spec(), sample));
+    await tester.pumpAndSettle();
+    expect(requests, hasLength(1));
+    await tester.pumpWidget(app(spec(), sample, enabled: false));
+    // Hiding a completed chart does not discard its useful geometry.
+    expect(find.byKey(const ValueKey('notepad-mini-plot-canvas')), findsOneWidget);
+    await tester.pumpWidget(app(spec(), sample));
+    expect(requests, hasLength(1));
+    // Changing both visibility and expression in one frame must also defer.
+    await tester.pumpWidget(app(spec(expression: '3*t^2'), sample, enabled: false));
+    expect(requests, hasLength(1));
+    await tester.pumpWidget(app(spec(expression: '3*t^2'), sample));
+    await tester.pumpAndSettle();
+    expect(requests, hasLength(2));
+    expect(requests.last['functions'], ['3*x^2']);
+    expect(find.byKey(const ValueKey('notepad-mini-plot-canvas')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('invalid intervals fail visibly without starting a worker',
+      (tester) async {
+    var requests = 0;
+    Future<GraphSamples> sample(Map<String, dynamic> _) async {
+      requests++;
+      return curve;
+    }
+
+    await tester.pumpWidget(app(spec(lo: 2, hi: -2), sample));
+    await tester.pump();
+    expect(requests, 0);
+    expect(find.text('Could not update the graph.'), findsOneWidget);
     expect(find.byKey(const ValueKey('notepad-mini-plot-canvas')), findsNothing);
     expect(tester.takeException(), isNull);
   });

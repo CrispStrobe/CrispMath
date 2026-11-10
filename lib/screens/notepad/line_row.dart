@@ -173,6 +173,7 @@ class _NotepadLineRow extends StatelessWidget {
                       onScrollToLineId: onScrollToLineId,
                       onFormatCycle: onFormatCycle,
                       engine: engine,
+                      onOpenGraph: onPlot,
                     ),
                   ),
                   if (!_isBlank && onPlot != null)
@@ -215,6 +216,7 @@ class _NotepadLineRow extends StatelessWidget {
                           alignStart: true,
                           onFormatCycle: onFormatCycle,
                           engine: engine,
+                          onOpenGraph: onPlot,
                         ),
                       ),
                     ],

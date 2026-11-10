@@ -17,6 +17,7 @@ import '../services/graph_sampling_service.dart';
 import '../controllers/latex_controller.dart';
 import '../engine/app_state.dart';
 import '../localization/app_localizations.dart';
+import '../localization/workflow_localizations.dart';
 import '../utils/expression_preprocessing_utils.dart';
 import '../utils/keyboard_input_handler.dart';
 import '../utils/latex_conversion_utils.dart';
@@ -55,6 +56,8 @@ class GraphingScreenState extends State<GraphingScreen>
   Size _plotSize = const Size(600, 400);
   final _undo = GraphUndoHistory<Map<String, dynamic>>();
   bool _fitting = false;
+  int _viewRevision = 0;
+  int _graphNavigationGeneration = 0;
   double _scale = 1.0;
   Offset _offset = Offset.zero;
   double _startScale = 1.0;
@@ -81,8 +84,53 @@ class GraphingScreenState extends State<GraphingScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _appState.graphChanges.addListener(_handleGraphRequest);
+    _handleGraphRequest();
     debugPrint("DEBUG: GraphingScreen initState - Screen initialized.");
     // FIX: Removed focus logic from here to prevent it from running at app startup.
+  }
+
+  void _handleGraphRequest() {
+    final request = _appState.consumeRequestedGraph();
+    if (request == null) return;
+    final generation = ++_graphNavigationGeneration;
+    // The destination may just have mounted, or changed from a split pane.
+    // Wait for its actual plot size before translating domain bounds to pixels.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || generation != _graphNavigationGeneration) return;
+      if (!_appState.graphLinks.containsKey(request.slot) ||
+          _appState.graphFunctions[request.slot].isEmpty) return;
+      _recordGraph();
+      setState(() {
+        _plotMode = PlotMode.cartesian;
+        _traceSlot = request.slot;
+      });
+      final plot = request.plot;
+      if (plot == null) return;
+      GraphBounds previous;
+      try {
+        previous = _bounds();
+      } on ArgumentError {
+        previous = GraphBounds(plot.lo, plot.hi, -10, 10);
+      }
+      _applyBounds(
+          GraphBounds(plot.lo, plot.hi, previous.yMin, previous.yMax),
+          record: false);
+      final revision = _viewRevision;
+      final expression = _appState.graphFunctions[request.slot];
+      try {
+        final xs = List.generate(81, (i) => plot.lo + (plot.hi - plot.lo) * i / 80);
+        final values = await GraphSamplingService.values(expression, xs);
+        if (!mounted || generation != _graphNavigationGeneration ||
+            revision != _viewRevision || _plotMode != PlotMode.cartesian ||
+            _appState.graphFunctions[request.slot] != expression) return;
+        _applyBounds(fittedGraphBounds(plot.lo, plot.hi,
+            values.map((row) => row[1])), record: false);
+      } catch (_) {
+        // Keep the requested x interval even when no real y values exist.
+        // The graph's regular sampling path provides empty/error feedback.
+      }
+    });
   }
 
   // FIX: Public method for the parent widget (MainScreen) to call.
@@ -175,6 +223,8 @@ class GraphingScreenState extends State<GraphingScreen>
 
   @override
   void dispose() {
+    _appState.graphChanges.removeListener(_handleGraphRequest);
+    _graphNavigationGeneration++;
     debugPrint("DEBUG: GraphingScreen disposing.");
     _latexController.dispose();
     _screenFocusNode.dispose();
@@ -487,22 +537,26 @@ class GraphingScreenState extends State<GraphingScreen>
   }
 
   void _recordGraph() {
+    _viewRevision++;
     _undo.record({
       ..._appState.captureGraphWorkspace(),
       'scale': _scale,
       'yRatio': _yRatio,
-      'offset': _offset
+      'offset': _offset,
+      'plotMode': _plotMode,
     });
   }
 
   void _undoGraph() {
     final previous = _undo.undo();
     if (previous == null) return;
+    _viewRevision++;
     _appState.restoreGraphWorkspace(previous);
     setState(() {
       _scale = previous['scale'] as double;
       _yRatio = previous['yRatio'] as double;
       _offset = previous['offset'] as Offset;
+      _plotMode = previous['plotMode'] as PlotMode;
     });
   }
 
@@ -514,8 +568,8 @@ class GraphingScreenState extends State<GraphingScreen>
         (cy - _plotSize.height) / uy, cy / uy);
   }
 
-  void _applyBounds(GraphBounds bounds) {
-    _recordGraph();
+  void _applyBounds(GraphBounds bounds, {bool record = true}) {
+    if (record) _recordGraph();
     setState(() {
       final ux = bounds.unitX(_plotSize.width),
           uy = bounds.unitY(_plotSize.height);
@@ -524,6 +578,21 @@ class GraphingScreenState extends State<GraphingScreen>
       _offset = Offset(-bounds.xMin * ux - _plotSize.width / 2,
           bounds.yMax * uy - _plotSize.height / 2);
     });
+  }
+
+  void _createWorksheet(int slot) {
+    final labels = WorkflowLocalizations.of(context);
+    try {
+      final bounds = _bounds();
+      _recordGraph();
+      _appState.createWorksheetFromGraph(slot,
+          name: labels.text(WorkflowLabel.graphWorksheetName, '${slot + 1}'),
+          xMin: bounds.xMin, xMax: bounds.xMax);
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+          labels.text(WorkflowLabel.worksheetLinkFailed,
+              error is StateError ? error.message.toString() : error.toString()))));
+    }
   }
 
   Future<void> _editBounds() async {
@@ -1103,15 +1172,36 @@ class GraphingScreenState extends State<GraphingScreen>
                   side: BorderSide(color: color, width: 1),
                   deleteIcon: PopupMenuButton<String>(
                     key: ValueKey('graph-function-actions-$originalIndex'),
-                    tooltip: AppLocalizations.of(context).functionActions,
+                    tooltip: '$yLabel: ${AppLocalizations.of(context).functionActions}',
                     icon: const Icon(Icons.more_horiz, size: 16),
                     padding: EdgeInsets.zero,
-                    onSelected: (action) => action == 'edit'
-                        ? _editFunction(originalIndex)
-                        : _removeFunction(funcText),
+                    onSelected: (action) {
+                      switch (action) {
+                        case 'edit':
+                          _editFunction(originalIndex);
+                        case 'worksheet':
+                          _createWorksheet(originalIndex);
+                        case 'source':
+                          _appState.requestOpenNotepadSource(originalIndex);
+                        case 'remove':
+                          _removeFunction(funcText);
+                      }
+                    },
                     itemBuilder: (context) {
                       final t = AppLocalizations.of(context);
+                      final labels = WorkflowLocalizations.of(context);
                       return [
+                        PopupMenuItem(
+                          value: _appState.graphLinks.containsKey(originalIndex)
+                              ? 'source' : 'worksheet',
+                          child: ListTile(
+                            leading: const Icon(Icons.description_outlined),
+                            title: Text(labels.text(
+                                _appState.graphLinks.containsKey(originalIndex)
+                                    ? WorkflowLabel.openWorksheetSource
+                                    : WorkflowLabel.createWorksheet)),
+                          ),
+                        ),
                         PopupMenuItem(
                           value: 'edit',
                           child: ListTile(

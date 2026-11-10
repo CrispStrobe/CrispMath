@@ -21,8 +21,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/exact_integer.dart';
+import '../utils/expression_preprocessing_utils.dart';
+import '../utils/latex_conversion_utils.dart';
 import 'notepad.dart';
 import 'linked_graph.dart';
+import 'notepad_plot.dart';
+import 'graph_viewport.dart';
 import 'scene_3d/scene_object.dart';
 import 'scene_3d/scene_state.dart';
 
@@ -345,6 +349,9 @@ class AppState extends ChangeNotifier {
     functionParameters.clear();
     graphLinks.clear();
     _linkViewSignatures.clear();
+    _requestedGraph = null;
+    _requestedTab = null;
+    _requestedNotepadLine = null;
     notepadDocuments.clear();
     _currentNotepadDocId = null;
     for (var i = 0; i < graphFunctions.length; i++) {
@@ -1393,6 +1400,15 @@ class AppState extends ChangeNotifier {
   final Map<int, String> _linkViewSignatures = {};
   int? _requestedTab;
   String? _requestedNotepadLine;
+  ({int slot, PlotSpec? plot})? _requestedGraph;
+
+  /// One-shot graph navigation, separate from persistent graph definitions.
+  /// A plot row supplies its interval; ordinary expressions retain the view.
+  ({int slot, PlotSpec? plot})? consumeRequestedGraph() {
+    final request = _requestedGraph;
+    _requestedGraph = null;
+    return request;
+  }
   int? consumeRequestedTab() {
     final tab = _requestedTab;
     _requestedTab = null;
@@ -1447,12 +1463,69 @@ class AppState extends ChangeNotifier {
     _persistParameters();
     _refreshLinkedGraphs();
     _persistGraphLinks();
+    if (openGraph) _requestedGraph = (slot: slot, plot: resolved.plot);
     _notify({AppStateDomain.graphs});
     if (openGraph) {
       _requestedTab = 2;
       _notify({AppStateDomain.navigation});
     }
     return slot;
+  }
+
+  /// Bring an independent graph into a fresh document with its current slider
+  /// values. The document becomes the source of the existing slot, so edits
+  /// remain connected and cannot overwrite another worksheet's definitions.
+  /// An already linked graph returns to its existing source instead.
+  NotepadDocument createWorksheetFromGraph(int slot,
+      {required String name, required double xMin, required double xMax}) {
+    if (slot < 0 || slot >= graphFunctions.length) {
+      throw StateError('Choose an existing graph.');
+    }
+    final link = graphLinks[slot];
+    if (link != null) {
+      final existing = notepadDocuments[link.documentId];
+      if (existing != null &&
+          existing.lines.any((line) => line.id == link.lineId)) {
+        requestOpenNotepadSource(slot);
+        return existing;
+      }
+      throw StateError('The source worksheet is missing. Restore it or detach the graph first.');
+    }
+    // Match the finite interval limits accepted by the graph view.
+    GraphBounds(xMin, xMax, -1, 1);
+    final expression = LatexConversionUtils.fromLatex(graphFunctions[slot])
+        .trim()
+        .replaceFirst(RegExp(r'^y\s*=\s*'), '');
+    if (expression.isEmpty) throw StateError('Choose a nonempty graph.');
+    final document = NotepadDocument.fresh(name: name)..lines.clear();
+    for (final parameter
+        in ExpressionPreprocessingUtils.detectParameters(expression, 'x')) {
+      final value = functionParameters[slot]?[parameter] ?? 1.0;
+      if (!value.isFinite) {
+        throw StateError('Use a finite value for $parameter.');
+      }
+      document.lines.add(NotepadLine.fresh(source: '$parameter = $value')
+        ..cachedResult = value.toString());
+    }
+    final plotLine = NotepadLine.fresh(
+        source: 'plot($expression, x, $xMin, $xMax)');
+    document.lines.add(plotLine);
+    final resolved = resolveLinkedGraph(document, plotLine.id);
+    if (resolved.error != null || resolved.plot == null) {
+      throw StateError(resolved.error ?? 'This graph cannot become a worksheet.');
+    }
+    plotLine.cachedResult = resolved.plot!.toSentinel();
+    // Validate everything before changing either the document collection or
+    // graph ownership. The numeric caches above are the captured slider values.
+    setNotepadDocument(document, notify: false);
+    graphLinks[slot] = LinkedGraphSource(document.id, plotLine.id);
+    functionParameters.remove(slot);
+    _refreshLinkedGraphs();
+    _persistParameters();
+    _persistGraphLinks();
+    _persistNotepadDocs();
+    requestOpenNotepadSource(slot);
+    return document;
   }
 
   void detachGraphSource(int slot) {
@@ -1476,7 +1549,8 @@ class AppState extends ChangeNotifier {
         notepadDocuments[entry.value.documentId]?.name,
         resolution.source,
         resolution.scope,
-        resolution.error
+        resolution.error,
+        resolution.plot?.toSentinel(),
       ]);
       if (_linkViewSignatures[entry.key] != signature) {
         _linkViewSignatures[entry.key] = signature;

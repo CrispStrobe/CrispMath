@@ -73,6 +73,39 @@ void main() {
     expect(AppState().graphFunctions[1], isEmpty);
   });
 
+  testWidgets('Create worksheet keeps parameters and returns to its source',
+      (tester) async {
+    final state = AppState();
+    state.updateFunction(0, 'a*x^2');
+    state.setParameter(0, 'a', 3);
+    final previousDocument = state.currentNotepadDocId;
+    final previousCount = state.notepadDocuments.length;
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('graph-function-actions-0')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create worksheet'));
+    await tester.pumpAndSettle();
+
+    expect(state.currentNotepadDocId, isNot(previousDocument));
+    expect(state.notepadDocuments.length, previousCount + 1);
+    final document = state.notepadDocuments[state.currentNotepadDocId]!;
+    expect(document.lines.first.source, 'a = 3.0');
+    expect(document.lines.last.source, startsWith('plot(a*x^2, x,'));
+    expect(state.graphLinks[0]!.lineId, document.lines.last.id);
+    expect(state.consumeRequestedTab(), 1);
+    expect(state.consumeRequestedNotepadLine(), document.lines.last.id);
+
+    await tester.tap(find.byKey(const ValueKey('graph-function-actions-0')));
+    await tester.pumpAndSettle();
+    expect(find.text('Create worksheet'), findsNothing);
+    await tester.tap(find.text('Open worksheet source'));
+    await tester.pumpAndSettle();
+    expect(state.notepadDocuments.length, previousCount + 1);
+    expect(state.consumeRequestedNotepadLine(), document.lines.last.id);
+    expect(state.consumeRequestedTab(), 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('typing after a click on the plot still reaches the input',
       (tester) async {
     await pump(tester);
