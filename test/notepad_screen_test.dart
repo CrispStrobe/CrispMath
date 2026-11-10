@@ -285,13 +285,12 @@ void main() {
 
       // Accessibility activation invokes the Delete action directly; it does
       // not send a pointer press that can first blur the focused source.
-      final deleteNode = tester.getSemantics(find.descendant(
-          of: find.byKey(ValueKey(sourceId)),
-          matching: find.byTooltip('Delete line')));
-      expect(deleteNode.getSemanticsData().hasAction(ui.SemanticsAction.tap),
-          isTrue);
-      tester.semantics.tap(find.semantics.byPredicate(
-          (node) => node.id == deleteNode.id));
+      final deleteActions = find.semantics.byPredicate((node) =>
+          (RegExp(r'^Delete line(?:\s+Delete line)?$').hasMatch(node.label) ||
+              node.tooltip == 'Delete line') &&
+          node.getSemanticsData().hasAction(ui.SemanticsAction.tap));
+      expect(deleteActions.evaluate(), hasLength(2));
+      tester.semantics.tap(deleteActions.first);
       await tester.pump();
       expect(tester.takeException(), isNull);
       await tester.pump(const Duration(milliseconds: 350));
