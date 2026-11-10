@@ -83,6 +83,14 @@ class _NotepadLineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Flutter 3.44's RawTooltip portal can reactivate during a row's layout
+    // when insertion, deletion, Undo or reordering changes its list index.
+    // Keep this workaround local to movable worksheet rows; each action
+    // below supplies its own accessible label without a floating tooltip.
+    return TooltipVisibility(visible: false, child: _buildContent(context));
+  }
+
+  Widget _buildContent(BuildContext context) {
     // Empty and expression rows keep the same editor ancestry. Reparenting
     // the editor can reset the browser editing element during the input event.
     // Section headings: `## text` — larger, bold, theme-colored.
@@ -184,7 +192,8 @@ class _NotepadLineRow extends StatelessWidget {
                   if (!_isBlank && onPlot != null)
                     IconButton(
                         tooltip: 'Link line to graph',
-                        icon: const Icon(Icons.show_chart),
+                        icon: const Icon(Icons.show_chart,
+                            semanticLabel: 'Link line to graph'),
                         onPressed: onPlot),
                   _DeleteButton(onPressed: onDelete),
                 ],
@@ -231,7 +240,8 @@ class _NotepadLineRow extends StatelessWidget {
                 if (!_isBlank && onPlot != null)
                   IconButton(
                       tooltip: 'Link line to graph',
-                      icon: const Icon(Icons.show_chart),
+                      icon: const Icon(Icons.show_chart,
+                          semanticLabel: 'Link line to graph'),
                       onPressed: onPlot),
                 _DeleteButton(onPressed: onDelete),
               ],
@@ -474,7 +484,9 @@ class _DeleteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: Icon(Icons.close,
-          size: 18, semanticLabel: 'Delete line', color: Colors.grey[600]),
+          size: 18,
+          semanticLabel: AppLocalizations.of(context).notepadDeleteLine,
+          color: Colors.grey[600]),
       tooltip: AppLocalizations.of(context).notepadDeleteLine,
       visualDensity: VisualDensity.compact,
       onPressed: onPressed,
