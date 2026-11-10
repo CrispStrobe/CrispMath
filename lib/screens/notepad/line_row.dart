@@ -429,10 +429,11 @@ class _NotepadLineRow extends StatelessWidget {
       hint: hint,
       onTap: open,
       excludeSemantics: true,
+      // Keep the source hint in semantics. Flutter 3.44 tooltip overlays can
+      // assert when this row is reparented (flutter/flutter#187162).
       child: ActionChip(
         avatar: Icon(sourceIndex < 0 ? Icons.link_off : Icons.link, size: 16),
         label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-        tooltip: hint,
         visualDensity: VisualDensity.compact,
         onPressed: open,
       ),
