@@ -49,6 +49,7 @@ class NotepadAutocompleteOverlay extends StatefulWidget {
 
 class _NotepadAutocompleteOverlayState
     extends State<NotepadAutocompleteOverlay> {
+  final FocusNode _keyboardFocusNode = FocusNode(skipTraversal: true);
   OverlayEntry? _overlayEntry;
   final LayerLink _layerLink = LayerLink();
   List<AutocompleteSuggestion> _suggestions = [];
@@ -66,6 +67,7 @@ class _NotepadAutocompleteOverlayState
     widget.controller.removeListener(_onTextChanged);
     widget.focusNode.removeListener(_onFocusChanged);
     _removeOverlay();
+    _keyboardFocusNode.dispose();
     super.dispose();
   }
 
@@ -268,7 +270,7 @@ class _NotepadAutocompleteOverlayState
     return CompositedTransformTarget(
       link: _layerLink,
       child: KeyboardListener(
-        focusNode: FocusNode(skipTraversal: true),
+        focusNode: _keyboardFocusNode,
         onKeyEvent: (event) {
           if (_overlayEntry == null) return;
           if (event is! KeyDownEvent) return;
