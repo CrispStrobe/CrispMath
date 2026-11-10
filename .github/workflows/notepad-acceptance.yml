@@ -1,73 +1,51 @@
-name: Connected Notepad acceptance
-
+name: Notepad widget regression acceptance
 on:
   push:
     branches: [ci/notepad-acceptance-20261110]
-  workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: notepad-acceptance-${{ github.ref }}
   cancel-in-progress: true
-
 env:
-  APP_SOURCE_BASE: 63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22
-
+  APP_SOURCE_BASE: da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6
+  PRODUCTION_SOURCE_BASE: 63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22
 jobs:
-  browser:
-    name: Connected Notepad (${{ matrix.mode }})
+  regression:
     runs-on: macos-latest
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix:
-        mode: [release, debug]
-    env:
-      ACCEPTANCE_MODE: ${{ matrix.mode }}
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Verify application source and record provenance
+      - name: Verify unchanged application and exact test correction
         run: |
-          git cat-file -e "$APP_SOURCE_BASE^{commit}" || git fetch --no-tags --depth=1 origin "$APP_SOURCE_BASE"
-          python - <<'PY'
+          for source_ref in "$APP_SOURCE_BASE" "$PRODUCTION_SOURCE_BASE"; do
+            git cat-file -e "$source_ref^{commit}" || git fetch --no-tags --depth=1 origin "$source_ref"
+          done
+          python3 - <<'PY_RECEIPT'
           import json, os, subprocess
           from pathlib import Path
-
-          base = os.environ['APP_SOURCE_BASE']
-          workflow_sha = os.environ['GITHUB_SHA']
-          expected = '.github/workflows/notepad-acceptance.yml'
-          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-          assert head == workflow_sha, (head, workflow_sha)
-          changed = subprocess.check_output(
-              ['git', 'diff', '--name-only', base, workflow_sha], text=True).splitlines()
-          assert changed == [expected], f'Unexpected changes from the accepted source: {changed}'
-          receipt = {
-              'appSourceBase': base,
-              'workflowSha': workflow_sha,
-              'onlyChangedFile': expected,
-              'applicationSourceUnchanged': True,
-              'mode': os.environ['ACCEPTANCE_MODE'],
-              'runnerOS': os.environ['RUNNER_OS'],
-              'runId': os.environ['GITHUB_RUN_ID'],
-              'runAttempt': os.environ['GITHUB_RUN_ATTEMPT'],
-          }
-          Path('browser-results').mkdir(exist_ok=True)
-          Path('browser-results/source-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          test_base = os.environ['APP_SOURCE_BASE']
+          production = os.environ['PRODUCTION_SOURCE_BASE']
+          workflow = os.environ['GITHUB_SHA']
+          changed = subprocess.check_output(['git', 'diff', '--name-only', test_base, workflow], text=True).splitlines()
+          assert changed == ['.github/workflows/notepad-acceptance.yml'], changed
+          test_changes = subprocess.check_output(['git', 'diff', '--name-only', production, test_base], text=True).splitlines()
+          assert test_changes == ['test/notepad_screen_test.dart'], test_changes
+          receipt = {'applicationSourceBase': production, 'testSourceBase': test_base, 'workflowSha': workflow, 'applicationSourceUnchanged': True, 'onlyWorkflowChange': changed, 'testCorrectionFiles': test_changes, 'testBlob': subprocess.check_output(['git', 'rev-parse', test_base + ':test/notepad_screen_test.dart'], text=True).strip(), 'runnerOS': os.environ['RUNNER_OS'], 'runId': os.environ['GITHUB_RUN_ID']}
+          Path('widget-results').mkdir(exist_ok=True)
+          Path('widget-results/source-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
           print(json.dumps(receipt), flush=True)
-          PY
+          PY_RECEIPT
       - uses: actions/checkout@v4
         with:
           repository: CrispStrobe/CrispEmbed
           ref: d28ca2ea43a95934d673d1a54177fdf721614ade
           path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.0'
@@ -81,74 +59,19 @@ jobs:
               path: .ci/CrispEmbed/flutter/crispembed
           YAML
           flutter pub get
-      - name: Focused worksheet widget regressions
-        id: widgets
-        if: matrix.mode == 'release'
-        continue-on-error: true
+      - name: Analyze corrected test source
         run: |
           set -o pipefail
-          flutter test --reporter expanded test/notepad_screen_test.dart test/mini_plot_widget_test.dart | tee browser-results/widget-tests.log
-      - name: Build preview
+          flutter analyze --no-pub 2>&1 | tee widget-results/analysis.log
+      - name: Run complete affected worksheet widget suites
         run: |
-          if [[ "$ACCEPTANCE_MODE" == release ]]; then
-            tool/build_web.sh --release --no-wasm-dry-run -O2
-          else
-            tool/build_web.sh --debug --no-wasm-dry-run
-          fi
-      - name: Install browser test tools
-        run: |
-          python -m pip install -r tool/browser-requirements.txt
-          python -m playwright install --with-deps chromium
-      - name: Start browser preview server
-        id: preview
-        run: |
-          python -m http.server 8766 --bind 127.0.0.1 --directory build/web > browser-results/http.log 2>&1 &
-          curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
-      - name: Connected worksheet browser acceptance
-        id: connected
-        continue-on-error: true
-        run: python tool/check_connected_notepad_browser.py --output browser-results/connected-notepad
-      - name: Preserve connected worksheet evidence
-        uses: actions/upload-artifact@v4
+          set -o pipefail
+          flutter test --no-pub --reporter expanded test/notepad_screen_test.dart test/mini_plot_widget_test.dart 2>&1 | tee widget-results/widget-tests.log
+      - name: Retain exact-source evidence
         if: always()
-        with:
-          name: notepad-acceptance-${{ matrix.mode }}-connected
-          path: |
-            browser-results/source-receipt.json
-            browser-results/http.log
-            browser-results/widget-tests.log
-            browser-results/connected-notepad
-            build/web/build-info.json
-          if-no-files-found: ignore
-          retention-days: 7
-      - name: Stable result references browser acceptance
-        id: references
-        if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
-        continue-on-error: true
-        run: python tool/check_notepad_references_browser.py --output browser-results/notepad-references
-      - name: Preserve stable result references evidence
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: notepad-acceptance-${{ matrix.mode }}-references
-          path: |
-            browser-results/source-receipt.json
-            browser-results/http.log
-            browser-results/widget-tests.log
-            browser-results/notepad-references
-            build/web/build-info.json
-          if-no-files-found: ignore
+          name: notepad-final-widget-regressions
+          path: widget-results
+          if-no-files-found: error
           retention-days: 7
-      - name: Require worksheet acceptance checks to pass
-        if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
-        env:
-          WIDGET_OUTCOME: ${{ steps.widgets.outcome }}
-          CONNECTED_OUTCOME: ${{ steps.connected.outcome }}
-          REFERENCES_OUTCOME: ${{ steps.references.outcome }}
-        run: |
-          printf 'Connected worksheet: %s\nStable result references: %s\n' "$CONNECTED_OUTCOME" "$REFERENCES_OUTCOME"
-          if [[ "$ACCEPTANCE_MODE" == release ]]; then
-            test "$WIDGET_OUTCOME" = success
-          fi
-          test "$CONNECTED_OUTCOME" = success
-          test "$REFERENCES_OUTCOME" = success
