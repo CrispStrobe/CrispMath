@@ -101,11 +101,17 @@ async def function_menu(page, slot):
                 await next_frames(page)
                 return
         visible = await menus.evaluate_all("""els=>els.map(el=>{
-          const r=el.getBoundingClientRect();return {label:el.getAttribute('aria-label'),
+          const r=el.getBoundingClientRect();return {
+            label:(el.getAttribute('aria-label')||el.textContent||'').trim(),
             x:r.x+r.width/2,y:r.y+r.height/2};
         }).filter(r=>r.x>0&&r.x<innerWidth&&r.y>0&&r.y<innerHeight)""")
         assert visible, 'No graph function menu has visible scroll geometry'
-        first_slot = int(re.match(r'Y(\d+)', visible[0]['label']).group(1)) - 1
+        # Flutter can expose this button's accessible name through its child
+        # text instead of aria-label. Require the same complete name that the
+        # role locator matched before using it to choose a scroll direction.
+        first_name = re.fullmatch(r'Y(\d+): Function actions', visible[0]['label'])
+        assert first_name, f"Unexpected graph function action name: {visible[0]['label']!r}"
+        first_slot = int(first_name.group(1)) - 1
         direction = -1 if (position and position['x'] < 0) or first_slot > slot else 1
         await page.mouse.move(page.viewport_size['width'] * 0.5, visible[0]['y'])
         await page.mouse.wheel(direction * 220, 0)

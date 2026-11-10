@@ -1677,7 +1677,7 @@ class NotepadScreenState extends State<NotepadScreen> {
       final controller = _controllers[lineId];
       if (controller == null) return;
       final targetContext = GlobalObjectKey(controller).currentContext;
-      if (targetContext != null) {
+      if (targetContext != null && targetContext.mounted) {
         await Scrollable.ensureVisible(targetContext, alignment: .2);
         if (mounted && _currentDoc?.id == doc.id &&
             generation == _lineRevealGeneration) {
