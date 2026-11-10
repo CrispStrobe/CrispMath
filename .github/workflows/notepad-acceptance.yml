@@ -1,0 +1,141 @@
+name: Connected Notepad acceptance
+
+on:
+  push:
+    branches: [ci/notepad-acceptance-20261110]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notepad-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_SOURCE_BASE: 1c61d784fe8f8f3c61ede8b43f435c75c382b666
+
+jobs:
+  browser:
+    name: Connected Notepad (${{ matrix.mode }})
+    runs-on: macos-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        mode: [release, debug]
+    env:
+      ACCEPTANCE_MODE: ${{ matrix.mode }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify application source and record provenance
+        run: |
+          git cat-file -e "$APP_SOURCE_BASE^{commit}" || git fetch --no-tags --depth=1 origin "$APP_SOURCE_BASE"
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+
+          base = os.environ['APP_SOURCE_BASE']
+          workflow_sha = os.environ['GITHUB_SHA']
+          expected = '.github/workflows/notepad-acceptance.yml'
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == workflow_sha, (head, workflow_sha)
+          changed = subprocess.check_output(
+              ['git', 'diff', '--name-only', base, workflow_sha], text=True).splitlines()
+          assert changed == [expected], f'Unexpected changes from the accepted source: {changed}'
+          receipt = {
+              'appSourceBase': base,
+              'workflowSha': workflow_sha,
+              'onlyChangedFile': expected,
+              'applicationSourceUnchanged': True,
+              'mode': os.environ['ACCEPTANCE_MODE'],
+              'runnerOS': os.environ['RUNNER_OS'],
+              'runId': os.environ['GITHUB_RUN_ID'],
+              'runAttempt': os.environ['GITHUB_RUN_ATTEMPT'],
+          }
+          Path('browser-results').mkdir(exist_ok=True)
+          Path('browser-results/source-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt), flush=True)
+          PY
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: d28ca2ea43a95934d673d1a54177fdf721614ade
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Build preview
+        run: |
+          if [[ "$ACCEPTANCE_MODE" == release ]]; then
+            tool/build_web.sh --release --no-wasm-dry-run -O2
+          else
+            tool/build_web.sh --debug --no-wasm-dry-run
+          fi
+      - name: Install browser test tools
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Start browser preview server
+        id: preview
+        run: |
+          python -m http.server 8766 --bind 127.0.0.1 --directory build/web > browser-results/http.log 2>&1 &
+          curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+      - name: Connected worksheet browser acceptance
+        id: connected
+        continue-on-error: true
+        run: python tool/check_connected_notepad_browser.py --output browser-results/connected-notepad
+      - name: Preserve connected worksheet evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: notepad-acceptance-${{ matrix.mode }}-connected
+          path: |
+            browser-results/source-receipt.json
+            browser-results/http.log
+            browser-results/connected-notepad
+            build/web/build-info.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Stable result references browser acceptance
+        id: references
+        if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
+        continue-on-error: true
+        run: python tool/check_notepad_references_browser.py --output browser-results/notepad-references
+      - name: Preserve stable result references evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: notepad-acceptance-${{ matrix.mode }}-references
+          path: |
+            browser-results/source-receipt.json
+            browser-results/http.log
+            browser-results/notepad-references
+            build/web/build-info.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Require both browser acceptances to pass
+        if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
+        env:
+          CONNECTED_OUTCOME: ${{ steps.connected.outcome }}
+          REFERENCES_OUTCOME: ${{ steps.references.outcome }}
+        run: |
+          printf 'Connected worksheet: %s\nStable result references: %s\n' "$CONNECTED_OUTCOME" "$REFERENCES_OUTCOME"
+          test "$CONNECTED_OUTCOME" = success
+          test "$REFERENCES_OUTCOME" = success
