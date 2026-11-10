@@ -175,6 +175,11 @@ class NotepadScreenState extends State<NotepadScreen> {
 
   ({String documentId, String lineId, TextSelection selection})?
       _referenceInsertionTarget;
+  // Web semantics can blur the native editor before a menu activation reaches
+  // Flutter. Keep the last valid editing position separately from the current
+  // menu transaction, which is cleared when that menu is cancelled.
+  ({String documentId, String lineId, TextSelection selection})?
+      _recentReferenceEditor;
   bool _documentMenuPointerDown = false;
 
   // --- Phase 5: live recalc ------------------------------------------------
@@ -324,6 +329,8 @@ class NotepadScreenState extends State<NotepadScreen> {
       _controllers.clear();
       _focusNodes.clear();
       _referenceInsertionTarget = null;
+      _recentReferenceEditor = null;
+      _documentMenuPointerDown = false;
       _lineRevealGeneration++;
       final previousDoc = _appState.notepadDocuments[_activeControllerDocId];
       _interruptRecalc(previousDoc);
@@ -340,6 +347,7 @@ class NotepadScreenState extends State<NotepadScreen> {
     // Prune controllers for lines that have been deleted.
     final stale = _controllers.keys.where((k) => !liveIds.contains(k)).toList();
     for (final id in stale) {
+      _forgetReferenceEditor(id);
       _controllers.remove(id)?.dispose();
       _focusNodes.remove(id)?.dispose();
     }
@@ -347,10 +355,13 @@ class NotepadScreenState extends State<NotepadScreen> {
     for (final line in doc.lines) {
       if (!_controllers.containsKey(line.id)) {
         final c = SyntaxHighlightingController(text: line.source);
+        c.addListener(() => _trackReferenceEditor(doc.id, line.id));
         _controllers[line.id] = c;
       }
       if (!_focusNodes.containsKey(line.id)) {
-        _focusNodes[line.id] = FocusNode();
+        final focus = FocusNode();
+        focus.addListener(() => _trackReferenceEditor(doc.id, line.id));
+        _focusNodes[line.id] = focus;
       }
       // Update the controller text if the source changed
       // out-of-band (e.g. undo restored a previous value) and the
@@ -359,6 +370,9 @@ class NotepadScreenState extends State<NotepadScreen> {
       final c = _controllers[line.id]!;
       if (c.text != line.source &&
           (overwriteFocused || !_focusNodes[line.id]!.hasFocus)) {
+        // An undo, restore or other out-of-band replacement invalidates the
+        // remembered offsets. A focused editor records its new position below.
+        _forgetReferenceEditor(line.id);
         final offset = c.selection.isValid
             ? c.selection.extentOffset.clamp(0, line.source.length)
             : line.source.length;
@@ -503,13 +517,53 @@ class NotepadScreenState extends State<NotepadScreen> {
       if (_focusNodes[line.id]?.hasFocus != true) continue;
       final controller = _controllers[line.id];
       if (controller != null) {
+        var selection = controller.selection;
+        if (!selection.isValid || selection.end > controller.text.length) {
+          final recent = _recentReferenceEditor;
+          selection = recent != null && recent.documentId == doc.id &&
+                  recent.lineId == line.id && recent.selection.isValid &&
+                  recent.selection.end <= controller.text.length
+              ? recent.selection
+              : TextSelection.collapsed(offset: controller.text.length);
+        }
         _referenceInsertionTarget = (
           documentId: doc.id,
           lineId: line.id,
-          selection: controller.selection,
+          selection: selection,
         );
       }
       return;
+    }
+    final recent = _recentReferenceEditor;
+    if (recent != null && recent.documentId == doc.id &&
+        doc.lines.any((line) => line.id == recent.lineId)) {
+      _referenceInsertionTarget = recent;
+    }
+  }
+
+  void _trackReferenceEditor(String documentId, String lineId) {
+    if (_currentDoc?.id != documentId ||
+        _focusNodes[lineId]?.hasFocus != true) {
+      return;
+    }
+    final controller = _controllers[lineId];
+    if (controller == null || !controller.selection.isValid ||
+        controller.selection.end > controller.text.length) {
+      return;
+    }
+    _recentReferenceEditor = (
+      documentId: documentId,
+      lineId: lineId,
+      selection: controller.selection,
+    );
+  }
+
+  void _forgetReferenceEditor(String lineId) {
+    if (_recentReferenceEditor?.lineId == lineId) {
+      _recentReferenceEditor = null;
+    }
+    if (_referenceInsertionTarget?.lineId == lineId) {
+      _referenceInsertionTarget = null;
     }
   }
 

@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_SOURCE_BASE: 1c61d784fe8f8f3c61ede8b43f435c75c382b666
+  APP_SOURCE_BASE: db054c31ddd35346ece511989d520c911bc9f369
 
 jobs:
   browser:

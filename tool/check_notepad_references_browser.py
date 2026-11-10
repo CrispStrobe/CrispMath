@@ -103,14 +103,39 @@ async def reference_button(page, line_number, hint):
 async def reference_dom(page):
     """Bounded read-only evidence for a failed real-control assertion."""
     return await page.evaluate("""()=>{
-      const candidates=[...document.querySelectorAll('[aria-label]')].filter(el=>
-        /Use result|References|Result of line|Missing result|Delete line|Undo/.test(
-          el.getAttribute('aria-label')||''));
-      return candidates.slice(0,30).map(el=>{
+      const elements=selector=>{
+        const found=[];
+        const visit=root=>{
+          found.push(...root.querySelectorAll(selector));
+          for(const el of root.querySelectorAll('*'))if(el.shadowRoot)visit(el.shadowRoot);
+        };
+        visit(document);return found;
+      };
+      const rootActive=document.activeElement;
+      let active=rootActive;
+      while(active&&active.shadowRoot&&active.shadowRoot.activeElement)
+        active=active.shadowRoot.activeElement;
+      const describe=el=>{
+        if(!el)return null;
         const r=el.getBoundingClientRect();
-        return {label:el.getAttribute('aria-label'),role:el.getAttribute('role'),
+        return {tag:el.tagName,label:el.getAttribute('aria-label'),
+          role:el.getAttribute('role'),semanticsRole:el.getAttribute('data-semantics-role'),
+          placeholder:el.getAttribute('placeholder'),ariaHidden:el.getAttribute('aria-hidden'),
+          text:(el.textContent||'').slice(0,400),
+          value:typeof el.value==='string'?el.value:null,
+          selectionStart:typeof el.selectionStart==='number'?el.selectionStart:null,
+          selectionEnd:typeof el.selectionEnd==='number'?el.selectionEnd:null,
+          selectionDirection:el.selectionDirection||null,active:el===active,
           rect:{x:r.x,y:r.y,width:r.width,height:r.height},outerHTML:el.outerHTML.slice(0,2000)};
-      });
+      };
+      const inputs=elements('input,textarea,[contenteditable="true"],[role="textbox"]');
+      const controls=elements('[aria-label],[role="button"],[role="menuitem"]').filter(el=>
+        /Use result|References|Result of line|Missing result|Delete line|Undo/.test(
+          el.getAttribute('aria-label')||el.textContent||''));
+      return {viewport:{width:innerWidth,height:innerHeight},
+        rootActiveElement:describe(rootActive),activeElement:describe(active),
+        textboxCount:inputs.length,textboxes:inputs.slice(0,60).map(describe),
+        referenceControls:controls.slice(0,30).map(describe)};
     }""")
 
 
@@ -163,9 +188,12 @@ async def check(args):
                 await result_actions(page, '7', profile)
                 await expect(fields).to_have_count(2)
                 await expect(fields.nth(1)).to_have_value(re.compile(r'^@\{[^{}]+\}$'))
-                await expect(fields.nth(1)).to_be_focused()
                 token = await fields.nth(1).input_value()
                 assert referenced_ids(token) == [source_id], token
+                item['useResultFocusBeforeTyping'] = await reference_dom(page)
+                # Prove keyboard focus by actual input in the new row. Flutter
+                # may keep a separate semantic textarea from its active editor.
+                # No extra click/focus call may repair a lost application focus.
                 await page.keyboard.press('End')
                 await page.keyboard.type('*2')
                 await expect(fields.nth(1)).to_have_value(token + '*2')
@@ -173,6 +201,7 @@ async def check(args):
                 await row_result(page, 1, '14')
                 dependent_id = linked['l'][1]['i']
                 item['useResult'] = True
+                item['useResultKeyboardFocus'] = True
 
                 item['stage'] = 'source edits recalculate the same dependent row'
                 await fill_field(page, fields.first, '5+4')
@@ -200,8 +229,20 @@ async def check(args):
 
                 item['stage'] = 'reference chip returns focus to its source row'
                 await reference_button(page, 1, 'Open source: 5+4')
+                item['sourceFocusBeforeTyping'] = await reference_dom(page)
+                await page.keyboard.press('End')
+                await page.keyboard.type('+0')
+                await expect(fields.first).to_have_value('5+4+0')
+                navigated = await wait_rows(
+                    page, document_id, ['5+4+0', '10+' + token], ['9', '19'])
+                assert [row['i'] for row in navigated['l']] == [source_id, dependent_id]
+                await page.keyboard.press('Backspace')
+                await page.keyboard.press('Backspace')
+                restored_source = await wait_rows(
+                    page, document_id, ['5+4', '10+' + token], ['9', '19'])
+                assert [row['i'] for row in restored_source['l']] == [source_id, dependent_id]
                 await expect(fields.first).to_have_value('5+4')
-                await expect(fields.first).to_be_focused()
+                await row_result(page, 1, '19')
                 item['sourceNavigation'] = True
 
                 item['stage'] = 'deleting the source reports a missing reference and Undo recovers it'
