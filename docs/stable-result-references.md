@@ -3,15 +3,26 @@
 ## Scope and status — 10 November 2026
 
 Application checkpoint
-[`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
-tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`, passes the complete
-[release browser workflow](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015)
+[`63fbffa`](https://github.com/CrispStrobe/CrispMath/commit/63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22),
+tree `bcba66e3408e0830a19da5e782f3101774ef2613`, passes the complete
+[release and debug browser workflows](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370)
 on desktop and phone. References can be inserted, extended by typing, followed
 back to their source, recalculated, deleted/undone, duplicated and reloaded
-through actual controls. There are zero page errors, and 62 focused widget
-tests pass. The full native suite passes 6,052 tests/eight skips and all six
-platform builds pass. **Feature closure remains open for a debug phone Undo
-layout failure**, described below; the complete debug desktop lifecycle passes.
+through actual controls, with zero page errors. Strict analysis and all 63
+tests in the two affected widget files pass. All six platform builds, Docs
+freshness and format preview pass for the unchanged application source.
+**Functional acceptance is complete; PR22 remains a draft.** The row-scoped
+tooltip workaround resolves the previously reproduced phone Undo failure in
+the complete debug workflow.
+
+The test-only follow-up
+[`da8c6e9`](https://github.com/CrispStrobe/CrispMath/commit/da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6),
+tree `d6fab0fde51ee60f465b57ad9c81abbf5829e28a`, corrects obsolete tooltip-based selectors in
+`test/notepad_screen_test.dart`. It changes no application source; the browser
+results remain applicable. Its strict analysis and focused retry pass. The
+original full-suite 6,045 passes/eight failures/eight skips and focused
+55 passes/eight failures are retained below. These separate runs do not
+establish a combined full-suite pass.
 
 This is the second connected-worksheet increment on
 [PR 22](https://github.com/CrispStrobe/CrispMath/pull/22), following the merged
@@ -39,6 +50,13 @@ The initial stable-reference feature supports results of ordinary expressions,
 scalar assignments, and aggregates. Function definitions remain callable by name.
 Plots, document structure, and FlatZinc's multi-output display are not scalar
 reference targets. References belong to one document.
+
+Worksheet-row icons currently have no floating hover captions. A row-scoped
+tooltip workaround avoids an SDK overlay reactivation failure during structural
+edits. Delete retains its localized accessible label, both graph-action layouts
+retain their explicit label, and section controls retain their labels. Source
+chips keep readable labels and an accessible hint. Tooltips outside worksheet
+rows are unaffected.
 
 ## Identity and mathematical meaning
 
@@ -105,31 +123,36 @@ exercise the real result menu, reference picker, undo/redo, and source reveal.
 on desktop and phone layouts. Storage reads are evidence only; source documents
 and calculated results are not injected.
 
-### Current application checkpoint: `43d0030`
+### Current application checkpoint: `63fbffa`
 
 | Scope | Observed result | Evidence |
 | --- | --- | --- |
-| Analysis and full suite | Clean analysis; 6,052 passed, eight skipped, zero failed. The hovered source-deletion/Undo regression passes. | [Source-matched CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42822982607/job/129852918258) |
-| Platform builds | Web, macOS, Windows, Linux, Android and iOS pass. | [Candidate checks](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d) |
-| Focused widgets | 62 pass in the isolated release job; these overlap the full suite. | [Release job](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015) |
-| Release graphs and references | Complete actual workflows pass on desktop 1280×900 and phone 390×844, with zero page errors. | [Release job](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015) |
-| Debug graphs and references | Both graph layouts and the complete desktop reference lifecycle pass. Phone Undo restores saved state, then throws a visible list-layout assertion; later phone stages are not reached. | [Retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537/job/129859438590) |
+| Analysis and full suite | Clean analysis (43.9 seconds); 6,045 passed, eight failed, eight skipped. All eight failures occur at obsolete tooltip-based action selectors. | [Source-matched CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42829156775/job/129874390477) |
+| Platform builds | Web, macOS, Windows, Linux, Android and iOS pass. Docs freshness and format preview also pass. | [Candidate checks](https://github.com/CrispStrobe/CrispMath/commit/63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22) |
+| Original focused widgets | 55 passed/eight failed at the same obsolete selectors; these overlap the full suite. The job correctly fails its widget gate. | [Release job](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370/job/129874506764) |
+| Test-only corrected retry | `da8c6e9` changes only the affected test file. Full analysis passes in 43.5 seconds; all 63 tests in both affected widget files pass in 45 seconds, including phone hover/Delete/Undo. | [Strict retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42832203169/job/129884887253) |
+| Release graphs and references | Both complete workflows pass on desktop 1280×900 and phone 390×844, with zero page errors, despite the independent widget-gate failure. | [Release job](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370/job/129874506764) |
+| Debug graphs and references | Both complete workflows pass on desktop 1280×900 and phone 390×844, with zero page errors. Phone Undo restores original IDs and the visible result; independent duplicate/edit and reload pass. | [Debug job](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370/job/129874506249) |
 
-Release acceptance uses workflow commit `5d36e11`; the debug-only retry uses
-`95b6923`. Both bind their application source to `43d0030`; the workflow-only
-changes do not alter the app. The original
-[debug attempt](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091339)
-timed out during Flutter SDK setup before application execution.
+Isolated acceptance uses workflow commit `0c7a5e5` and verifies that its only
+change from application `63fbffa` is the acceptance workflow. The PR test-merge
+commit `7923636ce1c9c97356452220a5a70b7da267e9bb` has the same entire Git tree as
+the application checkpoint. These source checks bind results to the app; they
+do not mean the draft PR has merged. The broader Linux Feature validation jobs
+are not counted as passed while queued.
 
-### Remaining debug phone failure
-
-Source deletion correctly shows **Missing result**. Undo restores the two
-original row IDs, source expressions and results 9/19 in storage. The visible
-list then throws `_RenderLayoutBuilder0 was mutated in RenderSliverList.performLayout`
-while rebuilding `_ReorderableItem`, and the strict visible-result check times
-out. Undo's mathematical and identity restoration does not make that UI flow
-successful. The next bounded correction must remove the layout failure and
-complete the remaining phone lifecycle while retaining the existing assertions.
+The eight native/focused failures concern phone Undo after hovering Delete,
+collapsed-source navigation, deletion feedback/Undo/redo and visible search
+counts. They cannot locate controls through the suppressed tooltip nodes, so
+they fail before performing their intended action. The test-only correction
+uses the existing accessible Delete and section labels; all 63 tests in the two
+complete affected files now pass. The strict workflow `af739f7` verifies both
+the workflow-only difference from `da8c6e9` and the test-file-only difference
+between `da8c6e9` and application `63fbffa`. Its evidence artifact is
+`13771808421`. The automatic full-suite rerun
+[42832019698](https://github.com/CrispStrobe/CrispMath/actions/runs/42832019698)
+was in progress at 14:21 UTC and is not included as a passing result. The
+focused count is kept separate from the earlier full-suite count.
 
 ### Retained failures and bounded corrections
 
@@ -142,11 +165,28 @@ a shown-tooltip reactivation assertion. The same application passed a native
 control without a shown tooltip and failed when the tooltip was explicitly
 shown; the full stack identifies `OverlayPortal` reactivation.
 
-The final correction removes only the new source-chip Tooltip, retaining its
-semantic hint and the picker's source description. Full sources, trees, runs,
-control/failure logs and the original assertions remain in the
+Removing the source-chip Tooltip at `43d0030` retained its semantic hint and
+the picker's source description. That checkpoint passed 6,052 native tests
+with eight skips, all six builds, 62 focused widgets and complete release
+acceptance. Its debug retry passed the complete desktop lifecycle, but phone
+Undo restored original IDs and results 9/19 in storage before the visible list
+threw `_RenderLayoutBuilder0 was mutated in RenderSliverList.performLayout`.
+The later phone copy/reload stages were not reached at that source.
+
+The unchanged-source phone regression
+[42828479928](https://github.com/CrispStrobe/CrispMath/actions/runs/42828479928/job/129871933282)
+reproduced that failure after verifying the original pointer lay over the
+surviving Delete control and its **Delete line** tooltip was visible. Its
+captured exception supplies the test expectation stack, not a new OverlayPortal
+stack; the earlier source-tooltip experiment supplies the full portal stack.
+The corrected candidate `63fbffa` disables tooltip overlays only within
+worksheet rows and supplies explicit accessible action labels. It preserves
+row/editor keys, controllers and dependency pins. Actual debug phone Undo,
+independent duplication and reload now pass with the original assertions.
+
+Full sources, trees, runs, control/failure logs and the original assertions remain in the
 [receipt](evidence/notepad-stable-references-20261110.json) and
-[dated history](../HISTORY.md). The final debug setup timeout is recorded
+[dated history](../HISTORY.md). The earlier debug setup timeout is recorded
 separately as infrastructure failure, not an application result.
 
 This increment supplies the identity foundation for future source-linked

@@ -1,57 +1,76 @@
 {
   "schemaVersion": 1,
   "date": "2026-11-10",
-  "status": "debug-phone-undo-rendering-failure",
+  "status": "browser-and-corrected-widget-acceptance-passed",
   "pullRequest": "https://github.com/CrispStrobe/CrispMath/pull/22",
   "applicationCheckpoint": {
-    "commit": "43d00309345b369860c8453bcec0f4fea1e3717d",
-    "tree": "736640b9263ab9ac31e471b2ee5095d2dace65fb"
+    "commit": "63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22",
+    "tree": "bcba66e3408e0830a19da5e782f3101774ef2613"
   },
   "finalValidation": {
-    "status": "debug-phone-undo-rendering-failure",
-    "applicationCommit": "43d00309345b369860c8453bcec0f4fea1e3717d",
-    "applicationTree": "736640b9263ab9ac31e471b2ee5095d2dace65fb",
+    "status": "browser-and-corrected-widget-acceptance-passed",
+    "applicationCommit": "63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22",
+    "applicationTree": "bcba66e3408e0830a19da5e782f3101774ef2613",
     "pullRequestMergeSnapshot": {
-      "commit": "a4f412101b5fb35c3c9c3a2b435dd0d2c353dcf8",
-      "tree": "736640b9263ab9ac31e471b2ee5095d2dace65fb",
+      "commit": "7923636ce1c9c97356452220a5a70b7da267e9bb",
+      "tree": "bcba66e3408e0830a19da5e782f3101774ef2613",
       "exactTreeEquivalence": true,
-      "meaning": "GitHub pull-request test merge snapshot; not a claim that PR22 was merged."
+      "meaning": "GitHub PR test-merge snapshot; PR22 remains unmerged."
     },
-    "workflowCommit": "5d36e11172ffa7a4c582f5bffa140f49fcb7e187",
-    "runId": 42823031454,
-    "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454",
-    "correction": "Remove only the new source-chip Tooltip while retaining its semantic hint and reference-picker descriptions; add a mouse-hover, focused semantic deletion and Undo regression.",
+    "correction": "TooltipVisibility(false) scoped to worksheet rows; preserve explicit localized Delete and graph-action labels, source hints, stable keys and controllers.",
+    "tradeoff": "Floating hover captions on worksheet-row icons are disabled; tooltips outside those rows remain.",
+    "regression": "Direct mouse Delete, stationary hover over surviving row, then Undo; require named actions, original IDs and visible result19 without an editor tap or focus repair.",
+    "workflowCommit": "0c7a5e5e6ad80b1df31d053c7e106478aefd611e",
+    "runId": 42829214370,
+    "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370",
+    "originalBrowserAssertionsUnchanged": true,
+    "sourceGuard": {
+      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
+      "applicationSourceUnchanged": true
+    },
     "analysisAndFullSuite": {
-      "runId": 42822982607,
-      "jobId": 129852918258,
-      "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42822982607/job/129852918258",
-      "headSha": "43d00309345b369860c8453bcec0f4fea1e3717d",
-      "conclusion": "success",
+      "runId": 42829156775,
+      "jobId": 129874390477,
+      "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42829156775/job/129874390477",
+      "headSha": "63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22",
       "analysis": "passed",
-      "analysisMessage": "No issues found! (ran in 52.4s)",
-      "analysisCompletedAt": "2026-11-10T13:27:13Z",
-      "testsCompletedAt": "2026-11-10T13:37:25Z",
-      "passed": 6052,
+      "analysisCompletedAt": "2026-11-10T14:00:16Z",
+      "testsStartedAt": "2026-11-10T14:00:16Z",
+      "status": "completed",
+      "passed": 6045,
       "skipped": 8,
-      "failed": 0,
-      "hoveredSourceDeletionAndUndoRegression": "passed",
-      "hoveredSourceDeletionAndUndoRegressionCompletedAt": "2026-11-10T13:35:28Z"
+      "failed": 8,
+      "conclusion": "failure",
+      "analysisMessage": "No issues found! (ran in 43.9s)",
+      "testsCompletedAt": "2026-11-10T14:12:00Z",
+      "failureScope": "Eight native widget tests use suppressed tooltip nodes as action locators and fail before their intended actions. The corrected selector follow-up changes tests only."
+    },
+    "focusedWidgetTests": {
+      "passed": 55,
+      "failed": 8,
+      "overlapsFullSuite": true,
+      "mode": "release",
+      "jobId": 129874506764,
+      "runId": 42829214370,
+      "artifactId": 13771926055,
+      "conclusion": "failure",
+      "failureScope": "Same eight stale row-tooltip locators; no scenario or result assertion was relaxed."
     },
     "releaseDesktop": {
       "status": "passed",
-      "runId": 42823031454,
-      "jobId": 129853091015,
-      "workflowCommit": "5d36e11172ffa7a4c582f5bffa140f49fcb7e187",
-      "applicationSourceUnchanged": true,
-      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
-      "connectedGraphsArtifactId": 13769310201,
-      "stableReferencesArtifactId": 13770120297,
+      "runId": 42829214370,
+      "jobId": 129874506764,
+      "connectedGraphsArtifactId": 13771926055,
+      "stableReferencesArtifactId": 13771676665,
       "connectedGraphs": "passed",
       "completeStableReferenceLifecycle": "passed",
       "pageErrors": 0,
       "injectedDocuments": false,
       "injectedResults": false,
       "injectedPreferences": false,
+      "combinedJobConclusion": "failure",
+      "combinedJobFailureReason": "Separate focused-widget gate; both browser checks passed.",
+      "screenshotReview": "Reloaded rows, chips and results readable, with no ErrorWidget or overlap.",
       "viewport": {
         "width": 1280,
         "height": 900
@@ -59,142 +78,101 @@
     },
     "releasePhone": {
       "status": "passed",
-      "runId": 42823031454,
-      "jobId": 129853091015,
-      "workflowCommit": "5d36e11172ffa7a4c582f5bffa140f49fcb7e187",
-      "applicationSourceUnchanged": true,
-      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
-      "connectedGraphsArtifactId": 13769310201,
-      "stableReferencesArtifactId": 13770120297,
+      "runId": 42829214370,
+      "jobId": 129874506764,
+      "connectedGraphsArtifactId": 13771926055,
+      "stableReferencesArtifactId": 13771676665,
       "connectedGraphs": "passed",
       "completeStableReferenceLifecycle": "passed",
       "pageErrors": 0,
       "injectedDocuments": false,
       "injectedResults": false,
       "injectedPreferences": false,
+      "combinedJobConclusion": "failure",
+      "combinedJobFailureReason": "Separate focused-widget gate; both browser checks passed.",
+      "screenshotReview": "Reloaded rows, chips and results readable, with no ErrorWidget or overlap.",
       "viewport": {
         "width": 390,
         "height": 844
       }
     },
     "debugDesktop": {
-      "runId": 42824865537,
-      "jobId": 129859438590,
-      "workflowCommit": "95b69231211f7c89c0759f58e8cb8f81230f8100",
-      "applicationSourceUnchanged": true,
-      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
-      "connectedGraphsArtifactId": 13770220501,
-      "stableReferencesArtifactId": 13769921021,
+      "status": "passed",
+      "runId": 42829214370,
+      "jobId": 129874506249,
+      "connectedGraphsArtifactId": 13771295876,
+      "stableReferencesArtifactId": 13770647201,
       "connectedGraphs": "passed",
+      "completeStableReferenceLifecycle": "passed",
+      "pageErrors": 0,
       "injectedDocuments": false,
       "injectedResults": false,
       "injectedPreferences": false,
-      "status": "passed",
-      "completeStableReferenceLifecycle": "passed",
-      "pageErrors": 0,
+      "screenshotReview": "Reloaded rows, chips and results are readable, with no ErrorWidget or overlap.",
       "viewport": {
         "width": 1280,
         "height": 900
       }
     },
     "debugPhone": {
-      "runId": 42824865537,
-      "jobId": 129859438590,
-      "workflowCommit": "95b69231211f7c89c0759f58e8cb8f81230f8100",
-      "applicationSourceUnchanged": true,
-      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
-      "connectedGraphsArtifactId": 13770220501,
-      "stableReferencesArtifactId": 13769921021,
+      "status": "passed",
+      "runId": 42829214370,
+      "jobId": 129874506249,
+      "connectedGraphsArtifactId": 13771295876,
+      "stableReferencesArtifactId": 13770647201,
       "connectedGraphs": "passed",
+      "completeStableReferenceLifecycle": "passed",
+      "pageErrors": 0,
       "injectedDocuments": false,
       "injectedResults": false,
       "injectedPreferences": false,
-      "status": "failed",
+      "screenshotReview": "Reloaded rows, chips and results are readable, with no ErrorWidget or overlap.",
       "viewport": {
         "width": 390,
         "height": 844
-      },
-      "passedStages": [
-        "Use result with actual keyboard continuation to 14",
-        "Source edit recalculates to 18",
-        "Picker selection replacement to 19 and subsequent keyboard input",
-        "Source navigation and subsequent keyboard input",
-        "Delete source and show Missing result",
-        "Undo restores both original row IDs, source and calculated results 9/19 in persisted state"
-      ],
-      "failedStage": "After Undo, require the restored dependent row and its visible result 19",
-      "failure": "A _RenderLayoutBuilder0 was mutated in RenderSliverList.performLayout.",
-      "errorWidgetVisible": true,
-      "affectedRow": "Restored dependent row; source 5+4 and result9 render correctly.",
-      "notReached": [
-        "duplicate and reload on phone"
-      ],
-      "actualHoverAtFailureRecorded": false
-    },
-    "focusedWidgetTests": {
-      "runId": 42823031454,
-      "jobId": 129853091015,
-      "passed": 62,
-      "failed": 0,
-      "overlapsFullSuite": true,
-      "artifactId": 13769310201
-    },
-    "debugRetry": {
-      "workflowCommit": "95b69231211f7c89c0759f58e8cb8f81230f8100",
-      "workflowTree": "4cd8e3c8dada1164c85143c5a2215974a192d889",
-      "runId": 42824865537,
-      "jobId": 129859438590,
-      "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537",
-      "applicationSourceBase": "43d00309345b369860c8453bcec0f4fea1e3717d",
-      "applicationSourceUnchanged": true,
-      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
-      "matrix": [
-        "debug"
-      ],
-      "status": "completed",
-      "scope": "Retry only the infrastructure-failed debug lane; same application and browser assertions.",
-      "connectedGraphs": {
-        "status": "passed",
-        "profiles": [
-          "desktop",
-          "phone"
-        ],
-        "pageErrors": 0,
-        "artifactId": 13770220501
-      },
-      "conclusion": "failure",
-      "stableReferencesArtifactId": 13769921021
+      }
     },
     "platformBuilds": {
-      "headSha": "43d00309345b369860c8453bcec0f4fea1e3717d",
+      "headSha": "63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22",
       "conclusion": "success",
       "runs": {
-        "web": 42822982564,
-        "macOS": 42822982083,
-        "windows": 42822982292,
-        "linux": 42822982334,
-        "android": 42822982244,
-        "iOS": 42822982644
+        "web": 42829157104,
+        "macOS": 42829156747,
+        "windows": 42829157135,
+        "linux": 42829156793,
+        "android": 42829156801,
+        "iOS": 42829156883
       },
       "runUrlTemplate": "https://github.com/CrispStrobe/CrispMath/actions/runs/{runId}",
-      "scope": "Package builds, including unsigned iOS build; not release, deployment or physical-device testing."
+      "scope": "Package builds including unsigned iOS; not release, deployment or physical-device tests."
     },
     "supplementaryChecks": {
       "docsFreshness": {
-        "runId": 42822982294,
+        "runId": 42829157115,
         "conclusion": "success"
       },
       "dartFormatPreview": {
-        "runId": 42822973113,
+        "runId": 42829145594,
         "conclusion": "success",
         "scope": "Preview workflow, not zero-diff enforcement."
       },
       "broadFeatureValidation": {
-        "runId": 42822973027,
-        "status": "queued",
-        "checkedAt": "2026-11-10T13:34:59Z",
+        "runId": 42829145329,
+        "statusAtLastCheck": "in_progress",
         "countedAsPassed": false
       }
+    },
+    "correctedNativeAcceptance": {
+      "testSource": "da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6",
+      "runId": 42832203169,
+      "jobId": 129884887253,
+      "artifactId": 13771808421,
+      "analysis": "passed",
+      "passed": 63,
+      "failed": 0,
+      "overlapsOriginalFullSuite": true,
+      "applicationSourceUnchanged": true,
+      "scope": "Complete affected widget suites, including all eight previously blocked test scenarios. This is a separate rerun, not a new combined full-suite pass."
     }
   },
   "initialValidation": {
@@ -665,7 +643,7 @@
       "runId": 42813788661,
       "failure": "Actual stable-reference keyboard continuation fails in release and debug desktop flows.",
       "interveningCorrection": "The route.completed handoff and current-document/source guards did not by themselves resolve the native input focus failure.",
-      "laterEvidence": "Read-only trace 42817281396 retains the same failed assertion; final correction acceptance pending."
+      "laterEvidence": "Read-only trace42817281396 preserved the failure. Source-chip semantic containment and editor-focus ownership are verified by complete release/debug desktop/phone flows at63fbffa in42829214370."
     },
     {
       "category": "diagnostic provenance guard",
@@ -687,7 +665,7 @@
       "jobId": 129838661847,
       "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42818795130/job/129838661847",
       "failure": "Debug desktop reaches source deletion with working native keyboard focus, then displays a Flutter layout-mutation ErrorWidget while rebuilding the surviving reference row.",
-      "laterEvidence": "The same production source passes the no-tooltip native control and fails when the source tooltip is explicitly shown; the full stack identifies OverlayPortal reactivation. Tooltip-only correction 43d0030 has final validation pending."
+      "laterEvidence": "The unchanged-source native pair isolates the shown source tooltip and captures OverlayPortal activation. Source-chip correction43d0030 resolves deletion; row-scoped63fbffa resolves the later phone Undo case. Complete browser flows and corrected native hover/Undo regression pass."
     },
     {
       "category": "hosted-runner infrastructure before application execution",
@@ -714,7 +692,315 @@
       "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537/job/129859438590",
       "artifactId": 13769921021,
       "failure": "Debug desktop completes the entire reference lifecycle. Phone Delete reaches the missing state; Undo restores exact original IDs and results9/19 in storage, but the dependent row becomes an ErrorWidget with a RenderSliverList.performLayout mutation assertion.",
-      "laterEvidence": "Focused phone pointer/tooltip/Undo reproduction is being prepared; no cause or correction accepted yet."
+      "laterEvidence": "Unchanged-source phone baselinea068130/run42828479928 reproduces direct Undo with the surviving Delete tooltip visible. Row-scoped63fbffa passes the full phone browser lifecycle; test-onlyda8c6e9 and focused42832203169 pass the direct-pointer native regression without an editor repair tap."
+    },
+    {
+      "category": "phone diagnostic test compilation",
+      "applicationCommit": "43d00309345b369860c8453bcec0f4fea1e3717d",
+      "workflowCommit": "33e50a6055f8d70f6abcbdf8d5f754976e50a3ad",
+      "runId": 42827572908,
+      "jobId": 129868779180,
+      "artifactId": 13770197667,
+      "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42827572908",
+      "failure": "The new phone reproduction used Finder.single, which is not available in the pinned Flutter API. Test compilation stopped before application execution.",
+      "browserApplicationExecuted": false,
+      "correctedByCommit": "a068130f850ac4c4e53aa6afe2e48fdcafa71e51",
+      "laterEvidence": "Corrected baseline a068130/run42828479928 compiles, reaches the visible-tooltip precondition and reproduces the actual phone Undo renderer failure."
+    },
+    {
+      "category": "obsolete native widget test locators after intentional tooltip suppression",
+      "applicationCommit": "63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22",
+      "runId": 42829214370,
+      "jobId": 129874506764,
+      "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370/job/129874506764",
+      "artifactId": 13771926055,
+      "passed": 55,
+      "failed": 8,
+      "failure": "Seven Delete, two Collapse and one Expand finder calls still searched for tooltip widgets that are intentionally absent. Eight tests stopped before intended UI actions. All actual browser workflows passed.",
+      "fullSuite": {
+        "runId": 42829156775,
+        "jobId": 129874390477,
+        "passed": 6045,
+        "failed": 8,
+        "skipped": 8,
+        "sameEightLocatorFailures": true
+      },
+      "correctedByCommit": "da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6",
+      "laterEvidence": "Test-onlyda8c6e9 replaces only the obsolete locators. Strict run42832203169 passes analysis and all63 affected widget tests, including the eight scenarios and the exact phone hover/Delete/Undo regression. Original failures remain recorded."
     }
-  ]
+  ],
+  "phoneUndoDiagnostic": {
+    "status": "completed",
+    "applicationSource": "43d00309345b369860c8453bcec0f4fea1e3717d",
+    "workflowCommit": "a068130f850ac4c4e53aa6afe2e48fdcafa71e51",
+    "productionSourceUnchanged": true,
+    "allowedChangedFiles": [
+      ".github/workflows/notepad-delete-regression.yml",
+      "test/notepad_screen_test.dart"
+    ],
+    "testName": "phone Undo restores a source while the row tooltip is showing",
+    "result": "The source is deleted, the surviving Delete button occupies the original pointer coordinate, and its tooltip is visibly shown. Direct mouse Undo reproduces the same RenderSliverList.performLayout mutation assertion.",
+    "runId": 42828479928,
+    "jobId": 129871933282,
+    "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42828479928",
+    "conclusion": "failure",
+    "artifactId": 13770601978,
+    "passed": 0,
+    "failed": 1,
+    "passedPreconditions": [
+      "Source deleted; dependent has missing-reference state",
+      "Surviving Delete control contains the original pointer coordinates",
+      "Delete line tooltip visibly rendered",
+      "Mouse moves directly to Undo without editor tap or dismissal interval"
+    ],
+    "failure": "A _RenderLayoutBuilder was mutated in RenderSliverList.performLayout.",
+    "failedAssertion": "No framework exception in the first frame after direct Undo",
+    "originalExceptionStackCaptured": false,
+    "stackLimit": "tester.takeException captured this single FlutterError; the log records the test-expectation stack. The earlier source-tooltip reproduction contains original OverlayPortal frames.",
+    "artifactSha256": "75223d6d14640d853d766553018445de0d94a2f4762eccafb3dfd091abab72d4"
+  },
+  "previousValidation": {
+    "status": "debug-phone-undo-rendering-failure",
+    "applicationCommit": "43d00309345b369860c8453bcec0f4fea1e3717d",
+    "applicationTree": "736640b9263ab9ac31e471b2ee5095d2dace65fb",
+    "pullRequestMergeSnapshot": {
+      "commit": "a4f412101b5fb35c3c9c3a2b435dd0d2c353dcf8",
+      "tree": "736640b9263ab9ac31e471b2ee5095d2dace65fb",
+      "exactTreeEquivalence": true,
+      "meaning": "GitHub pull-request test merge snapshot; not a claim that PR22 was merged."
+    },
+    "workflowCommit": "5d36e11172ffa7a4c582f5bffa140f49fcb7e187",
+    "runId": 42823031454,
+    "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454",
+    "correction": "Remove only the new source-chip Tooltip while retaining its semantic hint and reference-picker descriptions; add a mouse-hover, focused semantic deletion and Undo regression.",
+    "analysisAndFullSuite": {
+      "runId": 42822982607,
+      "jobId": 129852918258,
+      "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42822982607/job/129852918258",
+      "headSha": "43d00309345b369860c8453bcec0f4fea1e3717d",
+      "conclusion": "success",
+      "analysis": "passed",
+      "analysisMessage": "No issues found! (ran in 52.4s)",
+      "analysisCompletedAt": "2026-11-10T13:27:13Z",
+      "testsCompletedAt": "2026-11-10T13:37:25Z",
+      "passed": 6052,
+      "skipped": 8,
+      "failed": 0,
+      "hoveredSourceDeletionAndUndoRegression": "passed",
+      "hoveredSourceDeletionAndUndoRegressionCompletedAt": "2026-11-10T13:35:28Z"
+    },
+    "releaseDesktop": {
+      "status": "passed",
+      "runId": 42823031454,
+      "jobId": 129853091015,
+      "workflowCommit": "5d36e11172ffa7a4c582f5bffa140f49fcb7e187",
+      "applicationSourceUnchanged": true,
+      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
+      "connectedGraphsArtifactId": 13769310201,
+      "stableReferencesArtifactId": 13770120297,
+      "connectedGraphs": "passed",
+      "completeStableReferenceLifecycle": "passed",
+      "pageErrors": 0,
+      "injectedDocuments": false,
+      "injectedResults": false,
+      "injectedPreferences": false,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      }
+    },
+    "releasePhone": {
+      "status": "passed",
+      "runId": 42823031454,
+      "jobId": 129853091015,
+      "workflowCommit": "5d36e11172ffa7a4c582f5bffa140f49fcb7e187",
+      "applicationSourceUnchanged": true,
+      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
+      "connectedGraphsArtifactId": 13769310201,
+      "stableReferencesArtifactId": 13770120297,
+      "connectedGraphs": "passed",
+      "completeStableReferenceLifecycle": "passed",
+      "pageErrors": 0,
+      "injectedDocuments": false,
+      "injectedResults": false,
+      "injectedPreferences": false,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    "debugDesktop": {
+      "runId": 42824865537,
+      "jobId": 129859438590,
+      "workflowCommit": "95b69231211f7c89c0759f58e8cb8f81230f8100",
+      "applicationSourceUnchanged": true,
+      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
+      "connectedGraphsArtifactId": 13770220501,
+      "stableReferencesArtifactId": 13769921021,
+      "connectedGraphs": "passed",
+      "injectedDocuments": false,
+      "injectedResults": false,
+      "injectedPreferences": false,
+      "status": "passed",
+      "completeStableReferenceLifecycle": "passed",
+      "pageErrors": 0,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      }
+    },
+    "debugPhone": {
+      "runId": 42824865537,
+      "jobId": 129859438590,
+      "workflowCommit": "95b69231211f7c89c0759f58e8cb8f81230f8100",
+      "applicationSourceUnchanged": true,
+      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
+      "connectedGraphsArtifactId": 13770220501,
+      "stableReferencesArtifactId": 13769921021,
+      "connectedGraphs": "passed",
+      "injectedDocuments": false,
+      "injectedResults": false,
+      "injectedPreferences": false,
+      "status": "failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "passedStages": [
+        "Use result with actual keyboard continuation to 14",
+        "Source edit recalculates to 18",
+        "Picker selection replacement to 19 and subsequent keyboard input",
+        "Source navigation and subsequent keyboard input",
+        "Delete source and show Missing result",
+        "Undo restores both original row IDs, source and calculated results 9/19 in persisted state"
+      ],
+      "failedStage": "After Undo, require the restored dependent row and its visible result 19",
+      "failure": "A _RenderLayoutBuilder0 was mutated in RenderSliverList.performLayout.",
+      "errorWidgetVisible": true,
+      "affectedRow": "Restored dependent row; source 5+4 and result9 render correctly.",
+      "notReached": [
+        "duplicate and reload on phone"
+      ],
+      "actualHoverAtFailureRecorded": false
+    },
+    "focusedWidgetTests": {
+      "runId": 42823031454,
+      "jobId": 129853091015,
+      "passed": 62,
+      "failed": 0,
+      "overlapsFullSuite": true,
+      "artifactId": 13769310201
+    },
+    "debugRetry": {
+      "workflowCommit": "95b69231211f7c89c0759f58e8cb8f81230f8100",
+      "workflowTree": "4cd8e3c8dada1164c85143c5a2215974a192d889",
+      "runId": 42824865537,
+      "jobId": 129859438590,
+      "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537",
+      "applicationSourceBase": "43d00309345b369860c8453bcec0f4fea1e3717d",
+      "applicationSourceUnchanged": true,
+      "onlyChangedFile": ".github/workflows/notepad-acceptance.yml",
+      "matrix": [
+        "debug"
+      ],
+      "status": "completed",
+      "scope": "Retry only the infrastructure-failed debug lane; same application and browser assertions.",
+      "connectedGraphs": {
+        "status": "passed",
+        "profiles": [
+          "desktop",
+          "phone"
+        ],
+        "pageErrors": 0,
+        "artifactId": 13770220501
+      },
+      "conclusion": "failure",
+      "stableReferencesArtifactId": 13769921021
+    },
+    "platformBuilds": {
+      "headSha": "43d00309345b369860c8453bcec0f4fea1e3717d",
+      "conclusion": "success",
+      "runs": {
+        "web": 42822982564,
+        "macOS": 42822982083,
+        "windows": 42822982292,
+        "linux": 42822982334,
+        "android": 42822982244,
+        "iOS": 42822982644
+      },
+      "runUrlTemplate": "https://github.com/CrispStrobe/CrispMath/actions/runs/{runId}",
+      "scope": "Package builds, including unsigned iOS build; not release, deployment or physical-device testing."
+    },
+    "supplementaryChecks": {
+      "docsFreshness": {
+        "runId": 42822982294,
+        "conclusion": "success"
+      },
+      "dartFormatPreview": {
+        "runId": 42822973113,
+        "conclusion": "success",
+        "scope": "Preview workflow, not zero-diff enforcement."
+      },
+      "broadFeatureValidation": {
+        "runId": 42822973027,
+        "status": "queued",
+        "checkedAt": "2026-11-10T13:34:59Z",
+        "countedAsPassed": false
+      }
+    }
+  },
+  "testSelectorCorrection": {
+    "commit": "da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6",
+    "tree": "d6fab0fde51ee60f465b57ad9c81abbf5829e28a",
+    "parent": "63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22",
+    "onlyChangedFile": "test/notepad_screen_test.dart",
+    "applicationSourceUnchanged": true,
+    "change": "Locate enabled row IconButtons by explicit accessible labels within the worksheet list. Delete uses its localized label; Collapse/Expand use their existing section labels.",
+    "preservedAssertions": [
+      "Direct mouse Delete and stationary pointer geometry",
+      "No editor tap or dismissal delay before Undo",
+      "Named actionable Delete and graph controls",
+      "Exact original row IDs and mathematical results",
+      "Visible restored result19",
+      "All existing deletion, feedback, search and collapsed-source assertions"
+    ],
+    "validation": {
+      "workflowCommit": "af739f70251a7b43d69b3af58db669c863cb5491",
+      "runId": 42832203169,
+      "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42832203169",
+      "status": "completed",
+      "scope": "Strict analysis and both affected worksheet widget files; no application or browser-harness changes.",
+      "conclusion": "success",
+      "jobId": 129884887253,
+      "artifactId": 13771808421,
+      "artifactName": "notepad-final-widget-regressions",
+      "analysis": "passed",
+      "analysisMessage": "No issues found! (ran in 43.5s)",
+      "passed": 63,
+      "failed": 0,
+      "durationSeconds": 45,
+      "testBlob": "18310ea8ddfc6263a22f4b658c927f51cd65ba1b",
+      "applicationSourceBase": "63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22",
+      "testSourceBase": "da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6",
+      "onlyWorkflowChange": [
+        ".github/workflows/notepad-acceptance.yml"
+      ],
+      "testCorrectionFiles": [
+        "test/notepad_screen_test.dart"
+      ],
+      "strictStepsWithoutContinueOnError": true,
+      "phoneHoverDeleteAndUndoRegression": "passed",
+      "visibleDependentResult": "19"
+    }
+  },
+  "automaticFullSuiteFollowup": {
+    "testSource": "da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6",
+    "runId": 42832019698,
+    "jobId": 129884254027,
+    "url": "https://github.com/CrispStrobe/CrispMath/actions/runs/42832019698",
+    "statusAtLastCheck": "in_progress",
+    "checkedAt": "2026-11-10T14:20:17Z",
+    "countedAsPassed": false,
+    "note": "Additional automatic full-suite reruns are separate from the completed browser and corrected widget acceptance. Subsequent documentation-only pushes may supersede them."
+  }
 }

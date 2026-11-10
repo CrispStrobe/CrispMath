@@ -9,32 +9,39 @@ Completed items with details are in `HISTORY.md`.
 Notepad/Graph work in PR21 with incremental remote checkpoints. It is a draft
 feature branch from `c7f84eb`; release metadata and dependency pins are unchanged.
 The current application checkpoint is
-[`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
-tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`.
+[`63fbffa`](https://github.com/CrispStrobe/CrispMath/commit/63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22),
+tree `bcba66e3408e0830a19da5e782f3101774ef2613`.
+The test-only follow-up
+[`da8c6e9`](https://github.com/CrispStrobe/CrispMath/commit/da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6),
+tree `d6fab0fde51ee60f465b57ad9c81abbf5829e28a`, changes only
+`test/notepad_screen_test.dart`; the browser-verified application is unchanged.
 
 - [x] Connect [Notepad plots and Graph](docs/connected-notepad.md) through shared
   function/parameter/range resolution, source navigation, and Graph-to-worksheet
-  creation. Final-source release browser checks pass on desktop and phone in
-  [acceptance 42823031454](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015).
-- [~] Close [stable result references](docs/stable-result-references.md).
-  The same release job passes the complete reference workflow on both layouts,
-  with zero page errors and 62 focused widget passes. **Use result**, picker
+  creation. Current-source release and debug browser checks pass on desktop and phone in
+  [acceptance 42829214370](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370/job/129874506249).
+- [x] Complete [stable result references](docs/stable-result-references.md).
+  The same acceptance run passes the complete reference workflow in both modes and layouts,
+  with zero page errors. **Use result**, picker
   insertion, keyboard continuation, source navigation, deletion/Undo, document
   duplication and reload are verified. Preserve raw editable tokens,
   same-document ownership, positional `lineN`, and static-export semantics.
-  Analysis is clean, the full native suite passes 6,052 tests/eight skips, and
-  all six platform builds pass. The
-  [debug retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537)
-  passes both graph layouts and the complete desktop reference workflow, but
-  **phone Undo still breaks the visible list**: the original two row IDs,
-  sources and results 9/19 return in storage, then a layout-mutation assertion
-  appears while rebuilding a reorderable item. Fix that observed failure and
-  complete the remaining phone lifecycle before closure. The earlier SDK setup
-  timeout remains separate infrastructure evidence. Preserve exact results and
-  initial failures in the
+  Row-scoped tooltip suppression fixes the reproduced phone Undo layout
+  assertion; worksheet-row icons lose floating hover captions but keep explicit
+  accessible labels. Row/editor identities, controllers and dependency pins
+  remain unchanged. Analysis, all six platform builds, Docs freshness and
+  format preview pass at `63fbffa`. The test-only `da8c6e9` follow-up passes
+  [strict analysis and all 63 affected widget tests](https://github.com/CrispStrobe/CrispMath/actions/runs/42832203169/job/129884887253),
+  including phone hover/Delete/Undo. The original full run's 6,045 passes,
+  eight failures and eight skips, and original focused 55 passes/eight failures,
+  remain recorded: all eight failures used obsolete tooltip-based selectors,
+  corrected in that test-only follow-up. These are separate runs; no combined
+  full-suite pass is claimed. Automatic full-suite reruns are separate and are
+  not included as a passing result. PR22 remains a draft, not merged or released.
+  Preserve exact results and initial failures in the
   [evidence receipt](docs/evidence/notepad-stable-references-20261110.json).
 - [ ] Build derived calculation groups and worksheet parameter controls on the
-  same source identities after the reference contract is verified.
+  verified source-identity foundation.
 
 ## Next release planning — 7 November 2026
 

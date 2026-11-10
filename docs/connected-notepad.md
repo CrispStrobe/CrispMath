@@ -3,19 +3,31 @@
 ## Scope and status — 10 November 2026
 
 Application checkpoint
-[`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
-tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`, connects worksheet calculations,
+[`63fbffa`](https://github.com/CrispStrobe/CrispMath/commit/63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22),
+tree `bcba66e3408e0830a19da5e782f3101774ef2613`, connects worksheet calculations,
 inline plots, Graph and [stable result references](stable-result-references.md).
-[Release acceptance](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015)
-passes both complete workflows on desktop and phone with zero page errors;
-62 focused widget tests also pass. Analysis is clean, the full native suite
-passes 6,052 tests/eight skips, and all six platform builds pass. The
-[debug retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537)
-passes both graph layouts and the complete desktop reference lifecycle, but
-phone Undo exposes a remaining list-layout assertion after restoring the
-correct row identities, sources and results in storage. Feature closure remains
-open for that visible UI failure. The first debug attempt's Flutter SDK setup
-timeout occurred before application execution. Exact sources and retained failures are in the
+[Browser acceptance](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370)
+passes both complete workflows in release and debug on desktop and phone with zero page errors,
+including visible Undo recovery, independent duplication and reload. Strict
+analysis, all 63 tests in the two affected widget files, all six platform builds,
+Docs freshness and format preview pass. Functional acceptance is complete on
+the draft feature branch. Test-only follow-up
+[`da8c6e9`](https://github.com/CrispStrobe/CrispMath/commit/da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6)
+corrects obsolete tooltip-based test selectors without changing application
+code. Its [strict retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42832203169/job/129884887253)
+passes analysis and all 63 widget tests, including phone hover/Delete/Undo.
+The original full run's 6,045 passes/eight failures/eight skips and original
+focused 55 passes/eight failures remain recorded separately. All eight failures
+were the corrected selector lookups. Automatic full-suite reruns are separate
+and are not included as a passing result or combined with the focused count.
+
+The candidate suppresses tooltip overlays inside worksheet rows to prevent the
+reproduced deletion/Undo layout failure. Floating hover captions are removed
+only from worksheet-row controls; explicit accessible labels remain. Other
+tooltips, row/editor keys, controllers and dependency pins are unchanged.
+The prior `43d0030` checkpoint passed 6,052 tests/eight skips, all six builds and
+release acceptance, but its debug phone Undo flow failed. Those historical
+results, controlled reproductions and the earlier SDK setup timeout remain in the
 [evidence receipt](evidence/notepad-stable-references-20261110.json).
 
 This audit began at
@@ -182,8 +194,8 @@ separate graph collection and fixed preview interval need their own review.
 Use focused unit/widget regressions plus actual hosted browser controls on wide
 and narrow layouts. Record exact commits and workflow conclusions. Do not
 replace historical mathematical fixtures or infer application behavior from a
-model-only test. The `43d0030` release, native-suite and debug results, including
-the remaining phone Undo layout failure, are recorded in the
+model-only test. The `63fbffa` browser results and native selector failures, together with
+earlier failures and controlled tooltip reproductions, are recorded in the
 [evidence receipt](evidence/notepad-stable-references-20261110.json). The checks live in `notepad_plot_test.dart`,
 `mini_plot_widget_test.dart`, `graph_worksheet_test.dart`, the existing graph
 navigation/action, Notepad screen and export suites, and
@@ -204,19 +216,24 @@ bounded and discontinuity handling is heuristic, as in the full graph view.
 Exports contain readable expression and interval metadata; they do not yet
 embed the inline plot as a chart image. The merged first increment retains the
 positional `lineN` convention; PR22 adds explicit stable references alongside
-it. The remaining next steps below are proposed work.
+it. Worksheet-row icons retain explicit accessible labels but currently have
+no floating hover captions because the row-scoped workaround disables tooltip
+overlays. Tooltips elsewhere in the app are unaffected. The remaining next
+steps below are proposed work.
 
 ## Subsequent worksheet roadmap
 
-1. **Stable result references — phone Undo layout fix remains.**
+1. **Stable result references — verified foundation.**
    [PR22's contract](stable-result-references.md) uses persistent row IDs and
    adds **Use result**, a **References…** picker and readable source links.
    Editable source still shows `@{row-id}` tokens, scoped to the same document;
    existing `lineN` stays positional without migration. Copy/import remaps
    internal identities, undo preserves them, and static exports use snapshot
-   labels. Release controls pass on desktop and phone; debug passes the complete
-   desktop lifecycle. Phone Undo restores the document state but throws a
-   visible list-layout assertion. Resolve that bounded defect before moving on.
+   labels. Current-source release and debug controls pass the entire desktop and phone
+   lifecycle, including visible Undo recovery and independent copy/reload.
+   The test-only selector correction at `da8c6e9` passes strict analysis and all
+   63 affected widget tests. The original full-suite result and corrected
+   focused count remain separate. PR22 remains a draft awaiting review.
 2. **Dependent calculation groups.** Differentiate, integrate, solve, plot and
    table actions should insert a new source-linked calculation beside the
    original. Show inputs, output and any assumptions together. Reuse the

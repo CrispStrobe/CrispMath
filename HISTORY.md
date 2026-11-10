@@ -1,6 +1,55 @@
-## 10 November 2026 — Connected worksheets and stable references, phone Undo layout failure open
+## 10 November 2026 — Connected worksheets and stable references validated
 
 Application checkpoint
+[`63fbffa`](https://github.com/CrispStrobe/CrispMath/commit/63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22),
+tree `bcba66e3408e0830a19da5e782f3101774ef2613`, passes the complete graph and
+stable-reference release and debug workflows on desktop and phone with zero page errors.
+The debug results are in
+[job 129874506249](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370/job/129874506249).
+Phone deletion, visible missing-reference feedback and Undo now recover both
+original row IDs and the visible result 19; independent copying, editing the
+copy to 20 while preserving the original 19, and reload also pass. Actual
+keyboard continuation after **Use result**, picker insertion and source
+navigation passes in both layouts. The acceptance workflow `0c7a5e5` verifies
+a workflow-only difference from the application source. PR test-merge commit
+`7923636ce1c9c97356452220a5a70b7da267e9bb` has the same entire application tree.
+All six platform builds, Docs freshness and format preview pass. The
+test-only selector correction also passes strict analysis and all 63 tests in
+the two affected widget files, including phone hover/Delete/Undo. Functional
+acceptance is complete; PR22 remains a draft, not merged or released.
+
+[Current-source CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42829156775/job/129874390477)
+passes analysis (43.9 seconds). The full native suite completes at 14:12:00 UTC
+with 6,045 passed, eight failed and eight skipped. All six platform builds,
+Docs freshness and format preview pass. The
+[release acceptance job](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370/job/129874506764)
+passes both complete browser workflows on both layouts, but correctly fails
+its focused-widget gate: 55 passed/eight failed. The same eight obsolete
+tooltip-based Delete/collapse test selectors fail before their intended actions
+in both runs. Test-only follow-up
+[`da8c6e9`](https://github.com/CrispStrobe/CrispMath/commit/da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6),
+tree `d6fab0fde51ee60f465b57ad9c81abbf5829e28a`, changes only
+`test/notepad_screen_test.dart` to use the existing accessible controls. The
+application source is unchanged. Its
+[strict retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42832203169/job/129884887253)
+at workflow `af739f7` passes full analysis in 43.5 seconds and all 63 tests in
+the two complete affected widget files in 45 seconds, with zero failures.
+Artifact `13771808421` retains the logs and source receipt, including the exact
+test-file blob `18310ea8ddfc6263a22f4b658c927f51cd65ba1b` and workflow-only
+difference. The automatic `da8c6e9` full-suite run `42832019698` was in progress
+at 14:21 UTC and is not included as a passing result. These separate results
+are not combined into a full-suite pass. Historical
+test totals below are not attributed to this candidate, and queued broad Linux
+Feature validation jobs are not counted as successful.
+
+This bounded correction applies `TooltipVisibility(visible: false)` only to
+worksheet rows, avoiding tooltip-overlay reactivation during structural edits.
+Worksheet-row icons lose floating hover captions; explicit localized Delete,
+graph-action and section-action labels preserve accessibility. Source chips
+retain their accessible hint. Outside-row tooltips, row/editor keys, controllers
+and dependency pins remain unchanged.
+
+The preceding application checkpoint
 [`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
 tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`, passes the complete graph and
 stable-reference release workflows on desktop and phone with zero page errors.
@@ -23,7 +72,20 @@ reference; Undo restores the two original row IDs, sources and results 9/19 in
 storage, then `_RenderLayoutBuilder0 was mutated in RenderSliverList.performLayout`
 appears while rebuilding `_ReorderableItem`. The strict visible-result check
 times out, and later phone stages are not reached. That concrete UI failure
-keeps feature closure open. Focused test totals overlap the full suite.
+prevented closure at `43d0030`. Focused test totals overlap the full suite.
+
+An unchanged-`43d0030` native phone regression at workflow `a068` in
+[run 42828479928](https://github.com/CrispStrobe/CrispMath/actions/runs/42828479928/job/129871933282)
+verifies that the original pointer lies over the surviving Delete control and
+its **Delete line** tooltip is visible, then reproduces the same
+`RenderSliverList.performLayout` assertion on the first pump after actual mouse
+Undo. This log contains the test expectation stack because the framework error
+was captured by `takeException`; it does not supply a new OverlayPortal stack.
+The prior diagnostic `33e` in
+[run 42827572908](https://github.com/CrispStrobe/CrispMath/actions/runs/42827572908)
+failed to compile `Finder.single` before the application ran. The corrected
+reproduction and the earlier full-stack source-tooltip experiment below
+motivate the row-scoped workaround at `63fbffa`.
 
 [PR21](https://github.com/CrispStrobe/CrispMath/pull/21) merged the shared Notepad
 plot resolution and Graph-to-worksheet workflow as `c7f84eb`.
@@ -83,14 +145,15 @@ not establish a separate controller-disposal cause. Flutter issues
 [188500](https://github.com/flutter/flutter/issues/188500) provide context; the
 application's matched control and failure establish the causal evidence.
 
-The final `43d0030` correction removes only the new source-chip Tooltip,
+The intermediate `43d0030` correction removes only the new source-chip Tooltip,
 retains its semantic hint and the picker's source descriptions, and adds the
 mouse-hover/focused semantic deletion/Undo regression. The permanent
 [evidence receipt](docs/evidence/notepad-stable-references-20261110.json) binds
 the sources, trees, runs, artifacts and initial failures, including the earlier
-picker destination and test-lifecycle failures. The full-suite pass and remaining
-debug phone Undo failure are distinct results. This branch work does not claim a release, deployment
-or physical-device result.
+picker destination and test-lifecycle failures. The older full-suite pass and
+debug phone Undo failure are distinct results; `63fbffa` supplies complete
+browser recovery, with the corrected tests passing at `da8c6e9`. This branch work does
+not claim a release, deployment or physical-device result.
 
 ## 5 November 2026 — 1.2.0 resubmitted to App Review with build 27
 
