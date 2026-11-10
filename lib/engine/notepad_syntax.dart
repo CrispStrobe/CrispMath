@@ -589,14 +589,53 @@ String? preprocessNotepadLine(
   required int lineIndex,
   required Map<String, String> scope,
   Map<String, NotepadDocument>? allDocs,
+  Map<String, String> externalScope = const {},
+  Set<String>? resolvedReferenceVariables,
 }) {
   if (parsed.body == null) return null;
+  final references = _ProtectedResultReferences(doc, externalScope,
+      extraSources: [parsed.body!, ...scope.values]);
+  final out = _preprocessNotepadBody(parsed.body!,
+      doc: doc,
+      lineIndex: lineIndex,
+      scope: scope,
+      references: references,
+      parameterOwner: parsed.isFunction ? lineIndex : null,
+      expand: (source) => _expandNotepadFunctionCalls(source, doc, references),
+      allDocs: allDocs);
+  final resolved = references.restore(out);
+  if (resolvedReferenceVariables != null && references._values.isNotEmpty) {
+    final captured = <String>{
+      for (final value in references._values.values)
+        ...identifierWordsIn(references.restore(value.expression)),
+    };
+    final free = freeVariablesOfLine(
+        ParsedNotepadLine.expression(resolved), const {});
+    resolvedReferenceVariables.addAll(free.intersection(captured)
+      ..removeAll(parsed.parameters ?? const <String>[]));
+  }
+  return resolved;
+}
+
+String _preprocessNotepadBody(
+  String source, {
+  required NotepadDocument doc,
+  required int lineIndex,
+  required Map<String, String> scope,
+  required _ProtectedResultReferences references,
+  required String Function(String) expand,
+  int? parameterOwner,
+  Map<String, NotepadDocument>? allDocs,
+}) {
+  // Result values enter only after scalar substitution. A symbolic x produced
+  // by a different row must not pick up an unrelated document scalar x here.
+  var out = references.protect(source, parameterOwner: parameterOwner,
+      sourceLineIndex: lineIndex);
   // Calculus dummy variables and recognized unit tokens own their syntax.
   // Protect them before function expansion and scalar substitution; bounds,
   // limit points and quantity magnitudes still use document scope.
-  final protected = _protectLexicalSyntaxBindings(parsed.body!, scope);
-  var out = protected.source;
-  out = expandNotepadFunctionCalls(out, doc);
+  out = references.protectSyntax(out, scope);
+  out = expand(out);
 
   // Resolve cross-document references before anything else.
   if (allDocs != null && out.contains('{doc:')) {
@@ -622,7 +661,7 @@ String? preprocessNotepadLine(
       final value = scope[match[0]];
       return value == null ? match[0]! : '($value)';
     });
-    return protected.restore(substituted);
+    return substituted;
   }
   final names = scope.keys.toList()
     ..sort((a, b) => b.length.compareTo(a.length));
@@ -633,7 +672,139 @@ String? preprocessNotepadLine(
             ? '(${scope[name]!})'
             : match[0]!);
   }
-  return protected.restore(out);
+  return out;
+}
+
+class _ProtectedResultValue {
+  const _ProtectedResultValue(this.expression, this.parameterOwner);
+  final String expression;
+  final int? parameterOwner;
+}
+
+/// One synchronous preprocessing pass shares its markers through local calls.
+/// Markers never reach caches, persistence, the mathematical engine or exports.
+class _ProtectedResultReferences {
+  _ProtectedResultReferences(this.doc, this.externalScope,
+      {Iterable<String> extraSources = const []}) : _extraSources = extraSources;
+
+  final NotepadDocument doc;
+  final Map<String, String> externalScope;
+  final Iterable<String> _extraSources;
+  final _values = <String, _ProtectedResultValue>{};
+  final _syntax = <String, String>{};
+  Map<String, List<int>>? _lineIds;
+  var _prefix = '\uE002';
+  var _prefixReady = false;
+
+  String _store(String value, int? parameterOwner) {
+    if (!_prefixReady) {
+      bool occupied(String token) =>
+          _extraSources.any((source) => source.contains(token)) ||
+          externalScope.values.any((source) => source.contains(token)) ||
+          doc.lines.any((line) => line.source.contains(token) ||
+              (line.cachedResult?.contains(token) ?? false));
+      while (occupied(_prefix)) {
+        _prefix += '\uE002';
+      }
+      _prefixReady = true;
+    }
+    final token = '$_prefix${_values.length}\uE003';
+    _values[token] = _ProtectedResultValue(value, parameterOwner);
+    return token;
+  }
+
+  String protect(String source, {int? parameterOwner, int? sourceLineIndex}) {
+    final references = resultReferencesIn(source, strict: true);
+    if (references.isEmpty) return source;
+    _lineIds ??= <String, List<int>>{};
+    if (_lineIds!.isEmpty) {
+      for (var i = 0; i < doc.lines.length; i++) {
+        (_lineIds![doc.lines[i].id] ??= <int>[]).add(i);
+      }
+    }
+    final out = StringBuffer();
+    var cursor = 0;
+    for (final reference in references) {
+      final targets = _lineIds![reference.lineId];
+      if (targets == null) {
+        throw const FormatException(
+            'The referenced result is missing from this document.');
+      }
+      if (targets.length != 1) {
+        throw const FormatException(
+            'The referenced row ID is duplicated in this document.');
+      }
+      final targetIndex = targets.single;
+      if (targetIndex == sourceLineIndex) {
+        throw const FormatException('A row cannot use its own result.');
+      }
+      final target = doc.lines[targetIndex];
+      final parsed = classifyNotepadLine(target.source,
+          lineIndex: targetIndex, firstCodeLineIndex: firstCodeLineIndexOf(doc));
+      if (!_isResultReferenceKind(parsed) ||
+          (target.cachedResult?.startsWith(PlotSpec.prefix) ?? false)) {
+        throw const FormatException(
+            'This source row has no reusable mathematical result.');
+      }
+      if (target.cachedError != null ||
+          (target.cachedResult?.startsWith('Error') ?? false)) {
+        throw const FormatException(
+            'Fix the referenced row before using its result.');
+      }
+      final value = target.cachedResult;
+      if (value == null || value.trim().isEmpty) {
+        throw const FormatException(
+            'The referenced result is not ready. Recalculate its source row.');
+      }
+      out.write(source.substring(cursor, reference.start));
+      out.write(_store(value, parameterOwner));
+      cursor = reference.end;
+    }
+    out.write(source.substring(cursor));
+    return out.toString();
+  }
+
+  String protectSyntax(String source, Map<String, String> scope) {
+    final protected = _protectLexicalSyntaxBindings(source, scope,
+        excludedTokens: _syntax.keys.toSet());
+    _syntax.addAll(protected.replacements);
+    return protected.source;
+  }
+
+  /// A function may bind its own formal variables within a referenced formula.
+  /// A caller's parameters cannot capture symbols belonging to a nested call.
+  String bindParameters(
+      String template, int owner, Map<String, String> parameters) {
+    for (final entry in _values.entries.toList()) {
+      if (entry.value.parameterOwner != owner ||
+          !template.contains(entry.key)) {
+        continue;
+      }
+      final value = entry.value.expression.replaceAllMapped(
+          _identifierWordRegex, (match) {
+        if (_isKnownNotepadCallee(entry.value.expression, match)) {
+          return match[0]!;
+        }
+        final argument = parameters[match[0]];
+        return argument == null ? match[0]! : '($argument)';
+      });
+      template = template.replaceAll(entry.key, _store(value, null));
+    }
+    return template;
+  }
+
+  String restore(String source) {
+    // A derived function argument can contain an earlier marker. Expanding in
+    // reverse creation order resolves that nesting without interpreting values
+    // as new worksheet source or rebinding their free mathematical symbols.
+    for (final entry in _values.entries.toList().reversed) {
+      source = source.replaceAll(entry.key, '(${entry.value.expression})');
+    }
+    for (final entry in _syntax.entries) {
+      source = source.replaceAll(entry.key, entry.value);
+    }
+    return source;
+  }
 }
 
 /// Walk backward from [lineIndex] to the first answer-producing line above.
@@ -769,7 +940,7 @@ final RegExp _flatzincScalarLineRegex = RegExp(
 /// against scope keys + reserved CAS names).
 Set<String> identifierWordsIn(String source) {
   final out = <String>{};
-  for (final m in _identifierWordMatches(source)) {
+  for (final m in _identifierWordMatches(_maskResultReferenceTokens(source))) {
     out.add(m.group(0)!);
   }
   return out;
@@ -888,6 +1059,7 @@ Map<int, ({int end, String name, bool outputVariable})> _lexicalSyntaxBindings(
 Set<String> _unboundIdentifierWords(String source,
     {bool includeOutputVariables = false,
     bool excludeKnownCallees = false}) {
+  source = _maskResultReferenceTokens(source);
   final bindings = _lexicalSyntaxBindings(source);
   return {
     for (final word in _identifierWordMatches(source))
@@ -895,6 +1067,18 @@ Set<String> _unboundIdentifierWords(String source,
               (includeOutputVariables && bindings[word.start]!.outputVariable)) &&
           (!excludeKnownCallees || !_isKnownNotepadCallee(source, word))) word[0]!
   };
+}
+
+/// Keep source offsets stable for lexical analysis while treating each result
+/// reference as one atomic value. Row identities are never mathematical names.
+String _maskResultReferenceTokens(String source) {
+  if (!source.contains('@{')) return source;
+  // Invalid and half-typed references are still not mathematical identifiers.
+  // Strict preprocessing diagnoses them; dependency discovery must not first
+  // block on an accidental scalar whose name happens to occur in the payload.
+  return source.replaceAllMapped(
+      RegExp(r'@\{[^}\r\n]*(?:\}|(?=[\r\n]|$))'),
+      (match) => '0'.padRight(match.end - match.start));
 }
 
 class _ProtectedSyntaxBindings {
@@ -910,7 +1094,8 @@ class _ProtectedSyntaxBindings {
 }
 
 _ProtectedSyntaxBindings _protectLexicalSyntaxBindings(
-    String source, Map<String, String> scope) {
+    String source, Map<String, String> scope,
+    {Set<String> excludedTokens = const {}}) {
   final bindings = _lexicalSyntaxBindings(source);
   if (bindings.isEmpty) return _ProtectedSyntaxBindings(source, const {});
   final starts = bindings.keys.toList()..sort();
@@ -925,7 +1110,7 @@ _ProtectedSyntaxBindings _protectLexicalSyntaxBindings(
       // Private-use characters cannot be a scalar/function identifier, so
       // these markers cannot pick up a document binding during expansion.
       token = '\uE000${sequence++}\uE001';
-    } while (source.contains(token) ||
+    } while (excludedTokens.contains(token) || source.contains(token) ||
         scope.values.any((value) => value.contains(token)));
     output.write(source.substring(cursor, start));
     output.write(token);
@@ -1012,19 +1197,41 @@ bool _mayCallNotepadFunction(String input) => _notepadCallPattern
     .any((m) => !kReservedNotepadNames.contains(m[1]));
 
 String expandNotepadFunctionCalls(String input, NotepadDocument doc) {
+  final references =
+      _ProtectedResultReferences(doc, const {}, extraSources: [input]);
+  return references.restore(_expandNotepadFunctionCalls(
+      references.protect(input), doc, references));
+}
+
+String _expandNotepadFunctionCalls(String input, NotepadDocument doc,
+    _ProtectedResultReferences references) {
   if (!_mayCallNotepadFunction(input)) return input;
   final definitions =
-      <String, ({ParsedNotepadLine parsed, NotepadLine line})>{};
+      <String, ({ParsedNotepadLine parsed, NotepadLine line, int index})>{};
   final first = firstCodeLineIndexOf(doc);
   for (var i = 0; i < doc.lines.length; i++) {
     final parsed = classifyNotepadLine(doc.lines[i].source,
         lineIndex: i, firstCodeLineIndex: first);
     if (parsed.isFunction) {
-      definitions[parsed.name!] = (parsed: parsed, line: doc.lines[i]);
+      definitions[parsed.name!] = (parsed: parsed, line: doc.lines[i], index: i);
     } else if (parsed.kind == NotepadLineKind.assignment) {
       definitions.remove(parsed.name);
     }
   }
+  final referenceTemplates = <String, bool>{};
+  bool hasReferences(String name, Set<String> visiting) {
+    final cached = referenceTemplates[name];
+    if (cached != null) return cached;
+    final definition = definitions[name];
+    if (definition == null || !visiting.add(name)) return false;
+    final source = definition.parsed.body ?? '';
+    final found = resultReferencesIn(source).isNotEmpty ||
+        _notepadCallPattern.allMatches(_maskResultReferenceTokens(source))
+            .any((call) => hasReferences(call[1]!, visiting));
+    visiting.remove(name);
+    return referenceTemplates[name] = found;
+  }
+
   String expand(String source, int depth) {
     if (depth > 32 || source.length > 100000) {
       throw const FormatException('Function expansion exceeds its limit');
@@ -1067,14 +1274,35 @@ String expandNotepadFunctionCalls(String input, NotepadDocument doc) {
         throw FormatException(
             '${match[0]} expects ${parameters.length} arguments');
       }
-      final template = definition.line.cachedResult;
-      if (template == null || definition.line.cachedError != null) {
+      final cachedTemplate = definition.line.cachedResult;
+      if (cachedTemplate == null || definition.line.cachedError != null) {
         throw FormatException('Function ${match[0]} is unavailable');
       }
       final bindings = <String, String>{
         for (var i = 0; i < parameters.length; i++)
           parameters[i]: expand(arguments[i], depth + 1),
       };
+      var template = cachedTemplate;
+      if (hasReferences(match[0]!, <String>{})) {
+        // The ordinary cache is a displayable expression. Rebuild only the
+        // reference-bearing templates so captured symbolic values retain their
+        // boundaries through nested calls, without persisting private markers.
+        final scope = buildNotepadScope(doc,
+            externalScope: references.externalScope)
+          ..remove('line${definition.index + 1}')
+          ..remove(definition.parsed.name);
+        for (final parameter in parameters) {
+          scope.remove(parameter);
+        }
+        template = _preprocessNotepadBody(definition.parsed.body!,
+            doc: doc,
+            lineIndex: definition.index,
+            scope: scope,
+            references: references,
+            parameterOwner: definition.index,
+            expand: (body) => expand(body, depth + 1));
+      }
+      template = references.bindParameters(template, definition.index, bindings);
       var expandedLength = template.length;
       final body = template.replaceAllMapped(_scopeIdentifierRegex, (m) {
         final value = bindings[m[0]];

@@ -5,6 +5,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_export.dart';
+import 'package:crisp_math/engine/notepad_references.dart';
 import 'package:crisp_math/engine/worksheet_bundle.dart';
 
 void main() {
@@ -70,6 +71,54 @@ void main() {
       final exported = exportDocument(doc);
       expect(exported.name, 'My Doc');
       expect(exported.createdAt, DateTime.utc(2026, 6, 1));
+    });
+  });
+
+  group('stable result references in static snapshots', () {
+    test('source and references share readable labels without rewriting source',
+        () {
+      final token = resultReferenceToken('l0');
+      final doc = makeDoc(lines: [('2+3', '5'), ('$token * 2', '10')]);
+      final exported = exportDocument(doc);
+      expect(exported.lines.first.displaySource, 'result[1]: 2+3');
+      expect(exported.lines.last.source, 'result[1] * 2');
+      expect(doc.lines.last.source, '$token * 2');
+      final bundle = WorksheetBundle.capture(doc);
+      for (final content in [exportToMarkdown(doc), exportToLatex(doc),
+          bundle.html(), bundle.markdown(), bundle.latex()]) {
+        expect(content, contains('result[1]'));
+        expect(content, isNot(contains('@{')));
+      }
+    });
+
+    test('snapshot labels follow the same source after row reordering', () {
+      final token = resultReferenceToken('l0');
+      final doc = makeDoc(lines: [('6', '6'), ('$token + 4', '10')]);
+      doc.lines.insert(0, doc.lines.removeLast());
+      final exported = exportDocument(doc);
+      expect(exported.lines.first.source, 'result[2] + 4');
+      expect(exported.lines.last.displaySource, 'result[2]: 6');
+      expect(doc.lines.first.source, '$token + 4');
+    });
+
+    test('missing and non-mathematical targets are described explicitly', () {
+      final missing = resultReferenceToken('deleted-private-id');
+      final heading = resultReferenceToken('l0');
+      final doc = makeDoc(lines: [('## Notes', null),
+        ('$missing + $heading', null)]);
+      final source = exportDocument(doc).lines.last.source;
+      expect(source, '[missing result] + [unavailable result of line 1]');
+      expect(source, isNot(contains('deleted-private-id')));
+    });
+
+    test('uncalculated plot metadata describes linked bounds and expression', () {
+      final token = resultReferenceToken('l0');
+      final doc = makeDoc(lines: [('3', '3'),
+        ('plot($token*x,x,-$token,$token)', null)]);
+      final plot = exportDocument(doc).lines.last;
+      expect(plot.source, 'plot(result[1]*x,x,-result[1],result[1])');
+      expect(plot.formattedResult, contains('[-result[1], result[1]]'));
+      expect(exportToMarkdown(doc), isNot(contains('@{')));
     });
   });
 

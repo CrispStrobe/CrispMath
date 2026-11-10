@@ -1,5 +1,65 @@
 # CrispMath and CrispEmbed: current state and executable lanes
 
+## Connected Notepad feature branch — 10 November 2026
+
+[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) is the current bounded
+worksheet lane, based on the PR21 merge `c7f84eb`. See the [plot audit](connected-notepad.md) and
+[stable-reference contract](stable-result-references.md). All work is retained
+in incremental feature-branch commits; it is not merged or released.
+
+The current application checkpoint is
+[`63fbffa`](https://github.com/CrispStrobe/CrispMath/commit/63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22),
+tree `bcba66e3408e0830a19da5e782f3101774ef2613`.
+[Browser acceptance](https://github.com/CrispStrobe/CrispMath/actions/runs/42829214370)
+passes the complete graph and stable-reference workflows in release and debug on desktop and phone,
+with zero page errors.
+The graphs preserve worksheet functions, parameter values, interval and source
+identity. **Use result**, the **References…** picker, continued typing, source
+navigation, deletion/Undo, duplicate identity and reload pass through actual
+controls. The test-only follow-up also passes strict analysis and all 63 tests
+in the two affected widget files, including phone hover/Delete/Undo. All six
+platform builds, Docs freshness and format preview pass for the unchanged
+application source. Functional acceptance is complete; PR22 remains a draft.
+
+[Source-matched CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42829156775/job/129874390477)
+has clean analysis (43.9 seconds). The full native suite reports 6,045 passed,
+eight failed and eight skipped; the focused run reports 55 passed/eight failed.
+Both runs expose the same eight obsolete tooltip-based Delete/collapse test
+selectors before the intended action. All six platform builds, Docs freshness
+and format preview pass. The historical `43d0030` checkpoint passed 6,052 tests
+with eight skips, but its debug phone Undo rendering failure prevented closure
+at that source.
+
+The current correction suppresses tooltips only inside worksheet rows,
+preventing the reproduced tooltip-overlay mutation during deletion and Undo.
+Those row icons lose floating hover captions; explicit localized Delete,
+graph-action and section-action labels preserve accessibility. Tooltips outside
+worksheet rows, row/editor keys, controllers and dependency pins are unchanged.
+The debug phone workflow now restores both original row IDs and the visible
+dependent result 19, then independently copies, edits and reloads the document.
+
+The test-only follow-up
+[`da8c6e9`](https://github.com/CrispStrobe/CrispMath/commit/da8c6e92a459a5267e2baf1ca1d3fa4884f76ed6),
+tree `d6fab0fde51ee60f465b57ad9c81abbf5829e28a`, changes only
+`test/notepad_screen_test.dart` to locate the existing accessible controls.
+Application source remains unchanged from the passing browser checkpoint.
+The [strict retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42832203169/job/129884887253)
+passes full analysis in 43.5 seconds and all 63 tests in the two affected widget
+files in 45 seconds, with zero failures. The original release acceptance job
+retains its failed focused-widget gate. The automatic `da8c6e9` full-suite rerun
+was in progress at 14:21 UTC and is not included as a passing result; the
+separate focused pass does not establish a combined full-suite total.
+Earlier focus failures, controlled tooltip reproductions, the prior debug SDK
+setup timeout and exact sources/runs are retained in the
+[public evidence receipt](evidence/notepad-stable-references-20261110.json).
+
+References use persistent row IDs within one document. Editable source still
+displays `@{row-id}` tokens; `lineN` remains positional. Static exports use
+snapshot result labels and readable plot metadata, without embedded inline
+chart images. Derived calculation groups and worksheet parameter controls are
+the next bounded product work on this verified foundation. No vendor-runtime,
+release, deployment or physical-device result is claimed by this lane.
+
 ## Integrated checkpoint — 6 November 2026
 
 [CrispEmbed PR165](https://github.com/CrispStrobe/CrispEmbed/pull/165) merged as `cb56aeec6559f7676ddfd639a29d471121008088` and closed issue 164. Its empty-frame acceptance and changing-shape rebuild remain independently opt-in. Hosted CPU and real CUDA T4 detector/server controls passed; the [CPU](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/ppocrv6/issue164-cpu-initial.json), [CPU server](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/ppocrv6/issue164-cpu-server.json) and [CUDA](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/ppocrv6/issue164-cuda.json) receipts retain their scope and numerical limits. Development 0.17.16 is not a published release.

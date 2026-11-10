@@ -12,6 +12,7 @@ class _NotepadResultColumn extends StatelessWidget {
   final VoidCallback? onFormatCycle;
   final CalculatorEngine engine;
   final VoidCallback? onOpenGraph;
+  final VoidCallback? onUseResult;
 
   const _NotepadResultColumn({
     required this.line,
@@ -19,6 +20,7 @@ class _NotepadResultColumn extends StatelessWidget {
     required this.onScrollToLineId,
     required this.engine,
     this.onOpenGraph,
+    this.onUseResult,
     this.alignStart = false,
     this.onFormatCycle,
   });
@@ -152,7 +154,11 @@ class _NotepadResultColumn extends StatelessWidget {
     // simple string match suffices.
     final trimmedRes = res.trim();
     if (trimmedRes == 'true' || trimmedRes == 'false') {
-      return BooleanChip(value: trimmedRes == 'true', fontSize: 16);
+      return GestureDetector(
+        onLongPress: () => _showResultActions(context, res, res),
+        onSecondaryTap: () => _showResultActions(context, res, res),
+        child: BooleanChip(value: trimmedRes == 'true', fontSize: 16),
+      );
     }
     final color = scheme.primary;
     final style = TextStyle(fontSize: 16, color: color);
@@ -283,6 +289,25 @@ class _NotepadResultColumn extends StatelessWidget {
                 );
               },
             ),
+            if (onUseResult != null)
+              ListTile(
+                leading: const Icon(Icons.link),
+                title: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.useResult)),
+                onTap: () async {
+                  final route = ModalRoute.of(sheetContext);
+                  Navigator.of(sheetContext).pop();
+                  // The popped future resolves before the closing sheet's
+                  // focus scope and overlay are removed. Inserting sooner can
+                  // let that scope steal focus back from the new web editor.
+                  if (route != null) {
+                    await route.completed;
+                  }
+                  if (context.mounted) {
+                    onUseResult?.call();
+                  }
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.code, semanticLabel: 'Copy as LaTeX'),
               title: Text(t.notepadCopyAsLatex),
@@ -378,11 +403,9 @@ class _NotepadResultColumn extends StatelessWidget {
     final t = AppLocalizations.of(context);
 
     if (rawError.startsWith(NotepadErrorPrefix.blockedBy)) {
-      // blockedBy:<lineId>:<alias>
-      final payload = rawError.substring(NotepadErrorPrefix.blockedBy.length);
-      final sep = payload.indexOf(':');
-      final lineId = sep < 0 ? '' : payload.substring(0, sep);
-      final alias = sep < 0 ? payload : payload.substring(sep + 1);
+      final blocked = NotepadErrorPrefix.parseBlocked(rawError);
+      final alias = blocked?.alias ?? WorkflowLocalizations.of(context)
+          .text(WorkflowLabel.missingResult);
       return ActionChip(
         avatar: Icon(Icons.block,
             size: 16, semanticLabel: 'Blocked', color: cs.error),
@@ -390,7 +413,8 @@ class _NotepadResultColumn extends StatelessWidget {
           t.notepadBlockedBy(alias),
           style: TextStyle(color: cs.error, fontSize: 12),
         ),
-        onPressed: () => onScrollToLineId(lineId),
+        onPressed: blocked == null
+            ? null : () => onScrollToLineId(blocked.lineId),
       );
     }
 

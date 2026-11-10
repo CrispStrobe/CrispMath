@@ -7,6 +7,7 @@ part of '../notepad_screen.dart';
 final _dividerPattern = RegExp(r'^-{3,}\s*$');
 
 class _NotepadLineRow extends StatelessWidget {
+  final NotepadDocument document;
   final NotepadLine line;
   final int index;
   final bool sideBySide;
@@ -16,6 +17,7 @@ class _NotepadLineRow extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final VoidCallback onDelete;
   final VoidCallback? onPlot;
+  final VoidCallback? onUseResult;
   final void Function(String lineId) onScrollToLineId;
 
   /// Round 104b (P6): used by [_showLineHelp] to wire the Show-steps
@@ -35,6 +37,7 @@ class _NotepadLineRow extends StatelessWidget {
   final bool useLatexInput;
 
   const _NotepadLineRow({
+    required this.document,
     required this.line,
     required this.index,
     required this.sideBySide,
@@ -44,6 +47,7 @@ class _NotepadLineRow extends StatelessWidget {
     required this.onChanged,
     required this.onDelete,
     this.onPlot,
+    this.onUseResult,
     required this.onScrollToLineId,
     required this.engine,
     required this.appState,
@@ -79,6 +83,14 @@ class _NotepadLineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Flutter 3.44's RawTooltip portal can reactivate during a row's layout
+    // when insertion, deletion, Undo or reordering changes its list index.
+    // Keep this workaround local to movable worksheet rows; each action
+    // below supplies its own accessible label without a floating tooltip.
+    return TooltipVisibility(visible: false, child: _buildContent(context));
+  }
+
+  Widget _buildContent(BuildContext context) {
     // Empty and expression rows keep the same editor ancestry. Reparenting
     // the editor can reset the browser editing element during the input event.
     // Section headings: `## text` — larger, bold, theme-colored.
@@ -174,12 +186,14 @@ class _NotepadLineRow extends StatelessWidget {
                       onFormatCycle: onFormatCycle,
                       engine: engine,
                       onOpenGraph: onPlot,
+                      onUseResult: onUseResult,
                     ),
                   ),
                   if (!_isBlank && onPlot != null)
                     IconButton(
                         tooltip: 'Link line to graph',
-                        icon: const Icon(Icons.show_chart),
+                        icon: const Icon(Icons.show_chart,
+                            semanticLabel: 'Link line to graph'),
                         onPressed: onPlot),
                   _DeleteButton(onPressed: onDelete),
                 ],
@@ -217,6 +231,7 @@ class _NotepadLineRow extends StatelessWidget {
                           onFormatCycle: onFormatCycle,
                           engine: engine,
                           onOpenGraph: onPlot,
+                          onUseResult: onUseResult,
                         ),
                       ),
                     ],
@@ -225,7 +240,8 @@ class _NotepadLineRow extends StatelessWidget {
                 if (!_isBlank && onPlot != null)
                   IconButton(
                       tooltip: 'Link line to graph',
-                      icon: const Icon(Icons.show_chart),
+                      icon: const Icon(Icons.show_chart,
+                          semanticLabel: 'Link line to graph'),
                       onPressed: onPlot),
                 _DeleteButton(onPressed: onDelete),
               ],
@@ -352,36 +368,85 @@ class _NotepadLineRow extends StatelessWidget {
       },
     );
 
-    // When LaTeX input is active, show a live-rendered preview of the
-    // expression below the text field. Only render when the input
-    // contains LaTeX-ish content (backslash commands, braces, carets).
-    if (!useLatexInput) return dragTarget;
+    final references = resultReferencesIn(controller.text)
+        .map((reference) => reference.lineId).toSet();
+    // References use source chips below the editor in either input mode. Do
+    // not pass their literal @{id} syntax through the LaTeX preview formatter.
+    Widget? preview;
     final src = controller.text.trim();
-    if (src.isEmpty || !RegExp(r'[\\{}\^_]').hasMatch(src)) return dragTarget;
-    final latex = MathDisplayUtils.toHistoryDisplayLatex(src);
-    Widget preview;
-    try {
-      preview = Math.tex(
-        latex,
-        textStyle: TextStyle(
-          fontSize: 16,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-        ),
-        onErrorFallback: (_) => const SizedBox.shrink(),
-      );
-    } catch (_) {
-      return dragTarget;
+    if (useLatexInput && references.isEmpty && src.isNotEmpty &&
+        RegExp(r'[\\{}\^_]').hasMatch(src)) {
+      try {
+        preview = Math.tex(
+          MathDisplayUtils.toHistoryDisplayLatex(src),
+          textStyle: TextStyle(
+            fontSize: 16,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+          onErrorFallback: (_) => const SizedBox.shrink(),
+        );
+      } catch (_) {
+        // The ordinary source editor remains available for incomplete input.
+      }
     }
+    // Keep this ancestry stable as the user adds or removes a reference; the
+    // browser editing element must not be recreated during its input event.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         dragTarget,
-        Padding(
+        if (references.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 4),
+            child: Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (final sourceId in references)
+                  _buildReferenceChip(context, sourceId),
+              ],
+            ),
+          ),
+        if (preview != null) Padding(
           padding: const EdgeInsets.only(left: 8, bottom: 4),
           child: preview,
         ),
       ],
+    );
+  }
+
+  Widget _buildReferenceChip(BuildContext context, String sourceId) {
+    final labels = WorkflowLocalizations.of(context);
+    final sourceIndex = document.lines.indexWhere((row) => row.id == sourceId);
+    final label = sourceIndex < 0
+        ? labels.text(WorkflowLabel.missingResult)
+        : labels.text(WorkflowLabel.resultOfLine, '${sourceIndex + 1}');
+    final hint = sourceIndex < 0 ? label : labels.text(
+        WorkflowLabel.referenceOpenSource,
+        _readableReferenceSource(
+            document, document.lines[sourceIndex].source, labels));
+    final VoidCallback? open = sourceIndex < 0
+        ? null : () => onScrollToLineId(sourceId);
+    return Semantics(
+      key: ValueKey('notepad-reference:${line.id}:$sourceId'),
+      // Keep this action separate from the reorderable row. Otherwise its
+      // button role can merge into the editor's ancestor while a result is
+      // pending, then replace that ancestor when the result arrives on web.
+      container: true,
+      button: open != null,
+      label: label,
+      hint: hint,
+      onTap: open,
+      excludeSemantics: true,
+      // Keep the source hint in semantics. Flutter 3.44 tooltip overlays can
+      // assert when this row is reparented (flutter/flutter#187162).
+      child: ActionChip(
+        avatar: Icon(sourceIndex < 0 ? Icons.link_off : Icons.link, size: 16),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        visualDensity: VisualDensity.compact,
+        onPressed: open,
+      ),
     );
   }
 }
@@ -419,7 +484,9 @@ class _DeleteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: Icon(Icons.close,
-          size: 18, semanticLabel: 'Delete line', color: Colors.grey[600]),
+          size: 18,
+          semanticLabel: AppLocalizations.of(context).notepadDeleteLine,
+          color: Colors.grey[600]),
       tooltip: AppLocalizations.of(context).notepadDeleteLine,
       visualDensity: VisualDensity.compact,
       onPressed: onPressed,

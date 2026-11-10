@@ -50,7 +50,9 @@ async def button(page, name):
 
 async def popup_item(page, name, *, reveal=False):
     """Wait for actual popup layout/hit testing before a real pointer click."""
-    target = page.locator('[aria-label=' + json.dumps(name) + ']')
+    # Accessible names preserve Unicode; JSON escapes are not CSS escapes.
+    # Include clipped menu items so real scrolling can reveal them below.
+    target = page.get_by_role('menuitem', name=name, exact=True, include_hidden=True)
     await target.wait_for(state='attached')
     samples = []
     for _ in range(180):
@@ -101,11 +103,17 @@ async def function_menu(page, slot):
                 await next_frames(page)
                 return
         visible = await menus.evaluate_all("""els=>els.map(el=>{
-          const r=el.getBoundingClientRect();return {label:el.getAttribute('aria-label'),
+          const r=el.getBoundingClientRect();return {
+            label:(el.getAttribute('aria-label')||el.textContent||'').trim(),
             x:r.x+r.width/2,y:r.y+r.height/2};
         }).filter(r=>r.x>0&&r.x<innerWidth&&r.y>0&&r.y<innerHeight)""")
         assert visible, 'No graph function menu has visible scroll geometry'
-        first_slot = int(re.match(r'Y(\d+)', visible[0]['label']).group(1)) - 1
+        # Flutter can expose this button's accessible name through its child
+        # text instead of aria-label. Require the same complete name that the
+        # role locator matched before using it to choose a scroll direction.
+        first_name = re.fullmatch(r'Y(\d+): Function actions', visible[0]['label'])
+        assert first_name, f"Unexpected graph function action name: {visible[0]['label']!r}"
+        first_slot = int(first_name.group(1)) - 1
         direction = -1 if (position and position['x'] < 0) or first_slot > slot else 1
         await page.mouse.move(page.viewport_size['width'] * 0.5, visible[0]['y'])
         await page.mouse.wheel(direction * 220, 0)
@@ -113,15 +121,16 @@ async def function_menu(page, slot):
     raise AssertionError(f'Could not reveal function menu Y{slot + 1}')
 
 
-# Flutter web does not reliably expose Semantics(image: true) as a visible
-# ARIA img to Playwright's role engine, so match the plot by its label and
-# require on-screen geometry explicitly.
+# The chart owns an image semantics node, distinct from its range caption and
+# graph-opening button. Retain full label matching and real on-screen geometry
+# without depending on one browser's mapping of Flutter's image role.
 PLOT_LABEL_JS = r"""({pattern})=>{
   const re=new RegExp(pattern);
   for(const el of document.querySelectorAll('[aria-label^="Graphing: "]')){
     const label=el.getAttribute('aria-label');
     const r=el.getBoundingClientRect();
-    if(re.test(label)&&r.width>0&&r.height>0)return label;
+    if(re.test(label)&&r.width>0&&r.height>0&&r.right>0&&r.bottom>0&&
+       r.left<innerWidth&&r.top<innerHeight)return label;
   }return false;
 }"""
 
@@ -132,6 +141,28 @@ async def wait_plot_label(page, pattern):
     text = await handle.json_value()
     await handle.dispose()
     return text
+
+
+async def plot_semantics_evidence(page):
+    """Read actual semantic DOM geometry when a browser assertion fails."""
+    return await page.evaluate(r"""()=>{
+      const describe=el=>{
+        const r=el.getBoundingClientRect(),s=getComputedStyle(el);
+        return {tag:el.tagName,role:el.getAttribute('role'),
+          label:el.getAttribute('aria-label'),hidden:el.getAttribute('aria-hidden'),
+          rect:{x:r.x,y:r.y,width:r.width,height:r.height},
+          display:s.display,visibility:s.visibility,
+          outerHTML:el.outerHTML.slice(0,3000)};
+      };
+      return {viewport:{width:innerWidth,height:innerHeight},
+        plots:[...document.querySelectorAll('[aria-label^="Graphing: "]')]
+          .slice(0,20).map(el=>{
+            const ancestors=[];let parent=el.parentElement;
+            for(let i=0;parent&&i<4;i++,parent=parent.parentElement)
+              ancestors.push(describe(parent));
+            return {...describe(el),ancestors};
+          })};
+    }""")
 
 
 async def inline_plot(page, coefficient, lo, hi):
@@ -157,7 +188,8 @@ async def inline_range(page, lo, hi):
         const label=el.getAttribute('aria-label');
         const m=/^Graphing: .+; ([^;]+) ≤ x ≤ ([^;]+)$/.exec(label);
         const r=el.getBoundingClientRect();
-        if(m&&r.width>0&&r.height>0&&Math.abs(Number(m[1])-lo)<1e-6&&
+        if(m&&r.width>0&&r.height>0&&r.right>0&&r.bottom>0&&
+           r.left<innerWidth&&r.top<innerHeight&&Math.abs(Number(m[1])-lo)<1e-6&&
            Math.abs(Number(m[2])-hi)<1e-6)
           return label;
       }return false;
@@ -378,6 +410,10 @@ async def check(args):
                 try:
                     item['state'] = await snapshot(page)
                     (output / f'{profile}-failure-labels.txt').write_text(await labels(page))
+                    semantics = await plot_semantics_evidence(page)
+                    (output / f'{profile}-failure-semantics.json').write_text(
+                        json.dumps(semantics, indent=2) + '\n')
+                    item['plotSemanticNodes'] = len(semantics['plots'])
                     await page.screenshot(path=str(output / f'{profile}-failure.png'), timeout=10000)
                 except Exception as evidence_error:
                     item['evidenceError'] = str(evidence_error)

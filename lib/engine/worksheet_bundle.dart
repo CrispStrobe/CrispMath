@@ -18,16 +18,12 @@ class WorksheetBundle {
   WorksheetBundle.capture(NotepadDocument source,
       {List<String> expressions = const [], List<String> warnings = const []})
       : document = exportDocument(source),
-        errors =
-            List.unmodifiable(source.lines.map((line) => line.cachedError)),
+        errors = List.unmodifiable(exportedNotepadErrors(source)),
         graphs =
             List.unmodifiable(expressions.take(12).map(WorksheetGraph.new)),
         warnings = List.unmodifiable([
           ...warnings,
-          ...source.lines
-              .where((line) => line.resultEvidence?.sourceDomain != null)
-              .map((line) =>
-                  '${line.source}: original domain ${line.resultEvidence!.sourceDomain}'),
+          ...exportedNotepadDomainWarnings(source),
           if (expressions.length > 12)
             'Only the first 12 linked graphs are included.',
         ]);
@@ -60,7 +56,7 @@ class WorksheetBundle {
         '<table><thead><tr><th>Source</th><th>Result</th></tr></thead><tbody>');
     for (var i = 0; i < document.lines.length; i++) {
       final line = document.lines[i];
-      out.write('<tr><td><code>${escape(line.source)}</code></td><td>'
+      out.write('<tr><td><code>${escape(line.displaySource)}</code></td><td>'
           '${escape(resultAt(i))}</td></tr>');
     }
     out.write('</tbody></table>');
@@ -80,7 +76,7 @@ class WorksheetBundle {
   String markdown() {
     final out = StringBuffer('# ${document.name}\n\n');
     for (var i = 0; i < document.lines.length; i++) {
-      out.writeln('    ${document.lines[i].source}');
+      out.writeln('    ${document.lines[i].displaySource}');
       final result = resultAt(i);
       if (result.isNotEmpty) out.writeln('    → $result');
     }
@@ -117,7 +113,7 @@ class WorksheetBundle {
     out.writeln('\\section*{${text(document.name)}}');
     for (var i = 0; i < document.lines.length; i++) {
       out.writeln(
-          '\\noindent ${text(document.lines[i].source)} \\quad ${text(resultAt(i))}\\par');
+          '\\noindent ${text(document.lines[i].displaySource)} \\quad ${text(resultAt(i))}\\par');
     }
     for (final graph in graphs) {
       out.writeln('\\subsection*{${text(graph.expression)}}');
@@ -156,7 +152,7 @@ class WorksheetBundle {
       for (var i = 0; i < document.lines.length; i++)
         pw.Padding(
             padding: const pw.EdgeInsets.symmetric(vertical: 4),
-            child: pw.Text('${document.lines[i].source}\n${resultAt(i)}')),
+            child: pw.Text('${document.lines[i].displaySource}\n${resultAt(i)}')),
       for (final graph in graphs) ...[
         pw.Text(graph.expression),
         pw.SvgImage(svg: graph.svg, width: 480, height: 240),

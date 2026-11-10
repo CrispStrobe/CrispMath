@@ -1,7 +1,6 @@
 import 'notepad.dart';
 import 'notepad_evaluator.dart';
 import 'notepad_plot.dart';
-import 'symbolic_expr.dart' show kKnownFunctions;
 
 class LinkedGraphSource {
   final String documentId;
@@ -31,6 +30,10 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
   final index = doc.lines.indexWhere((l) => l.id == lineId);
   if (index < 0) {
     return const LinkedGraphResolution('', null, {}, 'Source line is missing.');
+  }
+  if (doc.lines.where((line) => line.id == lineId).length != 1) {
+    return const LinkedGraphResolution(
+        '', null, {}, 'Source row ID is duplicated in this document.');
   }
   final line = doc.lines[index];
   final first = firstCodeLineIndexOf(doc);
@@ -103,9 +106,16 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
   final variable = parsed.isFunction
       ? parsed.parameters!.single
       : 'x';
+  scope.remove(variable);
+  final bound = <String, String>{
+    for (final name in dependenciesOfLine(parsed, scope.keys.toSet(),
+        excludeKnownCallees: true)) name: scope[name]!,
+  };
   String body;
   try {
-    body = expandNotepadFunctionCalls(parsed.body ?? '', doc);
+    body = preprocessNotepadLine(parsed,
+        doc: doc, lineIndex: index, scope: scope,
+        externalScope: imports) ?? '';
   } on FormatException catch (error) {
     return LinkedGraphResolution(
         line.source, null, {}, error.message.toString());
@@ -114,30 +124,14 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
     return LinkedGraphResolution(
         line.source, null, {}, 'The source expression is empty.');
   }
-  final bound = <String, String>{};
-  String? missing;
-  final expression =
-      body.replaceAllMapped(RegExp(r'\b[A-Za-z_][A-Za-z_0-9]*\b'), (m) {
-    final name = m[0]!;
-    final tail = body.substring(m.end).trimLeft();
-    if (kKnownFunctions.containsKey(name) && tail.startsWith('(')) return name;
-    if (name == variable) return 'x';
-    if (scope.containsKey(name)) {
-      bound[name] = scope[name]!;
-      return '(${scope[name]})';
-    }
-    if (!kReservedNotepadNames.contains(name) &&
-        !tail.startsWith('(') &&
-        name != 'I' &&
-        name != 'oo') {
-      missing ??= name;
-    }
-    return name;
-  });
-  if (missing != null) {
+  final missing = freeVariablesOfLine(
+      ParsedNotepadLine.expression(body), const {})..remove(variable);
+  if (missing.isNotEmpty) {
     return LinkedGraphResolution(line.source, null, bound,
-        'Define $missing in this document or import it with use.');
+        'Define ${missing.first} in this document or import it with use.');
   }
+  final expression = PlotSpec(expression: body, variable: variable,
+      lo: -10, hi: 10).graphExpression;
   return LinkedGraphResolution(line.source, expression, bound, null);
 }
 

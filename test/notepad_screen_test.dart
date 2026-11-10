@@ -12,16 +12,21 @@
 // ran end-to-end. Tests that poke `cachedResult` / `cachedError`
 // directly stay reliable because no engine call is made.
 
+import 'dart:ui' as ui;
+
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/localization/app_localizations.dart';
 import 'package:crisp_math/localization/workflow_localizations.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad_references.dart';
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/services/document_history.dart';
 import 'package:crisp_math/services/engine_service.dart';
 import 'package:crisp_math/widgets/boolean_chip.dart';
+import 'package:crisp_math/widgets/notepad_autocomplete.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,12 +62,566 @@ Future<void> _gotoNotepad(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Finder _editorWithSource(String source) => find.byWidgetPredicate((widget) =>
+    widget is TextField && widget.controller?.text == source);
+
+/// Row tooltips are suppressed; find the enabled action by its accessible name.
+Finder _rowIconButton(String label) => find.descendant(
+    of: find.byType(ReorderableListView),
+    matching: find.byWidgetPredicate((widget) =>
+        widget is IconButton &&
+        widget.onPressed != null &&
+        widget.icon is Icon &&
+        (widget.icon as Icon).semanticLabel == label));
+
+Finder _deleteLineButtons(WidgetTester tester) => _rowIconButton(
+    AppLocalizations.of(tester.element(find.byType(ReorderableListView)))
+        .notepadDeleteLine);
+
+/// The editor's path to its reorderable row must never acquire the source
+/// chip's button role. On web that role change replaces an ancestor DOM node
+/// and blurs an otherwise unchanged, focused textarea.
+List<int> _referenceEditorSemanticsPath(
+    WidgetTester tester, String source, Finder chip) {
+  final chipNode = tester.getSemantics(chip);
+  expect(chipNode.label, 'Result of line 1');
+  expect(chipNode.flagsCollection.isButton, isTrue);
+  expect(chipNode.getSemanticsData().hasAction(ui.SemanticsAction.tap), isTrue);
+  final editors = find.semantics.byPredicate((node) =>
+      node.flagsCollection.isTextField && node.value == source).evaluate();
+  expect(editors, hasLength(1));
+  final path = <int>[];
+  for (SemanticsNode? node = editors.single; node != null; node = node.parent) {
+    path.add(node.id);
+    expect(node.id, isNot(chipNode.id),
+        reason: 'The source action must not contain the editor.');
+    expect(node.flagsCollection.isButton, isFalse,
+        reason: 'The editor ancestry must not inherit the source action.');
+    if (node.label.contains('Drag to reorder')) {
+      expect(node.label, 'Drag to reorder');
+      expect(node.getSemanticsData().customSemanticsActionIds, isNotEmpty,
+          reason: 'The row must retain its accessible reorder actions.');
+      return path;
+    }
+  }
+  fail('The editor has no reorderable row in its semantics ancestry.');
+}
+
+Future<void> _worksheetUndo(WidgetTester tester, {bool redo = false}) async {
+  await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+  if (redo) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+  await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+  if (redo) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+  await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+  await tester.pump(const Duration(milliseconds: 350));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   // Phase 5: the screen now schedules engine work via the persistent
   // worker isolate. Tear it down between tests so a hung worker
   // from a prior test can't leak into the next one.
   tearDown(() async {
     await EngineService.shutdownForTest();
+  });
+
+  for (final size in [const Size(390, 844), const Size(1280, 900)]) {
+    testWidgets('Use result appends a live reference with undo/redo at $size',
+        (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await _bootApp(tester, size: size);
+        await _gotoNotepad(tester);
+        await tester.enterText(find.byType(TextField).first, '3+4');
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        final state = AppState();
+        final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+        final source = doc.lines.first;
+        expect(source.cachedResult, '7');
+        final result = find.byKey(ValueKey('notepad-result:${source.id}'));
+        if (size.width < 720) {
+          await tester.longPress(result);
+        } else {
+          await tester.tap(result, buttons: 2);
+        }
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Use result'));
+        await tester.pump();
+        expect(find.byType(BottomSheet), findsOneWidget);
+        expect(doc.lines, hasLength(1),
+            reason: 'Insertion must wait until the sheet releases its focus scope.');
+        // Finish dismissal, then build/focus the appended row without advancing
+        // its new 300 ms calculation debounce. This is the failing web phase:
+        // the source chip exists before the first result adds sibling semantics.
+        await tester.pump(const Duration(milliseconds: 400));
+        for (var frame = 0; frame < 4; frame++) {
+          await tester.pump();
+        }
+        expect(find.byType(BottomSheet), findsNothing);
+        expect(doc.lines, hasLength(2));
+        expect(doc.lines.last.cachedResult, isNull);
+        final token = resultReferenceToken(source.id);
+        final dependentId = doc.lines.last.id;
+        final chip = find.byKey(
+            ValueKey('notepad-reference:$dependentId:${source.id}'));
+        final beforeResult = _referenceEditorSemanticsPath(tester, token, chip);
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        expect(doc.lines, hasLength(2));
+        expect(doc.lines.first.id, source.id);
+        expect(doc.lines.last.source, token);
+        expect(doc.lines.last.cachedResult, '7');
+        expect(_referenceEditorSemanticsPath(tester, token, chip), beforeResult,
+            reason: 'Result arrival must preserve the editor semantic ancestry.');
+        final editor = tester.widget<TextField>(_editorWithSource(token));
+        expect(editor.focusNode!.hasFocus, isTrue);
+        expect(editor.controller!.selection.extentOffset, token.length);
+        expect(find.text('Result of line 1'), findsOneWidget);
+
+        expect(tester.testTextInput.hasAnyClients, isTrue);
+        tester.testTextInput.updateEditingValue(TextEditingValue(
+            text: '$token+1',
+            selection: TextSelection.collapsed(offset: token.length + 2)));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+        expect(doc.lines.first.source, '3+4');
+        expect(doc.lines.last.source, '$token+1');
+        expect(doc.lines.last.cachedResult, '8');
+        await _worksheetUndo(tester);
+        expect(doc.lines.last.source, token);
+        expect(doc.lines.last.cachedResult, '7');
+
+        await _worksheetUndo(tester);
+        expect(doc.lines, hasLength(1));
+        await _worksheetUndo(tester, redo: true);
+        expect(doc.lines.last.id, dependentId);
+        expect(doc.lines.last.source, token);
+        expect(doc.lines.last.cachedResult, '7');
+        expect(_editorWithSource(token), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
+
+  testWidgets('autocomplete owns one keyboard node across editor rebuilds',
+      (tester) async {
+    final controller = TextEditingController();
+    final editorFocus = FocusNode();
+    late StateSetter rebuild;
+    var names = <String>{'sigma'};
+    try {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(builder: (context, setState) {
+            rebuild = setState;
+            return NotepadAutocompleteOverlay(
+              controller: controller,
+              focusNode: editorFocus,
+              scopeNames: names,
+              child: TextField(controller: controller, focusNode: editorFocus),
+            );
+          }),
+        ),
+      ));
+      await tester.tap(find.byType(TextField));
+      await tester.enterText(find.byType(TextField), 'si');
+      await tester.pump();
+      final listener = find.descendant(
+          of: find.byType(NotepadAutocompleteOverlay),
+          matching: find.byType(KeyboardListener));
+      final keyboardNode = tester.widget<KeyboardListener>(listener).focusNode;
+      rebuild(() => names = {'customAngle'});
+      await tester.pump();
+      expect(tester.widget<KeyboardListener>(listener).focusNode,
+          same(keyboardNode));
+      expect(editorFocus.hasFocus, isTrue);
+      expect(controller.selection, const TextSelection.collapsed(offset: 2));
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+      // Continue through the existing input client, without a tap or the
+      // implicit focus request made by WidgetTester.enterText.
+      tester.testTextInput.updateEditingValue(const TextEditingValue(
+          text: 'cust', selection: TextSelection.collapsed(offset: 4)));
+      await tester.pump();
+      expect(controller.text, 'cust');
+      expect(find.text('customAngle'), findsOneWidget);
+      await tester.tap(find.text('customAngle'));
+      await tester.pump();
+      expect(controller.text, 'customAngle');
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(() => keyboardNode.addListener(() {}), throwsFlutterError,
+          reason: 'The autocomplete owner must dispose its keyboard node.');
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+      editorFocus.dispose();
+    }
+  });
+
+  testWidgets('semantic deletion of a focused source preserves its dependent and Undo',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _bootApp(tester, size: const Size(1280, 900));
+      await _gotoNotepad(tester);
+      await tester.enterText(find.byType(TextField).first, '5+4');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final state = AppState();
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      final sourceId = doc.lines.first.id;
+      expect(doc.lines.first.cachedResult, '9');
+      await tester.tap(find.byKey(ValueKey('notepad-result:$sourceId')),
+          buttons: 2);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Use result'));
+      await tester.pumpAndSettle();
+      final dependentId = doc.lines.last.id;
+      final expression = '10+${resultReferenceToken(sourceId)}';
+      await tester.enterText(
+          _editorWithSource(resultReferenceToken(sourceId)), expression);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(doc.lines.last.cachedResult, '19');
+      final dependentController =
+          tester.widget<TextField>(_editorWithSource(expression)).controller;
+      tester.semantics.tap(find.semantics.byPredicate((node) =>
+          node.label == 'Result of line 1' &&
+          node.getSemanticsData().hasAction(ui.SemanticsAction.tap)));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(_editorWithSource('5+4'))
+          .focusNode!.hasFocus, isTrue);
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+
+      // Hover the surviving row's source chip while the source stays focused.
+      // Deleting the source then moves this row from index 1 to index 0.
+      final mouse =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      final sourceChip = find.byKey(
+          ValueKey('notepad-reference:$dependentId:$sourceId'));
+      await mouse.moveTo(tester.getCenter(sourceChip));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(tester.getSemantics(sourceChip).hint, 'Open source: 5+4');
+      expect(tester.widget<TextField>(_editorWithSource('5+4'))
+          .focusNode!.hasFocus, isTrue);
+
+      // Accessibility activation invokes the Delete action directly; it does
+      // not send a pointer press that can first blur the focused source.
+      final deleteActions = find.semantics.byPredicate((node) =>
+          (RegExp(r'^Delete line(?:\s+Delete line)?$').hasMatch(node.label) ||
+              node.tooltip == 'Delete line') &&
+          node.getSemanticsData().hasAction(ui.SemanticsAction.tap));
+      expect(deleteActions.evaluate(), hasLength(2));
+      tester.semantics.tap(deleteActions.first);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(doc.lines, hasLength(1));
+      expect(doc.lines.single.id, dependentId);
+      expect(doc.lines.single.source, expression);
+      expect(doc.lines.single.cachedResult, isNull);
+      expect(doc.lines.single.cachedError, contains('missing'));
+      expect(find.text('Missing result'), findsOneWidget);
+      expect(tester.widget<TextField>(_editorWithSource(expression)).controller,
+          same(dependentController));
+      await tester.tap(_editorWithSource(expression));
+      await tester.pump();
+      expect(tester.widget<TextField>(_editorWithSource(expression))
+          .focusNode!.hasFocus, isTrue);
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(doc.lines.map((line) => line.id), [sourceId, dependentId]);
+      expect(doc.lines.map((line) => line.cachedResult), ['9', '19']);
+      expect(find.text('Missing result'), findsNothing);
+      expect(find.text('Result of line 1'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('phone Undo preserves a reference after hovering the surviving Delete action',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      await tester.enterText(find.byType(TextField).first, '5+4');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final state = AppState();
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      final sourceId = doc.lines.first.id;
+      expect(doc.lines.first.cachedResult, '9');
+      await tester.longPress(find.byKey(ValueKey('notepad-result:$sourceId')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Use result'));
+      await tester.pumpAndSettle();
+      final dependentId = doc.lines.last.id;
+      final expression = '10+${resultReferenceToken(sourceId)}';
+      await tester.enterText(
+          _editorWithSource(resultReferenceToken(sourceId)), expression);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(doc.lines.last.cachedResult, '19');
+      await tester.tap(find.text('Result of line 1'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(_editorWithSource('5+4'))
+          .focusNode!.hasFocus, isTrue);
+
+      final mouse =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      final deletePosition = tester.getCenter(_deleteLineButtons(tester).first);
+      await mouse.moveTo(deletePosition);
+      await mouse.down(deletePosition);
+      await mouse.up();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(doc.lines, hasLength(1));
+      expect(doc.lines.single.id, dependentId);
+      expect(doc.lines.single.source, expression);
+      expect(doc.lines.single.cachedResult, isNull);
+      expect(doc.lines.single.cachedError, contains('missing'));
+      expect(find.text('Missing result'), findsOneWidget);
+
+      // Narrow rows top-align Delete, so the stationary pointer now hovers the
+      // surviving row's control. Keep its accessible action and graph action
+      // available without a floating portal that could be grafted during Undo.
+      final remainingDelete = _deleteLineButtons(tester);
+      expect(remainingDelete, findsOneWidget);
+      expect(tester.getRect(remainingDelete)
+          .contains(deletePosition), isTrue);
+      expect(find.text('Delete line', findRichText: true), findsNothing);
+      for (final label in ['Delete line', 'Link line to graph']) {
+        final actions = find.semantics.byPredicate((node) =>
+            node.label == label &&
+            node.getSemanticsData().hasAction(ui.SemanticsAction.tap));
+        expect(actions.evaluate(), hasLength(1), reason: label);
+      }
+      final undoPosition = tester.getCenter(find.text('Undo'));
+      await mouse.moveTo(undoPosition);
+      await mouse.down(undoPosition);
+      await mouse.up();
+      // Restore directly; do not add an editor tap or a hover-dismissal delay.
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(doc.lines.map((line) => line.id), [sourceId, dependentId]);
+      expect(doc.lines.map((line) => line.cachedResult), ['9', '19']);
+      final dependentResult = find.byKey(ValueKey('notepad-result:$dependentId'));
+      expect(dependentResult, findsOneWidget);
+      expect(tester.getSemantics(dependentResult).label, '19');
+      expect(find.text('Missing result'), findsNothing);
+      expect(find.text('Result of line 1'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  for (final latex in [false, true]) {
+    testWidgets('References preserves selection after semantic-menu blur (LaTeX: $latex)',
+        (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      final state = AppState();
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      if (latex) {
+        doc.useLatexInput = true;
+        state.setNotepadDocument(doc);
+        tester.binding.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(
+            tester.binding.platformDispatcher.clearTextScaleFactorTestValue);
+        await tester.pump();
+      }
+      await tester.enterText(find.byType(TextField).first, '3+4');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Add line'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_editorWithSource(''), '10+0');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      final destination = tester.widget<TextField>(_editorWithSource('10+0'));
+      expect(destination.controller!.selection.start, 3);
+      expect(destination.controller!.selection.end, 4);
+
+      // Browser accessibility activation can blur the editor before Flutter
+      // receives the menu action, and does not send Listener.onPointerDown.
+      destination.focusNode!.unfocus();
+      await tester.pump();
+      expect(destination.focusNode!.hasFocus, isFalse);
+      final documentMenuAction = find.semantics.byPredicate((node) =>
+          (node.label == 'Document menu' || node.tooltip == 'Document menu') &&
+          node.getSemanticsData().hasAction(ui.SemanticsAction.tap));
+      tester.semantics.tap(documentMenuAction);
+      await tester.pumpAndSettle();
+      // Cancelling a menu clears that transaction, not the editing position.
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      tester.semantics.tap(documentMenuAction);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('References…'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(ValueKey(
+          'notepad-reference-choice:${doc.lines.last.id}')), findsNothing,
+          reason: 'The destination cannot reference itself.');
+      await tester.tap(find.byKey(ValueKey(
+          'notepad-reference-choice:${doc.lines.first.id}')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('notepad-reference-picker')),
+          findsOneWidget);
+      expect(doc.lines.last.source, '10+0',
+          reason: 'The picker must release its focus scope before editing resumes.');
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final text = '10+${resultReferenceToken(doc.lines.first.id)}';
+      expect(doc.lines, hasLength(2));
+      expect(doc.lines.last.source, text);
+      expect(doc.lines.last.cachedResult, '17');
+      final insertedEditor = tester.widget<TextField>(_editorWithSource(text));
+      expect(insertedEditor.focusNode!.hasFocus, isTrue);
+      expect(insertedEditor.controller!.selection.extentOffset, text.length);
+
+      await _worksheetUndo(tester);
+      expect(doc.lines.last.source, '10+0');
+      expect(_editorWithSource('10+0'), findsOneWidget,
+          reason: 'Undo must also update a still-focused editor.');
+      await _worksheetUndo(tester, redo: true);
+      expect(doc.lines.last.source, text);
+      expect(_editorWithSource(text), findsOneWidget);
+      final chip = find.byKey(ValueKey(
+          'notepad-reference:${doc.lines.last.id}:${doc.lines.first.id}'));
+      await tester.ensureVisible(chip);
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(_editorWithSource('3+4'))
+          .focusNode!.hasFocus, isTrue);
+      expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
+
+  testWidgets('source chips reveal distant rows inside collapsed sections',
+      (tester) async {
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    final state = AppState();
+    final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+    doc.lines
+      ..clear()
+      ..add(NotepadLine(id: 'section', source: '## Source'))
+      ..add(NotepadLine(id: 'source', source: '3+4', cachedResult: '7'))
+      ..add(NotepadLine(id: 'work', source: '## Calculations'));
+    for (var i = 0; i < 45; i++) {
+      doc.lines.add(NotepadLine(id: 'filler-$i', source: '$i', cachedResult: '$i'));
+    }
+    doc.lines.add(NotepadLine(id: 'dependent',
+        source: '${resultReferenceToken('source')}*2', cachedResult: '14'));
+    state.setNotepadDocument(doc);
+    await tester.pumpAndSettle();
+    await tester.tap(_rowIconButton('Collapse section').first);
+    await tester.pumpAndSettle();
+    expect(_editorWithSource('3+4'), findsNothing);
+    final chip = find.byKey(
+        const ValueKey('notepad-reference:dependent:source'));
+    final scrollable = find.descendant(of: find.byType(ReorderableListView),
+        matching: find.byType(Scrollable)).first;
+    await tester.scrollUntilVisible(chip, 500,
+        scrollable: scrollable, maxScrolls: 40);
+    await tester.pumpAndSettle();
+    await tester.tap(chip);
+    await tester.pumpAndSettle();
+    expect(_editorWithSource('3+4').hitTestable(), findsOneWidget);
+    expect(tester.widget<TextField>(_editorWithSource('3+4'))
+        .focusNode!.hasFocus, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('opening a linked manager copy recalculates its cleared caches',
+      (tester) async {
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    final state = AppState();
+    final original = state.notepadDocuments[state.currentNotepadDocId]!;
+    original.name = 'Linked sheet';
+    final source = original.lines.first;
+    source.source = '3+4';
+    source.cachedResult = '7';
+    original.lines.add(NotepadLine.fresh(
+        source: '${resultReferenceToken(source.id)}*2')..cachedResult = '14');
+    state.setNotepadDocument(original);
+    await tester.pumpAndSettle();
+    final labels = AppLocalizations.of(
+        tester.element(find.byType(AppBar).first));
+    await tester.tap(find.byTooltip(labels.notepadDocumentMenu));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text(labels.notepadManageNotepads),
+        160, scrollable: find.byType(Scrollable).last);
+    await tester.tap(find.text(labels.notepadManageNotepads));
+    await tester.pumpAndSettle();
+    final originalRow = find.widgetWithText(ListTile, original.name);
+    await tester.tap(find.descendant(of: originalRow,
+        matching: find.byType(PopupMenuButton<String>)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(labels.notepadDuplicate));
+    await tester.pumpAndSettle();
+    final copy = state.notepadDocuments.values
+        .singleWhere((doc) => doc.name == 'Linked sheet (copy)');
+    expect(copy.lines.every((line) => line.cachedResult == null), isTrue);
+    expect(resultReferencesIn(copy.lines.last.source).single.lineId,
+        copy.lines.first.id);
+    await tester.tap(find.widgetWithText(ListTile, copy.name));
+    // Opening schedules the debounce after the controller-switch frame.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    // Multiplication uses the real engine worker, unlike the local small-sum
+    // path. Let isolate messages arrive between fake-clock frame pumps;
+    // pumpAndSettle alone spins on the pending indicator without real I/O.
+    for (var i = 0; i < 30; i++) {
+      if (copy.lines.every((line) =>
+          line.cachedResult != null || line.cachedError != null)) {
+        break;
+      }
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await tester.pump();
+    }
+    await tester.pump();
+    expect(state.currentNotepadDocId, copy.id);
+    expect(copy.lines.first.cachedResult, '7');
+    expect(copy.lines.last.cachedResult, '14');
+    expect(copy.lines.every((line) => line.cachedError == null), isTrue);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(original.lines.last.source,
+        '${resultReferenceToken(source.id)}*2');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('computed multi-digit result exposes its complete accessible value',
@@ -449,7 +1008,7 @@ void main() {
       // The snackbar's slide-in animation takes ~250 ms; pump in
       // chunks so its Undo button is hit-testable before the
       // recalc timer fires at +300 ms.
-      final deleteBtns = find.byTooltip('Delete line');
+      final deleteBtns = _deleteLineButtons(tester);
       expect(deleteBtns, findsWidgets);
       await tester.tap(deleteBtns.last);
       // Pump short of 300ms — past the snackbar slide-in but
@@ -484,7 +1043,7 @@ void main() {
       doc.lines.add(NotepadLine.fresh(source: 'temporary'));
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.tap(_deleteLineButtons(tester).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Line deleted'), findsOneWidget);
@@ -505,7 +1064,7 @@ void main() {
       doc.lines.add(line);
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.tap(_deleteLineButtons(tester).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('Undo'));
@@ -527,7 +1086,7 @@ void main() {
       doc.lines.add(line);
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.tap(_deleteLineButtons(tester).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
@@ -557,7 +1116,7 @@ void main() {
       doc.lines.add(line);
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.tap(_deleteLineButtons(tester).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Line deleted'), findsOneWidget);
@@ -626,7 +1185,7 @@ void main() {
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
       // Collapse the section so its only match is out of view.
-      await tester.tap(find.byTooltip('Collapse'));
+      await tester.tap(_rowIconButton('Collapse section'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Document menu'));
       await tester.pumpAndSettle();
@@ -637,7 +1196,7 @@ void main() {
       await tester.enterText(field, 'alpha');
       await tester.pumpAndSettle();
       expect(find.text('0 shown · 1 hidden'), findsOneWidget);
-      await tester.tap(find.byTooltip('Expand'));
+      await tester.tap(_rowIconButton('Expand section'));
       await tester.pumpAndSettle();
       expect(find.text('1 matches'), findsOneWidget);
       // A matching heading is highlighted like any other matching row.

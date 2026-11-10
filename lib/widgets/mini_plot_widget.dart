@@ -193,6 +193,12 @@ class _MiniPlotWidgetState extends State<MiniPlotWidget> {
       );
     } else {
       body = Semantics(
+        key: const ValueKey('notepad-mini-plot-semantics'),
+        // The chart needs its own bounded image node. Otherwise its label can
+        // merge into the surrounding row/range and lose a usable image target
+        // in the browser accessibility tree.
+        container: true,
+        explicitChildNodes: true,
         image: true,
         label: '${t.navGraphing}: ${widget.spec.expression}; $range',
         child: RepaintBoundary(

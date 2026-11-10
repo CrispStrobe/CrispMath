@@ -39,6 +39,7 @@ import '../widgets/native_bridge_status_listenable.dart';
 import '../engine/notepad.dart';
 import '../localization/workflow_localizations.dart';
 import '../engine/notepad_evaluator.dart';
+import '../engine/notepad_references.dart';
 import '../engine/notepad_export.dart';
 import '../engine/worksheet_bundle.dart';
 import '../widgets/worksheet_export_dialog.dart';
@@ -76,6 +77,27 @@ part 'notepad/result_column.dart';
 /// (decision #17). At or above this width the input + result render
 /// side-by-side; below, the result stacks under the input.
 const double _kSideBySideBreakpoint = 720;
+
+/// Keep saved tokens intact in the editor, but use readable labels in source
+/// previews and navigation controls. Offsets in the editor remain ordinary
+/// TextSelection offsets, including while using an IME.
+String _readableReferenceSource(NotepadDocument doc, String source,
+    WorkflowLocalizations labels) {
+  final references = resultReferencesIn(source);
+  if (references.isEmpty) return source;
+  final buffer = StringBuffer();
+  var end = 0;
+  for (final reference in references) {
+    buffer.write(source.substring(end, reference.start));
+    final index = doc.lines.indexWhere((line) => line.id == reference.lineId);
+    buffer.write(index < 0
+        ? labels.text(WorkflowLabel.missingResult)
+        : labels.text(WorkflowLabel.resultOfLine, '${index + 1}'));
+    end = reference.end;
+  }
+  buffer.write(source.substring(end));
+  return buffer.toString();
+}
 
 class NotepadScreen extends StatefulWidget {
   const NotepadScreen({super.key, this.onOpenCommands});
@@ -148,6 +170,17 @@ class NotepadScreenState extends State<NotepadScreen> {
   /// Scroll controller for the line list so blocked-by chips can
   /// scroll the upstream line into view on tap.
   final ScrollController _listScrollController = ScrollController();
+  final GlobalKey _lineListKey = GlobalKey();
+  int _lineRevealGeneration = 0;
+
+  ({String documentId, String lineId, TextSelection selection})?
+      _referenceInsertionTarget;
+  // Web semantics can blur the native editor before a menu activation reaches
+  // Flutter. Keep the last valid editing position separately from the current
+  // menu transaction, which is cleared when that menu is cancelled.
+  ({String documentId, String lineId, TextSelection selection})?
+      _recentReferenceEditor;
+  bool _documentMenuPointerDown = false;
 
   // --- Phase 5: live recalc ------------------------------------------------
 
@@ -282,7 +315,8 @@ class NotepadScreenState extends State<NotepadScreen> {
   /// Rebuild [_controllers] / [_focusNodes] for the doc currently
   /// in focus. Called at the top of build() so the maps always
   /// match the active doc's line set.
-  void _syncControllersFor(NotepadDocument? doc) {
+  void _syncControllersFor(NotepadDocument? doc,
+      {bool overwriteFocused = false}) {
     final docId = doc?.id;
     if (_activeControllerDocId != docId) {
       // Doc switched — dispose everything and start fresh.
@@ -294,6 +328,10 @@ class NotepadScreenState extends State<NotepadScreen> {
       }
       _controllers.clear();
       _focusNodes.clear();
+      _referenceInsertionTarget = null;
+      _recentReferenceEditor = null;
+      _documentMenuPointerDown = false;
+      _lineRevealGeneration++;
       final previousDoc = _appState.notepadDocuments[_activeControllerDocId];
       _interruptRecalc(previousDoc);
       _activeControllerDocId = docId;
@@ -309,6 +347,7 @@ class NotepadScreenState extends State<NotepadScreen> {
     // Prune controllers for lines that have been deleted.
     final stale = _controllers.keys.where((k) => !liveIds.contains(k)).toList();
     for (final id in stale) {
+      _forgetReferenceEditor(id);
       _controllers.remove(id)?.dispose();
       _focusNodes.remove(id)?.dispose();
     }
@@ -316,18 +355,31 @@ class NotepadScreenState extends State<NotepadScreen> {
     for (final line in doc.lines) {
       if (!_controllers.containsKey(line.id)) {
         final c = SyntaxHighlightingController(text: line.source);
+        c.addListener(() => _trackReferenceEditor(doc.id, line.id));
         _controllers[line.id] = c;
       }
       if (!_focusNodes.containsKey(line.id)) {
-        _focusNodes[line.id] = FocusNode();
+        final focus = FocusNode();
+        focus.addListener(() => _trackReferenceEditor(doc.id, line.id));
+        _focusNodes[line.id] = focus;
       }
       // Update the controller text if the source changed
       // out-of-band (e.g. undo restored a previous value) and the
       // user isn't actively editing. We compare strings rather
       // than replacing wholesale to avoid clobbering cursor state.
       final c = _controllers[line.id]!;
-      if (c.text != line.source && !_focusNodes[line.id]!.hasFocus) {
-        c.text = line.source;
+      if (c.text != line.source &&
+          (overwriteFocused || !_focusNodes[line.id]!.hasFocus)) {
+        // An undo, restore or other out-of-band replacement invalidates the
+        // remembered offsets. A focused editor records its new position below.
+        _forgetReferenceEditor(line.id);
+        final offset = c.selection.isValid
+            ? c.selection.extentOffset.clamp(0, line.source.length)
+            : line.source.length;
+        c.value = TextEditingValue(
+          text: line.source,
+          selection: TextSelection.collapsed(offset: offset),
+        );
       }
     }
   }
@@ -406,6 +458,7 @@ class NotepadScreenState extends State<NotepadScreen> {
       index: index,
       lineId: line.id,
       previousValue: prev,
+      newValue: value,
     ));
     // Drop stale cache immediately so the row stops showing a wrong
     // value during the 300 ms debounce window. The recalc below
@@ -425,21 +478,199 @@ class NotepadScreenState extends State<NotepadScreen> {
     }
   }
 
-  void _appendLine(NotepadDocument doc) {
+  void _appendLine(NotepadDocument doc, {String source = ''}) {
     _dismissPendingLineUndo(doc);
-    final line = NotepadLine.fresh(source: '');
+    final line = NotepadLine.fresh(source: source);
     doc.lines.add(line);
     _undoFor(doc).record(undo.UndoOp(
       kind: undo.UndoOpKind.insert,
       index: doc.lines.length - 1,
       lineId: line.id,
+      newValue: source,
     ));
     _persistDoc(doc);
+    if (source.isNotEmpty) _scheduleRecalc(doc, doc.lines.length - 1);
     // Focus the new line on the next frame so the user can type.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _focusNodes[line.id]?.requestFocus();
+      if (!mounted || _currentDoc?.id != doc.id) return;
+      _controllers[line.id]?.selection =
+          TextSelection.collapsed(offset: source.length);
+      _scrollToLineId(line.id);
     });
+  }
+
+  void _useResult(NotepadDocument doc, NotepadLine source) {
+    if (!identical(_currentDoc, doc)) return;
+    final sourceIndex = doc.lines.indexWhere((line) => line.id == source.id);
+    if (sourceIndex < 0 ||
+        _pendingLineIds.contains(source.id) ||
+        !canReferenceNotepadLine(doc.lines[sourceIndex])) {
+      return;
+    }
+    // Appending preserves the meaning of legacy positional lineN expressions.
+    _appendLine(doc, source: resultReferenceToken(source.id));
+  }
+
+  void _rememberReferenceInsertionTarget() {
+    _referenceInsertionTarget = null;
+    final doc = _currentDoc;
+    if (doc == null) return;
+    for (final line in doc.lines) {
+      if (_focusNodes[line.id]?.hasFocus != true) continue;
+      final controller = _controllers[line.id];
+      if (controller != null) {
+        var selection = controller.selection;
+        if (!selection.isValid || selection.end > controller.text.length) {
+          final recent = _recentReferenceEditor;
+          selection = recent != null && recent.documentId == doc.id &&
+                  recent.lineId == line.id && recent.selection.isValid &&
+                  recent.selection.end <= controller.text.length
+              ? recent.selection
+              : TextSelection.collapsed(offset: controller.text.length);
+        }
+        _referenceInsertionTarget = (
+          documentId: doc.id,
+          lineId: line.id,
+          selection: selection,
+        );
+      }
+      return;
+    }
+    final recent = _recentReferenceEditor;
+    if (recent != null && recent.documentId == doc.id &&
+        doc.lines.any((line) => line.id == recent.lineId)) {
+      _referenceInsertionTarget = recent;
+    }
+  }
+
+  void _trackReferenceEditor(String documentId, String lineId) {
+    if (_currentDoc?.id != documentId ||
+        _focusNodes[lineId]?.hasFocus != true) {
+      return;
+    }
+    final controller = _controllers[lineId];
+    if (controller == null || !controller.selection.isValid ||
+        controller.selection.end > controller.text.length) {
+      return;
+    }
+    _recentReferenceEditor = (
+      documentId: documentId,
+      lineId: lineId,
+      selection: controller.selection,
+    );
+  }
+
+  void _forgetReferenceEditor(String lineId) {
+    if (_recentReferenceEditor?.lineId == lineId) {
+      _recentReferenceEditor = null;
+    }
+    if (_referenceInsertionTarget?.lineId == lineId) {
+      _referenceInsertionTarget = null;
+    }
+  }
+
+  Future<void> _showReferences(
+      ({String documentId, String lineId, TextSelection selection})?
+          destination) async {
+    final doc = _currentDoc;
+    if (doc == null) return;
+    final labels = WorkflowLocalizations.of(context);
+    final candidates = doc.lines.indexed.where((entry) =>
+        entry.$2.id != destination?.lineId &&
+        !_pendingLineIds.contains(entry.$2.id) &&
+        canReferenceNotepadLine(entry.$2)).toList();
+    Future<String?>? pickerDismissed;
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const ValueKey('notepad-reference-picker'),
+        title: Text(labels.text(WorkflowLabel.references)),
+        content: candidates.isEmpty
+            ? Text(labels.text(WorkflowLabel.referencesEmpty))
+            : SizedBox(
+                width: 480,
+                height: (MediaQuery.sizeOf(dialogContext).height * .5)
+                    .clamp(120.0, 420.0).toDouble(),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: candidates.length,
+                  itemBuilder: (context, index) {
+                    final candidate = candidates[index];
+                    final label = labels.text(
+                        WorkflowLabel.resultOfLine, '${candidate.$1 + 1}');
+                    final source = _readableReferenceSource(
+                        doc, candidate.$2.source, labels);
+                    final preview = '$source = ${candidate.$2.cachedResult}';
+                    void choose() {
+                      pickerDismissed =
+                          ModalRoute.of<String>(dialogContext)?.completed;
+                      Navigator.of(dialogContext).pop(candidate.$2.id);
+                    }
+                    return Semantics(
+                      key: ValueKey(
+                          'notepad-reference-choice:${candidate.$2.id}'),
+                      button: true,
+                      label: label,
+                      hint: preview,
+                      excludeSemantics: true,
+                      onTap: choose,
+                      child: ListTile(
+                        title: Text(label),
+                        subtitle: Text(preview,
+                            maxLines: 2, overflow: TextOverflow.ellipsis),
+                        onTap: choose,
+                      ),
+                    );
+                  },
+                ),
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(labels.text(WorkflowLabel.cancel)),
+          ),
+        ],
+      ),
+    );
+    if (chosen == null) return;
+    // A chosen result resumes editing only after the dialog has released its
+    // overlay and focus scope, just like the result action sheet handoff.
+    final dismissal = pickerDismissed;
+    if (dismissal != null) {
+      await dismissal;
+    }
+    if (!mounted || !identical(_currentDoc, doc)) return;
+    final sourceIndex = doc.lines.indexWhere((line) => line.id == chosen);
+    if (sourceIndex < 0 ||
+        _pendingLineIds.contains(chosen) ||
+        !canReferenceNotepadLine(doc.lines[sourceIndex])) {
+      return;
+    }
+    final token = resultReferenceToken(chosen);
+    final destinationIndex = destination?.documentId == doc.id
+        ? doc.lines.indexWhere((line) => line.id == destination!.lineId)
+        : -1;
+    if (destinationIndex < 0) {
+      _appendLine(doc, source: token);
+      return;
+    }
+    final line = doc.lines[destinationIndex];
+    final controller = _controllers[line.id];
+    if (controller == null) return;
+    final selection = destination!.selection;
+    final start = selection.isValid
+        ? selection.start.clamp(0, controller.text.length)
+        : controller.text.length;
+    final end = selection.isValid
+        ? selection.end.clamp(start, controller.text.length)
+        : start;
+    final text = controller.text.replaceRange(start, end, token);
+    controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: start + token.length),
+    );
+    _onLineEdited(doc, line, text, destinationIndex);
+    _scrollToLineId(line.id);
   }
 
   void _performUndo(NotepadDocument doc, {bool dismissSnackbar = true}) {
@@ -448,7 +679,7 @@ class NotepadScreenState extends State<NotepadScreen> {
     if (op == null) return;
     final modified = undo.applyUndo(doc, op);
     if (modified) {
-      _syncControllersFor(doc);
+      _syncControllersFor(doc, overwriteFocused: true);
       _persistDoc(doc);
       setState(() {});
       _scheduleFullRecalc(doc);
@@ -461,7 +692,7 @@ class NotepadScreenState extends State<NotepadScreen> {
     if (op == null) return;
     final modified = undo.applyRedo(doc, op);
     if (modified) {
-      _syncControllersFor(doc);
+      _syncControllersFor(doc, overwriteFocused: true);
       _persistDoc(doc);
       setState(() {});
       _scheduleFullRecalc(doc);
@@ -1093,25 +1324,15 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _duplicateCurrent() {
     final doc = _currentDoc;
     if (doc == null) return;
-    final now = DateTime.now().toUtc();
-    final copy = NotepadDocument(
-      id: generateNotepadId(),
-      name: '${doc.name} (copy)',
-      createdAt: now,
-      updatedAt: now,
-      lines: doc.lines
-          .map((l) => NotepadLine(
-                id: generateNotepadId(),
-                source: l.source,
-                cachedResult: l.cachedResult,
-                resultEvidence: l.resultEvidence,
-                cachedError: l.cachedError,
-                cachedFreeVars: List<String>.from(l.cachedFreeVars),
-              ))
-          .toList(),
-    );
-    _appState.setNotepadDocument(copy);
-    _appState.setCurrentNotepadDoc(copy.id);
+    try {
+      final copy = duplicateNotepadDocument(doc, name: '${doc.name} (copy)');
+      openImportedWorksheet(copy);
+    } on FormatException {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(WorkflowLocalizations.of(context)
+            .text(WorkflowLabel.worksheetCopyFailed)),
+      ));
+    }
   }
 
   void _deleteCurrent() {
@@ -1486,15 +1707,90 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // Blocked-by → scroll to upstream
+  // Result references and blocked-by errors → reveal the source row
   // ---------------------------------------------------------------------------
 
   void _scrollToLineId(String lineId) {
+    unawaited(_revealLineId(lineId));
+  }
+
+  Future<void> _revealLineId(String lineId) async {
     final doc = _currentDoc;
     if (doc == null) return;
     final idx = doc.lines.indexWhere((l) => l.id == lineId);
     if (idx < 0) return;
-    _focusNodes[doc.lines[idx].id]?.requestFocus();
+    final generation = ++_lineRevealGeneration;
+    // A section ends at the next heading. Expand only the section containing
+    // the source, leaving the user's other collapsed sections alone.
+    for (var i = idx - 1; i >= 0; i--) {
+      final line = doc.lines[i];
+      if (!line.source.trim().startsWith('## ')) continue;
+      if (_collapsedHeadings.contains(line.id)) {
+        setState(() => _collapsedHeadings.remove(line.id));
+      }
+      break;
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    var lowerOffset = 0.0;
+    double? upperOffset;
+    // ReorderableListView builds rows lazily and rows can have very different
+    // heights. Bracket the target using the rows actually laid out, rather
+    // than assuming a fixed row height or focusing an unbuilt editor.
+    for (var attempt = 0; attempt < 24; attempt++) {
+      if (!mounted || _currentDoc?.id != doc.id ||
+          generation != _lineRevealGeneration) {
+        return;
+      }
+      final controller = _controllers[lineId];
+      if (controller == null) return;
+      final targetContext = GlobalObjectKey(controller).currentContext;
+      if (targetContext != null && targetContext.mounted) {
+        await Scrollable.ensureVisible(targetContext, alignment: .2);
+        if (mounted && _currentDoc?.id == doc.id &&
+            generation == _lineRevealGeneration) {
+          _focusNodes[lineId]?.requestFocus();
+        }
+        return;
+      }
+      if (!_listScrollController.hasClients) return;
+      final position = _listScrollController.position;
+      final visible = _visibleLineIndices(doc);
+      final target = visible.indexWhere((i) => doc.lines[i].id == lineId);
+      if (target < 0) return;
+      final viewport = _lineListKey.currentContext?.findRenderObject();
+      if (viewport is! RenderBox || !viewport.hasSize) return;
+      final viewportTop = viewport.localToGlobal(Offset.zero).dy;
+      final viewportBottom = viewportTop + viewport.size.height;
+      final built = <int>[];
+      for (var i = 0; i < visible.length; i++) {
+        final c = _controllers[doc.lines[visible[i]].id];
+        if (c == null) continue;
+        final box = GlobalObjectKey(c).currentContext?.findRenderObject();
+        if (box is! RenderBox || !box.attached || !box.hasSize) continue;
+        final top = box.localToGlobal(Offset.zero).dy;
+        if (top <= viewportBottom && top + box.size.height >= viewportTop) {
+          built.add(i);
+        }
+      }
+      if (built.isNotEmpty) {
+        if (target < built.first) upperOffset = position.pixels;
+        if (target > built.last) lowerOffset = position.pixels;
+      }
+      final high = (upperOffset ?? position.maxScrollExtent)
+          .clamp(0.0, position.maxScrollExtent).toDouble();
+      final low = lowerOffset.clamp(0.0, high).toDouble();
+      var next = attempt == 0 && visible.length > 1
+          ? position.maxScrollExtent * target / (visible.length - 1)
+          : (low + high) / 2;
+      if ((next - position.pixels).abs() < 1) {
+        final direction = built.isNotEmpty && target < built.first ? -1 : 1;
+        next = (position.pixels + direction * position.viewportDimension)
+            .clamp(0.0, position.maxScrollExtent).toDouble();
+        if ((next - position.pixels).abs() < 1) return;
+      }
+      _listScrollController.jumpTo(next);
+      await WidgetsBinding.instance.endOfFrame;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -1734,8 +2030,18 @@ class NotepadScreenState extends State<NotepadScreen> {
           tooltip: t.notepadAddLine,
           onPressed: () => _appendLine(doc),
         ),
-      PopupMenuButton<String>(
+      Listener(
+        onPointerDown: (_) {
+          _rememberReferenceInsertionTarget();
+          _documentMenuPointerDown = true;
+        },
+        child: PopupMenuButton<String>(
         tooltip: t.notepadDocumentMenu,
+        onOpened: () {
+          if (!_documentMenuPointerDown) _rememberReferenceInsertionTarget();
+          _documentMenuPointerDown = false;
+        },
+        onCanceled: () => _referenceInsertionTarget = null,
         onSelected: _onMenuSelected,
         itemBuilder: (context) {
           final items = <PopupMenuEntry<String>>[
@@ -1745,6 +2051,12 @@ class NotepadScreenState extends State<NotepadScreen> {
                 value: 'search-document',
                 child: Text(WorkflowLocalizations.of(context)
                     .text(WorkflowLabel.searchDocument)),
+              ),
+            if (doc != null)
+              PopupMenuItem(
+                value: 'references',
+                child: Text('${WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.references)}…'),
               ),
             if (widget.onOpenCommands != null)
               PopupMenuItem(
@@ -1858,11 +2170,18 @@ class NotepadScreenState extends State<NotepadScreen> {
           }
           return items;
         },
+        ),
       ),
     ];
   }
 
   void _onMenuSelected(String value) async {
+    final referenceDestination = _referenceInsertionTarget;
+    _referenceInsertionTarget = null;
+    if (value == 'references') {
+      await _showReferences(referenceDestination);
+      return;
+    }
     if (value == 'template-picker') {
       final chosen = await showDialog<NotepadTemplate>(
         context: context,
@@ -1943,7 +2262,7 @@ class NotepadScreenState extends State<NotepadScreen> {
     } else if (value == 'open-welcome') {
       _openWelcomeSample();
     } else if (value == 'manage') {
-      showNotepadManagerDialog(context, onSwitchTo: (_) {});
+      showNotepadManagerDialog(context, onSwitchTo: _openDocument);
     } else if (value.startsWith('open:')) {
       _openDocument(value.substring('open:'.length));
     } else if (value == 'recalc') {
@@ -2040,7 +2359,6 @@ class NotepadScreenState extends State<NotepadScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _scrollToLineId(requestedLine);
-          _focusNodes[requestedLine]?.requestFocus();
         }
       });
     }
@@ -2058,6 +2376,7 @@ class NotepadScreenState extends State<NotepadScreen> {
       ];
 
       final listView = ReorderableListView.builder(
+        key: _lineListKey,
         scrollController: _listScrollController,
         padding: const EdgeInsets.symmetric(vertical: 8),
         buildDefaultDragHandles: false,
@@ -2089,6 +2408,7 @@ class NotepadScreenState extends State<NotepadScreen> {
               line.cachedFreeVars,
             ),
             builder: (context) => _NotepadLineRow(
+              document: doc,
               line: line,
               index: realIndex,
               sideBySide: sideBySide,
@@ -2099,6 +2419,9 @@ class NotepadScreenState extends State<NotepadScreen> {
               onDelete: () => _deleteLine(doc, realIndex),
               onPlot: _pendingLineIds.contains(line.id)
                   ? null : () => _linkLine(doc, line),
+              onUseResult: !_pendingLineIds.contains(line.id) &&
+                      canReferenceNotepadLine(line)
+                  ? () => _useResult(doc, line) : null,
               onScrollToLineId: _scrollToLineId,
               engine: _engine,
               appState: _appState,
