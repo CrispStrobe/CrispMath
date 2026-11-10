@@ -389,7 +389,9 @@ void main() {
     // Narrow rows top-align Delete, so the stationary pointer now hovers the
     // surviving row's control. Its shown tooltip must survive this exact path
     // through Undo without a portal being grafted during sliver layout.
-    expect(tester.getRect(find.byTooltip('Delete line').single)
+    final remainingDelete = find.byTooltip('Delete line');
+    expect(remainingDelete, findsOneWidget);
+    expect(tester.getRect(remainingDelete)
         .contains(deletePosition), isTrue);
     expect(find.text('Delete line', findRichText: true), findsOneWidget);
     final undoPosition = tester.getCenter(find.text('Undo'));
