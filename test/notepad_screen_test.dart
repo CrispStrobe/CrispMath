@@ -65,6 +65,19 @@ Future<void> _gotoNotepad(WidgetTester tester) async {
 Finder _editorWithSource(String source) => find.byWidgetPredicate((widget) =>
     widget is TextField && widget.controller?.text == source);
 
+/// Row tooltips are suppressed; find the enabled action by its accessible name.
+Finder _rowIconButton(String label) => find.descendant(
+    of: find.byType(ReorderableListView),
+    matching: find.byWidgetPredicate((widget) =>
+        widget is IconButton &&
+        widget.onPressed != null &&
+        widget.icon is Icon &&
+        (widget.icon as Icon).semanticLabel == label));
+
+Finder _deleteLineButtons(WidgetTester tester) => _rowIconButton(
+    AppLocalizations.of(tester.element(find.byType(ReorderableListView)))
+        .notepadDeleteLine);
+
 /// The editor's path to its reorderable row must never acquire the source
 /// chip's button role. On web that role change replaces an ancestor DOM node
 /// and blurs an otherwise unchanged, focused textarea.
@@ -373,7 +386,7 @@ void main() {
           await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
       await mouse.addPointer(location: Offset.zero);
       addTearDown(mouse.removePointer);
-      final deletePosition = tester.getCenter(find.byTooltip('Delete line').first);
+      final deletePosition = tester.getCenter(_deleteLineButtons(tester).first);
       await mouse.moveTo(deletePosition);
       await mouse.down(deletePosition);
       await mouse.up();
@@ -391,7 +404,7 @@ void main() {
       // Narrow rows top-align Delete, so the stationary pointer now hovers the
       // surviving row's control. Keep its accessible action and graph action
       // available without a floating portal that could be grafted during Undo.
-      final remainingDelete = find.byTooltip('Delete line');
+      final remainingDelete = _deleteLineButtons(tester);
       expect(remainingDelete, findsOneWidget);
       expect(tester.getRect(remainingDelete)
           .contains(deletePosition), isTrue);
@@ -533,7 +546,7 @@ void main() {
         source: '${resultReferenceToken('source')}*2', cachedResult: '14'));
     state.setNotepadDocument(doc);
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Collapse').first);
+    await tester.tap(_rowIconButton('Collapse section').first);
     await tester.pumpAndSettle();
     expect(_editorWithSource('3+4'), findsNothing);
     final chip = find.byKey(
@@ -995,7 +1008,7 @@ void main() {
       // The snackbar's slide-in animation takes ~250 ms; pump in
       // chunks so its Undo button is hit-testable before the
       // recalc timer fires at +300 ms.
-      final deleteBtns = find.byTooltip('Delete line');
+      final deleteBtns = _deleteLineButtons(tester);
       expect(deleteBtns, findsWidgets);
       await tester.tap(deleteBtns.last);
       // Pump short of 300ms — past the snackbar slide-in but
@@ -1030,7 +1043,7 @@ void main() {
       doc.lines.add(NotepadLine.fresh(source: 'temporary'));
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.tap(_deleteLineButtons(tester).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Line deleted'), findsOneWidget);
@@ -1051,7 +1064,7 @@ void main() {
       doc.lines.add(line);
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.tap(_deleteLineButtons(tester).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('Undo'));
@@ -1073,7 +1086,7 @@ void main() {
       doc.lines.add(line);
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.tap(_deleteLineButtons(tester).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
@@ -1103,7 +1116,7 @@ void main() {
       doc.lines.add(line);
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Delete line').last);
+      await tester.tap(_deleteLineButtons(tester).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Line deleted'), findsOneWidget);
@@ -1172,7 +1185,7 @@ void main() {
       AppState().setNotepadDocument(doc);
       await tester.pumpAndSettle();
       // Collapse the section so its only match is out of view.
-      await tester.tap(find.byTooltip('Collapse'));
+      await tester.tap(_rowIconButton('Collapse section'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Document menu'));
       await tester.pumpAndSettle();
@@ -1183,7 +1196,7 @@ void main() {
       await tester.enterText(field, 'alpha');
       await tester.pumpAndSettle();
       expect(find.text('0 shown · 1 hidden'), findsOneWidget);
-      await tester.tap(find.byTooltip('Expand'));
+      await tester.tap(_rowIconButton('Expand section'));
       await tester.pumpAndSettle();
       expect(find.text('1 matches'), findsOneWidget);
       // A matching heading is highlighted like any other matching row.
