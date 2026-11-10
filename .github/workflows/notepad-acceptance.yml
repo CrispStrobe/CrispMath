@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_SOURCE_BASE: db054c31ddd35346ece511989d520c911bc9f369
+  APP_SOURCE_BASE: 90d80b6f1ce087fc2cd95e1fd0a0618d95c57c46
 
 jobs:
   browser:
@@ -81,6 +81,13 @@ jobs:
               path: .ci/CrispEmbed/flutter/crispembed
           YAML
           flutter pub get
+      - name: Focused worksheet widget regressions
+        id: widgets
+        if: matrix.mode == 'release'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded test/notepad_screen_test.dart test/mini_plot_widget_test.dart | tee browser-results/widget-tests.log
       - name: Build preview
         run: |
           if [[ "$ACCEPTANCE_MODE" == release ]]; then
@@ -109,6 +116,7 @@ jobs:
           path: |
             browser-results/source-receipt.json
             browser-results/http.log
+            browser-results/widget-tests.log
             browser-results/connected-notepad
             build/web/build-info.json
           if-no-files-found: ignore
@@ -126,16 +134,21 @@ jobs:
           path: |
             browser-results/source-receipt.json
             browser-results/http.log
+            browser-results/widget-tests.log
             browser-results/notepad-references
             build/web/build-info.json
           if-no-files-found: ignore
           retention-days: 7
-      - name: Require both browser acceptances to pass
+      - name: Require worksheet acceptance checks to pass
         if: ${{ !cancelled() && steps.preview.outcome == 'success' }}
         env:
+          WIDGET_OUTCOME: ${{ steps.widgets.outcome }}
           CONNECTED_OUTCOME: ${{ steps.connected.outcome }}
           REFERENCES_OUTCOME: ${{ steps.references.outcome }}
         run: |
           printf 'Connected worksheet: %s\nStable result references: %s\n' "$CONNECTED_OUTCOME" "$REFERENCES_OUTCOME"
+          if [[ "$ACCEPTANCE_MODE" == release ]]; then
+            test "$WIDGET_OUTCOME" = success
+          fi
           test "$CONNECTED_OUTCOME" = success
           test "$REFERENCES_OUTCOME" = success

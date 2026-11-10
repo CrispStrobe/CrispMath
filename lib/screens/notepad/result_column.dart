@@ -294,9 +294,18 @@ class _NotepadResultColumn extends StatelessWidget {
                 leading: const Icon(Icons.link),
                 title: Text(WorkflowLocalizations.of(context)
                     .text(WorkflowLabel.useResult)),
-                onTap: () {
+                onTap: () async {
+                  final route = ModalRoute.of(sheetContext);
                   Navigator.of(sheetContext).pop();
-                  onUseResult!();
+                  // The popped future resolves before the closing sheet's
+                  // focus scope and overlay are removed. Inserting sooner can
+                  // let that scope steal focus back from the new web editor.
+                  if (route != null) {
+                    await route.completed;
+                  }
+                  if (context.mounted) {
+                    onUseResult?.call();
+                  }
                 },
               ),
             ListTile(
