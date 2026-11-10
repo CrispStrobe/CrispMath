@@ -113,16 +113,37 @@ async def function_menu(page, slot):
     raise AssertionError(f'Could not reveal function menu Y{slot + 1}')
 
 
+# Flutter web does not reliably expose Semantics(image: true) as a visible
+# ARIA img to Playwright's role engine, so match the plot by its label and
+# require on-screen geometry explicitly.
+PLOT_LABEL_JS = r"""({pattern})=>{
+  const re=new RegExp(pattern);
+  for(const el of document.querySelectorAll('[aria-label^="Graphing: "]')){
+    const label=el.getAttribute('aria-label');
+    const r=el.getBoundingClientRect();
+    if(re.test(label)&&r.width>0&&r.height>0)return label;
+  }return false;
+}"""
+
+
+async def wait_plot_label(page, pattern):
+    handle = await page.wait_for_function(
+        PLOT_LABEL_JS, arg={'pattern': pattern}, timeout=90000)
+    text = await handle.json_value()
+    await handle.dispose()
+    return text
+
+
 async def inline_plot(page, coefficient, lo, hi):
     # This is the image semantics attached only after sampling succeeds. Its
     # label exposes the same bound expression/range painted in the widget.
-    image = page.get_by_role('img', name=re.compile(
-        r'^Graphing: (?=[^;]*\b' + re.escape(str(coefficient)) +
-        r'(?:\.0)?\b)[^;]+; ' + re.escape(f'{lo} ≤ x ≤ {hi}') + r'$'))
-    await image.wait_for(state='visible')
-    await expect(image).to_have_count(1)
-    await expect(image).to_be_visible()
-    text = await image.get_attribute('aria-label')
+    pattern = (r'^Graphing: (?=[^;]*\b' + re.escape(str(coefficient)) +
+               r'(?:\.0)?\b)[^;]+; ' + re.escape(f'{lo} ≤ x ≤ {hi}') + r'$')
+    text = await wait_plot_label(page, pattern)
+    count = await page.locator('[aria-label^="Graphing: "]').evaluate_all(
+        "(els,p)=>els.filter(e=>new RegExp(p).test(e.getAttribute('aria-label'))).length",
+        pattern)
+    assert count == 1, f'expected one inline plot, found {count}: {text}'
     expression = text.removeprefix('Graphing: ').rsplit('; ', 1)[0]
     assert not re.search(r'\b[af]\b', expression), expression
     return text
@@ -132,16 +153,17 @@ async def inline_range(page, lo, hi):
     # Capturing a viewport can introduce harmless double roundoff. Read the
     # rendered interval numerically instead of assuming one decimal spelling.
     handle = await page.wait_for_function(r"""({lo,hi})=>{
-      for(const el of document.querySelectorAll('[role="img"][aria-label]')){
+      for(const el of document.querySelectorAll('[aria-label^="Graphing: "]')){
         const label=el.getAttribute('aria-label');
         const m=/^Graphing: .+; ([^;]+) ≤ x ≤ ([^;]+)$/.exec(label);
-        if(m&&Math.abs(Number(m[1])-lo)<1e-6&&Math.abs(Number(m[2])-hi)<1e-6)
+        const r=el.getBoundingClientRect();
+        if(m&&r.width>0&&r.height>0&&Math.abs(Number(m[1])-lo)<1e-6&&
+           Math.abs(Number(m[2])-hi)<1e-6)
           return label;
       }return false;
-    }""", arg={'lo': lo, 'hi': hi})
+    }""", arg={'lo': lo, 'hi': hi}, timeout=90000)
     text = await handle.json_value()
     await handle.dispose()
-    await expect(page.get_by_role('img', name=text, exact=True)).to_be_visible()
     return text
 
 
