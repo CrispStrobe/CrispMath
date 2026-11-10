@@ -63,7 +63,7 @@ double? value(NotepadLine line, [Map<String, double> scope = const {}]) =>
 void main() {
   group('reference source helpers', () {
     test('tokens round trip imported IDs and expose UTF-16 editor spans', () {
-      const id = 'row /#} α " \u{1f9ee}';
+      const id = 'row /#} α " \u{1f9ee} (plot)!*\'';
       final token = resultReferenceToken(id);
       final source = '\u{1f9ee} $token + 1';
       final reference = resultReferencesIn(source, strict: true).single;
@@ -71,6 +71,7 @@ void main() {
       expect(reference.start, 3);
       expect(source.substring(reference.start, reference.end), token);
       expect(token, isNot(contains('#')));
+      expect(token, contains('%28plot%29%21%2A%27'));
       expect(() => resultReferenceToken(''), throwsFormatException);
     });
 
@@ -88,7 +89,7 @@ void main() {
         () {
       for (final source in [
         '@{}', '@{unfinished', '@{%}', '@{%GG}', '@{%FF}',
-        '@{raw space}', '@{raw/#}', '@{nested{row}}',
+        '@{raw space}', '@{raw/#}', '@{nested{row}}', '@{raw(value}',
       ]) {
         expect(resultReferencesIn(source), isEmpty, reason: source);
         expect(() => resultReferencesIn(source, strict: true),
@@ -246,6 +247,24 @@ void main() {
     }
   });
 
+  test('unfinished IDs never become scalar dependencies, Ans or free variables',
+      () async {
+    final doc = document(['unfinished=1/0', '@{unfinished', '@{Ans']);
+    final graph = buildDependencyGraph(doc);
+    expect(graph.dependsOn[1], isEmpty);
+    expect(graph.dependsOn[2], isEmpty);
+    expect(freeVariablesOfLine(
+        ParsedNotepadLine.expression('@{unfinished'), const {}), isEmpty);
+    expect(freeVariablesOfLine(
+        ParsedNotepadLine.expression('@{%GG}+z'), const {}), {'z'});
+    await evaluator().evaluateAll(doc);
+    for (final row in doc.lines.skip(1)) {
+      expect(row.cachedResult, isNull);
+      expect(row.cachedError, contains('Invalid result reference'));
+      expect(row.cachedFreeVars, isEmpty);
+    }
+  });
+
   test('references preserve symbolic results against downstream scalar capture',
       () async {
     final doc = document(['x=100', 'diff(x^3,x)', '@{r1}+x']);
@@ -339,6 +358,19 @@ void main() {
     await engine.evaluateFrom(doc, 1);
     expect(doc.lines.last.cachedResult, isNull);
     expect(resolveLinkedGraph(doc, 'r2').expression, isNull);
+  });
+
+  test('encoded imported IDs cannot alter plot argument nesting', () async {
+    const id = "radius('!*";
+    final token = resultReferenceToken(id);
+    final doc = document(['3', 'plot(x,x,-$token,$token)']);
+    doc.lines[0] = NotepadLine(id: id, source: '3');
+    await evaluator().evaluateAll(doc);
+    expect(doc.lines.last.cachedError, isNull);
+    final plot = PlotSpec.tryParse(doc.lines.last.cachedResult)!;
+    expect(plot.lo, -3);
+    expect(plot.hi, 3);
+    expect(buildDependencyGraph(doc).dependsOn[1], {0});
   });
 
   test('symbolic references share graph coordinates without scalar rebinding',

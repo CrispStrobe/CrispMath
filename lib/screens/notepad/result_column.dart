@@ -394,11 +394,9 @@ class _NotepadResultColumn extends StatelessWidget {
     final t = AppLocalizations.of(context);
 
     if (rawError.startsWith(NotepadErrorPrefix.blockedBy)) {
-      // blockedBy:<lineId>:<alias>
-      final payload = rawError.substring(NotepadErrorPrefix.blockedBy.length);
-      final sep = payload.indexOf(':');
-      final lineId = sep < 0 ? '' : payload.substring(0, sep);
-      final alias = sep < 0 ? payload : payload.substring(sep + 1);
+      final blocked = NotepadErrorPrefix.parseBlocked(rawError);
+      final alias = blocked?.alias ?? WorkflowLocalizations.of(context)
+          .text(WorkflowLabel.missingResult);
       return ActionChip(
         avatar: Icon(Icons.block,
             size: 16, semanticLabel: 'Blocked', color: cs.error),
@@ -406,7 +404,8 @@ class _NotepadResultColumn extends StatelessWidget {
           t.notepadBlockedBy(alias),
           style: TextStyle(color: cs.error, fontSize: 12),
         ),
-        onPressed: () => onScrollToLineId(lineId),
+        onPressed: blocked == null
+            ? null : () => onScrollToLineId(blocked.lineId),
       );
     }
 

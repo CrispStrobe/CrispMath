@@ -1073,17 +1073,12 @@ Set<String> _unboundIdentifierWords(String source,
 /// reference as one atomic value. Row identities are never mathematical names.
 String _maskResultReferenceTokens(String source) {
   if (!source.contains('@{')) return source;
-  final references = resultReferencesIn(source);
-  if (references.isEmpty) return source;
-  final out = StringBuffer();
-  var cursor = 0;
-  for (final reference in references) {
-    out.write(source.substring(cursor, reference.start));
-    out.write('0'.padRight(reference.end - reference.start));
-    cursor = reference.end;
-  }
-  out.write(source.substring(cursor));
-  return out.toString();
+  // Invalid and half-typed references are still not mathematical identifiers.
+  // Strict preprocessing diagnoses them; dependency discovery must not first
+  // block on an accidental scalar whose name happens to occur in the payload.
+  return source.replaceAllMapped(
+      RegExp(r'@\{[^}\r\n]*(?:\}|(?=[\r\n]|$))'),
+      (match) => '0'.padRight(match.end - match.start));
 }
 
 class _ProtectedSyntaxBindings {

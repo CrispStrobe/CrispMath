@@ -75,7 +75,8 @@ ExportedDocument exportDocument(NotepadDocument doc) {
     // including the shared worksheet bundle/PDF path, receives readable
     // metadata rather than the evaluator's private cache encoding.
     if (parsed.kind == NotepadLineKind.plot) {
-      final description = references.describe(_plotDescription(line, parsed));
+      final description = references.describe(_plotDescription(line, parsed,
+          error: references.describeError(line.cachedError)));
       exportedLines.add(ExportedLine(
         kind: parsed.kind.name,
         source: source,
@@ -118,6 +119,8 @@ class _ExportResultReferences {
       counts.update(line.id, (value) => value + 1, ifAbsent: () => 1);
       mentioned.addAll(
           resultReferencesIn(line.source).map((reference) => reference.lineId));
+      final blocked = NotepadErrorPrefix.parseBlocked(line.cachedError ?? '');
+      if (blocked != null) mentioned.add(blocked.lineId);
     }
     final firstCode = firstCodeLineIndexOf(document);
     for (var i = 0; i < document.lines.length; i++) {
@@ -144,6 +147,24 @@ class _ExportResultReferences {
   final labels = <String, String>{};
   final descriptions = <String, String>{};
 
+  String? describeError(String? error) {
+    if (error == null) return null;
+    if (error.startsWith(NotepadErrorPrefix.blockedBy)) {
+      final blocked = NotepadErrorPrefix.parseBlocked(error);
+      if (blocked == null) return 'A required result is unavailable.';
+      final target = descriptions[blocked.lineId] ?? '[missing result]';
+      return 'Blocked by $target. Fix the source calculation.';
+    }
+    if (error.startsWith(NotepadErrorPrefix.evaluation)) {
+      return error.substring(NotepadErrorPrefix.evaluation.length);
+    }
+    if (error.startsWith(NotepadErrorPrefix.circularReference)) {
+      return 'Circular reference: '
+          '${error.substring(NotepadErrorPrefix.circularReference.length)}';
+    }
+    return error;
+  }
+
   String describe(String source) {
     final out = StringBuffer();
     var cursor = 0;
@@ -167,9 +188,17 @@ List<String> exportedNotepadDomainWarnings(NotepadDocument doc) {
   ];
 }
 
-String _plotDescription(NotepadLine line, ParsedNotepadLine parsed) {
+List<String?> exportedNotepadErrors(NotepadDocument doc) {
+  final references = _ExportResultReferences(doc);
+  return [
+    for (final line in doc.lines) references.describeError(line.cachedError),
+  ];
+}
+
+String _plotDescription(NotepadLine line, ParsedNotepadLine parsed,
+    {String? error}) {
   if (line.cachedError != null) {
-    return 'Plot unavailable: ${line.cachedError}';
+    return 'Plot unavailable: ${error ?? line.cachedError}';
   }
   final spec = PlotSpec.tryParse(line.cachedResult);
   if (spec != null) {

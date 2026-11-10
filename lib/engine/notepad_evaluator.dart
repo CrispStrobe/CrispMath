@@ -404,6 +404,19 @@ class NotepadErrorPrefix {
   static String blocked(String lineId, String alias) =>
       '$blockedBy$lineId:$alias';
 
+  /// The final separator belongs to the display alias. Imported persistent
+  /// IDs may themselves contain colons and must remain intact for navigation.
+  static ({String lineId, String alias})? parseBlocked(String error) {
+    if (!error.startsWith(blockedBy)) return null;
+    final payload = error.substring(blockedBy.length);
+    final separator = payload.lastIndexOf(':');
+    if (separator <= 0 || separator == payload.length - 1) return null;
+    return (
+      lineId: payload.substring(0, separator),
+      alias: payload.substring(separator + 1),
+    );
+  }
+
   /// `circularReference:a→b→a` — cycle participants. Body is the
   /// cycle's name path joined with `→`; the UI renders verbatim.
   static String circular(List<String> namePath) =>

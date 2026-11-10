@@ -18,7 +18,12 @@ String resultReferenceToken(String lineId) {
   if (lineId.isEmpty) {
     throw const FormatException('A result reference needs a source row.');
   }
-  return '@{${Uri.encodeComponent(lineId)}}';
+  // Uri.encodeComponent retains the older RFC2396 punctuation !'()*. Escape
+  // that too: parentheses in an imported ID must not affect plot/call parsing.
+  final encoded = Uri.encodeComponent(lineId).replaceAllMapped(
+      RegExp(r"[!'()*]"),
+      (match) => '%${match[0]!.codeUnitAt(0).toRadixString(16).toUpperCase()}');
+  return '@{$encoded}';
 }
 
 /// Find complete references outside comments and quoted text. The default is
@@ -59,7 +64,7 @@ List<ResultReferenceSpan> resultReferencesIn(String source,
       // Raw whitespace, braces and comment characters are not canonical URI
       // components. Requiring their encoded spelling avoids ambiguous source.
       if (payload.isNotEmpty &&
-          RegExp(r"^(?:[A-Za-z0-9_.!~*'()-]|%[0-9A-Fa-f]{2})+$")
+          RegExp(r'^(?:[A-Za-z0-9_.~-]|%[0-9A-Fa-f]{2})+$')
               .hasMatch(payload)) {
         try {
           lineId = Uri.decodeComponent(payload);

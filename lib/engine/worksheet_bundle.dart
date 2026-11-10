@@ -18,8 +18,7 @@ class WorksheetBundle {
   WorksheetBundle.capture(NotepadDocument source,
       {List<String> expressions = const [], List<String> warnings = const []})
       : document = exportDocument(source),
-        errors =
-            List.unmodifiable(source.lines.map((line) => line.cachedError)),
+        errors = List.unmodifiable(exportedNotepadErrors(source)),
         graphs =
             List.unmodifiable(expressions.take(12).map(WorksheetGraph.new)),
         warnings = List.unmodifiable([
