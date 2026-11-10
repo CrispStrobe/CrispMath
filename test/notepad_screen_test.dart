@@ -283,6 +283,22 @@ void main() {
           .focusNode!.hasFocus, isTrue);
       expect(tester.testTextInput.hasAnyClients, isTrue);
 
+      // Keep the reference tooltip visible on the surviving row while its
+      // source remains focused. Deleting the source will move this row from
+      // index 1 to index 0 inside the reorderable list.
+      final mouse =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(find.byKey(
+          ValueKey('notepad-reference:$dependentId:$sourceId'))));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(find.text('Open source: 5+4', findRichText: true), findsOneWidget);
+      expect(tester.widget<TextField>(_editorWithSource('5+4'))
+          .focusNode!.hasFocus, isTrue);
+
       // Accessibility activation invokes the Delete action directly; it does
       // not send a pointer press that can first blur the focused source.
       final deleteActions = find.semantics.byPredicate((node) =>
