@@ -11,6 +11,7 @@ import 'result_evidence.dart';
 // global namespaces.
 
 import 'notepad.dart';
+import 'notepad_plot.dart';
 import 'matrix_operation_names.dart';
 import 'numeric_fallback.dart';
 import 'unit_expression.dart';
@@ -120,9 +121,11 @@ NotepadDependencyGraph buildDependencyGraph(
         }
       }
     } else if (parsed.kind != NotepadLineKind.flatzinc &&
-        _ansPattern.hasMatch(parsed.body ?? '')) {
+        (_ansPattern.hasMatch(parsed.body ?? '') ||
+            (parsed.kind == NotepadLineKind.plot &&
+                parsed.imports.any(_ansPattern.hasMatch)))) {
       for (var prior = i - 1; prior >= 0; prior--) {
-        if (_stripComment(doc.lines[prior].source).trim().isNotEmpty) {
+        if (_isAnswerKind(parsedLines[prior]!.kind)) {
           addDependency(prior);
           break;
         }
@@ -136,6 +139,14 @@ NotepadDependencyGraph buildDependencyGraph(
       }
       final target = nameToLine[name];
       if (target == null) continue;
+      // A scalar named sec must not become a dependency of builtin sec(x).
+      // A real local sec(t) definition still owns its call and its dependency.
+      if (kKnownFunctions.containsKey(name) &&
+          !parsedLines[target]!.isFunction &&
+          !dependenciesOfLine(parsed, {name}, excludeKnownCallees: true)
+              .contains(name)) {
+        continue;
+      }
       // A line referencing itself by its own auto-alias / name is
       // a self-loop. Surface it as a one-element cycle.
       dependsOn[i]!.add(target);
@@ -204,6 +215,130 @@ Set<int> downstreamFrom(int start, NotepadDependencyGraph graph) {
     }
   }
   return out;
+}
+
+/// Resolve one plot from source, never from its possibly stale result cache.
+/// Inline plots and linked graph slots share this path so both use the same
+/// worksheet function captures, scalar bindings and numeric interval.
+NotepadPlotResolution resolveNotepadPlot(
+  NotepadDocument doc,
+  int lineIndex, {
+  Map<String, String> externalScope = const {},
+}) {
+  final first = firstCodeLineIndexOf(doc);
+  final parsed = classifyNotepadLine(doc.lines[lineIndex].source,
+      lineIndex: lineIndex, firstCodeLineIndex: first);
+  if (parsed.kind != NotepadLineKind.plot) {
+    throw const FormatException('Choose a plot line.');
+  }
+  final variable = parsed.name ?? 'x';
+  if (!_identifierRegex.hasMatch(variable) ||
+      kReservedNotepadNames.contains(variable)) {
+    throw const FormatException('Use a variable name for the plot coordinate.');
+  }
+  if (parsed.imports.length != 2) {
+    throw const FormatException('Provide both plot limits.');
+  }
+
+  final scope = buildNotepadScope(doc, externalScope: externalScope);
+  final definitions = <String, ParsedNotepadLine>{};
+  final owners = <String, NotepadLine>{};
+  // Only the effective definition owns a name. An older failed definition
+  // must not erase a later valid binding; a failed latest definition must not
+  // silently fall back to an older value or an imported value of that name.
+  for (var i = 0; i < doc.lines.length; i++) {
+    final other = doc.lines[i];
+    final source = classifyNotepadLine(other.source,
+        lineIndex: i, firstCodeLineIndex: first);
+    if (other.cachedError != null) scope.remove('line${i + 1}');
+    if (source.kind != NotepadLineKind.assignment) continue;
+    definitions[source.name!] = source;
+    owners[source.name!] = other;
+  }
+  for (final owner in owners.entries) {
+    if (owner.value.cachedError != null || owner.value.cachedResult == null) {
+      scope.remove(owner.key);
+    }
+  }
+  scope.remove('line${lineIndex + 1}');
+
+  String bind(String source, {bool coordinate = false}) {
+    final bindings = Map<String, String>.of(scope);
+    if (coordinate) bindings.remove(variable);
+    return preprocessNotepadLine(ParsedNotepadLine.expression(source),
+        doc: doc, lineIndex: lineIndex, scope: bindings)!;
+  }
+
+  void validate(String source, {bool coordinate = false}) {
+    final diagnosis = SymbolicExpressionEvaluator.diagnose(source);
+    final error = engineErrorForDiagnosis(diagnosis);
+    if (diagnosis.isIncomplete) {
+      throw const FormatException('Complete the plot expression and limits.');
+    }
+    if (error != null) {
+      throw FormatException(error.replaceFirst('Error: ', ''));
+    }
+    // Recognized callees are not scalar dependencies. Check each occurrence:
+    // sec(x) is valid, while sec(x) + sec still needs a value for the latter.
+    // Unknown calls remain errors above and are never silently exempted here.
+    final missing = _unboundIdentifierWords(source,
+            includeOutputVariables: true, excludeKnownCallees: true)
+        .where((name) =>
+            !(coordinate && name == variable) &&
+            !kReservedNotepadNames.contains(name))
+        .toList();
+    if (missing.isNotEmpty) {
+      throw FormatException(
+          'Define ${missing.first} in this document or import it with use.');
+    }
+  }
+
+  final expression = bind(parsed.body ?? '', coordinate: true);
+  validate(expression, coordinate: true);
+  double limit(String source) {
+    final bound = bind(source);
+    validate(bound);
+    final value = NumericFallbackEvaluator.evalNumeric(bound);
+    if (value == null || !value.isFinite) {
+      throw const FormatException('Plot limits must be finite real numbers.');
+    }
+    return value;
+  }
+
+  final spec = PlotSpec(
+      expression: expression,
+      variable: variable,
+      lo: limit(parsed.imports[0]),
+      hi: limit(parsed.imports[1]));
+  if (!spec.isValid) {
+    throw const FormatException(
+        'Use increasing plot limits between -1e12 and 1e12, with a range of at least 1e-9.');
+  }
+
+  // Retain direct and captured function bindings for the source inspector.
+  final captured = <String, String>{};
+  Set<String> referencedBindings(ParsedNotepadLine line) {
+    final names = dependenciesOfLine(line, {...scope.keys, ...definitions.keys});
+    names.removeWhere((name) =>
+        kKnownFunctions.containsKey(name) &&
+        definitions[name]?.isFunction != true &&
+        !dependenciesOfLine(line, {name}, excludeKnownCallees: true)
+            .contains(name));
+    return names;
+  }
+  final pending = referencedBindings(parsed).toList();
+  final visited = <String>{};
+  while (pending.isNotEmpty) {
+    final name = pending.removeLast();
+    if (!visited.add(name)) continue;
+    final value = scope[name];
+    if (value != null) captured[name] = value;
+    final definition = definitions[name];
+    if (definition?.isFunction == true) {
+      pending.addAll(referencedBindings(definition!));
+    }
+  }
+  return NotepadPlotResolution(spec, captured);
 }
 
 // ---------------------------------------------------------------------------
@@ -474,14 +609,6 @@ class NotepadEvaluator {
         line.cachedError = null;
         line.cachedFreeVars = [];
         return;
-      case NotepadLineKind.plot:
-        // Store the plot spec in cachedResult as a sentinel the UI
-        // recognizes. Format: `__plot__:expr|var|lo|hi`.
-        line.cachedResult =
-            '__plot__:${parsed.body}|${parsed.name}|${parsed.imports.join('|')}';
-        line.cachedError = null;
-        line.cachedFreeVars = [];
-        return;
       case NotepadLineKind.useDirective:
         line.cachedResult = null;
         // Preserve a pre-existing useDirective: error so callers
@@ -507,6 +634,7 @@ class NotepadEvaluator {
         return;
       case NotepadLineKind.assignment:
       case NotepadLineKind.expression:
+      case NotepadLineKind.plot:
         break;
     }
 
@@ -529,6 +657,23 @@ class NotepadEvaluator {
         parsed,
         _scopeKeysFor(doc, firstCode),
       ).toList();
+      return;
+    }
+
+    if (parsed.kind == NotepadLineKind.plot) {
+      try {
+        final plot = resolveNotepadPlot(doc, lineIndex,
+            externalScope: externalScope);
+        line.cachedResult = plot.spec.toSentinel();
+        line.cachedError = null;
+        line.cachedFreeVars = [];
+      } on FormatException catch (error) {
+        line.cachedResult = null;
+        line.cachedError =
+            NotepadErrorPrefix.fromEngine('Error: ${error.message}');
+        line.cachedFreeVars = freeVariablesOfLine(
+            parsed, _scopeKeysFor(doc, firstCode)).toList()..sort();
+      }
       return;
     }
 

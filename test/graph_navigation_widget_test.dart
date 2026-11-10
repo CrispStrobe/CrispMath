@@ -1,11 +1,42 @@
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/engine/app_state.dart';
+import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/screens/graphing_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('opening a worksheet plot applies its interval on first mount',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues({'crisp.onboardingDismissed': true});
+    final state = AppState();
+    await state.load(force: true);
+    await tester.pumpWidget(const CrispMathApp());
+    await tester.pumpAndSettle();
+    final document = NotepadDocument.fresh(name: 'Interval')
+      ..lines.clear()
+      ..lines.add(NotepadLine.fresh(source: 'plot(x^2,x,-2,2)'));
+    state.setNotepadDocument(document);
+    state.linkNotepadLine(document.id, document.lines.single.id);
+    await tester.pumpAndSettle();
+    final graph = find.byWidgetPredicate(
+        (widget) => widget is CustomPaint && widget.painter is GraphPainter);
+    expect(graph, findsOneWidget);
+    final painter = tester.widget<CustomPaint>(graph).painter! as GraphPainter;
+    final request = painter.sampleRequest(tester.getSize(graph), false);
+    expect(request['xMin'], closeTo(-2, 1e-9));
+    expect(request['xMax'], closeTo(2, 1e-9));
+    expect(painter.plotMode, PlotMode.cartesian);
+    expect(state.consumeRequestedGraph(), isNull);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
   testWidgets('accepted bounds update the viewport before dialog disposal',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 900);

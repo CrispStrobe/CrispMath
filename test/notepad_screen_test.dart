@@ -92,6 +92,49 @@ void main() {
     }
   });
 
+  testWidgets('Copy as Markdown exports an entered plot as readable metadata',
+      (tester) async {
+    String? copiedText;
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copiedText = (call.arguments as Map)['text'] as String;
+      } else if (call.method == 'Clipboard.getData') {
+        return copiedText == null ? null : {'text': copiedText};
+      }
+      return null;
+    });
+    addTearDown(() =>
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    const source = 'plot(x^2,x,-2,2)';
+    await tester.enterText(find.byType(TextField).first, source);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+    final state = AppState();
+    final line = state.notepadDocuments[state.currentNotepadDocId]!.lines.first;
+    expect(line.source, source);
+    expect(line.cachedError, isNull);
+    expect(line.cachedResult, startsWith('__plot__:'));
+
+    // Exercise the real menu callback. Bounded pumps avoid waiting for the
+    // independent graph sampling isolate in the widget test's fake clock.
+    await tester.tap(find.byTooltip('Document menu'));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.scrollUntilVisible(find.text('Copy as Markdown'), 160,
+        scrollable: find.byType(Scrollable).last);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('Copy as Markdown'));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(copiedText, contains('`$source`'));
+    expect(copiedText, contains('Plot of x^2; x in [-2, 2]'));
+    expect(copiedText, isNot(contains('__plot__')));
+    expect(line.cachedResult, startsWith('__plot__:'),
+        reason: 'Copying must not rewrite the stored mathematical output.');
+    expect(tester.takeException(), isNull);
+  });
+
   for (final configuration in [
     (const Size(390, 844), 1.0),
     (const Size(390, 844), 2.0),

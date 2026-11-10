@@ -1142,21 +1142,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   void _copyAsMarkdown() {
     final doc = _currentDoc;
     if (doc == null) return;
-    final buf = StringBuffer();
-    buf.writeln('# ${doc.name}');
-    buf.writeln();
-    buf.writeln('```');
-    for (final line in doc.lines) {
-      final src = line.source;
-      final res = line.cachedResult;
-      if (res != null && res.isNotEmpty) {
-        buf.writeln('$src  // → $res');
-      } else {
-        buf.writeln(src);
-      }
-    }
-    buf.writeln('```');
-    Clipboard.setData(ClipboardData(text: buf.toString()));
+    Clipboard.setData(ClipboardData(text: exportToMarkdown(doc)));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(AppLocalizations.of(context).notepadCopiedAsMarkdown),
@@ -2111,7 +2097,8 @@ class NotepadScreenState extends State<NotepadScreen> {
               focusNode: _focusNodes[line.id]!,
               onChanged: (v) => _onLineEdited(doc, line, v, realIndex),
               onDelete: () => _deleteLine(doc, realIndex),
-              onPlot: () => _linkLine(doc, line),
+              onPlot: _pendingLineIds.contains(line.id)
+                  ? null : () => _linkLine(doc, line),
               onScrollToLineId: _scrollToLineId,
               engine: _engine,
               appState: _appState,
@@ -2165,7 +2152,10 @@ class NotepadScreenState extends State<NotepadScreen> {
                           Text(
                             _pendingLineIds.contains(doc.lines[pi].id)
                                 ? '…'
-                                : doc.lines[pi].cachedResult ?? '',
+                                : (doc.lines[pi].cachedResult?.startsWith('__plot__:') ?? false)
+                                    ? WorkflowLocalizations.of(context)
+                                        .text(WorkflowLabel.worksheetGraph)
+                                    : doc.lines[pi].cachedResult ?? '',
                             style: TextStyle(
                               fontSize: 13,
                               color: Theme.of(context).colorScheme.primary,

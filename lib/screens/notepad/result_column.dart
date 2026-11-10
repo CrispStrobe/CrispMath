@@ -11,12 +11,14 @@ class _NotepadResultColumn extends StatelessWidget {
   final bool alignStart;
   final VoidCallback? onFormatCycle;
   final CalculatorEngine engine;
+  final VoidCallback? onOpenGraph;
 
   const _NotepadResultColumn({
     required this.line,
     required this.isPending,
     required this.onScrollToLineId,
     required this.engine,
+    this.onOpenGraph,
     this.alignStart = false,
     this.onFormatCycle,
   });
@@ -111,7 +113,9 @@ class _NotepadResultColumn extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (res != null && res.isNotEmpty)
-          Flexible(child: Text(res, style: style, textAlign: textAlign)),
+          Flexible(child: Text(res.startsWith('__plot__:')
+              ? AppLocalizations.of(context).graphSampling : res,
+              style: style, textAlign: textAlign)),
         if (res != null && res.isNotEmpty) const SizedBox(width: 6),
         SizedBox(
           width: 12,
@@ -130,7 +134,9 @@ class _NotepadResultColumn extends StatelessWidget {
     // Inline plot: the evaluator stores a `__plot__:` sentinel.
     final plotSpec = PlotSpec.tryParse(res);
     if (plotSpec != null) {
-      return MiniPlotWidget(spec: plotSpec, engine: engine);
+      return MiniPlotWidget(
+          key: ValueKey('notepad-plot:${line.id}'),
+          spec: plotSpec, engine: engine, onOpenGraph: onOpenGraph);
     }
     // FlatZinc lines (Round E.4) produce multi-line `name = value;`
     // output blocks plus separator markers — Math.tex can't render

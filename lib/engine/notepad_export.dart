@@ -15,6 +15,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import 'notepad.dart';
 import 'notepad_evaluator.dart';
+import 'notepad_plot.dart';
 
 /// A single exported line with its classification and formatted parts.
 class ExportedLine {
@@ -59,6 +60,20 @@ ExportedDocument exportDocument(NotepadDocument doc) {
       firstCodeLineIndex: firstCode,
     );
 
+    // Plots are structured outputs, not scalar answers. Every exporter,
+    // including the shared worksheet bundle/PDF path, receives readable
+    // metadata rather than the evaluator's private cache encoding.
+    if (parsed.kind == NotepadLineKind.plot) {
+      final description = _plotDescription(line, parsed);
+      exportedLines.add(ExportedLine(
+        kind: parsed.kind.name,
+        source: line.source,
+        result: description,
+        formattedResult: description,
+      ));
+      continue;
+    }
+
     final formattedResult =
         line.cachedResult != null && line.resultFormat != LineResultFormat.auto
             ? formatLineResult(line.cachedResult!, line.resultFormat)
@@ -79,6 +94,26 @@ ExportedDocument exportDocument(NotepadDocument doc) {
     lines: exportedLines,
   );
 }
+
+String _plotDescription(NotepadLine line, ParsedNotepadLine parsed) {
+  if (line.cachedError != null) {
+    return 'Plot unavailable: ${line.cachedError}';
+  }
+  final spec = PlotSpec.tryParse(line.cachedResult);
+  if (spec != null) {
+    return 'Plot of ${spec.expression}; ${spec.variable} in '
+        '[${_plotNumber(spec.lo)}, ${_plotNumber(spec.hi)}]';
+  }
+  // Retain the requested expression and symbolic bounds when no usable
+  // evaluation is available. This is a description, not a rendered graph.
+  return 'Plot not calculated: ${parsed.body}; ${parsed.name} in '
+      '[${parsed.imports[0]}, ${parsed.imports[1]}]';
+}
+
+String _plotNumber(double value) =>
+    value == value.roundToDouble() && value.abs() < 1e21
+        ? value.toStringAsFixed(0)
+        : value.toString();
 
 /// Export to Markdown format.
 String exportToMarkdown(NotepadDocument doc) {
@@ -103,6 +138,11 @@ String exportToMarkdown(NotepadDocument doc) {
       case 'aggregate':
         final res = line.formattedResult ?? '';
         buf.writeln('**${line.source}**: $res');
+      case 'plot':
+        buf.writeln('`${line.source}`');
+        buf.writeln();
+        buf.writeln('> ${line.formattedResult}');
+        buf.writeln();
       default:
         if (line.formattedResult != null && line.formattedResult!.isNotEmpty) {
           buf.writeln('`${line.source}` → `${line.formattedResult}`');
@@ -138,6 +178,10 @@ String exportToLatex(NotepadDocument doc) {
         buf.writeln('\\textit{${_latexEscape(text)}}');
       case 'blank':
         buf.writeln(r'\vspace{0.5em}');
+      case 'plot':
+        buf.writeln('\\noindent\\texttt{${_latexEscape(line.source)}}\\par');
+        buf.writeln(
+            '\\noindent ${_latexEscape(line.formattedResult!)}\\par');
       default:
         if (line.formattedResult != null && line.formattedResult!.isNotEmpty) {
           buf.writeln(r'\[ \text{' +
@@ -229,6 +273,15 @@ Future<pw.Document> exportToPdf(NotepadDocument doc) async {
           pw.Expanded(child: pw.Text(line.source, style: aggregateStyle)),
           pw.Text(res, style: resultStyle),
         ]));
+      case 'plot':
+        widgets.add(pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(line.source, style: exprStyle),
+            pw.Text(line.formattedResult!, style: resultStyle),
+            pw.SizedBox(height: 4),
+          ],
+        ));
       default:
         // Expression line — show source and result side-by-side.
         if (line.formattedResult != null && line.formattedResult!.isNotEmpty) {

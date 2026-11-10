@@ -1,5 +1,7 @@
 import 'notepad.dart';
 import 'notepad_evaluator.dart';
+import 'notepad_plot.dart';
+import 'symbolic_expr.dart' show kKnownFunctions;
 
 class LinkedGraphSource {
   final String documentId;
@@ -15,8 +17,9 @@ class LinkedGraphResolution {
   final String? expression;
   final Map<String, String> scope;
   final String? error;
+  final PlotSpec? plot;
   const LinkedGraphResolution(
-      this.source, this.expression, this.scope, this.error);
+      this.source, this.expression, this.scope, this.error, {this.plot});
 }
 
 LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
@@ -55,10 +58,29 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
       }
     }
   }
+  if (parsed.kind == NotepadLineKind.plot) {
+    try {
+      final resolved = resolveNotepadPlot(doc, index, externalScope: imports);
+      return LinkedGraphResolution(line.source, resolved.spec.graphExpression,
+          resolved.scope, null, plot: resolved.spec);
+    } on FormatException catch (error) {
+      return LinkedGraphResolution(
+          line.source, null, {}, error.message.toString());
+    }
+  }
   final scope = buildNotepadScope(doc, externalScope: imports);
   for (var i = index - 1; i >= 0; i--) {
     final previous = doc.lines[i];
-    if (previous.cachedError == null && previous.cachedResult != null) {
+    final previousKind = classifyNotepadLine(previous.source,
+        lineIndex: i, firstCodeLineIndex: first).kind;
+    if (previousKind == NotepadLineKind.plot ||
+        previousKind == NotepadLineKind.heading ||
+        previousKind == NotepadLineKind.divider ||
+        previousKind == NotepadLineKind.useDirective) {
+      continue;
+    }
+    if (previous.cachedError == null && previous.cachedResult != null &&
+        !previous.cachedResult!.startsWith(PlotSpec.prefix)) {
       scope['Ans'] = previous.cachedResult!;
       scope['ans'] = previous.cachedResult!;
       break;
@@ -80,9 +102,7 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
   }
   final variable = parsed.isFunction
       ? parsed.parameters!.single
-      : parsed.kind == NotepadLineKind.plot
-          ? parsed.name ?? 'x'
-          : 'x';
+      : 'x';
   String body;
   try {
     body = expandNotepadFunctionCalls(parsed.body ?? '', doc);
@@ -99,12 +119,13 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
   final expression =
       body.replaceAllMapped(RegExp(r'\b[A-Za-z_][A-Za-z_0-9]*\b'), (m) {
     final name = m[0]!;
+    final tail = body.substring(m.end).trimLeft();
+    if (kKnownFunctions.containsKey(name) && tail.startsWith('(')) return name;
     if (name == variable) return 'x';
     if (scope.containsKey(name)) {
       bound[name] = scope[name]!;
       return '(${scope[name]})';
     }
-    final tail = body.substring(m.end).trimLeft();
     if (!kReservedNotepadNames.contains(name) &&
         !tail.startsWith('(') &&
         name != 'I' &&

@@ -19,6 +19,19 @@ NotepadDocument sample() {
 }
 
 void main() {
+  test('expression links keep builtin calls separate from same-named scalars',
+      () {
+    final doc = NotepadDocument.fresh(name: 'Callee scope')
+      ..lines.clear()
+      ..lines.addAll([
+        NotepadLine.fresh(source: 'sec=2')..cachedResult = '2',
+        NotepadLine.fresh(source: 'sec(x)+sec'),
+      ]);
+    final resolved = resolveLinkedGraph(doc, doc.lines.last.id);
+    expect(resolved.error, isNull);
+    expect(resolved.expression, 'sec(x)+(2)');
+    expect(resolved.scope, {'sec': '2'});
+  });
   test('local function definitions map their lexical parameter to graph x',
       () async {
     final doc = NotepadDocument.fresh(name: 'Function graph')
