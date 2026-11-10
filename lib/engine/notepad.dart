@@ -1,4 +1,5 @@
 import 'result_evidence.dart';
+import 'notepad_references.dart';
 // lib/engine/notepad.dart
 //
 // Data model for the Notepad / document mode (P5 strategic next).
@@ -168,6 +169,38 @@ class NotepadDocument {
       useLatexInput: j['lx'] == true,
     );
   }
+}
+
+/// Copy a worksheet as independent source, retaining its internal result links.
+/// Allocate every destination identity before rewriting references, including
+/// forward references. Cached calculations are deliberately recalculated in
+/// the new document rather than carrying potentially stale imported outputs.
+NotepadDocument duplicateNotepadDocument(NotepadDocument document,
+    {String? name}) {
+  final replacements = <String, String>{};
+  for (final line in document.lines) {
+    if (line.id.isEmpty || replacements.containsKey(line.id)) {
+      throw const FormatException('Invalid or duplicate worksheet row ID');
+    }
+    replacements[line.id] = generateNotepadId();
+  }
+  final now = DateTime.now().toUtc();
+  return NotepadDocument(
+    id: generateNotepadId(),
+    name: name ?? document.name,
+    createdAt: now,
+    updatedAt: now,
+    useLatexInput: document.useLatexInput,
+    lines: [
+      for (final line in document.lines)
+        NotepadLine(
+          id: replacements[line.id]!,
+          source: remapResultReferences(line.source, replacements),
+          resultFormat: line.resultFormat,
+          pinned: line.pinned,
+        ),
+    ],
+  );
 }
 
 class NotepadLine {

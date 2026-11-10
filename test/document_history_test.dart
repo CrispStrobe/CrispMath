@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_references.dart';
 import 'package:crisp_math/services/document_history.dart';
 import 'package:crisp_math/services/workspace_backup.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -134,6 +135,31 @@ void main() {
         (incoming.mergeDocuments(AppState())['notepadDocuments'] as List)
             .length,
         2);
+  });
+
+  test('conflict copies retain live links and repeated import is idempotent', () {
+    final doc = document();
+    final sourceId = doc.lines.first.id;
+    doc.lines.add(NotepadLine.fresh(source: '${resultReferenceToken(sourceId)}*2'));
+    AppState().setNotepadDocument(doc);
+    final remote = worksheetSource(doc);
+    remote['l'][0]['s'] = '9';
+    final incoming = WorkspaceBackup.fromState({
+      'notepadDocuments': [remote]
+    });
+    final preview = incoming.mergeDocuments(AppState());
+    final copies = (preview['notepadDocuments'] as List)
+        .map(validateWorksheetSource).toList();
+    final copy = copies.singleWhere((copy) => copy.id != doc.id);
+    expect(copy.lines.first.id, isNot(sourceId));
+    expect(resultReferencesIn(copy.lines.last.source).single.lineId,
+        copy.lines.first.id);
+    AppState().importFromJson(preview);
+    expect((incoming.mergeDocuments(AppState())['notepadDocuments'] as List)
+        .length, 2);
+    final restored = DocumentCheckpoint.capture(copy, label: 'Linked').document;
+    expect(restored.lines.last.source, copy.lines.last.source);
+    expect(restored.lines.first.id, copy.lines.first.id);
   });
   test('invalid 3D geometry is rejected before changing the workspace', () {
     final raw = AppState().exportToJson();

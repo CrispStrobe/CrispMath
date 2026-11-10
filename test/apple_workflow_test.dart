@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_references.dart';
 import 'package:crisp_math/services/apple_workflow.dart';
 import 'package:crisp_math/services/worksheet_file.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,6 +33,35 @@ void main() {
     final doc = NotepadDocument.fresh(name: 'Empty')..lines.clear();
     expect(WorksheetFile.decode(WorksheetFile.encode(doc)).lines.single.source,
         '');
+  });
+
+  test('worksheet file imports preserve internal links with fresh row IDs', () {
+    final original = NotepadDocument.fresh(name: 'Linked');
+    original.lines
+      ..clear()
+      ..add(NotepadLine(id: 'value #1/é}', source: '6'))
+      ..add(NotepadLine(id: 'later',
+          source: '${resultReferenceToken('value #1/é}')} * 2'));
+    final first = WorksheetFile.decode(WorksheetFile.encode(original));
+    final second = WorksheetFile.decode(WorksheetFile.encode(original));
+    expect(resultReferencesIn(first.lines.last.source).single.lineId,
+        first.lines.first.id);
+    expect(resultReferencesIn(second.lines.last.source).single.lineId,
+        second.lines.first.id);
+    expect(first.lines.first.id, isNot(second.lines.first.id));
+    expect(first.lines.last.source, isNot(original.lines.last.source));
+    expect(first.lines.every((line) => line.cachedResult == null), isTrue);
+  });
+
+  test('ambiguous imported row identities are rejected before creating a copy',
+      () {
+    final original = NotepadDocument.fresh(name: 'Ambiguous');
+    original.lines
+      ..clear()
+      ..add(NotepadLine(id: 'same', source: '2'))
+      ..add(NotepadLine(id: 'same', source: resultReferenceToken('same')));
+    expect(() => WorksheetFile.decode(WorksheetFile.encode(original)),
+        throwsFormatException);
   });
 
   test('unknown schema, malformed rows and oversized files are rejected', () {

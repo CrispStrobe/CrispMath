@@ -10,6 +10,47 @@ import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/engine/notepad_undo.dart';
 
 void main() {
+  group('reference insertion undo/redo', () {
+    test('redo restores the inserted reference source and the same identity', () {
+      final doc = NotepadDocument.fresh(name: 'References');
+      doc.lines
+        ..clear()
+        ..add(NotepadLine(id: 'source', source: '3+4'))
+        ..add(NotepadLine(id: 'dependent', source: '@{source}'));
+      const op = UndoOp(
+        kind: UndoOpKind.insert,
+        index: 1,
+        lineId: 'dependent',
+        newValue: '@{source}',
+      );
+      expect(applyUndo(doc, op), isTrue);
+      expect(doc.lines.map((line) => line.id), ['source']);
+      expect(applyRedo(doc, op), isTrue);
+      expect(doc.lines.last.id, 'dependent');
+      expect(doc.lines.last.source, '@{source}');
+      expect(applyRedo(doc, op), isFalse,
+          reason: 'The same row identity must not be inserted twice.');
+    });
+
+    test('replacing a selection with a reference is reversible', () {
+      final doc = NotepadDocument.fresh(name: 'References');
+      doc.lines
+        ..clear()
+        ..add(NotepadLine(id: 'dependent', source: '10+@{source}'));
+      const op = UndoOp(
+        kind: UndoOpKind.edit,
+        index: 0,
+        lineId: 'dependent',
+        previousValue: '10+0',
+        newValue: '10+@{source}',
+      );
+      expect(applyUndo(doc, op), isTrue);
+      expect(doc.lines.single.source, '10+0');
+      expect(applyRedo(doc, op), isTrue);
+      expect(doc.lines.single.source, '10+@{source}');
+    });
+  });
+
   // =========================================================================
   // Ring buffer eviction
   // =========================================================================
@@ -358,7 +399,7 @@ void main() {
       expect(applyRedo(doc, op), false);
     });
 
-    test('redo edit always returns false (no-op by design)', () {
+    test('legacy edit without a recorded new source cannot be redone', () {
       final doc = NotepadDocument.fresh(name: 'T');
       doc.lines.clear();
       doc.lines.add(NotepadLine(id: 'a', source: 'x'));

@@ -17,6 +17,7 @@ import 'package:crisp_math/engine/notepad.dart';
 import 'package:crisp_math/localization/app_localizations.dart';
 import 'package:crisp_math/localization/workflow_localizations.dart';
 import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad_references.dart';
 import 'package:crisp_math/main.dart';
 import 'package:crisp_math/services/document_history.dart';
 import 'package:crisp_math/services/engine_service.dart';
@@ -57,12 +58,217 @@ Future<void> _gotoNotepad(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Finder _editorWithSource(String source) => find.byWidgetPredicate((widget) =>
+    widget is TextField && widget.controller?.text == source);
+
+Future<void> _worksheetUndo(WidgetTester tester, {bool redo = false}) async {
+  await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+  if (redo) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+  await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+  if (redo) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+  await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+  await tester.pump(const Duration(milliseconds: 350));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   // Phase 5: the screen now schedules engine work via the persistent
   // worker isolate. Tear it down between tests so a hung worker
   // from a prior test can't leak into the next one.
   tearDown(() async {
     await EngineService.shutdownForTest();
+  });
+
+  for (final size in [const Size(390, 844), const Size(1280, 900)]) {
+    testWidgets('Use result appends a live reference with undo/redo at $size',
+        (tester) async {
+      await _bootApp(tester, size: size);
+      await _gotoNotepad(tester);
+      await tester.enterText(find.byType(TextField).first, '3+4');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final state = AppState();
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      final source = doc.lines.first;
+      expect(source.cachedResult, '7');
+      final result = find.byKey(ValueKey('notepad-result:${source.id}'));
+      if (size.width < 720) {
+        await tester.longPress(result);
+      } else {
+        await tester.tap(result, buttons: 2);
+      }
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Use result'));
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(doc.lines, hasLength(2));
+      expect(doc.lines.first.id, source.id);
+      final dependentId = doc.lines.last.id;
+      final token = resultReferenceToken(source.id);
+      expect(doc.lines.last.source, token);
+      expect(doc.lines.last.cachedResult, '7');
+      final editor = tester.widget<TextField>(_editorWithSource(token));
+      expect(editor.focusNode!.hasFocus, isTrue);
+      expect(editor.controller!.selection.extentOffset, token.length);
+      expect(find.text('Result of line 1'), findsOneWidget);
+
+      await _worksheetUndo(tester);
+      expect(doc.lines, hasLength(1));
+      await _worksheetUndo(tester, redo: true);
+      expect(doc.lines.last.id, dependentId);
+      expect(doc.lines.last.source, token);
+      expect(doc.lines.last.cachedResult, '7');
+      expect(_editorWithSource(token), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final latex in [false, true]) {
+    testWidgets('References replaces the remembered selection (LaTeX: $latex)',
+        (tester) async {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      final state = AppState();
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      if (latex) {
+        doc.useLatexInput = true;
+        state.setNotepadDocument(doc);
+        tester.binding.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(
+            tester.binding.platformDispatcher.clearTextScaleFactorTestValue);
+        await tester.pump();
+      }
+      await tester.enterText(find.byType(TextField).first, '3+4');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Add line'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_editorWithSource(''), '10+0');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      final destination = tester.widget<TextField>(_editorWithSource('10+0'));
+      expect(destination.controller!.selection.start, 3);
+      expect(destination.controller!.selection.end, 4);
+
+      await tester.tap(find.byTooltip('Document menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('References…'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(ValueKey(
+          'notepad-reference-choice:${doc.lines.last.id}')), findsNothing,
+          reason: 'The destination cannot reference itself.');
+      await tester.tap(find.byKey(ValueKey(
+          'notepad-reference-choice:${doc.lines.first.id}')));
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final text = '10+${resultReferenceToken(doc.lines.first.id)}';
+      expect(doc.lines, hasLength(2));
+      expect(doc.lines.last.source, text);
+      expect(doc.lines.last.cachedResult, '17');
+      final insertedEditor = tester.widget<TextField>(_editorWithSource(text));
+      expect(insertedEditor.focusNode!.hasFocus, isTrue);
+      expect(insertedEditor.controller!.selection.extentOffset, text.length);
+
+      await _worksheetUndo(tester);
+      expect(doc.lines.last.source, '10+0');
+      expect(_editorWithSource('10+0'), findsOneWidget,
+          reason: 'Undo must also update a still-focused editor.');
+      await _worksheetUndo(tester, redo: true);
+      expect(doc.lines.last.source, text);
+      expect(_editorWithSource(text), findsOneWidget);
+      final chip = find.byKey(ValueKey(
+          'notepad-reference:${doc.lines.last.id}:${doc.lines.first.id}'));
+      await tester.ensureVisible(chip);
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(_editorWithSource('3+4'))
+          .focusNode!.hasFocus, isTrue);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('source chips reveal distant rows inside collapsed sections',
+      (tester) async {
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    final state = AppState();
+    final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+    doc.lines
+      ..clear()
+      ..add(NotepadLine(id: 'section', source: '## Source'))
+      ..add(NotepadLine(id: 'source', source: '3+4', cachedResult: '7'))
+      ..add(NotepadLine(id: 'work', source: '## Calculations'));
+    for (var i = 0; i < 45; i++) {
+      doc.lines.add(NotepadLine(id: 'filler-$i', source: '$i', cachedResult: '$i'));
+    }
+    doc.lines.add(NotepadLine(id: 'dependent',
+        source: '${resultReferenceToken('source')}*2', cachedResult: '14'));
+    state.setNotepadDocument(doc);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Collapse').first);
+    await tester.pumpAndSettle();
+    expect(_editorWithSource('3+4'), findsNothing);
+    final chip = find.byKey(
+        const ValueKey('notepad-reference:dependent:source'));
+    final scrollable = find.descendant(of: find.byType(ReorderableListView),
+        matching: find.byType(Scrollable)).first;
+    await tester.scrollUntilVisible(chip, 500,
+        scrollable: scrollable, maxScrolls: 40);
+    await tester.pumpAndSettle();
+    await tester.tap(chip);
+    await tester.pumpAndSettle();
+    expect(_editorWithSource('3+4').hitTestable(), findsOneWidget);
+    expect(tester.widget<TextField>(_editorWithSource('3+4'))
+        .focusNode!.hasFocus, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('opening a linked manager copy recalculates its cleared caches',
+      (tester) async {
+    await _bootApp(tester, size: const Size(390, 844));
+    await _gotoNotepad(tester);
+    final state = AppState();
+    final original = state.notepadDocuments[state.currentNotepadDocId]!;
+    original.name = 'Linked sheet';
+    final source = original.lines.first;
+    source.source = '3+4';
+    source.cachedResult = '7';
+    original.lines.add(NotepadLine.fresh(
+        source: '${resultReferenceToken(source.id)}*2')..cachedResult = '14');
+    state.setNotepadDocument(original);
+    await tester.pumpAndSettle();
+    final labels = AppLocalizations.of(
+        tester.element(find.byType(AppBar).first));
+    await tester.tap(find.byTooltip(labels.notepadDocumentMenu));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text(labels.notepadManageNotepads),
+        160, scrollable: find.byType(Scrollable).last);
+    await tester.tap(find.text(labels.notepadManageNotepads));
+    await tester.pumpAndSettle();
+    final originalRow = find.widgetWithText(ListTile, original.name);
+    await tester.tap(find.descendant(of: originalRow,
+        matching: find.byType(PopupMenuButton<String>)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(labels.notepadDuplicate));
+    await tester.pumpAndSettle();
+    final copy = state.notepadDocuments.values
+        .singleWhere((doc) => doc.name == 'Linked sheet (copy)');
+    expect(copy.lines.every((line) => line.cachedResult == null), isTrue);
+    expect(resultReferencesIn(copy.lines.last.source).single.lineId,
+        copy.lines.first.id);
+    await tester.tap(find.widgetWithText(ListTile, copy.name));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(state.currentNotepadDocId, copy.id);
+    expect(copy.lines.first.cachedResult, '7');
+    expect(copy.lines.last.cachedResult, '14');
+    expect(copy.lines.every((line) => line.cachedError == null), isTrue);
+    expect(original.lines.last.source,
+        '${resultReferenceToken(source.id)}*2');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('computed multi-digit result exposes its complete accessible value',

@@ -1,5 +1,24 @@
 # CrispMath and CrispEmbed: current state and executable lanes
 
+## Connected Notepad feature branch — 10 November 2026
+
+[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) is the current bounded
+worksheet lane, based on the PR21 merge `c7f84eb`. See the [plot audit](connected-notepad.md) and
+[stable-reference contract](stable-result-references.md). All work is retained
+in incremental feature-branch commits; it is not merged or released.
+
+At `84877bd`, [Linux feature validation](https://github.com/CrispStrobe/CrispMath/actions/runs/42793201631)
+and [macOS CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42793212441)
+report clean analysis and 6,005 full-suite passes/eight skips each. The six
+platform builds pass. The new connected-plot browser flow still fails at its
+initial semantic observation despite a visibly rendered parabola and correct
+plot metadata. The chart-container fix is `9e8f2f6`; its exact hosted result
+must be checked before claiming the new flow passes.
+
+Stable result references are the next increment in this same lane. Preserve
+old `lineN` semantics, document ownership, import/copy identity remapping, and
+honest static exports. No vendor-runtime or release work is part of this lane.
+
 ## Integrated checkpoint — 6 November 2026
 
 [CrispEmbed PR165](https://github.com/CrispStrobe/CrispEmbed/pull/165) merged as `cb56aeec6559f7676ddfd639a29d471121008088` and closed issue 164. Its empty-frame acceptance and changing-shape rebuild remain independently opt-in. Hosted CPU and real CUDA T4 detector/server controls passed; the [CPU](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/ppocrv6/issue164-cpu-initial.json), [CPU server](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/ppocrv6/issue164-cpu-server.json) and [CUDA](https://github.com/CrispStrobe/CrispEmbed/blob/main/tests/results/ppocrv6/issue164-cuda.json) receipts retain their scope and numerical limits. Development 0.17.16 is not a published release.

@@ -16,6 +16,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'notepad.dart';
 import 'notepad_evaluator.dart';
 import 'notepad_plot.dart';
+import 'notepad_references.dart';
 
 /// A single exported line with its classification and formatted parts.
 class ExportedLine {
@@ -23,12 +24,19 @@ class ExportedLine {
   final String source;
   final String? result;
   final String? formattedResult; // With per-line format applied.
+  final String? resultLabel;
+
+  /// Readable identity within this static snapshot. Editable worksheet files
+  /// retain persistent tokens instead of these presentation-only labels.
+  String get displaySource =>
+      resultLabel == null ? source : '$resultLabel: $source';
 
   const ExportedLine({
     required this.kind,
     required this.source,
     this.result,
     this.formattedResult,
+    this.resultLabel,
   });
 }
 
@@ -51,6 +59,7 @@ class ExportedDocument {
 ExportedDocument exportDocument(NotepadDocument doc) {
   final firstCode = firstCodeLineIndexOf(doc);
   final exportedLines = <ExportedLine>[];
+  final references = _ExportResultReferences(doc);
 
   for (var i = 0; i < doc.lines.length; i++) {
     final line = doc.lines[i];
@@ -59,15 +68,17 @@ ExportedDocument exportDocument(NotepadDocument doc) {
       lineIndex: i,
       firstCodeLineIndex: firstCode,
     );
+    final source = references.describe(line.source);
+    final resultLabel = references.labels[line.id];
 
     // Plots are structured outputs, not scalar answers. Every exporter,
     // including the shared worksheet bundle/PDF path, receives readable
     // metadata rather than the evaluator's private cache encoding.
     if (parsed.kind == NotepadLineKind.plot) {
-      final description = _plotDescription(line, parsed);
+      final description = references.describe(_plotDescription(line, parsed));
       exportedLines.add(ExportedLine(
         kind: parsed.kind.name,
-        source: line.source,
+        source: source,
         result: description,
         formattedResult: description,
       ));
@@ -81,9 +92,10 @@ ExportedDocument exportDocument(NotepadDocument doc) {
 
     exportedLines.add(ExportedLine(
       kind: parsed.kind.name,
-      source: line.source,
+      source: source,
       result: line.cachedResult,
       formattedResult: formattedResult ?? line.cachedResult,
+      resultLabel: resultLabel,
     ));
   }
 
@@ -93,6 +105,66 @@ ExportedDocument exportDocument(NotepadDocument doc) {
     updatedAt: doc.updatedAt,
     lines: exportedLines,
   );
+}
+
+/// Snapshot labels are assigned from the current row order, with the same
+/// label attached to the source and every reference to its result. They never
+/// become executable aliases or alter the persisted worksheet source.
+class _ExportResultReferences {
+  _ExportResultReferences(NotepadDocument document) {
+    final counts = <String, int>{};
+    final mentioned = <String>{};
+    for (final line in document.lines) {
+      counts.update(line.id, (value) => value + 1, ifAbsent: () => 1);
+      mentioned.addAll(
+          resultReferencesIn(line.source).map((reference) => reference.lineId));
+    }
+    final firstCode = firstCodeLineIndexOf(document);
+    for (var i = 0; i < document.lines.length; i++) {
+      final line = document.lines[i];
+      if (counts[line.id] != 1) {
+        descriptions[line.id] = '[ambiguous result]';
+        continue;
+      }
+      final parsed = classifyNotepadLine(line.source,
+          lineIndex: i, firstCodeLineIndex: firstCode);
+      final eligible = parsed.kind == NotepadLineKind.expression ||
+          parsed.kind == NotepadLineKind.aggregate ||
+          (parsed.kind == NotepadLineKind.assignment && !parsed.isFunction);
+      if (!eligible) {
+        descriptions[line.id] = '[unavailable result of line ${i + 1}]';
+      } else {
+        final label = 'result[${i + 1}]';
+        descriptions[line.id] = label;
+        if (mentioned.contains(line.id)) labels[line.id] = label;
+      }
+    }
+  }
+
+  final labels = <String, String>{};
+  final descriptions = <String, String>{};
+
+  String describe(String source) {
+    final out = StringBuffer();
+    var cursor = 0;
+    for (final reference in resultReferencesIn(source)) {
+      out.write(source.substring(cursor, reference.start));
+      out.write(descriptions[reference.lineId] ?? '[missing result]');
+      cursor = reference.end;
+    }
+    out.write(source.substring(cursor));
+    return out.toString();
+  }
+}
+
+List<String> exportedNotepadDomainWarnings(NotepadDocument doc) {
+  final references = _ExportResultReferences(doc);
+  return [
+    for (final line in doc.lines)
+      if (line.resultEvidence?.sourceDomain != null)
+        '${references.describe(line.source)}: '
+            'original domain ${line.resultEvidence!.sourceDomain}',
+  ];
 }
 
 String _plotDescription(NotepadLine line, ParsedNotepadLine parsed) {
@@ -137,7 +209,7 @@ String exportToMarkdown(NotepadDocument doc) {
         buf.writeln();
       case 'aggregate':
         final res = line.formattedResult ?? '';
-        buf.writeln('**${line.source}**: $res');
+        buf.writeln('**${line.displaySource}**: $res');
       case 'plot':
         buf.writeln('`${line.source}`');
         buf.writeln();
@@ -145,9 +217,9 @@ String exportToMarkdown(NotepadDocument doc) {
         buf.writeln();
       default:
         if (line.formattedResult != null && line.formattedResult!.isNotEmpty) {
-          buf.writeln('`${line.source}` → `${line.formattedResult}`');
+          buf.writeln('`${line.displaySource}` → `${line.formattedResult}`');
         } else {
-          buf.writeln('`${line.source}`');
+          buf.writeln('`${line.displaySource}`');
         }
     }
   }
@@ -185,12 +257,12 @@ String exportToLatex(NotepadDocument doc) {
       default:
         if (line.formattedResult != null && line.formattedResult!.isNotEmpty) {
           buf.writeln(r'\[ \text{' +
-              _latexEscape(line.source) +
+              _latexEscape(line.displaySource) +
               r'} = ' +
               _latexEscape(line.formattedResult!) +
               r' \]');
         } else {
-          buf.writeln(r'\[ ' + _latexEscape(line.source) + r' \]');
+          buf.writeln(r'\[ ' + _latexEscape(line.displaySource) + r' \]');
         }
     }
   }
@@ -270,7 +342,7 @@ Future<pw.Document> exportToPdf(NotepadDocument doc) async {
       case 'aggregate':
         final res = line.formattedResult ?? '';
         widgets.add(pw.Row(children: [
-          pw.Expanded(child: pw.Text(line.source, style: aggregateStyle)),
+          pw.Expanded(child: pw.Text(line.displaySource, style: aggregateStyle)),
           pw.Text(res, style: resultStyle),
         ]));
       case 'plot':
@@ -290,7 +362,7 @@ Future<pw.Document> exportToPdf(NotepadDocument doc) async {
             children: [
               pw.Expanded(
                 flex: 3,
-                child: pw.Text(line.source, style: exprStyle),
+                child: pw.Text(line.displaySource, style: exprStyle),
               ),
               pw.SizedBox(width: 8),
               pw.Text('=', style: exprStyle),
@@ -302,7 +374,7 @@ Future<pw.Document> exportToPdf(NotepadDocument doc) async {
             ],
           ));
         } else if (line.source.trim().isNotEmpty) {
-          widgets.add(pw.Text(line.source, style: exprStyle));
+          widgets.add(pw.Text(line.displaySource, style: exprStyle));
         }
     }
   }

@@ -12,6 +12,7 @@ class _NotepadResultColumn extends StatelessWidget {
   final VoidCallback? onFormatCycle;
   final CalculatorEngine engine;
   final VoidCallback? onOpenGraph;
+  final VoidCallback? onUseResult;
 
   const _NotepadResultColumn({
     required this.line,
@@ -19,6 +20,7 @@ class _NotepadResultColumn extends StatelessWidget {
     required this.onScrollToLineId,
     required this.engine,
     this.onOpenGraph,
+    this.onUseResult,
     this.alignStart = false,
     this.onFormatCycle,
   });
@@ -152,7 +154,11 @@ class _NotepadResultColumn extends StatelessWidget {
     // simple string match suffices.
     final trimmedRes = res.trim();
     if (trimmedRes == 'true' || trimmedRes == 'false') {
-      return BooleanChip(value: trimmedRes == 'true', fontSize: 16);
+      return GestureDetector(
+        onLongPress: () => _showResultActions(context, res, res),
+        onSecondaryTap: () => _showResultActions(context, res, res),
+        child: BooleanChip(value: trimmedRes == 'true', fontSize: 16),
+      );
     }
     final color = scheme.primary;
     final style = TextStyle(fontSize: 16, color: color);
@@ -283,6 +289,16 @@ class _NotepadResultColumn extends StatelessWidget {
                 );
               },
             ),
+            if (onUseResult != null)
+              ListTile(
+                leading: const Icon(Icons.link),
+                title: Text(WorkflowLocalizations.of(context)
+                    .text(WorkflowLabel.useResult)),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  onUseResult!();
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.code, semanticLabel: 'Copy as LaTeX'),
               title: Text(t.notepadCopyAsLatex),

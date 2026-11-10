@@ -8,6 +8,9 @@
 
 import 'package:crisp_math/engine/app_state.dart';
 import 'package:crisp_math/engine/notepad.dart';
+import 'package:crisp_math/engine/notepad_evaluator.dart';
+import 'package:crisp_math/engine/notepad_references.dart';
+import 'package:crisp_math/engine/numeric_fallback.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,6 +21,64 @@ void main() {
     final s = AppState();
     s.notepadDocuments.clear();
     s.setCurrentNotepadDoc(null);
+  });
+
+  group('independent worksheet copies', () {
+    test('forward result links are remapped and recalculate independently',
+        () async {
+      final original = NotepadDocument.fresh(name: 'Original')
+        ..useLatexInput = true;
+      original.lines
+        ..clear()
+        ..add(NotepadLine(id: 'derived',
+            source: '${resultReferenceToken('answer')} * 3',
+            cachedResult: 'stale', cachedError: 'old error'))
+        ..add(NotepadLine(id: 'answer', source: '7', cachedResult: '999',
+            cachedExports: {'stale': '999'}, pinned: true,
+            resultFormat: LineResultFormat.fraction));
+      final copy = duplicateNotepadDocument(original, name: 'Independent');
+      expect(copy.id, isNot(original.id));
+      expect(copy.name, 'Independent');
+      expect(copy.useLatexInput, isTrue);
+      expect(copy.lines.map((line) => line.id).toSet()
+          .intersection(original.lines.map((line) => line.id).toSet()), isEmpty);
+      expect(resultReferencesIn(copy.lines.first.source).single.lineId,
+          copy.lines.last.id);
+      expect(copy.lines.every((line) => line.cachedResult == null &&
+          line.cachedError == null && line.cachedExports.isEmpty), isTrue);
+      expect(copy.lines.last.pinned, isTrue);
+      expect(copy.lines.last.resultFormat, LineResultFormat.fraction);
+
+      final evaluator = NotepadEvaluator(dispatcher: (source) async =>
+          NumericFallbackEvaluator.evalNumeric(source)?.toString() ??
+          'Error: unsupported numeric expression');
+      await evaluator.evaluateAll(copy);
+      expect(double.parse(copy.lines.first.cachedResult!), 21);
+      original.lines.last.source = '100';
+      await evaluator.evaluateAll(original);
+      expect(double.parse(copy.lines.first.cachedResult!), 21);
+      copy.lines.last.source = '4';
+      await evaluator.evaluateFrom(copy, 1);
+      expect(double.parse(copy.lines.first.cachedResult!), 12);
+      expect(original.lines.last.source, '100');
+    });
+
+    test('missing references remain missing and positional aliases stay intact',
+        () {
+      final original = NotepadDocument.fresh(name: 'Links');
+      original.lines.single.source = '${resultReferenceToken('deleted')} + line2';
+      final copy = duplicateNotepadDocument(original);
+      expect(copy.lines.single.source, original.lines.single.source);
+    });
+
+    test('ambiguous row identities cannot be silently copied', () {
+      final original = NotepadDocument.fresh(name: 'Ambiguous');
+      original.lines
+        ..clear()
+        ..add(NotepadLine(id: 'same', source: '3'))
+        ..add(NotepadLine(id: 'same', source: '7'));
+      expect(() => duplicateNotepadDocument(original), throwsFormatException);
+    });
   });
 
   group('NotepadLine JSON round-trip', () {

@@ -5,11 +5,15 @@
 This lane makes calculations, inline plots and the graph workspace cooperate
 inside the existing Notepad model. The baseline inspection is source review at
 [834bcc0](https://github.com/CrispStrobe/CrispMath/commit/834bcc0152bb703a187e7a838dfb6f70d3e11013).
-The first increment below is implemented on the feature branch and has focused
-regressions plus desktop/phone browser checks. Hosted verification is pending;
-the draft [PR 21](https://github.com/CrispStrobe/CrispMath/pull/21) tracks current
-source commits and workflow conclusions. This document does not establish a released app,
-deployment, device result or new mathematical-engine capability.
+The first increment below merged through
+[PR 21](https://github.com/CrispStrobe/CrispMath/pull/21) as `c7f84eb`. At its
+`84877bd` source, clean analysis, both full suites (6,005 passed, eight skipped
+each), and all six platform builds passed. The new connected browser flow
+still failed at observing a rendered plot's semantic geometry. Follow-up
+[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) contains the chart
+accessibility correction and the [stable-reference increment](stable-result-references.md).
+It tracks exact hosted results and the retained initial failures. This document
+does not establish a released app, deployment, device result, or new engine capability.
 
 Follow the [current state and executable lanes](https://github.com/CrispStrobe/CrispMath/blob/main/docs/current-state-and-next-steps.md)
 and [PLAN](https://github.com/CrispStrobe/CrispMath/blob/main/PLAN.md). Keep the
@@ -184,15 +188,17 @@ limitation, separately from a range with no finite real samples. Sampling is
 bounded and discontinuity handling is heuristic, as in the full graph view.
 
 Exports contain readable expression and interval metadata; they do not yet
-embed the inline plot as a chart image. Result references still use the existing
-positional `lineN` convention. The next steps below remain proposed work.
+embed the inline plot as a chart image. The merged first increment retains the
+positional `lineN` convention; PR22 adds explicit stable references alongside
+it. The remaining next steps below are proposed work.
 
 ## Subsequent worksheet roadmap
 
 1. **Stable result references.** Use row UUIDs for new references and display
    convenient labels. Preserve existing `lineN` behavior during migration;
    do not silently reinterpret saved documents. Insert, delete, move, undo,
-   copy and import need explicit reference semantics.
+   copy and import need explicit reference semantics. The implementation and
+   acceptance contract are now tracked in [PR22](stable-result-references.md).
 2. **Dependent calculation groups.** Differentiate, integrate, solve, plot and
    table actions should insert a new source-linked calculation beside the
    original. Show inputs, output and any assumptions together. Reuse the

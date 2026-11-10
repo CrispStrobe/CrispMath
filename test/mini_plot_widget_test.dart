@@ -223,23 +223,26 @@ void main() {
   testWidgets('a plotted image owns its label and chart-sized semantic bounds',
       (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    Future<GraphSamples> sample(Map<String, dynamic> _) async => curve;
-    await tester.pumpWidget(app(spec(), sample, onOpenGraph: () {}));
-    await tester.pumpAndSettle();
+    try {
+      Future<GraphSamples> sample(Map<String, dynamic> _) async => curve;
+      await tester.pumpWidget(app(spec(), sample, onOpenGraph: () {}));
+      await tester.pumpAndSettle();
 
-    final chart = tester.getSemantics(
-        find.byKey(const ValueKey('notepad-mini-plot-semantics')));
-    expect(chart.label, 'Graphing: t^2; -2 ≤ t ≤ 2');
-    expect(chart.flagsCollection.isImage, isTrue);
-    expect(chart.rect.width, closeTo(260, 0.01));
-    expect(chart.rect.height, closeTo(96, 0.01));
-    final action = tester.getSemantics(
-        find.byKey(const ValueKey('notepad-mini-plot-open')));
-    expect(action.label, 'View linked graph');
-    expect(action.flagsCollection.isButton, isTrue);
-    expect(action.id, isNot(chart.id),
-        reason: 'The graph description and navigation action are separate.');
+      final chart = tester.getSemantics(
+          find.byKey(const ValueKey('notepad-mini-plot-semantics')));
+      expect(chart.label, 'Graphing: t^2; -2 ≤ t ≤ 2');
+      expect(chart.flagsCollection.isImage, isTrue);
+      expect(chart.rect.width, closeTo(260, 0.01));
+      expect(chart.rect.height, closeTo(96, 0.01));
+      final action = tester.getSemantics(
+          find.byKey(const ValueKey('notepad-mini-plot-open')));
+      expect(action.label, 'View linked graph');
+      expect(action.flagsCollection.isButton, isTrue);
+      expect(action.id, isNot(chart.id),
+          reason: 'The graph description and navigation action are separate.');
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('late worker failure after removing a row is ignored',

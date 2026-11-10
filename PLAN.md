@@ -3,6 +3,25 @@
 Living worklist. `[ ]` pending · `[~]` in-progress · `[x]` done.
 Completed items with details are in `HISTORY.md`.
 
+## Connected worksheet work — 10 November 2026
+
+[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) follows the merged
+Notepad/Graph work in PR21 with incremental remote checkpoints. It is a draft
+feature branch from `c7f84eb`; release metadata and dependency pins are unchanged.
+
+- [~] Complete the [connected plot workflow](docs/connected-notepad.md) browser
+  gate. Source `84877bd` passes clean analysis, both full suites (6,005 passed,
+  eight skipped each), and all six platform builds; the new browser harness
+  finds rendered plot evidence but fails semantic geometry. An explicit chart
+  semantics container and regression are pushed at `9e8f2f6`; verification is
+  pending. Preserve both initial browser failures.
+- [~] Add [stable result references](docs/stable-result-references.md), friendly
+  insertion/source navigation, and copy/import/undo/export behavior while
+  preserving legacy positional `lineN` semantics. Require focused regressions
+  and actual desktop/phone controls before declaring the increment ready.
+- [ ] Build derived calculation groups and worksheet parameter controls on the
+  same source identities after the reference contract is verified.
+
 ## Next release planning — 7 November 2026
 
 [The 0.17.15 consumer release plan](docs/release-plan-runtime-01715.md) binds the merged source, existing consumer evidence, outstanding exact-candidate gates and read-only store inspection. No new version, upload or review submission has been authorized by this plan.

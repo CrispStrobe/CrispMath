@@ -28,6 +28,10 @@ class UndoOp {
   /// For edit: the previous source text.
   final String? previousValue;
 
+  /// For insert: the initial source of the new line.
+  /// For edit: the source after the edit, so redo restores the same change.
+  final String? newValue;
+
   /// For insert: the line id (for removal on undo).
   /// For edit: the line id.
   final String? lineId;
@@ -40,6 +44,7 @@ class UndoOp {
     required this.index,
     this.newIndex,
     this.previousValue,
+    this.newValue,
     this.lineId,
     this.deletedLine,
   });
@@ -150,7 +155,8 @@ bool applyRedo(NotepadDocument doc, UndoOp op) {
     case UndoOpKind.insert:
       // Redo an insert → re-insert.
       if (op.lineId != null) {
-        final line = NotepadLine(id: op.lineId!, source: '');
+        if (doc.lines.any((line) => line.id == op.lineId)) return false;
+        final line = NotepadLine(id: op.lineId!, source: op.newValue ?? '');
         final idx = op.index.clamp(0, doc.lines.length);
         doc.lines.insert(idx, line);
         return true;
@@ -167,8 +173,11 @@ bool applyRedo(NotepadDocument doc, UndoOp op) {
       return false;
 
     case UndoOpKind.edit:
-      // Redo an edit → we don't store the "new" value in the op,
-      // so redo of edit is a no-op (the user just types again).
+      final idx = doc.lines.indexWhere((l) => l.id == op.lineId);
+      if (idx >= 0 && op.newValue != null) {
+        doc.lines[idx].source = op.newValue!;
+        return true;
+      }
       return false;
 
     case UndoOpKind.reorder:

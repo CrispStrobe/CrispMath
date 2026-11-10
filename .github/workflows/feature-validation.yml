@@ -107,6 +107,8 @@ jobs:
           flutter test --no-pub --concurrency=2 --reporter expanded
           test/notepad_plot_test.dart test/mini_plot_widget_test.dart
           test/notepad_export_test.dart test/notepad_screen_test.dart test/linked_graph_test.dart
+          test/notepad_references_test.dart test/notepad_persistence_test.dart test/notepad_undo_test.dart
+          test/apple_workflow_test.dart test/document_history_test.dart
           test/notepad_v2_test.dart test/notepad_v2_comprehensive_test.dart
           test/graph_worksheet_test.dart test/graphing_function_actions_test.dart
           test/graph_navigation_widget_test.dart
@@ -255,6 +257,7 @@ jobs:
           YAML
           flutter pub get
       - name: Build release preview
+        id: release_build
         run: tool/build_web.sh --release --no-wasm-dry-run -O2
       - uses: actions/upload-artifact@v4
         with:
@@ -268,14 +271,32 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Check integral browser trace capture
         run: python -m unittest discover -s tool -p 'test_check_integral_syntax_browser.py'
-      - name: Live browser feature checks
+      - name: Start browser preview server
         run: |
           python -m http.server 8766 --bind 127.0.0.1 --directory build/web > /tmp/crispmath-http.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8766/privacy.html > /dev/null
+      - name: Connected worksheet release UI
+        run: |
+          status=0
+          python tool/check_connected_notepad_browser.py --output browser-results/connected-notepad || status=1
+          python tool/check_notepad_references_browser.py --output browser-results/notepad-references || status=1
+          exit "$status"
+      - name: Upload connected worksheet release evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connected-notepad-release-ui
+          path: |
+            browser-results/connected-notepad
+            browser-results/notepad-references
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Live browser feature checks
+        if: ${{ !cancelled() && steps.release_build.outcome == 'success' }}
+        run: |
           python tool/check_ocr_wasm_runtime_browser.py --expected-source "$GITHUB_SHA" --output browser-results/ocr-runtime.json
           python tool/ai_contract_fixture.py > /tmp/crispmath-ai-fixture.log 2>&1 &
           curl --fail --silent --show-error --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8769/requests > /dev/null
-          python tool/check_connected_notepad_browser.py --output browser-results/connected-notepad
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
           python tool/check_mobile_trace.py --screenshots browser-results
           python tool/check_catalog_browser.py --screenshots browser-results
@@ -303,13 +324,33 @@ jobs:
           python tool/check_round11_math_browser.py --expected-source "$GITHUB_SHA" --output browser-results/round11-math-ui || status=1
           python tool/check_guided_worksheet_browser.py --output browser-results/guided-worksheet || status=1
           exit "$status"
-      - name: Debug build and framework assertion checks
-        id: debug_checks
+      - name: Build debug preview
+        id: debug_build
         if: ${{ !cancelled() }}
         run: |
           tool/build_web.sh --debug --no-wasm-dry-run
+      - name: Connected worksheet debug UI
+        if: ${{ !cancelled() && steps.debug_build.outcome == 'success' }}
+        run: |
+          status=0
+          python tool/check_connected_notepad_browser.py --output browser-results/debug/connected-notepad || status=1
+          python tool/check_notepad_references_browser.py --output browser-results/debug/notepad-references || status=1
+          exit "$status"
+      - name: Upload connected worksheet debug evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connected-notepad-debug-ui
+          path: |
+            browser-results/debug/connected-notepad
+            browser-results/debug/notepad-references
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Debug framework assertion checks
+        id: debug_checks
+        if: ${{ !cancelled() && steps.debug_build.outcome == 'success' }}
+        run: |
           python tool/check_ocr_wasm_runtime_browser.py --expected-source "$GITHUB_SHA" --output browser-results/debug/ocr-runtime.json
-          python tool/check_connected_notepad_browser.py --output browser-results/debug/connected-notepad
           python tool/check_feature_browser.py --stage "$(cat tool/feature_stage)" --screenshots browser-results
           python tool/check_mobile_trace.py --screenshots browser-results/debug
           python tool/check_catalog_browser.py --screenshots browser-results/debug
@@ -333,16 +374,6 @@ jobs:
           python tool/check_round11_math_browser.py --expected-source "$GITHUB_SHA" --output browser-results/debug/round11-math-ui || status=1
           python tool/check_guided_worksheet_browser.py --output browser-results/debug/guided-worksheet || status=1
           exit "$status"
-      - name: Upload connected Notepad UI evidence
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: connected-notepad-ui
-          path: |
-            browser-results/connected-notepad
-            browser-results/debug/connected-notepad
-          if-no-files-found: ignore
-          retention-days: 7
       - uses: actions/upload-artifact@v4
         if: always()
         with:

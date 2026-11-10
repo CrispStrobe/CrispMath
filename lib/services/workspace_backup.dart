@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../engine/app_state.dart';
 import '../engine/linked_graph.dart';
 import '../engine/notepad.dart';
+import '../engine/notepad_references.dart';
 import '../engine/scene_3d/scene_state.dart';
 import 'document_history.dart';
 
@@ -196,13 +197,40 @@ class WorkspaceBackup {
         .where((d) => d.id != kWelcomeNotepadDocId)
         .map(worksheetSource)
         .toList();
-    String content(NotepadDocument doc) => jsonEncode({
+    String content(NotepadDocument doc) {
+      final indices = {
+        for (var i = 0; i < doc.lines.length; i++) doc.lines[i].id: i
+      };
+      List<Object> sourceContent(String source) {
+        final parts = <Object>[];
+        var cursor = 0;
+        for (final reference in resultReferencesIn(source)) {
+          parts.add(source.substring(cursor, reference.start));
+          final index = indices[reference.lineId];
+          parts.add(index == null
+              ? {'missing': reference.lineId}
+              : {'row': index});
+          cursor = reference.end;
+        }
+        parts.add(source.substring(cursor));
+        return parts;
+      }
+
+      // Fresh IDs in a preserved conflict copy must not make the same source
+      // look different on the next import. Missing targets remain distinct
+      // from references that genuinely point to a local row.
+      return jsonEncode({
           'lx': doc.useLatexInput,
           'l': [
             for (final row in doc.lines)
-              {'s': row.source, 'rf': row.resultFormat.index, 'p': row.pinned}
+              {
+                's': sourceContent(row.source),
+                'rf': row.resultFormat.index,
+                'p': row.pinned
+              }
           ]
         });
+    }
     final byName = <String, Set<String>>{};
     for (final doc in local.notepadDocuments.values) {
       byName.putIfAbsent(doc.name, () => {}).add(content(doc));
@@ -227,14 +255,7 @@ class WorkspaceBackup {
         continue;
       }
       byName.putIfAbsent(copyName, () => {}).add(incomingContent);
-      final copy = NotepadDocument.fresh(name: copyName);
-      copy.useLatexInput = incoming.useLatexInput;
-      copy.lines.clear();
-      for (final row in incoming.lines) {
-        copy.lines.add(NotepadLine.fresh(source: row.source)
-          ..pinned = row.pinned
-          ..resultFormat = row.resultFormat);
-      }
+      final copy = duplicateNotepadDocument(incoming, name: copyName);
       docs.add(worksheetSource(copy));
     }
     merged['notepadDocuments'] = docs;

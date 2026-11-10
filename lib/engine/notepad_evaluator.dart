@@ -12,6 +12,7 @@ import 'result_evidence.dart';
 
 import 'notepad.dart';
 import 'notepad_plot.dart';
+import 'notepad_references.dart';
 import 'matrix_operation_names.dart';
 import 'numeric_fallback.dart';
 import 'unit_expression.dart';
@@ -19,6 +20,35 @@ import 'symbolic_expr.dart';
 import '../services/integral_arguments.dart';
 
 part 'notepad_syntax.dart';
+
+bool _isResultReferenceKind(ParsedNotepadLine parsed) =>
+    parsed.kind == NotepadLineKind.expression ||
+    parsed.kind == NotepadLineKind.aggregate ||
+    (parsed.kind == NotepadLineKind.assignment && !parsed.isFunction);
+
+/// Whether this row currently offers an ordinary mathematical result for reuse.
+/// Function definitions remain callable by name; plots and solver reports are
+/// displays, rather than expressions to inject into another calculation.
+bool canReferenceNotepadLine(NotepadLine line) {
+  final value = line.cachedResult;
+  return line.id.isNotEmpty &&
+      _isResultReferenceKind(classifyNotepadLine(line.source,
+          lineIndex: 0, firstCodeLineIndex: 0)) &&
+      line.cachedError == null &&
+      value != null &&
+      value.trim().isNotEmpty &&
+      !value.startsWith(PlotSpec.prefix) &&
+      !value.startsWith('Error');
+}
+
+Iterable<String> _resultReferenceSources(ParsedNotepadLine parsed) sync* {
+  if (parsed.kind == NotepadLineKind.expression ||
+      parsed.kind == NotepadLineKind.assignment ||
+      parsed.kind == NotepadLineKind.plot) {
+    yield parsed.body ?? '';
+    if (parsed.kind == NotepadLineKind.plot) yield* parsed.imports;
+  }
+}
 
 /// Per-document dependency graph keyed by line index.
 /// `graph[i]` = set of line indices that line `i` depends on.
@@ -53,9 +83,11 @@ NotepadDependencyGraph buildDependencyGraph(
   // point at the same line, so a reference to either flows the
   // same edge.
   final nameToLine = <String, int>{};
+  final lineIds = <String, List<int>>{};
   final firstCode = firstCodeLineIndexOf(doc);
   final parsedLines = <int, ParsedNotepadLine>{};
   for (var i = 0; i < doc.lines.length; i++) {
+    (lineIds[doc.lines[i].id] ??= <int>[]).add(i);
     final parsed = classifyNotepadLine(doc.lines[i].source,
         lineIndex: i, firstCodeLineIndex: firstCode);
     parsedLines[i] = parsed;
@@ -105,6 +137,16 @@ NotepadDependencyGraph buildDependencyGraph(
       dependents[target]!.add(i);
     }
 
+    // Stable result identities are independent of scalar scope and row order.
+    // Missing or ambiguous targets are diagnosed during preprocessing; never
+    // choose one of several imported rows with the same identity.
+    for (final source in _resultReferenceSources(parsed)) {
+      for (final reference in resultReferencesIn(source)) {
+        final targets = lineIds[reference.lineId];
+        if (targets?.length == 1) addDependency(targets!.single);
+      }
+    }
+
     // These inputs are implicit in preprocessing and aggregate evaluation;
     // omitting them leaves stale answers after an incremental edit.
     if (parsed.kind == NotepadLineKind.aggregate) {
@@ -121,9 +163,10 @@ NotepadDependencyGraph buildDependencyGraph(
         }
       }
     } else if (parsed.kind != NotepadLineKind.flatzinc &&
-        (_ansPattern.hasMatch(parsed.body ?? '') ||
+        (_ansPattern.hasMatch(_maskResultReferenceTokens(parsed.body ?? '')) ||
             (parsed.kind == NotepadLineKind.plot &&
-                parsed.imports.any(_ansPattern.hasMatch)))) {
+                parsed.imports.any((source) =>
+                    _ansPattern.hasMatch(_maskResultReferenceTokens(source)))))) {
       for (var prior = i - 1; prior >= 0; prior--) {
         if (_isAnswerKind(parsedLines[prior]!.kind)) {
           addDependency(prior);
@@ -266,7 +309,8 @@ NotepadPlotResolution resolveNotepadPlot(
     final bindings = Map<String, String>.of(scope);
     if (coordinate) bindings.remove(variable);
     return preprocessNotepadLine(ParsedNotepadLine.expression(source),
-        doc: doc, lineIndex: lineIndex, scope: bindings)!;
+        doc: doc, lineIndex: lineIndex, scope: bindings,
+        externalScope: externalScope)!;
   }
 
   void validate(String source, {bool coordinate = false}) {
@@ -733,9 +777,12 @@ class NotepadEvaluator {
     final inputAccuracy =
         _dependencyAccuracy(doc, lineIndex, graph, scope, referencedNames, firstCode);
     String? preprocessed;
+    final resolvedReferenceVariables = <String>{};
     try {
       preprocessed = preprocessNotepadLine(parsed,
-          doc: doc, lineIndex: lineIndex, scope: scope);
+          doc: doc, lineIndex: lineIndex, scope: scope,
+          externalScope: externalScope,
+          resolvedReferenceVariables: resolvedReferenceVariables);
     } on FormatException catch (error) {
       line.cachedResult = null;
       line.cachedError =
@@ -743,6 +790,8 @@ class NotepadEvaluator {
       line.cachedFreeVars = freeVars;
       return;
     }
+    freeVars.addAll(resolvedReferenceVariables.difference(freeVars.toSet()));
+    freeVars.sort();
     if (parsed.isFunction) {
       final diagnosis = SymbolicExpressionEvaluator.diagnose(preprocessed!);
       final error = engineErrorForDiagnosis(diagnosis);

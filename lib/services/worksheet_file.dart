@@ -43,7 +43,12 @@ class WorksheetFile {
     doc.useLatexInput = raw['lx'] == true;
     doc.lines.clear();
     for (final row in rows) {
-      final line = NotepadLine.fresh(source: row['s'] as String);
+      final rawId = row['i'];
+      final line = NotepadLine(
+          id: rawId is String && rawId.isNotEmpty
+              ? rawId
+              : generateNotepadId(),
+          source: row['s'] as String);
       // Preserve presentation, but never trust imported calculation caches.
       final format = row['rf'];
       if (format is int &&
@@ -55,7 +60,9 @@ class WorksheetFile {
       doc.lines.add(line);
     }
     if (doc.lines.isEmpty) doc.lines.add(NotepadLine.fresh(source: ''));
-    return doc;
+    // The file's IDs identify links within its source, but the imported
+    // worksheet must own fresh identities. Rewrite both in one shared copy.
+    return duplicateNotepadDocument(doc);
   }
 
   static String fileName(String name) {

@@ -20,6 +20,7 @@ import 'package:flutter/services.dart';
 import '../engine/app_state.dart';
 import '../engine/notepad.dart';
 import '../localization/app_localizations.dart';
+import '../localization/workflow_localizations.dart';
 
 /// Opens the manager as a Material dialog. Pass [onSwitchTo] so
 /// "Open" rows can also switch the active doc back on the
@@ -104,23 +105,17 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
   }
 
   void _duplicate(NotepadDocument doc) {
-    final now = DateTime.now().toUtc();
-    final copy = NotepadDocument(
-      id: generateNotepadId(),
-      name: _nextUntitledName('${doc.name} (copy)'),
-      createdAt: now,
-      updatedAt: now,
-      lines: doc.lines
-          .map((l) => NotepadLine(
-                id: generateNotepadId(),
-                source: l.source,
-                cachedResult: l.cachedResult,
-                cachedError: l.cachedError,
-                cachedFreeVars: List<String>.from(l.cachedFreeVars),
-              ))
-          .toList(),
-    );
-    _appState.setNotepadDocument(copy);
+    try {
+      final copy = duplicateNotepadDocument(doc,
+          name: _nextUntitledName('${doc.name} (copy)'));
+      _appState.setNotepadDocument(copy);
+    } on FormatException {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(WorkflowLocalizations.of(context)
+            .text(WorkflowLabel.worksheetCopyFailed)),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ));
+    }
   }
 
   void _delete(NotepadDocument doc) {
@@ -169,25 +164,11 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
     if (raw == null || raw.trim().isEmpty) return;
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      // Always mint a fresh id so importing a doc twice doesn't
-      // overwrite the first; the imported `i` field becomes a
-      // historical relic.
+      // Keep internal result links together when fresh identities are minted.
+      // Imported calculation caches are discarded and recomputed locally.
       final doc = NotepadDocument.fromJson(decoded);
-      final fresh = NotepadDocument(
-        id: generateNotepadId(),
-        name: _nextUntitledName(doc.name),
-        createdAt: doc.createdAt,
-        updatedAt: DateTime.now().toUtc(),
-        lines: doc.lines
-            .map((l) => NotepadLine(
-                  id: generateNotepadId(),
-                  source: l.source,
-                  cachedResult: l.cachedResult,
-                  cachedError: l.cachedError,
-                  cachedFreeVars: List<String>.from(l.cachedFreeVars),
-                ))
-            .toList(),
-      );
+      final fresh = duplicateNotepadDocument(doc,
+          name: _nextUntitledName(doc.name));
       _appState.setNotepadDocument(fresh);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
