@@ -340,6 +340,90 @@ void main() {
     }
   });
 
+  testWidgets('phone Undo preserves a reference after hovering the surviving Delete action',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _bootApp(tester, size: const Size(390, 844));
+      await _gotoNotepad(tester);
+      await tester.enterText(find.byType(TextField).first, '5+4');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final state = AppState();
+      final doc = state.notepadDocuments[state.currentNotepadDocId]!;
+      final sourceId = doc.lines.first.id;
+      expect(doc.lines.first.cachedResult, '9');
+      await tester.longPress(find.byKey(ValueKey('notepad-result:$sourceId')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Use result'));
+      await tester.pumpAndSettle();
+      final dependentId = doc.lines.last.id;
+      final expression = '10+${resultReferenceToken(sourceId)}';
+      await tester.enterText(
+          _editorWithSource(resultReferenceToken(sourceId)), expression);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(doc.lines.last.cachedResult, '19');
+      await tester.tap(find.text('Result of line 1'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(_editorWithSource('5+4'))
+          .focusNode!.hasFocus, isTrue);
+
+      final mouse =
+          await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      final deletePosition = tester.getCenter(find.byTooltip('Delete line').first);
+      await mouse.moveTo(deletePosition);
+      await mouse.down(deletePosition);
+      await mouse.up();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(doc.lines, hasLength(1));
+      expect(doc.lines.single.id, dependentId);
+      expect(doc.lines.single.source, expression);
+      expect(doc.lines.single.cachedResult, isNull);
+      expect(doc.lines.single.cachedError, contains('missing'));
+      expect(find.text('Missing result'), findsOneWidget);
+
+      // Narrow rows top-align Delete, so the stationary pointer now hovers the
+      // surviving row's control. Keep its accessible action and graph action
+      // available without a floating portal that could be grafted during Undo.
+      final remainingDelete = find.byTooltip('Delete line');
+      expect(remainingDelete, findsOneWidget);
+      expect(tester.getRect(remainingDelete)
+          .contains(deletePosition), isTrue);
+      expect(find.text('Delete line', findRichText: true), findsNothing);
+      for (final label in ['Delete line', 'Link line to graph']) {
+        final actions = find.semantics.byPredicate((node) =>
+            node.label == label &&
+            node.getSemanticsData().hasAction(ui.SemanticsAction.tap));
+        expect(actions.evaluate(), hasLength(1), reason: label);
+      }
+      final undoPosition = tester.getCenter(find.text('Undo'));
+      await mouse.moveTo(undoPosition);
+      await mouse.down(undoPosition);
+      await mouse.up();
+      // Restore directly; do not add an editor tap or a hover-dismissal delay.
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(doc.lines.map((line) => line.id), [sourceId, dependentId]);
+      expect(doc.lines.map((line) => line.cachedResult), ['9', '19']);
+      final dependentResult = find.byKey(ValueKey('notepad-result:$dependentId'));
+      expect(dependentResult, findsOneWidget);
+      expect(tester.getSemantics(dependentResult).label, '19');
+      expect(find.text('Missing result'), findsNothing);
+      expect(find.text('Result of line 1'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   for (final latex in [false, true]) {
     testWidgets('References preserves selection after semantic-menu blur (LaTeX: $latex)',
         (tester) async {

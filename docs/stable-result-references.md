@@ -2,12 +2,24 @@
 
 ## Scope and status — 10 November 2026
 
+Application checkpoint
+[`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
+tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`, passes the complete
+[release browser workflow](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015)
+on desktop and phone. References can be inserted, extended by typing, followed
+back to their source, recalculated, deleted/undone, duplicated and reloaded
+through actual controls. There are zero page errors, and 62 focused widget
+tests pass. The full native suite passes 6,052 tests/eight skips and all six
+platform builds pass. **Feature closure remains open for a debug phone Undo
+layout failure**, described below; the complete debug desktop lifecycle passes.
+
 This is the second connected-worksheet increment on
-[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22). It builds on the merged
-[Notepad and graph audit](connected-notepad.md) without changing dependency
-pins, release metadata, or the meaning of existing `lineN` expressions.
-Implementation and hosted acceptance evidence are tracked in the PR. This
-document describes the new contract; it is not a release or deployment claim.
+[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22), following the merged
+[Notepad and graph work](connected-notepad.md). Dependency pins, release
+metadata and existing `lineN` semantics are unchanged. The
+[permanent evidence receipt](evidence/notepad-stable-references-20261110.json)
+records exact sources, results and retained failures. This is feature-branch
+validation, not a release, deployment or physical-device claim.
 
 ## User workflow
 
@@ -17,13 +29,14 @@ example by multiplying it by two. Editing the original calculation updates the
 dependent row; inserting or moving other rows does not change its target.
 
 **Copy result** still copies a value. The document menu's **References…** action
-offers usable results by their current line number, source, and value. It can
-insert a reference at the remembered editor selection. References displayed
-under a row provide navigation back to their source, including a source in a
+offers usable results by their current line number, source, and value. It
+replaces the remembered editor selection, or appends a new row if there is no
+valid destination. References displayed under a row provide navigation back to
+their source, including a source in a
 collapsed section or outside the current viewport.
 
-The first increment supports results of ordinary expressions, scalar
-assignments, and aggregates. Function definitions remain callable by name.
+The initial stable-reference feature supports results of ordinary expressions,
+scalar assignments, and aggregates. Function definitions remain callable by name.
 Plots, document structure, and FlatZinc's multi-output display are not scalar
 reference targets. References belong to one document.
 
@@ -90,8 +103,51 @@ exercise the real result menu, reference picker, undo/redo, and source reveal.
 
 `tool/check_notepad_references_browser.py` enters data through actual controls
 on desktop and phone layouts. Storage reads are evidence only; source documents
-and calculated results are not injected. Exact hosted results and retained
-initial failures belong in the PR before readiness is asserted.
+and calculated results are not injected.
+
+### Current application checkpoint: `43d0030`
+
+| Scope | Observed result | Evidence |
+| --- | --- | --- |
+| Analysis and full suite | Clean analysis; 6,052 passed, eight skipped, zero failed. The hovered source-deletion/Undo regression passes. | [Source-matched CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42822982607/job/129852918258) |
+| Platform builds | Web, macOS, Windows, Linux, Android and iOS pass. | [Candidate checks](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d) |
+| Focused widgets | 62 pass in the isolated release job; these overlap the full suite. | [Release job](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015) |
+| Release graphs and references | Complete actual workflows pass on desktop 1280×900 and phone 390×844, with zero page errors. | [Release job](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015) |
+| Debug graphs and references | Both graph layouts and the complete desktop reference lifecycle pass. Phone Undo restores saved state, then throws a visible list-layout assertion; later phone stages are not reached. | [Retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537/job/129859438590) |
+
+Release acceptance uses workflow commit `5d36e11`; the debug-only retry uses
+`95b6923`. Both bind their application source to `43d0030`; the workflow-only
+changes do not alter the app. The original
+[debug attempt](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091339)
+timed out during Flutter SDK setup before application execution.
+
+### Remaining debug phone failure
+
+Source deletion correctly shows **Missing result**. Undo restores the two
+original row IDs, source expressions and results 9/19 in storage. The visible
+list then throws `_RenderLayoutBuilder0 was mutated in RenderSliverList.performLayout`
+while rebuilding `_ReorderableItem`, and the strict visible-result check times
+out. Undo's mathematical and identity restoration does not make that UI flow
+successful. The next bounded correction must remove the layout failure and
+complete the remaining phone lifecycle while retaining the existing assertions.
+
+### Retained failures and bounded corrections
+
+Earlier runs found a picker destination lost across menu blur, then native
+keyboard focus lost after **Use result**. A read-only same-bundle trace at
+`90d80b6` recorded the surviving textarea's semantic ancestor changing before
+the original keys reached BODY. Semantic containment and FocusNode lifecycle
+corrections at `ca24eb3` restored typing, but debug source deletion then exposed
+a shown-tooltip reactivation assertion. The same application passed a native
+control without a shown tooltip and failed when the tooltip was explicitly
+shown; the full stack identifies `OverlayPortal` reactivation.
+
+The final correction removes only the new source-chip Tooltip, retaining its
+semantic hint and the picker's source description. Full sources, trees, runs,
+control/failure logs and the original assertions remain in the
+[receipt](evidence/notepad-stable-references-20261110.json) and
+[dated history](../HISTORY.md). The final debug setup timeout is recorded
+separately as infrastructure failure, not an application result.
 
 This increment supplies the identity foundation for future source-linked
 differentiate/integrate/solve/plot/table actions and worksheet sliders. Those

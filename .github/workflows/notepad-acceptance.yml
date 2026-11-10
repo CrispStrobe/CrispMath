@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APP_SOURCE_BASE: 43d00309345b369860c8453bcec0f4fea1e3717d
+  APP_SOURCE_BASE: 63fbffad6e9e292da0c1fa17e5fe2b78c9e92b22
 
 jobs:
   browser:
@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        mode: [debug]
+        mode: [release, debug]
     env:
       ACCEPTANCE_MODE: ${{ matrix.mode }}
     steps:

@@ -1,3 +1,97 @@
+## 10 November 2026 — Connected worksheets and stable references, phone Undo layout failure open
+
+Application checkpoint
+[`43d0030`](https://github.com/CrispStrobe/CrispMath/commit/43d00309345b369860c8453bcec0f4fea1e3717d),
+tree `736640b9263ab9ac31e471b2ee5095d2dace65fb`, passes the complete graph and
+stable-reference release workflows on desktop and phone with zero page errors.
+[Release job 129853091015](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091015)
+also passes 62 focused widget tests. Actual controls verify source-linked
+plots, Graph-to-worksheet creation, **Use result**, picker insertion, continued
+typing, source navigation, deletion/Undo, duplicate identity and reload.
+
+[Source-matched CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42822982607/job/129852918258)
+passes clean analysis (52.4 seconds) and the full native suite: 6,052 tests
+passed, eight skipped, zero failed, completed at 13:37:25 UTC. The hovered
+source-deletion/Undo regression explicitly passes at 13:35:28 UTC. All six
+platform builds, Docs freshness and format preview pass. The first
+[debug job](https://github.com/CrispStrobe/CrispMath/actions/runs/42823031454/job/129853091339)
+timed out during Flutter SDK setup, before the application ran. An
+[unchanged-source debug retry](https://github.com/CrispStrobe/CrispMath/actions/runs/42824865537/job/129859438590)
+passes both graph layouts and the complete desktop reference lifecycle, with
+zero page errors on those passing flows. On phone, deletion shows the missing
+reference; Undo restores the two original row IDs, sources and results 9/19 in
+storage, then `_RenderLayoutBuilder0 was mutated in RenderSliverList.performLayout`
+appears while rebuilding `_ReorderableItem`. The strict visible-result check
+times out, and later phone stages are not reached. That concrete UI failure
+keeps feature closure open. Focused test totals overlap the full suite.
+
+[PR21](https://github.com/CrispStrobe/CrispMath/pull/21) merged the shared Notepad
+plot resolution and Graph-to-worksheet workflow as `c7f84eb`.
+[Draft PR22](https://github.com/CrispStrobe/CrispMath/pull/22) adds stable result
+references, readable insertion/source navigation, and reference-aware
+copy/import/undo/export behavior. Editable references use existing row IDs
+within one document; legacy positional `lineN` expressions retain their meaning.
+The [connected worksheet audit](docs/connected-notepad.md) and
+[reference contract](docs/stable-result-references.md) describe the behavior and
+remaining limits. No release metadata or dependency pin changes are included.
+
+At application source
+[`90d80b6`](https://github.com/CrispStrobe/CrispMath/commit/90d80b6f1ce087fc2cd95e1fd0a0618d95c57c46),
+[macOS CI](https://github.com/CrispStrobe/CrispMath/actions/runs/42813758817)
+passes analysis and all 6,050 tests, with eight skips. All six platform builds
+pass. [Isolated acceptance](https://github.com/CrispStrobe/CrispMath/actions/runs/42813788661)
+passes 60 focused widget tests and the actual connected graph flow on desktop
+and phone in both release and debug. The focused tests overlap the full suite.
+The workflow-only acceptance commit verifies application source unchanged.
+
+The initial rendered-plot semantic geometry failure at `84877bd` is retained.
+Stable-reference browser acceptance was negative at `90d80b6` in both
+modes: **Use result** correctly appends a reference to 7, but immediate native
+`End`, `*`, `2` input reaches the page body instead of extending the expression
+to produce 14. Phone and later picker stages were not reached.
+
+[Read-only diagnostic 42817281396](https://github.com/CrispStrobe/CrispMath/actions/runs/42817281396)
+at workflow `b489c6e` retains the original failed assertion and trace artifact
+`13764587367`. The reused release bundle identifies PR merge source `8fe1d274`;
+its entire Git tree and the `90d80b6` tree are both
+`dd4e56bbe729f344ed665cd8136fbd4876639531`. The same textarea 29 is focused at
+701.2 ms, blurs to BODY at 940.2 ms, and is observed under semantic ancestor
+32 (`group`) in place of 31 (`button`) at 956.9–957.1 ms. The subsequent original
+keys target BODY. These are relative diagnostic times, not wall-clock times.
+
+The semantic-boundary and FocusNode lifecycle correction at
+[`ca24eb3`](https://github.com/CrispStrobe/CrispMath/commit/ca24eb34b9b83037aad1be6fc54e3f7623e92aa0),
+with native ancestry/input regressions, passed clean analysis, 6,051 tests/eight
+skips and all six builds. Its
+[release browser job](https://github.com/CrispStrobe/CrispMath/actions/runs/42818795130/job/129838661380)
+passed both complete layouts and 61 focused widgets. Debug keyboard entry,
+picker insertion and source navigation worked, then source deletion displayed
+a Flutter layout-mutation ErrorWidget. The
+[all-console diagnostic](https://github.com/CrispStrobe/CrispMath/actions/runs/42820532927)
+retained that assertion but still supplied no stack frames.
+
+Two hosted native regressions used the same unchanged `ca24eb3` production
+source. The [no-tooltip control](https://github.com/CrispStrobe/CrispMath/actions/runs/42821621753)
+passed one test; adding real mouse hover and a visible-tooltip assertion made
+the [shown-tooltip variant](https://github.com/CrispStrobe/CrispMath/actions/runs/42822495875)
+fail with the same layout assertion. Its full stack runs through
+`_RenderTheater._addDeferredChild`, `_OverlayEntryLocation._activate` and
+`_OverlayPortalElement.activate` during row reparenting. A later focus
+notification on a deactivated editor follows the failed reactivation; it does
+not establish a separate controller-disposal cause. Flutter issues
+[187162](https://github.com/flutter/flutter/issues/187162) and
+[188500](https://github.com/flutter/flutter/issues/188500) provide context; the
+application's matched control and failure establish the causal evidence.
+
+The final `43d0030` correction removes only the new source-chip Tooltip,
+retains its semantic hint and the picker's source descriptions, and adds the
+mouse-hover/focused semantic deletion/Undo regression. The permanent
+[evidence receipt](docs/evidence/notepad-stable-references-20261110.json) binds
+the sources, trees, runs, artifacts and initial failures, including the earlier
+picker destination and test-lifecycle failures. The full-suite pass and remaining
+debug phone Undo failure are distinct results. This branch work does not claim a release, deployment
+or physical-device result.
+
 ## 5 November 2026 — 1.2.0 resubmitted to App Review with build 27
 
 Tag `v1.2.0` shipped six desktop/mobile/web artifacts plus the dependency
