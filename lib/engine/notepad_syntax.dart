@@ -29,6 +29,10 @@ final _scopeIdentifierRegex = RegExp('$_notepadNumberToken|'
     r'(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])');
 final _scalarScopeValue = RegExp(r'^[+-]?\d+(?:\.\d+)?$');
 
+bool _isKnownNotepadCallee(String source, RegExpMatch token) =>
+    kKnownFunctions.containsKey(token[0]) &&
+    source.substring(token.end).trimLeft().startsWith('(');
+
 /// Incremental bindings only for documents with unambiguous numeric ownership.
 /// Checks source, identity and cached values between rows, so external edits
 /// disable the index rather than allowing it to serve stale bindings.
@@ -614,6 +618,7 @@ String? preprocessNotepadLine(
       scope[match[0]] == null ||
       _scalarScopeValue.hasMatch(scope[match[0]]!))) {
     final substituted = out.replaceAllMapped(_scopeIdentifierRegex, (match) {
+      if (_isKnownNotepadCallee(out, match)) return match[0]!;
       final value = scope[match[0]];
       return value == null ? match[0]! : '($value)';
     });
@@ -624,7 +629,9 @@ String? preprocessNotepadLine(
   for (final name in names) {
     if (!out.contains(name)) continue;
     out = out.replaceAllMapped(_scopeIdentifierRegex,
-        (match) => match[0] == name ? '(${scope[name]!})' : match[0]!);
+        (match) => match[0] == name && !_isKnownNotepadCallee(out, match)
+            ? '(${scope[name]!})'
+            : match[0]!);
   }
   return protected.restore(out);
 }
@@ -879,12 +886,14 @@ Map<int, ({int end, String name, bool outputVariable})> _lexicalSyntaxBindings(
 }
 
 Set<String> _unboundIdentifierWords(String source,
-    {bool includeOutputVariables = false}) {
+    {bool includeOutputVariables = false,
+    bool excludeKnownCallees = false}) {
   final bindings = _lexicalSyntaxBindings(source);
   return {
     for (final word in _identifierWordMatches(source))
-      if (!bindings.containsKey(word.start) ||
-          (includeOutputVariables && bindings[word.start]!.outputVariable)) word[0]!
+      if ((!bindings.containsKey(word.start) ||
+              (includeOutputVariables && bindings[word.start]!.outputVariable)) &&
+          (!excludeKnownCallees || !_isKnownNotepadCallee(source, word))) word[0]!
   };
 }
 
@@ -937,18 +946,21 @@ _ProtectedSyntaxBindings _protectLexicalSyntaxBindings(
 /// so they never produce dependency edges.
 Set<String> dependenciesOfLine(
   ParsedNotepadLine parsed,
-  Set<String> scopeKeys,
-) {
+  Set<String> scopeKeys, {
+  bool excludeKnownCallees = false,
+}) {
   if (parsed.kind == NotepadLineKind.flatzinc) return const {};
   final body = parsed.body;
   if (body == null) return const {};
-  final words = _unboundIdentifierWords(body);
+  final words = _unboundIdentifierWords(body,
+      excludeKnownCallees: excludeKnownCallees);
   if (parsed.kind == NotepadLineKind.plot) {
     // A plot's coordinate is lexical in its body, but range bounds are normal
     // document expressions (x=2; plot(x,x,-x,x) deliberately uses both roles).
     words.remove(parsed.name);
     for (final bound in parsed.imports) {
-      words.addAll(_unboundIdentifierWords(bound));
+      words.addAll(_unboundIdentifierWords(bound,
+          excludeKnownCallees: excludeKnownCallees));
     }
   }
   return words
@@ -973,12 +985,13 @@ Set<String> freeVariablesOfLine(
   if (parsed.kind == NotepadLineKind.flatzinc) return const {};
   final body = parsed.body;
   if (body == null) return const {};
-  final words = _unboundIdentifierWords(body, includeOutputVariables: true);
+  final words = _unboundIdentifierWords(body,
+      includeOutputVariables: true, excludeKnownCallees: true);
   if (parsed.kind == NotepadLineKind.plot) {
     words.remove(parsed.name);
     for (final bound in parsed.imports) {
       words.addAll(_unboundIdentifierWords(bound,
-          includeOutputVariables: true));
+          includeOutputVariables: true, excludeKnownCallees: true));
     }
   }
   return words

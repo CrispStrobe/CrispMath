@@ -161,6 +161,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('finite values beyond display limits are not labelled undefined',
+      (tester) async {
+    Future<GraphSamples> sample(Map<String, dynamic> _) async =>
+        const GraphSamples(curves: [
+          [(x: -2, y: 1e13, ok: true), (x: 2, y: 1e13, ok: true)]
+        ]);
+    var opened = 0;
+    await tester.pumpWidget(app(spec(expression: '10000000000000'), sample,
+        onOpenGraph: () => opened++));
+    await tester.pumpAndSettle();
+    expect(find.text('Values are outside the supported plot range.'),
+        findsOneWidget);
+    expect(find.textContaining('No real values'), findsNothing);
+    expect(find.byKey(const ValueKey('notepad-mini-plot-canvas')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('notepad-mini-plot-open')));
+    expect(opened, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('worker failure is visible and Retry starts a fresh request',
       (tester) async {
     final first = Completer<GraphSamples>();

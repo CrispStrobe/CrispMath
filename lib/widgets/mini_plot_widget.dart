@@ -45,6 +45,7 @@ class _MiniPlotWidgetState extends State<MiniPlotWidget> {
   bool _needsSample = true;
   bool _busy = true;
   bool _failed = false;
+  bool _outsideRange = false;
   List<PlotPt> _points = const [];
   GraphBounds? _bounds;
 
@@ -79,6 +80,7 @@ class _MiniPlotWidgetState extends State<MiniPlotWidget> {
       _needsSample = true;
       _busy = false;
       _failed = false;
+      _outsideRange = false;
       _points = const [];
       _bounds = null;
       // A tab change and source update can arrive in the same frame, before
@@ -98,6 +100,7 @@ class _MiniPlotWidgetState extends State<MiniPlotWidget> {
     _needsSample = false;
     _busy = true;
     _failed = false;
+    _outsideRange = false;
     _points = const [];
     _bounds = null;
     try {
@@ -118,16 +121,18 @@ class _MiniPlotWidgetState extends State<MiniPlotWidget> {
           ? const <PlotPt>[]
           : samples.curves.first;
       final finite = points
-          .where((point) => point.ok && point.y.isFinite && point.y.abs() <= 1e12)
+          .where((point) => point.ok && point.y.isFinite)
           .map((point) => point.y)
           .toList();
-      final bounds = finite.isEmpty
+      final displayable = finite.where((value) => value.abs() <= 1e12).toList();
+      final bounds = displayable.isEmpty
           ? null
-          : fittedGraphBounds(spec.lo, spec.hi, finite);
+          : fittedGraphBounds(spec.lo, spec.hi, displayable);
       setState(() {
         _points = points;
         _bounds = bounds;
         _busy = false;
+        _outsideRange = finite.isNotEmpty && displayable.isEmpty;
       });
     } catch (_) {
       if (!mounted || generation != _generation) return;
@@ -170,7 +175,12 @@ class _MiniPlotWidgetState extends State<MiniPlotWidget> {
               padding: const EdgeInsets.all(6),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Text(
-                  _failed ? t.graphSamplingFailed : t.graphNoRealValues,
+                  _failed
+                      ? t.graphSamplingFailed
+                      : _outsideRange
+                          ? WorkflowLocalizations.of(context)
+                              .text(WorkflowLabel.plotOutsideRange)
+                          : t.graphNoRealValues,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12),
                 ),

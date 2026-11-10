@@ -1,6 +1,7 @@
 import 'notepad.dart';
 import 'notepad_evaluator.dart';
 import 'notepad_plot.dart';
+import 'symbolic_expr.dart' show kKnownFunctions;
 
 class LinkedGraphSource {
   final String documentId;
@@ -116,12 +117,13 @@ LinkedGraphResolution resolveLinkedGraph(NotepadDocument? doc, String lineId,
   final expression =
       body.replaceAllMapped(RegExp(r'\b[A-Za-z_][A-Za-z_0-9]*\b'), (m) {
     final name = m[0]!;
+    final tail = body.substring(m.end).trimLeft();
+    if (kKnownFunctions.containsKey(name) && tail.startsWith('(')) return name;
     if (name == variable) return 'x';
     if (scope.containsKey(name)) {
       bound[name] = scope[name]!;
       return '(${scope[name]})';
     }
-    final tail = body.substring(m.end).trimLeft();
     if (!kReservedNotepadNames.contains(name) &&
         !tail.startsWith('(') &&
         name != 'I' &&

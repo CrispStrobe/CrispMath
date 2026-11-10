@@ -5,8 +5,10 @@
 This lane makes calculations, inline plots and the graph workspace cooperate
 inside the existing Notepad model. The baseline inspection is source review at
 [834bcc0](https://github.com/CrispStrobe/CrispMath/commit/834bcc0152bb703a187e7a838dfb6f70d3e11013).
-The changes below are planned or in progress until exact hosted checks and
-their results are recorded. This document does not establish a released app,
+The first increment below is implemented on the feature branch and has focused
+regressions plus desktop/phone browser checks. Hosted verification is pending;
+the draft [PR 21](https://github.com/CrispStrobe/CrispMath/pull/21) tracks current
+source commits and workflow conclusions. This document does not establish a released app,
 deployment, device result or new mathematical-engine capability.
 
 Follow the [current state and executable lanes](https://github.com/CrispStrobe/CrispMath/blob/main/docs/current-state-and-next-steps.md)
@@ -77,6 +79,29 @@ and [exporter](https://github.com/CrispStrobe/CrispMath/blob/834bcc0152bb703a187
 
 ## Selected first increment
 
+### Try the connected worksheet
+
+Enter these rows in Notepad:
+
+```text
+a = 2
+radius = 3
+f(t) = a*t^2
+f(2)
+plot(f(x), x, -radius, radius)
+```
+
+The last row shows a compact plot. Change `a` to update the function result and
+plot, or change `radius` to update its interval. The plot's **View linked graph**
+action opens Graph at that interval. The graph function menu's **Open worksheet
+source** returns to the same row; the linked-source dialog can navigate to its
+parameter assignments.
+
+For a calculation started in Graph, choose **Create worksheet** from a function's
+menu. Current parameter values and the visible x interval become editable rows
+in a fresh document, and the original graph slot follows them. Existing linked
+functions offer **Open worksheet source** instead of creating another copy.
+
 ### Shared plot meaning
 
 Move the plain plot specification into the engine layer. Resolve document
@@ -141,7 +166,25 @@ Use focused unit/widget regressions plus actual hosted browser controls on wide
 and narrow layouts. Record exact commits and workflow conclusions. Do not
 replace historical mathematical fixtures or infer application behavior from a
 model-only test. At this initial audit checkpoint, these acceptance checks are
-pending.
+pending. The checks live in `notepad_plot_test.dart`,
+`mini_plot_widget_test.dart`, `graph_worksheet_test.dart`, the existing graph
+navigation/action and export suites, and `tool/check_connected_notepad_browser.py`.
+The latter enters data through actual controls, observes successful sampled
+plot semantics, checks both navigation directions, and reloads saved work.
+
+### Current limits
+
+This increment covers Cartesian expressions with one independent variable.
+Plot limits use ordinary numeric arithmetic, functions and constants; a bound
+requiring a CAS operation should first be calculated into a named numeric
+value. Both intervals and preview geometry respect the existing graph display
+limits. Finite samples outside that display range are reported as a display
+limitation, separately from a range with no finite real samples. Sampling is
+bounded and discontinuity handling is heuristic, as in the full graph view.
+
+Exports contain readable expression and interval metadata; they do not yet
+embed the inline plot as a chart image. Result references still use the existing
+positional `lineN` convention. The next steps below remain proposed work.
 
 ## Subsequent worksheet roadmap
 

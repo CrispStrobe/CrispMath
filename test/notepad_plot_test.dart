@@ -152,6 +152,92 @@ void main() {
     expect(doc.lines.first.cachedError, contains('Define a'));
   });
 
+  test('recognized reciprocal trig calls are not undefined scalar bindings',
+      () async {
+    final doc = document(['plot(sec(x))', 'plot(csc(x))', 'plot(cot(x))']);
+    await evaluator().evaluateAll(doc);
+    for (final (index, name) in ['sec', 'csc', 'cot'].indexed) {
+      final row = doc.lines[index];
+      expect(row.cachedError, isNull, reason: name);
+      expect(row.cachedFreeVars, isEmpty, reason: name);
+      final spec = PlotSpec.tryParse(row.cachedResult)!;
+      expect(spec.graphExpression, '$name(x)');
+      expect(resolveLinkedGraph(doc, row.id).expression, '$name(x)');
+    }
+  });
+
+  test('recognized calls do not hide missing scalars or malformed calls',
+      () async {
+    final doc = document(['plot(sec(x))']);
+    final engine = evaluator();
+    await engine.evaluateAll(doc);
+    for (final source in [
+      'plot(sec*x)',
+      'plot(sec(x)+sec)',
+      'plot(sinn(x))',
+      'plot(sec(x,x))',
+    ]) {
+      doc.lines.first.source = source;
+      await engine.evaluateFrom(doc, 0);
+      expect(doc.lines.first.cachedResult, isNull, reason: source);
+      expect(doc.lines.first.cachedError, isNotNull, reason: source);
+    }
+  });
+
+  test('a same-named scalar binds beside a builtin without replacing its call',
+      () async {
+    final doc = document(['sec=2', 'plot(sec(x)+sec)']);
+    await evaluator().evaluateAll(doc);
+    expect(doc.lines.last.cachedError, isNull);
+    final spec = PlotSpec.tryParse(doc.lines.last.cachedResult)!;
+    expect(SymbolicExpressionEvaluator.tryParse(spec.expression)!.key,
+        SymbolicExpressionEvaluator.tryParse('sec(x)+2')!.key);
+
+    // Force the ordered symbolic-value path as well as numeric substitution.
+    final symbolic = preprocessNotepadLine(
+        classifyNotepadLine('sec (x)+sec',
+            lineIndex: 1, firstCodeLineIndex: 0),
+        doc: document(['1', 'sec (x)+sec']),
+        lineIndex: 1,
+        scope: {'sec': 'a+1', 'a': '1'});
+    expect(SymbolicExpressionEvaluator.tryParse(symbolic!)!.key,
+        SymbolicExpressionEvaluator.tryParse('sec(x)+2')!.key);
+  });
+
+  test('callee protection preserves local expansion and calculus variables',
+      () async {
+    final doc = document(['a=2', 'sec(t)=a*t', 'plot(sec(x))']);
+    final engine = evaluator();
+    await engine.evaluateAll(doc);
+    expect(at(PlotSpec.tryParse(doc.lines.last.cachedResult)!, 2), 4);
+    expect(buildDependencyGraph(doc).dependsOn[2], {1});
+    doc.lines.first.source = 'a=3';
+    await engine.evaluateFrom(doc, 0);
+    expect(at(PlotSpec.tryParse(doc.lines.last.cachedResult)!, 2), 6);
+
+    final source = 'diff(sec(x)+sec,x)+sec';
+    final protected = preprocessNotepadLine(
+        classifyNotepadLine(source, lineIndex: 0, firstCodeLineIndex: 0),
+        doc: document([source]),
+        lineIndex: 0,
+        scope: {'sec': '2', 'x': '100'});
+    expect(protected, 'diff(sec(x)+(2),x)+(2)');
+  });
+
+  test('builtin-only calls do not depend on a same-named failed scalar',
+      () async {
+    final doc = document(['sec=1/0', 'plot(sec(x))', 'plot(sec(x)+sec)']);
+    await evaluator().evaluateAll(doc);
+    expect(doc.lines.first.cachedError, isNotNull);
+    expect(doc.lines[1].cachedError, isNull);
+    expect(PlotSpec.tryParse(doc.lines[1].cachedResult)!.expression, 'sec(x)');
+    expect(buildDependencyGraph(doc).dependsOn[1], isEmpty);
+    expect(resolveLinkedGraph(doc, doc.lines[1].id).scope, isEmpty);
+    expect(doc.lines.last.cachedResult, isNull);
+    expect(doc.lines.last.cachedError,
+        NotepadErrorPrefix.blocked(doc.lines.first.id, 'line1'));
+  });
+
   test('an unrelated failed scalar does not capture the plot coordinate',
       () async {
     final doc = document(['t=1/0', 'plot(t^2,t,-2,2) // independent coordinate']);

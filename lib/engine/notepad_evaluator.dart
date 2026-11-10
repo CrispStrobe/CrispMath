@@ -139,6 +139,14 @@ NotepadDependencyGraph buildDependencyGraph(
       }
       final target = nameToLine[name];
       if (target == null) continue;
+      // A scalar named sec must not become a dependency of builtin sec(x).
+      // A real local sec(t) definition still owns its call and its dependency.
+      if (kKnownFunctions.containsKey(name) &&
+          !parsedLines[target]!.isFunction &&
+          !dependenciesOfLine(parsed, {name}, excludeKnownCallees: true)
+              .contains(name)) {
+        continue;
+      }
       // A line referencing itself by its own auto-alias / name is
       // a self-loop. Surface it as a one-element cycle.
       dependsOn[i]!.add(target);
@@ -270,8 +278,11 @@ NotepadPlotResolution resolveNotepadPlot(
     if (error != null) {
       throw FormatException(error.replaceFirst('Error: ', ''));
     }
+    // Recognized callees are not scalar dependencies. Check each occurrence:
+    // sec(x) is valid, while sec(x) + sec still needs a value for the latter.
+    // Unknown calls remain errors above and are never silently exempted here.
     final missing = _unboundIdentifierWords(source,
-            includeOutputVariables: true)
+            includeOutputVariables: true, excludeKnownCallees: true)
         .where((name) =>
             !(coordinate && name == variable) &&
             !kReservedNotepadNames.contains(name))
@@ -306,8 +317,16 @@ NotepadPlotResolution resolveNotepadPlot(
 
   // Retain direct and captured function bindings for the source inspector.
   final captured = <String, String>{};
-  final pending = dependenciesOfLine(parsed,
-      {...scope.keys, ...definitions.keys}).toList();
+  Set<String> referencedBindings(ParsedNotepadLine line) {
+    final names = dependenciesOfLine(line, {...scope.keys, ...definitions.keys});
+    names.removeWhere((name) =>
+        kKnownFunctions.containsKey(name) &&
+        definitions[name]?.isFunction != true &&
+        !dependenciesOfLine(line, {name}, excludeKnownCallees: true)
+            .contains(name));
+    return names;
+  }
+  final pending = referencedBindings(parsed).toList();
   final visited = <String>{};
   while (pending.isNotEmpty) {
     final name = pending.removeLast();
@@ -316,8 +335,7 @@ NotepadPlotResolution resolveNotepadPlot(
     if (value != null) captured[name] = value;
     final definition = definitions[name];
     if (definition?.isFunction == true) {
-      pending.addAll(dependenciesOfLine(definition!,
-          {...scope.keys, ...definitions.keys}));
+      pending.addAll(referencedBindings(definition!));
     }
   }
   return NotepadPlotResolution(spec, captured);
