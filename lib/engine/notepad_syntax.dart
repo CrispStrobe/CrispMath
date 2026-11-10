@@ -29,7 +29,7 @@ final _scopeIdentifierRegex = RegExp('$_notepadNumberToken|'
     r'(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*(?![A-Za-z0-9_])');
 final _scalarScopeValue = RegExp(r'^[+-]?\d+(?:\.\d+)?$');
 
-bool _isKnownNotepadCallee(String source, RegExpMatch token) =>
+bool _isKnownNotepadCallee(String source, Match token) =>
     kKnownFunctions.containsKey(token[0]) &&
     source.substring(token.end).trimLeft().startsWith('(');
 
