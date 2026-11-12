@@ -1,8 +1,16 @@
 # CrispMath and CrispEmbed: current state and executable lanes
 
-## Connected Notepad feature branch — 10 November 2026
+## Current cross-repository checkpoint — 12 November 2026
 
-[PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) is the current bounded
+CrispEmbed [v0.17.19](https://github.com/CrispStrobe/CrispEmbed/releases/tag/v0.17.19) is published at tag source `c364feb974b91e14cbf328c6949f3df36e89ce81`; the release lists 16 uploaded native/WASM assets. This is a release listing, not an independent asset readback or app-consumer qualification. CrispMath main `2b9d0982a3fd780deb2ffd67835da3ce658dce27` pins CrispEmbed 0.17.15 in `pubspec.lock`; its 1.2.1+28 commit is a TestFlight build, while the latest GitHub release remains 1.2.0. A newer vendor release does not update the app automatically. Recheck release and distribution status before acting.
+
+The fixed [LightOn4B Q6 provisional replay](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/lighton4b-q6-heldout-provisional-results.md) at `52e1cfcec` passes two of three frozen case floors but the receipt misses upstream: 25 versus 24 character edits and 19 versus 18 word edits. The [planner-only replay](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/lighton4b-planner-heldout-provisional-results.md) at `a6164205620c71427a39c97ab386591406c4ca73` retains that receipt failure; inventory passes, and the extended book reaches 1,536 tokens without EOS. Thus only one of three planner floors passes. The labels are provisional, cases were previously observed, and the capped book is incomplete. Preserve the initial timeout, wrapper failure and independent artifact audits; keep experimental gates off and do not promote an alias or claim decoded qualification.
+
+Choose a bounded lane from [CrispEmbed PLAN](https://github.com/CrispStrobe/CrispEmbed/blob/main/PLAN.md) and its [executable handoff](https://github.com/CrispStrobe/CrispEmbed/blob/main/docs/next-agent-handoff.md). Bind exact sources and retained artifacts, trace the earliest differing inference stage with magnitudes and absolute errors, and compare final decoded output under frozen gates. Large artifacts stay remote. Recheck current owner branches and evidence before dispatch; historical checkpoints below describe their dated state and do not override this section.
+
+## Historical Connected Notepad feature branch — 10 November 2026
+
+At this checkpoint, [PR 22](https://github.com/CrispStrobe/CrispMath/pull/22) was the bounded
 worksheet lane, based on the PR21 merge `c7f84eb`. See the [plot audit](connected-notepad.md) and
 [stable-reference contract](stable-result-references.md). All work is retained
 in incremental feature-branch commits; it is not merged or released.
