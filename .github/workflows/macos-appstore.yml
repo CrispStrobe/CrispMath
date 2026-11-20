@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'probe = read-only; validate = build/sign/validate; upload = also upload'
+        description: 'probe = read-only; validate = build/sign/validate; upload = also upload; listing = native Mac screenshots + listing text'
         type: choice
-        options: [probe, validate, upload]
+        options: [probe, validate, upload, listing]
         default: probe
 
 permissions:
@@ -62,7 +62,7 @@ jobs:
           rm -f "$RUNNER_TEMP/cm.p8"
 
   package:
-    if: ${{ inputs.mode != 'probe' }}
+    if: ${{ inputs.mode == 'validate' || inputs.mode == 'upload' }}
     runs-on: macos-15
     timeout-minutes: 75
     env:
@@ -178,3 +178,77 @@ jobs:
         run: |
           rm -f "$HOME/.appstoreconnect/private_keys/"*.p8 "$RUNNER_TEMP/cm.provisionprofile"
           security delete-keychain "$RUNNER_TEMP/cm-signing.keychain-db" || true
+
+  listing:
+    if: ${{ inputs.mode == 'listing' }}
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      GALLERY: mac-gallery
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout CrispEmbed
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: d28ca2ea43a95934d673d1a54177fdf721614ade
+          path: .ci/CrispEmbed
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Stage verified OCR runtime libraries
+        run: python tool/stage_ocr_runtime.py --platform macos
+      - name: Capture the native macOS gallery
+        timeout-minutes: 35
+        run: |
+          unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
+          flutter pub get
+          CRISPMATH_GALLERY_OUTPUT="$GALLERY" flutter drive \
+            --driver=test_driver/product_gallery_driver.dart \
+            --target=integration_test/product_gallery_test.dart -d macos
+      - name: Select and verify ten 2560x1600 store screenshots
+        run: |
+          set -euo pipefail
+          mkdir -p store-shots
+          i=1
+          for name in connected-worksheet linked-function-graph calculator-exact-integral \
+                      graph-curve-trace multiple-function-graph generated-graph-value-table \
+                      evaluated-engineering-worksheet worksheet-graph-export-preview \
+                      sudoku-solver-explained-step worksheet-checkpoint-history; do
+            src="$GALLERY/$name.png"
+            test -f "$src"
+            w=$(sips -g pixelWidth "$src" | awk '/pixelWidth/{print $2}')
+            h=$(sips -g pixelHeight "$src" | awk '/pixelHeight/{print $2}')
+            test "$w" = 2560 && test "$h" = 1600
+            cp "$src" "store-shots/$(printf %02d $i)-$name.png"
+            i=$((i+1))
+          done
+          ls -la store-shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-store-screenshots
+          path: |
+            store-shots
+            ${{ env.GALLERY }}/native-evidence.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Fill macOS listing text and screenshots
+        env:
+          KEY_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python -m pip install cryptography
+          echo "$KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/cm.p8"
+          python tool/macos_store_listing.py --key-file "$RUNNER_TEMP/cm.p8" \
+            --screenshots store-shots/*.png
+          rm -f "$RUNNER_TEMP/cm.p8"
