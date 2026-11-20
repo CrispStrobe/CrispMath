@@ -63,7 +63,9 @@ jobs:
 
   package:
     if: ${{ inputs.mode == 'validate' || inputs.mode == 'upload' }}
-    runs-on: macos-15
+    # ITMS-90725: App Store Connect requires the 27 SDKs (Xcode 27) from
+    # April 2027; the standard macOS images only ship Xcode 26.x.
+    runs-on: xcode-27
     timeout-minutes: 75
     env:
       ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
@@ -74,6 +76,17 @@ jobs:
       APP: build/macos/Build/Products/Release/crisp_math.app
     steps:
       - uses: actions/checkout@v4
+      - name: Select the newest Xcode 27 and require the macOS 27 SDK
+        run: |
+          set -euo pipefail
+          XC=$(ls -d /Applications/Xcode_27*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XC/Contents/Developer"
+          xcodebuild -version
+          SDK=$(xcrun --sdk macosx --show-sdk-version)
+          echo "macosx SDK: $SDK"
+          if [ "${SDK%%.*}" -lt 27 ]; then
+            echo "::error::macOS SDK $SDK < 27 (ITMS-90725)"; exit 1
+          fi
       - name: Checkout CrispEmbed
         uses: actions/checkout@v4
         with:
@@ -115,7 +128,9 @@ jobs:
         run: |
           set -euo pipefail
           KC="$RUNNER_TEMP/cm-signing.keychain-db"
-          KC_PW="ci-$(uuidgen)"
+          # Empty password: on the xcode-27 image unlock-keychain rejects the
+          # password the keychain was just created with (runner-images#14837).
+          KC_PW=""
           echo "$P12_B64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
           security create-keychain -p "$KC_PW" "$KC"
           security set-keychain-settings -lut 21600 "$KC"
