@@ -48,6 +48,12 @@ def ensure_profile(api, bundle_id, cert):
 def ensure_version(api, app, version):
     versions = api.request(f'/v1/apps/{app}/appStoreVersions?' + urlencode(
         {'filter[platform]': 'MAC_OS', 'limit': '50'}))['data']
+    # The same version string may already exist in a non-editable state (in
+    # review, pending release): a build of it can still be uploaded, but
+    # creating it again is a 409 duplicate, so reuse it.
+    for v in versions:
+        if v['attributes'].get('versionString') == version:
+            return {'id': v['id'], 'version': version, 'created': False}
     for v in versions:
         state = v['attributes'].get('appVersionState') or v['attributes'].get('appStoreState')
         if state in EDITABLE:
