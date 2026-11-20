@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'probe = read-only; validate = build/sign/validate; upload = also upload; listing = native Mac screenshots + listing text'
+        description: 'probe = read-only; validate = build/sign/validate; upload = also upload; listing = native Mac screenshots + listing text; testflight = assign the macOS build to Internal Testers'
         type: choice
-        options: [probe, validate, upload, listing]
+        options: [probe, validate, upload, listing, testflight]
         default: probe
 
 permissions:
@@ -251,4 +251,32 @@ jobs:
           echo "$KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/cm.p8"
           python tool/macos_store_listing.py --key-file "$RUNNER_TEMP/cm.p8" \
             --screenshots store-shots/*.png
+          rm -f "$RUNNER_TEMP/cm.p8"
+
+  testflight:
+    if: ${{ inputs.mode == 'testflight' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assign the processed macOS build to Internal Testers
+        env:
+          KEY_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python -m pip install cryptography
+          echo "$KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/cm.p8"
+          VER=$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)
+          BUILD=$(sed -n 's/^version: .*+//p' pubspec.yaml)
+          python tool/testflight_internal.py --key-file "$RUNNER_TEMP/cm.p8" --inspect-only
+          python tool/testflight_internal.py --key-file "$RUNNER_TEMP/cm.p8" \
+            --platform MAC_OS --version "$VER" --build "$BUILD"
           rm -f "$RUNNER_TEMP/cm.p8"

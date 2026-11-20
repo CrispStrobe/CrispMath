@@ -13,10 +13,10 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
-def matching_build(build, prerelease, number, version):
+def matching_build(build, prerelease, number, version, platform='IOS'):
     return (build['attributes']['version'] == number
             and prerelease['attributes']['version'] == version
-            and prerelease['attributes']['platform'] == 'IOS')
+            and prerelease['attributes']['platform'] == platform)
 
 
 def internal_group(groups):
@@ -57,13 +57,13 @@ class AppleApi:
             return json.loads(raw) if raw else {}
 
 
-def matching_builds(api, app, number, version):
+def matching_builds(api, app, number, version, platform='IOS'):
     """Return every iOS build of [version] whose build number is [number]."""
     query = urlencode({'filter[app]': app, 'filter[version]': number, 'limit': '200'})
     found = []
     for build in api.request('/v1/builds?' + query)['data']:
         prerelease = api.request(f'/v1/builds/{build["id"]}/preReleaseVersion')['data']
-        if matching_build(build, prerelease, number, version):
+        if matching_build(build, prerelease, number, version, platform):
             found.append(build)
     return found
 
@@ -86,12 +86,12 @@ def assert_unused(api, app, number, version):
         f'(processingState={", ".join(states)}); bump the build number instead of re-uploading')
 
 
-def prepare(api, app, number, version, wait_seconds=900):
+def prepare(api, app, number, version, wait_seconds=900, platform='IOS'):
     if api.request(f'/v1/apps/{app}')['data']['attributes']['bundleId'] != 'com.crispstrobe.crispmath':
         raise ValueError('App ID does not identify CrispMath')
     deadline = time.monotonic() + wait_seconds
     while True:
-        candidates = matching_builds(api, app, number, version)
+        candidates = matching_builds(api, app, number, version, platform)
         if len(candidates) > 1:
             raise ValueError('Multiple matching iOS builds; assignment aborted')
         if candidates:
@@ -128,6 +128,7 @@ if __name__ == '__main__':
     parser.add_argument('--version')
     parser.add_argument('--build')
     parser.add_argument('--inspect-only', action='store_true')
+    parser.add_argument('--platform', default='IOS', choices=['IOS', 'MAC_OS'])
     parser.add_argument('--assert-unused', action='store_true',
                         help='Fail when this version/build pair is already uploaded')
     parser.add_argument('--output', type=Path, default=Path('testflight-evidence.json'))
@@ -156,6 +157,7 @@ if __name__ == '__main__':
     else:
         if not args.version or not args.build:
             parser.error('--version and --build are required for assignment')
-        evidence = prepare(api, app, args.build, args.version)
+        evidence = prepare(api, app, args.build, args.version, platform=args.platform)
+        evidence['platform'] = args.platform
     args.output.write_text(json.dumps(evidence, indent=2) + '\n')
     print(json.dumps(evidence), flush=True)
