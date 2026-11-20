@@ -17,6 +17,10 @@ on:
         description: 'Submit for App Review (otherwise inspect only)'
         type: boolean
         default: false
+      release_pending:
+        description: 'Release the approved version pending developer release first'
+        type: boolean
+        default: false
       replace_in_review:
         description: 'Withdraw the version currently in review first (requires submit)'
         type: boolean
@@ -41,6 +45,7 @@ jobs:
       BUILD: ${{ inputs.build }}
       SUBMIT: ${{ inputs.submit }}
       REPLACE: ${{ inputs.replace_in_review }}
+      RELEASE_PENDING: ${{ inputs.release_pending }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -61,6 +66,7 @@ jobs:
           VER=$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)
           ARGS=()
           if [ "$SUBMIT" = true ]; then ARGS+=(--submit); fi
+          if [ "$RELEASE_PENDING" = true ]; then ARGS+=(--release-pending); fi
           if [ "$REPLACE" = true ]; then
             test "$SUBMIT" = true
             ARGS+=(--replace-in-review)

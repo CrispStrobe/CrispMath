@@ -40,3 +40,12 @@ class ReviewNotesTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class WhatsNewTest(unittest.TestCase):
+    def test_every_locale_fits_and_falls_back_to_english(self):
+        from app_review_submit import WHATS_NEW, whats_new
+        for text in WHATS_NEW.values():
+            self.assertLess(len(text), 4000)
+        self.assertEqual(whats_new('de-DE'), WHATS_NEW['de'])
+        self.assertEqual(whats_new('it'), WHATS_NEW['en'])

@@ -16,16 +16,61 @@ from urllib.parse import urlencode
 from testflight_internal import AppleApi, matching_build
 
 REVIEW_NOTES = """\
-This resubmission answers the Guideline 4.3(a) finding against CrispMath 1.2.0. The full point-by-point response to the nine questions was sent in Messages on 3 November 2026; this build carries the fixes made since the rejected binary.
+CrispMath 1.2.1 is an update to the approved 1.2.0. It makes the worksheet a connected mathematical document; no account, purchase or network access is needed to review it.
 
-CrispMath is a standalone mathematical workspace, not a template product or an opportunistic variant of a category app. Users define variables and functions in a worksheet, compute symbolic algebra and calculus, link expressions to a graph, trace curves and export the worksheet together with its plots. The algebra is SymEngine, a C++ computer algebra library, called through dart:ffi and running on device without an account; it is not string rewriting or a stored table of worked examples. It provides factoring and simplification with rational cancellation, symbolic differentiation, Taylor and Maclaurin series, limits computed by the Gruntz algorithm, equation and linear-system solving, matrices with determinant/inverse/RREF/eigenvalues, statistical tests, unit conversion with composite dimensions, and a FlatZinc constraint solver with a step-by-step propagation view.
+CrispMath is a standalone mathematical workspace. The algebra is SymEngine, a C++ computer algebra library, called through dart:ffi and running on device. The source is public: https://github.com/CrispStrobe/CrispMath
 
-Suggested path: the app opens on a worksheet. Enter a=3, then f(t)=t^2+a, then f(4); the result is 19, and changing a recalculates the sheet. Analysis > Labs > Sudoku solver > AI Escargot > Solve, then Next, steps through each explained deduction.
-
-It is about 99,000 lines of Dart with more than 3,400 automated tests, localised in English, German, French and Spanish, and exports LaTeX. The source is public: https://github.com/CrispStrobe/CrispMath
-
-This build (27) also fixes the keyboard focus, graph-function editing and memory-value layout issues found while testing build 25. It shares no codebase, SDK or content library with any third-party app; internal components shared with our other titles are identified in the 3 November reply.
+Suggested path for the new features: the app opens on a worksheet. Enter a=2, then f(t)=a*t^2, then plot(f(x),x,-2,2). An inline plot appears under the row; change a to 3 and the plot and dependent results update. Tap View linked graph to open the same curve in the Graphing tab, then use the function's menu to return to the worksheet source. In Graphing, an independent function's menu offers Create worksheet. Results referenced by later rows stay attached to the same calculation when rows are inserted or moved.
 """
+
+WHATS_NEW = {
+    'en': """Connected worksheet:
+- Inline plots use your worksheet's variables, functions and interval expressions, update when a parameter changes, and keep gaps at undefined points.
+- Open an inline plot in Graph and return to its worksheet source, or turn a graph into a new worksheet with its parameters and interval.
+- References to earlier results stay attached to the same calculation when rows are inserted, moved, duplicated or imported.
+- Markdown and other exports describe plots readably.""",
+    'de': """Verbundenes Arbeitsblatt:
+- Eingebettete Plots verwenden die Variablen, Funktionen und Intervallausdrücke des Arbeitsblatts, aktualisieren sich bei Parameteränderungen und zeigen Lücken an undefinierten Stellen.
+- Plots im Graphen öffnen und zur Quelle im Arbeitsblatt zurückkehren oder aus einem Graphen ein neues Arbeitsblatt mit Parametern und Intervall erstellen.
+- Verweise auf frühere Ergebnisse bleiben beim Einfügen, Verschieben, Duplizieren oder Importieren von Zeilen an derselben Berechnung.
+- Markdown- und andere Exporte beschreiben Plots lesbar.""",
+    'fr': """Feuille de calcul connectée :
+- Les tracés intégrés utilisent les variables, fonctions et intervalles de la feuille, se mettent à jour quand un paramètre change et conservent les discontinuités.
+- Ouvrez un tracé dans Graphique et revenez à sa source, ou créez une nouvelle feuille à partir d'un graphique avec ses paramètres et son intervalle.
+- Les références aux résultats précédents restent liées au même calcul lorsque des lignes sont insérées, déplacées, dupliquées ou importées.
+- Les exports Markdown et autres décrivent les tracés de façon lisible.""",
+    'es': """Hoja de cálculo conectada:
+- Los gráficos integrados usan las variables, funciones e intervalos de la hoja, se actualizan al cambiar un parámetro y conservan los huecos en puntos no definidos.
+- Abre un gráfico en Gráficos y vuelve a su origen, o crea una hoja nueva a partir de un gráfico con sus parámetros e intervalo.
+- Las referencias a resultados anteriores siguen vinculadas al mismo cálculo al insertar, mover, duplicar o importar filas.
+- Las exportaciones Markdown y otras describen los gráficos de forma legible.""",
+}
+
+
+def whats_new(locale):
+    return WHATS_NEW.get(locale.split('-')[0], WHATS_NEW['en'])
+
+
+def release_pending(api, app, wait_seconds=600):
+    """Release an approved version waiting for manual developer release."""
+    versions = api.request(f'/v1/apps/{app}/appStoreVersions?' + urlencode(
+        {'filter[platform]': 'IOS', 'limit': '50'}))['data']
+    pending = [v for v in versions if version_state(v) == 'PENDING_DEVELOPER_RELEASE']
+    if len(pending) != 1:
+        raise ValueError(f'Expected exactly one version pending developer release, found {len(pending)}')
+    vid = pending[0]['id']
+    api.request('/v1/appStoreVersionReleaseRequests', {'data': {
+        'type': 'appStoreVersionReleaseRequests',
+        'relationships': {'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': vid}}}}})
+    deadline = time.time() + wait_seconds
+    while True:
+        state = version_state(api.request(f'/v1/appStoreVersions/{vid}')['data'])
+        if state != 'PENDING_DEVELOPER_RELEASE':
+            return {'released': pending[0]['attributes']['versionString'], 'state': state}
+        if time.time() > deadline:
+            raise ValueError('Released version is still pending developer release')
+        time.sleep(15)
+
 
 EDITABLE = {'PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED',
             'METADATA_REJECTED', 'INVALID_BINARY'}
@@ -155,6 +200,11 @@ def submit(api, app, evidence):
     api.request(f'/v1/appStoreVersions/{vid}/relationships/build',
                 {'data': {'type': 'builds', 'id': bid}}, method='PATCH')
 
+    for loc in api.request(f'/v1/appStoreVersions/{vid}/appStoreVersionLocalizations?limit=50')['data']:
+        api.request(f'/v1/appStoreVersionLocalizations/{loc["id"]}', {'data': {
+            'type': 'appStoreVersionLocalizations', 'id': loc['id'],
+            'attributes': {'whatsNew': whats_new(loc['attributes']['locale'])}}}, method='PATCH')
+
     detail = api.request(f'/v1/appStoreVersions/{vid}/appStoreReviewDetail').get('data')
     if detail:
         api.request(f'/v1/appStoreReviewDetails/{detail["id"]}', {'data': {'type': 'appStoreReviewDetails',
@@ -219,11 +269,21 @@ if __name__ == '__main__':
     parser.add_argument('--submit', action='store_true')
     parser.add_argument('--replace-in-review', action='store_true',
                         help='Withdraw the version in review first, then submit this build')
+    parser.add_argument('--release-pending', action='store_true',
+                        help='Release the approved version pending developer release first')
     parser.add_argument('--output', type=Path, default=Path('app-review-evidence.json'))
     args = parser.parse_args()
     api = AppleApi(args.key_file)
     app = os.environ['ASC_APP_ID']
+    released = None
+    if args.release_pending:
+        try:
+            released = release_pending(api, app)
+        except HTTPError as error:
+            print(error.read().decode(errors='replace'))
+            raise
     evidence = inspect(api, app, args.build, args.version)
+    evidence['releasedPending'] = released
     if args.submit:
         try:
             if args.replace_in_review:
