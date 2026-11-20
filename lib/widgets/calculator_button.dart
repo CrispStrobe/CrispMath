@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../localization/app_localizations.dart';
+
 /// A styled button for the calculator keypad.
 class CalculatorButton extends StatelessWidget {
   final String text;
@@ -13,36 +15,10 @@ class CalculatorButton extends StatelessWidget {
     required this.onPressed,
   });
 
-  /// Maps glyph-only button labels to spoken descriptions for screen
-  /// readers. VoiceOver / TalkBack would otherwise announce "√" as
-  /// nothing or "u+221A" depending on the platform. Plain digits and
-  /// recognizable function names (`sin`, `solve`) pass through their
-  /// own text and aren't in this table.
-  static const Map<String, String> _semanticLabel = {
-    '⌫': 'backspace',
-    '±': 'plus or minus',
-    '√': 'square root',
-    '∛': 'cube root',
-    'ⁿ√': 'nth root',
-    '^': 'to the power of',
-    '×': 'times',
-    '÷': 'divided by',
-    '·': 'times',
-    'π': 'pi',
-    'e': 'Euler\'s number',
-    '∞': 'infinity',
-    '°': 'degrees',
-    'φ': 'phi',
-    '∫ dx': 'integral',
-    'd/dx': 'derivative',
-    '∫⌄': 'integral with bounds picker',
-    'd/dx⌄': 'differentiation steps picker',
-    'solve⌄': 'solve steps picker',
-    'Ans': 'last answer',
-    'EXE': 'evaluate',
-    '=': 'equals',
-    'C': 'clear',
-  };
+  // Glyph-only buttons get a spoken description for screen readers
+  // (VoiceOver / TalkBack would otherwise announce "√" as nothing or
+  // "u+221A"); see AppLocalizations.keypadSpokenLabel. Plain digits and
+  // recognizable function names (`sin`, `solve`) pass through their own text.
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +28,7 @@ class CalculatorButton extends StatelessWidget {
         // Override the auto-derived label with a screen-reader-friendly
         // form for glyph-only buttons; fall back to the visible text
         // for digits and named functions where the literal is fine.
-        label: _semanticLabel[text] ?? text,
+        label: AppLocalizations.of(context).keypadSpokenLabel(text) ?? text,
         button: true,
         excludeSemantics: true,
         child: FilledButton(

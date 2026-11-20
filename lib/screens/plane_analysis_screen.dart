@@ -74,6 +74,7 @@ class _PlaneAnalysisScreenState extends State<PlaneAnalysisScreen> {
   double _parse(TextEditingController c) => double.tryParse(c.text.trim()) ?? 0;
 
   void _analyze() {
+    final t = AppLocalizations.of(context);
     PlaneAnalysis result;
     if (_form == _Form.coordinate) {
       result = analyzePlaneFromCoordinate(
@@ -87,37 +88,37 @@ class _PlaneAnalysisScreenState extends State<PlaneAnalysisScreen> {
     }
 
     if (!result.isValid) {
-      setState(() => _output = 'Error: ${result.error}');
+      setState(() => _output = t.planeError('${result.error}'));
       return;
     }
 
     final buf = StringBuffer();
-    buf.writeln('Coordinate form:');
+    buf.writeln(t.planeCoordinateFormHeading);
     buf.writeln(
         '  ${_term(result.a, 'x')} ${_termSigned(result.b, 'y')} ${_termSigned(result.c, 'z')} = ${_fmt(result.d)}');
     buf.writeln();
     buf.writeln(
-        'Normal vector n = (${_fmt(result.a)}, ${_fmt(result.b)}, ${_fmt(result.c)})');
+        t.planeNormalVector('(${_fmt(result.a)}, ${_fmt(result.b)}, ${_fmt(result.c)})'));
     buf.writeln(
-        'Unit normal n̂ = (${_fmt(result.unitNormal.x)}, ${_fmt(result.unitNormal.y)}, ${_fmt(result.unitNormal.z)})');
+        t.planeUnitNormal('(${_fmt(result.unitNormal.x)}, ${_fmt(result.unitNormal.y)}, ${_fmt(result.unitNormal.z)})'));
     buf.writeln(
-        'Hessian normal form: n̂·x = ${_fmt(-result.signedDistanceFromOrigin)}');
+        t.planeHessianNormalForm(_fmt(-result.signedDistanceFromOrigin)));
     buf.writeln(
-        'Signed distance from origin: ${_fmt(result.signedDistanceFromOrigin)}');
+        t.planeSignedDistance(_fmt(result.signedDistanceFromOrigin)));
     buf.writeln();
     buf.writeln(
-        'Point on plane: (${_fmt(result.pointOnPlane.x)}, ${_fmt(result.pointOnPlane.y)}, ${_fmt(result.pointOnPlane.z)})');
+        t.planePointOnPlane('(${_fmt(result.pointOnPlane.x)}, ${_fmt(result.pointOnPlane.y)}, ${_fmt(result.pointOnPlane.z)})'));
     buf.writeln();
-    buf.writeln('Axis intercepts:');
+    buf.writeln(t.planeAxisIntercepts);
     buf.writeln(result.xIntercept != null
-        ? '  x-axis: (${_fmt(result.xIntercept!.x)}, 0, 0)'
-        : '  x-axis: parallel (no intercept)');
+        ? '  ${t.planeAxisIntercept('x', '(${_fmt(result.xIntercept!.x)}, 0, 0)')}'
+        : '  ${t.planeAxisParallel('x')}');
     buf.writeln(result.yIntercept != null
-        ? '  y-axis: (0, ${_fmt(result.yIntercept!.y)}, 0)'
-        : '  y-axis: parallel (no intercept)');
+        ? '  ${t.planeAxisIntercept('y', '(0, ${_fmt(result.yIntercept!.y)}, 0)')}'
+        : '  ${t.planeAxisParallel('y')}');
     buf.writeln(result.zIntercept != null
-        ? '  z-axis: (0, 0, ${_fmt(result.zIntercept!.z)})'
-        : '  z-axis: parallel (no intercept)');
+        ? '  ${t.planeAxisIntercept('z', '(0, 0, ${_fmt(result.zIntercept!.z)})')}'
+        : '  ${t.planeAxisParallel('z')}');
 
     setState(() => _output = buf.toString());
   }
@@ -230,6 +231,7 @@ class _PlaneAnalysisScreenState extends State<PlaneAnalysisScreen> {
   }
 
   Widget _buildParametricForm() {
+    final t = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -240,11 +242,11 @@ class _PlaneAnalysisScreenState extends State<PlaneAnalysisScreen> {
               child: Text('x = P + s·U + t·V'),
             ),
             const SizedBox(height: 12),
-            _vecRow('Point P', _px, _py, _pz),
+            _vecRow(t.planePointP, _px, _py, _pz),
             const SizedBox(height: 8),
-            _vecRow('Direction U', _ux, _uy, _uz),
+            _vecRow(t.planeDirectionU, _ux, _uy, _uz),
             const SizedBox(height: 8),
-            _vecRow('Direction V', _vx, _vy, _vz),
+            _vecRow(t.planeDirectionV, _vx, _vy, _vz),
           ],
         ),
       ),

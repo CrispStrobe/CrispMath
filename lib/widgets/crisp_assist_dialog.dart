@@ -7,6 +7,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../localization/app_localizations.dart';
+
 import '../engine/app_state.dart';
 import '../engine/step_engine.dart';
 import '../services/crisp_assist_service_stub.dart'
@@ -181,11 +183,13 @@ class _CrispAssistExplainDialogState extends State<_CrispAssistExplainDialog> {
               _cancel.cancel();
               setState(() => _done = true);
             },
-            child: const Text('Stop'),
+            child: Text(AppLocalizations.of(context).assistStop),
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(_done ? 'Close' : 'Dismiss'),
+          child: Text(_done
+              ? AppLocalizations.of(context).dialogClose
+              : AppLocalizations.of(context).assistDismiss),
         ),
       ],
     );
@@ -266,7 +270,7 @@ class _CrispAssistNarrateDialogState extends State<_CrispAssistNarrateDialog> {
           Icon(Icons.auto_awesome,
               color: cs.primary, size: 20, semanticLabel: 'CrispAssist'),
           const SizedBox(width: 8),
-          const Text('CrispAssist — Step Narration'),
+          Text('CrispAssist — ${AppLocalizations.of(context).assistStepNarration}'),
         ],
       ),
       content: SizedBox(
@@ -297,7 +301,7 @@ class _CrispAssistNarrateDialogState extends State<_CrispAssistNarrateDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(AppLocalizations.of(context).dialogClose),
         ),
       ],
     );

@@ -52,6 +52,7 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
 
   Future<void> _generate() async {
     final n = _n;
+    final t = AppLocalizations.of(context);
     setState(() {
       _solving = true;
       _square = null;
@@ -65,7 +66,7 @@ class _MagicSquareTabState extends State<_MagicSquareTab> {
     } catch (e) {
       // A thrown solve must not leave the button spinning forever with no
       // visible outcome.
-      r = DiophantineResult.failure('Magic-square solve failed: $e');
+      r = DiophantineResult.failure(t.constraintsMagicSolveFailed('$e'));
     }
     if (!mounted) return;
     if (n != _n) {

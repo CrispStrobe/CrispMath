@@ -495,6 +495,30 @@ class NotepadScreenState extends State<NotepadScreen> {
       if (!mounted || _currentDoc?.id != doc.id) return;
       _controllers[line.id]?.selection =
           TextSelection.collapsed(offset: source.length);
+      _focusNodes[line.id]?.requestFocus();
+      _scrollToLineId(line.id);
+    });
+  }
+
+  /// Enter in a row: insert an empty row directly below [index] and move the
+  /// keyboard focus into it.
+  void _insertLineAfter(NotepadDocument doc, int index) {
+    _dismissPendingLineUndo(doc);
+    final at = (index + 1).clamp(0, doc.lines.length);
+    final line = NotepadLine.fresh(source: '');
+    doc.lines.insert(at, line);
+    _undoFor(doc).record(undo.UndoOp(
+      kind: undo.UndoOpKind.insert,
+      index: at,
+      lineId: line.id,
+      newValue: '',
+    ));
+    _persistDoc(doc);
+    // Rows below moved: legacy positional `lineN` references must re-resolve.
+    if (at < doc.lines.length - 1) _scheduleFullRecalc(doc);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _currentDoc?.id != doc.id) return;
+      _focusNodes[line.id]?.requestFocus();
       _scrollToLineId(line.id);
     });
   }
@@ -740,18 +764,18 @@ class NotepadScreenState extends State<NotepadScreen> {
                     .primary
                     .withValues(alpha: 0.1),
                 title: Text(
-                  doc.name,
+                  t.notepadDisplayDocName(doc.name),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 subtitle: Text(
-                  '${doc.lines.length} lines',
+                  t.notepadLineCount(doc.lines.length),
                   style: const TextStyle(fontSize: 11),
                 ),
                 onTap: () => _openDocument(doc.id),
                 trailing: doc.id == kWelcomeNotepadDocId
-                    ? const Icon(Icons.menu_book,
-                        size: 16, semanticLabel: 'Welcome sample')
+                    ? Icon(Icons.menu_book,
+                        size: 16, semanticLabel: t.notepadWelcomeSample)
                     : null,
               );
             },
@@ -760,7 +784,7 @@ class NotepadScreenState extends State<NotepadScreen> {
         Padding(
           padding: const EdgeInsets.all(8),
           child: TextButton.icon(
-            icon: const Icon(Icons.add, size: 18, semanticLabel: 'Add'),
+            icon: Icon(Icons.add, size: 18, semanticLabel: t.notepadAdd),
             label: Text(t.notepadNewDocument),
             onPressed: _newDocument,
           ),
@@ -784,6 +808,7 @@ class NotepadScreenState extends State<NotepadScreen> {
                 .where((l) => _lineMatchesSearch(l))
                 .length -
             matchCount;
+    final t = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -794,21 +819,21 @@ class NotepadScreenState extends State<NotepadScreen> {
               autofocus: true,
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Search…',
+                hintText: t.notepadSearchHint,
                 border: InputBorder.none,
                 suffixText: _searchQuery.isEmpty
                     ? ''
                     : hiddenMatches > 0
-                        ? '$matchCount shown · $hiddenMatches hidden'
-                        : '$matchCount matches',
+                        ? t.notepadSearchShownHidden(matchCount, hiddenMatches)
+                        : t.notepadSearchMatches(matchCount),
               ),
               style: const TextStyle(fontSize: 14),
               onChanged: (v) => setState(() => _searchQuery = v),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close,
-                size: 18, semanticLabel: 'Close search'),
+            icon: Icon(Icons.close,
+                size: 18, semanticLabel: t.notepadCloseSearch),
             onPressed: _toggleSearch,
           ),
         ],
@@ -950,28 +975,29 @@ class NotepadScreenState extends State<NotepadScreen> {
         .where((p) => p.name.contains('Layout'))
         .firstOrNull;
 
+    final t = AppLocalizations.of(context);
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (ctx) => SafeArea(
         child: Wrap(children: [
           ListTile(
-            leading: const Icon(Icons.camera_alt, semanticLabel: 'Camera'),
-            title: const Text('Take photo'),
-            subtitle: const Text('Single formula'),
+            leading: Icon(Icons.camera_alt, semanticLabel: t.notepadCamera),
+            title: Text(t.notepadTakePhoto),
+            subtitle: Text(t.notepadSingleFormula),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
             leading:
-                const Icon(Icons.photo_library, semanticLabel: 'Photo library'),
-            title: const Text('Choose from gallery'),
+                Icon(Icons.photo_library, semanticLabel: t.notepadPhotoLibrary),
+            title: Text(t.notepadChooseFromGallery),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
           if (layoutProvider != null)
             ListTile(
-              leading: const Icon(Icons.article_outlined,
-                  semanticLabel: 'Document page'),
-              title: const Text('Document page'),
-              subtitle: const Text('Detect layout, OCR formula regions'),
+              leading: Icon(Icons.article_outlined,
+                  semanticLabel: t.notepadDocumentPage),
+              title: Text(t.notepadDocumentPage),
+              subtitle: Text(t.notepadDocumentPageSubtitle),
               onTap: () {
                 provider = layoutProvider;
                 Navigator.pop(ctx, ImageSource.gallery);
@@ -992,7 +1018,7 @@ class NotepadScreenState extends State<NotepadScreen> {
     if (activeProvider == null) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No OCR provider configured.')),
+        SnackBar(content: Text(t.notepadNoOcrProvider)),
       );
       return;
     }
@@ -1020,7 +1046,7 @@ class NotepadScreenState extends State<NotepadScreen> {
     if (!context.mounted) return;
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OCR failed.')),
+        SnackBar(content: Text(t.notepadOcrFailed)),
       );
       return;
     }
@@ -1053,7 +1079,7 @@ class NotepadScreenState extends State<NotepadScreen> {
               Icon(Icons.auto_awesome,
                   semanticLabel: 'AI', color: cs.primary, size: 20),
               const SizedBox(width: 8),
-              const Text('AI Translate'),
+              Text(AppLocalizations.of(ctx).notepadAiTranslate),
             ]),
             content: SizedBox(
               width: 400,
@@ -1062,7 +1088,7 @@ class NotepadScreenState extends State<NotepadScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Describe the math in natural language:',
+                    AppLocalizations.of(ctx).notepadAiDescribePrompt,
                     style: TextStyle(
                       fontSize: 12,
                       color: cs.onSurface.withValues(alpha: 0.7),
@@ -1073,7 +1099,7 @@ class NotepadScreenState extends State<NotepadScreen> {
                     controller: controller,
                     autofocus: true,
                     decoration: InputDecoration(
-                      hintText: 'e.g. "derivative of x cubed minus 4x"',
+                      hintText: AppLocalizations.of(ctx).notepadAiHint,
                       isDense: true,
                       suffixIcon: loading
                           ? const SizedBox(
@@ -1155,12 +1181,12 @@ class NotepadScreenState extends State<NotepadScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.of(ctx).cancel),
               ),
               if (translated != null)
                 FilledButton(
                   onPressed: () => Navigator.of(ctx).pop(translated),
-                  child: const Text('Insert'),
+                  child: Text(AppLocalizations.of(ctx).dialogInsert),
                 ),
             ],
           ),
@@ -1178,6 +1204,11 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   void recalculateAll() => _recalculateAll();
+
+  // Desktop menu entry points (File menu).
+  void newDocument() => _newDocument();
+  Future<void> openWorksheetFile() => _openWorksheetFile();
+  Future<void> saveWorksheetFile() => _saveWorksheetFile();
 
   void _newDocument() {
     final base = AppLocalizations.of(context).notepadDefaultDocName;
@@ -1325,7 +1356,9 @@ class NotepadScreenState extends State<NotepadScreen> {
     final doc = _currentDoc;
     if (doc == null) return;
     try {
-      final copy = duplicateNotepadDocument(doc, name: '${doc.name} (copy)');
+      final copy = duplicateNotepadDocument(doc,
+          name: AppLocalizations.of(context).notepadCopyName(
+              AppLocalizations.of(context).notepadDisplayDocName(doc.name)));
       openImportedWorksheet(copy);
     } on FormatException {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1670,7 +1703,8 @@ class NotepadScreenState extends State<NotepadScreen> {
     if (doc == null) return;
     _renameController?.dispose();
     _renameFocus?.dispose();
-    _renameController = TextEditingController(text: doc.name);
+    _renameController = TextEditingController(
+        text: AppLocalizations.of(context).notepadDisplayDocName(doc.name));
     _renameFocus = FocusNode();
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1905,7 +1939,7 @@ class NotepadScreenState extends State<NotepadScreen> {
   }
 
   Widget _buildTitle(NotepadDocument? doc) {
-    if (doc == null) return const Text('Notepad');
+    if (doc == null) return Text(AppLocalizations.of(context).navNotepad);
     if (_renameController != null) {
       return TextField(
         controller: _renameController,
@@ -1925,7 +1959,7 @@ class NotepadScreenState extends State<NotepadScreen> {
       onTap: _startRename,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        child: Text(doc.name),
+        child: Text(AppLocalizations.of(context).notepadDisplayDocName(doc.name)),
       ),
     );
   }
@@ -1945,16 +1979,16 @@ class NotepadScreenState extends State<NotepadScreen> {
       // OCR camera button
       if (!compact)
         IconButton(
-          icon:
-              const Icon(Icons.camera_alt_outlined, semanticLabel: 'Scan math'),
-          tooltip: 'Scan math',
+          icon: Icon(Icons.camera_alt_outlined,
+              semanticLabel: t.notepadScanMath),
+          tooltip: t.notepadScanMath,
           onPressed: () => _launchNotepadOcr(context),
         ),
       // Handwriting input
       if (!compact)
         IconButton(
-          icon: const Icon(Icons.draw_outlined, semanticLabel: 'Write math'),
-          tooltip: 'Write math',
+          icon: Icon(Icons.draw_outlined, semanticLabel: t.notepadWriteMath),
+          tooltip: t.notepadWriteMath,
           onPressed: () async {
             final expr = await showHandwritingInputDialog(context);
             if (expr == null || expr.isEmpty || !mounted) return;
@@ -1969,23 +2003,23 @@ class NotepadScreenState extends State<NotepadScreen> {
         ),
       if (!compact)
         IconButton(
-          icon: const Icon(Icons.picture_as_pdf_outlined,
-              semanticLabel: 'Export PDF'),
-          tooltip: 'Export as PDF',
+          icon: Icon(Icons.picture_as_pdf_outlined,
+              semanticLabel: t.notepadExportPdf),
+          tooltip: t.notepadExportAsPdf,
           onPressed: () async {
             if (_currentDoc == null) return;
             final pdf = await exportToPdf(_currentDoc!);
             await Printing.layoutPdf(
               onLayout: (format) async => pdf.save(),
               name:
-                  _currentDoc!.name.isNotEmpty ? _currentDoc!.name : 'Notepad',
+                  _currentDoc!.name.isNotEmpty ? _currentDoc!.name : t.navNotepad,
             );
           },
         ),
       if (!compact)
         IconButton(
-          icon: const Icon(Icons.menu_book_outlined,
-              semanticLabel: 'Worked examples'),
+          icon: Icon(Icons.menu_book_outlined,
+              semanticLabel: t.workedExamplesTitle),
           tooltip: t.workedExamplesTitle,
           onPressed: () => showDialog<void>(
             context: context,
@@ -2090,10 +2124,10 @@ class NotepadScreenState extends State<NotepadScreen> {
                 ),
             ],
             if (compact) ...[
-              const PopupMenuItem(value: 'scan', child: Text('Scan math')),
-              const PopupMenuItem(value: 'write', child: Text('Write math')),
-              const PopupMenuItem(
-                  value: 'examples', child: Text('Worked examples')),
+              PopupMenuItem(value: 'scan', child: Text(t.notepadScanMath)),
+              PopupMenuItem(value: 'write', child: Text(t.notepadWriteMath)),
+              PopupMenuItem(
+                  value: 'examples', child: Text(t.workedExamplesTitle)),
             ],
             // One entry instead of seven: the picker opens a dialog, which
             // keeps this menu short enough to use without scrolling.
@@ -2109,7 +2143,7 @@ class NotepadScreenState extends State<NotepadScreen> {
             for (final d in others) {
               items.add(PopupMenuItem(
                 value: 'open:${d.id}',
-                child: Text(d.name),
+                child: Text(t.notepadDisplayDocName(d.name)),
               ));
             }
           }
@@ -2140,14 +2174,14 @@ class NotepadScreenState extends State<NotepadScreen> {
               value: 'copy-markdown',
               child: Text(t.notepadCopyAsMarkdown),
             ));
-            items.add(const PopupMenuItem(
+            items.add(PopupMenuItem(
               value: 'export-pdf',
-              child: Text('Export PDF'),
+              child: Text(t.notepadExportPdf),
             ));
             if (AppState().crispAssistEnabled) {
-              items.add(const PopupMenuItem(
+              items.add(PopupMenuItem(
                 value: 'ai-translate',
-                child: Text('AI Translate'),
+                child: Text(t.notepadAiTranslate),
               ));
             }
             items.add(PopupMenuItem(
@@ -2158,9 +2192,11 @@ class NotepadScreenState extends State<NotepadScreen> {
                         ? Icons.check_box
                         : Icons.check_box_outline_blank,
                     size: 18,
-                    semanticLabel: doc.useLatexInput ? 'Checked' : 'Unchecked'),
+                    semanticLabel: doc.useLatexInput
+                        ? t.notepadChecked
+                        : t.notepadUnchecked),
                 const SizedBox(width: 8),
-                const Flexible(child: Text('LaTeX input')),
+                Flexible(child: Text(t.notepadLatexInput)),
               ]),
             ));
             items.add(PopupMenuItem(
@@ -2173,6 +2209,14 @@ class NotepadScreenState extends State<NotepadScreen> {
         ),
       ),
     ];
+  }
+
+  NotepadDocument _createFromTemplate(NotepadTemplate tmpl) {
+    final t = AppLocalizations.of(context);
+    return tmpl.createDocument(
+      localizedName: t.notepadTemplateName(tmpl.id, tmpl.name),
+      translateText: t.notepadTemplateText,
+    );
   }
 
   void _onMenuSelected(String value) async {
@@ -2195,14 +2239,16 @@ class NotepadScreenState extends State<NotepadScreen> {
                 child: Row(children: [
                   const Icon(Icons.description_outlined, size: 18),
                   const SizedBox(width: 8),
-                  Flexible(child: Text(tmpl.name)),
+                  Flexible(
+                      child: Text(AppLocalizations.of(ctx)
+                          .notepadTemplateName(tmpl.id, tmpl.name))),
                 ]),
               ),
           ],
         ),
       );
       if (chosen == null || !mounted) return;
-      final doc = chosen.createDocument();
+      final doc = _createFromTemplate(chosen);
       _appState.setNotepadDocument(doc);
       _appState.setCurrentNotepadDoc(doc.id);
       return;
@@ -2232,7 +2278,7 @@ class NotepadScreenState extends State<NotepadScreen> {
         (t) => t.id == id,
         orElse: () => NotepadTemplates.all.first,
       );
-      final doc = tmpl.createDocument();
+      final doc = _createFromTemplate(tmpl);
       _appState.setNotepadDocument(doc);
       _appState.setCurrentNotepadDoc(doc.id);
       return;
@@ -2306,8 +2352,8 @@ class NotepadScreenState extends State<NotepadScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.notes,
-                size: 64, color: Colors.grey, semanticLabel: 'Notes'),
+            Icon(Icons.notes,
+                size: 64, color: Colors.grey, semanticLabel: t.notepadNotes),
             const SizedBox(height: 16),
             Text(
               t.notepadEmptyTitle,
@@ -2320,7 +2366,7 @@ class NotepadScreenState extends State<NotepadScreen> {
               spacing: 12,
               children: [
                 FilledButton.icon(
-                  icon: const Icon(Icons.add, semanticLabel: 'New'),
+                  icon: Icon(Icons.add, semanticLabel: t.notepadNew),
                   label: Text(t.notepadNewDocument),
                   onPressed: _newDocument,
                 ),
@@ -2331,8 +2377,8 @@ class NotepadScreenState extends State<NotepadScreen> {
                   onPressed: exploreLinkedWorksheet,
                 ),
                 OutlinedButton.icon(
-                  icon: const Icon(Icons.menu_book,
-                      semanticLabel: 'Welcome sample'),
+                  icon: Icon(Icons.menu_book,
+                      semanticLabel: t.notepadWelcomeSample),
                   label: Text(t.notepadOpenWelcomeSample),
                   onPressed: _openWelcomeSample,
                 ),
@@ -2417,6 +2463,7 @@ class NotepadScreenState extends State<NotepadScreen> {
               focusNode: _focusNodes[line.id]!,
               onChanged: (v) => _onLineEdited(doc, line, v, realIndex),
               onDelete: () => _deleteLine(doc, realIndex),
+              onEnter: () => _insertLineAfter(doc, realIndex),
               onPlot: _pendingLineIds.contains(line.id)
                   ? null : () => _linkLine(doc, line),
               onUseResult: !_pendingLineIds.contains(line.id) &&
@@ -2459,8 +2506,10 @@ class NotepadScreenState extends State<NotepadScreen> {
                           horizontal: 12, vertical: 2),
                       child: Row(
                         children: [
-                          const Icon(Icons.push_pin,
-                              size: 14, semanticLabel: 'Pinned'),
+                          Icon(Icons.push_pin,
+                              size: 14,
+                              semanticLabel:
+                                  AppLocalizations.of(context).notepadPinned),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(

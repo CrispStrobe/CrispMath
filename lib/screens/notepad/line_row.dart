@@ -16,6 +16,9 @@ class _NotepadLineRow extends StatelessWidget {
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
   final VoidCallback onDelete;
+
+  /// Plain Enter in this row's editor (Shift+Enter keeps the line break).
+  final VoidCallback? onEnter;
   final VoidCallback? onPlot;
   final VoidCallback? onUseResult;
   final void Function(String lineId) onScrollToLineId;
@@ -46,6 +49,7 @@ class _NotepadLineRow extends StatelessWidget {
     required this.focusNode,
     required this.onChanged,
     required this.onDelete,
+    this.onEnter,
     this.onPlot,
     this.onUseResult,
     required this.onScrollToLineId,
@@ -96,45 +100,52 @@ class _NotepadLineRow extends StatelessWidget {
     // Section headings: `## text` — larger, bold, theme-colored.
     // Fold/unfold toggle + hidden-line-count chip when collapsed.
     if (_lineKind == NotepadLineKind.heading) {
-      return _maybeHighlight(Padding(
-        key: ValueKey('row-${line.id}'),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _DragHandle(index: index),
-            if (onToggleCollapse != null)
-              IconButton(
-                icon: Icon(
-                  isCollapsedHeading ? Icons.expand_more : Icons.expand_less,
-                  size: 20,
-                  semanticLabel: isCollapsedHeading
-                      ? 'Expand section'
-                      : 'Collapse section',
-                ),
-                onPressed: onToggleCollapse,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 28,
-                  minHeight: 28,
-                ),
-                tooltip: isCollapsedHeading ? 'Expand' : 'Collapse',
-              ),
-            Expanded(child: _buildInputField(context, heading: true)),
-            if (isCollapsedHeading && hiddenLineCount > 0)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Chip(
-                  label: Text('$hiddenLineCount hidden'),
-                  labelStyle: const TextStyle(fontSize: 11),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            _DeleteButton(onPressed: onDelete),
-          ],
-        ),
-      ), context);
+      return _maybeHighlight(
+          Padding(
+            key: ValueKey('row-${line.id}'),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _DragHandle(index: index),
+                if (onToggleCollapse != null)
+                  IconButton(
+                    icon: Icon(
+                      isCollapsedHeading
+                          ? Icons.expand_more
+                          : Icons.expand_less,
+                      size: 20,
+                      semanticLabel: isCollapsedHeading
+                          ? AppLocalizations.of(context).notepadExpandSection
+                          : AppLocalizations.of(context).notepadCollapseSection,
+                    ),
+                    onPressed: onToggleCollapse,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    tooltip: isCollapsedHeading
+                        ? AppLocalizations.of(context).notepadExpand
+                        : AppLocalizations.of(context).notepadCollapse,
+                  ),
+                Expanded(child: _buildInputField(context, heading: true)),
+                if (isCollapsedHeading && hiddenLineCount > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Chip(
+                      label: Text(AppLocalizations.of(context)
+                          .notepadHiddenLines(hiddenLineCount)),
+                      labelStyle: const TextStyle(fontSize: 11),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                _DeleteButton(onPressed: onDelete),
+              ],
+            ),
+          ),
+          context);
     }
 
     // Horizontal dividers: `---` — render a line instead of result.
@@ -191,9 +202,10 @@ class _NotepadLineRow extends StatelessWidget {
                   ),
                   if (!_isBlank && onPlot != null)
                     IconButton(
-                        tooltip: 'Link line to graph',
-                        icon: const Icon(Icons.show_chart,
-                            semanticLabel: 'Link line to graph'),
+                        tooltip: AppLocalizations.of(context).notepadLinkToGraph,
+                        icon: Icon(Icons.show_chart,
+                            semanticLabel:
+                                AppLocalizations.of(context).notepadLinkToGraph),
                         onPressed: onPlot),
                   _DeleteButton(onPressed: onDelete),
                 ],
@@ -239,9 +251,10 @@ class _NotepadLineRow extends StatelessWidget {
                 ),
                 if (!_isBlank && onPlot != null)
                   IconButton(
-                      tooltip: 'Link line to graph',
-                      icon: const Icon(Icons.show_chart,
-                          semanticLabel: 'Link line to graph'),
+                      tooltip: AppLocalizations.of(context).notepadLinkToGraph,
+                      icon: Icon(Icons.show_chart,
+                          semanticLabel:
+                              AppLocalizations.of(context).notepadLinkToGraph),
                       onPressed: onPlot),
                 _DeleteButton(onPressed: onDelete),
               ],
@@ -298,6 +311,35 @@ class _NotepadLineRow extends StatelessWidget {
     );
   }
 
+  Widget _enterStartsNewRow(Widget child) {
+    final onEnter = this.onEnter;
+    if (onEnter == null) return child;
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent ||
+            (event.logicalKey != LogicalKeyboardKey.enter &&
+                event.logicalKey != LogicalKeyboardKey.numpadEnter)) {
+          return KeyEventResult.ignored;
+        }
+        final hw = HardwareKeyboard.instance;
+        // Modified Enter keeps its meaning (Shift: line break in the row;
+        // Cmd/Ctrl: screen shortcuts), and IME composition needs Enter.
+        if (hw.isShiftPressed ||
+            hw.isMetaPressed ||
+            hw.isControlPressed ||
+            hw.isAltPressed ||
+            controller.value.composing.isValid) {
+          return KeyEventResult.ignored;
+        }
+        onEnter();
+        return KeyEventResult.handled;
+      },
+      child: child,
+    );
+  }
+
   Widget _buildInputField(BuildContext context,
       {bool dense = false, bool heading = false}) {
     final textField = TextField(
@@ -320,7 +362,7 @@ class _NotepadLineRow extends StatelessWidget {
       decoration: InputDecoration(
         isDense: dense,
         border: InputBorder.none,
-        hintText: 'line ${index + 1}',
+        hintText: AppLocalizations.of(context).notepadLineHint(index + 1),
         hintStyle: TextStyle(
           color: Colors.grey[600],
           fontStyle: FontStyle.italic,
@@ -328,13 +370,15 @@ class _NotepadLineRow extends StatelessWidget {
       ),
     );
     // Skip autocomplete for dense/heading/divider rows.
-    if (dense || heading) return textField;
-    final withAutocomplete = NotepadAutocompleteOverlay(
+    if (dense || heading) return _enterStartsNewRow(textField);
+    // The autocomplete sits inside, so it sees Enter first and consumes it
+    // when accepting a suggestion; only an unused Enter starts a new row.
+    final withAutocomplete = _enterStartsNewRow(NotepadAutocompleteOverlay(
       controller: controller,
       focusNode: focusNode,
       scopeNames: _scopeNames,
       child: textField,
-    );
+    ));
     // Wrap in DragTarget so dragged results can be dropped into this line.
     final dragTarget = DragTarget<String>(
       onAcceptWithDetails: (details) {
@@ -369,19 +413,23 @@ class _NotepadLineRow extends StatelessWidget {
     );
 
     final references = resultReferencesIn(controller.text)
-        .map((reference) => reference.lineId).toSet();
+        .map((reference) => reference.lineId)
+        .toSet();
     // References use source chips below the editor in either input mode. Do
     // not pass their literal @{id} syntax through the LaTeX preview formatter.
     Widget? preview;
     final src = controller.text.trim();
-    if (useLatexInput && references.isEmpty && src.isNotEmpty &&
+    if (useLatexInput &&
+        references.isEmpty &&
+        src.isNotEmpty &&
         RegExp(r'[\\{}\^_]').hasMatch(src)) {
       try {
         preview = Math.tex(
           MathDisplayUtils.toHistoryDisplayLatex(src),
           textStyle: TextStyle(
             fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
           onErrorFallback: (_) => const SizedBox.shrink(),
         );
@@ -408,10 +456,11 @@ class _NotepadLineRow extends StatelessWidget {
               ],
             ),
           ),
-        if (preview != null) Padding(
-          padding: const EdgeInsets.only(left: 8, bottom: 4),
-          child: preview,
-        ),
+        if (preview != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 8, bottom: 4),
+            child: preview,
+          ),
       ],
     );
   }
@@ -422,12 +471,14 @@ class _NotepadLineRow extends StatelessWidget {
     final label = sourceIndex < 0
         ? labels.text(WorkflowLabel.missingResult)
         : labels.text(WorkflowLabel.resultOfLine, '${sourceIndex + 1}');
-    final hint = sourceIndex < 0 ? label : labels.text(
-        WorkflowLabel.referenceOpenSource,
-        _readableReferenceSource(
-            document, document.lines[sourceIndex].source, labels));
-    final VoidCallback? open = sourceIndex < 0
-        ? null : () => onScrollToLineId(sourceId);
+    final hint = sourceIndex < 0
+        ? label
+        : labels.text(
+            WorkflowLabel.referenceOpenSource,
+            _readableReferenceSource(
+                document, document.lines[sourceIndex].source, labels));
+    final VoidCallback? open =
+        sourceIndex < 0 ? null : () => onScrollToLineId(sourceId);
     return Semantics(
       key: ValueKey('notepad-reference:${line.id}:$sourceId'),
       // Keep this action separate from the reorderable row. Otherwise its
@@ -461,15 +512,20 @@ class _DragHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Six-dot grip, not the two-bar `drag_handle`: next to math the bars
+    // read as an equals sign. The grab cursor signals "draggable" on desktop.
     return ReorderableDragStartListener(
       index: index,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Icon(
-          Icons.drag_handle,
-          size: 20,
-          semanticLabel: 'Drag to reorder',
-          color: Colors.grey[600],
+      child: MouseRegion(
+        cursor: SystemMouseCursors.grab,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Icon(
+            Icons.drag_indicator,
+            size: 20,
+            semanticLabel: AppLocalizations.of(context).notepadDragToReorder,
+            color: Colors.grey[600],
+          ),
         ),
       ),
     );

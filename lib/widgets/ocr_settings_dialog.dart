@@ -10,6 +10,7 @@ import '../engine/ocr_model_manager.dart';
 import '../engine/ocr_provider.dart';
 import '../services/ocr_initialization.dart';
 import '../engine/ocr_providers_init.dart';
+import '../localization/app_localizations.dart';
 import 'model_license_consent_dialog.dart';
 
 class OcrSettingsDialog extends StatefulWidget {
@@ -24,6 +25,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   final Map<String, double> _downloadProgress = {};
   final Set<String> _downloading = {};
   int _totalDiskUsage = 0;
+  AppLocalizations get _t => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -57,22 +59,19 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       final accepted = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('License Terms'),
+          title: Text(_t.ocrLicenseTermsTitle),
           content: Text(
-            'This model is licensed under ${model.license}.\n\n'
-            'By downloading, you confirm that you will use these '
-            'model weights for non-commercial purposes only.\n\n'
-            'The app itself is not restricted — this applies only '
-            'to the model weights.',
+            '${_t.ocrLicenseTermsBody('${model.license}')}\n\n'
+            '${_t.ocrLicenseAppNotRestricted}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
+              child: Text(_t.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('I accept — download'),
+              child: Text(_t.ocrAcceptDownload),
             ),
           ],
         ),
@@ -108,11 +107,11 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
         setState(() {});
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${model.name} downloaded')),
+          SnackBar(content: Text(_t.ocrModelDownloaded(model.name))),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: ${model.name}')),
+          SnackBar(content: Text(_t.ocrDownloadFailed(model.name))),
         );
       }
     }
@@ -154,9 +153,10 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final diskMB = (_totalDiskUsage / (1024 * 1024)).toStringAsFixed(1);
+    final t = _t;
 
     return AlertDialog(
-      title: const Text('OCR Models'),
+      title: Text(t.ocrModelsTitle),
       content: SizedBox(
         width: 480,
         child: SingleChildScrollView(
@@ -169,10 +169,10 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                 children: [
                   Icon(Icons.storage,
                       size: 16,
-                      semanticLabel: 'Disk usage',
+                      semanticLabel: t.ocrDiskUsageSemantic,
                       color: scheme.primary),
                   const SizedBox(width: 8),
-                  Text('Disk usage: $diskMB MB',
+                  Text(t.ocrDiskUsage(diskMB),
                       style: TextStyle(
                           fontSize: 13,
                           color: scheme.onSurface.withValues(alpha: 0.7))),
@@ -182,7 +182,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
 
               // Provider selector
               if (OcrProviders.available.isNotEmpty) ...[
-                Text('Active Provider',
+                Text(t.ocrActiveProvider,
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: scheme.primary)),
                 const SizedBox(height: 4),
@@ -196,14 +196,14 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                           : Icons.radio_button_unchecked,
                       size: 20,
                       color: isActive ? scheme.primary : null,
-                      semanticLabel: isActive ? 'Active' : 'Inactive',
+                      semanticLabel: isActive ? t.ocrActive : t.ocrInactive,
                     ),
                     title: Text(p.name, style: const TextStyle(fontSize: 13)),
                     subtitle: Text(
                       [
-                        if (p.requiresNetwork) 'cloud',
-                        if (p.requiresApiKey) 'API key',
-                        if (!p.requiresNetwork) 'on-device',
+                        if (p.requiresNetwork) t.ocrTagCloud,
+                        if (p.requiresApiKey) t.ocrTagApiKey,
+                        if (!p.requiresNetwork) t.ocrTagOnDevice,
                       ].join(' · '),
                       style: const TextStyle(fontSize: 11),
                     ),
@@ -215,42 +215,42 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                 Chip(
                   avatar: Icon(Icons.info_outline,
                       size: 16,
-                      semanticLabel: 'No model active',
+                      semanticLabel: t.ocrNoModelActiveSemantic,
                       color: scheme.error),
-                  label: const Text('No model active — download one below'),
+                  label: Text(t.ocrNoModelActive),
                 ),
                 const SizedBox(height: 16),
               ],
 
               // Model catalog sections
-              _buildSection('Printed Math — Best Quality',
+              _buildSection('${t.ocrCatPrintedMath} — ${t.ocrQualBestQuality}',
                   OcrModelCatalog.printedMathPpfnl),
               _buildSection(
-                  'Printed Math — Texo', OcrModelCatalog.printedMathTexo),
-              _buildSection('Printed Math — MixTex (Chinese+English)',
+                  '${t.ocrCatPrintedMath} — Texo', OcrModelCatalog.printedMathTexo),
+              _buildSection('${t.ocrCatPrintedMath} — MixTex (${t.ocrQualChineseEnglish})',
                   OcrModelCatalog.printedMathMixtex),
               _buildSection(
-                  'Printed Math — pix2tex', OcrModelCatalog.printedMath),
+                  '${t.ocrCatPrintedMath} — pix2tex', OcrModelCatalog.printedMath),
               _buildSection(
-                  'Handwritten Math', OcrModelCatalog.handwrittenMath),
-              _buildSection('Text Detection — Surya (91 langs)',
+                  t.ocrCatHandwrittenMath, OcrModelCatalog.handwrittenMath),
+              _buildSection('${t.ocrCatTextDetection} — Surya (${t.ocrQual91Langs})',
                   OcrModelCatalog.textDetectionSurya),
               _buildSection(
-                  'Text Detection — DBNet', OcrModelCatalog.textDetection),
+                  '${t.ocrCatTextDetection} — DBNet', OcrModelCatalog.textDetection),
               _buildSection(
-                  'Text Recognition — TrOCR', OcrModelCatalog.textRecognition),
+                  '${t.ocrCatTextRecognition} — TrOCR', OcrModelCatalog.textRecognition),
               _buildSection(
-                  'Layout Detection', OcrModelCatalog.layoutDetection),
-              _buildSection('Vision-Language — Qwen3-VL (recommended)',
+                  t.ocrCatLayoutDetection, OcrModelCatalog.layoutDetection),
+              _buildSection('${t.ocrCatVisionLanguage} — Qwen3-VL (${t.ocrQualRecommended})',
                   OcrModelCatalog.visionLanguageQwen3),
               _buildSection(
-                  'Vision-Language — Qwen2.5-VL (non-commercial, optional)',
+                  '${t.ocrCatVisionLanguage} — Qwen2.5-VL (${t.ocrQualNonCommercialOptional})',
                   OcrModelCatalog.visionLanguage),
-              _buildSection('Vision-Language — DeepSeek-OCR2',
+              _buildSection('${t.ocrCatVisionLanguage} — DeepSeek-OCR2',
                   OcrModelCatalog.deepseekOcr2),
-              _buildSection('Vision-Language — Granite Vision (OCRBench 852)',
+              _buildSection('${t.ocrCatVisionLanguage} — Granite Vision (OCRBench 852)',
                   OcrModelCatalog.graniteVision),
-              _buildSection('Vision-Language — LightOnOCR (fast, 1B)',
+              _buildSection('${t.ocrCatVisionLanguage} — LightOnOCR (${t.ocrQualFast1B})',
                   OcrModelCatalog.lightOnOcr),
             ],
           ),
@@ -259,7 +259,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(t.dialogClose),
         ),
       ],
     );
@@ -287,16 +287,17 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
     final isDownloading = _downloading.contains(model.id);
     final progress = _downloadProgress[model.id] ?? 0;
     final isPaused = !isDownloading && !isDownloaded && progress > 0;
+    final t = _t;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         dense: true,
         leading: isDownloaded
-            ? const Icon(Icons.check_circle,
-                color: Colors.green, semanticLabel: 'Downloaded')
-            : const Icon(Icons.cloud_download_outlined,
-                semanticLabel: 'Not downloaded'),
+            ? Icon(Icons.check_circle,
+                color: Colors.green, semanticLabel: t.ocrDownloaded)
+            : Icon(Icons.cloud_download_outlined,
+                semanticLabel: t.ocrNotDownloaded),
         title: Text(model.name),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,15 +338,15 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                 child: ModelLicenseConsent.allows(model.restrictedTerms)
                     ? TextButton(
                         onPressed: () => _withdrawLicense(model),
-                        child: const Text('Withdraw license consent',
-                            style: TextStyle(fontSize: 11)),
+                        child: Text(t.ocrWithdrawLicense,
+                            style: const TextStyle(fontSize: 11)),
                       )
                     : TextButton(
                         onPressed: () => _acceptLicense(model),
                         child: Text(
                             isDownloaded
-                                ? 'Review license to enable'
-                                : 'Review license',
+                                ? t.ocrReviewLicenseToEnable
+                                : t.ocrReviewLicense,
                             style: const TextStyle(fontSize: 11)),
                       ),
               ),
@@ -361,8 +362,8 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
         ),
         trailing: isDownloading
             ? IconButton(
-                icon: const Icon(Icons.pause,
-                    size: 20, semanticLabel: 'Pause download'),
+                icon: Icon(Icons.pause,
+                    size: 20, semanticLabel: t.ocrPauseDownload),
                 onPressed: () {
                   OcrModelManager.cancelDownload(model);
                   setState(() {
@@ -372,15 +373,15 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
               )
             : isDownloaded
                 ? IconButton(
-                    icon: const Icon(Icons.delete_outline,
-                        size: 20, semanticLabel: 'Delete model'),
+                    icon: Icon(Icons.delete_outline,
+                        size: 20, semanticLabel: t.ocrDeleteModel),
                     onPressed: () => _delete(model),
                   )
                 : IconButton(
                     icon: Icon(isPaused ? Icons.play_arrow : Icons.download,
                         size: 20,
                         semanticLabel:
-                            isPaused ? 'Resume download' : 'Download model'),
+                            isPaused ? t.ocrResumeDownload : t.ocrDownloadModel),
                     onPressed: () => _download(model),
                   ),
       ),

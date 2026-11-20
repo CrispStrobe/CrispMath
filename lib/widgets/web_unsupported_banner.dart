@@ -81,8 +81,8 @@ class WebUnsupportedBanner extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => launchUrl(_releases,
                         mode: LaunchMode.externalApplication),
-                    icon: const Icon(Icons.download,
-                        size: 16, semanticLabel: 'Download app'),
+                    icon: Icon(Icons.download,
+                        size: 16, semanticLabel: t.bannerDownloadAppSemantic),
                     label: Text(t.webDownloadApp),
                   ),
                 ],

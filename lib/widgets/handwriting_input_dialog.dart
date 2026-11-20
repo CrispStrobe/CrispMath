@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../engine/ocr_provider.dart';
+import '../localization/app_localizations.dart';
 import '../services/ocr_initialization.dart';
 import 'drawing_canvas.dart';
 import 'ocr_capture_dialog.dart';
@@ -29,6 +30,7 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
   bool _runningInference = false;
   bool _loading = true;
   String? _error;
+  AppLocalizations get _t => AppLocalizations.of(context);
   List<OcrProvider> get _available =>
       handwritingProviders(widget.providers ?? OcrProviders.available);
 
@@ -51,7 +53,7 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
     } catch (error) {
       if (mounted) {
         setState(() {
-          _error = 'Model initialization failed: $error';
+          _error = _t.handwritingInitFailed('$error');
           _loading = false;
         });
       }
@@ -73,7 +75,7 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel')),
+                      child: Text(_t.cancel)),
                   FilledButton(
                       onPressed: () => Navigator.pop(context, true),
                       child: Text(action)),
@@ -99,9 +101,9 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
       final terms = (provider as HandwritingOcrProvider).licenseToAccept;
       if (terms != null && !_acceptedLicenses.contains(provider.name)) {
         if (!await _confirm(
-            'Model usage terms',
-            '${provider.name} is provided under $terms. Review its terms and confirm your use complies before downloading.',
-            'Accept model terms')) {
+            _t.handwritingTermsTitle,
+            _t.handwritingTermsBody(provider.name, terms),
+            _t.handwritingAcceptTerms)) {
           return;
         }
         _acceptedLicenses.add(provider.name);
@@ -109,9 +111,9 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
       if (!mounted) return;
       if (provider.requiresNetwork &&
           !await _confirm(
-              'Send drawing to cloud?',
-              'Your drawing will be sent to ${provider.name} for recognition. Review the returned expression before using it.',
-              'Send drawing')) {
+              _t.handwritingSendTitle,
+              _t.handwritingSendBody(provider.name),
+              _t.handwritingSendAction)) {
         return;
       }
       if (!mounted) return;
@@ -122,8 +124,7 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
       if (!mounted) return;
       setState(() => _runningInference = false);
       if (result == null || result.text.trim().isEmpty) {
-        setState(() => _error =
-            'Could not recognize this drawing. Try clearer strokes or enter the expression directly.');
+        setState(() => _error = _t.handwritingNotRecognized);
         return;
       }
       final expression = await showOcrCaptureDialog(context, result);
@@ -131,7 +132,7 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
         Navigator.pop(context, expression);
       }
     } catch (error) {
-      if (mounted) setState(() => _error = 'Recognition failed: $error');
+      if (mounted) setState(() => _error = _t.handwritingRecognitionFailed('$error'));
     } finally {
       if (mounted) {
         setState(() {
@@ -154,14 +155,14 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
           padding: const EdgeInsets.all(16),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('Write Math', style: Theme.of(context).textTheme.titleLarge),
+            Text(_t.handwritingTitle, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             if (_loading) const LinearProgressIndicator(),
             if (providers.isNotEmpty)
               DropdownButton<OcrProvider>(
                 isExpanded: true,
                 value: providers.contains(_provider) ? _provider : null,
-                hint: const Text('Choose handwriting model'),
+                hint: Text(_t.handwritingChooseModel),
                 onChanged:
                     _recognizing ? null : (p) => setState(() => _provider = p),
                 items: [
@@ -173,17 +174,16 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
                 ],
               ),
             Text(_provider == null
-                ? 'No handwriting model is available. Open Models to configure one.'
+                ? _t.handwritingNoModel
                 : _provider!.requiresNetwork
-                    ? 'Cloud recognition sends your drawing only after confirmation.'
-                    : 'Recognition runs on this device. An uncached model may need a download.'),
-            const Text(
-                'Recognition can be wrong. Review and edit the expression before using it.'),
+                    ? _t.handwritingCloudNote
+                    : _t.handwritingLocalNote),
+            Text(_t.handwritingReviewNote),
             const SizedBox(height: 8),
             Expanded(
                 child: Semantics(
                     container: true,
-                    label: 'Handwriting canvas',
+                    label: _t.handwritingCanvas,
                     child: LayoutBuilder(
                       builder: (context, constraints) => DrawingCanvas(
                           key: _canvasKey,
@@ -201,24 +201,24 @@ class _HandwritingInputDialogState extends State<HandwritingInputDialog> {
             Wrap(alignment: WrapAlignment.end, spacing: 8, children: [
               TextButton(
                   onPressed: _recognizing ? null : _models,
-                  child: const Text('Models')),
+                  child: Text(_t.handwritingModels)),
               TextButton(
                   onPressed: _recognizing
                       ? null
                       : () => _canvasKey.currentState?.undo(),
-                  child: const Text('Undo')),
+                  child: Text(_t.notepadUndo)),
               TextButton(
                   onPressed: _recognizing
                       ? null
                       : () => _canvasKey.currentState?.clear(),
-                  child: const Text('Clear')),
+                  child: Text(_t.sudokuClearCell)),
               TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel')),
+                  child: Text(_t.cancel)),
               FilledButton(
                   onPressed:
                       _recognizing || _provider == null ? null : _recognize,
-                  child: const Text('Recognize')),
+                  child: Text(_t.handwritingRecognize)),
             ]),
           ])),
     ));

@@ -148,7 +148,7 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
               decoration: InputDecoration(
                 isDense: true,
                 prefixIcon:
-                    const Icon(Icons.search, size: 18, semanticLabel: 'Search'),
+                    Icon(Icons.search, size: 18, semanticLabel: t.examplesSearchSemantic),
                 hintText: t.workedExamplesSearchHint,
                 border: const OutlineInputBorder(),
               ),
@@ -216,14 +216,14 @@ class _WorkedExamplesDialogState extends State<WorkedExamplesDialog> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.copy,
-                                    size: 18, semanticLabel: 'Copy'),
+                                icon: Icon(Icons.copy,
+                                    size: 18, semanticLabel: t.actionCopy),
                                 tooltip: t.workedExamplesCopy,
                                 onPressed: () => _copy(context, e.expression),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.input,
-                                    size: 18, semanticLabel: 'Insert'),
+                                icon: Icon(Icons.input,
+                                    size: 18, semanticLabel: t.dialogInsert),
                                 tooltip: t.workedExamplesInsert,
                                 onPressed: () => _insert(context, e.expression),
                               ),

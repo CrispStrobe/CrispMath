@@ -276,7 +276,7 @@ class _NotepadResultColumn extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.content_copy, semanticLabel: 'Copy'),
+              leading: Icon(Icons.content_copy, semanticLabel: t.notepadCopy),
               title: Text(t.notepadCopyResult),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: plain));
@@ -309,7 +309,7 @@ class _NotepadResultColumn extends StatelessWidget {
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.code, semanticLabel: 'Copy as LaTeX'),
+              leading: Icon(Icons.code, semanticLabel: t.notepadCopyAsLatex),
               title: Text(t.notepadCopyAsLatex),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: latex));
@@ -324,8 +324,9 @@ class _NotepadResultColumn extends StatelessWidget {
             ),
             if (line.resultEvidence != null)
               ListTile(
-                leading: const Icon(Icons.info_outline,
-                    semanticLabel: 'Result details'),
+                leading: Icon(Icons.info_outline,
+                    semanticLabel: WorkflowLocalizations.of(context)
+                        .text(WorkflowLabel.resultDetails)),
                 title: Text(WorkflowLocalizations.of(context)
                     .text(WorkflowLabel.resultDetails)),
                 onTap: () {
@@ -336,8 +337,8 @@ class _NotepadResultColumn extends StatelessWidget {
               ),
             const Divider(height: 1),
             ListTile(
-              leading: const Icon(Icons.save_alt,
-                  semanticLabel: 'Store as variable'),
+              leading: Icon(Icons.save_alt,
+                  semanticLabel: t.storeAsVariable),
               title: Text(t.storeAsVariable),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
@@ -357,9 +358,9 @@ class _NotepadResultColumn extends StatelessWidget {
             ),
             if (AppState().crispAssistEnabled)
               ListTile(
-                leading: const Icon(Icons.auto_awesome,
-                    semanticLabel: 'Explain with AI'),
-                title: const Text('Explain with AI'),
+                leading: Icon(Icons.auto_awesome,
+                    semanticLabel: t.notepadExplainWithAi),
+                title: Text(t.notepadExplainWithAi),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   showCrispAssistExplainDialog(
@@ -371,8 +372,8 @@ class _NotepadResultColumn extends StatelessWidget {
               ),
             if (freeVars.isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.functions,
-                    semanticLabel: 'Store as function'),
+                leading: Icon(Icons.functions,
+                    semanticLabel: t.storeAsFunction),
                 title: Text(t.storeAsFunction),
                 onTap: () async {
                   Navigator.of(sheetContext).pop();
@@ -408,7 +409,7 @@ class _NotepadResultColumn extends StatelessWidget {
           .text(WorkflowLabel.missingResult);
       return ActionChip(
         avatar: Icon(Icons.block,
-            size: 16, semanticLabel: 'Blocked', color: cs.error),
+            size: 16, semanticLabel: t.notepadBlocked, color: cs.error),
         label: Text(
           t.notepadBlockedBy(alias),
           style: TextStyle(color: cs.error, fontSize: 12),
@@ -423,7 +424,9 @@ class _NotepadResultColumn extends StatelessWidget {
           rawError.substring(NotepadErrorPrefix.circularReference.length);
       return Chip(
         avatar: Icon(Icons.sync_problem,
-            size: 16, semanticLabel: 'Circular reference', color: cs.error),
+            size: 16,
+            semanticLabel: t.notepadCircularReference,
+            color: cs.error),
         label: Text(
           t.notepadCycle(path),
           style: TextStyle(color: cs.error, fontSize: 12),

@@ -13,6 +13,11 @@ on:
         description: 'Uploaded build number (CFBundleVersion)'
         type: string
         required: true
+      platform:
+        description: 'App Store platform'
+        type: choice
+        options: [IOS, MAC_OS]
+        default: IOS
       submit:
         description: 'Submit for App Review (otherwise inspect only)'
         type: boolean
@@ -46,6 +51,7 @@ jobs:
       SUBMIT: ${{ inputs.submit }}
       REPLACE: ${{ inputs.replace_in_review }}
       RELEASE_PENDING: ${{ inputs.release_pending }}
+      PLATFORM: ${{ inputs.platform || 'IOS' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -72,7 +78,7 @@ jobs:
             ARGS+=(--replace-in-review)
           fi
           python tool/app_review_submit.py --key-file "$RUNNER_TEMP/cm-review.p8" \
-            --version "$VER" --build "$BUILD" "${ARGS[@]}"
+            --version "$VER" --build "$BUILD" --platform "$PLATFORM" "${ARGS[@]}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -15,6 +15,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../localization/app_localizations.dart';
+
 /// A single autocomplete suggestion.
 class AutocompleteSuggestion {
   final String text;
@@ -253,13 +255,19 @@ class _NotepadAutocompleteOverlayState
     switch (kind) {
       case 'var':
         return Icon(Icons.abc,
-            size: 16, color: color, semanticLabel: 'Variable');
+            size: 16,
+            color: color,
+            semanticLabel: AppLocalizations.of(context).notepadKindVariable);
       case 'fn':
         return Icon(Icons.functions,
-            size: 16, color: color, semanticLabel: 'Function');
+            size: 16,
+            color: color,
+            semanticLabel: AppLocalizations.of(context).notepadKindFunction);
       case 'const':
         return Icon(Icons.looks_one,
-            size: 16, color: color, semanticLabel: 'Constant');
+            size: 16,
+            color: color,
+            semanticLabel: AppLocalizations.of(context).notepadKindConstant);
       default:
         return Icon(Icons.circle, size: 16, color: color, semanticLabel: kind);
     }
@@ -269,31 +277,37 @@ class _NotepadAutocompleteOverlayState
   Widget build(BuildContext context) {
     return CompositedTransformTarget(
       link: _layerLink,
-      child: KeyboardListener(
+      child: Focus(
         focusNode: _keyboardFocusNode,
-        onKeyEvent: (event) {
-          if (_overlayEntry == null) return;
-          if (event is! KeyDownEvent) return;
+        // Report the keys the popup acts on as handled, so Enter/Tab that
+        // accept a suggestion do not also insert a line break or start a row.
+        onKeyEvent: (node, event) {
+          if (_overlayEntry == null) return KeyEventResult.ignored;
+          if (event is! KeyDownEvent) return KeyEventResult.ignored;
           if (event.logicalKey == LogicalKeyboardKey.tab ||
               event.logicalKey == LogicalKeyboardKey.enter) {
-            if (_suggestions.isNotEmpty) {
-              _acceptSuggestion(_suggestions[_selectedIndex]);
-            }
+            if (_suggestions.isEmpty) return KeyEventResult.ignored;
+            _acceptSuggestion(_suggestions[_selectedIndex]);
+            return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
             setState(() {
               _selectedIndex =
                   (_selectedIndex + 1).clamp(0, _suggestions.length - 1);
             });
             _showOverlay();
+            return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
             setState(() {
               _selectedIndex =
                   (_selectedIndex - 1).clamp(0, _suggestions.length - 1);
             });
             _showOverlay();
+            return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.escape) {
             _removeOverlay();
+            return KeyEventResult.handled;
           }
+          return KeyEventResult.ignored;
         },
         child: widget.child,
       ),

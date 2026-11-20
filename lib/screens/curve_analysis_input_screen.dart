@@ -108,7 +108,8 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
 
     if (function.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a function.')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).curvePleaseEnterFunction)),
       );
       return;
     }
@@ -130,7 +131,9 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error during analysis: $e')),
+          SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).curveAnalysisError('$e'))),
         );
       }
     } finally {
@@ -150,7 +153,9 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
       if (_appState.graphFunctions[i].isEmpty) {
         _appState.updateFunction(i, function);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Saved as Y${i + 1}')),
+          SnackBar(
+              content:
+                  Text(AppLocalizations.of(context).storeSavedAs('Y${i + 1}'))),
         );
         return;
       }
@@ -163,7 +168,8 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
   void _saveResultAsVariable(String name, String value) {
     _appState.setVariable(name, value);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved $name = $value')),
+      SnackBar(
+          content: Text(AppLocalizations.of(context).curveSavedVariable(name, value))),
     );
   }
 
@@ -171,12 +177,12 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('All function slots are full'),
-        content: const Text('Which function would you like to replace?'),
+        title: Text(AppLocalizations.of(context).curveAllSlotsFullTitle),
+        content: Text(AppLocalizations.of(context).curveWhichFunctionReplace),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           ...List.generate(
               _appState.graphFunctions.length,
@@ -185,7 +191,9 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
                       _appState.updateFunction(i, function);
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Replaced Y${i + 1}')),
+                        SnackBar(
+                            content: Text(AppLocalizations.of(context)
+                                .curveReplacedSlot(i + 1))),
                       );
                     },
                     child: Text(
@@ -205,7 +213,8 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
 
     if (nonEmptyFunctions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No saved functions available')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).curveNoSavedFunctions)),
       );
       return;
     }
@@ -218,9 +227,9 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Select Function to Analyze',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context).selectFunctionToAnalyze,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             ...nonEmptyFunctions.map((entry) => ListTile(
@@ -252,7 +261,7 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.functions),
-            tooltip: 'Select from saved functions',
+            tooltip: t.curveSelectFromSaved,
             onPressed: _selectFromFunctions,
           ),
           const ModuleHelpButton(kind: ModuleHelpKind.curveSketching),
@@ -303,7 +312,7 @@ class _CurveAnalysisInputScreenState extends State<CurveAnalysisInputScreen>
                   const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.save),
-                    tooltip: 'Save as function',
+                    tooltip: t.curveSaveAsFunction,
                     onPressed: _saveAsFunction,
                   ),
                 ],

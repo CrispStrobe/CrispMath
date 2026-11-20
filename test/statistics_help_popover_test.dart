@@ -74,7 +74,9 @@ void main() {
     AppState().setHelpMode(true);
     await tester.pump();
 
-    await tester.tap(find.text('Two-sample t (Welch)'), warnIfMissed: false);
+    await tester.tap(
+        find.text(const DeLocalizations().statsTestTwoSampleT),
+        warnIfMissed: false);
     await tester.pumpAndSettle();
 
     final deDesc = const DeLocalizations().functionRefDescription('welch_t');

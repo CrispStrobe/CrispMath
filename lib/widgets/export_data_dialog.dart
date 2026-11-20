@@ -89,7 +89,7 @@ class _ExportDataDialogState extends State<ExportDataDialog> {
           child: Text(t.dialogClose),
         ),
         ElevatedButton.icon(
-          icon: const Icon(Icons.copy, size: 16, semanticLabel: 'Copy'),
+          icon: Icon(Icons.copy, size: 16, semanticLabel: t.actionCopy),
           label: Text(t.exportDataCopy),
           onPressed: () async {
             await Clipboard.setData(ClipboardData(text: content));

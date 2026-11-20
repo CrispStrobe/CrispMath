@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../engine/command_catalog.dart';
+import '../localization/app_localizations.dart';
+import '../localization/workflow_localizations.dart';
 
 class CommandPalette extends StatefulWidget {
   const CommandPalette({super.key});
@@ -21,8 +23,10 @@ class _CommandPaletteState extends State<CommandPalette> {
   @override
   Widget build(BuildContext context) {
     final results = searchCommands(query);
+    final t = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Search commands'),
+      title: Text(WorkflowLocalizations.of(context)
+          .text(WorkflowLabel.searchCommands)),
       content: SizedBox(
           width: 560,
           height: MediaQuery.sizeOf(context).height.clamp(240, 580) * .65,
@@ -53,10 +57,10 @@ class _CommandPaletteState extends State<CommandPalette> {
                 },
                 child: TextField(
                     autofocus: true,
-                    decoration: const InputDecoration(
-                        labelText: 'Find a command',
-                        hintText: 'Functions, tools or screens',
-                        prefixIcon: Icon(Icons.search)),
+                    decoration: InputDecoration(
+                        labelText: t.cmdPaletteFindCommand,
+                        hintText: t.cmdPaletteHint,
+                        prefixIcon: const Icon(Icons.search)),
                     onChanged: (value) => setState(() {
                           query = value;
                           selected = 0;
@@ -73,7 +77,7 @@ class _CommandPaletteState extends State<CommandPalette> {
             const SizedBox(height: 8),
             Expanded(
                 child: results.isEmpty
-                    ? const Center(child: Text('No commands found'))
+                    ? Center(child: Text(t.cmdPaletteNoResults))
                     : ListView.builder(
                         controller: _scroll,
                         itemCount: results.length,
@@ -87,7 +91,8 @@ class _CommandPaletteState extends State<CommandPalette> {
           ])),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context), child: const Text('Close'))
+            onPressed: () => Navigator.pop(context),
+            child: Text(t.dialogClose))
       ],
     );
   }

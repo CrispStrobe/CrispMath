@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../engine/ocr_provider.dart';
+import '../localization/app_localizations.dart';
 
 /// Shows the OCR result for review. Returns the (possibly edited)
 /// expression string, or null if cancelled.
@@ -51,9 +52,10 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context);
 
     return AlertDialog(
-      title: const Text('Recognized Expression'),
+      title: Text(t.ocrRecognizedExpression),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -64,7 +66,7 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
             Row(
               children: [
                 Icon(Icons.camera_alt,
-                    size: 16, semanticLabel: 'Camera', color: scheme.primary),
+                    size: 16, semanticLabel: t.ocrCamera, color: scheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   widget.result.providerName,
@@ -95,17 +97,17 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
               style: const TextStyle(fontFamily: 'monospace', fontSize: 16),
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
-                labelText: 'Expression',
-                helperText: 'Edit if needed before inserting',
+                labelText: t.dialogExpression,
+                helperText: t.ocrEditBeforeInsert,
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.content_copy,
-                      size: 18, semanticLabel: 'Copy'),
+                  icon: Icon(Icons.content_copy,
+                      size: 18, semanticLabel: t.actionCopy),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: _controller.text));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Copied'),
-                          duration: Duration(seconds: 1)),
+                      SnackBar(
+                          content: Text(t.historyEntryCopied),
+                          duration: const Duration(seconds: 1)),
                     );
                   },
                 ),
@@ -123,11 +125,11 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
                       _showRaw ? Icons.expand_less : Icons.expand_more,
                       size: 16,
                       semanticLabel:
-                          _showRaw ? 'Hide raw output' : 'Show raw output',
+                          _showRaw ? t.ocrHideRawOutput : t.ocrShowRawOutput,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Raw output',
+                      t.ocrRawOutput,
                       style: TextStyle(
                         fontSize: 12,
                         color: scheme.onSurface.withValues(alpha: 0.5),
@@ -160,11 +162,11 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancel'),
+          child: Text(t.cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
-          child: const Text('Insert'),
+          child: Text(t.dialogInsert),
         ),
       ],
     );

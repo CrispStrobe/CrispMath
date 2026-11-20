@@ -133,6 +133,8 @@ class _DescriptiveTab extends StatefulWidget {
 }
 
 class _DescriptiveTabState extends State<_DescriptiveTab> {
+  AppLocalizations get _t => AppLocalizations.of(context);
+
   final _input = TextEditingController(text: '2, 4, 4, 4, 5, 5, 7, 9');
 
   @override
@@ -182,12 +184,12 @@ class _DescriptiveTabState extends State<_DescriptiveTab> {
             maxLines: 4,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'Data (comma, space, or newline-separated)',
+              labelText: _t.statsDataLabel,
               border: const OutlineInputBorder(),
               hintText: '1, 2, 3, 4, 5',
               suffixIcon: IconButton(
-                icon: const Icon(Icons.paste, semanticLabel: 'Paste'),
-                tooltip: 'Paste from clipboard',
+                icon: Icon(Icons.paste, semanticLabel: _t.statsPaste),
+                tooltip: _t.statsPasteFromClipboard,
                 onPressed: () async {
                   final data = await Clipboard.getData('text/plain');
                   if (data?.text != null) {
@@ -200,28 +202,27 @@ class _DescriptiveTabState extends State<_DescriptiveTab> {
           ),
           const SizedBox(height: 16),
           if (err != null)
-            Text('Error: $err',
+            Text(_t.statsError(err),
                 style: TextStyle(color: Theme.of(context).colorScheme.error))
           else if (summary != null) ...[
             _StatsTable(summary),
             TextButton.icon(
               icon: const Icon(Icons.more_horiz),
-              label: const Text('Full precision'),
+              label: Text(_t.statsFullPrecision),
               onPressed: () => showDialog<void>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Summary at full precision'),
-                  content: Text('Mean: ${summary.mean}\n'
-                      'Median: ${summary.median}\n'
-                      'Sample standard deviation: ${summary.sampleStddev}'),
+                  title: Text(_t.statsFullPrecisionTitle),
+                  content: Text(_t.statsFullPrecisionBody('${summary.mean}',
+                      '${summary.median}', '${summary.sampleStddev}')),
                   actions: [TextButton(onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'))],
+                      child: Text(_t.dialogClose))],
                 ),
               ),
             ),
           ]
           else
-            const Text('Enter at least one number above.'),
+            Text(_t.statsEnterAtLeastOne),
         ],
       ),
     );
@@ -300,6 +301,8 @@ class _RegressionTab extends StatefulWidget {
 enum _RegressionModel { linear, polynomial, exponential }
 
 class _RegressionTabState extends State<_RegressionTab> {
+  AppLocalizations get _t => AppLocalizations.of(context);
+
   final _xs = TextEditingController(text: '1, 2, 3, 4, 5');
   final _ys = TextEditingController(text: '2.1, 3.9, 6.0, 8.1, 10.0');
   _RegressionModel _model = _RegressionModel.linear;
@@ -363,11 +366,11 @@ class _RegressionTabState extends State<_RegressionTab> {
           final fit = Statistics.linearFit(xs, ys);
           return _resultCard(
             context,
-            'Best-fit line:',
+            _t.statsBestFitLine,
             'y = ${_fmt(fit.slope)}·x + ${_fmt(fit.intercept)}',
             [
-              'Slope a = ${_fmt(fit.slope)}',
-              'Intercept b = ${_fmt(fit.intercept)}',
+              _t.statsSlopeA(_fmt(fit.slope)),
+              _t.statsInterceptB(_fmt(fit.intercept)),
               'R² = ${_fmt(fit.rSquared)}',
               'n = ${fit.count}',
             ],
@@ -387,7 +390,7 @@ class _RegressionTabState extends State<_RegressionTab> {
           }
           return _resultCard(
             context,
-            'Best-fit polynomial (degree ${fit.degree}):',
+            _t.statsBestFitPolynomial(fit.degree),
             'y = ${terms.join(' + ')}',
             [
               for (var i = 0; i < fit.coefficients.length; i++)
@@ -400,18 +403,18 @@ class _RegressionTabState extends State<_RegressionTab> {
           final fit = Statistics.expFit(xs, ys);
           return _resultCard(
             context,
-            'Best-fit exponential:',
+            _t.statsBestFitExponential,
             'y = ${_fmt(fit.a)}·exp(${_fmt(fit.b)}·x)',
             [
               'a = ${_fmt(fit.a)}',
               'b = ${_fmt(fit.b)}',
-              'R² (log-space) = ${_fmt(fit.rSquared)}',
+              _t.statsRSquaredLogSpace(_fmt(fit.rSquared)),
               'n = ${fit.count}',
             ],
           );
       }
     } catch (e) {
-      return Text('Error: $e',
+      return Text(_t.statsError('$e'),
           style: TextStyle(color: Theme.of(context).colorScheme.error));
     }
   }
@@ -443,17 +446,17 @@ class _RegressionTabState extends State<_RegressionTab> {
           Wrap(
             spacing: 6,
             children: [
-              _modelChip('Linear', _RegressionModel.linear, 'linreg'),
-              _modelChip('Polynomial', _RegressionModel.polynomial, 'poly_fit'),
+              _modelChip(_t.statsModelLinear, _RegressionModel.linear, 'linreg'),
+              _modelChip(_t.statsModelPolynomial, _RegressionModel.polynomial, 'poly_fit'),
               _modelChip(
-                  'Exponential', _RegressionModel.exponential, 'exp_fit'),
+                  _t.statsModelExponential, _RegressionModel.exponential, 'exp_fit'),
             ],
           ),
           if (_model == _RegressionModel.polynomial) ...[
             const SizedBox(height: 8),
             Row(
               children: [
-                const Text('Degree: '),
+                Text(_t.statsDegreeLabel),
                 DropdownButton<int>(
                   value: _polyDegree,
                   items: [
@@ -472,11 +475,11 @@ class _RegressionTabState extends State<_RegressionTab> {
             controller: _xs,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'x values',
+              labelText: _t.statsXValues,
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.paste, semanticLabel: 'Paste'),
-                tooltip: 'Paste from clipboard',
+                icon: Icon(Icons.paste, semanticLabel: _t.statsPaste),
+                tooltip: _t.statsPasteFromClipboard,
                 onPressed: () async {
                   final data = await Clipboard.getData('text/plain');
                   if (data?.text != null) {
@@ -492,11 +495,11 @@ class _RegressionTabState extends State<_RegressionTab> {
             controller: _ys,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'y values',
+              labelText: _t.statsYValues,
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.paste, semanticLabel: 'Paste'),
-                tooltip: 'Paste from clipboard',
+                icon: Icon(Icons.paste, semanticLabel: _t.statsPaste),
+                tooltip: _t.statsPasteFromClipboard,
                 onPressed: () async {
                   final data = await Clipboard.getData('text/plain');
                   if (data?.text != null) {
@@ -527,6 +530,8 @@ class _DistributionsTab extends StatefulWidget {
 }
 
 class _DistributionsTabState extends State<_DistributionsTab> {
+  AppLocalizations get _t => AppLocalizations.of(context);
+
   // Normal
   final _normMean = TextEditingController(text: '0');
   final _normSd = TextEditingController(text: '1');
@@ -601,22 +606,22 @@ class _DistributionsTabState extends State<_DistributionsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Normal distribution',
+          Text(_t.statsNormalDistribution,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(child: _field(_normMean, 'mean μ')),
+              Expanded(child: _field(_normMean, _t.statsMeanMu)),
               const SizedBox(width: 8),
-              Expanded(child: _field(_normSd, 'stddev σ')),
+              Expanded(child: _field(_normSd, _t.statsStddevSigma)),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _field(_normX, 'x for CDF')),
+              Expanded(child: _field(_normX, _t.statsXForCdf)),
               const SizedBox(width: 8),
-              Expanded(child: _field(_normP, 'p for quantile')),
+              Expanded(child: _field(_normP, _t.statsPForQuantile)),
             ],
           ),
           const SizedBox(height: 8),
@@ -627,46 +632,46 @@ class _DistributionsTabState extends State<_DistributionsTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (norm == null)
-                    const Text('Enter μ and σ > 0 to compute normal values.')
+                    Text(_t.statsNormalPrompt)
                   else ...[
                     if (x != null) _resultRow('PDF(x)', _fmt(norm.pdf(x))),
                     if (x != null)
                       _resultRow('CDF(x) = P(X ≤ x)', _fmt(norm.cdf(x))),
                     if (p != null && p >= 0 && p <= 1)
-                      _resultRow('quantile(p)', _fmt(norm.quantile(p))),
+                      _resultRow(_t.statsQuantileP, _fmt(norm.quantile(p))),
                   ],
                 ],
               ),
             ),
           ),
           const SizedBox(height: 24),
-          Text('Student t distribution',
+          Text(_t.statsStudentTDistribution,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          _field(_tDf, 'Degrees of freedom ν'),
+          _field(_tDf, _t.statsDegreesOfFreedomNu),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: _field(_tLower, 'Interval lower bound')),
+            Expanded(child: _field(_tLower, _t.statsIntervalLowerBound)),
             const SizedBox(width: 8),
-            Expanded(child: _field(_tUpper, 'Interval upper bound')),
+            Expanded(child: _field(_tUpper, _t.statsIntervalUpperBound)),
           ]),
           const SizedBox(height: 8),
           Card(child: Padding(
             padding: const EdgeInsets.all(12),
             child: validInterval
-                ? _resultRow('P(lower ≤ T ≤ upper)',
+                ? _resultRow(_t.statsTIntervalProbability,
                     _fmt(TDistribution(df: df).intervalProbability(lower, upper)))
-                : const Text('Enter a positive integer ν and finite bounds with lower ≤ upper.'),
+                : Text(_t.statsTPrompt),
           )),
           const SizedBox(height: 24),
-          Text('Binomial distribution',
+          Text(_t.statsBinomialDistribution,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(child: _field(_binN, 'n (trials)')),
+              Expanded(child: _field(_binN, _t.statsTrialsN)),
               const SizedBox(width: 8),
-              Expanded(child: _field(_binP, 'p (success)')),
+              Expanded(child: _field(_binP, _t.statsSuccessP)),
               const SizedBox(width: 8),
               Expanded(child: _field(_binK, 'k')),
             ],
@@ -679,12 +684,11 @@ class _DistributionsTabState extends State<_DistributionsTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (bin == null)
-                    const Text(
-                        'Enter n ≥ 0 and 0 ≤ p ≤ 1 to compute binomial values.')
+                    Text(_t.statsBinomialPrompt)
                   else ...[
-                    _resultRow('Mean', _fmt(bin.mean)),
-                    _resultRow('Variance', _fmt(bin.variance)),
-                    _resultRow('Stddev', _fmt(bin.stddev)),
+                    _resultRow(_t.statsDescMean, _fmt(bin.mean)),
+                    _resultRow(_t.statsDescVariance, _fmt(bin.variance)),
+                    _resultRow(_t.statsStddevShort, _fmt(bin.stddev)),
                     if (k != null) ...[
                       _resultRow('P(X = k)', _fmt(bin.pmf(k))),
                       _resultRow('P(X ≤ k)', _fmt(bin.cdf(k))),
@@ -748,6 +752,8 @@ class _TestsTab extends StatefulWidget {
 }
 
 class _TestsTabState extends State<_TestsTab> {
+  AppLocalizations get _t => AppLocalizations.of(context);
+
   _TestKind _kind = _TestKind.oneSampleT;
 
   /// Round 95 follow-up: maps a `_TestKind` enum name (as carried in a
@@ -925,8 +931,8 @@ class _TestsTabState extends State<_TestsTab> {
           Expanded(
             child: Text(
               rejects
-                  ? 'Reject H₀ at α (the data are inconsistent with H₀).'
-                  : 'Fail to reject H₀ at α (the data are consistent with H₀).',
+                  ? _t.statsRejectH0
+                  : _t.statsFailToRejectH0,
               style: TextStyle(
                 color: rejects
                     ? scheme.onErrorContainer
@@ -960,9 +966,9 @@ class _TestsTabState extends State<_TestsTab> {
           controller: _oneSampleData,
           maxLines: 3,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Sample data',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsSampleData,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
@@ -971,9 +977,9 @@ class _TestsTabState extends State<_TestsTab> {
           keyboardType: const TextInputType.numberWithOptions(
               decimal: true, signed: true),
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Hypothesized mean μ₀',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsHypothesizedMeanLabel,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -981,15 +987,15 @@ class _TestsTabState extends State<_TestsTab> {
           Text(err,
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
-          _resultRow('Sample mean x̄', _fmt(r.sampleMean)),
-          _resultRow('Sample stddev s', _fmt(r.sampleStddev)),
-          _resultRow('Sample size n', '${r.sampleSize}'),
-          _resultRow('Hypothesized μ₀', _fmt(r.hypothesizedMean)),
-          _resultRow('t-statistic', _fmt(r.statistic)),
-          _resultRow('Degrees of freedom', '${r.df}'),
-          _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
-          _resultRow('p-value (upper tail)', _fmt(r.pValueOneSidedUpper)),
-          _resultRow('p-value (lower tail)', _fmt(r.pValueOneSidedLower)),
+          _resultRow(_t.statsSampleMean, _fmt(r.sampleMean)),
+          _resultRow(_t.statsSampleStddev, _fmt(r.sampleStddev)),
+          _resultRow(_t.statsSampleSize, '${r.sampleSize}'),
+          _resultRow(_t.statsHypothesizedMu, _fmt(r.hypothesizedMean)),
+          _resultRow(_t.statsTStatistic, _fmt(r.statistic)),
+          _resultRow(_t.statsDegreesOfFreedom, '${r.df}'),
+          _resultRow(_t.statsPValueTwoSided, _fmt(r.pValueTwoSided)),
+          _resultRow(_t.statsPValueUpperTail, _fmt(r.pValueOneSidedUpper)),
+          _resultRow(_t.statsPValueLowerTail, _fmt(r.pValueOneSidedLower)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1016,9 +1022,9 @@ class _TestsTabState extends State<_TestsTab> {
           controller: _twoSampleA,
           maxLines: 2,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Sample 1',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsSampleN(1),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
@@ -1026,9 +1032,9 @@ class _TestsTabState extends State<_TestsTab> {
           controller: _twoSampleB,
           maxLines: 2,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Sample 2',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsSampleN(2),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1036,16 +1042,16 @@ class _TestsTabState extends State<_TestsTab> {
           Text(err,
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
-          _resultRow('Mean₁ x̄₁', _fmt(r.mean1)),
-          _resultRow('Mean₂ x̄₂', _fmt(r.mean2)),
-          _resultRow('Stddev₁ s₁', _fmt(r.stddev1)),
-          _resultRow('Stddev₂ s₂', _fmt(r.stddev2)),
-          _resultRow('Sizes n₁, n₂', '${r.n1}, ${r.n2}'),
-          _resultRow('t-statistic (Welch)', _fmt(r.statistic)),
-          _resultRow('df (Welch-Satterthwaite)', _fmt(r.df)),
-          _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
-          _resultRow('p-value (upper tail)', _fmt(r.pValueOneSidedUpper)),
-          _resultRow('p-value (lower tail)', _fmt(r.pValueOneSidedLower)),
+          _resultRow(_t.statsMean1, _fmt(r.mean1)),
+          _resultRow(_t.statsMean2, _fmt(r.mean2)),
+          _resultRow(_t.statsStddev1, _fmt(r.stddev1)),
+          _resultRow(_t.statsStddev2, _fmt(r.stddev2)),
+          _resultRow(_t.statsSizes, '${r.n1}, ${r.n2}'),
+          _resultRow(_t.statsTStatisticWelch, _fmt(r.statistic)),
+          _resultRow(_t.statsDfWelch, _fmt(r.df)),
+          _resultRow(_t.statsPValueTwoSided, _fmt(r.pValueTwoSided)),
+          _resultRow(_t.statsPValueUpperTail, _fmt(r.pValueOneSidedUpper)),
+          _resultRow(_t.statsPValueLowerTail, _fmt(r.pValueOneSidedLower)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1071,18 +1077,18 @@ class _TestsTabState extends State<_TestsTab> {
         TextField(
           controller: _pairedBefore,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Before',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsBefore,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _pairedAfter,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'After',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsAfter,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1090,12 +1096,12 @@ class _TestsTabState extends State<_TestsTab> {
           Text(err,
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
-          _resultRow('Mean difference', _fmt(r.sampleMean)),
-          _resultRow('Stddev of diffs', _fmt(r.sampleStddev)),
-          _resultRow('Pairs n', '${r.sampleSize}'),
-          _resultRow('t-statistic', _fmt(r.statistic)),
-          _resultRow('Degrees of freedom', '${r.df}'),
-          _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
+          _resultRow(_t.statsMeanDifference, _fmt(r.sampleMean)),
+          _resultRow(_t.statsStddevOfDiffs, _fmt(r.sampleStddev)),
+          _resultRow(_t.statsPairsN, '${r.sampleSize}'),
+          _resultRow(_t.statsTStatistic, _fmt(r.statistic)),
+          _resultRow(_t.statsDegreesOfFreedom, '${r.df}'),
+          _resultRow(_t.statsPValueTwoSided, _fmt(r.pValueTwoSided)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1125,10 +1131,10 @@ class _TestsTabState extends State<_TestsTab> {
           controller: _anovaGroups,
           maxLines: 6,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Groups (one per line)',
-            helperText: 'Each line is one group, comma- or space-separated.',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsGroupsLabel,
+            helperText: _t.statsGroupsHelper,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1137,16 +1143,16 @@ class _TestsTabState extends State<_TestsTab> {
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
           for (var i = 0; i < r.groupMeans.length; i++)
-            _resultRow('Group ${i + 1} (n=${r.groupSizes[i]})',
-                'mean ${_fmt(r.groupMeans[i])}'),
-          _resultRow('Grand mean', _fmt(r.grandMean)),
-          _resultRow('SS between', _fmt(r.ssBetween)),
-          _resultRow('SS within', _fmt(r.ssWithin)),
-          _resultRow('df (between, within)', '${r.dfBetween}, ${r.dfWithin}'),
-          _resultRow('MS between', _fmt(r.msBetween)),
-          _resultRow('MS within', _fmt(r.msWithin)),
-          _resultRow('F-statistic', _fmt(r.fStatistic)),
-          _resultRow('p-value (upper tail)', _fmt(r.pValue)),
+            _resultRow(_t.statsGroupLabel(i + 1, r.groupSizes[i]),
+                _t.statsGroupMean(_fmt(r.groupMeans[i]))),
+          _resultRow(_t.statsGrandMean, _fmt(r.grandMean)),
+          _resultRow(_t.statsSsBetween, _fmt(r.ssBetween)),
+          _resultRow(_t.statsSsWithin, _fmt(r.ssWithin)),
+          _resultRow(_t.statsDfBetweenWithin, '${r.dfBetween}, ${r.dfWithin}'),
+          _resultRow(_t.statsMsBetween, _fmt(r.msBetween)),
+          _resultRow(_t.statsMsWithin, _fmt(r.msWithin)),
+          _resultRow(_t.statsFStatistic, _fmt(r.fStatistic)),
+          _resultRow(_t.statsPValueUpperTail, _fmt(r.pValue)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1176,10 +1182,10 @@ class _TestsTabState extends State<_TestsTab> {
           controller: _indepTable,
           maxLines: 6,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Contingency table (one row per line)',
-            helperText: 'Each line is a row, comma- or space-separated.',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsContingencyLabel,
+            helperText: _t.statsContingencyHelper,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1187,10 +1193,10 @@ class _TestsTabState extends State<_TestsTab> {
           Text(err,
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
-          _resultRow('χ² statistic', _fmt(r.statistic)),
-          _resultRow('Degrees of freedom', '${r.df}'),
-          _resultRow('Grand total', _fmt(r.grandTotal)),
-          _resultRow('p-value (upper tail)', _fmt(r.pValue)),
+          _resultRow(_t.statsChiSquareStatistic, _fmt(r.statistic)),
+          _resultRow(_t.statsDegreesOfFreedom, '${r.df}'),
+          _resultRow(_t.statsGrandTotal, _fmt(r.grandTotal)),
+          _resultRow(_t.statsPValueUpperTail, _fmt(r.pValue)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1220,10 +1226,10 @@ class _TestsTabState extends State<_TestsTab> {
         TextField(
           controller: _fisherTable,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: '2×2 cells: a, b, c, d',
-            helperText: 'Row 1 = [a, b]; row 2 = [c, d].',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsFisherCellsLabel,
+            helperText: _t.statsFisherCellsHelper,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1231,14 +1237,14 @@ class _TestsTabState extends State<_TestsTab> {
           Text(err,
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
-          _resultRow('a (row1,col1)', '${r.a}'),
-          _resultRow('b (row1,col2)', '${r.b}'),
-          _resultRow('c (row2,col1)', '${r.c}'),
-          _resultRow('d (row2,col2)', '${r.d}'),
-          _resultRow('P(observed)', _fmt(r.pObserved)),
-          _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
-          _resultRow('p-value (upper)', _fmt(r.pValueOneSidedUpper)),
-          _resultRow('p-value (lower)', _fmt(r.pValueOneSidedLower)),
+          _resultRow(_t.statsCell('a', 1, 1), '${r.a}'),
+          _resultRow(_t.statsCell('b', 1, 2), '${r.b}'),
+          _resultRow(_t.statsCell('c', 2, 1), '${r.c}'),
+          _resultRow(_t.statsCell('d', 2, 2), '${r.d}'),
+          _resultRow(_t.statsPObserved, _fmt(r.pObserved)),
+          _resultRow(_t.statsPValueTwoSided, _fmt(r.pValueTwoSided)),
+          _resultRow(_t.statsPValueUpper, _fmt(r.pValueOneSidedUpper)),
+          _resultRow(_t.statsPValueLower, _fmt(r.pValueOneSidedLower)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1264,19 +1270,19 @@ class _TestsTabState extends State<_TestsTab> {
         TextField(
           controller: _signBefore,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Before',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsBefore,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _signAfter,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'After',
-            helperText: 'Pairs with zero difference are dropped.',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsAfter,
+            helperText: _t.statsSignHelper,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1284,11 +1290,11 @@ class _TestsTabState extends State<_TestsTab> {
           Text(err,
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
-          _resultRow('Positives (before > after)', '${r.positives}'),
-          _resultRow('Negatives (before < after)', '${r.negatives}'),
-          _resultRow('Ties (excluded)', '${r.zeros}'),
-          _resultRow('Effective n', '${r.n}'),
-          _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
+          _resultRow(_t.statsPositives, '${r.positives}'),
+          _resultRow(_t.statsNegatives, '${r.negatives}'),
+          _resultRow(_t.statsTies, '${r.zeros}'),
+          _resultRow(_t.statsEffectiveN, '${r.n}'),
+          _resultRow(_t.statsPValueTwoSided, _fmt(r.pValueTwoSided)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1314,19 +1320,19 @@ class _TestsTabState extends State<_TestsTab> {
         TextField(
           controller: _wilcoxonA,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Sample 1',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsSampleN(1),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _wilcoxonB,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Sample 2',
-            helperText: 'Normal-approximation p-value; reliable for n ≳ 10.',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsSampleN(2),
+            helperText: _t.statsWilcoxonHelper,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1334,12 +1340,12 @@ class _TestsTabState extends State<_TestsTab> {
           Text(err,
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
-          _resultRow('Rank sum R₁', _fmt(r.rankSum1)),
+          _resultRow(_t.statsRankSum, _fmt(r.rankSum1)),
           _resultRow('U₁', _fmt(r.u1)),
           _resultRow('U₂', _fmt(r.u2)),
           _resultRow('n₁ / n₂', '${r.n1} / ${r.n2}'),
-          _resultRow('z statistic', _fmt(r.z)),
-          _resultRow('p-value (two-sided)', _fmt(r.pValueTwoSided)),
+          _resultRow(_t.statsZStatistic, _fmt(r.z)),
+          _resultRow(_t.statsPValueTwoSided, _fmt(r.pValueTwoSided)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1366,18 +1372,18 @@ class _TestsTabState extends State<_TestsTab> {
         TextField(
           controller: _gofObserved,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Observed counts',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsObservedCounts,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _gofExpected,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Expected counts',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: _t.statsExpectedCounts,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1385,9 +1391,9 @@ class _TestsTabState extends State<_TestsTab> {
           Text(err,
               style: TextStyle(color: Theme.of(context).colorScheme.error))
         else if (r != null) ...[
-          _resultRow('χ² statistic', _fmt(r.statistic)),
-          _resultRow('Degrees of freedom', '${r.df}'),
-          _resultRow('p-value (upper tail)', _fmt(r.pValue)),
+          _resultRow(_t.statsChiSquareStatistic, _fmt(r.statistic)),
+          _resultRow(_t.statsDegreesOfFreedom, '${r.df}'),
+          _resultRow(_t.statsPValueUpperTail, _fmt(r.pValue)),
           _verdictBlock(context, r.rejectsAt(alpha)),
         ],
       ],
@@ -1409,20 +1415,20 @@ class _TestsTabState extends State<_TestsTab> {
             spacing: 6,
             runSpacing: 4,
             children: [
-              _testChip('One-sample t', _TestKind.oneSampleT, 'one_sample_t'),
+              _testChip(_t.statsTestOneSampleT, _TestKind.oneSampleT, 'one_sample_t'),
               _testChip(
-                  'Two-sample t (Welch)', _TestKind.twoSampleT, 'welch_t'),
-              _testChip('Paired t', _TestKind.pairedT, 'paired_t'),
-              _testChip('ANOVA (one-way)', _TestKind.anovaOneWay, 'anova_1'),
-              _testChip('χ² goodness-of-fit', _TestKind.chiSquareGof,
+                  _t.statsTestTwoSampleT, _TestKind.twoSampleT, 'welch_t'),
+              _testChip(_t.statsTestPairedT, _TestKind.pairedT, 'paired_t'),
+              _testChip(_t.statsTestAnova, _TestKind.anovaOneWay, 'anova_1'),
+              _testChip(_t.statsTestChiSquareGof, _TestKind.chiSquareGof,
                   'chi2_goodness'),
-              _testChip('χ² independence', _TestKind.chiSquareIndep,
+              _testChip(_t.statsTestChiSquareIndependence, _TestKind.chiSquareIndep,
                   'chi2_independence'),
               _testChip(
-                  "Fisher's exact 2×2", _TestKind.fisherExact, 'fisher_exact'),
-              _testChip('Paired sign', _TestKind.pairedSign, 'sign_test'),
+                  _t.statsTestFisherExact, _TestKind.fisherExact, 'fisher_exact'),
+              _testChip(_t.statsTestPairedSign, _TestKind.pairedSign, 'sign_test'),
               _testChip(
-                  'Wilcoxon rank-sum', _TestKind.wilcoxonRankSum, 'wilcoxon'),
+                  _t.statsTestWilcoxon, _TestKind.wilcoxonRankSum, 'wilcoxon'),
             ],
           ),
           const SizedBox(height: 12),
@@ -1434,9 +1440,9 @@ class _TestsTabState extends State<_TestsTab> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: 'Significance level α',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: _t.statsSignificanceLevel,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),

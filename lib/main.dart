@@ -38,6 +38,7 @@ import 'services/apple_workflow.dart';
 import 'utils/share_link.dart';
 import 'widgets/perf_overlay.dart';
 import 'widgets/command_palette.dart';
+import 'widgets/desktop_menu_bar.dart';
 import 'engine/command_catalog.dart';
 import 'widgets/module_navigation.dart';
 import 'widgets/unit_converter_dialog.dart';
@@ -273,11 +274,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ),
       const AnalysisHubScreen(),
       SettingsScreen(
-        onWorkspaceRestored: () {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _notepadKey.currentState?.recalculateAll();
-          });
-        },
+        onWorkspaceRestored: _onWorkspaceRestored,
         onReplayTour: _runOnboarding,
       ),
     ];
@@ -332,7 +329,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }, (error) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Could not open workflow: $error')));
+            SnackBar(content: Text(AppLocalizations.of(context).settingsWorkflowOpenFailed('$error'))));
       }));
     });
     // Worked-examples V2: when a dialog signals "insert this into the
@@ -434,7 +431,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     // Ctrl/Cmd + 1-6 switch between tabs (accessibility / power-user).
-    return CallbackShortcuts(
+    return DesktopMenuBar(
+      actions: _menuActions,
+      child: CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.keyK, control: true):
             _openCommands,
@@ -483,8 +482,52 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           },
         ),
       ),
+    ),
     );
   }
+
+  void _onWorkspaceRestored() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _notepadKey.currentState?.recalculateAll();
+    });
+  }
+
+  /// Switch to the Notepad (mounting it on first visit), then run [action].
+  void _withNotepad(void Function(NotepadScreenState notepad) action) {
+    _select(_kNotepad);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notepad = _notepadKey.currentState;
+      if (mounted && notepad != null) action(notepad);
+    });
+  }
+
+  void _dialog(Widget dialog) =>
+      unawaited(showDialog<void>(context: context, builder: (_) => dialog));
+
+  void _push(Widget screen) => unawaited(Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => screen)));
+
+  late final _menuActions = DesktopMenuActions(
+    selectTab: _select,
+    openCommandPalette: () => unawaited(_openCommands()),
+    newWorksheet: () => _withNotepad((n) => n.newDocument()),
+    openWorksheet: () => _withNotepad((n) => unawaited(n.openWorksheetFile())),
+    saveWorksheet: () => _withNotepad((n) => unawaited(n.saveWorksheetFile())),
+    importData: () => _dialog(const ImportDataDialog()),
+    exportData: () => _dialog(const ExportDataDialog()),
+    workspaceBackups: () =>
+        _dialog(WorkspaceBackupDialog(onRestored: _onWorkspaceRestored)),
+    sync: () => _dialog(
+        SyncDialog(appState: AppState(), onRestored: _onWorkspaceRestored)),
+    unitConverter: () => _dialog(const UnitConverterDialog()),
+    functionReference: () => _dialog(const FunctionReferenceDialog()),
+    userFunctions: () => _dialog(const UserFunctionsDialog()),
+    workedExamples: () => _dialog(const WorkedExamplesDialog()),
+    openModule: (sentinel) => dispatchModuleSentinel(context, sentinel),
+    help: () => _push(const HelpScreen()),
+    replayTour: () => unawaited(_runOnboarding()),
+    about: () => _push(const AboutScreen()),
+  );
 
   Future<void> _openCommands() async {
     final command = await showDialog<AppCommand>(
@@ -736,8 +779,8 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: SwitchListTile(
-                  secondary: const Icon(Icons.contrast,
-                      semanticLabel: 'High contrast'),
+                  secondary: Icon(Icons.contrast,
+                      semanticLabel: t.settingsHighContrastSemantic),
                   title: Text(t.settingsHighContrast),
                   subtitle: Text(t.settingsHighContrastSubtitle),
                   value: appState.highContrast,
@@ -747,8 +790,8 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.text_fields,
-                      semanticLabel: 'Text scale'),
+                  leading: Icon(Icons.text_fields,
+                      semanticLabel: t.settingsTextScaleSemantic),
                   title: Text(t.settingsTextScale),
                   subtitle: Slider(
                     value: appState.textScale,
@@ -763,8 +806,8 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: SwitchListTile(
-                  secondary: const Icon(Icons.pin_outlined,
-                      semanticLabel: 'Exact integers'),
+                  secondary: Icon(Icons.pin_outlined,
+                      semanticLabel: t.settingsExactIntegersSemantic),
                   title: Text(t.settingsExactIntegerMode),
                   subtitle: Text(t.settingsExactIntegerModeSubtitle),
                   value: appState.exactIntegerMode,
@@ -775,7 +818,7 @@ class SettingsScreen extends StatelessWidget {
               Card(
                 child: SwitchListTile(
                   secondary:
-                      const Icon(Icons.link, semanticLabel: 'Auto bind solve'),
+                      Icon(Icons.link, semanticLabel: t.settingsAutoBindSolveSemantic),
                   title: Text(t.settingsAutoBindSolve),
                   subtitle: Text(t.settingsAutoBindSolveSubtitle),
                   value: appState.autoBindSolve,
@@ -786,11 +829,11 @@ class SettingsScreen extends StatelessWidget {
               Card(
                 child: ListTile(
                   leading:
-                      const Icon(Icons.flag_outlined, semanticLabel: 'Tour'),
+                      Icon(Icons.flag_outlined, semanticLabel: t.settingsTourSemantic),
                   title: Text(t.settingsReplayTour),
                   subtitle: Text(t.settingsReplayTourSubtitle),
                   trailing:
-                      const Icon(Icons.play_arrow, semanticLabel: 'Start tour'),
+                      Icon(Icons.play_arrow, semanticLabel: t.settingsStartTourSemantic),
                   onTap: () => onReplayTour != null
                       ? onReplayTour!()
                       : OnboardingTour.show(context),
@@ -818,12 +861,12 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.functions,
-                      semanticLabel: 'User functions'),
+                  leading: Icon(Icons.functions,
+                      semanticLabel: t.settingsUserFunctionsSemantic),
                   title: Text(t.settingsUserFunctions),
                   subtitle: Text(t.settingsUserFunctionsSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const UserFunctionsDialog(),
@@ -833,12 +876,12 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.menu_book_outlined,
-                      semanticLabel: 'Worked examples'),
+                  leading: Icon(Icons.menu_book_outlined,
+                      semanticLabel: t.settingsWorkedExamplesSemantic),
                   title: Text(t.settingsWorkedExamples),
                   subtitle: Text(t.settingsWorkedExamplesSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const WorkedExamplesDialog(),
@@ -851,12 +894,12 @@ class SettingsScreen extends StatelessWidget {
               // surface it inline from Calculator / Notepad.
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.functions,
-                      semanticLabel: 'Function reference'),
+                  leading: Icon(Icons.functions,
+                      semanticLabel: t.settingsFunctionReferenceSemantic),
                   title: Text(t.settingsFunctionRef),
                   subtitle: Text(t.settingsFunctionRefSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const FunctionReferenceDialog(),
@@ -867,11 +910,11 @@ class SettingsScreen extends StatelessWidget {
               Card(
                 child: ListTile(
                   leading:
-                      const Icon(Icons.help_outline, semanticLabel: 'Help'),
+                      Icon(Icons.help_outline, semanticLabel: t.menuHelp),
                   title: Text(t.settingsHelp),
                   subtitle: Text(t.settingsHelpSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () {
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => const HelpScreen(),
@@ -882,11 +925,11 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.ios_share, semanticLabel: 'Export'),
+                  leading: Icon(Icons.ios_share, semanticLabel: t.settingsExportSemantic),
                   title: Text(t.settingsExportData),
                   subtitle: Text(t.settingsExportDataSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const ExportDataDialog(),
@@ -897,11 +940,11 @@ class SettingsScreen extends StatelessWidget {
               Card(
                 child: ListTile(
                   leading:
-                      const Icon(Icons.file_upload, semanticLabel: 'Import'),
+                      Icon(Icons.file_upload, semanticLabel: t.notepadImport),
                   title: Text(t.settingsImportData),
                   subtitle: Text(t.settingsImportDataSubtitle),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const ImportDataDialog(),
@@ -912,10 +955,9 @@ class SettingsScreen extends StatelessWidget {
               Card(
                   child: ListTile(
                 leading:
-                    const Icon(Icons.backup_outlined, semanticLabel: 'Backup'),
-                title: const Text('Workspace backups'),
-                subtitle:
-                    const Text('Files, restore and transfer between devices'),
+                    Icon(Icons.backup_outlined, semanticLabel: t.settingsBackupSemantic),
+                title: Text(t.backupDialogTitle),
+                subtitle: Text(t.settingsBackupsSubtitle),
                 onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) =>
@@ -925,13 +967,12 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.camera_alt_outlined,
-                      semanticLabel: 'OCR Models'),
-                  title: const Text('Math OCR Models'),
-                  subtitle:
-                      const Text('Download models for equation recognition'),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  leading: Icon(Icons.camera_alt_outlined,
+                      semanticLabel: t.ocrModelsTitle),
+                  title: Text(t.settingsOcrModelsTitle),
+                  subtitle: Text(t.settingsOcrModelsSubtitle),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () => showDialog<void>(
                     context: context,
                     builder: (_) => const OcrSettingsDialog(),
@@ -950,12 +991,12 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Card(
                   child: ListTile(
-                    leading: const Icon(Icons.fact_check_outlined,
-                        semanticLabel: 'Diagnostics'),
+                    leading: Icon(Icons.fact_check_outlined,
+                        semanticLabel: t.settingsDiagnosticsSemantic),
                     title: Text(t.matrixDiagnosticsTitle),
                     subtitle: Text(t.matrixDiagnosticsSubtitle),
-                    trailing: const Icon(Icons.play_arrow,
-                        semanticLabel: 'Run diagnostics'),
+                    trailing: Icon(Icons.play_arrow,
+                        semanticLabel: t.settingsRunDiagnosticsSemantic),
                     onTap: () => _showMatrixDiagnostics(context, t),
                   ),
                 ),
@@ -969,32 +1010,31 @@ class SettingsScreen extends StatelessWidget {
                 Card(
                   child: ListTile(
                     leading: Icon(Icons.bug_report,
-                        semanticLabel: 'Crash reports',
+                        semanticLabel: t.crashReportsSemantic,
                         color: Theme.of(context).colorScheme.error),
                     title:
-                        Text('Crash Reports (${CrashReporter.instance.count})'),
-                    subtitle: const Text(
-                        'Review and send — no data leaves without your action'),
-                    trailing: const Icon(Icons.arrow_forward_ios,
-                        size: 16, semanticLabel: 'Open'),
+                        Text(t.crashReportsCount(CrashReporter.instance.count)),
+                    subtitle: Text(t.crashReportsSubtitle),
+                    trailing: Icon(Icons.arrow_forward_ios,
+                        size: 16, semanticLabel: t.settingsOpenSemantic),
                     onTap: () => _showCrashReportDialog(context),
                   ),
                 ),
               if (CrashReporter.instance.hasReports) const SizedBox(height: 16),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.cloud_sync, semanticLabel: 'Sync'),
-                  title: const Text('Cloud Sync'),
+                  leading: Icon(Icons.cloud_sync, semanticLabel: t.settingsSyncSemantic),
+                  title: Text(t.syncDialogTitle),
                   subtitle: ListenableBuilder(
                     listenable: SyncService.instance,
                     builder: (context, _) => Text(
                       SyncService.instance.isConfigured
-                          ? 'Configured · transfer workspace backups'
-                          : 'Off · local work needs no account',
+                          ? t.syncSettingsConfigured
+                          : t.syncSettingsOff,
                     ),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () {
                     showDialog(
                       context: context,
@@ -1008,10 +1048,10 @@ class SettingsScreen extends StatelessWidget {
               Card(
                 child: ListTile(
                   leading:
-                      const Icon(Icons.info_outline, semanticLabel: 'About'),
+                      Icon(Icons.info_outline, semanticLabel: t.settingsAboutSemantic),
                   title: Text(t.settingsAbout),
-                  trailing: const Icon(Icons.arrow_forward_ios,
-                      size: 16, semanticLabel: 'Open'),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, semanticLabel: t.settingsOpenSemantic),
                   onTap: () {
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => const AboutScreen(),
@@ -1028,10 +1068,11 @@ class SettingsScreen extends StatelessWidget {
 
   void _showCrashReportDialog(BuildContext context) {
     final reporter = CrashReporter.instance;
+    final t = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Crash Reports'),
+        title: Text(t.crashReportsTitle),
         content: SizedBox(
           width: 420,
           height: 300,
@@ -1061,21 +1102,21 @@ class SettingsScreen extends StatelessWidget {
               // Trigger ListenableBuilder rebuild to hide the card.
               AppState().refresh();
             },
-            child: const Text('Clear All'),
+            child: Text(t.clearAll),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               reporter.launchGitHubIssue();
             },
-            child: const Text('Report on GitHub'),
+            child: Text(t.crashReportOnGitHub),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               reporter.launchEmailReport();
             },
-            child: const Text('Send Email'),
+            child: Text(t.crashSendEmail),
           ),
         ],
       ),
@@ -1110,7 +1151,7 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       Icon(
                         r.passed ? Icons.check_circle : Icons.cancel,
-                        semanticLabel: r.passed ? 'Passed' : 'Failed',
+                        semanticLabel: r.passed ? t.settingsDiagnosticPassed : t.settingsDiagnosticFailed,
                         color: r.passed
                             ? Colors.green
                             : Theme.of(context).colorScheme.error,
@@ -1173,9 +1214,8 @@ class _MathAssistantSettingsCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
           child: ListTile(
         leading: const Icon(Icons.auto_awesome),
-        title: const Text('Math assistance'),
-        subtitle: const Text(
-            'Translate a question, review the expression, then calculate.'),
+        title: Text(AppLocalizations.of(context).assistMathTitle),
+        subtitle: Text(AppLocalizations.of(context).assistMathSubtitle),
         trailing: OutlinedButton(
             onPressed: () async {
               await ai.loadLibrary();
@@ -1184,7 +1224,7 @@ class _MathAssistantSettingsCard extends StatelessWidget {
                     context: context, builder: (_) => ai.AiMathDialog());
               }
             },
-            child: const Text('Open assistant')),
+            child: Text(AppLocalizations.of(context).assistOpenAssistant)),
       ));
 }
 
@@ -1237,7 +1277,7 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
     widget.appState.setCrispAssistModel(
         model.isEmpty ? 'claude-sonnet-4-20250514' : model);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('CrispAssist settings saved')),
+      SnackBar(content: Text(AppLocalizations.of(context).assistSettingsSaved)),
     );
   }
 
@@ -1253,6 +1293,7 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final t = AppLocalizations.of(context);
     final enabled = widget.appState.crispAssistEnabled;
     return Card(
       child: Padding(
@@ -1276,8 +1317,8 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
                             style: Theme.of(context).textTheme.titleMedium),
                         Text(
                           enabled
-                              ? 'Configured (${widget.appState.crispAssistModel})'
-                              : 'Not configured',
+                              ? t.assistConfigured(widget.appState.crispAssistModel)
+                              : t.assistNotConfigured,
                           style: TextStyle(
                             fontSize: 12,
                             color: enabled
@@ -1289,16 +1330,14 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
                     ),
                   ),
                   Icon(_expanded ? Icons.expand_less : Icons.expand_more,
-                      semanticLabel: _expanded ? 'Collapse' : 'Expand'),
+                      semanticLabel: _expanded ? t.assistCollapse : t.assistExpand),
                 ],
               ),
             ),
             if (_expanded) ...[
               const SizedBox(height: 16),
               Text(
-                'CrispAssist explains results and translates natural language '
-                'to engine syntax. It never computes answers — all math goes '
-                'through SymEngine. You supply your own API key.',
+                t.assistDescription,
                 style: TextStyle(
                   fontSize: 12,
                   color: cs.onSurface.withValues(alpha: 0.7),
@@ -1340,8 +1379,8 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
               TextField(
                 controller: _keyCtl,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'API Key',
+                decoration: InputDecoration(
+                  labelText: t.assistApiKey,
                   hintText: 'sk-ant-...',
                   isDense: true,
                 ),
@@ -1349,8 +1388,8 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
               const SizedBox(height: 8),
               TextField(
                 controller: _modelCtl,
-                decoration: const InputDecoration(
-                  labelText: 'Model',
+                decoration: InputDecoration(
+                  labelText: t.assistModel,
                   hintText: 'claude-sonnet-4-20250514',
                   isDense: true,
                 ),
@@ -1361,12 +1400,12 @@ class _CrispAssistSettingsCardState extends State<_CrispAssistSettingsCard> {
                 children: [
                   TextButton(
                     onPressed: _clear,
-                    child: const Text('Clear'),
+                    child: Text(t.sudokuClearCell),
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
                     onPressed: _save,
-                    child: const Text('Save'),
+                    child: Text(t.storeButton),
                   ),
                 ],
               ),

@@ -82,14 +82,16 @@ class _UserFunctionsDialogState extends State<UserFunctionsDialog> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit,
-                                    size: 18, semanticLabel: 'Edit'),
+                                icon: Icon(Icons.edit,
+                                    size: 18,
+                                    semanticLabel: t.userFunctionsEdit),
                                 tooltip: t.userFunctionsEdit,
                                 onPressed: () => _editDialog(context, fn),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    size: 18, semanticLabel: 'Delete'),
+                                icon: Icon(Icons.delete_outline,
+                                    size: 18,
+                                    semanticLabel: t.userFunctionsDelete),
                                 tooltip: t.userFunctionsDelete,
                                 onPressed: () =>
                                     _appState.removeUserFunction(fn.name),
@@ -104,8 +106,8 @@ class _UserFunctionsDialogState extends State<UserFunctionsDialog> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: FilledButton.icon(
-                    icon: const Icon(Icons.add,
-                        size: 18, semanticLabel: 'Add function'),
+                    icon: Icon(Icons.add,
+                        size: 18, semanticLabel: t.userFunctionsAddFunction),
                     label: Text(t.userFunctionsAdd),
                     onPressed: () => _editDialog(context, null),
                   ),

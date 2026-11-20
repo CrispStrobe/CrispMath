@@ -348,7 +348,13 @@ class HistoryRowHelpModal extends StatelessWidget {
                 ResultEvidenceBadge(evidence: entry.resultEvidence!),
               if (entry.resultEvidence == null && info.hasEngine) ...[
                 Text(
-                  t.historyHelpComputedVia(info.engineLabel!),
+                  t.historyHelpComputedVia(
+                      // Engine identifiers stay as-is; only the one prose
+                      // label (kept English in [HistoryHelpInfo] for tests)
+                      // is shown localized.
+                      info.engineLabel == 'Integration (method not recorded)'
+                          ? t.historyIntegrationMethodNotRecorded
+                          : info.engineLabel!),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 if (ref != null && ref.id.isNotEmpty) ...[
@@ -387,9 +393,9 @@ class HistoryRowHelpModal extends StatelessWidget {
                 result: entry.result,
               );
             },
-            icon: const Icon(Icons.auto_awesome,
-                size: 16, semanticLabel: 'Explain with AI'),
-            label: const Text('Explain'),
+            icon: Icon(Icons.auto_awesome,
+                size: 16, semanticLabel: t.historyExplainWithAi),
+            label: Text(t.historyExplain),
           ),
         if (onLearnMore != null)
           FilledButton.tonal(
@@ -454,13 +460,11 @@ Future<void> runHistoryStepTrace({
       steps = odeSteps ??
           [
             MathStep(
-              rule: 'Solution',
+              rule: t.stepsSolution,
               formula: '',
               before: info.stepExpr!,
               after: OdeSolver.solve(engine, info.stepExpr!),
-              note: 'A full step-by-step trace is available for '
-                  'constant-coefficient linear ODEs; the answer is shown '
-                  'above.',
+              note: t.stepsOdeFallbackNote,
             ),
           ];
       title = t.odeStepsTitle;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../engine/app_state.dart';
+import '../localization/app_localizations.dart';
 import '../services/document_history.dart';
 import '../services/workspace_backup.dart';
 
@@ -16,6 +17,7 @@ class _WorkspaceBackupDialogState extends State<WorkspaceBackupDialog> {
   WorkspaceBackup? _incoming;
   bool _busy = false;
   String? _message;
+  AppLocalizations get _t => AppLocalizations.of(context);
   @override
   void initState() {
     super.initState();
@@ -30,7 +32,7 @@ class _WorkspaceBackupDialogState extends State<WorkspaceBackupDialog> {
     try {
       await action();
     } catch (error) {
-      if (mounted) setState(() => _message = 'Backup failed: $error');
+      if (mounted) setState(() => _message = _t.backupFailed('$error'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -59,15 +61,15 @@ class _WorkspaceBackupDialogState extends State<WorkspaceBackupDialog> {
       setState(() {
         _incoming = null;
         _message = merge
-            ? 'Worksheets imported; conflicting versions kept separately.'
-            : 'Workspace restored. Previous work is available under Previous workspace.';
+            ? _t.backupWorksheetsImported
+            : _t.backupWorkspaceRestored;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Workspace backups'),
+        title: Text(_t.backupDialogTitle),
         content: SizedBox(
             width: 600,
             height: 360,
@@ -75,29 +77,27 @@ class _WorkspaceBackupDialogState extends State<WorkspaceBackupDialog> {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  const Text(
-                      'Save a portable backup to Files, iCloud Drive or another provider. Open it on another device to transfer your work. Automatic cloud sync requires a configured backend.'),
+                  Text(_t.backupIntro),
                   if (_message != null) Text(_message!),
                   if (_incoming != null) ...[
-                    Text(
-                        '${_incoming!.documents.length} worksheets and ${_incoming!.checkpoints.length} checkpoints in this backup.'),
-                    const Text(
-                        'Import worksheets keeps current settings and graphs and preserves both versions of changed documents. Replace workspace restores all saved settings, history, functions, graphs and worksheets. A recovery backup is saved first.'),
+                    Text(_t.backupContents(
+                        _incoming!.documents.length, _incoming!.checkpoints.length)),
+                    Text(_t.backupRestoreExplanation),
                     for (final doc in _incoming!.documents.take(20))
-                      Text('${doc.name}: ${doc.lines.length} rows'),
+                      Text(_t.backupDocRows(doc.name, doc.lines.length)),
                   ],
                 ]))),
         actions: [
           TextButton(
               onPressed: _busy ? null : () => Navigator.pop(context),
-              child: const Text('Close')),
+              child: Text(_t.dialogClose)),
           TextButton(
               onPressed: _busy
                   ? null
                   : () => _run(() async {
                         await WorkspaceBackup.save(AppState());
                       }),
-              child: const Text('Save backup')),
+              child: Text(_t.backupSave)),
           TextButton(
               onPressed: _busy
                   ? null
@@ -107,7 +107,7 @@ class _WorkspaceBackupDialogState extends State<WorkspaceBackupDialog> {
                           setState(() => _incoming = backup);
                         }
                       }),
-              child: const Text('Open backup')),
+              child: Text(_t.backupOpen)),
           TextButton(
               onPressed: _busy
                   ? null
@@ -117,19 +117,19 @@ class _WorkspaceBackupDialogState extends State<WorkspaceBackupDialog> {
                           setState(() {
                             _incoming = backup;
                             if (backup == null) {
-                              _message = 'No recovery backup is available.';
+                              _message = _t.backupNoRecovery;
                             }
                           });
                         }
                       }),
-              child: const Text('Previous workspace')),
+              child: Text(_t.backupPreviousWorkspace)),
           if (_incoming != null) ...[
             FilledButton(
                 onPressed: _busy ? null : () => _run(() => _restore(true)),
-                child: const Text('Import worksheets')),
+                child: Text(_t.backupImportWorksheets)),
             TextButton(
                 onPressed: _busy ? null : () => _run(() => _restore(false)),
-                child: const Text('Replace workspace')),
+                child: Text(_t.backupReplaceWorkspace)),
           ],
         ],
       );

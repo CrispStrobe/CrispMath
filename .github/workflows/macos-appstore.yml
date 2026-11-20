@@ -95,6 +95,19 @@ jobs:
           unset GEM_HOME GEM_PATH GEM_ROOT RUBY_ROOT RUBYOPT RUBY_ENGINE RUBY_VERSION
           flutter pub get
           flutter build macos --release
+      - name: Verify SymEngine and CrispEmbed symbols survived link and strip
+        # Release builds up to 1.2.1+28 dead-stripped every flutter_symengine_*
+        # symbol (Dart resolves them via dlsym), so CAS silently fell back.
+        run: |
+          set -eu
+          APP=build/macos/Build/Products/Release/crisp_math.app/Contents
+          SYM=$(nm -gU "$APP/MacOS/crisp_math" | grep -c flutter_symengine || true)
+          CE=$(nm -gU "$APP/Frameworks/libcrispembed.dylib" | grep -c ' _crispembed_' || true)
+          echo "flutter_symengine_*: $SYM  crispembed_*: $CE"
+          if [ "$SYM" -lt 30 ] || [ "$CE" -lt 1 ]; then
+            echo "::error::Native libraries missing from the macOS app (symengine=$SYM, crispembed=$CE)"
+            exit 1
+          fi
       - name: Import signing identities into a temp keychain
         env:
           P12_B64: ${{ secrets.DIST_CERT_P12_BASE64 }}

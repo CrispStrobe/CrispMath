@@ -1,6 +1,8 @@
 """Inspect, or submit, a verified CrispMath build for App Store review.
 
-Inspection makes no changes. Submission reuses the editable iOS App Store
+Works for iOS (default) and macOS (--platform MAC_OS); every App Store
+version, build and review submission query is scoped to that platform.
+Inspection makes no changes. Submission reuses the editable App Store
 version (keeping its screenshots and metadata), renames it to the build's
 version, attaches the build, writes the App Review notes and submits through
 the reviewSubmissions API. It refuses when a version is already in review.
@@ -19,6 +21,8 @@ REVIEW_NOTES = """\
 CrispMath 1.2.1 is an update to the approved 1.2.0. It makes the worksheet a connected mathematical document; no account, purchase or network access is needed to review it.
 
 CrispMath is a standalone mathematical workspace. The algebra is SymEngine, a C++ computer algebra library, called through dart:ffi and running on device. The source is public: https://github.com/CrispStrobe/CrispMath
+
+Since build 28 the on-device SymEngine algebra and the math OCR libraries are linked into the app binary (earlier builds silently fell back to a reduced numeric engine), so symbolic results such as factor(x^2-1) or solve(x^2=4,x) are computed on device.
 
 Suggested path for the new features: the app opens on a worksheet. Enter a=2, then f(t)=a*t^2, then plot(f(x),x,-2,2). An inline plot appears under the row; change a to 3 and the plot and dependent results update. Tap View linked graph to open the same curve in the Graphing tab, then use the function's menu to return to the worksheet source. In Graphing, an independent function's menu offers Create worksheet. Results referenced by later rows stay attached to the same calculation when rows are inserted or moved.
 """
@@ -47,14 +51,37 @@ WHATS_NEW = {
 }
 
 
+MAC_NOTES_INTRO = ("CrispMath 1.2.1 is the first macOS release of CrispMath, whose iOS "
+                   "version is on the App Store. It is the native Mac app (not the iPad "
+                   "app), with a full menu bar and keyboard shortcuts; no account, "
+                   "purchase or network access is needed to review it.")
+
+
+def review_notes(platform):
+    if platform != 'MAC_OS':
+        return REVIEW_NOTES
+    first, rest = REVIEW_NOTES.split('\n\n', 1)
+    return MAC_NOTES_INTRO + '\n\n' + rest
+
+
+WHATS_NEW_INPUT = {
+    'en': '- Editing: live result preview, maths symbols delete as one, Enter adds a worksheet row, hints on keypad buttons, more of the interface translated.',
+    'de': '- Bearbeiten: Live-Vorschau des Ergebnisses, Mathe-Symbole werden als Ganzes gelöscht, Enter fügt eine Arbeitsblattzeile ein, Hinweise auf Tastenfeld-Tasten, mehr Oberfläche übersetzt.',
+    'fr': '- Édition : aperçu du résultat en direct, les symboles mathématiques s’effacent d’un coup, Entrée ajoute une ligne, infobulles sur le pavé, davantage d’interface traduite.',
+    'es': '- Edición: vista previa del resultado en vivo, los símbolos matemáticos se borran de una vez, Intro añade una fila, ayudas en las teclas, más interfaz traducida.',
+}
+
+
 def whats_new(locale):
-    return WHATS_NEW.get(locale.split('-')[0], WHATS_NEW['en'])
+    lang = locale.split('-')[0]
+    lang = lang if lang in WHATS_NEW else 'en'
+    return WHATS_NEW[lang] + '\n' + WHATS_NEW_INPUT[lang]
 
 
-def release_pending(api, app, wait_seconds=600):
+def release_pending(api, app, wait_seconds=600, platform='IOS'):
     """Release an approved version waiting for manual developer release."""
     versions = api.request(f'/v1/apps/{app}/appStoreVersions?' + urlencode(
-        {'filter[platform]': 'IOS', 'limit': '50'}))['data']
+        {'filter[platform]': platform, 'limit': '50'}))['data']
     pending = [v for v in versions if version_state(v) == 'PENDING_DEVELOPER_RELEASE']
     if len(pending) != 1:
         raise ValueError(f'Expected exactly one version pending developer release, found {len(pending)}')
@@ -83,26 +110,26 @@ def version_state(v):
     return a.get('appVersionState') or a.get('appStoreState')
 
 
-def find_build(api, app, number, version):
+def find_build(api, app, number, version, platform='IOS'):
     query = urlencode({'filter[app]': app, 'filter[version]': number, 'limit': '200'})
     matches = [b for b in api.request('/v1/builds?' + query)['data']
-               if matching_build(b, api.request(f'/v1/builds/{b["id"]}/preReleaseVersion')['data'], number, version)]
+               if matching_build(b, api.request(f'/v1/builds/{b["id"]}/preReleaseVersion')['data'], number, version, platform)]
     if len(matches) != 1:
-        raise ValueError('Expected exactly one matching iOS build')
+        raise ValueError(f'Expected exactly one matching {platform} build')
     build = matches[0]
     if build['attributes']['processingState'] != 'VALID' or build['attributes'].get('expired'):
         raise ValueError('Build is not valid and current')
     return build
 
 
-def inspect(api, app, number, version):
+def inspect(api, app, number, version, platform='IOS'):
     if api.request(f'/v1/apps/{app}')['data']['attributes']['bundleId'] != 'com.crispstrobe.crispmath':
         raise ValueError('App ID does not identify CrispMath')
-    build = find_build(api, app, number, version)
+    build = find_build(api, app, number, version, platform)
     versions = api.request(f'/v1/apps/{app}/appStoreVersions?' + urlencode(
-        {'filter[platform]': 'IOS', 'limit': '50'}))['data']
+        {'filter[platform]': platform, 'limit': '50'}))['data']
     submissions = api.request('/v1/reviewSubmissions?' + urlencode(
-        {'filter[app]': app, 'filter[platform]': 'IOS', 'limit': '50'}))['data']
+        {'filter[app]': app, 'filter[platform]': platform, 'limit': '50'}))['data']
     subs = []
     for s in submissions:
         items = api.request(f'/v1/reviewSubmissions/{s["id"]}/items?include=appStoreVersion&limit=50')['data']
@@ -124,7 +151,8 @@ def inspect(api, app, number, version):
         ratings.append({'appInfoId': info['id'], 'state': info['attributes'].get('state'),
                         'declarationId': declaration.get('id'),
                         'declaration': declaration.get('attributes')})
-    return {'source': os.environ.get('BUILD_SOURCE'), 'version': version, 'build': number,
+    return {'source': os.environ.get('BUILD_SOURCE'), 'platform': platform,
+            'version': version, 'build': number,
             'ageRatings': ratings,
             'buildId': build['id'], 'usesNonExemptEncryption': build['attributes'].get('usesNonExemptEncryption'),
             'versions': vs, 'reviewSubmissions': subs, 'appReviewSubmitted': False}
@@ -147,7 +175,8 @@ def withdraw(api, app, evidence, wait_seconds=900):
         'attributes': {'canceled': True}}}, method='PATCH')
     deadline = time.time() + wait_seconds
     while True:
-        current = inspect(api, app, evidence['build'], evidence['version'])
+        current = inspect(api, app, evidence['build'], evidence['version'],
+                          evidence['platform'])
         state = next(v['state'] for v in current['versions'] if v['id'] == vid)
         if state in EDITABLE:
             current['withdrawnSubmissionId'] = sid
@@ -179,8 +208,10 @@ def submit(api, app, evidence):
         raise ValueError('A version is already waiting for or in review')
     editable = [v for v in evidence['versions'] if v['state'] in EDITABLE]
     if len(editable) > 1:
-        raise ValueError('More than one editable iOS version; resolve manually')
+        raise ValueError('More than one editable version; resolve manually')
     bid, version = evidence['buildId'], evidence['version']
+    platform = evidence['platform']
+    notes = review_notes(platform)
     # Apple added this age rating question after the last submission. A
     # calculator has no social media features; every other answer is kept.
     for rating in evidence['ageRatings']:
@@ -195,12 +226,17 @@ def submit(api, app, evidence):
                 'attributes': {'versionString': version}}}, method='PATCH')
     else:
         vid = api.request('/v1/appStoreVersions', {'data': {'type': 'appStoreVersions',
-            'attributes': {'platform': 'IOS', 'versionString': version},
+            'attributes': {'platform': platform, 'versionString': version},
             'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']['id']
     api.request(f'/v1/appStoreVersions/{vid}/relationships/build',
                 {'data': {'type': 'builds', 'id': bid}}, method='PATCH')
 
+    # A platform's first version has no "What's New"; Apple refuses the field.
+    first_release = not any(v['state'] == 'READY_FOR_SALE' or v['state'] == 'READY_FOR_DISTRIBUTION'
+                            for v in evidence['versions'] if v['id'] != vid)
     for loc in api.request(f'/v1/appStoreVersions/{vid}/appStoreVersionLocalizations?limit=50')['data']:
+        if first_release:
+            break
         api.request(f'/v1/appStoreVersionLocalizations/{loc["id"]}', {'data': {
             'type': 'appStoreVersionLocalizations', 'id': loc['id'],
             'attributes': {'whatsNew': whats_new(loc['attributes']['locale'])}}}, method='PATCH')
@@ -208,7 +244,7 @@ def submit(api, app, evidence):
     detail = api.request(f'/v1/appStoreVersions/{vid}/appStoreReviewDetail').get('data')
     if detail:
         api.request(f'/v1/appStoreReviewDetails/{detail["id"]}', {'data': {'type': 'appStoreReviewDetails',
-            'id': detail['id'], 'attributes': {'notes': REVIEW_NOTES}}}, method='PATCH')
+            'id': detail['id'], 'attributes': {'notes': notes}}}, method='PATCH')
     else:
         # A new version has no review detail; carry the contact fields over
         # from the most recent version that has them.
@@ -219,7 +255,7 @@ def submit(api, app, evidence):
         keep = {k: old.get(k) for k in ['contactFirstName', 'contactLastName', 'contactPhone',
                                         'contactEmail', 'demoAccountRequired'] if old.get(k) is not None}
         api.request('/v1/appStoreReviewDetails', {'data': {'type': 'appStoreReviewDetails',
-            'attributes': dict(keep, notes=REVIEW_NOTES),
+            'attributes': dict(keep, notes=notes),
             'relationships': {'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': vid}}}}})
 
     # Reuse an open draft submission instead of leaving another one behind.
@@ -239,7 +275,7 @@ def submit(api, app, evidence):
             sid = draft['id']
         else:
             sid = api.request('/v1/reviewSubmissions', {'data': {'type': 'reviewSubmissions',
-                'attributes': {'platform': 'IOS'},
+                'attributes': {'platform': platform},
                 'relationships': {'app': {'data': {'type': 'apps', 'id': app}}}}})['data']['id']
         if not (draft and any(i['appStoreVersion'] == vid for i in draft['items'])):
             api.request('/v1/reviewSubmissionItems', {'data': {'type': 'reviewSubmissionItems',
@@ -248,7 +284,7 @@ def submit(api, app, evidence):
     api.request(f'/v1/reviewSubmissions/{sid}', {'data': {'type': 'reviewSubmissions', 'id': sid,
         'attributes': {'submitted': True}}}, method='PATCH')
 
-    verified = inspect(api, app, evidence['build'], version)
+    verified = inspect(api, app, evidence['build'], version, platform)
     mine = next(v for v in verified['versions'] if v['id'] == vid)
     if mine['buildId'] != bid or mine['versionString'] != version:
         raise ValueError('Version rename or build attachment was not confirmed')
@@ -266,6 +302,7 @@ if __name__ == '__main__':
     parser.add_argument('--key-file', type=Path, required=True)
     parser.add_argument('--version', required=True)
     parser.add_argument('--build', required=True)
+    parser.add_argument('--platform', choices=['IOS', 'MAC_OS'], default='IOS')
     parser.add_argument('--submit', action='store_true')
     parser.add_argument('--replace-in-review', action='store_true',
                         help='Withdraw the version in review first, then submit this build')
@@ -278,11 +315,11 @@ if __name__ == '__main__':
     released = None
     if args.release_pending:
         try:
-            released = release_pending(api, app)
+            released = release_pending(api, app, platform=args.platform)
         except HTTPError as error:
             print(error.read().decode(errors='replace'))
             raise
-    evidence = inspect(api, app, args.build, args.version)
+    evidence = inspect(api, app, args.build, args.version, args.platform)
     evidence['releasedPending'] = released
     if args.submit:
         try:

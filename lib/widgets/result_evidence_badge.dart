@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../engine/result_evidence.dart';
+import '../localization/app_localizations.dart';
 import '../localization/workflow_localizations.dart';
 
 /// How a result was produced: accuracy, method, and any domain caveat.
@@ -44,7 +45,8 @@ class ResultEvidenceBadge extends StatelessWidget {
           if (evidence.accuracy == ResultAccuracy.unknown)
             Text(t.text(WorkflowLabel.resultUnknownPrecision)),
           if (evidence.sourceDomain != null)
-            Text('Original domain: ${evidence.sourceDomain}'),
+            Text(AppLocalizations.of(context)
+                .resultEvidenceOriginalDomain('${evidence.sourceDomain}')),
           if (evidence.unchanged)
             Text(t.text(WorkflowLabel.resultUnchanged)),
         ]);

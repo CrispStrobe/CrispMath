@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../engine/model_license_consent.dart';
 import '../engine/model_license_terms.dart';
+import '../localization/app_localizations.dart';
 
 /// Returns true if consent for [terms] is (now) recorded. Shows the dialog
 /// only when consent is not already persisted.
@@ -41,11 +42,12 @@ class ModelLicenseConsentDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(
         terms.nonCommercial
-            ? 'Non-commercial model license'
-            : 'Model license terms',
+            ? t.licenseNonCommercialTitle
+            : t.licenseTermsTitle,
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -55,12 +57,12 @@ class ModelLicenseConsentDialog extends StatelessWidget {
             SelectableText(terms.consentText(modelName)),
             const SizedBox(height: 8),
             TextButton.icon(
-              icon: const Icon(
+              icon: Icon(
                 Icons.open_in_new,
                 size: 16,
-                semanticLabel: 'Open license',
+                semanticLabel: t.licenseOpen,
               ),
-              label: const Text('Read the license'),
+              label: Text(t.licenseRead),
               onPressed: () => launchUrl(
                 Uri.parse(terms.url),
                 mode: LaunchMode.externalApplication,
@@ -72,11 +74,11 @@ class ModelLicenseConsentDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Decline'),
+          child: Text(t.licenseDecline),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('I accept these terms'),
+          child: Text(t.licenseAccept),
         ),
       ],
     );

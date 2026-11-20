@@ -372,6 +372,18 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
     }
   }
 
+  /// Hover / long-press description of a keypad tab or pane chip.
+  String _hintFor(_PaneKind kind) {
+    final t = widget.localizations;
+    return switch (kind) {
+      _PaneKind.num => t.keypadTabNumHint,
+      _PaneKind.trig => t.keypadTabTrigHint,
+      _PaneKind.cas => t.keypadTabCasHint,
+      _PaneKind.advanced => t.keypadTabAdvancedHint,
+      _PaneKind.vars => t.keypadTabVarsHint,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -391,11 +403,18 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
           controller: widget.tabController,
           isScrollable: true,
           tabs: [
-            Tab(text: widget.localizations.tabNum),
-            Tab(text: widget.localizations.tabTrig),
-            Tab(text: widget.localizations.tabCas),
-            Tab(text: widget.localizations.tabAdvanced),
-            Tab(text: widget.localizations.tabVars),
+            for (final kind in _PaneKind.values)
+              Tab(
+                child: Tooltip(
+                  message: _hintFor(kind),
+                  waitDuration: kKeypadTooltipWait,
+                  child: Text(
+                    _labelFor(kind),
+                    softWrap: false,
+                    overflow: TextOverflow.fade,
+                  ),
+                ),
+              ),
           ],
         ),
         Expanded(
@@ -476,11 +495,15 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
           final selected = k == kind;
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: ChoiceChip(
+            child: Tooltip(
+              message: _hintFor(k),
+              waitDuration: kKeypadTooltipWait,
+              child: ChoiceChip(
               label: Text(_labelFor(k)),
               selected: selected,
               onSelected: (_) => onChange(k),
               visualDensity: VisualDensity.compact,
+            ),
             ),
           );
         }).toList(),

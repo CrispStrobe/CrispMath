@@ -20,13 +20,34 @@ class NotepadTemplate {
     required this.lines,
   });
 
-  NotepadDocument createDocument() {
-    final doc = NotepadDocument.fresh(name: name);
+  /// [localizedName] replaces [name] for the new document; [translateText]
+  /// localizes the prose of `## heading` and `// comment` lines only. Math
+  /// lines (identifiers, keywords like `subtotal`/`total`) stay verbatim so
+  /// the worksheet evaluates identically in every UI language.
+  NotepadDocument createDocument({
+    String? localizedName,
+    String Function(String text)? translateText,
+  }) {
+    final doc = NotepadDocument.fresh(name: localizedName ?? name);
     doc.lines.clear();
     for (final source in lines) {
-      doc.lines.add(NotepadLine.fresh(source: source));
+      doc.lines.add(NotepadLine.fresh(
+          source: translateText == null
+              ? source
+              : localizeTemplateLine(source, translateText)));
     }
     return doc;
+  }
+
+  /// Applies [translateText] to the prose after a `## ` or `// ` prefix.
+  static String localizeTemplateLine(
+      String source, String Function(String text) translateText) {
+    for (final prefix in const ['## ', '// ']) {
+      if (source.startsWith(prefix)) {
+        return '$prefix${translateText(source.substring(prefix.length))}';
+      }
+    }
+    return source;
   }
 }
 

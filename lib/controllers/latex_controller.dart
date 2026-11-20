@@ -87,9 +87,11 @@ class LatexController extends ChangeNotifier {
             _selection = TextSelection.collapsed(offset: offset - 1);
           }
         } else {
-          // Standard single character delete
-          _text = _text.substring(0, offset - 1) + _text.substring(offset);
-          _selection = TextSelection.collapsed(offset: offset - 1);
+          // A LaTeX command (`\cdot `, `\pi`) renders as one symbol, so
+          // delete it as one unit instead of leaving `\cdo` behind.
+          final width = _commandWidthBefore(offset);
+          _text = _text.substring(0, offset - width) + _text.substring(offset);
+          _selection = TextSelection.collapsed(offset: offset - width);
         }
       }
     } else {
@@ -105,8 +107,33 @@ class LatexController extends ChangeNotifier {
     notifyListeners();
   }
 
+  static final _commandAtEnd = RegExp(r'\\[A-Za-z]+ ?$');
+  static final _commandAtStart = RegExp(r'^\\[A-Za-z]+ ?');
+
+  /// Width of the unit ending at [offset]: a whole LaTeX command such as
+  /// `\cdot ` (with its separating space), otherwise one character.
+  int _commandWidthBefore(int offset) {
+    final m = _commandAtEnd.firstMatch(_text.substring(0, offset));
+    return m == null ? 1 : offset - m.start;
+  }
+
+  int _commandWidthAfter(int offset) {
+    final m = _commandAtStart.firstMatch(_text.substring(offset));
+    return m == null ? 1 : m.end;
+  }
+
+  /// Moves by [amount] visible units; a LaTeX command counts as one.
   void moveCursor(int amount) {
-    final newOffset = (_selection.baseOffset + amount).clamp(0, _text.length);
+    var newOffset = _selection.baseOffset.clamp(0, _text.length);
+    for (var i = 0; i < amount.abs(); i++) {
+      if (amount < 0 && newOffset > 0) {
+        newOffset -= _commandWidthBefore(newOffset);
+      } else if (amount > 0 && newOffset < _text.length) {
+        newOffset += _commandWidthAfter(newOffset);
+      } else {
+        break;
+      }
+    }
     if (_selection.baseOffset != newOffset) {
       _selection = TextSelection.collapsed(offset: newOffset);
       notifyListeners();

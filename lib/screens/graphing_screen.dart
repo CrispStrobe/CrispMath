@@ -194,23 +194,26 @@ class GraphingScreenState extends State<GraphingScreen>
                 visualDensity: VisualDensity.compact,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              segments: const [
-                ButtonSegment(
+              segments: [
+                const ButtonSegment(
                   value: PlotMode.cartesian,
                   label: Text('y = f(x)'),
                 ),
                 ButtonSegment(
                   value: PlotMode.parametric,
-                  label: Text('Parametric'),
+                  label: Text(AppLocalizations.of(context).graphModeParametric),
                 ),
-                ButtonSegment(value: PlotMode.polar, label: Text('Polar')),
+                ButtonSegment(
+                    value: PlotMode.polar,
+                    label: Text(AppLocalizations.of(context).graphModePolar)),
                 ButtonSegment(
                   value: PlotMode.implicit,
-                  label: Text('Implicit'),
+                  label: Text(AppLocalizations.of(context).graphModeImplicit),
                 ),
                 ButtonSegment(
                   value: PlotMode.vectorField,
-                  label: Text('Vector Field'),
+                  label:
+                      Text(AppLocalizations.of(context).graphModeVectorField),
                 ),
               ],
               selected: {_plotMode},
@@ -605,21 +608,22 @@ class GraphingScreenState extends State<GraphingScreen>
         .map((v) => TextEditingController(text: v.toStringAsPrecision(8)))
         .toList();
     String? error;
+    final t = AppLocalizations.of(context);
     final result = await showDialog<GraphBounds>(
         context: context,
         builder: (ctx) => StatefulBuilder(
             builder: (ctx, update) => AlertDialog(
-                  title: const Text('Graph bounds'),
+                  title: Text(t.graphBounds),
                   content: SizedBox(
                       width: 360,
                       child: SingleChildScrollView(
                           child:
                               Column(mainAxisSize: MainAxisSize.min, children: [
-                        for (final entry in const [
-                          'x minimum',
-                          'x maximum',
-                          'y minimum',
-                          'y maximum'
+                        for (final entry in [
+                          t.graphBoundsXMin,
+                          t.graphBoundsXMax,
+                          t.graphBoundsYMin,
+                          t.graphBoundsYMax
                         ].indexed)
                           TextField(
                               controller: controllers[entry.$1],
@@ -632,7 +636,7 @@ class GraphingScreenState extends State<GraphingScreen>
                   actions: [
                     TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel')),
+                        child: Text(t.cancel)),
                     FilledButton(
                         onPressed: () {
                           try {
@@ -642,11 +646,10 @@ class GraphingScreenState extends State<GraphingScreen>
                             Navigator.pop(
                                 ctx, GraphBounds(v[0], v[1], v[2], v[3]));
                           } catch (_) {
-                            update(() => error =
-                                'Enter finite, increasing x and y bounds.');
+                            update(() => error = t.graphBoundsInvalid);
                           }
                         },
-                        child: const Text('Apply bounds'))
+                        child: Text(t.graphApplyBounds))
                   ],
                 )));
     // Apply accepted bounds immediately: another graph command can run while
@@ -679,7 +682,9 @@ class GraphingScreenState extends State<GraphingScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Could not fit graph: $e')));
+            .showSnackBar(SnackBar(
+                content:
+                    Text(AppLocalizations.of(context).graphFitFailed('$e'))));
       }
     } finally {
       if (mounted) setState(() => _fitting = false);
@@ -785,11 +790,11 @@ class GraphingScreenState extends State<GraphingScreen>
                         scrollDirection: Axis.horizontal,
                         child: Row(children: [
                           IconButton(
-                              tooltip: 'Graph bounds',
+                              tooltip: AppLocalizations.of(context).graphBounds,
                               icon: const Icon(Icons.crop_free),
                               onPressed: _editBounds),
                           IconButton(
-                              tooltip: 'Fit graph',
+                              tooltip: AppLocalizations.of(context).graphFit,
                               icon: const Icon(Icons.fit_screen),
                               onPressed: _plotMode == PlotMode.cartesian &&
                                       activeFunctions.isNotEmpty &&
@@ -797,13 +802,13 @@ class GraphingScreenState extends State<GraphingScreen>
                                   ? _fitGraph
                                   : null),
                           IconButton(
-                              tooltip: 'Undo graph change',
+                              tooltip: AppLocalizations.of(context).graphUndoChange,
                               icon: const Icon(Icons.undo),
                               onPressed: _undo.canUndo ? _undoGraph : null),
                           if (_plotMode == PlotMode.cartesian &&
                               activeFunctions.isNotEmpty)
                             IconButton(
-                                tooltip: 'Trace curve',
+                                tooltip: AppLocalizations.of(context).graphTraceCurve,
                                 icon: Icon(_tracing
                                     ? Icons.gps_fixed
                                     : Icons.gps_not_fixed),
@@ -812,7 +817,7 @@ class GraphingScreenState extends State<GraphingScreen>
                           if (_plotMode == PlotMode.cartesian &&
                               activeFunctions.isNotEmpty)
                             IconButton(
-                                tooltip: 'Value table',
+                                tooltip: AppLocalizations.of(context).graphValueTable,
                                 icon: const Icon(Icons.table_chart_outlined),
                                 onPressed: () => showDialog<void>(
                                     context: context,
@@ -898,7 +903,14 @@ class GraphingScreenState extends State<GraphingScreen>
                                 TextButton.icon(
                                     icon: const Icon(Icons.link, size: 16),
                                     label: Text(
-                                        'Linked Y${entry.key + 1}: ${_appState.notepadDocuments[entry.value.documentId]?.name ?? 'Missing document'}'),
+                                        AppLocalizations.of(context).graphLinkedSlot(
+                                            entry.key + 1,
+                                            _appState
+                                                    .notepadDocuments[entry
+                                                        .value.documentId]
+                                                    ?.name ??
+                                                AppLocalizations.of(context)
+                                                    .graphMissingDocument)),
                                     onPressed: () =>
                                         _showLinkedSource(entry.key)),
                             ])),
@@ -916,14 +928,16 @@ class GraphingScreenState extends State<GraphingScreen>
                               items: [
                                 for (final i in activeFunctionIndices)
                                   DropdownMenuItem(
-                                      value: i, child: Text('Trace Y${i + 1}'))
+                                      value: i,
+                                      child: Text(AppLocalizations.of(context)
+                                          .graphTraceSlot(i + 1)))
                               ],
                               onChanged: (v) =>
                                   setState(() => _traceSlot = v!)),
-                          const Expanded(
+                          Expanded(
                               child: Text(
-                                  'Tap or drag a curve. Use ← / → to step.',
-                                  style: TextStyle(fontSize: 12))),
+                                  AppLocalizations.of(context).graphTraceHint,
+                                  style: const TextStyle(fontSize: 12))),
                         ])),
                   // --- Graph display area ---
                   Expanded(
@@ -1986,8 +2000,9 @@ class _SampledGraphState extends State<_SampledGraph> {
                                 padding: const EdgeInsets.all(6),
                                 child: Text(
                                     trace == null
-                                        ? 'Trace: waiting for samples'
-                                        : 'x = ${trace.x.toStringAsPrecision(6)}, y = ${trace.ok ? trace.y.toStringAsPrecision(6) : 'undefined'}',
+                                        ? AppLocalizations.of(context)
+                                            .graphTraceWaiting
+                                        : 'x = ${trace.x.toStringAsPrecision(6)}, y = ${trace.ok ? trace.y.toStringAsPrecision(6) : AppLocalizations.of(context).graphUndefined}',
                                     key: const ValueKey(
                                         'graph-trace-readout')))))),
               if (_error || _noRealValues)

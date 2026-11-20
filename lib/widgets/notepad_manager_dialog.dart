@@ -107,7 +107,8 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
   void _duplicate(NotepadDocument doc) {
     try {
       final copy = duplicateNotepadDocument(doc,
-          name: _nextUntitledName('${doc.name} (copy)'));
+          name: _nextUntitledName(AppLocalizations.of(context).notepadCopyName(
+              AppLocalizations.of(context).notepadDisplayDocName(doc.name))));
       _appState.setNotepadDocument(copy);
     } on FormatException {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -125,7 +126,8 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
   void _startRename(NotepadDocument doc) {
     setState(() {
       _renamingDocId = doc.id;
-      _renameController.text = doc.name;
+      _renameController.text =
+          AppLocalizations.of(context).notepadDisplayDocName(doc.name);
       _renameController.selection = TextSelection(
         baseOffset: 0,
         extentOffset: doc.name.length,
@@ -213,7 +215,7 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, semanticLabel: 'Close'),
+                    icon: Icon(Icons.close, semanticLabel: t.dialogClose),
                     tooltip: t.cancel,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -241,13 +243,13 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
                 spacing: 8,
                 children: [
                   FilledButton.icon(
-                    icon: const Icon(Icons.add, semanticLabel: 'New document'),
+                    icon: Icon(Icons.add, semanticLabel: t.notepadNewDocument),
                     label: Text(t.notepadNewDocument),
                     onPressed: _newDocument,
                   ),
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.file_upload,
-                        semanticLabel: 'Import from JSON'),
+                    icon: Icon(Icons.file_upload,
+                        semanticLabel: t.notepadImportFromJson),
                     label: Text(t.notepadImportFromJson),
                     onPressed: _importJson,
                   ),
@@ -274,13 +276,13 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
 
   Widget _buildRow(AppLocalizations t, NotepadDocument doc, bool isCurrent) {
     final isRenaming = _renamingDocId == doc.id;
-    final subtitle = '${doc.lines.length} '
-        '${doc.lines.length == 1 ? 'line' : 'lines'}'
+    final subtitle = '${t.notepadLineCount(doc.lines.length)}'
         ' · ${_formatDate(doc.updatedAt)}';
     return ListTile(
       leading: Icon(
         isCurrent ? Icons.description : Icons.description_outlined,
-        semanticLabel: isCurrent ? 'Current document' : 'Document',
+        semanticLabel:
+            isCurrent ? t.notepadCurrentDocument : t.notepadDocument,
         color: isCurrent ? Theme.of(context).colorScheme.primary : null,
       ),
       title: isRenaming
@@ -294,7 +296,7 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
               onSubmitted: (_) => _commitRename(doc),
             )
           : Text(
-              doc.name,
+              t.notepadDisplayDocName(doc.name),
               style: TextStyle(
                 fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -306,13 +308,13 @@ class _NotepadManagerDialogState extends State<NotepadManagerDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon:
-                      const Icon(Icons.check, semanticLabel: 'Confirm rename'),
+                  icon: Icon(Icons.check,
+                      semanticLabel: t.notepadConfirmRename),
                   tooltip: t.notepadRename,
                   onPressed: () => _commitRename(doc),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, semanticLabel: 'Cancel rename'),
+                  icon: Icon(Icons.close, semanticLabel: t.notepadCancelRename),
                   tooltip: t.cancel,
                   onPressed: () => setState(() => _renamingDocId = null),
                 ),

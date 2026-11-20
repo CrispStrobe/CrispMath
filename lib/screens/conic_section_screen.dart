@@ -52,6 +52,7 @@ class _ConicSectionScreenState extends State<ConicSectionScreen> {
   double _parse(TextEditingController c) => double.tryParse(c.text.trim()) ?? 0;
 
   void _analyze() {
+    final t = AppLocalizations.of(context);
     final result = analyzeConic(
       _parse(_a),
       _parse(_b),
@@ -62,31 +63,30 @@ class _ConicSectionScreenState extends State<ConicSectionScreen> {
     );
 
     if (result.kind == ConicKind.notAConic) {
-      setState(() => _output = result.notes ?? 'Not a conic.');
+      setState(() => _output = result.notes ?? t.conicNotAConicSentence);
       return;
     }
 
     final buf = StringBuffer();
-    buf.writeln('Equation:');
+    buf.writeln(t.conicEquationHeading);
     buf.writeln(
         '  ${_fmtConic(result.a, result.b, result.c, result.d, result.e, result.f)} = 0');
     buf.writeln();
-    buf.writeln('Discriminant Δ = B² − 4AC = ${_fmt(result.discriminant)}');
+    buf.writeln(t.conicDiscriminant(_fmt(result.discriminant)));
     buf.writeln();
-    buf.writeln('Type: ${_kindLabel(result.kind)}');
+    buf.writeln(t.conicType(_kindLabel(t, result.kind)));
     buf.writeln();
 
     if (result.rotationRadians != null) {
-      buf.writeln('Rotation angle θ = ${_fmt(result.rotationRadians!)} rad '
-          '(${_fmt(result.rotationRadians! * 180 / math.pi)}°)');
+      buf.writeln(t.conicRotationAngle(_fmt(result.rotationRadians!),
+          _fmt(result.rotationRadians! * 180 / math.pi)));
     }
 
     final c = result.center;
     if (c != null) {
-      buf.writeln('Center: (${_fmt(c.x)}, ${_fmt(c.y)})');
+      buf.writeln(t.conicCenter(_fmt(c.x), _fmt(c.y)));
     } else if (result.kind == ConicKind.parabola) {
-      buf.writeln('Parabola — axis along the eigenvector of [A B/2; B/2 C] '
-          'with eigenvalue 0.');
+      buf.writeln(t.conicParabolaAxisNote);
     }
 
     if (result.notes != null) {
@@ -95,34 +95,34 @@ class _ConicSectionScreenState extends State<ConicSectionScreen> {
 
     if (result.semiMajor != null && result.semiMinor != null) {
       if (result.kind == ConicKind.hyperbola) {
-        buf.writeln('Semi-transverse axis a = ${_fmt(result.semiMajor!)}');
-        buf.writeln('Semi-conjugate axis b = ${_fmt(result.semiMinor!)}');
+        buf.writeln(t.conicSemiTransverseAxis(_fmt(result.semiMajor!)));
+        buf.writeln(t.conicSemiConjugateAxis(_fmt(result.semiMinor!)));
       } else {
-        buf.writeln('Semi-major axis a = ${_fmt(result.semiMajor!)}');
-        buf.writeln('Semi-minor axis b = ${_fmt(result.semiMinor!)}');
+        buf.writeln(t.conicSemiMajorAxis(_fmt(result.semiMajor!)));
+        buf.writeln(t.conicSemiMinorAxis(_fmt(result.semiMinor!)));
       }
     }
     if (result.eccentricity != null) {
-      buf.writeln('Eccentricity e = ${_fmt(result.eccentricity!)}');
+      buf.writeln(t.conicEccentricity(_fmt(result.eccentricity!)));
     }
 
     setState(() => _output = buf.toString());
   }
 
-  static String _kindLabel(ConicKind k) {
+  static String _kindLabel(AppLocalizations t, ConicKind k) {
     switch (k) {
       case ConicKind.circle:
-        return 'Circle';
+        return t.conicKindCircle;
       case ConicKind.ellipse:
-        return 'Ellipse';
+        return t.conicKindEllipse;
       case ConicKind.parabola:
-        return 'Parabola';
+        return t.conicKindParabola;
       case ConicKind.hyperbola:
-        return 'Hyperbola';
+        return t.conicKindHyperbola;
       case ConicKind.degenerate:
-        return 'Degenerate conic';
+        return t.conicKindDegenerate;
       case ConicKind.notAConic:
-        return 'Not a conic';
+        return t.conicKindNotAConic;
     }
   }
 

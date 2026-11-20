@@ -33,8 +33,8 @@ class FunctionPickerDialogs {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.keyboard_return,
-                    semanticLabel: 'Continue typing'),
+                leading: Icon(Icons.keyboard_return,
+                    semanticLabel: t.calcIconContinueTyping),
                 title: Text(t.continueTyping),
                 onTap: () => Navigator.of(context).pop(),
               ),
@@ -88,7 +88,7 @@ class FunctionPickerDialogs {
 
     _showPicker(
       context: context,
-      title: 'Select function or continue typing:',
+      title: AppLocalizations.of(context).selectFunction,
       options: options,
     );
   }
@@ -113,8 +113,8 @@ class FunctionPickerDialogs {
                     Text(title, style: Theme.of(context).textTheme.titleMedium),
               ),
               ListTile(
-                leading: const Icon(Icons.keyboard_return,
-                    semanticLabel: 'Continue typing'),
+                leading: Icon(Icons.keyboard_return,
+                    semanticLabel: t.calcIconContinueTyping),
                 title: Text(t.continueTyping),
                 subtitle: Text(t.dismissPanel),
                 onTap: () => Navigator.of(context).pop(),

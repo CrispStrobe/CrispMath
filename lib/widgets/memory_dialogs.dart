@@ -13,7 +13,7 @@ class MemoryDialogs {
   ) {
     if (appState.history.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No result to store')),
+        SnackBar(content: Text(AppLocalizations.of(context).memoryNoResultToStore)),
       );
       return;
     }
@@ -24,11 +24,11 @@ class MemoryDialogs {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Store Result'),
+        title: Text(AppLocalizations.of(context).memoryStoreResultTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Store: $lastResult'),
+            Text(AppLocalizations.of(context).memoryStorePreview(lastResult)),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -38,7 +38,7 @@ class MemoryDialogs {
                       Navigator.of(context).pop();
                       _showSaveAsVariableDialog(context, appState, lastResult);
                     },
-                    child: const Text('Save as Variable'),
+                    child: Text(AppLocalizations.of(context).memorySaveAsVariable),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -48,7 +48,7 @@ class MemoryDialogs {
                       Navigator.of(context).pop();
                       _showSaveToMemoryDialog(context, memory, lastResult);
                     },
-                    child: const Text('Save to Memory'),
+                    child: Text(AppLocalizations.of(context).memorySaveToMemory),
                   ),
                 ),
               ],
@@ -58,7 +58,7 @@ class MemoryDialogs {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
         ],
       ),
@@ -74,26 +74,26 @@ class MemoryDialogs {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Save as Variable'),
+        title: Text(AppLocalizations.of(context).memorySaveAsVariable),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Variable Name',
-                border: OutlineInputBorder(),
-                hintText: 'e.g., result1',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).memoryVariableNameLabel,
+                border: const OutlineInputBorder(),
+                hintText: AppLocalizations.of(context).memoryVariableNameHint,
               ),
             ),
             const SizedBox(height: 8),
-            Text('Value: $value'),
+            Text(AppLocalizations.of(context).memoryValuePreview(value)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -102,11 +102,12 @@ class MemoryDialogs {
                 appState.setVariable(name, value);
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Saved $name = $value')),
+                  SnackBar(
+                      content: Text(AppLocalizations.of(context).memorySavedVariable(name, value))),
                 );
               }
             },
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).storeButton),
           ),
         ],
       ),
@@ -121,14 +122,14 @@ class MemoryDialogs {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Save to Memory'),
+        title: Text(AppLocalizations.of(context).memorySaveToMemory),
         content: SizedBox(
           width: double.maxFinite,
           height: 400,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Save: $value'),
+              Text(AppLocalizations.of(context).memorySavePreview(value)),
               const SizedBox(height: 16),
               Expanded(
                 child: ListView(
@@ -137,13 +138,14 @@ class MemoryDialogs {
                       9,
                       (i) => ListTile(
                             title: Text('M${i + 1}'),
-                            subtitle: Text(memory['M$i'] ?? 'Empty',
+                            subtitle: Text(memory['M$i'] ?? AppLocalizations.of(context).memoryEmptySlot,
                                 maxLines: 2, overflow: TextOverflow.ellipsis),
                             onTap: () {
                               memory['M$i'] = value;
                               Navigator.of(context).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Saved to M${i + 1}')),
+                                SnackBar(
+                                    content: Text(AppLocalizations.of(context).memorySavedToSlot(i + 1))),
                               );
                             },
                           )),
@@ -155,7 +157,7 @@ class MemoryDialogs {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
         ],
       ),
@@ -171,7 +173,7 @@ class MemoryDialogs {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Delete Memory'),
+          title: Text(AppLocalizations.of(context).memoryDeleteTitle),
           content: SizedBox(
             width: double.maxFinite,
             height: 400,
@@ -181,12 +183,12 @@ class MemoryDialogs {
                   9,
                   (i) => ListTile(
                         title: Text('M${i + 1}'),
-                        subtitle: Text(memory['M$i'] ?? 'Empty',
+                        subtitle: Text(memory['M$i'] ?? AppLocalizations.of(context).memoryEmptySlot,
                             maxLines: 2, overflow: TextOverflow.ellipsis),
                         trailing: memory['M$i'] != null
                             ? IconButton(
-                                icon: const Icon(Icons.delete,
-                                    semanticLabel: 'Delete'),
+                                icon: Icon(Icons.delete,
+                                    semanticLabel: AppLocalizations.of(context).userFunctionsDelete),
                                 tooltip: AppLocalizations.of(context)
                                     .deleteMemorySlotTooltip,
                                 onPressed: () {
@@ -203,7 +205,7 @@ class MemoryDialogs {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -211,10 +213,10 @@ class MemoryDialogs {
                 Navigator.of(context).pop();
                 onUpdate();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('All memory cleared')),
+                  SnackBar(content: Text(AppLocalizations.of(context).memoryAllCleared)),
                 );
               },
-              child: const Text('Clear All'),
+              child: Text(AppLocalizations.of(context).clearAll),
             ),
           ],
         ),

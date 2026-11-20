@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../controllers/latex_controller.dart';
+import '../localization/app_localizations.dart';
 import 'latex_input_field.dart';
 import '../localization/workflow_localizations.dart';
 
@@ -165,6 +166,7 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
   @override
   Widget build(BuildContext context) {
     final t = WorkflowLocalizations.of(context);
+    final shortcut = AppLocalizations.of(context).keypadTooltipShortcut;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -194,32 +196,38 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
           ),
           IconButton(
             icon: const Icon(Icons.backspace_outlined),
-            tooltip: t.text(WorkflowLabel.backspace),
+            tooltip: '${t.text(WorkflowLabel.backspace)}\n${shortcut('⌫')}',
             onPressed: controller.backspace,
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            tooltip: t.text(WorkflowLabel.cursorLeft),
+            tooltip: '${t.text(WorkflowLabel.cursorLeft)}\n${shortcut('←')}',
             onPressed: () => controller.moveCursor(-1),
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            tooltip: t.text(WorkflowLabel.cursorRight),
+            tooltip: '${t.text(WorkflowLabel.cursorRight)}\n${shortcut('→')}',
             onPressed: () => controller.moveCursor(1),
             visualDensity: VisualDensity.compact,
           ),
-          FilledButton.icon(
-            icon: const Icon(Icons.keyboard_return, size: 18),
-            label: Semantics(
-                label: t.text(WorkflowLabel.evaluate),
-                excludeSemantics: true,
-                child: const Text('=')),
-            onPressed: widget.onEvaluate,
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          Tooltip(
+            message: '${t.text(WorkflowLabel.evaluate)}\n${shortcut('Enter')}',
+            waitDuration: const Duration(milliseconds: 500),
+            excludeFromSemantics: true,
+            child: FilledButton.icon(
+              icon: const Icon(Icons.keyboard_return, size: 18),
+              label: Semantics(
+                  label: t.text(WorkflowLabel.evaluate),
+                  excludeSemantics: true,
+                  child: const Text('=')),
+              onPressed: widget.onEvaluate,
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
             ),
           ),
         ];
@@ -259,14 +267,16 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                 ),
         );
 
-        final preview = widget.resultPreview.isEmpty
-            ? null
-            : Container(
-                height: 28,
-                alignment: Alignment.centerRight,
-                child: Text('= ${widget.resultPreview}',
-                    style: TextStyle(fontSize: 20, color: Colors.grey[600])),
-              );
+        // Always reserve the preview row, so the field does not jump up
+        // when a preview appears (and back down when it disappears).
+        final preview = Container(
+          height: 28,
+          alignment: Alignment.centerRight,
+          child: widget.resultPreview.isEmpty
+              ? null
+              : Text('= ${widget.resultPreview}',
+                  style: TextStyle(fontSize: 20, color: Colors.grey[600])),
+        );
 
         if (stack) {
           return Container(
@@ -281,7 +291,7 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: actions,
                 ),
-                if (preview != null) preview,
+                preview,
               ],
             ),
           );
@@ -303,7 +313,7 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                   ],
                 ),
               ),
-              if (preview != null) preview,
+              preview,
             ],
           ),
         );

@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 
 import '../engine/constants_catalog.dart';
 import '../localization/app_localizations.dart';
+import '../localization/workflow_localizations.dart';
 
 class ConstantsDialog extends StatefulWidget {
   const ConstantsDialog({super.key});
@@ -85,8 +86,10 @@ class _ConstantsDialogState extends State<ConstantsDialog> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 isDense: true,
-                prefixIcon:
-                    const Icon(Icons.search, size: 18, semanticLabel: 'Search'),
+                prefixIcon: Icon(Icons.search,
+                    size: 18,
+                    semanticLabel: WorkflowLocalizations.of(context)
+                        .text(WorkflowLabel.search)),
                 hintText: t.constantsSearchHint,
                 border: const OutlineInputBorder(),
               ),
@@ -152,7 +155,7 @@ class _ConstantsDialogState extends State<ConstantsDialog> {
         ],
       ),
       trailing: IconButton(
-        icon: const Icon(Icons.copy, size: 18, semanticLabel: 'Copy value'),
+        icon: Icon(Icons.copy, size: 18, semanticLabel: t.constantsCopyValue),
         tooltip: t.constantsCopyValue,
         onPressed: () async {
           await Clipboard.setData(ClipboardData(text: c.value.toString()));

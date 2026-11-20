@@ -458,8 +458,9 @@ class _Scene3DScreenState extends State<Scene3DScreen> {
         return '|x − ${_pt(s.center)}| = ${_fmt(s.radius)}';
       case QuadricObject q:
         final p = q.preset;
-        if (p == null) return 'Quadric (custom)';
-        return '${_kindShortName(p.kind)} a=${_fmt(p.a)}, b=${_fmt(p.b)}, c=${_fmt(p.c)}';
+        final t = AppLocalizations.of(context);
+        if (p == null) return t.scene3DQuadricCustom;
+        return '${_kindShortName(t, p.kind)} a=${_fmt(p.a)}, b=${_fmt(p.b)}, c=${_fmt(p.c)}';
       case ParametricSurfaceObject ps:
         return 'r(u,v) = (${_short(ps.exprX)}, ${_short(ps.exprY)}, ${_short(ps.exprZ)})';
       case ParametricCurveObject pc:
@@ -478,20 +479,20 @@ class _Scene3DScreenState extends State<Scene3DScreen> {
     return '(${_fmt(v.x as double)}, ${_fmt(v.y as double)}, ${_fmt(v.z as double)})';
   }
 
-  static String _kindShortName(QuadricKind k) {
+  static String _kindShortName(AppLocalizations t, QuadricKind k) {
     switch (k) {
       case QuadricKind.ellipsoid:
-        return 'Ellipsoid';
+        return t.quadricKindEllipsoid;
       case QuadricKind.ellipticCone:
-        return 'Cone';
+        return t.scene3DShortCone;
       case QuadricKind.ellipticCylinder:
-        return 'Cylinder';
+        return t.scene3DShortCylinder;
       case QuadricKind.ellipticParaboloid:
-        return 'Paraboloid';
+        return t.scene3DShortParaboloid;
       case QuadricKind.hyperboloid1Sheet:
-        return 'Hyperboloid (1)';
+        return t.scene3DShortHyperboloid1;
       case QuadricKind.hyperboloid2Sheets:
-        return 'Hyperboloid (2)';
+        return t.scene3DShortHyperboloid2;
     }
   }
 

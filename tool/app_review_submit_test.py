@@ -47,5 +47,18 @@ class WhatsNewTest(unittest.TestCase):
         from app_review_submit import WHATS_NEW, whats_new
         for text in WHATS_NEW.values():
             self.assertLess(len(text), 4000)
-        self.assertEqual(whats_new('de-DE'), WHATS_NEW['de'])
-        self.assertEqual(whats_new('it'), WHATS_NEW['en'])
+        self.assertTrue(whats_new('de-DE').startswith(WHATS_NEW['de']))
+        self.assertTrue(whats_new('it').startswith(WHATS_NEW['en']))
+        for locale in ['en-US', 'de-DE', 'fr-FR', 'es-ES']:
+            self.assertLess(len(whats_new(locale)), 4000)
+
+
+class PlatformNotesTest(unittest.TestCase):
+    def test_mac_notes_replace_the_ios_update_intro(self):
+        from app_review_submit import review_notes
+        self.assertEqual(review_notes('IOS'), REVIEW_NOTES)
+        mac = review_notes('MAC_OS')
+        self.assertIn('first macOS release', mac)
+        self.assertNotIn('update to the approved 1.2.0', mac)
+        self.assertIn('https://github.com/CrispStrobe/CrispMath', mac)
+        self.assertLess(len(mac), 4000)

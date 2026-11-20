@@ -20,7 +20,15 @@ class EngineErrorFormatter {
   /// Returns a user-friendly version of [raw] for display, or [raw]
   /// itself when nothing matches. Only acts on strings that start
   /// with `Error:` — non-errors pass through untouched.
+  /// History status lines (`Stored x = 2`, `Defined f(x)`) rather than
+  /// values. They stay English in the stored history, because Ans skips
+  /// them by prefix; [format] translates them for display.
+  static bool isStatus(String raw) =>
+      raw.startsWith('Stored ') || raw.startsWith('Defined ');
+
   static String format(String raw, AppLocalizations t) {
+    if (raw.startsWith('Stored ')) return t.historyStored(raw.substring(7));
+    if (raw.startsWith('Defined ')) return t.historyDefined(raw.substring(8));
     if (!raw.startsWith('Error')) return raw;
     final lower = raw.toLowerCase();
 

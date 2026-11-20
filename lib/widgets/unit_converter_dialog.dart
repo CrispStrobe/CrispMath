@@ -63,7 +63,7 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
     final value = double.tryParse(_input.text);
     if (value == null) return '—';
     final r = UnitConverter.convert(value, _from, _to);
-    if (!r.ok) return r.error ?? 'Error';
+    if (!r.ok) return r.error ?? AppLocalizations.of(context).unitConvError;
     return UnitConverter.format(r.value, r.unit);
   }
 
@@ -111,9 +111,10 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
                     child: _unitDropdown(
                         _from, (u) => setState(() => _from = u!), units)),
                 IconButton(
-                  icon:
-                      const Icon(Icons.swap_horiz, semanticLabel: 'Swap units'),
-                  tooltip: 'Swap',
+                  icon: Icon(Icons.swap_horiz,
+                      semanticLabel:
+                          AppLocalizations.of(context).unitConvSwapUnits),
+                  tooltip: AppLocalizations.of(context).unitConvSwap,
                   onPressed: _swap,
                 ),
                 Expanded(
@@ -132,7 +133,8 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
               child: Row(
                 children: [
                   Icon(Icons.east,
-                      semanticLabel: 'converts to',
+                      semanticLabel:
+                          AppLocalizations.of(context).unitConvConvertsTo,
                       color: Theme.of(context).colorScheme.onPrimaryContainer),
                   const SizedBox(width: 8),
                   Expanded(
@@ -196,9 +198,9 @@ class _UnitConverterDialogState extends State<UnitConverterDialog> {
       case UnitDimension.angle:
         return t.unitDimAngle;
       case UnitDimension.area:
-        return "Area"; // No translation key needed immediately
+        return t.unitConvDimArea;
       case UnitDimension.volume:
-        return "Volume";
+        return t.unitConvDimVolume;
     }
   }
 }

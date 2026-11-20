@@ -38,6 +38,28 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get notepadLineDeleted => 'Zeile gelöscht';
   @override
+  String get menuAboutApp => 'Über CrispMath';
+  @override
+  String get menuSettingsEllipsis => 'Einstellungen …';
+  @override
+  String get menuFile => 'Ablage';
+  @override
+  String get menuView => 'Darstellung';
+  @override
+  String get menuTools => 'Werkzeuge';
+  @override
+  String get menuHelp => 'Hilfe';
+  @override
+  String get menuCommandPalette => 'Befehlspalette …';
+  @override
+  String get menuWorkspaceBackups => 'Arbeitsbereich-Backups …';
+  @override
+  String get menuSync => 'Synchronisieren …';
+  @override
+  String historyStored(String what) => 'Gespeichert: $what';
+  @override
+  String historyDefined(String what) => 'Definiert: $what';
+  @override
   String notepadDocumentDeleted(String name) => 'Dokument „$name" gelöscht';
   @override
   String get notepadCopiedAsMarkdown => 'Als Markdown kopiert';
@@ -3569,4 +3591,1140 @@ class DeLocalizations implements AppLocalizations {
     }
     return null;
   }
+  // i18n sweep 2026-11-20
+  @override
+  String get helpGroupArithmetic => 'Arithmetik';
+  @override
+  String get helpGroupAlgebraicCas => 'Algebra (CAS)';
+  @override
+  String get helpGroupCalculus => 'Analysis';
+  @override
+  String get helpGroupTrigElementary => 'Trigonometrie & elementare Funktionen';
+  @override
+  String get helpGroupVectorTensor => 'Vektoren & Tensoren';
+  @override
+  String get helpGroupMatrix => 'Matrizen';
+  @override
+  String get helpFnArithmeticDesc => 'Addieren / subtrahieren / multiplizieren / dividieren';
+  @override
+  String get helpFnPowerDesc => 'Potenz: 2^10 = 1024';
+  @override
+  String get helpFnFactorialDesc => 'Fakultät: 5! = 120';
+  @override
+  String get helpFnAbsDesc => 'Betrag';
+  @override
+  String get helpFnSolveDesc => 'Gleichung nach einer Variablen lösen';
+  @override
+  String get helpFnFactorDesc => 'Polynom faktorisieren';
+  @override
+  String get helpFnExpandDesc => 'Produkt ausmultiplizieren / Potenz entwickeln';
+  @override
+  String get helpFnSimplifyDesc => 'e in Normalform bringen';
+  @override
+  String get helpFnSubstDesc => 'v für x in e einsetzen';
+  @override
+  String get helpFnAnsDesc => 'Letztes Ergebnis';
+  @override
+  String get helpFnDiffDesc => 'Ableitung von f nach x';
+  @override
+  String get helpFnDiffStepsDesc => 'Ebenso, aber mit Schritt-für-Schritt-Lösung';
+  @override
+  String get helpFnIntegralDesc => 'Unbestimmtes Integral (∫-Taste)';
+  @override
+  String get helpFnDefiniteIntegralDesc => 'Bestimmtes Integral über den ∫-Dialog';
+  @override
+  String get helpFnIntegralStepsDesc => 'Unbestimmtes Integral mit Schritt-für-Schritt-Lösung';
+  @override
+  String get helpFnLimitDesc => 'Einseitiger Grenzwert / Grenzwert gegen ∞ (numerisch)';
+  @override
+  String get helpFnTrigDesc => 'Trigonometrische Funktionen';
+  @override
+  String get helpFnInverseTrigDesc => 'Arkusfunktionen';
+  @override
+  String get helpFnHyperbolicDesc => 'Hyperbelfunktionen';
+  @override
+  String get helpFnLnDesc => 'Natürlicher Logarithmus';
+  @override
+  String get helpFnRootDesc => 'Quadratwurzel und n-te Wurzel';
+  @override
+  String get helpFnConstantsDesc => 'Gängige Konstanten';
+  @override
+  String get helpFnDotDesc => 'Skalarprodukt';
+  @override
+  String get helpFnCrossDesc => 'Kreuzprodukt (3D-Vektoren)';
+  @override
+  String get helpFnNormDesc => 'Euklidische Länge';
+  @override
+  String get helpFnUnitDesc => 'Einheitsvektor';
+  @override
+  String get helpFnDetDesc => 'Determinante';
+  @override
+  String get helpFnInvDesc => 'Inverse';
+  @override
+  String get helpFnTransposeDesc => 'Transponierte';
+  @override
+  String get helpFnMatrixOpsDesc => 'Elementweise addieren / multiplizieren';
+  @override
+  String get helpFnStatisticsDesc => 'Analyse → Statistik';
+  @override
+  String get helpFnNormalDesc => 'Dichte, Verteilungsfunktion, Quantil (z-Wert)';
+  @override
+  String get helpFnBinomialDesc => 'Wahrscheinlichkeitsfunktion, Verteilungsfunktion, Erwartungswert, Varianz';
+  @override
+  String get helpFnStatisticsName => 'Statistik-Ansicht';
+  @override
+  String get helpFnNormalName => 'Normalverteilung';
+  @override
+  String get helpFnBinomialName => 'Binomialverteilung';
+  @override
+  String get calcIconCamera => 'Kamera';
+  @override
+  String get calcIconPhotoLibrary => 'Fotomediathek';
+  @override
+  String get calcOcrTakePhoto => 'Foto aufnehmen';
+  @override
+  String get calcOcrSingleFormula => 'Einzelne Formel';
+  @override
+  String get calcOcrChooseFromGallery => 'Aus Galerie wählen';
+  @override
+  String get calcOcrDocumentPage => 'Dokumentseite';
+  @override
+  String get calcOcrDocumentPageSubtitle => 'Layout erkennen, Formelbereiche per OCR lesen';
+  @override
+  String get calcOcrNoProviderConfiguredYet => 'Noch kein OCR-Anbieter eingerichtet.';
+  @override
+  String get calcOcrNoProviderConfigured => 'Kein OCR-Anbieter eingerichtet.';
+  @override
+  String get calcOcrRecognizing => 'Mathematik wird erkannt …';
+  @override
+  String get calcOcrFailedClearer => 'Texterkennung fehlgeschlagen – versuchen Sie ein schärferes Bild.';
+  @override
+  String calcMemoryEmpty(int slot) => 'Speicher M$slot ist leer';
+  @override
+  String get calcIconAnalyze => 'Analysieren';
+  @override
+  String get calcIconSolve => 'Lösen';
+  @override
+  String get calcIconCopy => 'Kopieren';
+  @override
+  String get calcIconStoreAsVariable => 'Als Variable speichern';
+  @override
+  String get calcShareLink => 'Link teilen';
+  @override
+  String get calcLinkCopied => 'Link kopiert';
+  @override
+  String get calcScanMath => 'Mathe scannen';
+  @override
+  String get calcWriteMath => 'Mathe schreiben';
+  @override
+  String get calcIconHelpMode => 'Hilfemodus';
+  @override
+  String get calcIconDisableHelpMode => 'Hilfemodus beenden';
+  @override
+  String get calcIconPlainText => 'Klartext';
+  @override
+  String get calcIconContinueTyping => 'Weiter tippen';
+  @override
+  String get varViewerStorageIcon => 'Speicher';
+  @override
+  String get varViewerEmptyTitle => 'Keine Variablen oder Funktionen definiert.';
+  @override
+  String get varViewerEmptyBody => 'Mit „name = wert“ im Hauptbildschirm legen Sie Variablen an.\nFunktionen definieren Sie im Funktionseditor.';
+  @override
+  String varViewerClearAllTitle(String section) => '$section: alle löschen';
+  @override
+  String varViewerClearAllConfirm(String section) => 'Möchten Sie wirklich alle Einträge in „$section“ löschen?';
+  @override
+  String get varViewerClearAllIcon => 'Alle löschen';
+  @override
+  String varViewerClearAllTooltip(String section) => '$section: alle löschen';
+  @override
+  String get varViewerDeleteVariable => 'Variable löschen';
+  @override
+  String get varViewerDeleteFunction => 'Funktion löschen';
+  @override
+  String get memoryNoResultToStore => 'Kein Ergebnis zum Speichern';
+  @override
+  String get memoryStoreResultTitle => 'Ergebnis speichern';
+  @override
+  String memoryStorePreview(String value) => 'Speichern: $value';
+  @override
+  String get memorySaveAsVariable => 'Als Variable speichern';
+  @override
+  String get memorySaveToMemory => 'In Speicher ablegen';
+  @override
+  String get memoryVariableNameLabel => 'Variablenname';
+  @override
+  String get memoryVariableNameHint => 'z. B. ergebnis1';
+  @override
+  String memoryValuePreview(String value) => 'Wert: $value';
+  @override
+  String memorySavedVariable(String name, String value) => 'Gespeichert: $name = $value';
+  @override
+  String memorySavePreview(String value) => 'Speichern: $value';
+  @override
+  String get memoryEmptySlot => 'Leer';
+  @override
+  String memorySavedToSlot(int slot) => 'In M$slot gespeichert';
+  @override
+  String get memoryDeleteTitle => 'Speicher löschen';
+  @override
+  String get memoryAllCleared => 'Gesamter Speicher gelöscht';
+  @override
+  String get stepsNarrate => 'Erzählen';
+  @override
+  String get stepsNarrateWithAi => 'Mit KI erzählen';
+  @override
+  String get stepsResult => 'Ergebnis';
+  @override
+  String get stepsStep => 'Schritt';
+  @override
+  String get stepsBecomes => 'wird zu';
+  @override
+  String get stepsSolution => 'Lösung';
+  @override
+  String get stepsOdeFallbackNote => 'Eine vollständige Schritt-für-Schritt-Lösung gibt es für lineare DGLs mit konstanten Koeffizienten; die Lösung steht oben.';
+  @override
+  String get historyExplain => 'Erklären';
+  @override
+  String get historyExplainWithAi => 'Mit KI erklären';
+  @override
+  String get historyIntegrationMethodNotRecorded => 'Integration (Methode nicht erfasst)';
+  @override
+  String get cmdPaletteFindCommand => 'Befehl suchen';
+  @override
+  String get cmdPaletteHint => 'Funktionen, Werkzeuge oder Ansichten';
+  @override
+  String get cmdPaletteNoResults => 'Keine Befehle gefunden';
+  @override
+  String get unitConvError => 'Fehler';
+  @override
+  String get unitConvSwap => 'Tauschen';
+  @override
+  String get unitConvSwapUnits => 'Einheiten tauschen';
+  @override
+  String get unitConvConvertsTo => 'ergibt umgerechnet';
+  @override
+  String get unitConvDimArea => 'Fläche';
+  @override
+  String get unitConvDimVolume => 'Volumen';
+  @override
+  String get userFunctionsAddFunction => 'Funktion hinzufügen';
+  @override
+  String get graphModeParametric => 'Parametrisch';
+  @override
+  String get graphModePolar => 'Polar';
+  @override
+  String get graphModeImplicit => 'Implizit';
+  @override
+  String get graphModeVectorField => 'Vektorfeld';
+  @override
+  String get graphBounds => 'Graphbereich';
+  @override
+  String get graphBoundsXMin => 'x-Minimum';
+  @override
+  String get graphBoundsXMax => 'x-Maximum';
+  @override
+  String get graphBoundsYMin => 'y-Minimum';
+  @override
+  String get graphBoundsYMax => 'y-Maximum';
+  @override
+  String get graphBoundsInvalid => 'Gib endliche, aufsteigende x- und y-Grenzen ein.';
+  @override
+  String get graphApplyBounds => 'Bereich übernehmen';
+  @override
+  String graphFitFailed(String error) => 'Graph konnte nicht eingepasst werden: $error';
+  @override
+  String get graphFit => 'Graph einpassen';
+  @override
+  String get graphUndoChange => 'Graphänderung rückgängig';
+  @override
+  String get graphTraceCurve => 'Kurve verfolgen';
+  @override
+  String get graphValueTable => 'Wertetabelle';
+  @override
+  String graphLinkedSlot(int slot, String document) => 'Verknüpft Y$slot: $document';
+  @override
+  String get graphMissingDocument => 'Fehlendes Dokument';
+  @override
+  String graphTraceSlot(int slot) => 'Y$slot verfolgen';
+  @override
+  String get graphTraceHint => 'Kurve antippen oder ziehen. Mit ← / → schrittweise bewegen.';
+  @override
+  String get graphTraceWaiting => 'Verfolgen: warte auf Stützstellen';
+  @override
+  String get graphUndefined => 'undefiniert';
+  @override
+  String? keypadSpokenLabel(String key) => switch (key) {
+        '⌫' => 'Rücktaste',
+        '±' => 'plus minus',
+        '√' => 'Quadratwurzel',
+        '∛' => 'Kubikwurzel',
+        'ⁿ√' => 'n-te Wurzel',
+        '^' => 'hoch',
+        '×' => 'mal',
+        '÷' => 'geteilt durch',
+        '·' => 'mal',
+        'π' => 'Pi',
+        'e' => 'Eulersche Zahl',
+        '∞' => 'unendlich',
+        '°' => 'Grad',
+        'φ' => 'Phi',
+        '∫ dx' => 'Integral',
+        'd/dx' => 'Ableitung',
+        '∫⌄' => 'Integral mit Grenzenauswahl',
+        'd/dx⌄' => 'Ableitung Schritt für Schritt',
+        'solve⌄' => 'Lösen Schritt für Schritt',
+        'Ans' => 'letztes Ergebnis',
+        'EXE' => 'berechnen',
+        '=' => 'gleich',
+        'C' => 'löschen',
+        _ => null,
+      };
+  @override
+  String? keypadKeyHint(String key) => switch (key) {
+        'C' => 'Eingabe löschen',
+        'Ans' => 'Letztes Ergebnis einfügen',
+        '%' => 'Prozent: 20% = 0,2; 50 + 10% = 55',
+        '/' => 'Dividieren',
+        '*' => 'Multiplizieren',
+        '-' => 'Subtrahieren',
+        '+' => 'Addieren',
+        '.' => 'Dezimalpunkt',
+        '(' => 'Öffnende Klammer',
+        ')' => 'Schließende Klammer',
+        'x' => 'Variable x einfügen',
+        '^' => 'Potenz, z. B. x^2',
+        'frac' => 'Bruchvorlage (Zähler über Nenner)',
+        'solve⌄' => 'Gleichung Schritt für Schritt lösen',
+        'd/dx⌄' => 'Schritt für Schritt ableiten',
+        '∫⌄' => 'Schritt für Schritt integrieren',
+        '=' => 'Gleichheitszeichen für Gleichungen, z. B. x^2 = 4',
+        ',' => 'Argumenttrenner, z. B. gcd(12, 18)',
+        'f(x)' => 'Gespeicherte Funktion einfügen',
+        _ => null,
+      };
+  @override
+  String keypadTooltipExample(String example) => 'z. B. $example';
+  @override
+  String keypadTooltipShortcut(String keys) => 'Tastenkürzel: $keys';
+  @override
+  String get keypadTabNumHint => 'Ziffern, Grundrechenarten, Potenzen, Wurzeln und π';
+  @override
+  String get keypadTabTrigHint => 'Trigonometrische, hyperbolische, Logarithmus- und Exponentialfunktionen';
+  @override
+  String get keypadTabCasHint => 'Computeralgebra: lösen, faktorisieren, ausmultiplizieren, vereinfachen, Ableitungen, Integrale und Grenzwerte';
+  @override
+  String get keypadTabAdvancedHint => 'Zahlentheorie, Matrizen und Vektoren, hohe Genauigkeit, spezielle Funktionen und Logik';
+  @override
+  String get keypadTabVarsHint => 'Gespeicherte Variablen, Funktionen und Speicherplätze';
+  @override
+  String get statsDataLabel => 'Daten (durch Komma, Leerzeichen oder Zeilenumbruch getrennt)';
+  @override
+  String get statsPaste => 'Einfügen';
+  @override
+  String get statsPasteFromClipboard => 'Aus Zwischenablage einfügen';
+  @override
+  String statsError(String error) => 'Fehler: $error';
+  @override
+  String get statsFullPrecision => 'Volle Genauigkeit';
+  @override
+  String get statsFullPrecisionTitle => 'Zusammenfassung mit voller Genauigkeit';
+  @override
+  String statsFullPrecisionBody(String mean, String median, String stddev) => 'Mittelwert: $mean\nMedian: $median\nStichproben-Standardabweichung: $stddev';
+  @override
+  String get statsEnterAtLeastOne => 'Gib oben mindestens eine Zahl ein.';
+  @override
+  String get statsBestFitLine => 'Ausgleichsgerade:';
+  @override
+  String statsSlopeA(String value) => 'Steigung a = $value';
+  @override
+  String statsInterceptB(String value) => 'Achsenabschnitt b = $value';
+  @override
+  String statsBestFitPolynomial(int degree) => 'Ausgleichspolynom (Grad $degree):';
+  @override
+  String get statsBestFitExponential => 'Exponentielle Ausgleichsfunktion:';
+  @override
+  String statsRSquaredLogSpace(String value) => 'R² (logarithmiert) = $value';
+  @override
+  String get statsModelLinear => 'Linear';
+  @override
+  String get statsModelPolynomial => 'Polynomiell';
+  @override
+  String get statsModelExponential => 'Exponentiell';
+  @override
+  String get statsDegreeLabel => 'Grad: ';
+  @override
+  String get statsXValues => 'x-Werte';
+  @override
+  String get statsYValues => 'y-Werte';
+  @override
+  String get statsNormalDistribution => 'Normalverteilung';
+  @override
+  String get statsMeanMu => 'Mittelwert μ';
+  @override
+  String get statsStddevSigma => 'Standardabw. σ';
+  @override
+  String get statsXForCdf => 'x für Verteilungsfunktion';
+  @override
+  String get statsPForQuantile => 'p für Quantil';
+  @override
+  String get statsNormalPrompt => 'Gib μ und σ > 0 ein, um Werte der Normalverteilung zu berechnen.';
+  @override
+  String get statsQuantileP => 'Quantil(p)';
+  @override
+  String get statsStudentTDistribution => 'Student-t-Verteilung';
+  @override
+  String get statsDegreesOfFreedomNu => 'Freiheitsgrade ν';
+  @override
+  String get statsIntervalLowerBound => 'Untere Intervallgrenze';
+  @override
+  String get statsIntervalUpperBound => 'Obere Intervallgrenze';
+  @override
+  String get statsTIntervalProbability => 'P(untere ≤ T ≤ obere)';
+  @override
+  String get statsTPrompt => 'Gib eine positive ganze Zahl ν und endliche Grenzen mit unten ≤ oben ein.';
+  @override
+  String get statsBinomialDistribution => 'Binomialverteilung';
+  @override
+  String get statsTrialsN => 'n (Versuche)';
+  @override
+  String get statsSuccessP => 'p (Erfolg)';
+  @override
+  String get statsBinomialPrompt => 'Gib n ≥ 0 und 0 ≤ p ≤ 1 ein, um Werte der Binomialverteilung zu berechnen.';
+  @override
+  String get statsStddevShort => 'Standardabw.';
+  @override
+  String get statsRejectH0 => 'H₀ wird auf Niveau α verworfen (die Daten sind mit H₀ unvereinbar).';
+  @override
+  String get statsFailToRejectH0 => 'H₀ wird auf Niveau α nicht verworfen (die Daten sind mit H₀ vereinbar).';
+  @override
+  String get statsSampleData => 'Stichprobendaten';
+  @override
+  String get statsHypothesizedMeanLabel => 'Hypothetischer Mittelwert μ₀';
+  @override
+  String get statsSampleMean => 'Stichprobenmittel x̄';
+  @override
+  String get statsSampleStddev => 'Stichproben-Standardabw. s';
+  @override
+  String get statsSampleSize => 'Stichprobenumfang n';
+  @override
+  String get statsHypothesizedMu => 'Hypothetisches μ₀';
+  @override
+  String get statsTStatistic => 't-Statistik';
+  @override
+  String get statsDegreesOfFreedom => 'Freiheitsgrade';
+  @override
+  String get statsPValueTwoSided => 'p-Wert (zweiseitig)';
+  @override
+  String get statsPValueUpperTail => 'p-Wert (rechtsseitig)';
+  @override
+  String get statsPValueLowerTail => 'p-Wert (linksseitig)';
+  @override
+  String get statsPValueUpper => 'p-Wert (rechts)';
+  @override
+  String get statsPValueLower => 'p-Wert (links)';
+  @override
+  String statsSampleN(int n) => 'Stichprobe $n';
+  @override
+  String get statsMean1 => 'Mittelwert₁ x̄₁';
+  @override
+  String get statsMean2 => 'Mittelwert₂ x̄₂';
+  @override
+  String get statsStddev1 => 'Standardabw.₁ s₁';
+  @override
+  String get statsStddev2 => 'Standardabw.₂ s₂';
+  @override
+  String get statsSizes => 'Umfänge n₁, n₂';
+  @override
+  String get statsTStatisticWelch => 't-Statistik (Welch)';
+  @override
+  String get statsDfWelch => 'FG (Welch-Satterthwaite)';
+  @override
+  String get statsBefore => 'Vorher';
+  @override
+  String get statsAfter => 'Nachher';
+  @override
+  String get statsMeanDifference => 'Mittlere Differenz';
+  @override
+  String get statsStddevOfDiffs => 'Standardabw. der Differenzen';
+  @override
+  String get statsPairsN => 'Paare n';
+  @override
+  String get statsGroupsLabel => 'Gruppen (eine pro Zeile)';
+  @override
+  String get statsGroupsHelper => 'Jede Zeile ist eine Gruppe, durch Komma oder Leerzeichen getrennt.';
+  @override
+  String statsGroupLabel(int index, int size) => 'Gruppe $index (n=$size)';
+  @override
+  String statsGroupMean(String value) => 'Mittelwert $value';
+  @override
+  String get statsGrandMean => 'Gesamtmittelwert';
+  @override
+  String get statsSsBetween => 'QS zwischen';
+  @override
+  String get statsSsWithin => 'QS innerhalb';
+  @override
+  String get statsDfBetweenWithin => 'FG (zwischen, innerhalb)';
+  @override
+  String get statsMsBetween => 'MQ zwischen';
+  @override
+  String get statsMsWithin => 'MQ innerhalb';
+  @override
+  String get statsFStatistic => 'F-Statistik';
+  @override
+  String get statsContingencyLabel => 'Kontingenztafel (eine Zeile pro Zeile)';
+  @override
+  String get statsContingencyHelper => 'Jede Zeile ist eine Tabellenzeile, durch Komma oder Leerzeichen getrennt.';
+  @override
+  String get statsChiSquareStatistic => 'χ²-Statistik';
+  @override
+  String get statsGrandTotal => 'Gesamtsumme';
+  @override
+  String get statsFisherCellsLabel => '2×2-Zellen: a, b, c, d';
+  @override
+  String get statsFisherCellsHelper => 'Zeile 1 = [a, b]; Zeile 2 = [c, d].';
+  @override
+  String statsCell(String cell, int row, int col) => '$cell (Zeile$row,Spalte$col)';
+  @override
+  String get statsPObserved => 'P(beobachtet)';
+  @override
+  String get statsSignHelper => 'Paare mit Differenz null werden verworfen.';
+  @override
+  String get statsPositives => 'Positive (vorher > nachher)';
+  @override
+  String get statsNegatives => 'Negative (vorher < nachher)';
+  @override
+  String get statsTies => 'Bindungen (ausgeschlossen)';
+  @override
+  String get statsEffectiveN => 'Effektives n';
+  @override
+  String get statsWilcoxonHelper => 'p-Wert per Normalapproximation; verlässlich für n ≳ 10.';
+  @override
+  String get statsRankSum => 'Rangsumme R₁';
+  @override
+  String get statsZStatistic => 'z-Statistik';
+  @override
+  String get statsObservedCounts => 'Beobachtete Häufigkeiten';
+  @override
+  String get statsExpectedCounts => 'Erwartete Häufigkeiten';
+  @override
+  String get statsTestOneSampleT => 'Einstichproben-t';
+  @override
+  String get statsTestTwoSampleT => 'Zweistichproben-t (Welch)';
+  @override
+  String get statsTestPairedT => 'Gepaarter t';
+  @override
+  String get statsTestAnova => 'ANOVA (einfaktoriell)';
+  @override
+  String get statsTestChiSquareGof => 'χ²-Anpassungstest';
+  @override
+  String get statsTestChiSquareIndependence => 'χ²-Unabhängigkeitstest';
+  @override
+  String get statsTestFisherExact => 'Exakter Fisher-Test 2×2';
+  @override
+  String get statsTestPairedSign => 'Vorzeichentest (gepaart)';
+  @override
+  String get statsTestWilcoxon => 'Wilcoxon-Rangsummentest';
+  @override
+  String get statsSignificanceLevel => 'Signifikanzniveau α';
+  @override
+  String get conicNotAConicSentence => 'Kein Kegelschnitt.';
+  @override
+  String get conicEquationHeading => 'Gleichung:';
+  @override
+  String conicDiscriminant(String value) => 'Diskriminante Δ = B² − 4AC = $value';
+  @override
+  String conicType(String kind) => 'Typ: $kind';
+  @override
+  String conicRotationAngle(String radians, String degrees) => 'Drehwinkel θ = $radians rad ($degrees°)';
+  @override
+  String conicCenter(String x, String y) => 'Mittelpunkt: ($x, $y)';
+  @override
+  String get conicParabolaAxisNote => 'Parabel — Achse entlang des Eigenvektors von [A B/2; B/2 C] zum Eigenwert 0.';
+  @override
+  String conicSemiTransverseAxis(String value) => 'Reelle Halbachse a = $value';
+  @override
+  String conicSemiConjugateAxis(String value) => 'Imaginäre Halbachse b = $value';
+  @override
+  String conicSemiMajorAxis(String value) => 'Große Halbachse a = $value';
+  @override
+  String conicSemiMinorAxis(String value) => 'Kleine Halbachse b = $value';
+  @override
+  String conicEccentricity(String value) => 'Exzentrizität e = $value';
+  @override
+  String get conicKindCircle => 'Kreis';
+  @override
+  String get conicKindEllipse => 'Ellipse';
+  @override
+  String get conicKindParabola => 'Parabel';
+  @override
+  String get conicKindHyperbola => 'Hyperbel';
+  @override
+  String get conicKindDegenerate => 'Entarteter Kegelschnitt';
+  @override
+  String get conicKindNotAConic => 'Kein Kegelschnitt';
+  @override
+  String planeError(String error) => 'Fehler: $error';
+  @override
+  String get planeCoordinateFormHeading => 'Koordinatenform:';
+  @override
+  String planeNormalVector(String vector) => 'Normalenvektor n = $vector';
+  @override
+  String planeUnitNormal(String vector) => 'Normaleneinheitsvektor n̂ = $vector';
+  @override
+  String planeHessianNormalForm(String value) => 'Hessesche Normalform: n̂·x = $value';
+  @override
+  String planeSignedDistance(String value) => 'Vorzeichenbehafteter Abstand zum Ursprung: $value';
+  @override
+  String planePointOnPlane(String point) => 'Punkt auf der Ebene: $point';
+  @override
+  String get planeAxisIntercepts => 'Achsenschnittpunkte:';
+  @override
+  String planeAxisIntercept(String axis, String point) => '$axis-Achse: $point';
+  @override
+  String planeAxisParallel(String axis) => '$axis-Achse: parallel (kein Schnittpunkt)';
+  @override
+  String get planePointP => 'Punkt P';
+  @override
+  String get planeDirectionU => 'Richtung U';
+  @override
+  String get planeDirectionV => 'Richtung V';
+  @override
+  String get curvePleaseEnterFunction => 'Bitte gib eine Funktion ein.';
+  @override
+  String curveAnalysisError(String error) => 'Fehler bei der Analyse: $error';
+  @override
+  String curveSavedVariable(String name, String value) => 'Gespeichert: $name = $value';
+  @override
+  String get curveAllSlotsFullTitle => 'Alle Funktionsplätze sind belegt';
+  @override
+  String get curveWhichFunctionReplace => 'Welche Funktion möchtest du ersetzen?';
+  @override
+  String curveReplacedSlot(int slot) => 'Y$slot ersetzt';
+  @override
+  String get curveNoSavedFunctions => 'Keine gespeicherten Funktionen vorhanden';
+  @override
+  String get curveSelectFromSaved => 'Aus gespeicherten Funktionen wählen';
+  @override
+  String get curveSaveAsFunction => 'Als Funktion speichern';
+  @override
+  String get valueTableTitle => 'Wertetabelle';
+  @override
+  String get valueTableFunction => 'Funktion';
+  @override
+  String get valueTableFrom => 'Von';
+  @override
+  String get valueTableTo => 'Bis';
+  @override
+  String get valueTableStep => 'Schrittweite';
+  @override
+  String get valueTableGenerate => 'Tabelle erzeugen';
+  @override
+  String get valueTableGenerateFailed => 'Werte konnten nicht erzeugt werden. Prüfe Intervall und Ausdruck.';
+  @override
+  String get valueTableChooseInterval => 'Wähle ein Intervall, um Werte anzuzeigen.';
+  @override
+  String get valueTableCopied => 'Tabelle kopiert';
+  @override
+  String get valueTableCopyTable => 'Tabelle kopieren';
+  @override
+  String get valueTableCsvCopied => 'CSV kopiert';
+  @override
+  String get valueTableCopyCsv => 'CSV kopieren';
+  @override
+  String get matrixEdTitle => 'Matrix-Editor';
+  @override
+  String get matrixEdUseInCalculator => 'Matrix im Rechner verwenden';
+  @override
+  String get matrixEdValues => 'Matrixwerte';
+  @override
+  String get matrixEdQuickOperations => 'Schnelloperationen';
+  @override
+  String get matrixEdRows => 'Zeilen:';
+  @override
+  String get matrixEdColumns => 'Spalten:';
+  @override
+  String get scene3DQuadricCustom => 'Quadrik (benutzerdefiniert)';
+  @override
+  String get scene3DShortCone => 'Kegel';
+  @override
+  String get scene3DShortCylinder => 'Zylinder';
+  @override
+  String get scene3DShortParaboloid => 'Paraboloid';
+  @override
+  String get scene3DShortHyperboloid1 => 'Hyperboloid (1)';
+  @override
+  String get scene3DShortHyperboloid2 => 'Hyperboloid (2)';
+  @override
+  String scene3DParamSteps(String param) => '$param-Schritte';
+  @override
+  String get scene3DCurveSteps => 'Schritte';
+  @override
+  String constraintsMagicSolveFailed(String error) => 'Lösen des magischen Quadrats fehlgeschlagen: $error';
+  @override
+  String constraintsPackingHeader(int width, int height) => 'Packung · $width × $height';
+  @override
+  String constraintsSubcircuitHeader(int count) => 'Teilkreis · $count Knoten';
+  @override
+  String constraintsTourHeader(int count) => 'Rundreise · $count Knoten';
+  @override
+  String constraintsMoreSolutions(int count) => '… +$count weitere';
+  @override
+  String get graph3DNoFiniteValues => 'Keine endlichen Werte im abgetasteten Gitter.';
+  @override
+  String get moduleHelpIconLabel => 'Hilfe';
+  @override
+  String notepadDisplayDocName(String name) => RegExp(r'^Untitled( \d+)?$').hasMatch(name) ? '$notepadDefaultDocName${name.substring(8)}' : name;
+  @override
+  String notepadCopyName(String name) => '$name (Kopie)';
+  @override
+  String notepadTemplateName(String id, String fallback) => switch (id) {'budget' => 'Haushaltsrechner', 'homework' => 'Hausaufgabenhilfe', 'unit_conversion' => 'Einheitenumrechnung', 'statistics' => 'Datenanalyse', 'physics' => 'Physik-Laborbericht', _ => fallback};
+  @override
+  String notepadTemplateText(String text) => const <String, String>{'Income': 'Einnahmen', 'Expenses': 'Ausgaben', 'Balance': 'Saldo', 'Problem 1': 'Aufgabe 1', 'Problem 2': 'Aufgabe 2', 'Problem 3': 'Aufgabe 3', 'Write the equation here': 'Gleichung hier eingeben', 'Score: count correct answers above': 'Punkte: richtige Antworten oben zählen', 'Length': 'Länge', 'Weight': 'Gewicht', 'Temperature': 'Temperatur', 'Use the unit converter for temperature (offset units)': 'Für Temperaturen den Einheitenumrechner verwenden (Einheiten mit Nullpunktverschiebung)', 'Speed': 'Geschwindigkeit', 'Data': 'Daten', 'Enter your values as assignments': 'Werte als Zuweisungen eingeben', 'Summary': 'Zusammenfassung', 'Constants': 'Konstanten', 'Measurements': 'Messwerte', 'Enter measured values': 'Gemessene Werte eingeben', 'Calculations': 'Berechnungen', 'Kinetic energy': 'Kinetische Energie', 'Potential energy': 'Potenzielle Energie', 'Total energy': 'Gesamtenergie'}[text] ?? text;
+  @override
+  String notepadLineCount(int n) => n == 1 ? '1 Zeile' : '$n Zeilen';
+  @override
+  String get notepadWelcomeSample => 'Willkommensbeispiel';
+  @override
+  String get notepadAdd => 'Hinzufügen';
+  @override
+  String get notepadNew => 'Neu';
+  @override
+  String get notepadSearchHint => 'Suchen …';
+  @override
+  String notepadSearchShownHidden(int shown, int hidden) => '$shown sichtbar · $hidden ausgeblendet';
+  @override
+  String notepadSearchMatches(int n) => '$n Treffer';
+  @override
+  String get notepadCloseSearch => 'Suche schließen';
+  @override
+  String get notepadCamera => 'Kamera';
+  @override
+  String get notepadTakePhoto => 'Foto aufnehmen';
+  @override
+  String get notepadSingleFormula => 'Einzelne Formel';
+  @override
+  String get notepadPhotoLibrary => 'Fotomediathek';
+  @override
+  String get notepadChooseFromGallery => 'Aus Galerie wählen';
+  @override
+  String get notepadDocumentPage => 'Dokumentseite';
+  @override
+  String get notepadDocumentPageSubtitle => 'Layout erkennen, Formelbereiche per OCR lesen';
+  @override
+  String get notepadNoOcrProvider => 'Kein OCR-Anbieter eingerichtet.';
+  @override
+  String get notepadOcrFailed => 'OCR fehlgeschlagen.';
+  @override
+  String get notepadAiTranslate => 'KI-Übersetzung';
+  @override
+  String get notepadAiDescribePrompt => 'Beschreibe die Mathematik in natürlicher Sprache:';
+  @override
+  String get notepadAiHint => 'z. B. „Ableitung von x hoch drei minus 4x“';
+  @override
+  String get notepadScanMath => 'Mathe scannen';
+  @override
+  String get notepadWriteMath => 'Mathe schreiben';
+  @override
+  String get notepadExportPdf => 'PDF exportieren';
+  @override
+  String get notepadExportAsPdf => 'Als PDF exportieren';
+  @override
+  String get notepadLatexInput => 'LaTeX-Eingabe';
+  @override
+  String get notepadChecked => 'Aktiviert';
+  @override
+  String get notepadUnchecked => 'Deaktiviert';
+  @override
+  String get notepadNotes => 'Notizen';
+  @override
+  String get notepadPinned => 'Angeheftet';
+  @override
+  String get notepadExpandSection => 'Abschnitt aufklappen';
+  @override
+  String get notepadCollapseSection => 'Abschnitt zuklappen';
+  @override
+  String get notepadExpand => 'Aufklappen';
+  @override
+  String get notepadCollapse => 'Zuklappen';
+  @override
+  String notepadHiddenLines(int n) => '$n ausgeblendet';
+  @override
+  String get notepadLinkToGraph => 'Zeile mit Graph verknüpfen';
+  @override
+  String notepadLineHint(int n) => 'Zeile $n';
+  @override
+  String get notepadDragToReorder => 'Zum Umordnen ziehen';
+  @override
+  String get notepadCopy => 'Kopieren';
+  @override
+  String get notepadExplainWithAi => 'Mit KI erklären';
+  @override
+  String get notepadBlocked => 'Blockiert';
+  @override
+  String get notepadCircularReference => 'Zirkelbezug';
+  @override
+  String get notepadCurrentDocument => 'Aktuelles Dokument';
+  @override
+  String get notepadDocument => 'Dokument';
+  @override
+  String get notepadConfirmRename => 'Umbenennen bestätigen';
+  @override
+  String get notepadCancelRename => 'Umbenennen abbrechen';
+  @override
+  String get notepadKindVariable => 'Variable';
+  @override
+  String get notepadKindFunction => 'Funktion';
+  @override
+  String get notepadKindConstant => 'Konstante';
+  @override
+  String settingsWorkflowOpenFailed(String error) => 'Workflow konnte nicht geöffnet werden: $error';
+  @override
+  String get settingsHighContrastSemantic => 'Hoher Kontrast';
+  @override
+  String get settingsTextScaleSemantic => 'Textgröße';
+  @override
+  String get settingsExactIntegersSemantic => 'Exakte Ganzzahlen';
+  @override
+  String get settingsAutoBindSolveSemantic => 'Lösungen automatisch zuweisen';
+  @override
+  String get settingsTourSemantic => 'Tour';
+  @override
+  String get settingsStartTourSemantic => 'Tour starten';
+  @override
+  String get settingsUserFunctionsSemantic => 'Eigene Funktionen';
+  @override
+  String get settingsOpenSemantic => 'Öffnen';
+  @override
+  String get settingsWorkedExamplesSemantic => 'Beispielaufgaben';
+  @override
+  String get settingsFunctionReferenceSemantic => 'Funktionsreferenz';
+  @override
+  String get settingsExportSemantic => 'Exportieren';
+  @override
+  String get settingsBackupSemantic => 'Sicherung';
+  @override
+  String get settingsBackupsSubtitle => 'Dateien, Wiederherstellung und Übertragung zwischen Geräten';
+  @override
+  String get settingsOcrModelsTitle => 'Mathe-OCR-Modelle';
+  @override
+  String get settingsOcrModelsSubtitle => 'Modelle zur Formelerkennung herunterladen';
+  @override
+  String get settingsDiagnosticsSemantic => 'Diagnose';
+  @override
+  String get settingsRunDiagnosticsSemantic => 'Diagnose ausführen';
+  @override
+  String get settingsDiagnosticPassed => 'Bestanden';
+  @override
+  String get settingsDiagnosticFailed => 'Fehlgeschlagen';
+  @override
+  String get settingsSyncSemantic => 'Synchronisierung';
+  @override
+  String get settingsAboutSemantic => 'Über';
+  @override
+  String get bannerDownloadAppSemantic => 'App herunterladen';
+  @override
+  String get actionCopy => 'Kopieren';
+  @override
+  String get examplesSearchSemantic => 'Suchen';
+  @override
+  String resultEvidenceOriginalDomain(String domain) => 'Ursprünglicher Bereich: $domain';
+  @override
+  String get aboutFullPrivacyPolicy => 'Vollständige Datenschutzerklärung';
+  @override
+  String get aboutSourceCode => 'Quellcode:';
+  @override
+  String get crashReportsSemantic => 'Absturzberichte';
+  @override
+  String get crashReportsTitle => 'Absturzberichte';
+  @override
+  String crashReportsCount(int count) => 'Absturzberichte ($count)';
+  @override
+  String get crashReportsSubtitle => 'Prüfen und senden – ohne dein Zutun verlässt nichts das Gerät';
+  @override
+  String get crashReportOnGitHub => 'Auf GitHub melden';
+  @override
+  String get crashSendEmail => 'E-Mail senden';
+  @override
+  String get assistMathTitle => 'Mathe-Assistent';
+  @override
+  String get assistMathSubtitle => 'Frage übersetzen, Ausdruck prüfen, dann berechnen.';
+  @override
+  String get assistOpenAssistant => 'Assistent öffnen';
+  @override
+  String get assistSettingsSaved => 'CrispAssist-Einstellungen gespeichert';
+  @override
+  String assistConfigured(String model) => 'Eingerichtet ($model)';
+  @override
+  String get assistNotConfigured => 'Nicht eingerichtet';
+  @override
+  String get assistCollapse => 'Einklappen';
+  @override
+  String get assistExpand => 'Ausklappen';
+  @override
+  String get assistDescription => 'CrispAssist erklärt Ergebnisse und übersetzt natürliche Sprache in Rechensyntax. Es berechnet nie selbst Antworten – die gesamte Mathematik läuft über SymEngine. Du verwendest deinen eigenen API-Schlüssel.';
+  @override
+  String get assistApiKey => 'API-Schlüssel';
+  @override
+  String get assistModel => 'Modell';
+  @override
+  String get assistStop => 'Stopp';
+  @override
+  String get assistDismiss => 'Ausblenden';
+  @override
+  String get assistStepNarration => 'Schritterklärung';
+  @override
+  String get syncDialogTitle => 'Cloud-Synchronisierung';
+  @override
+  String get syncSettingsConfigured => 'Eingerichtet · Arbeitsbereich-Sicherungen übertragen';
+  @override
+  String get syncSettingsOff => 'Aus · lokale Arbeit braucht kein Konto';
+  @override
+  String get syncReplaceTitle => 'Cloud-Sicherung ersetzen?';
+  @override
+  String get syncReplaceBody => 'Den Arbeitsbereich dieses Geräts als Cloud-Sicherung hochladen. Lade zuerst herunter, um Arbeit von einem anderen Gerät zu prüfen.';
+  @override
+  String get syncUploadBackup => 'Sicherung hochladen';
+  @override
+  String get syncUploaded => 'Cloud-Sicherung hochgeladen.';
+  @override
+  String get syncUploadFailed => 'Hochladen fehlgeschlagen. Prüfe deine Verbindung, lade dann die neueste Sicherung herunter und prüfe sie, bevor du es erneut versuchst.';
+  @override
+  String get syncNoBackup => 'Keine Cloud-Sicherung vorhanden.';
+  @override
+  String get syncBackupLoaded => 'Cloud-Sicherung zur Prüfung geladen.';
+  @override
+  String get syncReadFailed => 'Cloud-Sicherung konnte nicht gelesen werden. Prüfe deine Verbindung und versuche es erneut.';
+  @override
+  String get syncAccountCreatedConfirm => 'Konto erstellt. Bestätige es per E-Mail, bevor du dich anmeldest.';
+  @override
+  String get syncAccountCreatedSignedIn => 'Konto erstellt. Du bist angemeldet.';
+  @override
+  String get syncSignedIn => 'Angemeldet. Du kannst jetzt eine Cloud-Sicherung herunterladen oder hochladen.';
+  @override
+  String get syncSignUpFailed => 'Registrierung fehlgeschlagen. Prüfe deine Angaben und Verbindung und versuche es erneut.';
+  @override
+  String get syncSignInFailed => 'Anmeldung fehlgeschlagen. Prüfe E-Mail und Passwort und versuche es erneut.';
+  @override
+  String get syncConfigured => 'Cloud-Synchronisierung ist eingerichtet. Melde dich an, um deinen Arbeitsbereich zu übertragen.';
+  @override
+  String get syncConfigureFailed => 'Cloud-Synchronisierung konnte nicht eingerichtet werden. Prüfe deine Verbindung und versuche es erneut.';
+  @override
+  String get syncConfigureFormatError => 'Gib eine HTTPS-Projekt-URL und einen öffentlichen Publishable- oder Anon-Schlüssel ein.';
+  @override
+  String get syncConfigureSaveFailed => 'Cloud-Synchronisierung ist verbunden, aber die Einstellungen konnten nicht gespeichert werden. Richte sie nach einem Neustart erneut ein.';
+  @override
+  String get syncSignedOut => 'Abgemeldet. Dein Arbeitsbereich bleibt auf diesem Gerät gespeichert.';
+  @override
+  String get syncSignOutFailed => 'Abmelden fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.';
+  @override
+  String get syncSignedOutLocally => 'Auf diesem Gerät abgemeldet. Der Server konnte die Abmeldung nicht bestätigen; prüfe deine Verbindung, bevor du dich erneut anmeldest.';
+  @override
+  String get syncWorking => 'Cloud-Synchronisierung läuft';
+  @override
+  String get syncConnectFailed => 'Cloud-Synchronisierung konnte keine Verbindung herstellen. Versuche es erneut, wenn du online bist.';
+  @override
+  String get syncReady => 'Cloud-Synchronisierung ist bereit.';
+  @override
+  String get syncNotConfigured => 'Cloud-Synchronisierung ist nicht eingerichtet. Gib öffentliche Projekteinstellungen ein, um fortzufahren.';
+  @override
+  String get syncOffBody => 'Cloud-Synchronisierung ist aus. Deine Arbeit bleibt auf diesem Gerät. Lokale Arbeitsblätter, Prüfpunkte und Sicherungsdateien funktionieren ohne Konto. Richte ein eigenes Projekt nur ein, wenn du Cloud-Sicherungen möchtest.';
+  @override
+  String get syncProjectUrl => 'Supabase-Projekt-URL';
+  @override
+  String get syncPublicKey => 'Öffentlicher Publishable- oder Anon-Schlüssel';
+  @override
+  String get syncConfigureButton => 'Cloud-Synchronisierung einrichten';
+  @override
+  String get syncEmail => 'E-Mail';
+  @override
+  String get syncPassword => 'Passwort';
+  @override
+  String get syncLogIn => 'Anmelden';
+  @override
+  String get syncSignUp => 'Registrieren';
+  @override
+  String syncLoggedInAs(String email) => 'Angemeldet als $email';
+  @override
+  String get syncPull => 'Herunterladen';
+  @override
+  String get syncPush => 'Hochladen';
+  @override
+  String get syncSignOut => 'Abmelden';
+  @override
+  String get backupDialogTitle => 'Arbeitsbereich-Sicherungen';
+  @override
+  String backupFailed(String error) => 'Sicherung fehlgeschlagen: $error';
+  @override
+  String get backupWorksheetsImported => 'Arbeitsblätter importiert; abweichende Versionen wurden getrennt behalten.';
+  @override
+  String get backupWorkspaceRestored => 'Arbeitsbereich wiederhergestellt. Die vorherige Arbeit findest du unter „Vorheriger Arbeitsbereich“.';
+  @override
+  String get backupIntro => 'Speichere eine portable Sicherung in Dateien, iCloud Drive oder bei einem anderen Anbieter. Öffne sie auf einem anderen Gerät, um deine Arbeit zu übertragen. Automatische Cloud-Synchronisierung erfordert ein eingerichtetes Backend.';
+  @override
+  String backupContents(int worksheets, int checkpoints) => '$worksheets Arbeitsblätter und $checkpoints Prüfpunkte in dieser Sicherung.';
+  @override
+  String get backupRestoreExplanation => '„Arbeitsblätter importieren“ behält aktuelle Einstellungen und Graphen und bewahrt beide Versionen geänderter Dokumente. „Arbeitsbereich ersetzen“ stellt alle gespeicherten Einstellungen, Verlauf, Funktionen, Graphen und Arbeitsblätter wieder her. Vorher wird eine Wiederherstellungssicherung gespeichert.';
+  @override
+  String backupDocRows(String name, int rows) => '$name: $rows Zeilen';
+  @override
+  String get backupSave => 'Sicherung speichern';
+  @override
+  String get backupOpen => 'Sicherung öffnen';
+  @override
+  String get backupNoRecovery => 'Keine Wiederherstellungssicherung vorhanden.';
+  @override
+  String get backupPreviousWorkspace => 'Vorheriger Arbeitsbereich';
+  @override
+  String get backupImportWorksheets => 'Arbeitsblätter importieren';
+  @override
+  String get backupReplaceWorkspace => 'Arbeitsbereich ersetzen';
+  @override
+  String handwritingInitFailed(String error) => 'Modell konnte nicht initialisiert werden: $error';
+  @override
+  String get handwritingTermsTitle => 'Nutzungsbedingungen des Modells';
+  @override
+  String handwritingTermsBody(String model, String terms) => '$model wird unter $terms bereitgestellt. Prüfe die Bedingungen und bestätige vor dem Herunterladen, dass deine Nutzung sie einhält.';
+  @override
+  String get handwritingAcceptTerms => 'Modellbedingungen akzeptieren';
+  @override
+  String get handwritingSendTitle => 'Zeichnung an die Cloud senden?';
+  @override
+  String handwritingSendBody(String model) => 'Deine Zeichnung wird zur Erkennung an $model gesendet. Prüfe den erkannten Ausdruck, bevor du ihn verwendest.';
+  @override
+  String get handwritingSendAction => 'Zeichnung senden';
+  @override
+  String get handwritingNotRecognized => 'Diese Zeichnung konnte nicht erkannt werden. Versuche deutlichere Striche oder gib den Ausdruck direkt ein.';
+  @override
+  String handwritingRecognitionFailed(String error) => 'Erkennung fehlgeschlagen: $error';
+  @override
+  String get handwritingTitle => 'Mathe schreiben';
+  @override
+  String get handwritingChooseModel => 'Handschriftmodell wählen';
+  @override
+  String get handwritingNoModel => 'Kein Handschriftmodell verfügbar. Öffne „Modelle“, um eines einzurichten.';
+  @override
+  String get handwritingCloudNote => 'Die Cloud-Erkennung sendet deine Zeichnung erst nach Bestätigung.';
+  @override
+  String get handwritingLocalNote => 'Die Erkennung läuft auf diesem Gerät. Ein nicht zwischengespeichertes Modell muss eventuell heruntergeladen werden.';
+  @override
+  String get handwritingReviewNote => 'Die Erkennung kann sich irren. Prüfe und bearbeite den Ausdruck, bevor du ihn verwendest.';
+  @override
+  String get handwritingCanvas => 'Zeichenfläche für Handschrift';
+  @override
+  String get handwritingModels => 'Modelle';
+  @override
+  String get handwritingRecognize => 'Erkennen';
+  @override
+  String get ocrRecognizedExpression => 'Erkannter Ausdruck';
+  @override
+  String get ocrCamera => 'Kamera';
+  @override
+  String get ocrEditBeforeInsert => 'Vor dem Einfügen bei Bedarf bearbeiten';
+  @override
+  String get ocrHideRawOutput => 'Rohausgabe ausblenden';
+  @override
+  String get ocrShowRawOutput => 'Rohausgabe anzeigen';
+  @override
+  String get ocrRawOutput => 'Rohausgabe';
+  @override
+  String get ocrLicenseTermsTitle => 'Lizenzbedingungen';
+  @override
+  String ocrLicenseTermsBody(String license) => 'Dieses Modell steht unter der Lizenz $license.\n\nMit dem Herunterladen bestätigst du, dass du diese Modellgewichte ausschließlich für nicht-kommerzielle Zwecke verwendest.';
+  @override
+  String get ocrLicenseAppNotRestricted => 'Die App selbst ist nicht eingeschränkt – dies gilt nur für die Modellgewichte.';
+  @override
+  String get ocrAcceptDownload => 'Ich stimme zu – herunterladen';
+  @override
+  String ocrModelDownloaded(String name) => '$name heruntergeladen';
+  @override
+  String ocrDownloadFailed(String name) => 'Download fehlgeschlagen: $name';
+  @override
+  String get ocrModelsTitle => 'OCR-Modelle';
+  @override
+  String get ocrModelsWebTitle => 'OCR-Modelle (Web)';
+  @override
+  String get ocrWebCacheNote => 'Modelle werden in deinem Browser zwischengespeichert (IndexedDB).';
+  @override
+  String get ocrAvailableModels => 'Verfügbare Modelle';
+  @override
+  String get ocrDiskUsageSemantic => 'Speicherbelegung';
+  @override
+  String ocrDiskUsage(String mb) => 'Speicherbelegung: $mb MB';
+  @override
+  String get ocrActiveProvider => 'Aktiver Anbieter';
+  @override
+  String get ocrActive => 'Aktiv';
+  @override
+  String get ocrInactive => 'Inaktiv';
+  @override
+  String get ocrTagCloud => 'Cloud';
+  @override
+  String get ocrTagApiKey => 'API-Schlüssel';
+  @override
+  String get ocrTagOnDevice => 'auf dem Gerät';
+  @override
+  String get ocrNoModelActiveSemantic => 'Kein Modell aktiv';
+  @override
+  String get ocrNoModelActive => 'Kein Modell aktiv – lade unten eines herunter';
+  @override
+  String get ocrCatPrintedMath => 'Gedruckte Mathematik';
+  @override
+  String get ocrCatHandwrittenMath => 'Handschriftliche Mathematik';
+  @override
+  String get ocrCatTextDetection => 'Texterkennung (Erkennung)';
+  @override
+  String get ocrCatTextRecognition => 'Texterkennung (Lesen)';
+  @override
+  String get ocrCatLayoutDetection => 'Layout-Erkennung';
+  @override
+  String get ocrCatVisionLanguage => 'Vision-Sprache';
+  @override
+  String get ocrQualBestQuality => 'Beste Qualität';
+  @override
+  String get ocrQualChineseEnglish => 'Chinesisch+Englisch';
+  @override
+  String get ocrQual91Langs => '91 Sprachen';
+  @override
+  String get ocrQualRecommended => 'empfohlen';
+  @override
+  String get ocrQualNonCommercialOptional => 'nicht-kommerziell, optional';
+  @override
+  String get ocrQualFast1B => 'schnell, 1B';
+  @override
+  String get ocrDownloaded => 'Heruntergeladen';
+  @override
+  String get ocrNotDownloaded => 'Nicht heruntergeladen';
+  @override
+  String get ocrCached => 'Zwischengespeichert';
+  @override
+  String get ocrNotCached => 'Nicht zwischengespeichert';
+  @override
+  String get ocrWithdrawLicense => 'Lizenzzustimmung widerrufen';
+  @override
+  String get ocrReviewLicenseToEnable => 'Lizenz prüfen zum Aktivieren';
+  @override
+  String get ocrReviewLicense => 'Lizenz prüfen';
+  @override
+  String get ocrPauseDownload => 'Download pausieren';
+  @override
+  String get ocrDeleteModel => 'Modell löschen';
+  @override
+  String get ocrResumeDownload => 'Download fortsetzen';
+  @override
+  String get ocrDownloadModel => 'Modell herunterladen';
+  @override
+  String get licenseNonCommercialTitle => 'Nicht-kommerzielle Modelllizenz';
+  @override
+  String get licenseTermsTitle => 'Lizenzbedingungen des Modells';
+  @override
+  String get licenseOpen => 'Lizenz öffnen';
+  @override
+  String get licenseRead => 'Lizenz lesen';
+  @override
+  String get licenseDecline => 'Ablehnen';
+  @override
+  String get licenseAccept => 'Ich akzeptiere diese Bedingungen';
+  // end i18n sweep 2026-11-20
 }

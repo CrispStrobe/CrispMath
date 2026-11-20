@@ -232,12 +232,16 @@ void main() {
       await tester.pump();
       final listener = find.descendant(
           of: find.byType(NotepadAutocompleteOverlay),
-          matching: find.byType(KeyboardListener));
-      final keyboardNode = tester.widget<KeyboardListener>(listener).focusNode;
+          matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Focus &&
+                  w.onKeyEvent != null &&
+                  w.focusNode != null &&
+                  w.focusNode != editorFocus)).first;
+      final keyboardNode = tester.widget<Focus>(listener).focusNode!;
       rebuild(() => names = {'customAngle'});
       await tester.pump();
-      expect(tester.widget<KeyboardListener>(listener).focusNode,
-          same(keyboardNode));
+      expect(tester.widget<Focus>(listener).focusNode, same(keyboardNode));
       expect(editorFocus.hasFocus, isTrue);
       expect(controller.selection, const TextSelection.collapsed(offset: 2));
       expect(tester.testTextInput.hasAnyClients, isTrue);
@@ -937,11 +941,12 @@ void main() {
       expect(find.descendant(
           of: find.byType(SimpleDialog), matching: find.text(locale.value)),
           findsOneWidget);
-      await tester.tap(find.text('Budget Calculator'));
+      final budget = AppLocalizations.of(context)
+          .notepadTemplateName('budget', 'Budget Calculator');
+      await tester.tap(find.text(budget));
       await tester.pump();
       expect(state.currentNotepadDocId, isNot(originalId));
-      expect(state.notepadDocuments[state.currentNotepadDocId]!.name,
-          'Budget Calculator');
+      expect(state.notepadDocuments[state.currentNotepadDocId]!.name, budget);
       expect(tester.takeException(), isNull);
     });
   }

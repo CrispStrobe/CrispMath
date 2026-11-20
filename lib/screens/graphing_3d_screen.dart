@@ -77,7 +77,7 @@ class _Graphing3DScreenState extends State<Graphing3DScreen> {
         _sampledRange = range;
         _error = zs.any((row) => row.any((z) => z.isFinite))
             ? null
-            : 'No finite values in the sampled grid.';
+            : AppLocalizations.of(context).graph3DNoFiniteValues;
       });
     } catch (_) {
       if (mounted && generation == _sampleGeneration) {

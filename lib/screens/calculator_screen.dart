@@ -245,23 +245,25 @@ class CalculatorScreenState extends State<CalculatorScreen>
       builder: (ctx) => SafeArea(
         child: Wrap(children: [
           ListTile(
-            leading: const Icon(Icons.camera_alt, semanticLabel: 'Camera'),
-            title: const Text('Take photo'),
-            subtitle: const Text('Single formula'),
+            leading: Icon(Icons.camera_alt,
+                semanticLabel: AppLocalizations.of(ctx).calcIconCamera),
+            title: Text(AppLocalizations.of(ctx).calcOcrTakePhoto),
+            subtitle: Text(AppLocalizations.of(ctx).calcOcrSingleFormula),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
-            leading:
-                const Icon(Icons.photo_library, semanticLabel: 'Photo library'),
-            title: const Text('Choose from gallery'),
+            leading: Icon(Icons.photo_library,
+                semanticLabel: AppLocalizations.of(ctx).calcIconPhotoLibrary),
+            title: Text(AppLocalizations.of(ctx).calcOcrChooseFromGallery),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
           if (layoutProvider != null)
             ListTile(
-              leading: const Icon(Icons.article_outlined,
-                  semanticLabel: 'Document page'),
-              title: const Text('Document page'),
-              subtitle: const Text('Detect layout, OCR formula regions'),
+              leading: Icon(Icons.article_outlined,
+                  semanticLabel: AppLocalizations.of(ctx).calcOcrDocumentPage),
+              title: Text(AppLocalizations.of(ctx).calcOcrDocumentPage),
+              subtitle:
+                  Text(AppLocalizations.of(ctx).calcOcrDocumentPageSubtitle),
               onTap: () {
                 provider = layoutProvider;
                 Navigator.pop(ctx, ImageSource.gallery);
@@ -283,7 +285,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
     if (activeProvider == null) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No OCR provider configured yet.')),
+        SnackBar(
+            content:
+                Text(AppLocalizations.of(context).calcOcrNoProviderConfiguredYet)),
       );
       return;
     }
@@ -291,8 +295,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
     // Run OCR
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Recognizing math…'), duration: Duration(seconds: 1)),
+      SnackBar(
+          content: Text(AppLocalizations.of(context).calcOcrRecognizing),
+          duration: const Duration(seconds: 1)),
     );
 
     // Try scan cleanup (deskew, crop, whiten) for camera photos.
@@ -320,7 +325,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
     if (!context.mounted) return;
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OCR failed — try a clearer image.')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).calcOcrFailedClearer)),
       );
       return;
     }
@@ -348,7 +354,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
     if (provider == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No OCR provider configured.')),
+        SnackBar(
+            content:
+                Text(AppLocalizations.of(context).calcOcrNoProviderConfigured)),
       );
       return;
     }
@@ -397,7 +405,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OCR failed — try a clearer image.')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).calcOcrFailedClearer)),
       );
       return;
     }
@@ -490,8 +499,18 @@ class CalculatorScreenState extends State<CalculatorScreen>
     final text = _latexController.text;
     if (text.isEmpty) return "";
     try {
-      return _engine.evaluate(
-          ExpressionPreprocessingUtils.substituteAns(text, _appState));
+      // Same LaTeX → engine syntax conversion as _calculate; the raw field
+      // text (`2\cdot 3`, `\frac{1}{2}`) does not parse, so without it the
+      // preview stayed empty for nearly every expression.
+      final expr = LatexConversionUtils.fromLatex(text);
+      // Assignments / definitions (`x = 3`, `f(x) = …`) only make sense on
+      // submit; previewing them printed a misleading parse error.
+      if (RegExp(r'(?<![<>=!])=(?!=)').hasMatch(expr)) return "";
+      final result = _engine.evaluate(
+          ExpressionPreprocessingUtils.substituteAns(expr, _appState));
+      // A half-typed expression (`2*`) is normal while typing: show nothing
+      // rather than "= Error: …" under the field.
+      return result.startsWith('Error') ? "" : result;
     } catch (_) {
       return "";
     }
@@ -702,7 +721,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
           _latexController.insert(_memory['M$memIndex']!);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Memory M${memIndex + 1} is empty')),
+            SnackBar(
+                content: Text(AppLocalizations.of(context)
+                    .calcMemoryEmpty(memIndex + 1))),
           );
         }
         break;
@@ -2284,8 +2305,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.show_chart,
-                    semanticLabel: 'Show on graph'),
+                leading: Icon(Icons.show_chart,
+                    semanticLabel: t.funcCtxShowOnGraph),
                 title: Text(t.funcCtxShowOnGraph),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -2293,7 +2314,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.analytics, semanticLabel: 'Analyze'),
+                leading:
+                    Icon(Icons.analytics, semanticLabel: t.calcIconAnalyze),
                 title: Text(t.funcCtxAnalyze),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -2301,8 +2323,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.trending_up,
-                    semanticLabel: 'Differentiate'),
+                leading: Icon(Icons.trending_up,
+                    semanticLabel: t.funcCtxDifferentiate),
                 title: Text(t.funcCtxDifferentiate),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -2311,7 +2333,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
               ),
               ListTile(
                 leading:
-                    const Icon(Icons.area_chart, semanticLabel: 'Integrate'),
+                    Icon(Icons.area_chart, semanticLabel: t.funcCtxIntegrate),
                 title: Text(t.funcCtxIntegrate),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -2319,8 +2341,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading:
-                    const Icon(Icons.lightbulb_outline, semanticLabel: 'Solve'),
+                leading: Icon(Icons.lightbulb_outline,
+                    semanticLabel: t.calcIconSolve),
                 title: Text(t.funcCtxSolve),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -2329,7 +2351,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
               ),
               const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.copy, semanticLabel: 'Copy'),
+                leading: Icon(Icons.copy, semanticLabel: t.calcIconCopy),
                 title: Text(t.historyEntryCopyResult),
                 onTap: () async {
                   Navigator.of(ctx).pop();
@@ -2339,8 +2361,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading:
-                    const Icon(Icons.functions, semanticLabel: 'Copy as LaTeX'),
+                leading: Icon(Icons.functions,
+                    semanticLabel: t.historyEntryCopyLatex),
                 title: Text(t.historyEntryCopyLatex),
                 subtitle: Text(t.historyEntryCopyLatexSubtitle,
                     style: Theme.of(ctx).textTheme.bodySmall),
@@ -2354,19 +2376,21 @@ class CalculatorScreenState extends State<CalculatorScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.share, semanticLabel: 'Share link'),
-                title: const Text('Share link'),
+                leading:
+                    Icon(Icons.share, semanticLabel: t.calcShareLink),
+                title: Text(t.calcShareLink),
                 onTap: () async {
                   Navigator.of(ctx).pop();
                   await copyShareLink(entry.expression);
                   if (!context.mounted) return;
-                  _toast(context, 'Link copied');
+                  _toast(context, t.calcLinkCopied);
                 },
               ),
               if (entry.resultEvidence != null)
                 ListTile(
-                  leading: const Icon(Icons.info_outline,
-                      semanticLabel: 'Result details'),
+                  leading: Icon(Icons.info_outline,
+                      semanticLabel: WorkflowLocalizations.of(context)
+                          .text(WorkflowLabel.resultDetails)),
                   title: Text(WorkflowLocalizations.of(context)
                       .text(WorkflowLabel.resultDetails)),
                   onTap: () {
@@ -2376,8 +2400,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   },
                 ),
               ListTile(
-                leading: const Icon(Icons.refresh,
-                    semanticLabel: 'Reuse expression'),
+                leading:
+                    Icon(Icons.refresh, semanticLabel: t.historyEntryReuse),
                 title: Text(t.historyEntryReuse),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -2391,8 +2415,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
               // is only meaningful when the expression has at least one
               // free identifier the user could parameterise on.
               ListTile(
-                leading: const Icon(Icons.save_alt,
-                    semanticLabel: 'Store as variable'),
+                leading: Icon(Icons.save_alt,
+                    semanticLabel: t.calcIconStoreAsVariable),
                 title: Text(t.storeAsVariable),
                 onTap: () async {
                   Navigator.of(ctx).pop();
@@ -2409,8 +2433,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                       entry.expression)
                   .isNotEmpty)
                 ListTile(
-                  leading: const Icon(Icons.functions,
-                      semanticLabel: 'Store as function'),
+                  leading: Icon(Icons.functions,
+                      semanticLabel: t.storeAsFunction),
                   title: Text(t.storeAsFunction),
                   onTap: () async {
                     Navigator.of(ctx).pop();
@@ -2818,16 +2842,22 @@ class CalculatorScreenState extends State<CalculatorScreen>
                             children: [
                               // OCR camera button
                               IconButton(
-                                icon: const Icon(Icons.camera_alt_outlined,
-                                    size: 20, semanticLabel: 'Scan math'),
-                                tooltip: 'Scan math',
+                                icon: Icon(Icons.camera_alt_outlined,
+                                    size: 20,
+                                    semanticLabel: AppLocalizations.of(context)
+                                        .calcScanMath),
+                                tooltip:
+                                    AppLocalizations.of(context).calcScanMath,
                                 onPressed: () => _launchOcr(context),
                               ),
                               // Handwriting input
                               IconButton(
-                                icon: const Icon(Icons.draw_outlined,
-                                    size: 20, semanticLabel: 'Write math'),
-                                tooltip: 'Write math',
+                                icon: Icon(Icons.draw_outlined,
+                                    size: 20,
+                                    semanticLabel: AppLocalizations.of(context)
+                                        .calcWriteMath),
+                                tooltip:
+                                    AppLocalizations.of(context).calcWriteMath,
                                 onPressed: () async {
                                   final expr =
                                       await showHandwritingInputDialog(context);
@@ -2838,8 +2868,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.menu_book_outlined,
-                                    size: 20, semanticLabel: 'Worked examples'),
+                                icon: Icon(Icons.menu_book_outlined,
+                                    size: 20,
+                                    semanticLabel: AppLocalizations.of(context)
+                                        .workedExamplesTitle),
                                 tooltip: AppLocalizations.of(context)
                                     .workedExamplesTitle,
                                 onPressed: () => showDialog<void>(
@@ -2912,8 +2944,8 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                       on ? Icons.help : Icons.help_outline,
                                       size: 20,
                                       semanticLabel: on
-                                          ? 'Disable help mode'
-                                          : 'Help mode',
+                                          ? t.calcIconDisableHelpMode
+                                          : t.calcIconHelpMode,
                                       color: on
                                           ? Theme.of(context)
                                               .colorScheme
@@ -2933,14 +2965,16 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                 // history; the "History:" caption only ate
                                 // width on narrow screens.
                                 SegmentedButton<bool>(
-                                  segments: const [
+                                  segments: [
                                     ButtonSegment<bool>(
                                       value: false,
                                       icon: Icon(Icons.text_fields,
                                           size: 16,
-                                          semanticLabel: 'Plain text'),
+                                          semanticLabel:
+                                              AppLocalizations.of(context)
+                                                  .calcIconPlainText),
                                     ),
-                                    ButtonSegment<bool>(
+                                    const ButtonSegment<bool>(
                                       value: true,
                                       icon: Icon(Icons.functions,
                                           size: 16, semanticLabel: 'LaTeX'),
@@ -2967,8 +3001,11 @@ class CalculatorScreenState extends State<CalculatorScreen>
                               focusNode: _historySearchFocusNode,
                               decoration: InputDecoration(
                                 isDense: true,
-                                prefixIcon: const Icon(Icons.search,
-                                    size: 18, semanticLabel: 'Search'),
+                                prefixIcon: Icon(Icons.search,
+                                    size: 18,
+                                    semanticLabel:
+                                        WorkflowLocalizations.of(context)
+                                            .text(WorkflowLabel.search)),
                                 hintText: AppLocalizations.of(context)
                                     .searchHistoryHint,
                                 border: const OutlineInputBorder(),
@@ -3079,7 +3116,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                         // It rides on the value as a tooltip now: the
                                         // value itself is already tap-to-copy.
                                         final resultBody = Text(
-                                          isError
+                                          isError ||
+                                                  EngineErrorFormatter
+                                                      .isStatus(entry.result)
                                               ? display
                                               : '= $shownResult',
                                           style: TextStyle(

@@ -18,6 +18,7 @@ import '../engine/app_state.dart';
 import '../engine/function_reference.dart';
 import '../engine/worked_examples.dart';
 import '../localization/app_localizations.dart';
+import '../localization/workflow_localizations.dart';
 import 'module_navigation.dart';
 import 'worked_examples_dialog.dart';
 
@@ -108,8 +109,8 @@ class _FunctionReferenceDialogState extends State<FunctionReferenceDialog> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 isDense: true,
-                prefixIcon:
-                    const Icon(Icons.search, size: 18, semanticLabel: 'Search'),
+                prefixIcon: Icon(Icons.search,
+                    size: 18, semanticLabel: WorkflowLocalizations.of(context).text(WorkflowLabel.search)),
                 hintText: t.functionRefSearchHint,
                 border: const OutlineInputBorder(),
               ),
@@ -240,8 +241,8 @@ class _FunctionRefRow extends StatelessWidget {
               if (entry.workedExampleId != null &&
                   _hasWorkedExample(entry.workedExampleId!))
                 TextButton.icon(
-                  icon: const Icon(Icons.menu_book_outlined,
-                      size: 16, semanticLabel: 'See worked example'),
+                  icon: Icon(Icons.menu_book_outlined,
+                      size: 16, semanticLabel: t.functionRefSeeWorkedExample),
                   label: Text(t.functionRefSeeWorkedExample),
                   onPressed: () =>
                       _openWorkedExample(context, entry.workedExampleId!),
@@ -255,8 +256,8 @@ class _FunctionRefRow extends StatelessWidget {
               // dialog dispatches `open:<module>` sentinels.
               if (entry.runnable && entry.examples.isNotEmpty)
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.input,
-                      size: 16, semanticLabel: 'Try in calculator'),
+                  icon: Icon(Icons.input,
+                      size: 16, semanticLabel: t.functionRefTryInCalculator),
                   label: Text(t.functionRefTryInCalculator),
                   onPressed: () =>
                       _tryInCalculator(context, entry.examples.first.input),
@@ -268,8 +269,8 @@ class _FunctionRefRow extends StatelessWidget {
               // in one tap instead of the two-hop worked-example path.
               if (entry.openTarget != null)
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.open_in_new,
-                      size: 16, semanticLabel: 'Open module'),
+                  icon: Icon(Icons.open_in_new,
+                      size: 16, semanticLabel: t.functionRefOpenModule),
                   label: Text(t.functionRefOpenModule),
                   onPressed: () => _openModule(context, entry.openTarget!),
                 ),
@@ -351,8 +352,8 @@ class _ExampleBlock extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.copy,
-                    size: 16, semanticLabel: 'Copy expression'),
+                icon: Icon(Icons.copy,
+                    size: 16, semanticLabel: t.workedExamplesCopy),
                 tooltip: t.workedExamplesCopy,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../engine/ocr_model_catalog.dart';
 import '../engine/ocr_model_manager_web.dart';
 import '../engine/ocr_provider.dart';
+import '../localization/app_localizations.dart';
 import '../services/ocr_initialization.dart';
 import 'model_license_consent_dialog.dart';
 
@@ -22,6 +23,7 @@ class OcrSettingsDialog extends StatefulWidget {
 class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
   final Map<String, bool> _downloaded = {};
   final Set<String> _downloading = {};
+  AppLocalizations get _t => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -48,20 +50,16 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       final accepted = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('License Terms'),
-          content: Text(
-            'This model is licensed under ${model.license}.\n\n'
-            'By downloading, you confirm that you will use these '
-            'model weights for non-commercial purposes only.',
-          ),
+          title: Text(_t.ocrLicenseTermsTitle),
+          content: Text(_t.ocrLicenseTermsBody('${model.license}')),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
+              child: Text(_t.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('I accept — download'),
+              child: Text(_t.ocrAcceptDownload),
             ),
           ],
         ),
@@ -80,8 +78,8 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(bytes != null
-            ? '${model.name} downloaded'
-            : 'Download failed: ${model.name}'),
+            ? _t.ocrModelDownloaded(model.name)
+            : _t.ocrDownloadFailed(model.name)),
       ));
     }
   }
@@ -102,8 +100,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
         .where((m) => m.sizeBytes <= 100 * 1024 * 1024)
         .toList();
 
+    final t = _t;
     return AlertDialog(
-      title: const Text('OCR Models (Web)'),
+      title: Text(t.ocrModelsWebTitle),
       content: SizedBox(
         width: 480,
         child: SingleChildScrollView(
@@ -111,7 +110,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Models are cached in your browser (IndexedDB).',
+              Text(t.ocrWebCacheNote,
                   style: TextStyle(
                       fontSize: 12,
                       color: scheme.onSurface.withValues(alpha: 0.6))),
@@ -119,7 +118,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
 
               // Provider selector
               if (OcrProviders.available.isNotEmpty) ...[
-                Text('Active Provider',
+                Text(t.ocrActiveProvider,
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: scheme.primary)),
                 const SizedBox(height: 4),
@@ -137,9 +136,9 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
                     title: Text(p.name, style: const TextStyle(fontSize: 13)),
                     subtitle: Text(
                       [
-                        if (p.requiresNetwork) 'cloud',
-                        if (p.requiresApiKey) 'API key',
-                        if (!p.requiresNetwork) 'on-device (WASM)',
+                        if (p.requiresNetwork) t.ocrTagCloud,
+                        if (p.requiresApiKey) t.ocrTagApiKey,
+                        if (!p.requiresNetwork) '${t.ocrTagOnDevice} (WASM)',
                       ].join(' · '),
                       style: const TextStyle(fontSize: 11),
                     ),
@@ -150,7 +149,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
               ],
 
               // Downloadable models
-              Text('Available Models',
+              Text(t.ocrAvailableModels,
                   style: TextStyle(
                       fontWeight: FontWeight.bold, color: scheme.primary)),
               const SizedBox(height: 8),
@@ -162,7 +161,7 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(t.dialogClose),
         ),
       ],
     );
@@ -177,10 +176,10 @@ class _OcrSettingsDialogState extends State<OcrSettingsDialog> {
       child: ListTile(
         dense: true,
         leading: isDownloaded
-            ? const Icon(Icons.check_circle,
-                color: Colors.green, semanticLabel: 'Cached')
-            : const Icon(Icons.cloud_download_outlined,
-                semanticLabel: 'Not cached'),
+            ? Icon(Icons.check_circle,
+                color: Colors.green, semanticLabel: _t.ocrCached)
+            : Icon(Icons.cloud_download_outlined,
+                semanticLabel: _t.ocrNotCached),
         title: Text(model.name, style: const TextStyle(fontSize: 13)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

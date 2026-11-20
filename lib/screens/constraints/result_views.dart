@@ -470,7 +470,8 @@ class _PackingChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Packing · $containerWidth × $containerHeight',
+            AppLocalizations.of(context)
+                .constraintsPackingHeader(containerWidth, containerHeight),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
@@ -633,8 +634,10 @@ class _TourChart extends StatelessWidget {
         children: [
           Text(
             isSub
-                ? 'Subcircuit · ${successors.length} nodes'
-                : 'Tour · ${successors.length} nodes',
+                ? AppLocalizations.of(context)
+                    .constraintsSubcircuitHeader(successors.length)
+                : AppLocalizations.of(context)
+                    .constraintsTourHeader(successors.length),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
@@ -936,7 +939,8 @@ class _SetSolutionView extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                '… +${setSolutions.length - shown.length} more',
+                AppLocalizations.of(context).constraintsMoreSolutions(
+                    setSolutions.length - shown.length),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),

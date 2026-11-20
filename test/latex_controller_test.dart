@@ -46,6 +46,17 @@ void main() {
       expect(c.text, equals(''));
     });
 
+    test('deletes a LaTeX command as one symbol', () {
+      final c = LatexController()..insert(r'2\cdot 3');
+      c.backspace();
+      expect(c.text, equals(r'2\cdot '));
+      c.backspace();
+      expect(c.text, equals('2'));
+      c.insert(r'\pi');
+      c.backspace();
+      expect(c.text, equals('2'));
+    });
+
     test('is a no-op on an empty controller', () {
       final c = LatexController();
       c.backspace();
@@ -68,6 +79,16 @@ void main() {
       c.moveCursor(-100);
       expect(c.selection.baseOffset, equals(0));
     });
+  });
+
+  test('moveCursor steps over a LaTeX command as one unit', () {
+    final c = LatexController()..insert(r'2\cdot 3');
+    c.moveCursor(-1);
+    expect(c.selection.baseOffset, equals(7));
+    c.moveCursor(-1);
+    expect(c.selection.baseOffset, equals(1));
+    c.moveCursor(1);
+    expect(c.selection.baseOffset, equals(7));
   });
 
   test('notifyListeners fires on insert', () {

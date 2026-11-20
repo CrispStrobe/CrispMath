@@ -69,9 +69,9 @@ class AboutScreen extends StatelessWidget {
                 GestureDetector(
                   onTap: () =>
                       _open('https://crisp-math.vercel.app/privacy.html'),
-                  child: const Text(
-                    'Full privacy policy',
-                    style: TextStyle(
+                  child: Text(
+                    l.aboutFullPrivacyPolicy,
+                    style: const TextStyle(
                       color: Colors.blue,
                       decoration: TextDecoration.underline,
                     ),
@@ -107,7 +107,7 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 // App source plus the native-stack notices in showLicensePage
                 // provide the source/build/relink path for the LGPL math stack.
-                const Text('Source code:'),
+                Text(l.aboutSourceCode),
                 InkWell(
                   onTap: () =>
                       _open('https://github.com/CrispStrobe/CrispMath'),

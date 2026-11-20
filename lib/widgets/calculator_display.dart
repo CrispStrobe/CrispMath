@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import '../engine/app_state.dart';
+import '../localization/app_localizations.dart';
 
 class CalculatorDisplay extends StatelessWidget {
   const CalculatorDisplay({
@@ -22,10 +23,10 @@ class CalculatorDisplay extends StatelessWidget {
       listenable: appState,
       builder: (context, child) {
         if (appState.history.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
-              'Calculation history will appear here.',
-              style: TextStyle(color: Colors.grey),
+              AppLocalizations.of(context).historyHere,
+              style: const TextStyle(color: Colors.grey),
             ),
           );
         }

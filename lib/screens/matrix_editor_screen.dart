@@ -4,6 +4,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../localization/app_localizations.dart';
+
 class MatrixEditorScreen extends StatefulWidget {
   const MatrixEditorScreen({super.key});
 
@@ -70,13 +72,14 @@ class _MatrixEditorScreenState extends State<MatrixEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Matrix Editor'),
+        title: Text(t.matrixEdTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.done_all),
-            tooltip: 'Use Matrix in Calculator',
+            tooltip: t.matrixEdUseInCalculator,
             onPressed: () {
               // Pop the screen and return the generated matrix string.
               Navigator.of(context).pop(_matrixToString());
@@ -94,14 +97,14 @@ class _MatrixEditorScreenState extends State<MatrixEditorScreen> {
             const Divider(height: 40),
 
             // Section for the matrix grid
-            Text('Matrix Values',
+            Text(t.matrixEdValues,
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             _buildMatrixGrid(),
             const SizedBox(height: 24),
 
             // Section for operations
-            Text('Quick Operations',
+            Text(t.matrixEdQuickOperations,
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             _buildOperationButtons(),
@@ -112,10 +115,11 @@ class _MatrixEditorScreenState extends State<MatrixEditorScreen> {
   }
 
   Widget _buildDimensionControls() {
+    final t = AppLocalizations.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        const Text('Rows:', style: TextStyle(fontSize: 16)),
+        Text(t.matrixEdRows, style: const TextStyle(fontSize: 16)),
         Text('$_rows',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         Column(
@@ -131,7 +135,7 @@ class _MatrixEditorScreenState extends State<MatrixEditorScreen> {
           ],
         ),
         const SizedBox(width: 24),
-        const Text('Columns:', style: TextStyle(fontSize: 16)),
+        Text(t.matrixEdColumns, style: const TextStyle(fontSize: 16)),
         Text('$_cols',
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         Column(

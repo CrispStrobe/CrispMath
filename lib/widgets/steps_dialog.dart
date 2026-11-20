@@ -89,9 +89,9 @@ class StepsDialog extends StatelessWidget {
                 steps: steps,
               );
             },
-            icon: const Icon(Icons.auto_awesome,
-                size: 16, semanticLabel: 'Narrate with AI'),
-            label: const Text('Narrate'),
+            icon: Icon(Icons.auto_awesome,
+                size: 16, semanticLabel: t.stepsNarrateWithAi),
+            label: Text(t.stepsNarrate),
           ),
       ],
     );
@@ -99,6 +99,7 @@ class StepsDialog extends StatelessWidget {
 
   Widget _stepCard(BuildContext context, MathStep s) {
     final isResult = s.rule == 'Result';
+    final t = AppLocalizations.of(context);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       color: isResult ? Theme.of(context).colorScheme.primaryContainer : null,
@@ -112,14 +113,15 @@ class StepsDialog extends StatelessWidget {
                 Icon(
                   isResult ? Icons.check_circle : Icons.bolt_outlined,
                   size: 18,
-                  semanticLabel: isResult ? 'Result' : 'Step',
+                  semanticLabel: isResult ? t.stepsResult : t.stepsStep,
                   color: isResult
                       ? Theme.of(context).colorScheme.onPrimaryContainer
                       : Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  s.rule,
+                  // `Result` is a marker the engine emits; show it localized.
+                  isResult ? t.stepsResult : s.rule,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: isResult
@@ -140,9 +142,10 @@ class StepsDialog extends StatelessWidget {
                 Expanded(
                   child: _latex(context, _bracketToFracLatex(s.before)),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6),
-                  child: Icon(Icons.east, size: 18, semanticLabel: 'becomes'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Icon(Icons.east,
+                      size: 18, semanticLabel: t.stepsBecomes),
                 ),
                 Expanded(child: _latex(context, _toLatex(s.after))),
               ],

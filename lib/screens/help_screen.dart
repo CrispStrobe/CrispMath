@@ -29,7 +29,8 @@ class HelpScreen extends StatelessWidget {
               _Group(
                 _translateGroupName(group.title, t),
                 group.items
-                    .map((f) => _Fn(f.name, _translateFnDesc(f.desc, t)))
+                    .map((f) => _Fn(_translateFnName(f.name, t),
+                        _translateFnDesc(f.desc, t)))
                     .toList(),
               ),
             ),
@@ -111,9 +112,21 @@ class HelpScreen extends StatelessWidget {
       );
 
   /// Translate one of the static group titles into the active locale.
-  /// Only "Probability" is localized for now; the rest fall through.
+  /// The const table below stays English; unknown titles fall through.
   String _translateGroupName(String englishTitle, AppLocalizations t) {
     switch (englishTitle) {
+      case 'Arithmetic':
+        return t.helpGroupArithmetic;
+      case 'Algebraic CAS':
+        return t.helpGroupAlgebraicCas;
+      case 'Calculus':
+        return t.helpGroupCalculus;
+      case 'Trig & elementary':
+        return t.helpGroupTrigElementary;
+      case 'Vector & tensor':
+        return t.helpGroupVectorTensor;
+      case 'Matrix':
+        return t.helpGroupMatrix;
       case 'Probability':
         return t.helpGroupProbability;
       default:
@@ -121,13 +134,95 @@ class HelpScreen extends StatelessWidget {
     }
   }
 
-  /// Translate one of the static function descriptions. Only `rref`'s
-  /// description is localized for now.
+  /// Translate one of the static function descriptions (math-only
+  /// descriptions such as `5 mod 3 = 2` pass through unchanged).
   String _translateFnDesc(String englishDesc, AppLocalizations t) {
-    if (englishDesc == 'Reduced row echelon form (Gauss-Jordan)') {
-      return t.helpFnRrefDescription;
+    switch (englishDesc) {
+      case 'Add / subtract / multiply / divide':
+        return t.helpFnArithmeticDesc;
+      case 'Power: 2^10 = 1024':
+        return t.helpFnPowerDesc;
+      case 'Factorial: 5! = 120':
+        return t.helpFnFactorialDesc;
+      case 'Absolute value':
+        return t.helpFnAbsDesc;
+      case 'Solve an equation for a variable':
+        return t.helpFnSolveDesc;
+      case 'Factor a polynomial':
+        return t.helpFnFactorDesc;
+      case 'Distribute a product / expand a power':
+        return t.helpFnExpandDesc;
+      case 'Reduce e to canonical form':
+        return t.helpFnSimplifyDesc;
+      case 'Substitute v for x in e':
+        return t.helpFnSubstDesc;
+      case 'Last result':
+        return t.helpFnAnsDesc;
+      case 'Derivative of f with respect to x':
+        return t.helpFnDiffDesc;
+      case 'Same, but show step-by-step trace':
+        return t.helpFnDiffStepsDesc;
+      case 'Indefinite integral (∫ button)':
+        return t.helpFnIntegralDesc;
+      case 'Definite integral via the ∫ dialog':
+        return t.helpFnDefiniteIntegralDesc;
+      case 'Indefinite integral with step-by-step trace':
+        return t.helpFnIntegralStepsDesc;
+      case 'One-sided / ∞ limit (numerical)':
+        return t.helpFnLimitDesc;
+      case 'Standard trig':
+        return t.helpFnTrigDesc;
+      case 'Inverse trig':
+        return t.helpFnInverseTrigDesc;
+      case 'Hyperbolic':
+        return t.helpFnHyperbolicDesc;
+      case 'Natural log':
+        return t.helpFnLnDesc;
+      case 'Square root and n-th root':
+        return t.helpFnRootDesc;
+      case 'Common constants':
+        return t.helpFnConstantsDesc;
+      case 'Dot product':
+        return t.helpFnDotDesc;
+      case 'Cross product (3-vectors)':
+        return t.helpFnCrossDesc;
+      case 'Euclidean length':
+        return t.helpFnNormDesc;
+      case 'Unit vector':
+        return t.helpFnUnitDesc;
+      case 'Determinant':
+        return t.helpFnDetDesc;
+      case 'Inverse':
+        return t.helpFnInvDesc;
+      case 'Transpose':
+        return t.helpFnTransposeDesc;
+      case 'Reduced row echelon form (Gauss-Jordan)':
+        return t.helpFnRrefDescription;
+      case 'Element-wise add / multiply':
+        return t.helpFnMatrixOpsDesc;
+      case 'Analysis hub → Statistics':
+        return t.helpFnStatisticsDesc;
+      case 'PDF, CDF, quantile (z-score)':
+        return t.helpFnNormalDesc;
+      case 'PMF, CDF, mean, variance':
+        return t.helpFnBinomialDesc;
+      default:
+        return englishDesc;
     }
-    return englishDesc;
+  }
+
+  /// Translate the few function-column entries that are words, not syntax.
+  String _translateFnName(String englishName, AppLocalizations t) {
+    switch (englishName) {
+      case 'Statistics screen':
+        return t.helpFnStatisticsName;
+      case 'Normal':
+        return t.helpFnNormalName;
+      case 'Binomial':
+        return t.helpFnBinomialName;
+      default:
+        return englishName;
+    }
   }
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/sync_service.dart';
 import '../services/cloud_backup_store.dart';
 import '../engine/app_state.dart';
+import '../localization/app_localizations.dart';
 import 'workspace_backup_dialog.dart';
 
 class SyncDialog extends StatefulWidget {
@@ -24,6 +25,7 @@ class _SyncDialogState extends State<SyncDialog> {
   String? _feedback;
   bool _feedbackIsError = false;
   SyncService get _service => widget.service ?? SyncService.instance;
+  AppLocalizations get _t => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -77,16 +79,15 @@ class _SyncDialogState extends State<SyncDialog> {
           context: context,
           builder: (context) => AlertDialog(
                 scrollable: true,
-                title: const Text('Replace cloud backup?'),
-                content: const Text(
-                    'Upload this device’s workspace as the cloud backup. Pull first to review work from another device.'),
+                title: Text(_t.syncReplaceTitle),
+                content: Text(_t.syncReplaceBody),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel')),
+                      child: Text(_t.cancel)),
                   FilledButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Upload backup'))
+                      child: Text(_t.syncUploadBackup))
                 ],
               ));
       if (confirmed != true || !mounted) return;
@@ -94,16 +95,16 @@ class _SyncDialogState extends State<SyncDialog> {
     if (push) {
       await _run(() async {
         await _service.pushState(widget.appState);
-        return 'Cloud backup uploaded.';
-      }, failureMessage: 'Cloud upload failed. Check your connection, then pull and review the latest backup before trying again.');
+        return _t.syncUploaded;
+      }, failureMessage: _t.syncUploadFailed);
       return;
     }
     CloudBackupSnapshot? incoming;
     await _run(() async {
       incoming = await _service.readBackup();
       return incoming == null
-          ? 'No cloud backup is available.' : 'Cloud backup loaded for review.';
-    }, failureMessage: 'Cloud backup could not be read. Check your connection and try again.');
+          ? _t.syncNoBackup : _t.syncBackupLoaded;
+    }, failureMessage: _t.syncReadFailed);
     // The fetch has finished. Reviewing a backup is a user decision, so it
     // must not leave a progress animation running beneath the review dialog.
     if (incoming != null && mounted) {
@@ -116,36 +117,36 @@ class _SyncDialogState extends State<SyncDialog> {
     if (signUp) {
       await _service.signUp(_emailCtl.text.trim(), _passwordCtl.text);
       return _service.currentUser == null
-          ? 'Account created. Check your email to confirm it before signing in.'
-          : 'Account created. You are signed in.';
+          ? _t.syncAccountCreatedConfirm
+          : _t.syncAccountCreatedSignedIn;
     }
     await _service.signInWithEmail(_emailCtl.text.trim(), _passwordCtl.text);
-    return 'Signed in. You can now pull or upload a cloud backup.';
+    return _t.syncSignedIn;
   }, failureMessage: signUp
-      ? 'Sign up failed. Check your details and connection, then try again.'
-      : 'Sign in failed. Check your email and password, then try again.');
+      ? _t.syncSignUpFailed
+      : _t.syncSignInFailed);
 
   Future<void> _configure() => _run(() async {
     await _service.configure(_urlCtl.text, _keyCtl.text);
-    return 'Cloud sync is configured. Sign in to transfer your workspace.';
-  }, failureMessage: 'Cloud sync could not be configured. Check your connection and try again.',
+    return _t.syncConfigured;
+  }, failureMessage: _t.syncConfigureFailed,
   describeError: (error) => error is FormatException
-      ? 'Enter an HTTPS project URL and a public publishable or anon key.'
+      ? _t.syncConfigureFormatError
       : _service.isConfigured
-          ? 'Cloud sync is connected, but its settings could not be saved. Configure it again after restarting.'
-          : 'Cloud sync could not be configured. Check your connection and try again.');
+          ? _t.syncConfigureSaveFailed
+          : _t.syncConfigureFailed);
 
   Future<void> _signOut() => _run(() async {
     try {
       await _service.signOut();
-      return 'Signed out. Your workspace remains saved on this device.';
+      return _t.syncSignedOut;
     } finally {
       if (mounted) _passwordCtl.clear();
     }
-  }, failureMessage: 'Sign out failed. Check your connection and try again.',
+  }, failureMessage: _t.syncSignOutFailed,
   describeError: (_) => _service.currentUser == null
-      ? 'Signed out on this device. The server could not confirm sign out; check your connection before signing in again.'
-      : 'Sign out failed. Check your connection and try again.');
+      ? _t.syncSignedOutLocally
+      : _t.syncSignOutFailed);
 
   Widget _notice(String message, {bool error = false}) => Semantics(
     container: true, liveRegion: true,
@@ -167,59 +168,59 @@ class _SyncDialogState extends State<SyncDialog> {
       final user = _service.currentUser;
       return AlertDialog(
         scrollable: true,
-        title: const Text('Cloud Sync'),
+        title: Text(_t.syncDialogTitle),
         content: SizedBox(width: 440, child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (_feedback != null) _notice(_feedback!, error: _feedbackIsError),
             if (initializing || _isLoading) ...[
-              Semantics(label: 'Cloud sync is working', liveRegion: true,
+              Semantics(label: _t.syncWorking, liveRegion: true,
                 child: const LinearProgressIndicator()),
               const SizedBox(height: 16),
             ],
             if (failed) ...[
               if (_feedback == null) _notice(
-                'Cloud sync could not connect. Try again when you are online.', error: true),
+                _t.syncConnectFailed, error: true),
               TextButton(onPressed: _isLoading ? null : () => _run(() async {
                 await _service.init();
                 if (_service.status == SyncStatus.failed) throw StateError('Connection failed');
-                return _service.isConfigured ? 'Cloud sync is ready.' :
-                    'Cloud sync is not configured. Enter public project settings to continue.';
-              }, failureMessage: 'Cloud sync could not connect. Try again when you are online.'),
-                child: const Text('Retry')),
+                return _service.isConfigured ? _t.syncReady :
+                    _t.syncNotConfigured;
+              }, failureMessage: _t.syncConnectFailed),
+                child: Text(_t.graphRetry)),
             ] else if (!initializing && !_service.isConfigured) ...[
-              const Text('Cloud sync is off. Your work stays on this device. Local worksheets, checkpoints and backup files work without an account. Configure your own project only if you want cloud backups.'),
+              Text(_t.syncOffBody),
               const SizedBox(height: 16),
               TextField(controller: _urlCtl, enabled: !_isLoading,
-                decoration: const InputDecoration(labelText: 'Supabase project URL')),
+                decoration: InputDecoration(labelText: _t.syncProjectUrl)),
               TextField(controller: _keyCtl, enabled: !_isLoading,
-                decoration: const InputDecoration(labelText: 'Public publishable or anon key')),
+                decoration: InputDecoration(labelText: _t.syncPublicKey)),
               const SizedBox(height: 16),
               FilledButton(onPressed: _isLoading ? null : _configure,
-                child: const Text('Configure cloud sync')),
+                child: Text(_t.syncConfigureButton)),
             ] else if (!initializing && user == null) ...[
               TextField(controller: _emailCtl, enabled: !_isLoading,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email')),
+                decoration: InputDecoration(labelText: _t.syncEmail)),
               TextField(controller: _passwordCtl, enabled: !_isLoading,
-                decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+                decoration: InputDecoration(labelText: _t.syncPassword), obscureText: true),
               const SizedBox(height: 16),
               Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.center, children: [
-                TextButton(onPressed: _isLoading ? null : () => _auth(false), child: const Text('Log In')),
-                FilledButton(onPressed: _isLoading ? null : () => _auth(true), child: const Text('Sign Up')),
+                TextButton(onPressed: _isLoading ? null : () => _auth(false), child: Text(_t.syncLogIn)),
+                FilledButton(onPressed: _isLoading ? null : () => _auth(true), child: Text(_t.syncSignUp)),
               ]),
             ] else if (!initializing) ...[
-              Text('Logged in as ${user!.email}'),
+              Text(_t.syncLoggedInAs('${user!.email}')),
               const SizedBox(height: 24),
               Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.center, children: [
                 ElevatedButton.icon(onPressed: _isLoading ? null : () => _sync(false),
-                  icon: const Icon(Icons.download), label: const Text('Pull')),
+                  icon: const Icon(Icons.download), label: Text(_t.syncPull)),
                 ElevatedButton.icon(onPressed: _isLoading ? null : () => _sync(true),
-                  icon: const Icon(Icons.upload), label: const Text('Push')),
+                  icon: const Icon(Icons.upload), label: Text(_t.syncPush)),
               ]),
               const SizedBox(height: 24),
-              TextButton(onPressed: _isLoading ? null : _signOut, child: const Text('Sign Out')),
+              TextButton(onPressed: _isLoading ? null : _signOut, child: Text(_t.syncSignOut)),
             ],
           ],
         )),
@@ -227,8 +228,8 @@ class _SyncDialogState extends State<SyncDialog> {
           if (!initializing && !_service.isConfigured)
             TextButton(onPressed: _isLoading ? null : () => showDialog<void>(
               context: context, builder: (_) => WorkspaceBackupDialog(onRestored: widget.onRestored)),
-              child: const Text('Workspace backups')),
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+              child: Text(_t.backupDialogTitle)),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(_t.dialogClose)),
         ],
       );
     },
