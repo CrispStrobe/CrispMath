@@ -134,7 +134,12 @@ jobs:
       - name: Sign app inside out with sandbox entitlements
         run: |
           set -euo pipefail
+          # App Store validation rejects files only root can read; staged
+          # runtime files can arrive with owner-only modes.
+          find "$APP" -type f ! -perm -a+r -print
+          chmod -R a+rX "$APP"
           cp "$RUNNER_TEMP/cm.provisionprofile" "$APP/Contents/embedded.provisionprofile"
+          chmod a+r "$APP/Contents/embedded.provisionprofile"
           # Nested code first: loose dylibs, then framework bundles, deepest first.
           find "$APP/Contents" -type f \( -name '*.dylib' -o -name '*.so' \) -print0 |
             xargs -0 -I{} codesign --force --sign "$DIST_SHA1" --timestamp=none {}
