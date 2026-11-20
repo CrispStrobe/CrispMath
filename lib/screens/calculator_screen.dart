@@ -3178,6 +3178,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   CalculatorInputBar(
                     controller: _latexController,
                     onResetFocus: _resetFocus,
+                    onFieldTap: _calculatorFocusNode.requestFocus,
                     onEvaluate: () => _onButtonPressed('EXE'),
                     onTextSubmitted: () {
                       _traceInput('screen-text-submitted');

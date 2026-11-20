@@ -273,6 +273,22 @@ jobs:
           unzip -qo "$IPA" -d /tmp/ipa_check
           codesign --verify --deep --strict --verbose=2 /tmp/ipa_check/Payload/Runner.app 2>&1 | tail -2
 
+      - name: Verify SymEngine and CrispEmbed symbols survived link and strip
+        # 1.2.1+28 shipped without either (dead-stripped), so CAS and OCR
+        # silently fell back. Dart resolves these via dlsym, so they must be
+        # present as globals in the signed binary.
+        run: |
+          set -eu
+          BIN=/tmp/ipa_check/Payload/Runner.app/Runner
+          ls -la "$BIN"
+          SYM=$(nm -gU "$BIN" | grep -c flutter_symengine || true)
+          CE=$(nm -gU "$BIN" | grep -c ' _crispembed_' || true)
+          echo "flutter_symengine_*: $SYM  crispembed_*: $CE"
+          if [ "$SYM" -lt 30 ] || [ "$CE" -lt 1 ]; then
+            echo "::error::Native libraries missing from Runner (symengine=$SYM, crispembed=$CE)"
+            exit 1
+          fi
+
       - name: Validate purpose strings in the signed application bundle
         run: |
           VER=$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)

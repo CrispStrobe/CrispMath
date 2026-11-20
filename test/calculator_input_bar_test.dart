@@ -16,6 +16,7 @@ Future<void> _pump(WidgetTester tester, Size size,
     {required LatexController controller,
     VoidCallback? onEvaluate,
     VoidCallback? onResetFocus,
+    VoidCallback? onFieldTap,
     bool? webInputForTesting,
     String preview = ''}) async {
   await tester.binding.setSurfaceSize(size);
@@ -28,6 +29,7 @@ Future<void> _pump(WidgetTester tester, Size size,
             controller: controller,
             onResetFocus: onResetFocus ?? () {},
             onEvaluate: onEvaluate ?? () {},
+            onFieldTap: onFieldTap,
             resultPreview: preview,
             webInputForTesting: webInputForTesting,
           ),
@@ -39,6 +41,19 @@ Future<void> _pump(WidgetTester tester, Size size,
 }
 
 void main() {
+  testWidgets('clicking the math field asks the screen for keyboard focus',
+      (tester) async {
+    final controller = LatexController();
+    addTearDown(controller.dispose);
+    var taps = 0;
+    await _pump(tester, const Size(1024, 768),
+        controller: controller, onFieldTap: () => taps++);
+    controller.insert('12');
+    await tester.pump();
+    await tester.tap(find.byType(LatexInputField));
+    expect(taps, 1);
+  });
+
   testWidgets('web submission keeps its text client for the next entry',
       (tester) async {
     final controller = LatexController();

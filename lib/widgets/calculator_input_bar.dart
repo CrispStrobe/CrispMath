@@ -42,6 +42,7 @@ class CalculatorInputBar extends StatefulWidget {
     required this.onResetFocus,
     required this.onEvaluate,
     this.onTextSubmitted,
+    this.onFieldTap,
     this.resultPreview = '',
     this.stackBelowWidth = 480,
     this.webInputForTesting,
@@ -57,6 +58,11 @@ class CalculatorInputBar extends StatefulWidget {
 
   /// Submits from the text editor without surrendering text focus.
   final VoidCallback? onTextSubmitted;
+
+  /// Tapping/clicking the math field. The field itself is not focusable
+  /// (keys arrive through the screen's KeyboardListener), so the screen
+  /// uses this to take keyboard focus back after it went elsewhere.
+  final VoidCallback? onFieldTap;
 
   /// Live "= …" preview shown under the field; hidden when empty.
   final String resultPreview;
@@ -242,10 +248,14 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                   decoration: InputDecoration(
                       labelText: t.text(WorkflowLabel.expression)),
                 )
-              : SingleChildScrollView(
-                  reverse: true,
-                  scrollDirection: Axis.horizontal,
-                  child: LatexInputField(controller: controller),
+              : GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onFieldTap,
+                  child: SingleChildScrollView(
+                    reverse: true,
+                    scrollDirection: Axis.horizontal,
+                    child: LatexInputField(controller: controller),
+                  ),
                 ),
         );
 

@@ -260,7 +260,7 @@ Generated from `pubspec.yaml` and `tool/dependency_lock.json` by
 
 | Component | Pin |
 |---|---|
-| CrispMath | <!-- AUTO:app_version_build -->1.2.1+28<!-- /AUTO:app_version_build --> |
+| CrispMath | <!-- AUTO:app_version_build -->1.2.1+29<!-- /AUTO:app_version_build --> |
 | Latest release tag | <!-- AUTO:latest_tag -->v1.2.0<!-- /AUTO:latest_tag --> |
 | Flutter | <!-- AUTO:flutter_version -->3.44.0<!-- /AUTO:flutter_version --> |
 | CrispEmbed runtime | <!-- AUTO:crispembed_revision -->d28ca2ea43a95934d673d1a54177fdf721614ade<!-- /AUTO:crispembed_revision --> |

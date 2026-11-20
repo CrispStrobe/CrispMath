@@ -230,7 +230,17 @@ void _workerEntry(SendPort mainPort) {
   final engine = CalculatorEngine();
   commands.listen((msg) {
     if (msg is _WorkerRequest) {
-      final result = runEngineOp(engine, msg.op);
+      // Always reply: an uncaught throw here (errorsAreFatal: false) would
+      // leave the caller's future pending forever, and the calculator
+      // serializes submissions, so every later `=` would silently stall.
+      String result;
+      try {
+        result = runEngineOp(engine, msg.op);
+      } catch (e) {
+        result = msg.op.kind.startsWith('details:')
+            ? jsonEncode(ComputedResult('Error: $e', null).toJson())
+            : 'Error: $e';
+      }
       mainPort.send(_WorkerResponse(msg.id, result));
     }
   });

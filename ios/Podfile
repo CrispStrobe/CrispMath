@@ -44,4 +44,31 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
     end
   end
+
+  # SymEngine (symbolic_math_bridge) and CrispEmbed are static archives whose
+  # C entry points Dart reaches only through DynamicLibrary.process() (dlsym).
+  # Nothing references them at link time, so the Runner link (-dead_strip)
+  # dropped every object: TestFlight 1.2.1+28 shipped a 64 KB Runner with no
+  # flutter_symengine_* or crispembed_* symbol, i.e. no CAS and no OCR.
+  # The plugins' pod_target_xcconfig flags never reach the Runner link, so
+  # force-load here (same fix as macos/Podfile). -all_load alone is not
+  # enough: -dead_strip still removes every function nothing calls, because
+  # a main executable's globals are not dead-strip roots unless
+  # -export_dynamic is given (verified locally: -all_load only → 0 symbols).
+  # Finally keep global symbols through the archive strip so dlsym finds them.
+  installer.aggregate_targets.each do |agg|
+    agg.user_build_configurations.each_key do |config|
+      xcconfig_path = agg.xcconfig_path(config)
+      next unless File.exist?(xcconfig_path)
+      contents = File.read(xcconfig_path)
+      unless contents.include?('-all_load')
+        contents = contents.gsub(/^(OTHER_LDFLAGS\s*=.*)$/,
+                                 '\\1 -all_load -Wl,-export_dynamic')
+      end
+      unless contents.include?('STRIP_STYLE')
+        contents += "\nSTRIP_STYLE = non-global\n"
+      end
+      File.write(xcconfig_path, contents)
+    end
+  end
 end
