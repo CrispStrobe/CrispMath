@@ -95,7 +95,7 @@ jobs:
           path: .ci/CrispEmbed
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
+          flutter-version: '3.44.9'  # >= 3.44.8: Xcode 27 lipo fix (flutter#188346)
           channel: stable
           cache: true
       - uses: actions/setup-python@v5
