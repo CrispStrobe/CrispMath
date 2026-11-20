@@ -15,7 +15,7 @@ constants, statistics, plotting and OCR all execute locally.
 **[TestFlight](https://testflight.apple.com/join/E6HdVhTx)**
 
 Current version: <!-- AUTO:app_version -->1.2.1<!-- /AUTO:app_version -->;
-`pubspec.yaml` carries build <!-- AUTO:build_number -->28<!-- /AUTO:build_number -->.
+`pubspec.yaml` carries build <!-- AUTO:build_number -->29<!-- /AUTO:build_number -->.
 Latest release tag: <!-- AUTO:latest_tag -->v1.2.0<!-- /AUTO:latest_tag -->.
 The App Store binary can trail the tag by a build number when it is rebuilt for
 a release-blocking fix — see [HISTORY.md](HISTORY.md).
