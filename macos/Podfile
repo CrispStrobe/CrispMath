@@ -38,6 +38,15 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    # Xcode 27 only accepts macOS deployment targets >= 12.0; some pods
+    # (FlutterMacOS, symbolic_math_bridge) still declare 10.15. The app's
+    # own minimum is 12.0 (platform above), so this changes nothing for users.
+    target.build_configurations.each do |config|
+      current = config.build_settings['MACOSX_DEPLOYMENT_TARGET']
+      if current.nil? || Gem::Version.new(current) < Gem::Version.new('12.0')
+        config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '12.0'
+      end
+    end
   end
 
   # Force-load every object file from the SymEngine and CrispEmbed static
