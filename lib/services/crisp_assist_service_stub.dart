@@ -5,6 +5,7 @@
 // false on web (no SharedPreferences with API keys on first load).
 
 import '../engine/step_engine.dart';
+import '../engine/ai_output_attribution.dart';
 
 class CrispAssistConfig {
   const CrispAssistConfig({
@@ -48,6 +49,8 @@ class CrispAssistHttpException implements Exception {
 
 class CrispAssistService {
   CrispAssistService();
+  AiOutputAttribution? get lastAttribution => null;
+  bool get lastResponseComplete => false;
   void dispose() {}
 
   Future<String> translate({

@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crisp_math/engine/step_engine.dart';
+import 'package:crisp_math/engine/ai_output_attribution.dart';
 import 'package:crisp_math/services/crisp_assist_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -74,6 +75,8 @@ void main() {
         config: config,
       );
       expect(result, 'diff(x^3, x)');
+      expect(service.lastAttribution!.kind, AiOutputKind.assistedExpression);
+      expect(service.lastAttribution!.responseModel, isNull);
     });
 
     test('explain() returns explanation text', () async {
@@ -253,4 +256,61 @@ void main() {
       );
     });
   });
+  test(
+    'stream attribution survives split SSE lines and only confirmed completion',
+    () async {
+      for (final finish in ['stop', 'length']) {
+        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        server.listen((request) async {
+          await request.drain<void>();
+          request.response.headers.contentType = ContentType(
+            'text',
+            'event-stream',
+          );
+          final event =
+              'data: ${jsonEncode({
+                'model': 'actual-served-model',
+                'choices': [
+                  {
+                    'delta': {'content': 'A generated explanation.'},
+                  },
+                ],
+              })}\n\n';
+          request.response.write(event.substring(0, 18));
+          await request.response.flush();
+          request.response.write(event.substring(18));
+          request.response.write(
+            'data: ${jsonEncode({
+              'choices': [
+                {'delta': {}, 'finish_reason': finish},
+              ],
+            })}\n\ndata: [DONE]\n\n',
+          );
+          await request.response.close();
+        });
+        final service = CrispAssistService();
+        try {
+          final result = await service
+              .streamExplain(
+                expression: '1+1',
+                result: '2',
+                config: CrispAssistConfig(
+                  apiUrl: 'http://localhost:${server.port}/v1/chat/completions',
+                  apiKey: 'fixture-key',
+                  model: 'requested-alias',
+                ),
+              )
+              .join();
+          expect(result, 'A generated explanation.');
+          expect(service.lastAttribution!.kind, AiOutputKind.generatedText);
+          expect(service.lastAttribution!.requestedModel, 'requested-alias');
+          expect(service.lastAttribution!.responseModel, 'actual-served-model');
+          expect(service.lastResponseComplete, finish == 'stop');
+        } finally {
+          service.dispose();
+          await server.close(force: true);
+        }
+      }
+    },
+  );
 }

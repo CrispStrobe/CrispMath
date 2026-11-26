@@ -47,6 +47,8 @@ import '../widgets/document_history_dialog.dart';
 import '../services/crisp_assist_service_stub.dart'
     if (dart.library.io) '../services/crisp_assist_service.dart';
 import '../widgets/crisp_assist_dialog.dart';
+import '../widgets/ai_content_notice.dart';
+import '../engine/ai_output_attribution.dart';
 import '../widgets/handwriting_input_dialog.dart';
 import '../widgets/module_help_dialog.dart';
 import '../engine/ocr_provider.dart';
@@ -1071,6 +1073,7 @@ class NotepadScreenState extends State<NotepadScreen> {
       builder: (ctx) {
         final cs = Theme.of(ctx).colorScheme;
         String? translated;
+        AiOutputAttribution? attribution;
         String? error;
         bool loading = false;
         return StatefulBuilder(
@@ -1140,6 +1143,7 @@ class NotepadScreenState extends State<NotepadScreen> {
                           userInput: controller.text.trim(),
                           config: cfg,
                         );
+                        attribution = svc.lastAttribution;
                         svc.dispose();
                         setDialogState(() {
                           translated = t.trim();
@@ -1159,6 +1163,11 @@ class NotepadScreenState extends State<NotepadScreen> {
                     Text(error!,
                         style: TextStyle(color: cs.error, fontSize: 12)),
                   if (translated != null) ...[
+                    AiContentNotice(
+                      kind: AiOutputKind.assistedExpression,
+                      attribution: attribution,
+                    ),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(

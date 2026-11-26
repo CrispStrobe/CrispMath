@@ -8,6 +8,7 @@ import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'ocr_provider.dart';
+import 'ai_output_attribution.dart';
 import '../engine/app_state.dart';
 
 // JS interop for fetch
@@ -176,6 +177,12 @@ class CloudLlmOcrProviderWeb implements OcrProvider, HandwritingOcrProvider {
         text: engineSyntax,
         rawOutput: latex,
         providerName: name,
+        attribution: AiOutputAttribution.fromResponse(
+          kind: AiOutputKind.assistedTranscription,
+          endpoint: apiUrl,
+          requestedModel: model,
+          responseModel: decoded['model'],
+        ),
       );
     } catch (e) {
       return null;

@@ -13,6 +13,7 @@
 import 'dart:typed_data';
 
 import '../utils/latex_conversion_utils.dart';
+import 'ai_output_attribution.dart';
 
 /// Result of an OCR operation.
 class OcrResult {
@@ -33,11 +34,15 @@ class OcrResult {
   /// Which provider produced this result.
   final String providerName;
 
+  /// Optional app-recorded origin; never part of [text] or [rawOutput].
+  final AiOutputAttribution? attribution;
+
   const OcrResult({
     required this.text,
     required this.rawOutput,
     this.confidence,
     required this.providerName,
+    this.attribution,
   });
 }
 

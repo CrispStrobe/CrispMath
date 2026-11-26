@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../engine/app_state.dart';
+import '../engine/ai_output_attribution.dart';
+import 'ai_content_notice.dart';
 import '../services/ai_provider_service.dart';
 import '../localization/workflow_localizations.dart';
 
@@ -109,6 +111,11 @@ class _AiMathDialogState extends State<AiMathDialog> {
                                       Theme.of(context).colorScheme.error)))),
                 if (_hasResult) ...[
                   const SizedBox(height: 12),
+                  AiContentNotice(
+                    kind: AiOutputKind.assistedExpression,
+                    attribution: _service.lastAttribution,
+                  ),
+                  const SizedBox(height: 8),
                   Text(t.text(WorkflowLabel.reviewExpression)),
                   TextField(
                       controller: _expression,

@@ -19,13 +19,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../engine/step_engine.dart';
+import '../engine/ai_output_attribution.dart';
 
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
 
 /// Immutable config for a CrispAssist API call. Constructed from AppState
-/// settings at call time — the service itself is stateless.
+/// settings at call time. Attribution describes the most recent response.
 class CrispAssistConfig {
   const CrispAssistConfig({
     required this.apiUrl,
@@ -136,6 +137,8 @@ Use LaTeX for math. Keep each step explanation to 1-2 sentences.
 class CrispAssistService {
   CrispAssistService();
 
+  AiOutputAttribution? lastAttribution;
+  bool lastResponseComplete = false;
   HttpClient? _client;
 
   HttpClient get _http => _client ??= HttpClient();
@@ -161,7 +164,8 @@ class CrispAssistService {
       {'role': 'system', 'content': _Prompts.translate},
       {'role': 'user', 'content': userInput},
     ];
-    return _chatCompletion(messages: messages, config: config);
+    return _chatCompletion(
+      messages: messages, config: config, kind: AiOutputKind.assistedExpression);
   }
 
   /// Explain a computation result.
@@ -246,7 +250,10 @@ class CrispAssistService {
   Future<String> _chatCompletion({
     required List<Map<String, String>> messages,
     required CrispAssistConfig config,
+    AiOutputKind kind = AiOutputKind.generatedText,
   }) async {
+    lastAttribution = null;
+    lastResponseComplete = false;
     final uri = Uri.parse(config.apiUrl);
     final isAnthropic = uri.host.contains('anthropic');
 
@@ -273,7 +280,15 @@ class CrispAssistService {
 
     final responseBody = await response.transform(utf8.decoder).join();
     final decoded = jsonDecode(responseBody);
-    return _extractContent(decoded, isAnthropic);
+    final content = _extractContent(decoded, isAnthropic);
+    lastResponseComplete = _reportsCompletion(decoded, isAnthropic);
+    lastAttribution = AiOutputAttribution.fromResponse(
+      kind: kind,
+      endpoint: config.apiUrl,
+      requestedModel: config.model,
+      responseModel: decoded['model'],
+    );
+    return content;
   }
 
   /// Streaming chat completion — yields content delta strings.
@@ -282,6 +297,8 @@ class CrispAssistService {
     required CrispAssistConfig config,
     CrispAssistCancelToken? cancel,
   }) async* {
+    lastAttribution = null;
+    lastResponseComplete = false;
     final uri = Uri.parse(config.apiUrl);
     final isAnthropic = uri.host.contains('anthropic');
 
@@ -306,24 +323,43 @@ class CrispAssistService {
       throw CrispAssistHttpException(response.statusCode, errorBody);
     }
 
-    // Parse SSE stream.
-    await for (final chunk in response.transform(utf8.decoder)) {
+    // Split complete SSE lines even when HTTP chunks bisect JSON/model metadata.
+    await for (final line in response.transform(utf8.decoder).transform(const LineSplitter())) {
       if (cancel?.cancelled ?? false) break;
-      for (final line in chunk.split('\n')) {
-        if (!line.startsWith('data: ')) continue;
-        final data = line.substring(6).trim();
-        if (data == '[DONE]') return;
-        try {
-          final event = jsonDecode(data);
-          final delta = isAnthropic
-              ? _extractAnthropicDelta(event)
-              : _extractOpenAiDelta(event);
-          if (delta.isNotEmpty) yield delta;
-        } catch (_) {
-          // Skip malformed SSE lines.
-        }
+      if (!line.startsWith('data: ')) continue;
+      final data = line.substring(6).trim();
+      if (data == '[DONE]') return;
+      try {
+        final event = jsonDecode(data);
+        final responseModel = event['model'] ??
+            (event['message'] is Map ? event['message']['model'] : null);
+        lastAttribution = AiOutputAttribution.fromResponse(
+          kind: AiOutputKind.generatedText,
+          endpoint: config.apiUrl,
+          requestedModel: config.model,
+          responseModel: responseModel ?? lastAttribution?.responseModel,
+          receivedAt: lastAttribution?.receivedAt,
+        );
+        if (_reportsCompletion(event, isAnthropic)) lastResponseComplete = true;
+        final delta = isAnthropic
+            ? _extractAnthropicDelta(event)
+            : _extractOpenAiDelta(event);
+        if (delta.isNotEmpty) yield delta;
+      } catch (_) {
+        // Skip malformed SSE lines without inventing completion/model details.
       }
     }
+  }
+
+  bool _reportsCompletion(Map event, bool anthropic) {
+    if (anthropic) {
+      final reason = event['stop_reason'] ??
+          (event['delta'] is Map ? event['delta']['stop_reason'] : null);
+      return reason == 'end_turn' || reason == 'stop_sequence';
+    }
+    final choices = event['choices'];
+    return choices is List && choices.isNotEmpty && choices.first is Map &&
+        choices.first['finish_reason'] == 'stop';
   }
 
   // ---- Body builders -----------------------------------------------------
