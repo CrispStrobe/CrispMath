@@ -1,3 +1,10 @@
+# CrispMath 1.2.2
+
+- Arithmetic with decimal numbers is answered in decimal: `9.5-2` now gives
+  `7.5` instead of `15/2`. Fraction input such as `19/2` still gives an
+  exact fraction, and decimal answers that do not terminate are computed
+  numerically.
+
 # CrispMath 1.2.1
 
 This TestFlight build makes the notepad a connected mathematical worksheet.

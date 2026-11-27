@@ -192,7 +192,8 @@ class CalculatorEngine {
     // Preserve arbitrary-size integer arithmetic before the bridge converts
     // numeric expressions to floating point. The bounded rational parser
     // preserves precedence and never labels a floating-point fallback exact.
-    final exact = ExactConstantEvaluator.evaluate(expression);
+    final exact =
+        ExactConstantEvaluator.evaluate(expression, decimalInput: true);
     if (exact != null) {
       lastResultEvidence = ResultEvidence(
           ResultAccuracy.exact,

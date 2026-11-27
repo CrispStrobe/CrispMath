@@ -3,7 +3,10 @@ import 'polynomial.dart';
 /// Exact arithmetic for bounded rational constants, roots and integer rounding.
 /// Returns null outside this grammar so callers can use their normal CAS path.
 class ExactConstantEvaluator {
-  static String? evaluate(String input) {
+  /// With [decimalInput] set, an input containing a decimal literal is
+  /// answered in decimal (`9.5-2` → `7.5`); internal callers that parse the
+  /// `p/q` text keep the default.
+  static String? evaluate(String input, {bool decimalInput = false}) {
     if (input.length > 512 ||
         !RegExp(r'^[\d.\s+*/%^!()\-absqrtfloorceilingE]+$').hasMatch(input)) {
       return null;
@@ -12,13 +15,47 @@ class ExactConstantEvaluator {
       final parser = _ConstantParser(input);
       final result = parser.expression();
       parser.whitespace();
-      return parser.position == input.length ? result.toString() : null;
+      if (parser.position != input.length) return null;
+      // Decimal input asks for a decimal answer: `9.5-2` is `7.5`, not
+      // `15/2`. Terminating results print exactly; anything else (`0.1/3`)
+      // is left to the CAS, which answers decimal input in floating point.
+      if (decimalInput && parser.sawDecimal && !result.isInteger) {
+        return terminatingDecimal(result);
+      }
+      return result.toString();
     } on _Decline {
       return null;
     } on ArgumentError {
       return null;
     }
   }
+}
+
+/// Exact decimal text for [value] when its expansion terminates within
+/// [maxPlaces] digits (denominator of the form 2^a·5^b), else null.
+String? terminatingDecimal(Rational value, {int maxPlaces = 30}) {
+  var den = value.denominator;
+  var twos = 0, fives = 0;
+  final two = BigInt.two, five = BigInt.from(5);
+  while (den % two == BigInt.zero) {
+    den ~/= two;
+    twos++;
+  }
+  while (den % five == BigInt.zero) {
+    den ~/= five;
+    fives++;
+  }
+  if (den != BigInt.one) return null;
+  final places = twos > fives ? twos : fives;
+  if (places > maxPlaces) return null;
+  final scaled =
+      value.numerator * BigInt.from(10).pow(places) ~/ value.denominator;
+  final negative = scaled.isNegative;
+  final digits = scaled.abs().toString().padLeft(places + 1, '0');
+  final whole = digits.substring(0, digits.length - places);
+  final fraction = digits.substring(digits.length - places);
+  final text = places == 0 ? whole : '$whole.$fraction';
+  return negative ? '-$text' : text;
 }
 
 class _Decline implements Exception {}
@@ -29,6 +66,7 @@ class _ConstantParser {
   int position = 0;
   int nodes = 0;
   int depth = 0;
+  bool sawDecimal = false;
   static const maxBits = 16384;
 
   void whitespace() {
@@ -193,6 +231,7 @@ class _ConstantParser {
     if (literal == null) throw _Decline();
     final text = literal[0]!;
     position += text.length;
+    if (text.contains(RegExp('[.eE]'))) sawDecimal = true;
     final parts = text.split(RegExp(r'[eE]'));
     final mantissa = parts.first;
     final exponent = parts.length == 1 ? BigInt.zero : BigInt.parse(parts[1]);

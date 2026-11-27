@@ -1,4 +1,5 @@
 import 'package:crisp_math/engine/exact_constant.dart';
+import 'package:crisp_math/engine/polynomial.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -37,5 +38,24 @@ void main() {
     }
     expect(ExactConstantEvaluator.evaluate('2^127'),
         '170141183460469231731687303715884105728');
+  });
+  test('decimal input is answered in decimal on the calculator path', () {
+    String? calc(String s) =>
+        ExactConstantEvaluator.evaluate(s, decimalInput: true);
+    for (final entry in {
+      '9.5-2': '7.5',
+      '2-9.5': '-7.5',
+      '0.2+0.3': '0.5',
+      '0.1*0.1': '0.01',
+      '-0.05/4': '-0.0125',
+      '9.5-1.5': '8',
+      '19/2': '19/2',
+      '1e-3*3': '0.003',
+    }.entries) {
+      expect(calc(entry.key), entry.value, reason: entry.key);
+    }
+    // Non-terminating decimal answers are left to the floating-point CAS.
+    expect(calc('0.1/3'), isNull);
+    expect(terminatingDecimal(Rational(BigInt.one, BigInt.from(3))), isNull);
   });
 }
