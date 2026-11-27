@@ -17,10 +17,13 @@ class ExactConstantEvaluator {
       parser.whitespace();
       if (parser.position != input.length) return null;
       // Decimal input asks for a decimal answer: `9.5-2` is `7.5`, not
-      // `15/2`. Terminating results print exactly; anything else (`0.1/3`)
-      // is left to the CAS, which answers decimal input in floating point.
+      // `15/2`. Terminating results print exactly; a non-terminating one
+      // (`0.1/3`) is left to the CAS, which answers decimal input in
+      // floating point. A terminating result too long to print as a
+      // decimal (`sqrt(1e-320)`) stays an exact fraction.
       if (decimalInput && parser.sawDecimal && !result.isInteger) {
-        return terminatingDecimal(result);
+        if (!terminates(result)) return null;
+        return terminatingDecimal(result) ?? result.toString();
       }
       return result.toString();
     } on _Decline {
@@ -29,6 +32,17 @@ class ExactConstantEvaluator {
       return null;
     }
   }
+}
+
+/// Whether [value] has a terminating decimal expansion.
+bool terminates(Rational value) {
+  var den = value.denominator;
+  for (final p in [BigInt.two, BigInt.from(5)]) {
+    while (den % p == BigInt.zero) {
+      den ~/= p;
+    }
+  }
+  return den == BigInt.one;
 }
 
 /// Exact decimal text for [value] when its expansion terminates within

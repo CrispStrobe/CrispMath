@@ -54,6 +54,8 @@ void main() {
     }.entries) {
       expect(calc(entry.key), entry.value, reason: entry.key);
     }
+    // Too many places to print: the exact fraction is kept.
+    expect(calc('sqrt(1e-320)'), '1/1${'0' * 160}');
     // Non-terminating decimal answers are left to the floating-point CAS.
     expect(calc('0.1/3'), isNull);
     expect(terminatingDecimal(Rational(BigInt.one, BigInt.from(3))), isNull);

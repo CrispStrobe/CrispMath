@@ -71,11 +71,11 @@ void main() {
     });
   }
 
-  test('explicit decimal literals and exact dependencies remain exact rationals',
+  test('explicit decimal literals and exact dependencies remain exact',
       () async {
     final doc = worksheet(['a=0.1', 'b=0.2', 'a+b', 'f(t)=t^2', 'f(3)']);
     await evaluator(ResultAccuracy.unknown).evaluateAll(doc);
-    expect(doc.lines[2].cachedResult, '3/10');
+    expect(doc.lines[2].cachedResult, '0.3');
     expect(doc.lines[2].resultEvidence?.accuracy, ResultAccuracy.exact);
     expect(doc.lines[3].resultEvidence?.accuracy, ResultAccuracy.symbolic);
     expect(doc.lines[4].cachedResult, '9');
@@ -99,7 +99,7 @@ void main() {
     final doc = worksheet(['f(t)=0.1', 'f(8)+0.2']);
     await evaluator(ResultAccuracy.unknown).evaluateAll(doc);
     expect(doc.lines[0].resultEvidence?.accuracy, ResultAccuracy.symbolic);
-    expect(doc.lines[1].cachedResult, '3/10');
+    expect(doc.lines[1].cachedResult, '0.3');
     expect(doc.lines[1].resultEvidence?.accuracy, ResultAccuracy.exact);
   });
 
