@@ -113,7 +113,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
   final LatexController _latexController = LatexController();
   final FocusNode _calculatorFocusNode = FocusNode(); // Dedicated focus node
 
-  String _resultPreview = '';
+  // A notifier, not screen state: the preview updates after every pause in
+  // typing, and a screen-wide setState rebuilt the history list and keypad
+  // on each keystroke.
+  final ValueNotifier<String> _resultPreview = ValueNotifier('');
   ResultEvidence? _resultEvidence;
   bool _justCalculated = false;
   Completer<void>? _calculationPending;
@@ -214,6 +217,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
 
   @override
   void dispose() {
+    _resultPreview.dispose();
     appRouteObserver.unsubscribe(this);
     _appState.removeListener(_consumePendingInsert);
     nativeBridgeStatusListenable.removeListener(_onBridgeStatusChanged);
@@ -561,9 +565,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       final preview = await _computeLivePreviewAsync();
       // Drop a preview for text that has since been edited.
       if (mounted && revision == _inputRevision) {
-        setState(() {
-          _resultPreview = preview;
-        });
+        _resultPreview.value = preview;
       }
     });
   }
@@ -1192,7 +1194,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
       _scheduleLivePreview();
       return;
     }
-    if (clearPreview) _resultPreview = '';
+    if (clearPreview) _resultPreview.value = '';
     if (justCalculated) _justCalculated = true;
     _latexController.clear();
   }
@@ -3222,18 +3224,21 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   // Wide layouts keep the toolbar left of the field; phone
                   // widths stack the field full-width above the toolbar so long
                   // numbers have room.
-                  CalculatorInputBar(
-                    controller: _latexController,
-                    onResetFocus: _resetFocus,
-                    onFieldTap: _calculatorFocusNode.requestFocus,
-                    onEvaluate: () => _onButtonPressed('EXE'),
-                    onTextSubmitted: () {
-                      _traceInput('screen-text-submitted');
-                      if (_latexController.text.isNotEmpty) {
-                        _calculate(_latexController.text);
-                      }
-                    },
-                    resultPreview: _resultPreview,
+                  ValueListenableBuilder<String>(
+                    valueListenable: _resultPreview,
+                    builder: (context, resultPreview, _) => CalculatorInputBar(
+                      controller: _latexController,
+                      onResetFocus: _resetFocus,
+                      onFieldTap: _calculatorFocusNode.requestFocus,
+                      onEvaluate: () => _onButtonPressed('EXE'),
+                      onTextSubmitted: () {
+                        _traceInput('screen-text-submitted');
+                        if (_latexController.text.isNotEmpty) {
+                          _calculate(_latexController.text);
+                        }
+                      },
+                      resultPreview: resultPreview,
+                    ),
                   ),
 
                   // Keypad - Use the existing CalculatorKeypad widget

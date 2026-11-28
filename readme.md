@@ -15,7 +15,7 @@ constants, statistics, plotting and OCR all execute locally.
 **[TestFlight](https://testflight.apple.com/join/E6HdVhTx)**
 
 Current version: <!-- AUTO:app_version -->1.2.2<!-- /AUTO:app_version -->;
-`pubspec.yaml` carries build <!-- AUTO:build_number -->30<!-- /AUTO:build_number -->.
+`pubspec.yaml` carries build <!-- AUTO:build_number -->31<!-- /AUTO:build_number -->.
 Latest release tag: <!-- AUTO:latest_tag -->v1.2.0<!-- /AUTO:latest_tag -->.
 The App Store binary can trail the tag by a build number when it is rebuilt for
 a release-blocking fix — see [HISTORY.md](HISTORY.md).
@@ -260,7 +260,7 @@ Generated from `pubspec.yaml` and `tool/dependency_lock.json` by
 
 | Component | Pin |
 |---|---|
-| CrispMath | <!-- AUTO:app_version_build -->1.2.2+30<!-- /AUTO:app_version_build --> |
+| CrispMath | <!-- AUTO:app_version_build -->1.2.2+31<!-- /AUTO:app_version_build --> |
 | Latest release tag | <!-- AUTO:latest_tag -->v1.2.0<!-- /AUTO:latest_tag --> |
 | Flutter | <!-- AUTO:flutter_version -->3.44.0<!-- /AUTO:flutter_version --> |
 | CrispEmbed runtime | <!-- AUTO:crispembed_revision -->d28ca2ea43a95934d673d1a54177fdf721614ade<!-- /AUTO:crispembed_revision --> |
