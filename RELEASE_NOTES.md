@@ -4,6 +4,9 @@
   `7.5` instead of `15/2`. Fraction input such as `19/2` still gives an
   exact fraction, and decimal answers that do not terminate are computed
   numerically.
+- Typing in the calculator no longer stalls while the live preview works
+  out a slow expression; integrals, factoring, matrices and other heavy
+  calculations are computed when you press Enter.
 
 # CrispMath 1.2.1
 

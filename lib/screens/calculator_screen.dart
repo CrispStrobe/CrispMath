@@ -506,8 +506,14 @@ class CalculatorScreenState extends State<CalculatorScreen>
       // Assignments / definitions (`x = 3`, `f(x) = …`) only make sense on
       // submit; previewing them printed a misleading parse error.
       if (RegExp(r'(?<![<>=!])=(?!=)').hasMatch(expr)) return "";
-      final result = _engine.evaluate(
-          ExpressionPreprocessingUtils.substituteAns(expr, _appState));
+      final source =
+          ExpressionPreprocessingUtils.substituteAns(expr, _appState);
+      // The preview runs on the UI thread between keystrokes. Work the
+      // submit path would offload (integrate, factor, matrices, long
+      // input, big factorials) would freeze typing here, so it is only
+      // computed on submit.
+      if (EngineService.shouldRunAsync(source)) return "";
+      final result = _engine.evaluate(source);
       // A half-typed expression (`2*`) is normal while typing: show nothing
       // rather than "= Error: …" under the field.
       return result.startsWith('Error') ? "" : result;
@@ -551,8 +557,10 @@ class CalculatorScreenState extends State<CalculatorScreen>
   void _scheduleLivePreview() {
     _livePreviewDebounce?.cancel();
     _livePreviewDebounce = Timer(const Duration(milliseconds: 150), () async {
+      final revision = _inputRevision;
       final preview = await _computeLivePreviewAsync();
-      if (mounted) {
+      // Drop a preview for text that has since been edited.
+      if (mounted && revision == _inputRevision) {
         setState(() {
           _resultPreview = preview;
         });
