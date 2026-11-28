@@ -59,6 +59,8 @@ void main() {
     expect(find.textContaining('HTTP 503'), findsOneWidget);
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
+    expect(find.text('AI-assisted expression'), findsOneWidget);
+    expect(find.text('AI-generated explanation'), findsNothing);
     expect(find.text('Provider responded. Review or edit this expression:'),
         findsOneWidget);
     await tester.enterText(find.byType(TextField).last, '3+3');

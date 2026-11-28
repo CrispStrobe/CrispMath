@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import '../localization/app_localizations.dart';
 
 import '../engine/app_state.dart';
+import '../engine/ai_output_attribution.dart';
+import 'ai_content_notice.dart';
 import '../engine/step_engine.dart';
 import '../services/crisp_assist_service_stub.dart'
     if (dart.library.io) '../services/crisp_assist_service.dart';
@@ -138,6 +140,9 @@ class _CrispAssistExplainDialogState extends State<_CrispAssistExplainDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              AiContentNotice(kind: AiOutputKind.generatedText,
+                  attribution: _service.lastAttribution),
+              const SizedBox(height: 12),
               Text(
                 '${widget.expression} = ${widget.result}',
                 style: TextStyle(
@@ -177,6 +182,10 @@ class _CrispAssistExplainDialogState extends State<_CrispAssistExplainDialog> {
         ),
       ),
       actions: [
+        if (_buffer.isNotEmpty && _service.lastAttribution != null)
+          AiOutputCopyButton(content: _buffer.toString(),
+            attribution: _service.lastAttribution!,
+            complete: _done && _service.lastResponseComplete && _error == null && !_cancel.cancelled),
         if (!_done)
           TextButton(
             onPressed: () {
@@ -280,6 +289,9 @@ class _CrispAssistNarrateDialogState extends State<_CrispAssistNarrateDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              AiContentNotice(kind: AiOutputKind.generatedText,
+                  attribution: _service.lastAttribution),
+              const SizedBox(height: 12),
               if (_error != null)
                 Text(_error!, style: TextStyle(color: cs.error))
               else if (!_done)
@@ -299,6 +311,9 @@ class _CrispAssistNarrateDialogState extends State<_CrispAssistNarrateDialog> {
         ),
       ),
       actions: [
+        if (_content.isNotEmpty && _service.lastAttribution != null)
+          AiOutputCopyButton(content: _content,
+            attribution: _service.lastAttribution!, complete: _done && _service.lastResponseComplete && _error == null),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(AppLocalizations.of(context).dialogClose),

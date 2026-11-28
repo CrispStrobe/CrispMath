@@ -62,6 +62,7 @@ void main() {
               expect(body['model'], 'configured-model');
               return http.Response(
                   jsonEncode({
+                    'model': 'served-model',
                     'choices': [
                       {
                         'message': {
@@ -76,6 +77,9 @@ void main() {
             }));
     expect(await service.processMathNLP('integrate x squared'),
         'integrate(x^2,x)');
+    expect(service.lastAttribution!.origin, 'ai_assisted_expression');
+    expect(service.lastAttribution!.requestedModel, 'configured-model');
+    expect(service.lastAttribution!.responseModel, 'served-model');
     expect(
         await service.processMathNLP('differentiate sine'), 'diff(sin(x),x)');
     expect(requests[0]['messages'].last['content'], 'integrate x squared');

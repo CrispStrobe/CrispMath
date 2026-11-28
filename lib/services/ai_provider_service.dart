@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../engine/app_state.dart';
+import '../engine/ai_output_attribution.dart';
 import 'ai_service_interface.dart';
 
 class AiProviderConfig {
@@ -47,6 +48,7 @@ class ProviderAiService implements AiService {
   final AiProviderConfig Function() config;
   final http.Client Function() clientFactory;
   void Function()? _cancelActive;
+  AiOutputAttribution? lastAttribution;
   ProviderAiService(
       {AiProviderConfig Function()? config,
       http.Client Function()? clientFactory})
@@ -65,6 +67,7 @@ class ProviderAiService implements AiService {
   void cancel() => _cancelActive?.call();
   @override
   Future<String> processMathNLP(String text) async {
+    lastAttribution = null;
     final settings = config();
     if (!settings.configured) {
       throw StateError(
@@ -154,6 +157,14 @@ class ProviderAiService implements AiService {
                   .hasMatch(expression))) {
         throw AiClarificationRequired(
             expression.replaceFirst(RegExp(r'^CLARIFY:\s*'), ''));
+      }
+      if (identical(_cancelActive, cancelThis) && !cancelled.isCompleted) {
+        lastAttribution = AiOutputAttribution.fromResponse(
+          kind: AiOutputKind.assistedExpression,
+          endpoint: settings.endpoint,
+          requestedModel: settings.model,
+          responseModel: decoded['model'],
+        );
       }
       return expression;
     }

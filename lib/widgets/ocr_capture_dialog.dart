@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../engine/ocr_provider.dart';
+import 'ai_content_notice.dart';
 import '../localization/app_localizations.dart';
 
 /// Shows the OCR result for review. Returns the (possibly edited)
@@ -89,6 +90,12 @@ class _OcrCaptureDialogState extends State<_OcrCaptureDialog> {
               ],
             ),
             const SizedBox(height: 12),
+
+            if (widget.result.attribution != null) ...[
+              AiContentNotice(kind: widget.result.attribution!.kind,
+                  attribution: widget.result.attribution),
+              const SizedBox(height: 12),
+            ],
 
             // Editable expression
             TextField(
