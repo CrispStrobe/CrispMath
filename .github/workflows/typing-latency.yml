@@ -13,6 +13,10 @@ on:
         description: 'Feature validation run whose build is the candidate'
         type: string
         required: true
+      third_run_id:
+        description: 'Optional third Feature validation run to compare'
+        type: string
+        default: ''
       cpu:
         description: 'CPU throttling rate'
         type: string
@@ -37,6 +41,9 @@ jobs:
         run: |
           gh run download "${{ inputs.before_run_id }}" -n feature-web -D web-before
           gh run download "${{ inputs.after_run_id }}" -n feature-web -D web-after
+          if [ -n "${{ inputs.third_run_id }}" ]; then
+            gh run download "${{ inputs.third_run_id }}" -n feature-web -D web-third
+          fi
       - name: Install browser test tools
         run: |
           python -m pip install -r tool/browser-requirements.txt
@@ -45,7 +52,10 @@ jobs:
         run: |
           python -m http.server 8771 --bind 127.0.0.1 --directory web-before > /tmp/before.log 2>&1 &
           python -m http.server 8772 --bind 127.0.0.1 --directory web-after > /tmp/after.log 2>&1 &
-          for p in 8771 8772; do
+          if [ -d web-third ]; then
+            python -m http.server 8774 --bind 127.0.0.1 --directory web-third > /tmp/third.log 2>&1 &
+          fi
+          for p in 8771 8772 $([ -d web-third ] && echo 8774); do
             curl --fail --silent --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:$p/ > /dev/null
           done
       - name: Measure
@@ -55,6 +65,7 @@ jobs:
             --cpu "${{ inputs.cpu }}" \
             --target before=http://127.0.0.1:8771/ \
             --target after=http://127.0.0.1:8772/ \
+            $([ -d ../web-third ] && echo --target third=http://127.0.0.1:8774/) \
             --output ../browser-results/typing-latency.json | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
