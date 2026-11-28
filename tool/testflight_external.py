@@ -7,11 +7,10 @@ from urllib.parse import urlencode
 
 from testflight_internal import AppleApi, matching_build
 
-TEST_NOTES = ('Please test worksheet calculations: a=3, f(t)=t^2+a, f(4) should give 19. '
-              'Change a and recalculate, link a graph, preview/export results, save and restore '
-              'a checkpoint, and import a worksheet through Files. Test formula photo import '
-              'and camera permission prompts. Handwriting transcription is experimental; '
-              'review and correct recognized formulas before inserting them.')
+TEST_NOTES = ('Please test typing in the calculator: long expressions, integrate(...), '
+              'factor(...) and matrices should no longer make the input lag. Decimal input '
+              'is answered in decimal (9.5-2 gives 7.5). AI explanations are labelled as '
+              'generated. Also test worksheet calculations, graphs and formula photo import.')
 
 
 ENGLISH_BETA_DESCRIPTION = (
@@ -33,7 +32,8 @@ def update_english_description(api, app, evidence):
         api.request('/v1/betaAppLocalizations/' + before['id'], {'data': {
             'type': 'betaAppLocalizations', 'id': before['id'],
             'attributes': {'description': ENGLISH_BETA_DESCRIPTION}}}, method='PATCH')
-    verified = inspect(api, app, evidence['build'], evidence['version'])
+    verified = inspect(api, app, evidence['build'], evidence['version'],
+                       evidence.get('platform', 'IOS'))
     if verified['buildId'] != evidence['buildId']:
         raise ValueError('Verified beta build changed during metadata update')
     expected = [dict(loc, description=ENGLISH_BETA_DESCRIPTION)
@@ -89,7 +89,8 @@ def submit(api, app, evidence):
     path = '/v1/betaGroups/' + group['id']
     if not any(b['id'] == evidence['buildId'] for b in api.request(path + '/builds?limit=200')['data']):
         api.request(path + '/relationships/builds', {'data': [{'type': 'builds', 'id': evidence['buildId']}]})
-    verified = inspect(api, app, evidence['build'], evidence['version'])
+    verified = inspect(api, app, evidence['build'], evidence['version'],
+                       evidence.get('platform', 'IOS'))
     verified['externalGroup'] = group['attributes']['name'] if 'attributes' in group else group['name']
     verified['externalGroupAssigned'] = any(b['id'] == evidence['buildId'] for b in api.request(path + '/builds?limit=200')['data'])
     verified['betaReviewSubmitted'] = bool(verified['submissions'])
@@ -97,14 +98,15 @@ def submit(api, app, evidence):
         raise ValueError('External assignment or beta submission was not confirmed')
     return verified
 
-def inspect(api, app, number, version):
+def inspect(api, app, number, version, platform='IOS'):
     if api.request(f'/v1/apps/{app}')['data']['attributes']['bundleId'] != 'com.crispstrobe.crispmath':
         raise ValueError('App ID does not identify CrispMath')
     query = urlencode({'filter[app]': app, 'filter[version]': number, 'limit': '200'})
     matches = [b for b in api.request('/v1/builds?' + query)['data']
-               if matching_build(b, api.request(f'/v1/builds/{b["id"]}/preReleaseVersion')['data'], number, version)]
+               if matching_build(b, api.request(f'/v1/builds/{b["id"]}/preReleaseVersion')['data'],
+                                 number, version, platform)]
     if len(matches) != 1:
-        raise ValueError('Expected exactly one matching iOS build')
+        raise ValueError(f'Expected exactly one matching {platform} build')
     build = matches[0]
     if build['attributes']['processingState'] != 'VALID' or build['attributes'].get('expired'):
         raise ValueError('Build is not valid and current')
@@ -116,7 +118,7 @@ def inspect(api, app, number, version):
     build_localizations = api.request(f'/v1/builds/{bid}/betaBuildLocalizations?limit=200')['data']
     submissions = api.request('/v1/betaAppReviewSubmissions?' + urlencode({'filter[build]': bid}))['data']
     return {'source': os.environ.get('BUILD_SOURCE'), 'verificationSource': os.environ.get('GITHUB_SHA'),
-            'version': version, 'build': number, 'buildId': bid,
+            'version': version, 'build': number, 'buildId': bid, 'platform': platform,
             'processingState': 'VALID', 'buildAudienceType': build['attributes'].get('buildAudienceType'),
             'betaDetail': detail['attributes'],
             'reviewFieldsPresent': {k: bool(v) for k, v in review['attributes'].items()},
@@ -132,12 +134,13 @@ if __name__ == '__main__':
     parser.add_argument('--key-file', type=Path, required=True)
     parser.add_argument('--version', required=True)
     parser.add_argument('--build', required=True)
+    parser.add_argument('--platform', default='IOS', choices=['IOS', 'MAC_OS'])
     action = parser.add_mutually_exclusive_group()
     action.add_argument('--submit', action='store_true')
     action.add_argument('--update-english-description', action='store_true')
     args = parser.parse_args()
     api = AppleApi(args.key_file)
-    evidence = inspect(api, os.environ['ASC_APP_ID'], args.build, args.version)
+    evidence = inspect(api, os.environ['ASC_APP_ID'], args.build, args.version, args.platform)
     output = Path('external-testflight-evidence.json')
     output.write_text(json.dumps(evidence, indent=2) + '\n')
     if args.update_english_description:

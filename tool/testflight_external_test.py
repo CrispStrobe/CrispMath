@@ -36,6 +36,13 @@ class ExternalInspectionTests(unittest.TestCase):
         self.assertNotIn('private@example.com', str(result))
         self.assertEqual(api.writes, [])
 
+    def test_platform_selects_only_matching_builds(self):
+        api = InspectionFixture()
+        self.assertEqual(inspect(api, 'app', '13', '1.2.0', 'IOS')['platform'], 'IOS')
+        with self.assertRaises(ValueError):
+            inspect(api, 'app', '13', '1.2.0', 'MAC_OS')
+        self.assertEqual(api.writes, [])
+
     def test_wrong_app_or_invalid_build_aborts(self):
         for api in [InspectionFixture(bundle='other.app'), InspectionFixture(state='INVALID')]:
             with self.assertRaises(ValueError):
@@ -138,7 +145,7 @@ class BetaDescriptionTests(unittest.TestCase):
         api = BetaDescriptionFixture(evidence)
         with patch('testflight_external.inspect', side_effect=lambda *args: deepcopy(api.evidence)) as verify:
             result = update_english_description(api, 'app', evidence)
-        verify.assert_called_once_with(api, 'app', '15', '1.2.0')
+        verify.assert_called_once_with(api, 'app', '15', '1.2.0', 'IOS')
         self.assertEqual(api.writes, [('/v1/betaAppLocalizations/english', {'data': {
             'type': 'betaAppLocalizations', 'id': 'english',
             'attributes': {'description': ENGLISH_BETA_DESCRIPTION}}}, 'PATCH')])
