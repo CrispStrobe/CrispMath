@@ -62,3 +62,53 @@ jobs:
           name: typing-latency
           path: browser-results
           retention-days: 14
+
+  profile:
+    # Profile-mode web build keeps Dart function names in the CPU profile.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: d28ca2ea43a95934d673d1a54177fdf721614ade
+          path: .ci/CrispEmbed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            crispembed:
+              path: .ci/CrispEmbed/flutter/crispembed
+          YAML
+          flutter pub get
+      - name: Build profile web
+        run: tool/build_web.sh --profile --no-wasm-dry-run
+      - name: Install browser test tools
+        run: |
+          python -m pip install -r tool/browser-requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Serve
+        run: |
+          python -m http.server 8773 --bind 127.0.0.1 --directory build/web > /tmp/profile.log 2>&1 &
+          curl --fail --silent --noproxy '*' --retry 30 --retry-all-errors --retry-delay 1 --max-time 2 http://127.0.0.1:8773/ > /dev/null
+      - name: Profile typing
+        working-directory: tool
+        run: |
+          python check_calculator_typing_latency_browser.py --cpu-profile \
+            --cpu "${{ inputs.cpu }}" --target profile=http://127.0.0.1:8773/ \
+            --output ../browser-results/typing-profile.json | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: typing-profile
+          path: browser-results
+          retention-days: 14
