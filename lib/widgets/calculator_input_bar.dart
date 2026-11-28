@@ -262,7 +262,12 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
                   child: SingleChildScrollView(
                     reverse: true,
                     scrollDirection: Axis.horizontal,
-                    child: LatexInputField(controller: controller),
+                    // Its own layer: the cursor blinks twice a second, and
+                    // without a boundary each blink repaints the whole
+                    // calculator screen (history and keypad) with it.
+                    child: RepaintBoundary(
+                      child: LatexInputField(controller: controller),
+                    ),
                   ),
                 ),
         );

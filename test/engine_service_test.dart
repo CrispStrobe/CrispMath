@@ -53,6 +53,21 @@ void main() {
       expect(EngineService.shouldRunAsync('fib(200)'), isTrue);
     });
 
+    test('returns true for powers with a huge result', () {
+      expect(EngineService.shouldRunAsync('2^99999'), isTrue);
+      expect(EngineService.shouldRunAsync('2^(123456)'), isTrue);
+      expect(EngineService.shouldRunAsync('9^9^9'), isTrue);
+      expect(EngineService.shouldRunAsync('2**100000'), isTrue);
+      expect(EngineService.shouldRunAsync('3^{99999}'), isTrue);
+    });
+
+    test('returns false for ordinary powers', () {
+      expect(EngineService.shouldRunAsync('2^10'), isFalse);
+      expect(EngineService.shouldRunAsync('x^2+3^4'), isFalse);
+      expect(EngineService.shouldRunAsync('(x+1)^2*2'), isFalse);
+      expect(EngineService.shouldRunAsync('1.5^1234'), isFalse);
+    });
+
     test('returns false for small factorial / fibonacci', () {
       expect(EngineService.shouldRunAsync('5!'), isFalse);
       expect(EngineService.shouldRunAsync('fib(10)'), isFalse);

@@ -40,6 +40,9 @@ class EngineService {
   /// work even with a persistent worker). Anything with an integral,
   /// factor, simplify, or matrix shape, or a long expression, returns
   /// true.
+  static final _hugePower =
+      RegExp(r'(?:\^|\*\*)\s*[({]?\s*(?:\d{5,}|\d+\s*[)}]?\s*(?:\^|\*\*))');
+
   static bool shouldRunAsync(String expression) {
     if (expression.length > 80) return true;
     final slowFunctions = [
@@ -63,6 +66,11 @@ class EngineService {
       final n = int.tryParse(factMatch.group(1)!) ?? 0;
       if (n > 50) return true;
     }
+    // Powers with a huge result: a 5+ digit exponent (`2^99999`) or a
+    // tower (`9^9^9`). The input is short, but computing and printing the
+    // result can take seconds, so the live preview must not run it on the
+    // UI thread while the user types.
+    if (_hugePower.hasMatch(expression)) return true;
     final fibMatch = RegExp(r'fib(?:onacci)?\((\d+)\)').firstMatch(expression);
     if (fibMatch != null) {
       final n = int.tryParse(fibMatch.group(1)!) ?? 0;

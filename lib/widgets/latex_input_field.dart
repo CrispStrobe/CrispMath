@@ -112,12 +112,15 @@ class _LatexInputFieldState extends State<LatexInputField> {
           children: [
             if (beforeCursor.isNotEmpty)
               _math(_before, beforeCursor, color, (c) => _before = c),
-            ValueListenableBuilder<bool>(
-              valueListenable: _showCursor,
-              builder: (context, visible, _) => Container(
-                width: 2,
-                height: 50,
-                color: visible ? color : Colors.transparent,
+            // A blink repaints only this 2-pixel layer, not the formula.
+            RepaintBoundary(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _showCursor,
+                builder: (context, visible, _) => Container(
+                  width: 2,
+                  height: 50,
+                  color: visible ? color : Colors.transparent,
+                ),
               ),
             ),
             if (afterCursor.isNotEmpty)
