@@ -7,6 +7,10 @@
 - Typing in the calculator no longer stalls while the live preview works
   out a slow expression; integrals, factoring, matrices and other heavy
   calculations are computed when you press Enter.
+- The math input field redraws only what changed while you type, so long
+  expressions no longer get slower to edit as they grow.
+- AI-generated explanations are labelled as such, and copying them keeps
+  which provider produced them.
 
 # CrispMath 1.2.1
 
