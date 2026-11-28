@@ -18,36 +18,75 @@ class LatexInputField extends StatefulWidget {
 
 class _LatexInputFieldState extends State<LatexInputField> {
   Timer? _cursorTimer;
-  bool _showCursor = true;
+  final ValueNotifier<bool> _showCursor = ValueNotifier<bool>(true);
+
+  // Typesetting a long expression (LaTeX conversion, Math.tex parse and
+  // layout) is the expensive part of this field. The formula halves are
+  // cached by text and color, so a rebuild that does not change them (the
+  // cursor blink, an unrelated parent rebuild) reuses the same widgets and
+  // Flutter skips their subtrees.
+  _CachedMath? _before;
+  _CachedMath? _after;
 
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onControllerChanged);
-    _cursorTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (mounted) setState(() => _showCursor = !_showCursor);
+    _startBlink();
+  }
+
+  @override
+  void didUpdateWidget(LatexInputField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  void _startBlink() {
+    _cursorTimer?.cancel();
+    _showCursor.value = true;
+    _cursorTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      _showCursor.value = !_showCursor.value;
     });
   }
 
   void _onControllerChanged() {
-    if (mounted) {
-      setState(() => _showCursor = true);
-      // Force a rebuild to ensure LaTeX is re-rendered after dialog insertion
-      Future.microtask(() {
-        if (mounted) setState(() {});
-      });
-    }
+    if (!mounted) return;
+    // Keep the cursor solid while typing; only the cursor rebuilds for that.
+    _startBlink();
+    setState(() {});
   }
 
   @override
   void dispose() {
     _cursorTimer?.cancel();
     widget.controller.removeListener(_onControllerChanged);
+    _showCursor.dispose();
     super.dispose();
   }
 
-  String _toLatex(String text) {
-    return MathDisplayUtils.toHistoryDisplayLatex(text);
+  Widget _math(_CachedMath? cached, String text, Color color,
+      void Function(_CachedMath) store) {
+    if (cached != null && cached.text == text && cached.color == color) {
+      return cached.widget;
+    }
+    final built = Math.tex(
+      MathDisplayUtils.toHistoryDisplayLatex(text),
+      textStyle: TextStyle(fontSize: 40, color: color, height: 1.3),
+      mathStyle: MathStyle.display,
+      onErrorFallback: (err) {
+        // If LaTeX rendering fails, show plain text
+        return Text(
+          text,
+          style:
+              TextStyle(fontSize: 40, color: Colors.red.shade300, height: 1.3),
+        );
+      },
+    );
+    store(_CachedMath(text, color, built));
+    return built;
   }
 
   @override
@@ -55,6 +94,7 @@ class _LatexInputFieldState extends State<LatexInputField> {
     final selection = widget.controller.selection;
     final text = widget.controller.text;
     final cursorPosition = selection.baseOffset.clamp(0, text.length);
+    final color = Theme.of(context).colorScheme.onSurface;
 
     // Split text at cursor position
     final beforeCursor = text.substring(0, cursorPosition);
@@ -70,57 +110,28 @@ class _LatexInputFieldState extends State<LatexInputField> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Text before cursor
             if (beforeCursor.isNotEmpty)
-              Math.tex(
-                _toLatex(beforeCursor),
-                textStyle: TextStyle(
-                  fontSize: 40,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  height: 1.3,
-                ),
-                mathStyle: MathStyle.display,
-                onErrorFallback: (err) {
-                  // If LaTeX rendering fails, show plain text
-                  return Text(
-                    beforeCursor,
-                    style: TextStyle(
-                        fontSize: 40, color: Colors.red.shade300, height: 1.3),
-                  );
-                },
+              _math(_before, beforeCursor, color, (c) => _before = c),
+            ValueListenableBuilder<bool>(
+              valueListenable: _showCursor,
+              builder: (context, visible, _) => Container(
+                width: 2,
+                height: 50,
+                color: visible ? color : Colors.transparent,
               ),
-
-            // Cursor
-            Container(
-              width: 2,
-              height: 50,
-              color: _showCursor
-                  ? Theme.of(context).colorScheme.onSurface
-                  : Colors.transparent,
             ),
-
-            // Text after cursor
             if (afterCursor.isNotEmpty)
-              Math.tex(
-                _toLatex(afterCursor),
-                textStyle: TextStyle(
-                  fontSize: 40,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  height: 1.3,
-                ),
-                mathStyle: MathStyle.display,
-                onErrorFallback: (err) {
-                  // If LaTeX rendering fails, show plain text
-                  return Text(
-                    afterCursor,
-                    style: TextStyle(
-                        fontSize: 40, color: Colors.red.shade300, height: 1.3),
-                  );
-                },
-              ),
+              _math(_after, afterCursor, color, (c) => _after = c),
           ],
         ),
       ),
     );
   }
+}
+
+class _CachedMath {
+  const _CachedMath(this.text, this.color, this.widget);
+  final String text;
+  final Color color;
+  final Widget widget;
 }
