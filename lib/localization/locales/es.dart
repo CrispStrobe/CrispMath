@@ -44,6 +44,20 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get menuFile => 'Archivo';
   @override
+  String get menuEdit => 'Edición';
+  @override
+  String get menuUndo => 'Deshacer';
+  @override
+  String get menuRedo => 'Rehacer';
+  @override
+  String get menuCut => 'Cortar';
+  @override
+  String get menuCopy => 'Copiar';
+  @override
+  String get menuPaste => 'Pegar';
+  @override
+  String get menuSelectAll => 'Seleccionar todo';
+  @override
   String get menuView => 'Visualización';
   @override
   String get menuTools => 'Herramientas';
@@ -896,6 +910,12 @@ class EsLocalizations implements AppLocalizations {
   @override
   String get settingsTextScale => 'Tamaño del texto';
 
+  @override
+  String get settingsShowExactFraction =>
+      'Mostrar también fracciones exactas';
+  @override
+  String get settingsShowExactFractionSubtitle =>
+      'Los resultados se muestran en decimal (19/2 = 9.5). Mostrar además la fracción exacta debajo.';
   @override
   String get settingsExactIntegerMode => 'Modo entero exacto';
   @override

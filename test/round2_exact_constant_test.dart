@@ -29,10 +29,18 @@ void main() {
   });
   test('invalid domains and excessive work decline before powers allocate', () {
     for (final source in [
-      '1/0', '0^-1', '3%0', '(1/2)%3', '2^(1/2)',
-      '2^100000000', '(2^1024)^1024',
+      '1/0',
+      '0^-1',
+      '3%0',
+      '(1/2)%3',
+      '2^(1/2)',
+      '2^100000000',
+      '(2^1024)^1024',
       '${List.filled(40, '(').join()}1${List.filled(40, ')').join()}',
-      'sin(1)', '1.2%1', 'x+1', '1 trailing',
+      'sin(1)',
+      '1.2%1',
+      'x+1',
+      '1 trailing',
     ]) {
       expect(ExactConstantEvaluator.evaluate(source), isNull, reason: source);
     }
@@ -49,15 +57,52 @@ void main() {
       '0.1*0.1': '0.01',
       '-0.05/4': '-0.0125',
       '9.5-1.5': '8',
-      '19/2': '19/2',
+      '19/2': '9.5',
       '1e-3*3': '0.003',
+      '4/2': '2',
     }.entries) {
       expect(calc(entry.key), entry.value, reason: entry.key);
     }
-    // Too many places to print: the exact fraction is kept.
-    expect(calc('sqrt(1e-320)'), '1/1${'0' * 160}');
-    // Non-terminating decimal answers are left to the floating-point CAS.
-    expect(calc('0.1/3'), isNull);
     expect(terminatingDecimal(Rational(BigInt.one, BigInt.from(3))), isNull);
+  });
+
+  test('fraction results are answered in decimal, exact form kept', () {
+    ExactConstantResult? calc(String s) =>
+        ExactConstantEvaluator.evaluateDetailed(s, decimalInput: true);
+    final long = calc('1+2*3-4/5+6*7-8+9*10-11/12+13*14-15+16*17-18/19+20*21')!;
+    expect(long.text, '987.3359649122807');
+    expect(long.exactFraction, '1125563/1140');
+    expect(long.approximate, isTrue);
+    expect(calc('1/3')!.text, '0.33333333333333333');
+    expect(calc('2/3')!.text, '0.66666666666666667');
+    expect(calc('-1/7')!.text, '-0.14285714285714286');
+    expect(calc('0.1/3')!.text, '0.033333333333333333');
+    final half = calc('19/2')!;
+    expect(half.text, '9.5');
+    expect(half.exactFraction, '19/2');
+    expect(half.approximate, isFalse);
+    // Integers stay exact and carry no fraction.
+    expect(calc('6/3')!.exactFraction, isNull);
+    expect(calc('2^127')!.text, '170141183460469231731687303715884105728');
+    // Too many places to print exactly: rounded, scientific notation.
+    expect(calc('sqrt(1e-320)')!.text, '1e-160');
+    // Internal callers keep the exact text.
+    expect(ExactConstantEvaluator.evaluate('19/2'), '19/2');
+  });
+
+  test('approximateDecimal rounds correctly in both notations', () {
+    Rational r(int n, int d) => Rational(BigInt.from(n), BigInt.from(d));
+    expect(approximateDecimal(r(1, 3), digits: 5), '0.33333');
+    expect(approximateDecimal(r(2, 3), digits: 5), '0.66667');
+    expect(approximateDecimal(r(999995, 1000000), digits: 5), '1');
+    expect(approximateDecimal(r(123456789, 1), digits: 4), '123500000');
+    expect(approximateDecimal(r(1, 30000000), digits: 4), '3.333e-8');
+    expect(approximateDecimal(r(1, 3000000), digits: 4), '0.0000003333');
+    expect(
+        approximateDecimal(Rational(BigInt.from(10).pow(22), BigInt.from(3)),
+            digits: 4),
+        '3.333e+21');
+    expect(approximateDecimal(r(-5, 4), digits: 17), '-1.25');
+    expect(approximateDecimal(r(0, 1)), '0');
   });
 }

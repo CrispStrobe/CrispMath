@@ -51,6 +51,7 @@ import '../utils/math_display_utils.dart';
 import '../utils/share_link.dart';
 import '../widgets/handwriting_input_dialog.dart';
 import '../widgets/store_result_dialogs.dart';
+import '../widgets/desktop_menu_bar.dart' show desktopMenuSupported;
 
 // Other imports
 import '../controllers/latex_controller.dart';
@@ -520,7 +521,9 @@ class CalculatorScreenState extends State<CalculatorScreen>
       final result = _engine.evaluate(source);
       // A half-typed expression (`2*`) is normal while typing: show nothing
       // rather than "= Error: …" under the field.
-      return result.startsWith('Error') ? "" : result;
+      // Same display rounding as the history (a fraction's decimal form
+      // carries 17 significant digits for `Ans`, not for display).
+      return result.startsWith('Error') ? "" : _appState.formatNumber(result);
     } catch (_) {
       return "";
     }
@@ -648,6 +651,35 @@ class CalculatorScreenState extends State<CalculatorScreen>
         _onButtonPressed("EXE");
         return true; // Consume the event to prevent tab switching
       }
+    }
+
+    // Clipboard shortcuts. On macOS the Edit menu owns ⌘X/⌘C/⌘V/⌘A and
+    // reaches this field through the Actions below; handling them here as
+    // well would paste twice. Elsewhere (Windows, Linux, iPad keyboards)
+    // this is the only route. A key typed with Cmd/Ctrl (but not AltGr,
+    // which is Ctrl+Alt on Windows) is never inserted as a character.
+    final hw = HardwareKeyboard.instance;
+    if ((hw.isMetaPressed || hw.isControlPressed) && !hw.isAltPressed) {
+      if (event is KeyDownEvent && !desktopMenuSupported) {
+        final key = event.logicalKey;
+        if (key == LogicalKeyboardKey.keyV) {
+          _latexController.pasteFromClipboard();
+          return true;
+        }
+        if (key == LogicalKeyboardKey.keyC) {
+          _latexController.copyToClipboard();
+          return true;
+        }
+        if (key == LogicalKeyboardKey.keyX) {
+          _latexController.cutToClipboard();
+          return true;
+        }
+        if (key == LogicalKeyboardKey.keyA) {
+          _latexController.selectAll();
+          return true;
+        }
+      }
+      return false;
     }
 
     return KeyboardInputHandler.handleKeyboardInput(
@@ -2809,7 +2841,25 @@ class CalculatorScreenState extends State<CalculatorScreen>
       },
       child: Stack(
         children: [
-          KeyboardListener(
+          // Edit-menu commands (and the platform's text shortcuts) arrive
+          // as intents at the focused widget; these route them into the
+          // math input, which is not a text field.
+          Actions(
+            actions: <Type, Action<Intent>>{
+              PasteTextIntent: CallbackAction<PasteTextIntent>(
+                  onInvoke: (_) => _latexController.pasteFromClipboard()),
+              CopySelectionTextIntent:
+                  CallbackAction<CopySelectionTextIntent>(
+                      onInvoke: (intent) => intent.collapseSelection
+                          ? _latexController.cutToClipboard()
+                          : _latexController.copyToClipboard()),
+              SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(
+                  onInvoke: (_) {
+                _latexController.selectAll();
+                return null;
+              }),
+            },
+            child: KeyboardListener(
             focusNode: _calculatorFocusNode,
             // autofocus is off on purpose: MainScreen calls requestFocus() when this
             // becomes the active pane. Two KeyboardListener(autofocus: true) instances
@@ -3117,6 +3167,12 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                             : (trimmedRaw == 'false'
                                                 ? false
                                                 : null);
+                                        // Optional exact fraction under a
+                                        // decimal result (Settings).
+                                        final exactForm = !isError &&
+                                                _appState.showExactFraction
+                                            ? entry.resultEvidence?.exactForm
+                                            : null;
                                         final shownResult = isBigInt
                                             ? ExactInteger.abbreviate(
                                                 entry.result)
@@ -3179,7 +3235,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                                       context, entry),
                                               excludeSemantics: true,
                                               label:
-                                                  '${entry.expression}\n= ${isError ? display : shownResult}',
+                                                  '${entry.expression}\n= ${isError ? display : shownResult}${exactForm == null ? '' : '\n= $exactForm'}',
                                               child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.end,
@@ -3199,6 +3255,16 @@ class CalculatorScreenState extends State<CalculatorScreen>
                                                             child: resultBody,
                                                           )
                                                         : resultBody,
+                                                  if (exactForm != null)
+                                                    Text(
+                                                      '= $exactForm',
+                                                      style: TextStyle(
+                                                          fontSize: 16,
+                                                          color:
+                                                              Colors.grey[500]),
+                                                      textAlign:
+                                                          TextAlign.right,
+                                                    ),
                                                 ],
                                               ),
                                             ),
@@ -3259,6 +3325,7 @@ class CalculatorScreenState extends State<CalculatorScreen>
                   ),
                 ],
               ),
+            ),
             ),
           ),
           if (_isDragging)

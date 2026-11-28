@@ -3,6 +3,7 @@
 // This version is "structure-aware" for better editing of math expressions.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class LatexController extends ChangeNotifier {
   String _text = '';
@@ -120,6 +121,52 @@ class LatexController extends ChangeNotifier {
   int _commandWidthAfter(int offset) {
     final m = _commandAtStart.firstMatch(_text.substring(offset));
     return m == null ? 1 : m.end;
+  }
+
+  /// The selected text, or the whole input when nothing is selected (the
+  /// math field shows a cursor but no selection highlight).
+  String get _clipboardText {
+    if (_selection.isValid && !_selection.isCollapsed) {
+      final start = _selection.start.clamp(0, _text.length);
+      final end = _selection.end.clamp(0, _text.length);
+      return _text.substring(start, end);
+    }
+    return _text;
+  }
+
+  Future<void> copyToClipboard() async {
+    final text = _clipboardText;
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+  }
+
+  Future<void> cutToClipboard() async {
+    final text = _clipboardText;
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    if (_selection.isValid && !_selection.isCollapsed) {
+      insert('');
+    } else {
+      clear();
+    }
+  }
+
+  /// Inserts the clipboard text at the cursor (replacing a selection).
+  /// Line breaks become spaces: the input is a single expression.
+  Future<void> pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.replaceAll(RegExp(r'[\r\n]+'), ' ').trim();
+    if (text == null || text.isEmpty) return;
+    if (!_selection.isValid) {
+      _selection = TextSelection.collapsed(offset: _text.length);
+    }
+    insert(text);
+  }
+
+  void selectAll() {
+    if (_text.isEmpty) return;
+    _selection = TextSelection(baseOffset: 0, extentOffset: _text.length);
+    notifyListeners();
   }
 
   /// Moves by [amount] visible units; a LaTeX command counts as one.

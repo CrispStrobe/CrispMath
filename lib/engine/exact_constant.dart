@@ -3,10 +3,20 @@ import 'polynomial.dart';
 /// Exact arithmetic for bounded rational constants, roots and integer rounding.
 /// Returns null outside this grammar so callers can use their normal CAS path.
 class ExactConstantEvaluator {
-  /// With [decimalInput] set, an input containing a decimal literal is
-  /// answered in decimal (`9.5-2` → `7.5`); internal callers that parse the
-  /// `p/q` text keep the default.
-  static String? evaluate(String input, {bool decimalInput = false}) {
+  /// With [decimalInput] set (the calculator path), a result that is not a
+  /// whole number is answered in decimal, like a pocket calculator:
+  /// `9.5-2` → `7.5`, `19/2` → `9.5`, `1/3` → `0.33333333333333333`.
+  /// Terminating results print exactly; others are correctly rounded to
+  /// [approximateDigits] significant digits (display rounds further). Use
+  /// [evaluateDetailed] to also get the exact fraction. Internal callers
+  /// that parse the `p/q` text keep the default.
+  static String? evaluate(String input, {bool decimalInput = false}) =>
+      evaluateDetailed(input, decimalInput: decimalInput)?.text;
+
+  static const approximateDigits = 17;
+
+  static ExactConstantResult? evaluateDetailed(String input,
+      {bool decimalInput = false}) {
     if (input.length > 512 ||
         !RegExp(r'^[\d.\s+*/%^!()\-absqrtfloorceilingE]+$').hasMatch(input)) {
       return null;
@@ -16,16 +26,22 @@ class ExactConstantEvaluator {
       final result = parser.expression();
       parser.whitespace();
       if (parser.position != input.length) return null;
-      // Decimal input asks for a decimal answer: `9.5-2` is `7.5`, not
-      // `15/2`. Terminating results print exactly; a non-terminating one
-      // (`0.1/3`) is left to the CAS, which answers decimal input in
-      // floating point. A terminating result too long to print as a
-      // decimal (`sqrt(1e-320)`) stays an exact fraction.
-      if (decimalInput && parser.sawDecimal && !result.isInteger) {
-        if (!terminates(result)) return null;
-        return terminatingDecimal(result) ?? result.toString();
+      if (!decimalInput || result.isInteger) {
+        return ExactConstantResult(result.toString());
       }
-      return result.toString();
+      final exactText = result.toString();
+      if (terminates(result)) {
+        final decimal = terminatingDecimal(result);
+        if (decimal != null) {
+          return ExactConstantResult(decimal, exactFraction: exactText);
+        }
+      }
+      return ExactConstantResult(
+          approximateDecimal(result, digits: approximateDigits),
+          exactFraction: exactText,
+          // `1e-160` is too long to print in plain notation but has one
+          // significant digit, so its scientific form is still exact.
+          approximate: !_fitsDigits(result, approximateDigits));
     } on _Decline {
       return null;
     } on ArgumentError {
@@ -34,7 +50,85 @@ class ExactConstantEvaluator {
   }
 }
 
-/// Whether [value] has a terminating decimal expansion.
+/// Whether [value] terminates within [digits] significant digits, i.e.
+/// [approximateDecimal] prints it without rounding.
+bool _fitsDigits(Rational value, int digits) {
+  if (!terminates(value)) return false;
+  var den = value.denominator;
+  var places = 0;
+  final ten = BigInt.from(10);
+  while (den != BigInt.one) {
+    // Multiply up to a power of ten: each factor 2 or 5 costs one place.
+    if (den % BigInt.two == BigInt.zero) {
+      den ~/= BigInt.two;
+    } else {
+      den ~/= BigInt.from(5);
+    }
+    places++;
+  }
+  final scaled = (value.numerator.abs() * ten.pow(places)) ~/ value.denominator;
+  final significant = scaled.toString().replaceFirst(RegExp(r'0+$'), '');
+  return significant.length <= digits;
+}
+
+/// A result of [ExactConstantEvaluator.evaluateDetailed]. [exactFraction] is
+/// the exact `p/q` when [text] is its decimal form; [approximate] is true
+/// when that decimal was rounded.
+class ExactConstantResult {
+  const ExactConstantResult(this.text,
+      {this.exactFraction, this.approximate = false});
+  final String text;
+  final String? exactFraction;
+  final bool approximate;
+}
+
+/// [value] correctly rounded (half up) to [digits] significant digits, in
+/// plain notation for magnitudes 1e-7 ≤ |x| < 1e21 and scientific notation
+/// (`1.5e-48`, `2.5e+21`) outside, with trailing zeros removed.
+String approximateDecimal(Rational value, {int digits = 17}) {
+  if (value.numerator == BigInt.zero) return '0';
+  final negative = value.numerator.isNegative;
+  final n = value.numerator.abs();
+  final d = value.denominator;
+  final ten = BigInt.from(10);
+  // e = floor(log10(n / d)).
+  var e = n.toString().length - d.toString().length;
+  bool below(int exp) =>
+      exp >= 0 ? n < d * ten.pow(exp) : n * ten.pow(-exp) < d;
+  if (below(e)) e--;
+  BigInt scaledAt(int exp) {
+    final shift = digits - 1 - exp;
+    final num = shift >= 0 ? n * ten.pow(shift) : n;
+    final den = shift >= 0 ? d : d * ten.pow(-shift);
+    return (num * BigInt.two + den) ~/ (den * BigInt.two);
+  }
+
+  var scaled = scaledAt(e);
+  if (scaled.toString().length > digits) {
+    e++;
+    scaled = scaledAt(e);
+  }
+  final mantissa = scaled.toString();
+  String trim(String s) =>
+      s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+  String text;
+  if (e >= 21 || e < -7) {
+    final frac = trim('0.${mantissa.substring(1)}').substring(1);
+    text = '${mantissa[0]}$frac'
+        'e${e >= 0 ? '+' : '-'}${e.abs()}';
+  } else if (e >= 0) {
+    final whole = e + 1 >= mantissa.length
+        ? mantissa.padRight(e + 1, '0')
+        : mantissa.substring(0, e + 1);
+    final frac = e + 1 >= mantissa.length ? '' : mantissa.substring(e + 1);
+    text = frac.isEmpty ? whole : trim('$whole.$frac');
+  } else {
+    text = trim('0.${'0' * (-e - 1)}$mantissa');
+  }
+  return negative ? '-$text' : text;
+}
+
+/// True when [value] has a finite decimal expansion (denominator 2^a·5^b).
 bool terminates(Rational value) {
   var den = value.denominator;
   for (final p in [BigInt.two, BigInt.from(5)]) {
@@ -224,8 +318,7 @@ class _ConstantParser {
       if (!take('(')) throw _Decline();
       final value = expression();
       if (!take(')') || value.numerator.isNegative) throw _Decline();
-      return checked(Rational(
-          perfectSquareRoot(value.numerator),
+      return checked(Rational(perfectSquareRoot(value.numerator),
           perfectSquareRoot(value.denominator)));
     }
     if (take('abs')) {
@@ -266,7 +359,8 @@ class _ConstantParser {
   Rational factorial(Rational value) {
     // The argument bound applies before converting to int or starting a loop.
     // Each multiplication checks its allocation budget before constructing it.
-    if (!value.isInteger || value.numerator.isNegative ||
+    if (!value.isInteger ||
+        value.numerator.isNegative ||
         value.numerator > BigInt.from(2048)) {
       throw _Decline();
     }

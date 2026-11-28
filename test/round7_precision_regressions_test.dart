@@ -10,13 +10,15 @@ class _NoRoundedNativeEngine extends CalculatorEngine {
 }
 
 void main() {
-  test('scientific literals retain rational values before native conversion', () {
+  test('scientific literals retain rational values before native conversion',
+      () {
     final engine = _NoRoundedNativeEngine();
     final denominator = BigInt.from(10).pow(160);
     for (final entry in {
       '1e308*1e-308': '1',
-      'sqrt(1e-320)': '1/$denominator',
-      'sqrt(4E-320)': '1/${denominator ~/ BigInt.two}',
+      // Shown in decimal; the exact fraction is kept as its exact form.
+      'sqrt(1e-320)': '1e-160',
+      'sqrt(4E-320)': '2e-160',
       '2.5e-2+.75E-1': '0.1',
       '-1.25e+2': '-125',
       '1e+2^2': '10000',
@@ -26,12 +28,21 @@ void main() {
       expect(engine.evaluate(entry.key), entry.value, reason: entry.key);
       expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
     }
+    engine.evaluate('sqrt(1e-320)');
+    expect(engine.lastResultEvidence?.exactForm, '1/$denominator');
   });
 
   test('scientific constant proof declines invalid or excessive inputs', () {
     for (final source in [
-      '1e', '1e+', '1E--3', '1e100000000', '1e-10000',
-      'sqrt(1e-319)', 'sin(1e2)', '1e2+x', '1e2/0',
+      '1e',
+      '1e+',
+      '1E--3',
+      '1e100000000',
+      '1e-10000',
+      'sqrt(1e-319)',
+      'sin(1e2)',
+      '1e2+x',
+      '1e2/0',
     ]) {
       expect(ExactConstantEvaluator.evaluate(source), isNull, reason: source);
     }
@@ -40,8 +51,8 @@ void main() {
   test('matrix FFI cells preserve near singular decimal perturbations', () {
     expect(MatrixEvaluator.canonicalCell('1.0000000000000001'),
         '10000000000000001/10000000000000000');
-    expect(MatrixEvaluator.canonicalCell('9007199254740993'),
-        '9007199254740993');
+    expect(
+        MatrixEvaluator.canonicalCell('9007199254740993'), '9007199254740993');
     expect(MatrixEvaluator.canonicalCell('1e-16'), '1/10000000000000000');
     expect(MatrixEvaluator.canonicalCell(' 2.5E-1 '), '1/4');
     for (final source in ['x', 'sqrt(2)', '1+I', 'sin(t)', '1/0']) {

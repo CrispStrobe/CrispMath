@@ -192,14 +192,21 @@ class CalculatorEngine {
     // Preserve arbitrary-size integer arithmetic before the bridge converts
     // numeric expressions to floating point. The bounded rational parser
     // preserves precedence and never labels a floating-point fallback exact.
-    final exact =
-        ExactConstantEvaluator.evaluate(expression, decimalInput: true);
-    if (exact != null) {
+    // A fraction result is answered as a decimal; the exact form rides on
+    // the evidence for the optional "also show the fraction" display.
+    final detailed = ExactConstantEvaluator.evaluateDetailed(expression,
+        decimalInput: true);
+    if (detailed != null) {
+      final exact = detailed.text;
       lastResultEvidence = ResultEvidence(
-          ResultAccuracy.exact,
-          exact.contains('/') || RegExp(r'\bsqrt\s*\(').hasMatch(expression)
+          detailed.approximate
+              ? ResultAccuracy.approximate
+              : ResultAccuracy.exact,
+          detailed.exactFraction != null ||
+                  RegExp(r'\bsqrt\s*\(').hasMatch(expression)
               ? ComputationMethod.symbolicEvaluation
-              : ComputationMethod.integerArithmetic);
+              : ComputationMethod.integerArithmetic,
+          exactForm: detailed.exactFraction);
       return exact;
     }
     final conjugated = ExactComplexConstant.conjugation(expression);

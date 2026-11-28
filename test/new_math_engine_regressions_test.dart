@@ -64,18 +64,26 @@ void main() {
       ['abs(-3/7)/(9/14)', '2/3'],
       ['1+1/3+1/9+1/27', '40/27'],
     ]) {
-      expect(engine.evaluate(pair[0]), pair[1]);
-      expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
+      // Fractions are shown in decimal; the exact value rides along.
+      final shown = engine.evaluate(pair[0]);
+      final evidence = engine.lastResultEvidence!;
+      expect(evidence.exactForm ?? shown, pair[1]);
+      expect(
+          evidence.accuracy == ResultAccuracy.exact ||
+              evidence.exactForm != null,
+          isTrue);
     }
     expect(engine.evaluate('1/0'), isNot('0'));
   });
 
-  test('negative-power exact rewrite preserves right-associative exponents', () {
+  test('negative-power exact rewrite preserves right-associative exponents',
+      () {
     final engine = NativeLessArithmeticEngine();
     expect(engine.evaluate('2^(-3)^2'), '512');
     expect(engine.evaluate('2^(-3) ^ 0'), '2');
     expect(engine.evaluate('-2^(-3)^2'), '-512');
-    expect(engine.evaluate('(2^(-3))^2'), '1/64');
+    expect(engine.evaluate('(2^(-3))^2'), '0.015625');
+    expect(engine.lastResultEvidence?.exactForm, '1/64');
     expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
   });
 
@@ -84,10 +92,10 @@ void main() {
     // before constructing its huge coefficient, not compute then inspect it.
     expect(SymbolicWeb.expand('((9^256)^256)^256'), isNull);
     expect(SymbolicWeb.expand('(1/(9^256))^256'), isNull);
-    expect(RationalEquationSolver.solve('(((((9^8)^8)^8)^8)^8)/1+x', 'x'),
-        isNull);
-    expect(SymbolicWeb.expand('2^127'),
-        '170141183460469231731687303715884105728');
+    expect(
+        RationalEquationSolver.solve('(((((9^8)^8)^8)^8)^8)/1+x', 'x'), isNull);
+    expect(
+        SymbolicWeb.expand('2^127'), '170141183460469231731687303715884105728');
     expect(RationalEquationSolver.solve('x/(2^100)-1', 'x'),
         isNull); // Exponent 100 remains outside this solver's degree-8 grammar.
     expect(RationalEquationSolver.solve('x/(2^8)-1', 'x'), ['256']);

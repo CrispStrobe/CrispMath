@@ -78,7 +78,11 @@ class WorkspaceBackup {
       if (raw.containsKey('currentNotepadDocId')) {
         result['currentNotepadDocId'] = raw['currentNotepadDocId'] as String?;
       }
-      for (final key in ['highContrast', 'exactIntegerMode']) {
+      for (final key in [
+        'highContrast',
+        'exactIntegerMode',
+        'showExactFraction'
+      ]) {
         if (raw.containsKey(key)) result[key] = raw[key] as bool;
       }
       if (raw.containsKey('textScale')) {

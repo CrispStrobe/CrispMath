@@ -44,6 +44,20 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get menuFile => 'Ablage';
   @override
+  String get menuEdit => 'Bearbeiten';
+  @override
+  String get menuUndo => 'Widerrufen';
+  @override
+  String get menuRedo => 'Wiederholen';
+  @override
+  String get menuCut => 'Ausschneiden';
+  @override
+  String get menuCopy => 'Kopieren';
+  @override
+  String get menuPaste => 'Einsetzen';
+  @override
+  String get menuSelectAll => 'Alles auswählen';
+  @override
   String get menuView => 'Darstellung';
   @override
   String get menuTools => 'Werkzeuge';
@@ -898,6 +912,12 @@ class DeLocalizations implements AppLocalizations {
   @override
   String get settingsTextScale => 'Textgröße';
 
+  @override
+  String get settingsShowExactFraction =>
+      'Exakte Brüche zusätzlich anzeigen';
+  @override
+  String get settingsShowExactFractionSubtitle =>
+      'Ergebnisse werden als Dezimalzahl angezeigt (19/2 = 9,5). Zusätzlich den exakten Bruch darunter anzeigen.';
   @override
   String get settingsExactIntegerMode => 'Exakter Ganzzahl-Modus';
   @override

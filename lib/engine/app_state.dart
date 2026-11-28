@@ -68,8 +68,9 @@ class CalculationEntry {
     DateTime? lastModified,
   }) : lastModified = lastModified ?? DateTime.now().toUtc();
 
-  /// What `Ans` should resolve to: full precision when available.
-  String get ansValue => rawResult ?? result;
+  /// What `Ans` should resolve to: the exact fraction behind a decimal
+  /// result (`1/3`, so `Ans*3` is exactly 1), else full precision.
+  String get ansValue => resultEvidence?.exactForm ?? rawResult ?? result;
 
   Map<String, dynamic> toJson() => {
         'e': expression,
@@ -213,6 +214,7 @@ class AppState extends ChangeNotifier {
   static const _kFunctions = 'crisp.functions';
   static const _kParameters = 'crisp.parameters';
   static const _kExactIntegerMode = 'crisp.exactIntegerMode';
+  static const _kShowExactFraction = 'crisp.showExactFraction';
   static const _kOnboardingDismissed = 'crisp.onboardingDismissed';
   static const _kAutoBindSolve = 'crisp.autoBindSolve';
   static const _kUserFunctions = 'crisp.userFunctions';
@@ -280,6 +282,11 @@ class AppState extends ChangeNotifier {
   bool _exactIntegerMode = true;
   bool get exactIntegerMode => _exactIntegerMode;
 
+  /// Fraction results are shown as decimals (`19/2` → `9.5`). When true,
+  /// the exact fraction is also shown under the decimal result.
+  bool _showExactFraction = false;
+  bool get showExactFraction => _showExactFraction;
+
   /// True once the user has completed or skipped the first-launch tour
   /// (or pressed "Don't show again" from the Settings re-trigger). The
   /// main screen checks this on each launch and shows the
@@ -335,6 +342,7 @@ class AppState extends ChangeNotifier {
     _decimalPlaces = -1;
     _themeMode = ThemeMode.dark;
     _exactIntegerMode = true;
+    _showExactFraction = false;
     _onboardingDismissed = false;
     _textScale = 1.0;
     _highContrast = false;
@@ -393,6 +401,8 @@ class AppState extends ChangeNotifier {
       if (hc != null) _highContrast = hc;
       final exactMode = _prefs!.getBool(_kExactIntegerMode);
       if (exactMode != null) _exactIntegerMode = exactMode;
+      final showFraction = _prefs!.getBool(_kShowExactFraction);
+      if (showFraction != null) _showExactFraction = showFraction;
       final onboarded = _prefs!.getBool(_kOnboardingDismissed);
       if (onboarded != null) _onboardingDismissed = onboarded;
       final autoBind = _prefs!.getBool(_kAutoBindSolve);
@@ -674,6 +684,13 @@ class AppState extends ChangeNotifier {
     if (_exactIntegerMode == enabled) return;
     _exactIntegerMode = enabled;
     _prefs?.setBool(_kExactIntegerMode, enabled);
+    _notify({AppStateDomain.settings});
+  }
+
+  void setShowExactFraction(bool enabled) {
+    if (_showExactFraction == enabled) return;
+    _showExactFraction = enabled;
+    _prefs?.setBool(_kShowExactFraction, enabled);
     _notify({AppStateDomain.settings});
   }
 
@@ -1186,6 +1203,7 @@ class AppState extends ChangeNotifier {
         target.removeLast();
       }
     }
+
     addTo(history);
     for (final edits in _pendingHistoryReplacements) {
       edits.add(addTo);
@@ -1231,7 +1249,8 @@ class AppState extends ChangeNotifier {
   Future<void> _enqueueHistoryWrite(Future<void> Function() perform) {
     final previous = _pendingHistoryWrites == 0 ? null : _historyWrites;
     _pendingHistoryWrites++;
-    final write = previous == null ? perform() : previous.then((_) => perform());
+    final write =
+        previous == null ? perform() : previous.then((_) => perform());
     _historyWrites = write.catchError((Object error) {
       debugPrint('STATE: history save failed: $error');
     }).whenComplete(() => _pendingHistoryWrites--);
@@ -1409,6 +1428,7 @@ class AppState extends ChangeNotifier {
     _requestedGraph = null;
     return request;
   }
+
   int? consumeRequestedTab() {
     final tab = _requestedTab;
     _requestedTab = null;
@@ -1489,7 +1509,8 @@ class AppState extends ChangeNotifier {
         requestOpenNotepadSource(slot);
         return existing;
       }
-      throw StateError('The source worksheet is missing. Restore it or detach the graph first.');
+      throw StateError(
+          'The source worksheet is missing. Restore it or detach the graph first.');
     }
     // Match the finite interval limits accepted by the graph view.
     GraphBounds(xMin, xMax, -1, 1);
@@ -1507,12 +1528,13 @@ class AppState extends ChangeNotifier {
       document.lines.add(NotepadLine.fresh(source: '$parameter = $value')
         ..cachedResult = value.toString());
     }
-    final plotLine = NotepadLine.fresh(
-        source: 'plot($expression, x, $xMin, $xMax)');
+    final plotLine =
+        NotepadLine.fresh(source: 'plot($expression, x, $xMin, $xMax)');
     document.lines.add(plotLine);
     final resolved = resolveLinkedGraph(document, plotLine.id);
     if (resolved.error != null || resolved.plot == null) {
-      throw StateError(resolved.error ?? 'This graph cannot become a worksheet.');
+      throw StateError(
+          resolved.error ?? 'This graph cannot become a worksheet.');
     }
     plotLine.cachedResult = resolved.plot!.toSentinel();
     // Validate everything before changing either the document collection or
@@ -1692,6 +1714,10 @@ class AppState extends ChangeNotifier {
       setExactIntegerMode(json['exactIntegerMode'] as bool);
       imported.add('exact integer mode');
     }
+    if (json['showExactFraction'] is bool) {
+      setShowExactFraction(json['showExactFraction'] as bool);
+      imported.add('show exact fraction');
+    }
     if (json['history'] is List) {
       final newEntries = <CalculationEntry>[];
       for (final raw in (json['history'] as List)) {
@@ -1724,6 +1750,7 @@ class AppState extends ChangeNotifier {
             ..addAll(newEntries.take(_kHistoryCap));
         }
       }
+
       applyImport(history);
       for (final edits in _pendingHistoryReplacements) {
         edits.add(applyImport);
@@ -1865,6 +1892,7 @@ class AppState extends ChangeNotifier {
       'textScale': _textScale,
       'highContrast': _highContrast,
       'exactIntegerMode': _exactIntegerMode,
+      'showExactFraction': _showExactFraction,
       'userFunctions':
           userFunctions.values.map((f) => f.toJson()).toList(growable: false),
       'history': history.map((e) => e.toJson()).toList(),

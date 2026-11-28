@@ -96,6 +96,39 @@ class _LatexInputFieldState extends State<LatexInputField> {
     final cursorPosition = selection.baseOffset.clamp(0, text.length);
     final color = Theme.of(context).colorScheme.onSurface;
 
+    // A selection (Select All, or text pasted over) is shown highlighted
+    // in place of the cursor, so typing visibly replaces it.
+    if (selection.isValid && !selection.isCollapsed && text.isNotEmpty) {
+      final start = selection.start.clamp(0, text.length);
+      final end = selection.end.clamp(0, text.length);
+      return Container(
+        constraints: const BoxConstraints(minHeight: 60),
+        alignment: Alignment.centerRight,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          reverse: true,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (start > 0)
+                _math(_before, text.substring(0, start), color,
+                    (c) => _before = c),
+              Container(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.35),
+                child: _math(null, text.substring(start, end), color, (_) {}),
+              ),
+              if (end < text.length)
+                _math(_after, text.substring(end), color, (c) => _after = c),
+            ],
+          ),
+        ),
+      );
+    }
+
     // Split text at cursor position
     final beforeCursor = text.substring(0, cursorPosition);
     final afterCursor = text.substring(cursorPosition);

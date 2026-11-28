@@ -817,6 +817,16 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Card(
                 child: SwitchListTile(
+                  secondary: const Icon(Icons.percent),
+                  title: Text(t.settingsShowExactFraction),
+                  subtitle: Text(t.settingsShowExactFractionSubtitle),
+                  value: appState.showExactFraction,
+                  onChanged: appState.setShowExactFraction,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: SwitchListTile(
                   secondary:
                       Icon(Icons.link, semanticLabel: t.settingsAutoBindSolveSemantic),
                   title: Text(t.settingsAutoBindSolve),

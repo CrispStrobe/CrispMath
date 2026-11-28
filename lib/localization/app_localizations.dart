@@ -51,6 +51,13 @@ abstract class AppLocalizations {
   String get menuAboutApp;
   String get menuSettingsEllipsis;
   String get menuFile;
+  String get menuEdit;
+  String get menuUndo;
+  String get menuRedo;
+  String get menuCut;
+  String get menuCopy;
+  String get menuPaste;
+  String get menuSelectAll;
   String get menuView;
   String get menuTools;
   String get menuHelp;
@@ -484,6 +491,8 @@ abstract class AppLocalizations {
   // -- Exact integer mode (arbitrary-precision results) --
   String get settingsExactIntegerMode;
   String get settingsExactIntegerModeSubtitle;
+  String get settingsShowExactFraction;
+  String get settingsShowExactFractionSubtitle;
   String exactIntegerBadge(int digits);
   String get exactIntegerTapToCopy;
 

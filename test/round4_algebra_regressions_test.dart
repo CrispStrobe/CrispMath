@@ -5,7 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _RejectNativeExactRootEngine extends CalculatorEngine {
   @override
-  bool get isNativeAvailable => throw StateError('Exact root reached native CAS');
+  bool get isNativeAvailable =>
+      throw StateError('Exact root reached native CAS');
 }
 
 void main() {
@@ -16,16 +17,21 @@ void main() {
       'sqrt(49/121)': '7/11',
       'sqrt(0)': '0',
       'sqrt(1)': '1',
-      'sqrt(0.0625)': '0.25',
+      'sqrt(0.0625)': '1/4',
       'sqrt((-7/11)^2)': '7/11',
       '-sqrt(49)/sqrt(121)': '-7/11',
       'sqrt(sqrt(81))': '3',
       'sqrt(49)+sqrt(121)': '18',
     }.entries) {
-      expect(engine.evaluate(entry.key), entry.value, reason: entry.key);
-      expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
-      expect(engine.lastResultEvidence?.method,
-          ComputationMethod.symbolicEvaluation);
+      // Fractions are shown in decimal; the exact value rides along.
+      final shown = engine.evaluate(entry.key);
+      final evidence = engine.lastResultEvidence!;
+      expect(evidence.exactForm ?? shown, entry.value, reason: entry.key);
+      expect(
+          evidence.accuracy == ResultAccuracy.exact ||
+              evidence.exactForm != null,
+          isTrue);
+      expect(evidence.method, ComputationMethod.symbolicEvaluation);
     }
   });
 
@@ -36,7 +42,8 @@ void main() {
     expect(engine.lastResultEvidence?.accuracy, ResultAccuracy.exact);
   });
 
-  test('irrational, complex, symbolic and excessive roots retain CAS routing', () {
+  test('irrational, complex, symbolic and excessive roots retain CAS routing',
+      () {
     for (final source in [
       'sqrt(2)',
       'sqrt(2/9)',

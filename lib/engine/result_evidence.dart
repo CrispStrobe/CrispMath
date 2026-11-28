@@ -20,17 +20,22 @@ enum ComputationMethod {
 
 class ResultEvidence {
   const ResultEvidence(this.accuracy, this.method,
-      {this.unchanged = false, this.sourceDomain});
+      {this.unchanged = false, this.sourceDomain, this.exactForm});
   final ResultAccuracy accuracy;
   final ComputationMethod method;
   final bool unchanged;
   final String? sourceDomain;
+
+  /// The exact value (`1125563/1140`) when the result is shown as its
+  /// decimal form; displayed under the result when the user enables it.
+  final String? exactForm;
 
   Map<String, dynamic> toJson() => {
         'accuracy': accuracy.name,
         'method': method.name,
         if (unchanged) 'unchanged': true,
         if (sourceDomain != null) 'sourceDomain': sourceDomain,
+        if (exactForm != null) 'exactForm': exactForm,
       };
 
   static ResultEvidence? fromJson(dynamic value) {
@@ -45,7 +50,8 @@ class ResultEvidence {
     return ResultEvidence(accuracy, method,
         unchanged: value['unchanged'] == true,
         sourceDomain:
-            value['sourceDomain'] is String ? value['sourceDomain'] : null);
+            value['sourceDomain'] is String ? value['sourceDomain'] : null,
+        exactForm: value['exactForm'] is String ? value['exactForm'] : null);
   }
 }
 

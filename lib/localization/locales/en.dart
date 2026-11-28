@@ -44,6 +44,20 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get menuFile => 'File';
   @override
+  String get menuEdit => 'Edit';
+  @override
+  String get menuUndo => 'Undo';
+  @override
+  String get menuRedo => 'Redo';
+  @override
+  String get menuCut => 'Cut';
+  @override
+  String get menuCopy => 'Copy';
+  @override
+  String get menuPaste => 'Paste';
+  @override
+  String get menuSelectAll => 'Select All';
+  @override
   String get menuView => 'View';
   @override
   String get menuTools => 'Tools';
@@ -886,6 +900,12 @@ class EnLocalizations implements AppLocalizations {
   @override
   String get settingsTextScale => 'Text size';
 
+  @override
+  String get settingsShowExactFraction =>
+      'Also show exact fractions';
+  @override
+  String get settingsShowExactFractionSubtitle =>
+      'Results are shown as decimals (19/2 = 9.5). Also show the exact fraction underneath.';
   @override
   String get settingsExactIntegerMode => 'Exact integer mode';
   @override

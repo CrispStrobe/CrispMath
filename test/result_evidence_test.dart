@@ -22,6 +22,21 @@ class NumericalEngine extends CalculatorEngine {
 }
 
 void main() {
+  test('Ans uses the exact fraction behind a decimal result', () {
+    final engine = CalculatorEngine();
+    expect(engine.evaluate('1/3'), '0.33333333333333333');
+    final evidence = engine.lastResultEvidence!;
+    expect(evidence.exactForm, '1/3');
+    final entry = CalculationEntry(
+        expression: '1/3', result: '0.333333333333', resultEvidence: evidence);
+    expect(entry.ansValue, '1/3');
+    // Survives history persistence.
+    final restored = CalculationEntry.fromJson(
+        jsonDecode(jsonEncode(entry.toJson())) as Map<String, dynamic>);
+    expect(restored.ansValue, '1/3');
+    expect(engine.evaluate('3*(${restored.ansValue})'), '1');
+  });
+
   test(
       'simplification fallback identifies expansion rather than full simplification',
       () {

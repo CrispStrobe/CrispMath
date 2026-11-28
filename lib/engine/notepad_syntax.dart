@@ -70,7 +70,9 @@ class _NumericScopeIndex {
           parsed.kind == NotepadLineKind.flatzinc ||
           parsed.kind == NotepadLineKind.plot ||
           (line.cachedResult != null &&
-              !_scalarScopeValue.hasMatch(line.cachedResult!))) {
+              !_scalarScopeValue.hasMatch(line.cachedResult!)) ||
+          // Bound by its exact fraction, which is not a scalar literal.
+          line.resultEvidence?.exactForm != null) {
         return null;
       }
       final name =
@@ -108,7 +110,8 @@ class _NumericScopeIndex {
     revision = doc.scopeRevision;
     results[index] = result;
     if (!matches(doc, externalScope) ||
-        (result != null && !_scalarScopeValue.hasMatch(result))) {
+        (result != null && !_scalarScopeValue.hasMatch(result)) ||
+        doc.lines[index].resultEvidence?.exactForm != null) {
       return false;
     }
     void update(String key) {
@@ -525,7 +528,11 @@ Map<String, String> buildNotepadScope(
       }
       continue;
     }
-    final cached = line.cachedResult;
+    // A fraction shown as a decimal is passed on exactly (`1/3`, not the
+    // rounded display text), so `3*a` gives 1, not 0.999999999999.
+    final cached = line.cachedResult == null
+        ? null
+        : line.resultEvidence?.exactForm ?? line.cachedResult;
     if (cached == null) continue;
     if (includeAliases && wanted('line${i + 1}')) {
       scope['line${i + 1}'] = cached;
@@ -820,7 +827,8 @@ String? _resolveAns(NotepadDocument doc, int lineIndex) {
     final parsed = classifyNotepadLine(line.source,
         lineIndex: i, firstCodeLineIndex: firstCode);
     if (!_isAnswerKind(parsed.kind)) continue;
-    return line.cachedResult;
+    if (line.cachedResult == null) return null;
+    return line.resultEvidence?.exactForm ?? line.cachedResult;
   }
   return null;
 }

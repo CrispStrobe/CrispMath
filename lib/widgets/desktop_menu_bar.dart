@@ -5,8 +5,10 @@
 // app actions. Other platforms (and the iPad build running on a Mac, whose
 // menu UIKit owns) get the child unchanged.
 //
-// Shortcuts deliberately avoid editing keys (⌘Z, ⌘C, ⌘V, ⌘A, ⌘F): a native
-// key equivalent would take those away from the focused text field.
+// The Edit menu owns the editing keys (⌘Z, ⌘X, ⌘C, ⌘V, ⌘A). Its items do
+// not act themselves: each one sends the matching text-editing intent to
+// the focused widget, so text fields edit exactly as with the keyboard and
+// the calculator's math input handles them through its own Actions.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +65,13 @@ const int kDesktopMenuSettingsTab = 5;
 bool get desktopMenuSupported =>
     !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
 
+/// Sends an editing [intent] to the focused widget (a text field, or the
+/// calculator's math input), as the keyboard shortcut would.
+void _invokeOnFocus(Intent intent) {
+  final context = FocusManager.instance.primaryFocus?.context;
+  if (context != null) Actions.maybeInvoke(context, intent);
+}
+
 class DesktopMenuBar extends StatelessWidget {
   const DesktopMenuBar({super.key, required this.actions, required this.child});
 
@@ -106,7 +115,8 @@ class DesktopMenuBar extends StatelessWidget {
             item(t.menuAboutApp, a.about),
           ]),
           PlatformMenuItemGroup(members: [
-            item(t.menuSettingsEllipsis,
+            item(
+                t.menuSettingsEllipsis,
                 () => a.selectTab(kDesktopMenuSettingsTab),
                 cmd(LogicalKeyboardKey.comma)),
           ]),
@@ -143,6 +153,39 @@ class DesktopMenuBar extends StatelessWidget {
           PlatformMenuItemGroup(members: [
             item(t.menuWorkspaceBackups, a.workspaceBackups),
             item(t.menuSync, a.sync),
+          ]),
+        ]),
+        PlatformMenu(label: t.menuEdit, menus: [
+          PlatformMenuItemGroup(members: [
+            item(
+                t.menuUndo,
+                () => _invokeOnFocus(
+                    const UndoTextIntent(SelectionChangedCause.keyboard)),
+                cmd(LogicalKeyboardKey.keyZ)),
+            item(
+                t.menuRedo,
+                () => _invokeOnFocus(
+                    const RedoTextIntent(SelectionChangedCause.keyboard)),
+                cmd(LogicalKeyboardKey.keyZ, shift: true)),
+          ]),
+          PlatformMenuItemGroup(members: [
+            item(
+                t.menuCut,
+                () => _invokeOnFocus(const CopySelectionTextIntent.cut(
+                    SelectionChangedCause.keyboard)),
+                cmd(LogicalKeyboardKey.keyX)),
+            item(t.menuCopy, () => _invokeOnFocus(CopySelectionTextIntent.copy),
+                cmd(LogicalKeyboardKey.keyC)),
+            item(
+                t.menuPaste,
+                () => _invokeOnFocus(
+                    const PasteTextIntent(SelectionChangedCause.keyboard)),
+                cmd(LogicalKeyboardKey.keyV)),
+            item(
+                t.menuSelectAll,
+                () => _invokeOnFocus(
+                    const SelectAllTextIntent(SelectionChangedCause.keyboard)),
+                cmd(LogicalKeyboardKey.keyA)),
           ]),
         ]),
         PlatformMenu(label: t.menuView, menus: [
@@ -187,8 +230,8 @@ class DesktopMenuBar extends StatelessWidget {
         ]),
         PlatformMenu(label: t.menuHelp, menus: [
           PlatformMenuItemGroup(members: [
-            item(t.settingsHelp, a.help, cmd(LogicalKeyboardKey.slash,
-                shift: true)),
+            item(t.settingsHelp, a.help,
+                cmd(LogicalKeyboardKey.slash, shift: true)),
             item(t.settingsFunctionRef, a.functionReference),
             item(t.settingsWorkedExamples, a.workedExamples),
           ]),

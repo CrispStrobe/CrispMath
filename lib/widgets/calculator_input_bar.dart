@@ -163,6 +163,36 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
     super.dispose();
   }
 
+  Future<void> _showEditMenu(BuildContext context, Offset position) async {
+    widget.onFieldTap?.call();
+    final t = AppLocalizations.of(context);
+    final hasText = controller.text.isNotEmpty;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final choice = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+          position & const Size(1, 1), Offset.zero & overlay.size),
+      items: [
+        PopupMenuItem(value: 'cut', enabled: hasText, child: Text(t.menuCut)),
+        PopupMenuItem(value: 'copy', enabled: hasText, child: Text(t.menuCopy)),
+        PopupMenuItem(value: 'paste', child: Text(t.menuPaste)),
+        PopupMenuItem(
+            value: 'selectAll', enabled: hasText, child: Text(t.menuSelectAll)),
+      ],
+    );
+    switch (choice) {
+      case 'cut':
+        await controller.cutToClipboard();
+      case 'copy':
+        await controller.copyToClipboard();
+      case 'paste':
+        await controller.pasteFromClipboard();
+      case 'selectAll':
+        controller.selectAll();
+    }
+    widget.onFieldTap?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = WorkflowLocalizations.of(context);
@@ -259,6 +289,12 @@ class _CalculatorInputBarState extends State<CalculatorInputBar> {
               : GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: widget.onFieldTap,
+                  // Right-click / long-press: the same clipboard commands a
+                  // text field offers (the math field is not a TextField).
+                  onSecondaryTapDown: (d) =>
+                      _showEditMenu(context, d.globalPosition),
+                  onLongPressStart: (d) =>
+                      _showEditMenu(context, d.globalPosition),
                   child: SingleChildScrollView(
                     reverse: true,
                     scrollDirection: Axis.horizontal,

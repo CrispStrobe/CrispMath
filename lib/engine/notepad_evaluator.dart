@@ -933,6 +933,8 @@ class NotepadEvaluator {
       localNames.add('line${dependency + 1}');
       if (parsed.name != null) localNames.add(parsed.name!);
       localNames.addAll(upstream.cachedExports.keys);
+      // Its exact fraction is what gets substituted: no precision is lost.
+      if (upstream.resultEvidence?.exactForm != null) continue;
       final accuracy = upstream.resultEvidence?.accuracy;
       if (accuracy == ResultAccuracy.approximate) {
         return ResultAccuracy.approximate;

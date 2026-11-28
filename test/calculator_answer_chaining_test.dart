@@ -97,6 +97,6 @@ void main() {
     await tester.enterText(field, '/2');
     expect(tester.widget<TextField>(field).controller!.text, 'Ans/2');
     await submit();
-    expect(AppState().history.first.result, '7/2');
+    expect(AppState().history.first.result, '3.5');
   });
 }
